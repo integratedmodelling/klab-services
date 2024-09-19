@@ -319,25 +319,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     //                    disabled");
                     //                } else {
                     setOperational(true);
-//                    // FIXME not sure this is useful anymore
-//                    serviceScope().send(Message.MessageClass.EngineLifecycle,
-//                            Message.MessageType.ReasoningAvailable,
-//                            capabilities(serviceScope()));
                     serviceScope().info("Worldview loaded into local reasoner");
 
                     // TODO if there were previous logical notifications they should be deleted now
 
-                    // worldview is synchronized, so the first one that works is the one
+                    /*
+                    We stop at the first worldview that loads. All available worldiews should be
+                    synchronized and mirrored automatically, and two services with different worldviews
+                    accessible to the same reasoner is a configuration abomination that should never happen.
+                     */
                     break;
 
-                }/* else {
-                    // FIXME this isn't reaching the clients as it should in a modeler config. Should just
-                    //  let the client ask for notifications (at that point they can be in capabilities) if
-                    //  status is not operational.
-//                    serviceScope().send(Message.MessageClass.KnowledgeLifecycle,
-//                            Message.MessageType.LogicalValidation, notifications);
-
-                }*/
+                }
             }
         }
 

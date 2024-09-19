@@ -1,5 +1,6 @@
 package org.integratedmodelling.cli.views;
 
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -19,6 +20,11 @@ public class CLIServicesView extends CLIView implements ServicesView {
 
     @Override
     public void reasoningAvailable(Reasoner.Capabilities reasonerCapabilities) {
+
+    }
+
+    @Override
+    public void engineStatusChanged(Engine.Status status) {
 
     }
 }

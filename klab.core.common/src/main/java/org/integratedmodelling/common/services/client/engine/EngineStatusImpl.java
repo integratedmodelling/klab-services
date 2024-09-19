@@ -2,55 +2,47 @@ package org.integratedmodelling.common.services.client.engine;
 
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
-public class EngineStatusImpl implements Engine.Status {
+public class EngineStatusImpl extends ServiceStatusImpl implements Engine.Status {
 
-    private Map<KlabService.Type, KlabService.ServiceStatus> serviceStatusMap = new HashMap<>();
-    private Map<KlabService.Type, KlabService.ServiceCapabilities> serviceCapabilities = new HashMap<>();
-    private boolean operational;
-
-    @Override
-    public boolean isOperational() {
-        return operational;
-    }
-
-    @Override
-    public KlabService.ServiceStatus getServiceStatus(KlabService.Type serviceType) {
-        // TODO return inop service status if null
-        return serviceStatusMap.get(serviceType);
-    }
+    private Map<KlabService.Type, KlabService.ServiceStatus> servicesStatus = new HashMap<>();
+    private Map<KlabService.Type, KlabService.ServiceCapabilities> servicesCapabilities = new HashMap<>();
+    private Set<String> connectedUsernames = new HashSet<>();
 
     public static Engine.Status inop() {
         return new EngineStatusImpl();
     }
 
-    public void setOperational(boolean operational) {
-        this.operational = operational;
+    @Override
+    public Map<KlabService.Type, KlabService.ServiceStatus> getServicesStatus() {
+        return servicesStatus;
     }
 
-    public Map<KlabService.Type, KlabService.ServiceStatus> getServiceStatusMap() {
-        return serviceStatusMap;
+    public void setServicesStatus(Map<KlabService.Type, KlabService.ServiceStatus> servicesStatus) {
+        this.servicesStatus = servicesStatus;
     }
 
-    public void setServiceStatusMap(Map<KlabService.Type, KlabService.ServiceStatus> serviceStatusMap) {
-        this.serviceStatusMap = serviceStatusMap;
+    @Override
+    public Map<KlabService.Type, KlabService.ServiceCapabilities> getServicesCapabilities() {
+        return servicesCapabilities;
     }
 
-    public Map<KlabService.Type, KlabService.ServiceCapabilities> getServiceCapabilities() {
-        return serviceCapabilities;
+    public void setServicesCapabilities(Map<KlabService.Type, KlabService.ServiceCapabilities> servicesCapabilities) {
+        this.servicesCapabilities = servicesCapabilities;
     }
 
-    public void setServiceCapabilities(Map<KlabService.Type, KlabService.ServiceCapabilities> serviceCapabilities) {
-        this.serviceCapabilities = serviceCapabilities;
+    @Override
+    public Set<String> getConnectedUsernames() {
+        return connectedUsernames;
     }
 
-    public static boolean equals(Engine.Status s1, Engine.Status s2) {
-        // TODO
-        return false;
+    public void setConnectedUsernames(Set<String> connectedUsernames) {
+        this.connectedUsernames = connectedUsernames;
     }
-
-
 }

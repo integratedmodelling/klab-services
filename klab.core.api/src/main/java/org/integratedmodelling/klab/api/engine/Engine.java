@@ -1,13 +1,11 @@
 package org.integratedmodelling.klab.api.engine;
 
-import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.scope.*;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 
-import java.net.URL;
+import java.util.Collection;
 import java.util.List;
-import java.util.function.BiConsumer;
+import java.util.Map;
 
 /**
  * The k.LAB engine is a service orchestrator that maintains scopes and the services used by these scopes. Its
@@ -40,14 +38,7 @@ public interface Engine extends KlabService {
      * changes, either because of service lifecycle or because of the user choosing a different service as the
      * current one, a message is sent (intercepted by the modeler and also sent to the UI).
      */
-    interface Status {
-
-        /**
-         * True if every service is available and a worldview is loaded in the reasoner.
-         *
-         * @return
-         */
-        boolean isOperational();
+    interface Status extends ServiceStatus {
 
         /**
          * Return the current status of each specific service. If the service is not even connected, a
@@ -56,7 +47,23 @@ public interface Engine extends KlabService {
          * @param serviceType
          * @return
          */
-        ServiceStatus getServiceStatus(KlabService.Type serviceType);
+        Map<Type, ServiceStatus> getServicesStatus();
+
+        /**
+         * User names for all users that have currently active scopes. List may be filtered according to who's
+         * asking.
+         *
+         * @return
+         */
+        Collection<String> getConnectedUsernames();
+
+        /**
+         * Return service capabilities for all known current services. Capabilities may be filtered according
+         * to who's asking.
+         *
+         * @return
+         */
+        Map<Type, ServiceCapabilities> getServicesCapabilities();
 
     }
 

@@ -1,16 +1,13 @@
 package org.integratedmodelling.common.services.client.scope;
 
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
-import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
-import org.integratedmodelling.common.services.client.ServiceClient;
-import org.integratedmodelling.common.services.client.engine.EngineClient;
+import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -37,7 +34,7 @@ import java.util.function.BiConsumer;
  */
 public abstract class ClientUserScope extends AbstractReactiveScopeImpl implements UserScope {
 
-    protected final EngineClient engine;
+    protected final EngineImpl engine;
     // the data hash is the SAME OBJECT throughout the child
     protected Parameters<String> data;
     private Identity user;
@@ -56,7 +53,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    public ClientUserScope(Identity user, EngineClient engine, BiConsumer<Scope, Message>... listeners) {
+    public ClientUserScope(Identity user, EngineImpl engine, BiConsumer<Scope, Message>... listeners) {
         super(user, false, true);
         this.user = user;
         this.data = Parameters.create();

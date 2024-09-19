@@ -49,7 +49,7 @@ public class ServicesViewControllerImpl extends AbstractUIViewController<Service
 
     @Override
     public void engineStatusChanged(Engine.Status status) {
-        // TODO all the above as needed
+        view().engineStatusChanged(status);
     }
 
     @Override

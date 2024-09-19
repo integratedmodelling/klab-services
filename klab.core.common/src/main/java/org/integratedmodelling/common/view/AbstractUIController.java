@@ -1,6 +1,6 @@
 package org.integratedmodelling.common.view;
 
-import org.integratedmodelling.common.services.client.engine.EngineClient;
+import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -10,7 +10,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -157,7 +156,7 @@ public abstract class AbstractUIController implements UIController {
      */
     public void boot() {
         engine = createEngine();
-        if (engine instanceof EngineClient engineClient) {
+        if (engine instanceof EngineImpl engineClient) {
             engineClient.addScopeListener(this::processMessage);
         } else {
             engine.serviceScope().warn("Engine is not default: will not communicate engine messages to UI");

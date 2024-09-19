@@ -3,8 +3,6 @@ package org.integratedmodelling.common.services.client.engine;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
-import org.integratedmodelling.common.services.client.scope.ClientContextScope;
-import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -40,7 +38,7 @@ import java.util.function.BiConsumer;
  * scope. This implementation is lightweight (depending only on the API and commons packages) and can be
  * embedded into applications such as command-line or graphical IDEs.
  */
-public class EngineClient implements Engine, PropertyHolder {
+public class EngineImpl implements Engine, PropertyHolder {
 
     AtomicBoolean online = new AtomicBoolean(false);
     AtomicBoolean available = new AtomicBoolean(false);
@@ -59,8 +57,8 @@ public class EngineClient implements Engine, PropertyHolder {
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private boolean firstCall = true;
     String serviceId = Utils.Names.shortUUID();
-//    private boolean reasoningAvailable;
-//    private boolean reasonerDisabled;
+    //    private boolean reasoningAvailable;
+    //    private boolean reasonerDisabled;
     private Worldview worldview;
     private AtomicReference<Status> status = new AtomicReference<>(EngineStatusImpl.inop());
 
@@ -179,25 +177,29 @@ public class EngineClient implements Engine, PropertyHolder {
     public void boot() {
 
         this.defaultUser = authenticate();
-//        this.scopeListeners.add((channel, message) -> {
-//
-//            // basic listener for knowledge management
-//            if (message.is(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorkspaceChanged)) {
-//                var changes = message.getPayload(ResourceSet.class);
-//                var reasoner = defaultUser.getService(Reasoner.class);
-//                if (reasoner.status().isAvailable() && reasoner.isExclusive() && reasoner instanceof Reasoner.Admin admin) {
-//                    var notifications = admin.updateKnowledge(changes, getUser());
-//                    // send the notifications around for display
-//                    serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.LogicalValidation, notifications);
-//                    if (Utils.Resources.hasErrors(notifications)) {
-//                        defaultUser.warn("Worldview update in the reasoner returned ontologies with logical errors");
-//                    } else {
-//                        defaultUser.info("Worldview was updated in the reasoner");
-//                    }
-//                }
-//            }
-//
-//        });
+        //        this.scopeListeners.add((channel, message) -> {
+        //
+        //            // basic listener for knowledge management
+        //            if (message.is(Message.MessageClass.KnowledgeLifecycle, Message.MessageType
+        //            .WorkspaceChanged)) {
+        //                var changes = message.getPayload(ResourceSet.class);
+        //                var reasoner = defaultUser.getService(Reasoner.class);
+        //                if (reasoner.status().isAvailable() && reasoner.isExclusive() && reasoner
+        //                instanceof Reasoner.Admin admin) {
+        //                    var notifications = admin.updateKnowledge(changes, getUser());
+        //                    // send the notifications around for display
+        //                    serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message
+        //                    .MessageType.LogicalValidation, notifications);
+        //                    if (Utils.Resources.hasErrors(notifications)) {
+        //                        defaultUser.warn("Worldview update in the reasoner returned ontologies
+        //                        with logical errors");
+        //                    } else {
+        //                        defaultUser.info("Worldview was updated in the reasoner");
+        //                    }
+        //                }
+        //            }
+        //
+        //        });
         if (this.defaultUser instanceof ChannelImpl channel) {
             for (var listener : scopeListeners) {
                 channel.addListener(listener);
@@ -255,21 +257,26 @@ public class EngineClient implements Engine, PropertyHolder {
 
             var reasoner = serviceScope().getService(Reasoner.class);
 
-            if (reasoner != null && reasoner.status().isAvailable() && reasoner.capabilities(serviceScope()).getWorldviewId() != null) {
+            if (reasoner != null && reasoner.status().isAvailable() && reasoner.capabilities(serviceScope()
+            ).getWorldviewId() != null) {
 
                 // reasoner is online and able
                 reasoningAvailable = true;
                 serviceScope().send(Message.MessageClass.EngineLifecycle,
                         Message.MessageType.ReasoningAvailable, reasoner.capabilities(serviceScope()));
 
-            } else if (reasoner != null && reasoner.isExclusive() && reasoner.status().isAvailable() && reasoner.capabilities(serviceScope()).getWorldviewId() == null) {
+            } else if (reasoner != null && reasoner.isExclusive() && reasoner.status().isAvailable() &&
+            reasoner.capabilities(serviceScope()).getWorldviewId() == null) {
 
                 var resources = serviceScope().getService(ResourcesService.class);
-                if (resources != null && resources.status().isAvailable() && resources.capabilities(serviceScope()).isWorldviewProvider() && reasoner instanceof Reasoner.Admin admin) {
+                if (resources != null && resources.status().isAvailable() && resources.capabilities
+                (serviceScope()).isWorldviewProvider() && reasoner instanceof Reasoner.Admin admin) {
 
-                    var notifications = admin.loadKnowledge(this.worldview = resources.getWorldview(), getUser());
+                    var notifications = admin.loadKnowledge(this.worldview = resources.getWorldview(),
+                    getUser());
 
-                    serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.LogicalValidation, notifications);
+                    serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType
+                    .LogicalValidation, notifications);
 
                     if (Utils.Resources.hasErrors(notifications)) {
                         reasonerDisabled = true;
@@ -283,7 +290,7 @@ public class EngineClient implements Engine, PropertyHolder {
                     }
                 }
             }*/
-//        }
+        //        }
 
         // inform listeners
         if (wasAvailable != ok) {
@@ -309,19 +316,42 @@ public class EngineClient implements Engine, PropertyHolder {
         // explore state of all services, determine what we
         EngineStatusImpl engineStatus = new EngineStatusImpl();
 
-        // TODO fill this in, assess operational status w.r.t. current services etc.
-        var reasoner = serviceScope().getServices(Reasoner.class);
-        var resources = serviceScope().getService(ResourcesService.class);
-        var resolver = serviceScope().getService(Resolver.class);
-        var runtime = serviceScope().getService(RuntimeService.class);
-
-        var nss = 0;
-        if (resources != null) {
-
+        var changes = false;
+        var noperational = 0;
+        for (var scl : List.of(Reasoner.class, ResourcesService.class, Resolver.class,
+                RuntimeService.class)) {
+            var service = serviceScope().getService(scl);
+            var sertype = KlabService.Type.classify(scl);
+            if (service != null) {
+                var newStatus = service.status();
+                if (newStatus != null) {
+                    if (newStatus.isOperational()) {
+                        noperational++;
+                    }
+                    var oldStatus = status.get().getServicesStatus().get(sertype);
+                    if (oldStatus == null || newStatus.hasChangedComparedTo(oldStatus)) {
+                        changes = true;
+                        engineStatus.getServicesStatus().put(sertype, newStatus);
+                    } else {
+                        engineStatus.getServicesStatus().put(sertype, oldStatus);
+                    }
+                    if (status.get().getServicesCapabilities().get(sertype) == null) {
+                        status.get().getServicesCapabilities().put(sertype, service.capabilities(getUser()));
+                    }
+                }
+            } else if (status.get().getServicesStatus() != null) {
+                changes = true;
+            }
         }
 
+        if (users.size() != status.get().getConnectedUsernames().size()) {
+            engineStatus.getConnectedUsernames().addAll(users.stream().map(userScope -> userScope.getUser().getUsername()).toList());
+        }
+
+        engineStatus.setOperational(noperational == 4);
+
         // if state has changed, swap and send message
-        if (this.status.get() == null || !EngineStatusImpl.equals(this.status.get(), engineStatus)) {
+        if (changes) {
             this.status.set(engineStatus);
             serviceScope().send(Message.MessageClass.EngineLifecycle,
                     Message.MessageType.EngineStatusChanged, engineStatus);
@@ -355,7 +385,7 @@ public class EngineClient implements Engine, PropertyHolder {
 
             @Override
             public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-                return EngineClient.this.getServices(KlabService.Type.classify(serviceClass));
+                return EngineImpl.this.getServices(KlabService.Type.classify(serviceClass));
             }
         };
 
@@ -368,6 +398,7 @@ public class EngineClient implements Engine, PropertyHolder {
     }
 
     private <T extends KlabService> Collection<T> getServices(KlabService.Type serviceType) {
+
         switch (serviceType) {
             case REASONER -> {
                 return (Collection<T>) availableReasoners;
@@ -388,7 +419,7 @@ public class EngineClient implements Engine, PropertyHolder {
                 }
             }
             case ENGINE -> {
-                return List.of((T) EngineClient.this);
+                return List.of((T) EngineImpl.this);
             }
         }
         return Collections.emptyList();
@@ -411,7 +442,7 @@ public class EngineClient implements Engine, PropertyHolder {
 
     public static void main(String[] args) {
 
-        var client = new EngineClient();
+        var client = new EngineImpl();
         client.boot();
         while (!client.isStopped()) {
             try {
@@ -453,7 +484,7 @@ public class EngineClient implements Engine, PropertyHolder {
         }
 
         if (!found) {
-            serviceScope().error("EngineClient: cannot set unknown " + service.getType() + " service with " +
+            serviceScope().error("EngineImpl: cannot set unknown " + service.getType() + " service with " +
                     "ID " + service.getServiceId() +
                     " as default: service is not available to the engine");
         }

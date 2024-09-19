@@ -209,9 +209,10 @@ public interface KlabService extends Service {
         }
 
         default boolean hasChangedComparedTo(ServiceStatus statusBeforeChecking) {
-            return
-                    this.isAvailable() != statusBeforeChecking.isAvailable() ||
-                            this.isBusy() != statusBeforeChecking.isBusy();
+            return this.isAvailable() != statusBeforeChecking.isAvailable() ||
+                    this.isBusy() != statusBeforeChecking.isBusy() ||
+                    this.isOperational() != statusBeforeChecking.isOperational() ||
+                    !this.getAdvisories().equals(statusBeforeChecking.getAdvisories());
         }
     }
 

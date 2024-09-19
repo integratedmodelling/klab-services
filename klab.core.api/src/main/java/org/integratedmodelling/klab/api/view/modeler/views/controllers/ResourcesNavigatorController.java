@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.view.modeler.views.controllers;
 
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.ViewController;
@@ -55,6 +56,8 @@ public interface ResourcesNavigatorController extends ViewController<ResourcesNa
     @UIEventHandler(UIReactor.UIEvent.WorkspaceModified)
     void workspaceModified(ResourceSet changes);
 
+    @UIEventHandler(UIEvent.EngineStatusChanged)
+    void engineStatusChanged(Engine.Status status);
 
     /**
      * "SELECT" class events are double-clicks - bring the target to the forefront.

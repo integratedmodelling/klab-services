@@ -1,5 +1,6 @@
 package org.integratedmodelling.cli.views;
 
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
@@ -46,6 +47,11 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
     @Override
     public void resetValidationNotifications(NavigableContainer notifications) {
+
+    }
+
+    @Override
+    public void engineStatusChanged(Engine.Status status) {
 
     }
 }

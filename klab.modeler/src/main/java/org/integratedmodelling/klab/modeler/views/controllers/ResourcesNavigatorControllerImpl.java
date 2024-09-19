@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.modeler.views.controllers;
 
 import org.integratedmodelling.common.view.AbstractUIViewController;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
@@ -118,6 +119,11 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
             }
         }
 
+    }
+
+    @Override
+    public void engineStatusChanged(Engine.Status status) {
+        view().engineStatusChanged(status);
     }
 
     @Override

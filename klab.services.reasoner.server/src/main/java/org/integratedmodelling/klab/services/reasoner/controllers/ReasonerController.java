@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.reasoner.objects.DeclarationRequest;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -43,11 +44,13 @@ public class ReasonerController {
     }
 
     @PostMapping(ServicesAPI.REASONER.COMPUTE_OBSERVATION_STRATEGIES)
-    public @ResponseBody List<ObservationStrategy> inferStrategies(@RequestBody ResolutionRequest request, Principal principal) {
+    public @ResponseBody List<ObservationStrategy> inferStrategies(@RequestBody ResolutionRequest request,
+                                                                   Principal principal) {
         if (principal instanceof EngineAuthorization authorization) {
             var contextScope =
                     authorization.getScope(ContextScope.class).withResolutionConstraints(request.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
-            return reasoner.klabService().computeObservationStrategies(request.getObservation(), contextScope);
+            return reasoner.klabService().computeObservationStrategies(request.getObservation(),
+                    contextScope);
         }
         throw new KlabInternalErrorException("Unexpected implementation of request authorization");
     }
@@ -64,21 +67,19 @@ public class ReasonerController {
     }
 
     @PostMapping(ServicesAPI.REASONER.DECLARE_OBSERVABLE)
-    public @ResponseBody Observable declareObservable(@RequestBody Map<String, Object> parameters) {
-        var pattern = parameters.remove("OBSERVABLE");
-        if (pattern instanceof KimObservable kimObservable) {
-            return reasoner.klabService().declareObservable(kimObservable, parameters);
-        }
-        return null;
+    public @ResponseBody Observable declareObservable(@RequestBody DeclarationRequest request) {
+        return request.getObservableDeclaration().getPattern() == null ?
+               reasoner.klabService().declareObservable(request.getObservableDeclaration()) :
+               reasoner.klabService().declareObservable(request.getObservableDeclaration(),
+                       request.getPatternVariables());
     }
 
     @PostMapping(ServicesAPI.REASONER.DECLARE_CONCEPT)
-    public @ResponseBody Concept declareConcept(@RequestBody Map<String, Object> parameters) {
-        var pattern = parameters.remove("OBSERVABLE");
-        if (pattern instanceof KimConcept kimObservable) {
-            return reasoner.klabService().declareConcept(kimObservable, parameters);
-        }
-        return null;
+    public @ResponseBody Concept declareConcept(@RequestBody DeclarationRequest request) {
+        return request.getConceptDeclaration().isPattern() ?
+               reasoner.klabService().declareConcept(request.getConceptDeclaration()) :
+               reasoner.klabService().declareConcept(request.getConceptDeclaration(),
+                       request.getPatternVariables());
     }
 
     /**

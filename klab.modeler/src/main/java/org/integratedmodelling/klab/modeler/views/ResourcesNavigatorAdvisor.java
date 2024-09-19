@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.modeler.views;
 
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
@@ -50,6 +51,11 @@ public class ResourcesNavigatorAdvisor extends BaseViewAdvisor implements Resour
 
     @Override
     public void resetValidationNotifications(NavigableContainer notifications) {
+
+    }
+
+    @Override
+    public void engineStatusChanged(Engine.Status status) {
 
     }
 }

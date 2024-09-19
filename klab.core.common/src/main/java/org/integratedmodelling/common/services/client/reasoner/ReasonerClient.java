@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.reasoner.objects.DeclarationRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
@@ -83,28 +84,34 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public Concept declareConcept(KimConcept conceptDeclaration) {
-        // TODO Auto-generated method stub
-        return null;
+        DeclarationRequest request = new DeclarationRequest();
+        request.setConceptDeclaration(conceptDeclaration);
+        return client.post(ServicesAPI.REASONER.DECLARE_CONCEPT, request, Concept.class);
     }
 
     @Override
     public Observable declareObservable(KimObservable observableDeclaration) {
-        return client.post(ServicesAPI.REASONER.DECLARE_OBSERVABLE, Map.of("OBSERVABLE",
-                observableDeclaration), Observable.class);
+        DeclarationRequest request = new DeclarationRequest();
+        request.setObservableDeclaration(observableDeclaration);
+        return client.post(ServicesAPI.REASONER.DECLARE_OBSERVABLE, request, Observable.class);
     }
 
     @Override
     public Concept declareConcept(KimConcept conceptDeclaration,
                                   Map<String, Object> patternVariables) {
-        patternVariables.put("OBSERVABLE", conceptDeclaration);
-        return client.post(ServicesAPI.REASONER.DECLARE_CONCEPT, patternVariables, Concept.class);
+        DeclarationRequest request = new DeclarationRequest();
+        request.setConceptDeclaration(conceptDeclaration);
+        request.getPatternVariables().putAll(patternVariables);
+        return client.post(ServicesAPI.REASONER.DECLARE_CONCEPT, request, Concept.class);
     }
 
     @Override
     public Observable declareObservable(KimObservable observableDeclaration,
                                         Map<String, Object> patternVariables) {
-        patternVariables.put("OBSERVABLE", observableDeclaration);
-        return client.post(ServicesAPI.REASONER.DECLARE_OBSERVABLE, patternVariables, Observable.class);
+        DeclarationRequest request = new DeclarationRequest();
+        request.setObservableDeclaration(observableDeclaration);
+        request.getPatternVariables().putAll(patternVariables);
+        return client.post(ServicesAPI.REASONER.DECLARE_OBSERVABLE, request, Observable.class);
     }
 
     @Override

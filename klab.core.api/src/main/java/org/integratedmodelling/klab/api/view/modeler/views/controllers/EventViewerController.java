@@ -1,9 +1,11 @@
 package org.integratedmodelling.klab.api.view.modeler.views.controllers;
 
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.ViewController;
+import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIViewController;
 import org.integratedmodelling.klab.api.view.modeler.views.EventViewer;
 
@@ -22,5 +24,7 @@ public interface EventViewerController extends ViewController<EventViewer> {
      */
     void notificationReceived(Notification notification, KlabService service);
 
+    @UIEventHandler(UIEvent.EngineStatusChanged)
+    void engineStatusChanged(Engine.Status status);
 
 }

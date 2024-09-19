@@ -1,8 +1,6 @@
 package org.integratedmodelling.klab.modeler;
 
-import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
-import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
-import org.integratedmodelling.common.services.client.engine.EngineClient;
+import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
 import org.integratedmodelling.klab.api.configuration.Configuration;
@@ -12,7 +10,6 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
@@ -28,7 +25,6 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -52,7 +48,7 @@ import java.util.Map;
 
 /**
  * A {@link UIController} specialized to provide and orchestrate the views and panels that compose the
- * k.Modeler application. Uses an {@link EngineClient} which will connect to local services if available. Also
+ * k.Modeler application. Uses an {@link EngineImpl} which will connect to local services if available. Also
  * handles one or more users and keeps a catalog of sessions and contexts, tagging the "current" one in focus
  * in the UI.
  * <p>
@@ -122,7 +118,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     @Override
     public Engine createEngine() {
         // TODO first should locate and set the distribution
-        return new EngineClient();
+        return new EngineImpl();
     }
 
     @Override
@@ -386,12 +382,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     @Override
     public UserScope user() {
-        return ((EngineClient) engine()).getUser();
+        return ((EngineImpl) engine()).getUser();
     }
 
     @Override
     public void setDefaultService(KlabService.ServiceCapabilities service) {
-        if (engine() instanceof EngineClient engine) {
+        if (engine() instanceof EngineImpl engine) {
             engine.setDefaultService(service);
         } else {
             engine().serviceScope().warn("Modeler: request to set default service wasn't honored " +

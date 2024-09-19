@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.view.modeler.views.controllers;
 
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -12,8 +13,8 @@ import org.integratedmodelling.klab.api.view.modeler.views.ContextView;
 @UIViewController(value = UIReactor.Type.ContextView, viewType = ContextView.class)
 public interface ContextViewController extends ViewController<ContextView> {
 
-    @UIEventHandler(UIEvent.ServiceSelected)
-    void setServiceCapabilities(RuntimeService.Capabilities capabilities);
+//    @UIEventHandler(UIEvent.ServiceSelected)
+//    void setServiceCapabilities(RuntimeService.Capabilities capabilities);
 
     /**
      * Called when other views put semantics or a model into focus. May pre-select it for observation or do
@@ -35,4 +36,6 @@ public interface ContextViewController extends ViewController<ContextView> {
      */
     void knowledgeSelected(Knowledge observable);
 
+    @UIEventHandler(UIEvent.EngineStatusChanged)
+    void engineStatusChanged(Engine.Status status);
 }

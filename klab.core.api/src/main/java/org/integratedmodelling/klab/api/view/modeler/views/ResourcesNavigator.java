@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.view.modeler.views;
 
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -28,4 +29,6 @@ public interface ResourcesNavigator extends View {
     void workspaceCreated(NavigableContainer workspace);
 
     void resetValidationNotifications(NavigableContainer notifications);
+
+    void engineStatusChanged(Engine.Status status);
 }

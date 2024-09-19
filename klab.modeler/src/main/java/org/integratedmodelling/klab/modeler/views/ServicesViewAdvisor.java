@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.modeler.views;
 
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -23,6 +24,11 @@ public class ServicesViewAdvisor extends BaseViewAdvisor implements ServicesView
 
     @Override
     public void reasoningAvailable(Reasoner.Capabilities reasonerCapabilities) {
+
+    }
+
+    @Override
+    public void engineStatusChanged(Engine.Status status) {
 
     }
 
