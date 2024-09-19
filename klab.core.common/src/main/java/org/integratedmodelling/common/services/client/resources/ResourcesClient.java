@@ -14,7 +14,6 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -256,7 +255,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public Resource resolveResource(String urn, Scope scope) {
-        return client.get(ServicesAPI.RESOURCES.RESOLVE_RESOURCE_URN, Resource.class, "urn", urn);
+        return client.get(ServicesAPI.RESOURCES.RESOURCE, Resource.class, "urn", urn);
     }
 
     @Override

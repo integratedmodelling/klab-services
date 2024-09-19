@@ -362,7 +362,7 @@ public interface ServicesAPI {
                 "/resolveObservationStrategyDocument/" + URN_PARAMETER;
         String LIST_WORKSPACES = "/listWorkspaces";
         String RESOLVE_BEHAVIOR_URN = "/resolveBehavior/" + URN_PARAMETER;
-        String RESOLVE_RESOURCE_URN = "/resolveResource/" + URN_PARAMETER;
+        String RESOURCE = "/resource/" + URN_PARAMETER;
         String RESOLVE_WORKSPACE_URN = "/resolveWorkspace/" + URN_PARAMETER;
         String RESOLVE_SERVICE_CALL = "/resolveServiceCall/{name}";
         String RESOURCE_STATUS = "/resourceStatus/" + URN_PARAMETER;

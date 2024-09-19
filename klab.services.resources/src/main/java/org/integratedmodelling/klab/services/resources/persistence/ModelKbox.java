@@ -45,7 +45,7 @@ public class ModelKbox extends ObservableKbox {
     /**
      * Create a kbox with the passed name. If the kbox exists, open it and return it.
      *
-     * @param name
+     * @param service
      * @return a new kbox
      */
     public static ModelKbox create(ResourcesService service) {

@@ -5,17 +5,14 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
@@ -112,7 +109,19 @@ public class ResourcesProviderController {
     }
 
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOLVE_RESOURCE_URN)
+    /**
+     * TODO this should be just RESOURCE and take all methods for the various CRUD ops:
+     *      GET for data relative to the resource including status and main content;
+     *      POST for contextualization with a ResolutionRequest;
+     *      PUT to create new;
+     *      PATCH to update;
+     *      DELETE to delete.
+     *
+     * @param urn
+     * @param principal
+     * @return
+     */
+    @GetMapping(ServicesAPI.RESOURCES.RESOURCE)
     public @ResponseBody Resource resolveResource(@PathVariable("urn") String urn, Principal principal) {
         return resourcesServer.klabService().resolveResource(urn,
                 principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
