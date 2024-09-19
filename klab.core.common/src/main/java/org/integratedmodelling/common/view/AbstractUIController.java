@@ -201,9 +201,9 @@ public abstract class AbstractUIController implements UIController {
             }
             case ServiceLifecycle -> {
                 switch (message.getMessageType()) {
-                    case ServiceUnavailable, ServiceAvailable, ServiceInitializing -> recomputeStatus(message);
+//                    case ServiceUnavailable, ServiceAvailable, ServiceInitializing -> recomputeStatus(message);
                     case ServiceStatus -> {
-                        recomputeStatus(message);
+//                        recomputeStatus(message);
                         dispatch(this, UIReactor.UIEvent.ServiceStatus,
                                 message.getPayload(KlabService.ServiceStatus.class));
                     }
@@ -214,13 +214,16 @@ public abstract class AbstractUIController implements UIController {
             case EngineLifecycle -> {
                 // TODO engine ready event and status
                 switch (message.getMessageType()) {
-                    case ServiceUnavailable, ServiceAvailable, ServiceInitializing -> {
-                        recomputeStatus(message);
-                    }
-                    case ServiceStatus -> {
-                        recomputeStatus(message);
-                        dispatch(this, UIReactor.UIEvent.ServiceStatus,
-                                message.getPayload(KlabService.ServiceStatus.class));
+//                    case ServiceUnavailable, ServiceAvailable, ServiceInitializing -> {
+////                        recomputeStatus(message);
+//                    }
+//                    case ServiceStatus -> {
+////                        recomputeStatus(message);
+//                        dispatch(this, UIReactor.UIEvent.ServiceStatus,
+//                                message.getPayload(KlabService.ServiceStatus.class));
+//                    }
+                    case EngineStatusChanged -> {
+                        dispatch(this, UIEvent.ServiceStatus, message.getPayload(Engine.Status.class));
                     }
                     case UsingDistribution -> {
                         dispatch(this, UIReactor.UIEvent.DistributionSelected,
@@ -279,11 +282,11 @@ public abstract class AbstractUIController implements UIController {
         }
     }
 
-    private void recomputeStatus(Message message) {
-
-        System.out.println(" HOSTIA RECOMPUTE STATUS DIOCA' "  + message);
-
-    }
+//    private void recomputeStatus(Message message) {
+//        if (engine instanceof EngineImpl engineImpl) {
+//            engineImpl.updateStatus(message);
+//        }
+//    }
 
     @Override
     public void dispatch(UIReactor sender, UIReactor.UIEvent event, Object... payload) {

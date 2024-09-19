@@ -293,19 +293,22 @@ public class EngineImpl implements Engine, PropertyHolder {
         //        }
 
         // inform listeners
-        if (wasAvailable != ok) {
-            if (ok) {
-                serviceScope().send(Message.MessageClass.EngineLifecycle,
-                        Message.MessageType.ServiceAvailable, capabilities(serviceScope()));
-            } else {
-                serviceScope().send(Message.MessageClass.EngineLifecycle,
-                        Message.MessageType.ServiceUnavailable, capabilities(serviceScope()));
-            }
-        }
+//        if (wasAvailable != ok) {
+//            if (ok) {
+//                serviceScope().send(Message.MessageClass.EngineLifecycle,
+//                        Message.MessageType.ServiceAvailable, capabilities(serviceScope()));
+//            } else {
+//                serviceScope().send(Message.MessageClass.EngineLifecycle,
+//                        Message.MessageType.ServiceUnavailable, capabilities(serviceScope()));
+//            }
+//        }
 
         available.set(ok);
     }
 
+    public void updateStatus(Message message) {
+
+    }
 
     /**
      * TODO remove the polling from the clients, put it here explicitly, check status and update
@@ -336,7 +339,11 @@ public class EngineImpl implements Engine, PropertyHolder {
                         engineStatus.getServicesStatus().put(sertype, oldStatus);
                     }
                     if (status.get().getServicesCapabilities().get(sertype) == null) {
-                        status.get().getServicesCapabilities().put(sertype, service.capabilities(getUser()));
+                        try {
+                            status.get().getServicesCapabilities().put(sertype, service.capabilities(getUser()));
+                        } catch (Throwable t) {
+                            // ignore
+                        }
                     }
                 }
             } else if (status.get().getServicesStatus() != null) {
@@ -500,4 +507,5 @@ public class EngineImpl implements Engine, PropertyHolder {
                                                                            ExternalAuthenticationCredentials credentials, Scope scope) {
         return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
     }
+
 }
