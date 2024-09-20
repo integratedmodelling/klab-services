@@ -42,9 +42,9 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     private static final long serialVersionUID = 4305387731730961701L;
 
-//    public ResourcesClient() {
-//        super(Type.RESOURCES);
-//    }
+    //    public ResourcesClient() {
+    //        super(Type.RESOURCES);
+    //    }
 
     public ResourcesClient(URL url, Identity identity, KlabService owner) {
         super(Type.RESOURCES, identity, List.of());
@@ -210,6 +210,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
         return ret;
     }
+
     @Override
     public boolean scopesAreReactive() {
         return false;
@@ -360,8 +361,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public ResourceSet resolve(String urn, Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_URN, ResourceSet.class, "urn", urn);
     }
 
     @Override

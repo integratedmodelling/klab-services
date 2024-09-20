@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
- * Base abstract {@link UIController} class that implements annotation-driven (un)registration of
+ * Base abstract {@link UIController} class that implements annotation-driven (de)registration of
  * {@link UIReactor}s and event dispatching.
  */
 public abstract class AbstractUIController implements UIController {
@@ -201,12 +201,14 @@ public abstract class AbstractUIController implements UIController {
             }
             case ServiceLifecycle -> {
                 switch (message.getMessageType()) {
-//                    case ServiceUnavailable, ServiceAvailable, ServiceInitializing -> recomputeStatus(message);
-                    case ServiceStatus -> {
-//                        recomputeStatus(message);
-                        dispatch(this, UIReactor.UIEvent.ServiceStatus,
-                                message.getPayload(KlabService.ServiceStatus.class));
-                    }
+//                    case ServiceUnavailable -> dispatch(this, UIReactor.UIEvent.ServiceUnavailable,
+//                            message.getPayload(Object.class));
+//                    case ServiceAvailable ->  dispatch(this, UIReactor.UIEvent.ServiceAvailable,
+//                            message.getPayload(Object.class));
+//                    case ServiceInitializing -> dispatch(this, UIReactor.UIEvent.ServiceStarting,
+//                            message.getPayload(Object.class));
+                    case ServiceStatus -> dispatch(this, UIReactor.UIEvent.ServiceStatus,
+                            message.getPayload(KlabService.ServiceStatus.class));
                     default -> {
                     }
                 }
@@ -214,16 +216,22 @@ public abstract class AbstractUIController implements UIController {
             case EngineLifecycle -> {
                 // TODO engine ready event and status
                 switch (message.getMessageType()) {
-//                    case ServiceUnavailable, ServiceAvailable, ServiceInitializing -> {
-////                        recomputeStatus(message);
+//                    case ServiceUnavailable -> {
+//                        dispatch(this, UIReactor.UIEvent.EngineUnavailable, message.getPayload(Object.class));
 //                    }
-//                    case ServiceStatus -> {
-////                        recomputeStatus(message);
-//                        dispatch(this, UIReactor.UIEvent.ServiceStatus,
-//                                message.getPayload(KlabService.ServiceStatus.class));
+//                    case ServiceAvailable -> {
+//                        dispatch(this, UIReactor.UIEvent.EngineAvailable, message.getPayload(Object.class));
 //                    }
+//                    case ServiceInitializing -> {
+//                        dispatch(this, UIReactor.UIEvent.EngineStarting, message.getPayload(Object.class));
+//                    }
+                    case ServiceStatus -> {
+//                        recomputeStatus(message);
+                        dispatch(this, UIReactor.UIEvent.ServiceStatus,
+                                message.getPayload(KlabService.ServiceStatus.class));
+                    }
                     case EngineStatusChanged -> {
-                        dispatch(this, UIEvent.ServiceStatus, message.getPayload(Engine.Status.class));
+                        dispatch(this, UIEvent.EngineStatusChanged, message.getPayload(Engine.Status.class));
                     }
                     case UsingDistribution -> {
                         dispatch(this, UIReactor.UIEvent.DistributionSelected,

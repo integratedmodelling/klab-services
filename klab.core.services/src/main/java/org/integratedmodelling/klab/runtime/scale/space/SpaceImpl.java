@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.*;
 import org.integratedmodelling.klab.api.lang.Quantity;
+import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -15,6 +16,7 @@ import org.integratedmodelling.klab.runtime.scale.ExtentImpl;
 import org.locationtech.jts.geom.GeometryFactory;
 
 import java.util.List;
+import java.util.Map;
 
 public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
 
@@ -247,8 +249,16 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
                 }
                 var definition = scope.getService(ResourcesService.class).resolve(gridUrn, scope);
                 // TODO ingest the resource set and parse the symbol
-                if (KnowledgeRepository.INSTANCE.ingest(scope.getService(ResourcesService.class).resolve(gridUrn, scope), scope)) {
+                if (Utils.Notifications.hasErrors(definition.getNotifications())) {
                     throw new KlabUnimplementedException("cannot create grid from definition yet");
+                }
+                var result =
+                        KnowledgeRepository.INSTANCE.ingest(scope.getService(ResourcesService.class).resolve(gridUrn, scope), scope);
+                if (result.size() == 1 && result.getFirst() instanceof KimSymbolDefinition symbolDefinition) {
+                    var gridDef = symbolDefinition.getValue();
+                    if (gridDef instanceof Map map) {
+                        grid = new GridImpl(map);
+                    }
                 }
             } else if (gridResolution != null && envelope != null) {
                 Quantity resolution = gridResolution instanceof Quantity quantity ? quantity :
@@ -258,7 +268,7 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
             } else if (spatialShape != null && envelope != null) {
                 // TODO
                 // only consider if no grid resolution is provided; may want more flexibility
-//                grid = new GridImpl()
+                //                grid = new GridImpl()
             }
             if (grid != null && imposedGrid != null) {
                 grid = grid.align(imposedGrid);

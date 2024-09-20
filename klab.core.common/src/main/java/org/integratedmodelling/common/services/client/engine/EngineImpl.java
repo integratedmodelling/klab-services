@@ -16,9 +16,11 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
@@ -177,29 +179,28 @@ public class EngineImpl implements Engine, PropertyHolder {
     public void boot() {
 
         this.defaultUser = authenticate();
-        //        this.scopeListeners.add((channel, message) -> {
-        //
-        //            // basic listener for knowledge management
-        //            if (message.is(Message.MessageClass.KnowledgeLifecycle, Message.MessageType
-        //            .WorkspaceChanged)) {
-        //                var changes = message.getPayload(ResourceSet.class);
-        //                var reasoner = defaultUser.getService(Reasoner.class);
-        //                if (reasoner.status().isAvailable() && reasoner.isExclusive() && reasoner
-        //                instanceof Reasoner.Admin admin) {
-        //                    var notifications = admin.updateKnowledge(changes, getUser());
-        //                    // send the notifications around for display
-        //                    serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message
-        //                    .MessageType.LogicalValidation, notifications);
-        //                    if (Utils.Resources.hasErrors(notifications)) {
-        //                        defaultUser.warn("Worldview update in the reasoner returned ontologies
-        //                        with logical errors");
-        //                    } else {
-        //                        defaultUser.info("Worldview was updated in the reasoner");
-        //                    }
-        //                }
-        //            }
-        //
-        //        });
+        this.scopeListeners.add((channel, message) -> {
+
+            // basic listener for knowledge management
+            if (message.is(Message.MessageClass.KnowledgeLifecycle, Message.MessageType
+                    .WorkspaceChanged)) {
+                var changes = message.getPayload(ResourceSet.class);
+                var reasoner = defaultUser.getService(Reasoner.class);
+                if (reasoner.status().isAvailable() && reasoner.isExclusive() && reasoner
+                        instanceof Reasoner.Admin admin) {
+                    var notifications = admin.updateKnowledge(changes, getUser());
+                    // send the notifications around for display
+                    serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message
+                            .MessageType.LogicalValidation, notifications);
+                    if (Utils.Resources.hasErrors(notifications)) {
+                        defaultUser.warn("Worldview update caused logical" +
+                                " errors in the reasoner", UI.Interactivity.DISPLAY);
+                    } else {
+                        defaultUser.info("Worldview was updated in the reasoner", UI.Interactivity.DISPLAY);
+                    }
+                }
+            }
+        });
         if (this.defaultUser instanceof ChannelImpl channel) {
             for (var listener : scopeListeners) {
                 channel.addListener(listener);
@@ -293,15 +294,15 @@ public class EngineImpl implements Engine, PropertyHolder {
         //        }
 
         // inform listeners
-//        if (wasAvailable != ok) {
-//            if (ok) {
-//                serviceScope().send(Message.MessageClass.EngineLifecycle,
-//                        Message.MessageType.ServiceAvailable, capabilities(serviceScope()));
-//            } else {
-//                serviceScope().send(Message.MessageClass.EngineLifecycle,
-//                        Message.MessageType.ServiceUnavailable, capabilities(serviceScope()));
-//            }
-//        }
+        //        if (wasAvailable != ok) {
+        //            if (ok) {
+        //                serviceScope().send(Message.MessageClass.EngineLifecycle,
+        //                        Message.MessageType.ServiceAvailable, capabilities(serviceScope()));
+        //            } else {
+        //                serviceScope().send(Message.MessageClass.EngineLifecycle,
+        //                        Message.MessageType.ServiceUnavailable, capabilities(serviceScope()));
+        //            }
+        //        }
 
         available.set(ok);
     }
@@ -339,11 +340,7 @@ public class EngineImpl implements Engine, PropertyHolder {
                         engineStatus.getServicesStatus().put(sertype, oldStatus);
                     }
                     if (status.get().getServicesCapabilities().get(sertype) == null) {
-                        try {
-                            status.get().getServicesCapabilities().put(sertype, service.capabilities(getUser()));
-                        } catch (Throwable t) {
-                            // ignore
-                        }
+                        status.get().getServicesCapabilities().put(sertype, service.capabilities(getUser()));
                     }
                 }
             } else if (status.get().getServicesStatus() != null) {

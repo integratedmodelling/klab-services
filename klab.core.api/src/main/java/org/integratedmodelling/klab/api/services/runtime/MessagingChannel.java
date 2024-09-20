@@ -26,8 +26,8 @@ public interface MessagingChannel extends Channel {
     boolean hasMessaging();
 
     /**
-     * When a service advertises message queues, connect to the available admin user service-side queues using the passed
-     * handler.
+     * When a service advertises message queues, connect to the available admin user service-side queues using
+     * the passed handler.
      *
      * @param capabilities
      * @param identity
@@ -35,4 +35,12 @@ public interface MessagingChannel extends Channel {
      */
     void connectToService(KlabService.ServiceCapabilities capabilities, UserIdentity identity,
                           Consumer<Message> consumer);
+
+    /**
+     * True if {@link #connectToService(KlabService.ServiceCapabilities, UserIdentity, Consumer)} has been
+     * successfully called.
+     *
+     * @return
+     */
+    boolean isConnected();
 }

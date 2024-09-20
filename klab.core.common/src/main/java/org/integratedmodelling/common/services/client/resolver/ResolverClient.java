@@ -12,10 +12,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
+import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -54,7 +51,8 @@ public class ResolverClient extends ServiceClient implements Resolver {
 
     @Override
     public Capabilities capabilities(Scope scope) {
-        return client.withScope(scope).get(ServicesAPI.CAPABILITIES, ResolverCapabilitiesImpl.class);
+        return client.withScope(scope).get(ServicesAPI.CAPABILITIES, ResolverCapabilitiesImpl.class,
+                Notification.Mode.Silent);
     }
 
     @Override

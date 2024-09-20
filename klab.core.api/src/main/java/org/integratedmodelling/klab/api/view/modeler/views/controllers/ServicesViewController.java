@@ -19,12 +19,12 @@ import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
 @UIViewController(value = UIReactor.Type.ServiceChooser, viewType = ServicesView.class, target = Engine.class)
 public interface ServicesViewController extends ViewController<ServicesView> {
 
-    /**
-     * Service exists - may be on, off or in error. If no other services are available for its type, the view
-     * should focus it unless there are configuration options to that extent.
-     *
-     * @param service
-     */
+//    /**
+//     * Service exists - may be on, off or in error. If no other services are available for its type, the view
+//     * should focus it unless there are configuration options to that extent.
+//     *
+//     * @param service
+//     */
     //    @UIEventHandler(UIEvent.ServiceAvailable)
     //    void serviceAvailable(KlabService.ServiceCapabilities service);
     //

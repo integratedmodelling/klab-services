@@ -1,5 +1,7 @@
 package org.integratedmodelling.cli;
 
+import org.integratedmodelling.cli.views.CLIObservationView;
+import org.integratedmodelling.cli.views.CLIServicesView;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -99,9 +101,9 @@ public enum KlabCLI {
              subcommands = {
                      Auth.class, Expressions.class, Reasoner.class, Report.class, Resolver.class,
                      Resources.class, Shutdown.class, Credentials.class,
-                     Services.class, Run.class, PicocliCommands.ClearScreen.class,
+                     CLIServicesView.class, Run.class, PicocliCommands.ClearScreen.class,
                      CommandLine.HelpCommand.class,
-                     Session.class, Context.class, Components.class, Test.class, Run.Alias.class,
+                     Session.class, CLIObservationView.class, Components.class, Test.class, Run.Alias.class,
                      Run.Unalias.class})
     static class CliCommands implements Runnable {
 
@@ -358,6 +360,13 @@ public enum KlabCLI {
         INSTANCE.options = CLIStartupOptions.create(args);
 
         try {
+
+            // create the modeler
+            INSTANCE.modeler = new CommandLineModeler();
+            // Configure messages for CLI use
+            INSTANCE.modeler.setOption(ModelerImpl.Option.UseAnsiEscapeSequences, true);
+
+
             Supplier<Path> workDir = () -> Paths
                     .get(System.getProperty("user.home") + File.separator + ".klab" + File.separator +
                             "kcli");
@@ -424,16 +433,6 @@ public enum KlabCLI {
                 }
 
                 Run.loadAliases();
-
-                // tie the scope monitor to the CLI input and output streams
-
-                // create the modeler
-                INSTANCE.modeler = new CommandLineModeler();
-
-//                INSTANCE.modeler.addListener((scope, message) -> INSTANCE.onEvent(scope, message));
-
-                // Configure messages for CLI use
-                INSTANCE.modeler.setOption(ModelerImpl.Option.UseAnsiEscapeSequences, true);
 
                 // boot the engine. This will schedule processes so it wont'delay startup.
                 INSTANCE.modeler.boot();

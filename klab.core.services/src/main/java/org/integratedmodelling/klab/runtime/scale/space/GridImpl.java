@@ -18,6 +18,7 @@ import java.awt.geom.Point2D;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class GridImpl implements Grid {
 
@@ -79,7 +80,7 @@ public class GridImpl implements Grid {
 
     }
 
-    public GridImpl(Parameters<String> definition) {
+    public GridImpl(Map<String, Object> definition) {
 
     }
 

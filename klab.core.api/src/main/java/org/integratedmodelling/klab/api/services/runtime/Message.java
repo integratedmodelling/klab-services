@@ -221,10 +221,10 @@ public interface Message extends Serializable {
         Warning(Queue.Warnings, Notification.class),
         Error(Queue.Errors, Notification.class),
 
-//        /*
-//         * --- reasoning-related messages
-//         */
-//        LogicalValidation(Queue.Events,ResourceSet.class),
+        /*
+         * --- reasoning-related messages
+         */
+        LogicalValidation(Queue.Events,ResourceSet.class),
 
         /**
          * Runtime event messages

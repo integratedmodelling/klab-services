@@ -948,55 +948,51 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
         ResourceSet ret = new ResourceSet();
 
-        /*
-         * TODO Check if it's a project
-         */
-        /*if (workspaceManager.getLocalProjectURNs().contains(urn)) {
+        switch (Urn.classify(urn)) {
+            case RESOURCE -> {
+            }
+            case KIM_OBJECT -> {
 
-        } else *//*if (localNamespaces.containsKey(urn)) {
+                /**
+                 * TODO may be a project or even a workspace
+                 */
 
-         *//*
-         * If not, check for namespace
-         *//*
+                KimNamespace namespace = resolveNamespace(urn, scope);
+                if (namespace != null) {
 
-        } else if (localBehaviors.containsKey(urn)) {
+                    ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
+                            namespace.getProjectName(),
+                            namespace.getVersion(), KnowledgeClass.NAMESPACE));
 
-            *//*
-         * If not, check for behavior
-         *//*
+                } else {
 
-        } else */
-        if (urn.contains(".")) {
 
-            /*
-             * if not, extract namespace and check for that.
-             */
-            String ns = Utils.Paths.getLeading(urn, '.');
-            String nm = Utils.Paths.getLast(urn, '.');
-            KimNamespace namespace = resolveNamespace(urn, scope);
-            /*
-             * TODO check permissions!
-             */
-            if (namespace != null) {
-                for (KlabStatement statement : namespace.getStatements()) {
-                    if (statement instanceof KimModel && urn.equals(((KimModel) statement).getUrn())) {
-                        ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
-                                namespace.getProjectName(),
-                                namespace.getVersion(), KnowledgeClass.MODEL));
-                    } /*else if (statement instanceof KimInstance && nm.equals(((KimInstance) statement)
-                    .getName())) {
-                        ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
-                                namespace.getProjectName(),
-                                namespace.getVersion(), KnowledgeClass.INSTANCE));
-                    }*/
+                    /*
+                     * extract namespace and check for that.
+                     */
+                    String ns = Utils.Paths.getLeading(urn, '.');
+                    String nm = Utils.Paths.getLast(urn, '.');
+                    namespace = resolveNamespace(ns, scope);
+                    /*
+                     * TODO check permissions!
+                     */
+                    if (namespace != null) {
+                        for (KlabStatement statement : namespace.getStatements()) {
+                            if (urn.equals(statement.getUrn())) {
+                                ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
+                                        namespace.getProjectName(),
+                                        namespace.getVersion(), KlabAsset.classify(statement)));
+                                break;
+                            }
+                        }
+                    }
                 }
-
-                if (!ret.getResults().isEmpty()) {
-                    ret.getNamespaces().add(new ResourceSet.Resource(getUrl().toString(),
-                            namespace.getUrn(), namespace.getProjectName(), namespace.getVersion(),
-                            KnowledgeClass.NAMESPACE));
-                }
-
+            }
+            case OBSERVABLE -> {
+            }
+            case REMOTE_URL -> {
+            }
+            case UNKNOWN -> {
             }
         }
 
@@ -1009,6 +1005,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * EMPTY if dependencies cannot be resolved in this scope.
      */
     private ResourceSet addDependencies(ResourceSet resourceSet, Scope scope) {
+
+        if (resourceSet.getResults().isEmpty()) {
+            resourceSet.setEmpty(true);
+            return resourceSet;
+        }
 
         Set<String> namespaces = new HashSet<>();
         for (ResourceSet.Resource result : resourceSet.getResults()) {

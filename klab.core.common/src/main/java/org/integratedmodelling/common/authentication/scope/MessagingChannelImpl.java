@@ -45,6 +45,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     private Set<EventResultSupplier<?, ?>> eventResultSupplierSet =
             Collections.synchronizedSet(new LinkedHashSet<>());
     private Map<String, List<Consumer<Message>>> queueConsumers = new HashMap<>();
+    private boolean connected;
 
     public MessagingChannelImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity);
@@ -394,6 +395,8 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                 }
             }
 
+            info("Scope connected to queues " + ret);
+
             return ret;
         }
 
@@ -408,6 +411,9 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     @Override
     public void connectToService(KlabService.ServiceCapabilities capabilities, UserIdentity identity,
                                  Consumer<Message> consumer) {
+
+        this.connected = true;
+
         if (capabilities.getAvailableMessagingQueues().isEmpty() || capabilities.getBrokerURI() == null) {
             return;
         }
@@ -429,6 +435,11 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                 this.connection = null;
             }
         }
+    }
+
+    @Override
+    public boolean isConnected() {
+        return connected;
     }
 
     /**

@@ -14,10 +14,7 @@ import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
+import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -84,7 +81,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
         var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_SESSION, request,
                 String.class, "id", scope instanceof ServiceSideScope serviceSideScope ?
-                                           serviceSideScope.getId() : null);
+                                    serviceSideScope.getId() : null);
 
         var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
         if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
@@ -140,7 +137,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
                                     serviceSideScope.getId() : null);
 
         if (hasMessaging) {
-            var queues = getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+            var queues = getQueuesFromHeader(scope,
+                    client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
             if (scope instanceof MessagingChannelImpl messagingChannel) {
                 messagingChannel.setupMessagingQueues(ret, queues);
             }
@@ -164,7 +162,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     @Override
     public Capabilities capabilities(Scope scope) {
-        return client.withScope(scope).get(ServicesAPI.CAPABILITIES, RuntimeCapabilitiesImpl.class);
+        return client.withScope(scope).get(ServicesAPI.CAPABILITIES, RuntimeCapabilitiesImpl.class,
+                Notification.Mode.Silent);
     }
 
     public GraphQLClient graphClient() {

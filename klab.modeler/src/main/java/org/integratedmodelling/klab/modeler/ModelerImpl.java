@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.modeler;
 
+import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
@@ -10,6 +12,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
@@ -25,6 +28,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -82,29 +86,37 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         // intercept some messages for bookkeeping
         if (event == UIEvent.EngineStatusChanged) {
 
-            System.out.println("CAMBIATO STATO DIOCAN " + payload[0]);
+            Engine.Status status = (Engine.Status) payload[0];
 
-//            for (var service : )
-//
-//            if (capabilities.getUrl() != null) {
-//                serviceUrls.put(capabilities.getServiceId(), capabilities.getUrl());
-//            }
-//            if (capabilities.getBrokerURI() != null && scope() instanceof AbstractReactiveScopeImpl serviceClient) {
-//                /*
-//                 * Instrument the service client for messaging. This is pretty involved alas, but the whole
-//                 * matter isn't exactly trivial.
-//                 */
-//                var client = serviceClient.getService(capabilities.getServiceId());
-//                if (client != null && client.serviceScope() instanceof AbstractServiceDelegatingScope delegatingScope
-//                        && delegatingScope.getDelegateChannel() instanceof MessagingChannel messagingChannel) {
-//                    /*
-//                     * If the scope delegates to a messaging channel, set up messaging and link the
-//                     * available  service queues to service message dispatchers.
-//                     */
-//                    messagingChannel.connectToService(capabilities, (UserIdentity) user().getIdentity(),
-//                            (message) -> dispatchServerMessage(capabilities, message));
-//                }
-//            }
+            for (var capabilities : status.getServicesCapabilities().values()) {
+
+                if (capabilities == null) {
+                    continue;
+                }
+
+                if (capabilities.getUrl() != null) {
+                    serviceUrls.put(capabilities.getServiceId(), capabilities.getUrl());
+                }
+                if (capabilities.getBrokerURI() != null && scope() instanceof AbstractReactiveScopeImpl serviceClient) {
+                    /*
+                     * Instrument the service client for messaging. This is pretty involved alas, but the
+                     * whole
+                     * matter isn't exactly trivial.
+                     */
+                    var client = serviceClient.getService(capabilities.getServiceId());
+                    if (client != null && client.serviceScope() instanceof AbstractServiceDelegatingScope delegatingScope
+                            && delegatingScope.getDelegateChannel() instanceof MessagingChannel messagingChannel) {
+                        /*
+                         * If the scope delegates to a messaging channel, set up messaging and link the
+                         * available  service queues to service message dispatchers.
+                         */
+                        if (!messagingChannel.isConnected()) {
+                            messagingChannel.connectToService(capabilities, (UserIdentity) user().getIdentity(),
+                                    (message) -> dispatchServerMessage(capabilities, message));
+                        }
+                    }
+                }
+            }
         }
 
         super.dispatch(sender, event, payload);
