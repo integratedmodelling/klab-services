@@ -705,18 +705,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return null;
     }
 
-    //    @Override
-    //    public boolean publishResource(String resourceUrn, ResourcePrivileges permissions) {
-    //        // TODO Auto-generated method stub
-    //        return false;
-    //    }
-    //
-    //    @Override
-    //    public boolean unpublishResource(String resourceUrn) {
-    //        // TODO Auto-generated method stub
-    //        return false;
-    //    }
-
     @Override
     public List<ResourceSet> deleteDocument(String projectName, String assetUrn,
                                             UserScope scope) {
