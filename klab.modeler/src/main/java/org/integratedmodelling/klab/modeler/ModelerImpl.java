@@ -15,10 +15,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
-import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
-import org.integratedmodelling.klab.api.lang.kim.KimModel;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
+import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -104,14 +101,14 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                      * matter isn't exactly trivial.
                      */
                     var client = serviceClient.getService(capabilities.getServiceId());
-                    if (client != null && client.serviceScope() instanceof AbstractServiceDelegatingScope delegatingScope
-                            && delegatingScope.getDelegateChannel() instanceof MessagingChannel messagingChannel) {
+                    if (client != null && client.serviceScope() instanceof AbstractServiceDelegatingScope delegatingScope && delegatingScope.getDelegateChannel() instanceof MessagingChannel messagingChannel) {
                         /*
                          * If the scope delegates to a messaging channel, set up messaging and link the
                          * available  service queues to service message dispatchers.
                          */
                         if (!messagingChannel.isConnected()) {
-                            messagingChannel.connectToService(capabilities, (UserIdentity) user().getIdentity(),
+                            messagingChannel.connectToService(capabilities,
+                                    (UserIdentity) user().getIdentity(),
                                     (message) -> dispatchServerMessage(capabilities, message));
                         }
                     }
@@ -241,28 +238,27 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         /**
          * Assets are observed by URN unless they're models or observation definitions
          */
-        if (asset instanceof NavigableAsset navigableAsset) {
+        if (asset instanceof NavigableKlabStatement<?> navigableAsset) {
+            asset = navigableAsset.getDelegate();
+        }
 
-            if (asset instanceof NavigableKlabStatement<?> statement) {
+        if (asset instanceof KlabStatement statement) {
 
-                constraints.add(ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionNamespace,
-                        statement.getNamespace()));
-                constraints.add(ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionProject,
-                        statement.getProjectName()));
+            constraints.add(ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionNamespace,
+                    statement.getNamespace()));
+            constraints.add(ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionProject,
+                    statement.getProjectName()));
 
-                var delegate = statement.getDelegate();
-                if (delegate instanceof KimModel model) {
-                    resolvables.add(model.getObservables().getFirst());
-                    constraints.add(ResolutionConstraint.of(ResolutionConstraint.Type.UsingModel,
-                            model.getUrn()));
-                } else if (delegate instanceof KimSymbolDefinition definition &&
-                        "observation".equals(definition.getDefineClass())) {
-                    resolvables.add(delegate);
-                } else if (delegate instanceof KimConceptStatement conceptStatement) {
-                    resolvables.add(conceptStatement.getNamespace() + ":" + conceptStatement.getUrn());
-                } else if (delegate instanceof KimObservable conceptStatement) {
-                    resolvables.add(conceptStatement.getUrn());
-                }
+            if (statement instanceof KimModel model) {
+                resolvables.add(model.getObservables().getFirst());
+                constraints.add(ResolutionConstraint.of(ResolutionConstraint.Type.UsingModel,
+                        model.getUrn()));
+            } else if (statement instanceof KimSymbolDefinition definition && "observation".equals(definition.getDefineClass())) {
+                resolvables.add(statement);
+            } else if (statement instanceof KimConceptStatement conceptStatement) {
+                resolvables.add(conceptStatement.getNamespace() + ":" + conceptStatement.getUrn());
+            } else if (statement instanceof KimObservable conceptStatement) {
+                resolvables.add(conceptStatement.getUrn());
             }
         } else if (asset instanceof String || asset instanceof Urn) {
             resolvables.add(asset.toString());
@@ -271,6 +267,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         /*
         TODO add scenario constraints - scenario controller (TBI) should keep them between contexts
          */
+
+        if (resolvables.isEmpty()) {
+            currentContext.warn("No resolvable assets: observation not started");
+            return;
+        }
 
         currentContext
                 .withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new))
@@ -285,8 +286,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         var resources = engine().serviceScope().getService(ResourcesService.class);
         if (resources instanceof ResourcesService.Admin admin) {
             Thread.ofVirtual().start(() -> {
-                var ret = admin.importProject(workspaceName, projectUrl, overwriteExisting,
-                        currentUser());
+                var ret = admin.importProject(workspaceName, projectUrl, overwriteExisting, currentUser());
                 if (ret != null) {
                     handleResultSets(ret);
                 }
@@ -348,8 +348,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         var resources = engine().serviceScope().getService(ResourcesService.class);
         if (resources instanceof ResourcesService.Admin admin) {
             Thread.ofVirtual().start(() -> {
-                var ret = admin.manageRepository(projectId, operation,
-                        arguments);
+                var ret = admin.manageRepository(projectId, operation, arguments);
                 handleResultSets(ret);
             });
         } else if (getUI() != null) {

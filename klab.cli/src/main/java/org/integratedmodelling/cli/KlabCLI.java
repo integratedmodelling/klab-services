@@ -60,12 +60,11 @@ import java.util.function.Supplier;
  * <code> alias klab="java -cp "target/kcli-0.11.0-SNAPSHOT.jar;target/lib/*"
  * -Xmx4096M -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000
  * org.integratedmodelling.kcli.KlabCLI"</code>
- *
+ * <p>
  * TODO revise around the {@link org.integratedmodelling.klab.api.view.modeler.Modeler} and provide
  * CLI-versions of each view instead of making up commands. Should be
- *
- *  resources, services, statistics, report, distribution, knowledge, events, debug and context.
- *
+ * <p>
+ * resources, services, statistics, report, distribution, knowledge, events, debug and context.
  */
 public enum KlabCLI {
 
@@ -75,10 +74,14 @@ public enum KlabCLI {
 
     private CLIStartupOptions options;
     private CommandLine commandLine;
+
     public Engine engine() {
         return modeler.engine();
     }
-    public UserScope user() { return modeler.user(); }
+
+    public UserScope user() {
+        return modeler.user();
+    }
 
     public ModelerImpl modeler() {
         return this.modeler;
@@ -296,10 +299,9 @@ public enum KlabCLI {
                         arguments.set(i, "-" + arguments.get(i).substring(1));
                     }
                 }
-                //                String value = Utils.Strings.join(arguments.subList(1, arguments.size()),
-                //                " ");
-                //                Run.aliases.put(alias, value);
-                //                Run.storeAliases();
+                String value = Utils.Strings.join(arguments.subList(1, arguments.size())," ");
+                Run.aliases.put(alias, value);
+                Run.storeAliases();
             }
         }
 
@@ -490,97 +492,103 @@ public enum KlabCLI {
         }
     }
 
-//    private void onEvent(Scope scope, Message message) {
-//
-//        switch (message.getMessageClass()) {
-//            case UserInterface -> {
-//            }
-//            case UserContextChange -> {
-//            }
-//            case UserContextDefinition -> {
-//            }
-//            case ServiceLifecycle -> {
-//                switch (message.getMessageType()) {
-//                    case ServiceAvailable -> {
-//                        var capabilities = message.getPayload(KlabService.ServiceCapabilities.class);
-//                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities.getType() +
-//                                " service available: " + capabilities.getServiceName()
-//                                + "|@"));
-//
-//                    }
-//                    case ServiceInitializing -> {
-//                        var description = message.getPayload(KlabService.ServiceCapabilities.class);
-//                        commandLine.getOut().println(Ansi.AUTO.string("@|blue "
-//                                + "service initializing: " + description
-//                                + "|@"));
-//
-//                    }
-//                    case ServiceUnavailable -> {
-//                        var capabilities = message.getPayload(KlabService.ServiceCapabilities.class);
-//                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities.getType() +
-//                                " service unavailable: " + capabilities.getServiceName()
-//                                + "|@"));
-//                    }
-//                }
-//            }
-//            case EngineLifecycle -> {
-//            }
-//            case KimLifecycle -> {
-//            }
-//            case ResourceLifecycle -> {
-//            }
-//            case ProjectLifecycle -> {
-//            }
-//            case Authorization -> {
-//            }
-//            case TaskLifecycle -> {
-//            }
-//            case ObservationLifecycle -> {
-//            }
-//            case SessionLifecycle -> {
-//            }
-//            case UnitTests -> {
-//            }
-//            case Notification -> {
-//                switch (message.getMessageType()) {
-//                    case Info -> {
-//                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + message.getPayload(Notification.class).getMessage()
-//                                + "|@"));
-//                    }
-//                    case Error -> {
-//                        commandLine.getOut().println(Ansi.AUTO.string("@|red " + message.getPayload(Notification.class).getMessage()
-//                                + "|@"));
-//                    }
-//                    case Debug -> {
-//                        commandLine.getOut().println(Ansi.AUTO.string("@|gray " + message.getPayload(Notification.class).getMessage()
-//                                + "|@"));
-//                    }
-//                    case Warning -> {
-//                        commandLine.getOut().println(Ansi.AUTO.string("@|yellow " + message.getPayload(Notification.class).getMessage()
-//                                + "|@"));
-//                    }
-//                    default -> {
-//                    }
-//                }
-//            }
-//            case Search -> {
-//            }
-//            case Query -> {
-//            }
-//            case Run -> {
-//            }
-//            case ViewActor -> {
-//            }
-//            case ActorCommunication -> {
-//            }
-//            default -> {
-//            }
-//        }
-//
-//        if (message.getMessageClass() == Message.MessageClass.Notification) {
-//
-//        }
-//    }
+    //    private void onEvent(Scope scope, Message message) {
+    //
+    //        switch (message.getMessageClass()) {
+    //            case UserInterface -> {
+    //            }
+    //            case UserContextChange -> {
+    //            }
+    //            case UserContextDefinition -> {
+    //            }
+    //            case ServiceLifecycle -> {
+    //                switch (message.getMessageType()) {
+    //                    case ServiceAvailable -> {
+    //                        var capabilities = message.getPayload(KlabService.ServiceCapabilities.class);
+    //                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities
+    //                        .getType() +
+    //                                " service available: " + capabilities.getServiceName()
+    //                                + "|@"));
+    //
+    //                    }
+    //                    case ServiceInitializing -> {
+    //                        var description = message.getPayload(KlabService.ServiceCapabilities.class);
+    //                        commandLine.getOut().println(Ansi.AUTO.string("@|blue "
+    //                                + "service initializing: " + description
+    //                                + "|@"));
+    //
+    //                    }
+    //                    case ServiceUnavailable -> {
+    //                        var capabilities = message.getPayload(KlabService.ServiceCapabilities.class);
+    //                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities
+    //                        .getType() +
+    //                                " service unavailable: " + capabilities.getServiceName()
+    //                                + "|@"));
+    //                    }
+    //                }
+    //            }
+    //            case EngineLifecycle -> {
+    //            }
+    //            case KimLifecycle -> {
+    //            }
+    //            case ResourceLifecycle -> {
+    //            }
+    //            case ProjectLifecycle -> {
+    //            }
+    //            case Authorization -> {
+    //            }
+    //            case TaskLifecycle -> {
+    //            }
+    //            case ObservationLifecycle -> {
+    //            }
+    //            case SessionLifecycle -> {
+    //            }
+    //            case UnitTests -> {
+    //            }
+    //            case Notification -> {
+    //                switch (message.getMessageType()) {
+    //                    case Info -> {
+    //                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + message.getPayload
+    //                        (Notification.class).getMessage()
+    //                                + "|@"));
+    //                    }
+    //                    case Error -> {
+    //                        commandLine.getOut().println(Ansi.AUTO.string("@|red " + message.getPayload
+    //                        (Notification.class).getMessage()
+    //                                + "|@"));
+    //                    }
+    //                    case Debug -> {
+    //                        commandLine.getOut().println(Ansi.AUTO.string("@|gray " + message.getPayload
+    //                        (Notification.class).getMessage()
+    //                                + "|@"));
+    //                    }
+    //                    case Warning -> {
+    //                        commandLine.getOut().println(Ansi.AUTO.string("@|yellow " + message
+    //                        .getPayload(Notification.class).getMessage()
+    //                                + "|@"));
+    //                    }
+    //                    default -> {
+    //                    }
+    //                }
+    //            }
+    //            case Search -> {
+    //            }
+    //            case Query -> {
+    //            }
+    //            case Run -> {
+    //            }
+    //            case ViewActor -> {
+    //            }
+    //            case ActorCommunication -> {
+    //            }
+    //            default -> {
+    //            }
+    //        }
+    //
+    //        if (message.getMessageClass() == Message.MessageClass.Notification) {
+    //
+    //        }
+    //    }
 
     public static void printResourceSet(ResourceSet resourceSet, PrintStream out, int indent) {
 

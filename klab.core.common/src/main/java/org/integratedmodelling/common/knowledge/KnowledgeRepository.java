@@ -1,6 +1,5 @@
 package org.integratedmodelling.common.knowledge;
 
-import org.apache.commons.collections.MultiMap;
 import org.glassfish.tyrus.core.uri.internal.MultivaluedHashMap;
 import org.glassfish.tyrus.core.uri.internal.MultivaluedMap;
 import org.integratedmodelling.common.utils.Utils;
@@ -8,10 +7,10 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -52,7 +51,7 @@ public enum KnowledgeRepository {
 
         var ret = new ArrayList<KlabAsset>();
         for (var res : resourceSet.getResults()) {
-            KlabDocument<?> doc = getDocumentForResource(res);
+            KlabDocument<?> doc = getExistingDocumentForResource(res);
             if (doc == null) {
                 // this shouldn't happen, would mean the resource set is inconsistent, but for now no
                 // exception
@@ -80,20 +79,53 @@ public enum KnowledgeRepository {
         return ret;
     }
 
-    private KlabDocument<?> getDocumentForResource(ResourceSet.Resource res) {
+    private KlabDocument<?> getExistingDocumentForResource(ResourceSet.Resource res) {
+        String namespace = switch (res.getKnowledgeClass()) {
+            case NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE, APPLICATION, COMPONENT, ONTOLOGY,
+                 OBSERVATION_STRATEGY_DOCUMENT -> res.getResourceUrn();
+            case MODEL, DEFINITION, CONCEPT_STATEMENT -> Utils.Paths.getLeading(res.getResourceUrn(), '.');
+            default -> null;
+        };
+
+        if (namespace != null && namespaceMap.containsKey(namespace)) {
+            for (var doc : namespaceMap.get(namespace)) {
+                if (doc.getVersion() == null && res.getResourceVersion() == null ||
+                        (res.getResourceVersion() != null && doc.getVersion() != null && doc.getVersion().compatible(res.getResourceVersion()))) {
+                    return doc;
+                }
+            }
+        }
+
         return null;
     }
 
     private boolean ingest(ResourceSet.Resource resource, Scope scope) {
 
         if (namespaceMap.containsKey(resource.getResourceUrn())) {
-
             for (var doc : namespaceMap.get(resource.getResourceUrn())) {
-                if (doc.getVersion() == null && resource.getResourceVersion() == null || (resource.getResourceVersion() != null && doc.getVersion() != null && doc.getVersion().compatible(resource.getResourceVersion()))) {
-
+                if (doc.getVersion() == null && resource.getResourceVersion() == null ||
+                        (resource.getResourceVersion() != null && doc.getVersion() != null && doc.getVersion().compatible(resource.getResourceVersion()))) {
+                    return true;
                 }
             }
+        }
 
+        // if we get here, we need to resolve the document
+        // TODO use broadcast to all services
+        // TODO honor version in request
+        var resources = scope.getService(ResourcesService.class);
+        KlabDocument<?> doc = switch (resource.getKnowledgeClass()) {
+            case NAMESPACE -> resources.resolveNamespace(resource.getResourceUrn(), scope);
+            case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION, COMPONENT ->
+                    resources.resolveBehavior(resource.getResourceUrn(), scope);
+            case ONTOLOGY -> resources.resolveOntology(resource.getResourceUrn(), scope);
+            case OBSERVATION_STRATEGY_DOCUMENT ->
+                    resources.resolveObservationStrategyDocument(resource.getResourceUrn(), scope);
+            default -> null;
+        };
+
+        if (doc != null) {
+            namespaceMap.add(resource.getResourceUrn(), doc);
             return true;
         }
 
