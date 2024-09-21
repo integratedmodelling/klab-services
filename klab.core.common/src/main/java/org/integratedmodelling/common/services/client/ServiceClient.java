@@ -63,7 +63,6 @@ public abstract class ServiceClient implements KlabService {
     // this is not null only if the client is used by another service. In that case, the service should be
     // added to scope requests for talkback.
     private KlabService ownerService;
-
     //    // these can be installed from the outside. TODO these should go in the scope and only there
     //    @Deprecated
     //    protected List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
@@ -76,6 +75,10 @@ public abstract class ServiceClient implements KlabService {
         if (this.url != null) {
             establishConnection();
         }
+    }
+
+    public Utils.Http.Client getHttpClient() {
+        return client;
     }
 
     public KlabService getOwnerService() {

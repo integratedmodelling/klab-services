@@ -106,7 +106,7 @@ public enum KlabCLI {
                      Resources.class, Shutdown.class, Credentials.class,
                      CLIServicesView.class, Run.class, PicocliCommands.ClearScreen.class,
                      CommandLine.HelpCommand.class,
-                     Session.class, CLIObservationView.class, Components.class, Test.class, Run.Alias.class,
+                     /*Session.class, */CLIObservationView.class, Components.class, Test.class, Run.Alias.class,
                      Run.Unalias.class})
     static class CliCommands implements Runnable {
 

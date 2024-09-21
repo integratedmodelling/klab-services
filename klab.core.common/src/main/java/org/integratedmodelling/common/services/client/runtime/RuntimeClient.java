@@ -79,7 +79,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
             // Resolver should probably only catch events and errors.
         }
 
-        var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_SESSION, request,
+        var ret = client./*withScope(scope.getParentScope()).*/post(ServicesAPI.CREATE_SESSION, request,
                 String.class, "id", scope instanceof ServiceSideScope serviceSideScope ?
                                     serviceSideScope.getId() : null);
 

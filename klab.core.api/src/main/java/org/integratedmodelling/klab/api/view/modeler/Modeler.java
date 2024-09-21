@@ -2,12 +2,16 @@ package org.integratedmodelling.klab.api.view.modeler;
 
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
 import java.net.URL;
+import java.util.List;
 
 /**
  * A {@link UIController} that contains all the user actions relevant to a modeler IDE. Implement this to use
@@ -64,6 +68,74 @@ public interface Modeler extends UIController {
     @UIActionHandler(value = UIAction.ObserveAsset, label = "Observe asset", tooltip = "Select a k.LAB " +
             "asset to create a new context or add to the current one.")
     void observe(Object asset, boolean adding);
+
+    /**
+     * Return all the open sessions for the current user.
+     *
+     * @return
+     */
+    List<SessionScope> getOpenSessions();
+
+    /**
+     * Return all the open contexts for the current session.
+     *
+     * @return
+     */
+    List<ContextScope> getOpenContexts();
+
+    /**
+     * Return the current session, or null if none is current.
+     *
+     * @return
+     */
+    SessionScope getCurrentSession();
+
+    /**
+     * Return the current context, or null if there is no current context or session.
+     *
+     * @return
+     */
+    ContextScope getCurrentContext();
+
+    /**
+     * Create a new session in the current runtime service and make it current.
+     *
+     * @param sessionName
+     * @return
+     */
+    SessionScope openNewSession(String sessionName);
+
+    /**
+     * Create a new context and make it current. Throw an exception if there is no current session.
+     *
+     * @param contextName
+     * @return
+     */
+    ContextScope openNewContext(String contextName);
+
+    /**
+     * Make the passed session the current one.
+     *
+     * @param session
+     */
+    void setCurrentSession(SessionScope session);
+
+    /**
+     * Set the passed service as the current one. The state of the modeler will change according to the type
+     * of service selected, modifying the sessions/contexts if the service is a runtime, the workspaces if a
+     * resources service, etc.
+     *
+     * @param service
+     */
+    void setCurrentService(KlabService service);
+
+    /**
+     * Make the passed context the current one. The context must belong to the current session or an exception
+     * will be thrown.
+     *
+     * @param context
+     */
+    void setCurrentContext(ContextScope context);
 
     @UIActionHandler(value = UIReactor.UIAction.ImportProject, label = "New project", tooltip =
             "Create a new k.LAB project in the current workspace and scope")

@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -39,6 +40,8 @@ import org.integratedmodelling.klab.modeler.model.NavigableKlabStatement;
 import org.integratedmodelling.klab.modeler.model.NavigableProject;
 import org.integratedmodelling.klab.modeler.panels.controllers.DocumentEditorControllerImpl;
 import org.integratedmodelling.klab.modeler.views.controllers.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import java.io.File;
 import java.net.URL;
@@ -59,6 +62,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     private ContextScope currentContext;
     private SessionScope currentSession;
+    private List<SessionScope> sessions = new ArrayList<>();
+    private MultiValueMap<SessionScope, ContextScope> contexts = new LinkedMultiValueMap<>();
+
     EngineConfiguration workbench;
     File workbenchDefinition;
     private Map<String, URL> serviceUrls = new HashMap<>();
@@ -216,11 +222,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
          */
 
         if (currentSession == null) {
-            currentSession = user().runSession("Default session");
+            currentSession = openNewSession("Default session");
         }
 
         if (currentContext == null && currentSession != null) {
-            currentContext = currentSession.createContext("Default context");
+            currentContext = openNewContext("Default context");
         }
 
         if (currentContext == null) {
@@ -279,6 +285,62 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     }
 
+    @Override
+    public ContextScope openNewContext(String contextName) {
+        if (currentSession == null) {
+            return null;
+        }
+        var ret = currentSession.createContext(contextName);
+        if (ret != null) {
+            contexts.add(currentSession, ret);
+        }
+        return ret;
+    }
+
+    @Override
+    public SessionScope openNewSession(String sessionName) {
+        var ret = user().runSession(sessionName);
+        this.sessions.add(ret);
+        return ret;
+    }
+
+    @Override
+    public List<SessionScope> getOpenSessions() {
+        return new ArrayList<>(sessions);
+    }
+
+    @Override
+    public List<ContextScope> getOpenContexts() {
+        return new ArrayList<>(contexts.get(currentSession));
+    }
+
+    @Override
+    public ContextScope getCurrentContext() {
+        return currentContext;
+    }
+
+    @Override
+    public SessionScope getCurrentSession() {
+        return currentSession;
+    }
+
+    @Override
+    public void setCurrentContext(ContextScope context) {
+        if (this.currentSession == null || !this.currentSession.equals(context.getParentScope())) {
+            throw new KlabIllegalArgumentException("Cannot set context: argument is not part of the current session");
+        }
+        this.currentContext = context;
+    }
+
+    @Override
+    public void setCurrentService(KlabService service) {
+        // TODO
+    }
+
+    @Override
+    public void setCurrentSession(SessionScope session) {
+        this.currentSession = session;
+    }
 
     @Override
     public void importProject(String workspaceName, String projectUrl, boolean overwriteExisting) {
@@ -418,31 +480,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     public UserScope currentUser() {
         return engine() == null || engine().getUsers().isEmpty() ? null : engine().getUsers().getFirst();
-    }
-
-    public SessionScope currentSession() {
-        // TODO
-        return currentSession;
-    }
-
-    public ContextScope currentContext() {
-        // TODO
-        return currentContext;
-    }
-
-    public ContextScope context(String context, boolean createIfAbsent) {
-        // TODO named context
-        return null;
-    }
-
-    public UserScope user(String username) {
-        // TODO named user
-        return null;
-    }
-
-    public SessionScope session(String session, boolean createIfAbsent) {
-        // TODO named session
-        return null;
     }
 
     @Override

@@ -4,8 +4,9 @@ import org.integratedmodelling.cli.KlabCLI;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.scope.ServiceSideScope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.view.modeler.views.ContextView;
@@ -13,14 +14,15 @@ import org.integratedmodelling.klab.api.view.modeler.views.controllers.ContextVi
 import picocli.CommandLine;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 
-@CommandLine.Command(name = "context", mixinStandardHelpOptions = true, version = Version.CURRENT,
+@CommandLine.Command(name = "observe", mixinStandardHelpOptions = true, version = Version.CURRENT,
                      description = {
                              "Commands to create, access and manipulate contexts.",
-                             ""}, subcommands = {CLIObservationView.List.class, CLIObservationView.New.class,
-                                                 CLIObservationView.Connect.class,
-                                                 CLIObservationView.Observe.class})
-public class CLIObservationView extends CLIView implements ContextView {
+                             ""}, subcommands = {CLIObservationView.Session.class,
+                                                 CLIObservationView.Context.class})
+public class CLIObservationView extends CLIView implements ContextView, Runnable {
 
     private static ContextViewController controller;
 
@@ -29,128 +31,102 @@ public class CLIObservationView extends CLIView implements ContextView {
         controller.registerView(this);
     }
 
-    @CommandLine.Command(name = "new", mixinStandardHelpOptions = true, version = Version.CURRENT,
-                         description = {
-                                 "Create a new context and make it current.", ""}, subcommands = {})
-    public static class New implements Runnable {
+    private List<String> observationsMade = new ArrayList<>();
+
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec commandSpec;
+
+    @CommandLine.Option(names = {"-a", "--add"}, defaultValue = "false",
+                        description = {"Add to existing context as a parallel observation"}, required =
+                                false)
+    boolean addToContext = false;
+
+    @CommandLine.Option(names = {"-w", "--within"}, defaultValue = CommandLine.Parameters.NULL_VALUE,
+                        description = {
+                                "Choose an observation to become the context of the observation.",
+                                "Use a dot to select the root subject if there is one."}, required =
+                                false)
+    private String within;
+
+    @CommandLine.Option(names = {"-g", "--geometry"}, defaultValue = CommandLine.Parameters.NULL_VALUE,
+                        description = {
+                                "Override the geometry for the new observation (must be a " +
+                                        "countable/substantial)."}, required
+                                = false)
+    private String geometry;
+
+    @CommandLine.Parameters
+    List<String> observables;
+
+    @Override
+    public void run() {
+
+        PrintWriter out = commandSpec.commandLine().getOut();
+        PrintWriter err = commandSpec.commandLine().getErr();
+
+        if (observables == null || observables.isEmpty()) {
+            int n = 1;
+            if (observationsMade.isEmpty()) {
+                out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow No previous observations|@ "));
+            }
+            for (var urn : observationsMade) {
+                out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow" + n + ".|@ " + urn));
+            }
+            return;
+        }
+
+        String urn = Utils.Strings.join(observables, " ");
+
+        if (Utils.Numbers.encodesInteger(urn)) {
+            int n = Integer.parseInt(urn) - 1;
+            if (n < 0 || observationsMade.size() >= n) {
+                err.println("No previous observation at index " + n);
+                return;
+            }
+            urn = observationsMade.get(n);
+        } else {
+            observationsMade.add(urn);
+        }
+
+        var resources = KlabCLI.INSTANCE.user().getService(ResourcesService.class);
+        var resolvable = resources.resolve(urn, KlabCLI.INSTANCE.user());
+        var results = KnowledgeRepository.INSTANCE.ingest(resolvable, KlabCLI.INSTANCE.user());
+
+        // TODO this is only for root observations
+        if (!results.isEmpty() && results.getFirst() instanceof KlabAsset asset) {
+            out.println(CommandLine.Help.Ansi.AUTO.string("Observation of @|yellow " + urn + "|@ " +
+                    "started in "
+                    + asset.getUrn()));
+            KlabCLI.INSTANCE.modeler().observe(asset, addToContext);
+        } else {
+            err.println(CommandLine.Help.Ansi.AUTO.string("Can't resolve URN @|yellow " + urn + "|@ to " +
+                    "observable knowledge"));
+        }
+    }
+
+    /* ---- subcommands ---- */
+
+    @CommandLine.Command(name = "session", mixinStandardHelpOptions = true, version = Version.CURRENT,
+                         description = {"List the active sessions and optionally choose one by number or " +
+                                                "name", ""}, subcommands = {Session.New.class})
+    public static class Session implements Runnable {
 
         @CommandLine.ParentCommand
         CLIObservationView parent;
 
-        @CommandLine.Spec
-        CommandLine.Model.CommandSpec commandSpec;
-
-        @CommandLine.Parameters(description = {"Name of the context being created.",
-                                               "If not passed, a new name will be created."}, defaultValue
-                                        = CommandLine.Parameters.NULL_VALUE)
-        String name;
-
-        // TODO add geometry option and instance parameters
-        @CommandLine.Parameters(description = {"A known geometry identifier or geometry specification.",
-                                               "If not passed, the context will have an empty geometry."},
-                                defaultValue = CommandLine.Parameters.NULL_VALUE)
-        String geometry;
-
-        @Override
-        public void run() {
-
-            PrintWriter out = commandSpec.commandLine().getOut();
-
-            if (name == null) {
-                name = Utils.Names.shortUUID();
-            }
-
-            Geometry geom = null;
-
-            if (geometry != null) {
-                //				geom = Geometries.getGeometry(geometry);
-                //				if (geom == null) {
-                //					try {
-                //						geom = Geometry.create(geometry);
-                //					} catch (Throwable t) {
-                //						out.println(Ansi.AUTO.string("Invalid geometry specification: @|red
-                //						" + geometry + "|@"));
-                //					}
-                //				}
-            }
-
-            //			boolean isnew = Engine.INSTANCE.getCurrentSession() == null;
-            //			SessionScope session = Engine.INSTANCE.getCurrentSession(true, Engine.INSTANCE
-            //			.getCurrentUser());
-            //			if (isnew) {
-            //				out.println(
-            //						Ansi.AUTO.string("No active session: created new session @|green " +
-            //						session.getName() + "|@"));
-            //			}
-            //
-            //			ContextScope context = session.getContext(name);
-            //
-            //			if (context != null) {
-            //				out.println(Ansi.AUTO.string("Context @|red " + name + "|@ already exists!"));
-            //			} else {
-            //				context = session.createContext(name, geom == null ? Geometry.EMPTY : geom);
-            //				Engine.INSTANCE.setCurrentContext(context);
-            //				out.println(Ansi.AUTO.string("Context @|green " + context.getName() + "|@
-            //				created and selected."));
-            //			}
-
-        }
-
-    }
-
-    @CommandLine.Command(name = "connect", mixinStandardHelpOptions = true, version = Version.CURRENT,
-                         description = {
-                                 "Connect to an existing context.", ""}, subcommands = {})
-    public static class Connect implements Runnable {
-
-        @CommandLine.ParentCommand
-        CLIObservationView parent;
-
-        @Override
-        public void run() {
-            // TODO Auto-generated method stub
-            System.out.println("Hola");
-        }
-
-    }
-
-    @CommandLine.Command(name = "observe", mixinStandardHelpOptions = true, version = Version.CURRENT,
-                         description = {
-                                 "Make an observation of the passed resolvable URN.", ""}, subcommands = {})
-    public static class Observe implements Runnable {
+        @CommandLine.Parameters(defaultValue = "__NULL__")
+        String sessionNumberOrId;
 
         @CommandLine.Spec
         CommandLine.Model.CommandSpec commandSpec;
 
-        @CommandLine.Option(names = {"-a", "--add"}, defaultValue = "false",
-                            description = {"Add to existing context as a parallel observation"}, required =
-                                    false)
-        boolean addToContext = false;
+        @CommandLine.Option(names = "-v", description = "print session information when listing")
+        boolean verbose;
 
-        @CommandLine.Option(names = {"-c", "--context"}, defaultValue = CommandLine.Parameters.NULL_VALUE,
-                            description = {
-                                    "Choose a context for the observation (default is the current context)"}, required = false)
-        private String context;
-
-        @CommandLine.Option(names = {"-w", "--within"}, defaultValue = CommandLine.Parameters.NULL_VALUE,
-                            description = {
-                                    "Choose an observation to become the context of the observation.",
-                                    "Use a dot to select the root subject if there is one."}, required =
-                                    false)
-        private String within;
-
-        @CommandLine.Option(names = {"-g", "--geometry"}, defaultValue = CommandLine.Parameters.NULL_VALUE,
-                            description = {
-                                    "Specify a geometry for the new observation (must be a " +
-                                            "countable/substantial)."}, required
-                                    = false)
-        private String geometry;
-
-        @CommandLine.Parameters
-        java.util.List<String> observables;
-
-
-        // TODO option to observe in a sub-context
+        private static String displaySession(SessionScope session) {
+            // TODO improve and react to verbose flag
+            return "<" + session.getName() + ", id=" + session.getId() + ">";
+        }
 
         @Override
         public void run() {
@@ -158,42 +134,88 @@ public class CLIObservationView extends CLIView implements ContextView {
             PrintWriter out = commandSpec.commandLine().getOut();
             PrintWriter err = commandSpec.commandLine().getErr();
 
-            String urn = Utils.Strings.join(observables, " ");
-            var resources = KlabCLI.INSTANCE.user().getService(ResourcesService.class);
-            var resolvable = resources.resolve(urn, KlabCLI.INSTANCE.user());
-            var results = KnowledgeRepository.INSTANCE.ingest(resolvable, KlabCLI.INSTANCE.user());
+            if ("__NULL__".equals(sessionNumberOrId)) {
 
-            // TODO this is only for root observations
-            if (!results.isEmpty() && results.getFirst() instanceof KlabAsset asset) {
-                out.println(CommandLine.Help.Ansi.AUTO.string("Observation of @|yellow " + urn + "|@ " +
-                        "started in "
-                        + asset.getUrn()));
-                KlabCLI.INSTANCE.modeler().observe(asset, addToContext);
+                int n = 1;
+                if (KlabCLI.INSTANCE.modeler().getOpenSessions().isEmpty()) {
+                    out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow No sessions|@ "));
+                }
+                for (var session : KlabCLI.INSTANCE.modeler().getOpenSessions()) {
+                    out.println(CommandLine.Help.Ansi.AUTO.string("@|green " + n + ". " + displaySession(session) + "|@"));
+                }
+                return;
+
             } else {
-                err.println(CommandLine.Help.Ansi.AUTO.string("Can't resolve URN @|yellow " + urn + "|@ to " +
-                        "observable knowledge"));
+
+                SessionScope selected = null;
+
+                if (Utils.Numbers.encodesInteger(sessionNumberOrId)) {
+                    int n = Integer.parseInt(sessionNumberOrId) - 1;
+                    if (n > 0 && KlabCLI.INSTANCE.modeler().getOpenSessions().size() < n) {
+                        selected = KlabCLI.INSTANCE.modeler().getOpenSessions().get(n);
+                    }
+                } else for (var session : KlabCLI.INSTANCE.modeler().getOpenSessions()) {
+                    if (sessionNumberOrId.equals(session.getName()) || sessionNumberOrId.equals(session.getId())) {
+                        selected = session;
+                        break;
+                    }
+                }
+
+                // select the session with the passed number or name/ID
+                if (selected != null) {
+                    KlabCLI.INSTANCE.modeler().setCurrentSession(selected);
+                    out.println(CommandLine.Help.Ansi.AUTO.string("@|green Session " + displaySession(selected) + "selected|@ "));
+                }
             }
         }
 
+        @CommandLine.Command(name = "new", mixinStandardHelpOptions = true, version = Version.CURRENT,
+                             description = {"Create a new session and make it current.", ""}, subcommands =
+                                     {})
+        public static class New implements Runnable {
+
+            @CommandLine.ParentCommand
+            Session parent;
+
+            @CommandLine.Parameters(defaultValue = "__NULL__")
+            String session;
+
+            @CommandLine.Spec
+            CommandLine.Model.CommandSpec commandSpec;
+
+            @Override
+            public void run() {
+
+                PrintWriter out = commandSpec.commandLine().getOut();
+                PrintWriter err = commandSpec.commandLine().getErr();
+
+                String sessionName = "__NULL__".equals(session) ?
+                                     ("Session " + KlabCLI.INSTANCE.modeler().getOpenSessions().size() + 1) : session;
+                var ret = KlabCLI.INSTANCE.modeler().openNewSession(sessionName);
+                out.println(CommandLine.Help.Ansi.AUTO.string("@|green New session " + displaySession(ret)) +
+                        " created|@");
+
+            }
+        }
     }
 
-    @CommandLine.Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT,
-                         description = {
-                                 "List and describe currently active contexts.", ""}, subcommands = {})
-    public static class List implements Runnable {
+
+    @CommandLine.Command(name = "context", mixinStandardHelpOptions = true, version = Version.CURRENT,
+                         description = {"Connect to an existing context.", ""}, subcommands = {})
+    public static class Context implements Runnable {
 
         @CommandLine.ParentCommand
         CLIObservationView parent;
 
-        // TODO option to list the context tree for the current context
-
         @Override
         public void run() {
-            // TODO Auto-generated method stub
+            // lists the contexts
             System.out.println("Hola");
         }
 
     }
+
+    /* ---- view methods ---- */
 
     @Override
     public void engineStatusChanged(Engine.Status status) {

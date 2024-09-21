@@ -348,6 +348,21 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
             /**
+             * Use a simple socket to check if the service is alive
+             *
+             * @return
+             */
+            public boolean isAlive()  {
+                var host = this.uri.getHost();
+                var port = this.uri.getPort();
+                try (var socket = new Socket(host, port)) {
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+
+            /**
              * GET helper that sets all headers and automatically handles JSON marshalling.
              *
              * @param apiRequest  the request starting with "/" appended to the main service URL. Add any ?

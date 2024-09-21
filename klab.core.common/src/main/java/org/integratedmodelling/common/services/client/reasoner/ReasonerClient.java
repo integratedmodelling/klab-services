@@ -51,6 +51,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     public ReasonerClient(URL url, Identity identity, KlabService owner) {
         super(Type.REASONER, url, identity, List.of());
         setOwnerService(owner);
+        // TODO check why the server key is wrong
     }
 
     //    public ReasonerClient(Identity identity, List<ServiceReference> services) {
