@@ -95,7 +95,8 @@ public interface DigitalTwin {
 
     /**
      * Assemble the passed parameters into an unresolved Observation, to be passed to
-     * {@link #submit(Observation, Observation, Relationship)} for resolution and insertion in the graph.
+     * {@link #submit(Observation, Observation, Relationship, Metadata)}  for resolution and insertion in the
+     * graph.
      * <p>
      * Accepts:
      *      TODO

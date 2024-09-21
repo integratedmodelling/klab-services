@@ -228,9 +228,9 @@ public class ServiceAuthorizationManager {
                     ret = new EngineAuthorization(hubId, username, groupStrings,
                             Collections.unmodifiableList(filterRoles(roleStrings)));
 
-                    if (klabService.get().klabService().getServiceSecret().equals(token)) {
-                        ret.setTokenString(token);
-                    }
+//                    if (klabService.get().klabService().getServiceSecret().equals(token)) {
+//                        ret.setTokenString(token);
+//                    }
 
                     /*
                      * Audience (aud) - The "aud" (audience) claim identifies the recipients that
