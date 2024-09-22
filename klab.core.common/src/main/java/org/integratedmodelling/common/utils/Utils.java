@@ -540,11 +540,11 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 } else if (resultClass == Integer.class) {
                     return (T) Integer.valueOf(body);
                 } else if (resultClass == Long.class) {
-                    return (T) Integer.valueOf(body);
+                    return (T) Long.valueOf(body);
                 } else if (resultClass == Double.class) {
-                    return (T) Integer.valueOf(body);
+                    return (T) Double.valueOf(body);
                 } else if (resultClass == Float.class) {
-                    return (T) Integer.valueOf(body);
+                    return (T) Float.valueOf(body);
                 } else if (resultClass.isEnum()) {
                     try {
                         var method = resultClass.getMethod("valueOf", String.class);

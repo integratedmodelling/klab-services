@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
+import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -178,7 +179,7 @@ public interface DigitalTwin {
                                         var year = timeDefinition.get("year");
                                         if (year instanceof Number number) {
                                             timeBuilder.year(number.intValue());
-                                        } else if ("default".equals(year.toString())) {
+                                        } else if (year instanceof Identifier identifier && "default".equals(identifier.getValue())) {
                                             timeBuilder.year(TimeInstant.create().getYear());
                                         }
                                     }
