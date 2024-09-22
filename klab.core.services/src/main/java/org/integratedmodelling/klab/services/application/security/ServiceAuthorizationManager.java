@@ -293,7 +293,7 @@ public class ServiceAuthorizationManager {
             ret.setRoles(EnumSet.of(Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER,
                     Role.ROLE_DATA_MANAGER));
             ret.setAuthenticated(true);
-            ret.setTokenString(serverKey);
+            // ret.setTokenString(serverKey);
 
             var owner = klabService.get().getServiceOwner();
             if (owner instanceof UserIdentity user && "anonymous".equals(ret.getUsername())) {

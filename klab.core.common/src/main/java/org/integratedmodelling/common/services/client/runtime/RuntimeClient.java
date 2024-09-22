@@ -34,8 +34,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     public RuntimeClient(URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
-        super(Type.RUNTIME, url, identity, settings,List.of());
-        setOwnerService(owner);
+        super(Type.RUNTIME, url, identity, List.of(), settings, owner);
     }
 
     @Override

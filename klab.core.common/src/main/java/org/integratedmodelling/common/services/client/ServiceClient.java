@@ -88,8 +88,25 @@ public abstract class ServiceClient implements KlabService {
         return ownerService;
     }
 
-    protected void setOwnerService(KlabService ownerService) {
+    /**
+     * Constructor to use when the client is built to be used within a service, with a pre-authenticated identity.
+     *
+     * @param serviceType
+     * @param identity
+     * @param services
+     * @param settings
+     * @param ownerService
+     */
+    protected ServiceClient(KlabService.Type serviceType, URL url, Identity identity,
+                            List<ServiceReference> services, Parameters<Engine.Setting> settings, KlabService ownerService) {
+        this.settings = settings;
+        this.authentication = Pair.of(identity, List.of());
         this.ownerService = ownerService;
+        this.serviceType = serviceType;
+        this.url = url;
+        if (this.url != null) {
+            establishConnection();
+        }
     }
 
     protected ServiceClient(KlabService.Type serviceType, Identity identity,

@@ -45,28 +45,14 @@ import java.util.function.BiConsumer;
  */
 public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.Admin {
 
-
-    //    public ReasonerClient() {
-    //        super(Type.REASONER);
-    //    }
-
     public ReasonerClient(URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
-        super(Type.REASONER, url, identity, settings,List.of());
-        setOwnerService(owner);
+        super(Type.REASONER, url, identity,List.of(), settings, owner);
         // TODO check why the server key is wrong
     }
-
-    //    public ReasonerClient(Identity identity, List<ServiceReference> services) {
-    //        super(Type.REASONER, identity, services);
-    //    }
 
     public ReasonerClient(URL url, Identity identity, List<ServiceReference> services, Parameters<Engine.Setting> settings, BiConsumer<Channel,
             Message>... listeners) {
         super(Type.REASONER, url, identity, settings, services, listeners);
-    }
-
-    public ReasonerClient(URL url, Parameters<Engine.Setting> settings) {
-        super(url, settings);
     }
 
     @Override

@@ -38,8 +38,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
     //    }
 
     public ResolverClient(URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
-        super(Type.RESOLVER, url, identity, settings,List.of());
-        setOwnerService(owner);
+        super(Type.RESOLVER, url, identity, List.of(), settings, owner);
     }
 
     public ResolverClient(URL url, Identity identity, List<ServiceReference> services, Parameters<Engine.Setting> settings, BiConsumer<Channel,

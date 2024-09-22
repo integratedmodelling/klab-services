@@ -43,13 +43,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     private static final long serialVersionUID = 4305387731730961701L;
 
-    //    public ResourcesClient() {
-    //        super(Type.RESOURCES);
-    //    }
-
     public ResourcesClient(URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
-        super(Type.RESOURCES, identity, List.of(), settings);
-        setOwnerService(owner);
+        super(Type.RESOURCES, url, identity, List.of(), settings, owner);
     }
 
     public ResourcesClient(URL url, Identity identity, List<ServiceReference> services, Parameters<Engine.Setting> settings, BiConsumer<Channel,
@@ -57,15 +52,10 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
         super(Type.RESOURCES, url, identity, settings, services, listeners);
     }
 
-    public ResourcesClient(URL url, Parameters<Engine.Setting> settings) {
-        super(url, settings);
-    }
-
     @Override
     public Capabilities capabilities(Scope scope) {
         return client.get(ServicesAPI.CAPABILITIES, ResourcesCapabilitiesImpl.class);
     }
-
 
     /**
      * When called as a slave from a service, add the sessionId parameter to build a peer scope at the remote

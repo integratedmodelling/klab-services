@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class UserIdentityImpl extends IdentityImpl implements UserIdentity {
+
     private String username;
     private Set<Group> groups = new HashSet<>();
     private boolean anonymous;

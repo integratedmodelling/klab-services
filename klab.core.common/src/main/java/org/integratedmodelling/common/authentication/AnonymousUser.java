@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.authentication;
 
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -20,7 +21,7 @@ public class AnonymousUser implements UserIdentity {
 
     @Override
     public String getId() {
-        return "invalid.token";
+        return ServicesAPI.ANONYMOUS_TOKEN;
     }
 
     @Override
