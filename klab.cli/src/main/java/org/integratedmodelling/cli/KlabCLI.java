@@ -105,7 +105,7 @@ public enum KlabCLI {
                      Auth.class, Expressions.class, Reasoner.class, Report.class, Resolver.class,
                      Resources.class, Shutdown.class, Credentials.class,
                      CLIServicesView.class, Run.class, PicocliCommands.ClearScreen.class,
-                     CommandLine.HelpCommand.class,
+                     CommandLine.HelpCommand.class, Set.class,
                      /*Session.class, */CLIObservationView.class, Components.class, Test.class, Run.Alias.class,
                      Run.Unalias.class})
     static class CliCommands implements Runnable {
@@ -130,7 +130,7 @@ public enum KlabCLI {
                      {Run.List.class, Run.Purge.class})
     static class Run /* extends Monitor */ implements Runnable {
 
-        Set<SessionScope> running = new LinkedHashSet<>();
+        java.util.Set<SessionScope> running = new LinkedHashSet<>();
 
         static Map<String, String> aliases = new LinkedHashMap<>();
 
@@ -335,7 +335,7 @@ public enum KlabCLI {
             @Override
             public void run() {
                 if (appIds.isEmpty()) {
-                    Set<SessionScope> removed = new HashSet<>();
+                    java.util.Set<SessionScope> removed = new HashSet<>();
                     for (SessionScope s : parent.running) {
                         if (s.getStatus() != Status.STARTED && s.getStatus() != Status.WAITING) {
                             s.logout();

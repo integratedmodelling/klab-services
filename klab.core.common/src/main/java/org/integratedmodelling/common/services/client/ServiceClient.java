@@ -10,7 +10,9 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -67,9 +69,10 @@ public abstract class ServiceClient implements KlabService {
     //    @Deprecated
     //    protected List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
     private boolean local;
-
-    protected ServiceClient(KlabService.Type serviceType) {
-        this.authentication = Authentication.INSTANCE.authenticate(false);
+    private Parameters<Engine.Setting> settings;
+    protected ServiceClient(KlabService.Type serviceType, Parameters<Engine.Setting> settings) {
+        this.settings = settings;
+        this.authentication = Authentication.INSTANCE.authenticate(settings);
         this.serviceType = serviceType;
         this.url = discoverService(authentication.getFirst(), authentication.getSecond(), serviceType);
         if (this.url != null) {
@@ -90,8 +93,9 @@ public abstract class ServiceClient implements KlabService {
     }
 
     protected ServiceClient(KlabService.Type serviceType, Identity identity,
-                            List<ServiceReference> services) {
-        this.authentication = Authentication.INSTANCE.authenticate(false);
+                            List<ServiceReference> services, Parameters<Engine.Setting> settings) {
+        this.settings = settings;
+        this.authentication = Authentication.INSTANCE.authenticate(settings);
         this.serviceType = serviceType;
         this.url = discoverService(authentication.getFirst(), authentication.getSecond(), serviceType);
         if (this.url != null) {
@@ -100,8 +104,9 @@ public abstract class ServiceClient implements KlabService {
     }
 
     @SafeVarargs
-    protected ServiceClient(KlabService.Type serviceType, URL url, Identity identity,
+    protected ServiceClient(KlabService.Type serviceType, URL url, Identity identity, Parameters<Engine.Setting> settings,
                             List<ServiceReference> services, BiConsumer<Channel, Message>... listeners) {
+        this.settings = settings;
         this.authentication = Pair.of(identity, services);
         this.serviceType = serviceType;
         this.url = url;
@@ -166,7 +171,7 @@ public abstract class ServiceClient implements KlabService {
         return ret;
     }
 
-    protected ServiceClient(URL url) {
+    protected ServiceClient(URL url, Parameters<Engine.Setting> settings) {
         this.url = url;
         establishConnection();
     }
@@ -249,6 +254,10 @@ public abstract class ServiceClient implements KlabService {
     }
 
     private void timedTasks() {
+
+        if ("off".equals(settings.get(Engine.Setting.POLLING, String.class))) {
+            return;
+        }
 
         try {
 

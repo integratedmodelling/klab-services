@@ -72,25 +72,25 @@ public class KlabScopeController {
                         ? new ArrayList<>(List.of(r))
                         :
                         new ArrayList<>(request.getReasonerServices().stream().map(url -> new ReasonerClient(url,
-                                identity, instance.klabService())).toList());
+                                identity, instance.klabService(), instance.settings())).toList());
                 List<RuntimeService> runtimes =
                         instance.klabService() instanceof RuntimeService r
                         ? new ArrayList<>(List.of(r))
                         :
                         new ArrayList<>(request.getRuntimeServices().stream().map(url -> new RuntimeClient(url,
-                                identity, instance.klabService())).toList());
+                                identity, instance.klabService(), instance.settings())).toList());
                 List<ResourcesService> resources =
                         instance.klabService() instanceof ResourcesService r
                         ? new ArrayList<>(List.of(r))
                         :
                         new ArrayList<>(request.getResourceServices().stream().map(url -> new ResourcesClient(url,
-                                identity, instance.klabService())).toList());
+                                identity, instance.klabService(), instance.settings())).toList());
                 List<Resolver> resolvers =
                         instance.klabService() instanceof Resolver r
                         ? new ArrayList<>(List.of(r))
                         :
                         new ArrayList<>(request.getResolverServices().stream().map(url -> new ResolverClient(url,
-                                identity, instance.klabService())).toList());
+                                identity, instance.klabService(), instance.settings())).toList());
 
                 if (request.getReasonerServices().isEmpty()) {
                     reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));
@@ -173,25 +173,25 @@ public class KlabScopeController {
                         ? new ArrayList<>(List.of(r))
                         :
                         new ArrayList<>(request.getReasonerServices().stream().map(url -> new ReasonerClient(url,
-                                identity, instance.klabService())).toList());
+                                identity, instance.klabService(), instance.settings())).toList());
                 List<RuntimeService> runtimes =
                         instance.klabService() instanceof RuntimeService r
                         ? new ArrayList<>(List.of(r))
                         :
                         new ArrayList<>(request.getRuntimeServices().stream().map(url -> new RuntimeClient(url,
-                                identity, instance.klabService())).toList());
+                                identity, instance.klabService(), instance.settings())).toList());
                 List<ResourcesService> resources =
                         instance.klabService() instanceof ResourcesService r
                         ? new ArrayList<>(List.of(r))
                         :
                         new ArrayList<>(request.getResourceServices().stream().map(url -> new ResourcesClient(url,
-                                identity, instance.klabService())).toList());
+                                identity, instance.klabService(), instance.settings())).toList());
                 List<Resolver> resolvers =
                         instance.klabService() instanceof Resolver r
                         ? new ArrayList<>(List.of(r))
                         :
                         new ArrayList<>(request.getResolverServices().stream().map(url -> new ResolverClient(url,
-                                identity, instance.klabService())).toList());
+                                identity, instance.klabService(), instance.settings())).toList());
 
                 if (request.getReasonerServices().isEmpty()) {
                     reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));

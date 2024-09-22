@@ -6,6 +6,8 @@ import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
@@ -48,8 +50,8 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     //        super(Type.REASONER);
     //    }
 
-    public ReasonerClient(URL url, Identity identity, KlabService owner) {
-        super(Type.REASONER, url, identity, List.of());
+    public ReasonerClient(URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
+        super(Type.REASONER, url, identity, settings,List.of());
         setOwnerService(owner);
         // TODO check why the server key is wrong
     }
@@ -58,13 +60,13 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     //        super(Type.REASONER, identity, services);
     //    }
 
-    public ReasonerClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,
+    public ReasonerClient(URL url, Identity identity, List<ServiceReference> services, Parameters<Engine.Setting> settings, BiConsumer<Channel,
             Message>... listeners) {
-        super(Type.REASONER, url, identity, services, listeners);
+        super(Type.REASONER, url, identity, settings, services, listeners);
     }
 
-    public ReasonerClient(URL url) {
-        super(url);
+    public ReasonerClient(URL url, Parameters<Engine.Setting> settings) {
+        super(url, settings);
     }
 
     @Override

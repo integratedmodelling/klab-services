@@ -9,6 +9,8 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.scope.*;
@@ -60,8 +62,17 @@ public abstract class BaseService implements KlabService {
     private boolean initialized;
     private boolean operational;
 
+    protected Parameters<Engine.Setting> settingsForSlaveServices = Parameters.createSynchronized();
+
     protected BaseService(AbstractServiceDelegatingScope scope, KlabService.Type serviceType,
                           ServiceStartupOptions options) {
+
+
+        settingsForSlaveServices.put(Engine.Setting.POLLING, "on");
+        settingsForSlaveServices.put(Engine.Setting.POLLING_INTERVAL, 15);
+        settingsForSlaveServices.put(Engine.Setting.LOG_EVENTS, true);
+        settingsForSlaveServices.put(Engine.Setting.LAUNCH_PRODUCT, false);
+
         this.scope = scope;
         this.localName = localName;
         this.type = serviceType;
@@ -387,4 +398,5 @@ public abstract class BaseService implements KlabService {
     public boolean isInitialized() {
         return this.initialized;
     }
+
 }

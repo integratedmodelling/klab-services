@@ -4,6 +4,8 @@ import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -35,18 +37,18 @@ public class ResolverClient extends ServiceClient implements Resolver {
     //        super(Type.RESOLVER, identity, services);
     //    }
 
-    public ResolverClient(URL url, Identity identity, KlabService owner) {
-        super(Type.RESOLVER, url, identity, List.of());
+    public ResolverClient(URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
+        super(Type.RESOLVER, url, identity, settings,List.of());
         setOwnerService(owner);
     }
 
-    public ResolverClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,
+    public ResolverClient(URL url, Identity identity, List<ServiceReference> services, Parameters<Engine.Setting> settings, BiConsumer<Channel,
             Message>... listeners) {
-        super(Type.RESOLVER, url, identity, services, listeners);
+        super(Type.RESOLVER, url, identity, settings, services, listeners);
     }
 
-    public ResolverClient(URL url) {
-        super(url);
+    public ResolverClient(URL url, Parameters<Engine.Setting> settings) {
+        super(url, settings);
     }
 
     @Override

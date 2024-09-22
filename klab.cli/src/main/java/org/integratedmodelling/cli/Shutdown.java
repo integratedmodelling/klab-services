@@ -30,6 +30,9 @@ public class Shutdown implements Runnable {
         PrintWriter out = commandSpec.commandLine().getOut();
         PrintWriter err = commandSpec.commandLine().getErr();
 
+        out.println(CommandLine.Help.Ansi.AUTO.string("@|cyan Shutting down local services" + (exit ? (" and" +
+                " exiting to OS") : "") + "|@"));
+
         KlabCLI.INSTANCE.engine().shutdown();
 
         if (exit) {

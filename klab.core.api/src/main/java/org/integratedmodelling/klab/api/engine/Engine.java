@@ -33,6 +33,52 @@ import java.util.Map;
  */
 public interface Engine extends KlabService {
 
+
+    /**
+     * Engine settings that can be changed at runtime through the CLI or the API. Most of these are useful for
+     * debugging. Using an enum eases validation.
+     */
+    enum Setting {
+
+        // TODO add these as the need arises
+        POLLING("Enable or disable server polling in all service clients", "on", "off"),
+        POLLING_INTERVAL("Set the service polling interval in seconds", Integer.class),
+        LAUNCH_PRODUCT("Launch a local service if there is no online service and a distribution is " +
+                "available", Boolean.class),
+        LOG_EVENTS("Log server-side events", Boolean.class);
+
+        // if this is empty, any string value is admitted
+        public final String[] values;
+        public final Class<?> valueClass;
+        public final String description;
+
+        private Setting(String description, Class<?> valueClass) {
+            this.description = description;
+            this.valueClass = valueClass;
+            this.values = new String[]{};
+        }
+
+        private Setting(String description, String... stringValues) {
+            this.description = description;
+            this.values = stringValues;
+            this.valueClass = String.class;
+        }
+
+        public boolean validate(Object value) {
+            if (String.class.equals(valueClass)) {
+                if (value instanceof  String && values.length > 0) {
+                    for (var v : values) {
+                        if (value.equals(v)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            }
+            return value != null && valueClass.isAssignableFrom(value.getClass());
+        }
+    }
+
     /**
      * Comprehensive engine status is kept up to date by polling or listening to services. Whenever the status
      * changes, either because of service lifecycle or because of the user choosing a different service as the
@@ -96,6 +142,15 @@ public interface Engine extends KlabService {
      * There is no requirement for the boot to be reentrant so that it can be called multiple times.
      */
     void boot();
+
+    /**
+     * Return all settings for the engine. This is passed around to clients and any other object for checking
+     * when necessary without referencing the engine itself, so it should not be copied and should be a
+     * synchronized map. All settings <em>must</em> have a non-null value.
+     *
+     * @return the current settings.
+     */
+    Map<Setting, Object> getSettings();
 
     @Override
     default boolean scopesAreReactive() {

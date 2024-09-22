@@ -43,6 +43,7 @@ public enum Configuration {
 
     INSTANCE;
 
+
     /**
      * The package containing all REST resource beans.
      */
@@ -53,6 +54,9 @@ public enum Configuration {
     public static final int DEFAULT_NODE_PORT = 8287;
     public static final int DEFAULT_LEVER_PORT = 8761;
     public static final int DEFAULT_SEMANTIC_SERVER_PORT = 8301;
+
+    // TODO move all these to enum and reconcile with org.integratedmodelling.klab.api.engine.distribution
+    //  .Settings
     public static final String DEFAULT_PRODUCTS_BRANCH = "master";
     public static final String JREDIR_PROPERTY = "klab.directory.jre";
     public static final String KLAB_LOG_FILE = "klab.log.file";

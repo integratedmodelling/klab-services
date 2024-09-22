@@ -5,6 +5,8 @@ import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.GraphQLClient;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -26,13 +28,13 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     private GraphQLClient graphClient;
 
-    public RuntimeClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,
+    public RuntimeClient(URL url, Identity identity, List<ServiceReference> services, Parameters<Engine.Setting> settings, BiConsumer<Channel,
             Message>... listeners) {
-        super(Type.RUNTIME, url, identity, services, listeners);
+        super(Type.RUNTIME, url, identity, settings, services, listeners);
     }
 
-    public RuntimeClient(URL url, Identity identity, KlabService owner) {
-        super(Type.RUNTIME, url, identity, List.of());
+    public RuntimeClient(URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
+        super(Type.RUNTIME, url, identity, settings,List.of());
         setOwnerService(owner);
     }
 

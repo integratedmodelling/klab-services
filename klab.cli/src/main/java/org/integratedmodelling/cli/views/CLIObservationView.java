@@ -5,7 +5,6 @@ import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -178,7 +177,7 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
             Session parent;
 
             @CommandLine.Parameters(defaultValue = "__NULL__")
-            String session;
+            String sessionName;
 
             @CommandLine.Spec
             CommandLine.Model.CommandSpec commandSpec;
@@ -189,8 +188,8 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
                 PrintWriter out = commandSpec.commandLine().getOut();
                 PrintWriter err = commandSpec.commandLine().getErr();
 
-                String sessionName = "__NULL__".equals(session) ?
-                                     ("Session " + KlabCLI.INSTANCE.modeler().getOpenSessions().size() + 1) : session;
+                String sessionName = "__NULL__".equals(this.sessionName) ?
+                                     ("Session " + (KlabCLI.INSTANCE.modeler().getOpenSessions().size() + 1)) : this.sessionName;
                 var ret = KlabCLI.INSTANCE.modeler().openNewSession(sessionName);
                 out.println(CommandLine.Help.Ansi.AUTO.string("@|green New session " + displaySession(ret)) +
                         " created|@");

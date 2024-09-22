@@ -7,12 +7,15 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
@@ -72,7 +75,15 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     private long bootTime;
     private Pair<Identity, List<ServiceReference>> identity;
-    private boolean firstCall = true;
+//    private boolean firstCall = true;
+    private Parameters<Engine.Setting> settings = Parameters.createSynchronized();
+
+    protected ServiceInstance() {
+        settings.put(Engine.Setting.POLLING, "on");
+        settings.put(Engine.Setting.POLLING_INTERVAL, 15);
+        settings.put(Engine.Setting.LOG_EVENTS, true);
+        settings.put(Engine.Setting.LAUNCH_PRODUCT, false);
+    }
 
     /**
      * Return the type of any <em>other</em> services required for this service to become online. The service
@@ -122,7 +133,7 @@ public abstract class ServiceInstance<T extends BaseService> {
     protected KlabService createDefaultService(KlabService.Type serviceType, Scope scope,
                                                long timeUnavailable) {
         return Authentication.INSTANCE.findService(serviceType, scope, identity.getFirst(),
-                identity.getSecond(), firstCall, false);
+                identity.getSecond(), settings);
     }
 
     /**
@@ -164,7 +175,7 @@ public abstract class ServiceInstance<T extends BaseService> {
      */
 
     protected Pair<Identity, List<ServiceReference>> authenticateService() {
-        return Authentication.INSTANCE.authenticate(true);
+        return Authentication.INSTANCE.authenticate(settings);
     }
 
     /**
@@ -291,6 +302,7 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     private void timedTasks() {
 
+
         try {
 
         /*
@@ -345,13 +357,14 @@ public abstract class ServiceInstance<T extends BaseService> {
                 serviceScope.setStatus(Scope.Status.WAITING);
             }
 
-            firstCall = false;
+//            firstCall = false;
 
             if (wasAvailable != okEssentials) {
                 if (okEssentials) {
                     if (initialized.get()) {
                         serviceScope.send(Message.MessageClass.ServiceLifecycle,
-                                Message.MessageType.ServiceAvailable, klabService().capabilities(serviceScope));
+                                Message.MessageType.ServiceAvailable,
+                                klabService().capabilities(serviceScope));
                     } else {
                         serviceScope.send(Message.MessageClass.ServiceLifecycle,
                                 Message.MessageType.ServiceInitializing,
@@ -405,6 +418,11 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     protected void setAvailable(boolean b) {
         serviceScope.setMaintenanceMode(!b);
+    }
+
+
+    public Parameters<Engine.Setting> settings() {
+        return settings;
     }
 
 

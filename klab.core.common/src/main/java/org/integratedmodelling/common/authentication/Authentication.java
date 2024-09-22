@@ -21,9 +21,12 @@ import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCre
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
+import org.integratedmodelling.klab.api.engine.distribution.Settings;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.identities.Group;
@@ -32,6 +35,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.rest.EngineAuthenticationRequest;
@@ -77,14 +81,14 @@ public enum Authentication {
     /**
      * Authenticate using the default certificate if present on the filesystem, or anonymously if not.
      *
-     * @param logEvents log info messages (errors are logged no matter what)
+     * @param settings
      * @return
      */
-    public Pair<Identity, List<ServiceReference>> authenticate(boolean logEvents) {
+    public Pair<Identity, List<ServiceReference>> authenticate(Parameters<Engine.Setting> settings) {
         File certFile = new File(Configuration.INSTANCE.getDataPath() + File.separator + "klab.cert");
         KlabCertificate certificate = certFile.isFile() ? KlabCertificateImpl.createFromFile(certFile) :
                                       new AnonymousEngineCertificate();
-        return authenticate(certificate, logEvents);
+        return authenticate(certificate, settings);
     }
 
     /**
@@ -92,16 +96,16 @@ public enum Authentication {
      * return the anonymous user.
      *
      * @param certificate
-     * @param logEvents   log info messages (errors are logged no matter what)
+     * @param settings
      * @return
      */
     public Pair<Identity, List<ServiceReference>> authenticate(KlabCertificate certificate,
-                                                               boolean logEvents) {
+                                                               Parameters<Engine.Setting> settings) {
 
         if (certificate instanceof AnonymousEngineCertificate) {
             // no partner, no node, no token, no nothing. REST calls automatically accept
             // the anonymous user when secured as Roles.PUBLIC.
-            if (logEvents) {
+            if (settings.get(Engine.Setting.LOG_EVENTS, Boolean.class)) {
                 Logging.INSTANCE.info("No user certificate: continuing in anonymous offline mode");
             }
             return Pair.of(new AnonymousUser(), Collections.emptyList());
@@ -111,7 +115,7 @@ public enum Authentication {
             /*
              * expired or invalid certificate: throw away the identity, continue as anonymous.
              */
-            if (logEvents) {
+            if (settings.get(Engine.Setting.LOG_EVENTS, Boolean.class)) {
                 Logging.INSTANCE.info("Certificate is invalid or expired: continuing in anonymous offline " +
                         "mode");
             }
@@ -125,7 +129,7 @@ public enum Authentication {
 
             try (var client = Utils.Http.getClient(authenticationServer, null)) {
 
-                if (logEvents) {
+                if (settings.get(Engine.Setting.LOG_EVENTS, Boolean.class)) {
                     Logging.INSTANCE.info("authenticating " + certificate.getProperty(KlabCertificate.KEY_USERNAME) + " with hub "
                             + authenticationServer);
                 }
@@ -255,7 +259,7 @@ public enum Authentication {
                                                  Scope scope,
                                                  Identity identity,
                                                  List<ServiceReference> availableServices,
-                                                 boolean logFailures, boolean launchProduct) {
+                                                 Parameters<Engine.Setting> settings) {
 
         BiConsumer<Channel, Message>[] listeners = scope instanceof ChannelImpl clientScope ?
                                                    clientScope.listeners().toArray(BiConsumer[]::new) :
@@ -267,7 +271,8 @@ public enum Authentication {
                 for (var url : service.getUrls()) {
                     if (ServiceClient.readServiceStatus(url, scope) != null) {
                         scope.info("Using authenticated " + service.getServiceType() + " service from " + service.getPartner().getId());
-                        return (T) createLocalServiceClient(serviceType, url, scope, identity, availableServices,
+                        return (T) createLocalServiceClient(serviceType, url, scope, identity,
+                                availableServices, settings,
                                 listeners);
                     }
                 }
@@ -279,7 +284,7 @@ public enum Authentication {
         if (status != null) {
             scope.info("Using locally running " + status.getServiceType() + " service at " + serviceType.localServiceUrl());
             return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), scope, identity,
-                    availableServices, listeners);
+                    availableServices, settings, listeners);
         }
 
 
@@ -290,12 +295,12 @@ public enum Authentication {
                             new DevelopmentDistributionImpl() :
                             new DistributionImpl()) : this.distribution;
 
-        if (distribution.isAvailable() && launchProduct) {
+        if (distribution.isAvailable() && settings.get(Engine.Setting.LAUNCH_PRODUCT, Boolean.class)) {
 
             this.distribution = distribution;
 
             var product = distribution.findProduct(Product.ProductType.forService(serviceType));
-            if (logFailures) {
+            if (settings.get(Engine.Setting.LOG_EVENTS, Boolean.class)) {
                 scope.info("No service available for " + serviceType + ": " +
                         (product == null ? "distribution does not provide service implementation" :
                          "starting " +
@@ -313,11 +318,12 @@ public enum Authentication {
                     } catch (InterruptedException e) {
                         // move on
                     }
-                    return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), scope, identity,
-                            availableServices, listeners);
+                    return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), scope,
+                            identity,
+                            availableServices, settings, listeners);
                 }
             }
-        } else if (logFailures) {
+        } else if (settings.get(Engine.Setting.LOG_EVENTS, Boolean.class)) {
             scope.info("No service available for " + serviceType + " and no k.LAB distribution available");
 
         }
@@ -329,22 +335,23 @@ public enum Authentication {
     public final <T extends KlabService> T createLocalServiceClient(KlabService.Type serviceType, URL url,
                                                                     Scope scope, Identity identity,
                                                                     List<ServiceReference> services,
+                                                                    Parameters<Engine.Setting> settings,
                                                                     BiConsumer<Channel, Message>... listeners) {
         T ret = switch (serviceType) {
             case REASONER -> {
-                yield (T) new ReasonerClient(url, identity, services, listeners);
+                yield (T) new ReasonerClient(url, identity, services, settings, listeners);
             }
             case RESOURCES -> {
-                yield (T) new ResourcesClient(url, identity, services, listeners);
+                yield (T) new ResourcesClient(url, identity, services, settings, listeners);
             }
             case RESOLVER -> {
-                yield (T) new ResolverClient(url, identity, services, listeners);
+                yield (T) new ResolverClient(url, identity, services, settings, listeners);
             }
             case RUNTIME -> {
-                yield (T) new RuntimeClient(url, identity, services, listeners);
+                yield (T) new RuntimeClient(url, identity, services, settings, listeners);
             }
             case COMMUNITY -> {
-                yield (T) new CommunityClient(url, identity, services, listeners);
+                yield (T) new CommunityClient(url, identity, services, settings, listeners);
             }
             default -> throw new IllegalStateException("Unexpected value: " + serviceType);
         };
@@ -370,7 +377,8 @@ public enum Authentication {
         return externalCredentials;
     }
 
-    public ExternalAuthenticationCredentials.CredentialInfo addExternalCredentials(String host, ExternalAuthenticationCredentials credentials,
+    public ExternalAuthenticationCredentials.CredentialInfo addExternalCredentials(String host,
+                                                                                   ExternalAuthenticationCredentials credentials,
                                                                                    Scope scope) {
         var catalog = getExternalCredentialsCatalog(scope);
         // TODO improve key
@@ -397,7 +405,8 @@ public enum Authentication {
             return catalog.get(candidateKeys.getFirst());
         }
 
-        // FIXME match hostname, then compare all keys that start with hostname, choosing the longest that is contained in the URL
+        // FIXME match hostname, then compare all keys that start with hostname, choosing the longest that
+        //  is contained in the URL
         var ret = catalog.get(host);
 
         if (ret == null && sshHosts.get().contains(host)) {

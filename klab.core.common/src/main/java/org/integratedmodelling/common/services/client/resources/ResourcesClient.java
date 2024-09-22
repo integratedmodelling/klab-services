@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -46,18 +47,18 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     //        super(Type.RESOURCES);
     //    }
 
-    public ResourcesClient(URL url, Identity identity, KlabService owner) {
-        super(Type.RESOURCES, identity, List.of());
+    public ResourcesClient(URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
+        super(Type.RESOURCES, identity, List.of(), settings);
         setOwnerService(owner);
     }
 
-    public ResourcesClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,
+    public ResourcesClient(URL url, Identity identity, List<ServiceReference> services, Parameters<Engine.Setting> settings, BiConsumer<Channel,
             Message>... listeners) {
-        super(Type.RESOURCES, url, identity, services, listeners);
+        super(Type.RESOURCES, url, identity, settings, services, listeners);
     }
 
-    public ResourcesClient(URL url) {
-        super(url);
+    public ResourcesClient(URL url, Parameters<Engine.Setting> settings) {
+        super(url, settings);
     }
 
     @Override

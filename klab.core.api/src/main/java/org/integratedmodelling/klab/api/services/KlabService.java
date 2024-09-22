@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -365,7 +366,6 @@ public interface KlabService extends Service {
      * @return the ID of the new context scope created at server side, or null in case of failure.
      */
     String registerContext(ContextScope contextScope);
-
 
     /**
      * Exclusive status means that the service is either an application started by the requesting JVM or a

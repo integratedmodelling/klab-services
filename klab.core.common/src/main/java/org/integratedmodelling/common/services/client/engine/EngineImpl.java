@@ -7,6 +7,8 @@ import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -63,6 +65,14 @@ public class EngineImpl implements Engine, PropertyHolder {
     //    private boolean reasonerDisabled;
     private Worldview worldview;
     private AtomicReference<Status> status = new AtomicReference<>(EngineStatusImpl.inop());
+    private Parameters<Setting> settings = Parameters.createSynchronized();
+
+    public EngineImpl() {
+        settings.put(Setting.POLLING, "on");
+        settings.put(Setting.POLLING_INTERVAL, 5);
+        settings.put(Setting.LOG_EVENTS, false);
+        settings.put(Setting.LAUNCH_PRODUCT, true);
+    }
 
     public UserScope getUser() {
         return !this.users.isEmpty() ? users.getFirst() : null;
@@ -216,14 +226,16 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
 
     protected UserScope authenticate() {
-        this.authData = Authentication.INSTANCE.authenticate(false);
-        var ret = createUserScope(authData);
-
-        return ret;
+        this.authData = Authentication.INSTANCE.authenticate(settings);
+        return createUserScope(authData);
     }
 
 
     private void timedTasks() {
+
+        if ("off".equals(settings.get(Engine.Setting.POLLING, String.class))) {
+            return;
+        }
 
         boolean wasAvailable = available.get();
 
@@ -238,7 +250,7 @@ public class EngineImpl implements Engine, PropertyHolder {
             var service = currentServices.get(type);
             if (service == null) {
                 service = Authentication.INSTANCE.findService(type, getUser(), authData.getFirst(),
-                        authData.getSecond(), firstCall, true);
+                        authData.getSecond(), settings);
             }
             if (service == null && serviceIsEssential(type)) {
                 ok = false;
@@ -505,4 +517,8 @@ public class EngineImpl implements Engine, PropertyHolder {
         return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
     }
 
+    @Override
+    public Map<Setting, Object> getSettings() {
+        return settings;
+    }
 }
