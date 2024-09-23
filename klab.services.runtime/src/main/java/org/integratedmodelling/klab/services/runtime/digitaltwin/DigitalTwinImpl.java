@@ -81,6 +81,9 @@ public class DigitalTwinImpl implements DigitalTwin {
     public void finalizeObservation(Observation resolved, Dataflow<Observation> dataflow,
                                     Provenance provenance) {
 
+        // TODO update stored observation with resolved flag = true; store the dataflow and
+        //  provenance where they belong in the graph.
+
     }
 
 }

@@ -3,6 +3,8 @@ package org.integratedmodelling.common.knowledge;
 import org.glassfish.tyrus.core.uri.internal.MultivaluedHashMap;
 import org.glassfish.tyrus.core.uri.internal.MultivaluedMap;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -10,12 +12,13 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 
 /**
  * A singleton that ingests {@link ResourceSet}s intelligently and keeps tabs on loaded knowledge, caching
- * documents to minimize network transfer.
+ * documents to minimize network transfer. It can be configured with callbacks to extract derived knowledge
+ * assets from documents upon loading, also handling versions.
  */
 public enum KnowledgeRepository {
 
@@ -25,28 +28,30 @@ public enum KnowledgeRepository {
      * We keep all syntactic document we encounter here, in a multimap with different versions.
      */
     MultivaluedMap<String, KlabDocument<?>> namespaceMap = new MultivaluedHashMap<>();
+    MultivaluedMap<String, Pair<Knowledge, Version>> assetMap = new MultivaluedHashMap<>();
+    Map<KlabAsset.KnowledgeClass, Function<KlabDocument<?>, Collection<Knowledge>>> processors =
+            new HashMap<>();
 
-    public <T extends KlabAsset> List<T> ingest(ResourceSet resourceSet, Scope scope, Class<T> resultClass) {
-        List<T> ret = new ArrayList<>();
-        for (var asset : ingest(resourceSet, scope)) {
-            if (resultClass.isAssignableFrom(asset.getClass())) {
-                ret.add((T)asset);
-            }
-        }
-        return ret;
+    /**
+     * @param knowledgeClass
+     * @param processor
+     * @param <T>
+     */
+    public <T extends KlabDocument<?>> void setProcessor(KlabAsset.KnowledgeClass knowledgeClass,
+                                                         Function<T, Collection<Knowledge>> processor) {
+        this.processors.put(knowledgeClass, (Function<KlabDocument<?>, Collection<Knowledge>>) processor);
     }
 
     /**
-     * Load what necessary from the passed resource set and update any index. After this has returned, the
-     * URNs requested will be available to retrieve from the {@link #resolve(String, Class)} method; if the
-     * resource set named "result" object, these are returned directly in order of reference.
+     * Load what necessary from the passed resource set and update any index. After this has returned, any
+     * results in the resource set are returned directly in order of reference. Assets that have been
      *
      * @param resourceSet
      * @param scope
      * @return any resolved knowledge items pointed to by the resourceSet {@link ResourceSet#getResults()}
      * method, or an empty list if the result list was empty or an error occurred.
      */
-    public List<KlabAsset> ingest(ResourceSet resourceSet, Scope scope) {
+    public <T extends KlabAsset> List<T> ingest(ResourceSet resourceSet, Scope scope, Class<T> resultClass) {
 
         if (resourceSet.isEmpty()) {
             return List.of();
@@ -59,8 +64,27 @@ public enum KnowledgeRepository {
             }
         }
 
-        var ret = new ArrayList<KlabAsset>();
+        var ret = new ArrayList<T>();
         for (var res : resourceSet.getResults()) {
+
+            if (assetMap.containsKey(res.getResourceUrn())) {
+                boolean found = false;
+                for (var asset : assetMap.get(res.getResourceUrn())) {
+                    //  match versions
+                    if ((res.getResourceVersion() == null && asset.getSecond() == null) ||
+                            (res.getResourceVersion() != null && asset.getSecond()
+                                    != null && asset.getSecond().compatible(res.getResourceVersion()))) {
+                        if (resultClass.isAssignableFrom(asset.getClass())) {
+                            ret.add((T) asset.getFirst());
+                            found = true;
+                        }
+                    }
+                }
+                if (found) {
+                    continue;
+                }
+            }
+
             KlabDocument<?> doc = getExistingDocumentForResource(res);
             if (doc == null) {
                 // this shouldn't happen, would mean the resource set is inconsistent, but for now no
@@ -68,19 +92,17 @@ public enum KnowledgeRepository {
                 continue;
             }
             if (doc.getUrn().equals(res.getResourceUrn()) && res.getKnowledgeClass() == KlabAsset.classify(doc)) {
-                ret.add(doc);
-                break;
+                if (resultClass.isAssignableFrom(doc.getClass())) {
+                    ret.add((T) doc);
+                    break;
+                }
             } else {
                 for (var statement : doc.getStatements()) {
-                    if (switch (statement) {
-                        case KimModel model -> model.getUrn().equals(res.getResourceUrn());
-                        case KimSymbolDefinition model -> model.getUrn().equals(res.getResourceUrn());
-                        case KimConceptStatement model -> model.getUrn().equals(res.getResourceUrn());
-                        case KimObservationStrategy model -> model.getUrn().equals(res.getResourceUrn());
-                        default -> false;
-                    }) {
-                        ret.add((KlabAsset) statement);
-                        break;
+                    if (statement instanceof KlabAsset asset && asset.getUrn().equals(res.getResourceUrn())) {
+                        if (resultClass.isAssignableFrom(statement.getClass())) {
+                            ret.add((T) statement);
+                            break;
+                        }
                     }
                 }
             }
@@ -135,6 +157,12 @@ public enum KnowledgeRepository {
         };
 
         if (doc != null) {
+            var processor = this.processors.get(resource.getKnowledgeClass());
+            if (processor != null) {
+                for (var knowledge : processor.apply(doc)) {
+                    assetMap.add(knowledge.getUrn(), Pair.of(knowledge, doc.getVersion()));
+                }
+            }
             namespaceMap.add(resource.getResourceUrn(), doc);
             return true;
         }
