@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resolver;
 
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.knowledge.ModelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
@@ -825,15 +826,14 @@ public class ResolverService extends BaseService implements Resolver {
         var prioritizer = new PrioritizerImpl(scope, scale);
 
         // FIXME use virtual threads & join() to obtain a synchronized list of ResourceSet, then
-        // use a merging strategy to get models one by one
+        //  use a merging strategy to get models one by one
         var resources = scope.getService(ResourcesService.class);
 
         ResourceSet models = resources.queryModels(observable, scope);
-        loadResourceSet(models, scope);
-        for (ResourceSet.Resource urn : models.getResults()) {
-            ret.add(this.models.get(urn.getResourceUrn()));
+        for (KimModel model : KnowledgeRepository.INSTANCE.ingest(models, scope, KimModel.class)) {
+            System.out.println("GOT A FUCKER: " + model.getUrn());
         }
-        Collections.sort(ret, prioritizer);
+        ret.sort(prioritizer);
         return ret;
     }
 

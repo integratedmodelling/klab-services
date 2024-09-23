@@ -56,7 +56,7 @@ public interface Locator {
     /**
      * Adapt the locator to another with the needed API. If the parameter is the class or the type
      * of an extent we want to selec the returned locator may only report location information for
-     * that extent. For example, geometry.as(ISpace.class) will return a locator reflecting only the
+     * that extent. For example, geometry.as(Space.class) will return a locator reflecting only the
      * spatial dimension. Such partial locators should not be used for further location.
      * 
      * @param cls

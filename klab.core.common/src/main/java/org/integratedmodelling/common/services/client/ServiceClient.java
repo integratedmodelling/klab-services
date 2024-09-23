@@ -70,6 +70,7 @@ public abstract class ServiceClient implements KlabService {
     //    protected List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
     private boolean local;
     private Parameters<Engine.Setting> settings;
+
     protected ServiceClient(KlabService.Type serviceType, Parameters<Engine.Setting> settings) {
         this.settings = settings;
         this.authentication = Authentication.INSTANCE.authenticate(settings);
@@ -89,7 +90,8 @@ public abstract class ServiceClient implements KlabService {
     }
 
     /**
-     * Constructor to use when the client is built to be used within a service, with a pre-authenticated identity.
+     * Constructor to use when the client is built to be used within a service, with a pre-authenticated
+     * identity.
      *
      * @param serviceType
      * @param identity
@@ -98,7 +100,8 @@ public abstract class ServiceClient implements KlabService {
      * @param ownerService
      */
     protected ServiceClient(KlabService.Type serviceType, URL url, Identity identity,
-                            List<ServiceReference> services, Parameters<Engine.Setting> settings, KlabService ownerService) {
+                            List<ServiceReference> services, Parameters<Engine.Setting> settings,
+                            KlabService ownerService) {
         this.settings = settings;
         this.authentication = Pair.of(identity, List.of());
         this.ownerService = ownerService;
@@ -121,7 +124,8 @@ public abstract class ServiceClient implements KlabService {
     }
 
     @SafeVarargs
-    protected ServiceClient(KlabService.Type serviceType, URL url, Identity identity, Parameters<Engine.Setting> settings,
+    protected ServiceClient(KlabService.Type serviceType, URL url, Identity identity,
+                            Parameters<Engine.Setting> settings,
                             List<ServiceReference> services, BiConsumer<Channel, Message>... listeners) {
         this.settings = settings;
         this.authentication = Pair.of(identity, services);
@@ -234,10 +238,11 @@ public abstract class ServiceClient implements KlabService {
         /**
          * Service scopes are non-messaging at service side, but if the services are local, messaging
          * happens through the user scope used for admin calls. Messages sent to the service-side user
-         * scope use
-         * service channels intercepted here, set up when the service becomes available based on capabilities.
+         * scope use service channels intercepted here, set up when the service becomes available based on
+         * capabilities. We disable all messaging passing isReceiver = false if the service client is operating
+         * within a service.
          */
-        Channel channel = local ? new MessagingChannelImpl(this.authentication.getFirst(), false, true) :
+        Channel channel = local ? new MessagingChannelImpl(this.authentication.getFirst(), false, ownerService != null) :
                           new ChannelImpl(this.authentication.getFirst());
 
         this.scope = new AbstractServiceDelegatingScope(channel) {

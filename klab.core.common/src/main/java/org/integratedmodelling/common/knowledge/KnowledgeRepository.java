@@ -26,6 +26,16 @@ public enum KnowledgeRepository {
      */
     MultivaluedMap<String, KlabDocument<?>> namespaceMap = new MultivaluedHashMap<>();
 
+    public <T extends KlabAsset> List<T> ingest(ResourceSet resourceSet, Scope scope, Class<T> resultClass) {
+        List<T> ret = new ArrayList<>();
+        for (var asset : ingest(resourceSet, scope)) {
+            if (resultClass.isAssignableFrom(asset.getClass())) {
+                ret.add((T)asset);
+            }
+        }
+        return ret;
+    }
+
     /**
      * Load what necessary from the passed resource set and update any index. After this has returned, the
      * URNs requested will be available to retrieve from the {@link #resolve(String, Class)} method; if the
