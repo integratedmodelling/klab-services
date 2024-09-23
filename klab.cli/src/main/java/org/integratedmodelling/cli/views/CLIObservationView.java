@@ -89,14 +89,15 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
 
         var resources = KlabCLI.INSTANCE.user().getService(ResourcesService.class);
         var resolvable = resources.resolve(urn, KlabCLI.INSTANCE.user());
-        var results = KnowledgeRepository.INSTANCE.ingest(resolvable, KlabCLI.INSTANCE.user());
+        var results = KnowledgeRepository.INSTANCE.ingest(resolvable, KlabCLI.INSTANCE.user(),
+                KlabAsset.class);
 
         // TODO this is only for root observations
-        if (!results.isEmpty() && results.getFirst() instanceof KlabAsset asset) {
+        if (!results.isEmpty()) {
             out.println(CommandLine.Help.Ansi.AUTO.string("Observation of @|yellow " + urn + "|@ " +
                     "started in "
-                    + asset.getUrn()));
-            KlabCLI.INSTANCE.modeler().observe(asset, addToContext);
+                    + results.getFirst().getUrn()));
+            KlabCLI.INSTANCE.modeler().observe(results.getFirst(), addToContext);
         } else {
             err.println(CommandLine.Help.Ansi.AUTO.string("Can't resolve URN @|yellow " + urn + "|@ to " +
                     "observable knowledge"));

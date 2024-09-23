@@ -258,9 +258,10 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
                 }
                 var result =
                         KnowledgeRepository.INSTANCE.ingest(
-                                scope.getService(ResourcesService.class).resolve(gridUrn, scope), scope);
-                if (result.size() == 1 && result.getFirst() instanceof KimSymbolDefinition symbolDefinition) {
-                    var gridDef = symbolDefinition.getValue();
+                                scope.getService(ResourcesService.class).resolve(gridUrn, scope), scope,
+                                KimSymbolDefinition.class);
+                if (result.size() == 1) {
+                    var gridDef = result.getFirst();
                     if (gridDef instanceof Map map) {
                         grid = new GridImpl(map);
                     }
@@ -274,7 +275,8 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
                                         "true")));
             } else if (shape != null && dimension.getShape().size() > 1 && dimension.getShape().stream().reduce(
                     1L, (a, b) -> a * b) > 1) {
-//                grid = new GridImpl(shape, dimension.getShape().get(0), dimension.getShape().get(1));
+                //                grid = new GridImpl(shape, dimension.getShape().get(0), dimension
+                //                .getShape().get(1));
             }
             if (grid != null && imposedGrid != null) {
                 grid = grid.align(imposedGrid);
