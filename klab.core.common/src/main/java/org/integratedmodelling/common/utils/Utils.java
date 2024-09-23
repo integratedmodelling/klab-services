@@ -213,6 +213,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     if (response.statusCode() == 200) {
                         parseHeaders(response);
                         return parseResponse(response.body(), resultClass);
+                    } else {
+                        var log = parseResponse(response.body(), Map.class);
+                        // TODO do something with the error response (which should be better and contain a stack trace)
                     }
 
                 } catch (Throwable e) {

@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Tile;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.io.WKBWriter;
 
 import java.util.Arrays;
 
@@ -83,4 +84,11 @@ public class TileImpl extends ShapeImpl implements Tile {
         return new TileImpl(shape, grid);
     }
 
+    @Override
+    public String encode() {
+        return "S2(" + grid.getXCells() + "," + grid.getYCells() + "){" + getEnvelope().encode()
+                + ",shape=" + WKBWriter.toHex(wkbWriter.write(geometry)) + ",proj="
+                + getProjection().getCode() + "}";
+
+    }
 }

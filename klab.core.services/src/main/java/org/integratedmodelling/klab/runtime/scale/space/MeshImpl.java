@@ -42,4 +42,10 @@ public class MeshImpl extends ShapeImpl implements Mesh {
 		ServiceCall ret = super.encodeCall();
 		// TODO have ShapeImpl return a service call with a protected method, then use that and add arguments
 		return ret.encode(language);
-	}}
+	}
+
+	@Override
+	public String encode() {
+		return "s1(" + features.size() + "){proj=" + getProjection().getCode() + "," + getEnvelope().encode() + "}";
+	}
+}

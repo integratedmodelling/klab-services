@@ -131,8 +131,8 @@ public class DimensionScanner2DImpl implements DimensionScanner2D {
     }
 
     @Override
-    public String encode(Encoding... options) {
-        return originalScale.encode(options);
+    public String encode() {
+        return originalScale.encode();
     }
 
     @Override

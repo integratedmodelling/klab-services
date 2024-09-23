@@ -191,11 +191,13 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
     public static Space create(Dimension dimension, Scope scope) {
 
         Space ret = null;
-        var resourceUrn = dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_RESOURCE_URN,
+        var resourceUrn = dimension.getParameters().get(
+                GeometryImpl.PARAMETER_SPACE_RESOURCE_URN,
                 String.class);
         var bboxDefinition = dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_BOUNDINGBOX);
-        var spatialShape = dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_SHAPE);
-        var pointDefinition = dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_LONLAT,
+        //        var spatialShape = dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_SHAPE);
+        var pointDefinition = dimension.getParameters().get(
+                GeometryImpl.PARAMETER_SPACE_LONLAT,
                 String.class);
 
         if (resourceUrn != null) {
@@ -205,12 +207,14 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
             }
             var resource = scope.getService(ResourcesService.class).resolveResource(resourceUrn, scope);
             dimension =
-                    resource.getGeometry().getDimensions().stream().filter(d -> d.getType() == Type.SPACE).findAny().get();
+                    resource.getGeometry().getDimensions().stream().filter(
+                            d -> d.getType() == Type.SPACE).findAny().get();
         }
 
         var shapeDefinition = dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_SHAPE, String.class);
         Projection projection =
-                new ProjectionImpl(dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_PROJECTION,
+                new ProjectionImpl(dimension.getParameters().get(
+                        GeometryImpl.PARAMETER_SPACE_PROJECTION,
                         "EPSG:4326"));
         Envelope envelope = null;
 
@@ -253,7 +257,8 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
                     throw new KlabUnimplementedException("cannot create grid from definition yet");
                 }
                 var result =
-                        KnowledgeRepository.INSTANCE.ingest(scope.getService(ResourcesService.class).resolve(gridUrn, scope), scope);
+                        KnowledgeRepository.INSTANCE.ingest(
+                                scope.getService(ResourcesService.class).resolve(gridUrn, scope), scope);
                 if (result.size() == 1 && result.getFirst() instanceof KimSymbolDefinition symbolDefinition) {
                     var gridDef = symbolDefinition.getValue();
                     if (gridDef instanceof Map map) {
@@ -264,11 +269,12 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
                 Quantity resolution = gridResolution instanceof Quantity quantity ? quantity :
                                       Quantity.create(gridResolution.toString());
                 grid = new GridImpl(envelope, resolution,
-                        Boolean.parseBoolean(Configuration.INSTANCE.getProperty(Configuration.KLAB_USE_IN_MEMORY_DATABASE, "true")));
-            } else if (spatialShape != null && envelope != null) {
-                // TODO
-                // only consider if no grid resolution is provided; may want more flexibility
-                //                grid = new GridImpl()
+                        Boolean.parseBoolean(
+                                Configuration.INSTANCE.getProperty(Configuration.KLAB_USE_IN_MEMORY_DATABASE,
+                                        "true")));
+            } else if (shape != null && dimension.getShape().size() > 1 && dimension.getShape().stream().reduce(
+                    1L, (a, b) -> a * b) > 1) {
+//                grid = new GridImpl(shape, dimension.getShape().get(0), dimension.getShape().get(1));
             }
             if (grid != null && imposedGrid != null) {
                 grid = grid.align(imposedGrid);

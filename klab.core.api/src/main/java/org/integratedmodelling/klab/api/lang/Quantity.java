@@ -35,6 +35,10 @@ public interface Quantity extends Serializable {
 	 */
 	String getCurrency();
 
+	static Quantity of(double value, String unit) {
+		return create(value + "." + unit);
+	}
+
 	static Quantity create(String textSpecification) {
 		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
 		if (configuration == null) {

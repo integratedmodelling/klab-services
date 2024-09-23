@@ -245,55 +245,49 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
     }
 
     public String encode() {
-//        Set<Encoding> opts = EnumSet.noneOf(Encoding.class);
-//        if (options != null) {
-//            for (Encoding e : options) {
-//                opts.add(e);
-//            }
+
+        String prefix = "T";
+        if (getTimeType() == Time.Type.LOGICAL) {
+            prefix = "\u03c4";
+        } /*else if (partial && step == null) {
+            prefix = "t";
+        }*/
+
+        String ret = prefix + getDimensionality() + "(" + size + ")";
+        String args = GeometryImpl.PARAMETER_TIME_REPRESENTATION + "=" + getTimeType();
+
+        TimeImpl target = this;
+
+//        if (this.is(Time.Type.INITIALIZATION)) {
+//            args = GeometryImpl.PARAMETER_TIME_REPRESENTATION + "=" + Time.Type.PHYSICAL;
+//            // TODO FIXME BOH
+////            if (this.size() > 1) {
+////                target = getPrevious(this);
+////            }
 //        }
-//
-//        String prefix = "T";
-//        if (getTimeType() == ITime.Type.LOGICAL) {
-//            prefix = "\u03c4";
-//        } /*else if (partial && step == null) {
-//            prefix = "t";
-//        }*/
-//
-//        String ret = prefix + getDimensionality() + "(" + size + ")";
-//        String args = GeometryImpl.PARAMETER_TIME_REPRESENTATION + "=" + getTimeType();
-//
-//        Time target = this;
-//
-//        if (this.is(Time.Type.INITIALIZATION) && opts.contains(IGeometry.Encoding.CONCRETE_TIME_INTERVALS)) {
-//            args = GeometryImpl.PARAMETER_TIME_REPRESENTATION + "=" + ITime.Type.PHYSICAL;
-//            if (this.size() > 1) {
-//                target = getPreviousExtent(this);
-//            }
-//        }
-//
-//        if (target.getStart() != null) {
-//            if (target.getEnd() != null) {
-//                args += "," + GeometryImpl.PARAMETER_TIME_PERIOD + "=[" + target.getStart().getMilliseconds() + " "
-//                        + target.end.getMilliseconds() + "]";
-//            } else {
-//                args += "," + GeometryImpl.PARAMETER_TIME_LOCATOR + "=" + target.getEnd().getMilliseconds();
-//            }
-//        }
-//        if (target.getStart() != null) {
-//            args += "," + GeometryImpl.PARAMETER_TIME_GRIDRESOLUTION + "=" + target.step.getMilliseconds();
-//        }
-//        if (target.resolution != null) {
-//            args += "," + GeometryImpl.PARAMETER_TIME_SCOPE + "=" + target.resolution.getMultiplier();
-//            args += "," + GeometryImpl.PARAMETER_TIME_SCOPE_UNIT + "=" + target.resolution.getType();
-//        }
-//        if (target.coverageResolution != null) {
-//            args += "," + GeometryImpl.PARAMETER_TIME_COVERAGE_UNIT + "=" + target.coverageResolution.getType();
-//            args += "," + GeometryImpl.PARAMETER_TIME_COVERAGE_START + "=" + target.coverageStart;
-//            args += "," + GeometryImpl.PARAMETER_TIME_COVERAGE_END + "=" + target.coverageEnd;
-//        }
-//
-//        return ret + "{" + args + "}";
-        return null;
+
+        if (target.getStart() != null) {
+            if (target.getEnd() != null) {
+                args += "," + GeometryImpl.PARAMETER_TIME_PERIOD + "=[" + target.getStart().getMilliseconds() + " "
+                        + target.end.getMilliseconds() + "]";
+            } else {
+                args += "," + GeometryImpl.PARAMETER_TIME_LOCATOR + "=" + target.getEnd().getMilliseconds();
+            }
+        }
+        if (target.step != null) {
+            args += "," + GeometryImpl.PARAMETER_TIME_GRIDRESOLUTION + "=" + target.step.getMilliseconds();
+        }
+        if (target.resolution != null) {
+            args += "," + GeometryImpl.PARAMETER_TIME_SCOPE + "=" + target.resolution.getMultiplier();
+            args += "," + GeometryImpl.PARAMETER_TIME_SCOPE_UNIT + "=" + target.resolution.getType();
+        }
+        if (target.coverageResolution != null) {
+            args += "," + GeometryImpl.PARAMETER_TIME_COVERAGE_UNIT + "=" + target.coverageResolution.getType();
+            args += "," + GeometryImpl.PARAMETER_TIME_COVERAGE_START + "=" + target.coverageStart;
+            args += "," + GeometryImpl.PARAMETER_TIME_COVERAGE_END + "=" + target.coverageEnd;
+        }
+
+        return ret + "{" + args + "}";
     }
 
     @Override
@@ -377,8 +371,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 
     @Override
     public Time.Type getTimeType() {
-        // TODO Auto-generated method stub
-        return null;
+        return extentType;
     }
 
     @Override
@@ -398,6 +391,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
         // TODO Auto-generated method stub
         return null;
     }
+
 
     @Override
     public Time earliest() {

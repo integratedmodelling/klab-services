@@ -17,4 +17,10 @@ public abstract class ExtentImpl<T extends Extent<T>> extends DimensionImpl impl
 		return this.mask;
 	}
 
+	/**
+	 * Return the encoding as a dimension suitable for a geometry string.
+	 * @return the encoded form
+	 */
+	public abstract String encode();
+
 }

@@ -49,6 +49,7 @@ public class GridImpl implements Grid {
     private double xCellSize, yCellSize;
     private long size = 1;
     private boolean squareCells;
+    private Quantity assertedResolution;
 
     public static Grid create(double resolutionInM) {
         GridImpl ret = new GridImpl(resolutionInM);
@@ -71,6 +72,7 @@ public class GridImpl implements Grid {
         ret.xCellSize = this.xCellSize;
         ret.yCellSize = this.yCellSize;
         ret.size = this.size;
+        ret.assertedResolution = this.assertedResolution;
         ret.squareCells = this.squareCells;
         ret.anchorPoints.addAll(this.anchorPoints);
         return ret;
@@ -92,6 +94,7 @@ public class GridImpl implements Grid {
      */
     public GridImpl(Shape shape, double resolutionInM, boolean makeCellsSquare) {
         this.declaredResolutionM = resolutionInM;
+        this.assertedResolution = Quantity.of(resolutionInM, "m");
         adjustEnvelope(shape.getEnvelope(), resolutionInM, makeCellsSquare);
     }
 
@@ -102,6 +105,7 @@ public class GridImpl implements Grid {
      */
     public GridImpl(Envelope envelope, double resolutionInM, boolean makeCellsSquare) {
         this.declaredResolutionM = resolutionInM;
+        this.assertedResolution = Quantity.of(resolutionInM, "m");
         adjustEnvelope(envelope, resolutionInM, makeCellsSquare);
     }
 
@@ -112,6 +116,7 @@ public class GridImpl implements Grid {
     public GridImpl(Envelope envelope, Quantity quantity, boolean makeCellsSquare) {
         var unitService = ServiceConfiguration.INSTANCE.getService(UnitService.class);
         var originalUnit = unitService.getUnit(quantity.getUnit());
+        this.assertedResolution = quantity;
         this.declaredResolutionM = unitService.meters().convert(quantity.getValue(), originalUnit).doubleValue();
         adjustEnvelope(envelope, this.declaredResolutionM, makeCellsSquare);
     }
@@ -359,5 +364,11 @@ public class GridImpl implements Grid {
         this.envelope = envelope;
     }
 
+    public Quantity getAssertedResolution() {
+        return assertedResolution;
+    }
 
+    public void setAssertedResolution(Quantity assertedResolution) {
+        this.assertedResolution = assertedResolution;
+    }
 }

@@ -48,8 +48,10 @@ public class ReasonerController {
                                                                    Principal principal) {
         if (principal instanceof EngineAuthorization authorization) {
             var contextScope =
-                    authorization.getScope(ContextScope.class).withResolutionConstraints(request.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
-            return reasoner.klabService().computeObservationStrategies(request.getObservation(),
+                    authorization.getScope(ContextScope.class).withResolutionConstraints(
+                            request.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
+            return reasoner.klabService().computeObservationStrategies(
+                    request.getObservation(),
                     contextScope);
         }
         throw new KlabInternalErrorException("Unexpected implementation of request authorization");
@@ -70,7 +72,8 @@ public class ReasonerController {
     public @ResponseBody Observable declareObservable(@RequestBody DeclarationRequest request) {
         return request.getObservableDeclaration().getPattern() == null ?
                reasoner.klabService().declareObservable(request.getObservableDeclaration()) :
-               reasoner.klabService().declareObservable(request.getObservableDeclaration(),
+               reasoner.klabService().declareObservable(
+                       request.getObservableDeclaration(),
                        request.getPatternVariables());
     }
 
@@ -78,7 +81,8 @@ public class ReasonerController {
     public @ResponseBody Concept declareConcept(@RequestBody DeclarationRequest request) {
         return request.getConceptDeclaration().isPattern() ?
                reasoner.klabService().declareConcept(request.getConceptDeclaration()) :
-               reasoner.klabService().declareConcept(request.getConceptDeclaration(),
+               reasoner.klabService().declareConcept(
+                       request.getConceptDeclaration(),
                        request.getPatternVariables());
     }
 
@@ -188,7 +192,8 @@ public class ReasonerController {
     //            context.")
     @PostMapping(ServicesAPI.REASONER.DISTANCE)
     public int assertedDistance(@RequestBody Concept[] concepts,
-                                @RequestParam(defaultValue = "false") boolean asserted) {
+                                @RequestParam(name = "asserted",
+                                              defaultValue = "false") boolean asserted) {
         return asserted
                ? reasoner.klabService().assertedDistance(concepts[0], concepts[1])
                : reasoner.klabService().semanticDistance(concepts[0], concepts[1], concepts.length == 2 ?
@@ -197,13 +202,15 @@ public class ReasonerController {
 
     @PostMapping(ServicesAPI.REASONER.ROLES)
     public @ResponseBody Collection<Concept> roles(@RequestBody Concept concept,
-                                                   @RequestParam(defaultValue = "false") boolean direct) {
+                                                   @RequestParam(name = "direct",
+                                                                 defaultValue = "false") boolean direct) {
         return direct ? reasoner.klabService().directRoles(concept) : reasoner.klabService().roles(concept);
     }
 
     @PostMapping(ServicesAPI.REASONER.HAS_ROLE)
     public boolean hasRole(@RequestBody Concept[] concept,
-                           @RequestParam(defaultValue = "false") boolean direct) {
+                           @RequestParam(name = "direct",
+                                         defaultValue = "false") boolean direct) {
         return direct ? reasoner.klabService().hasDirectRole(concept[0], concept[1]) :
                reasoner.klabService().hasRole(concept[0], concept[1]);
     }
@@ -216,7 +223,8 @@ public class ReasonerController {
     //    }
 
     @PostMapping(ServicesAPI.REASONER.INHERENT)
-    public @ResponseBody Concept inherent(@RequestBody Concept concept, @RequestParam(defaultValue = "false"
+    public @ResponseBody Concept inherent(@RequestBody Concept concept, @RequestParam(name = "direct",
+                                                                                      defaultValue = "false"
     ) boolean direct) {
         return direct ? reasoner.klabService().directInherent(concept) :
                reasoner.klabService().inherent(concept);
@@ -224,40 +232,42 @@ public class ReasonerController {
 
     @PostMapping(ServicesAPI.REASONER.GOAL)
     public @ResponseBody Concept goal(@RequestBody Concept concept,
-                                      @RequestParam(defaultValue = "false") boolean direct) {
+                                      @RequestParam(name = "direct",
+                                                    defaultValue = "false") boolean direct) {
         return direct ? reasoner.klabService().directGoal(concept) : reasoner.klabService().goal(concept);
     }
 
     @PostMapping(ServicesAPI.REASONER.COOCCURRENT)
-    public @ResponseBody Concept cooccurrent(@RequestBody Concept concept, @RequestParam(defaultValue =
-            "false") boolean direct) {
+    public @ResponseBody Concept cooccurrent(@RequestBody Concept concept, @RequestParam(name = "direct",
+                                                                                         defaultValue =
+                                                                                                 "false") boolean direct) {
         return direct ? reasoner.klabService().directCooccurrent(concept) :
                reasoner.klabService().cooccurrent(concept);
     }
 
     @PostMapping(ServicesAPI.REASONER.CAUSANT)
     public Concept causant(@RequestBody Concept concept,
-                           @RequestParam(defaultValue = "false") boolean direct) {
+                           @RequestParam(name="direct", defaultValue = "false") boolean direct) {
         return direct ? reasoner.klabService().directCausant(concept) :
                reasoner.klabService().causant(concept);
     }
 
     @PostMapping(ServicesAPI.REASONER.CAUSED)
     public Concept caused(@RequestBody Concept concept,
-                          @RequestParam(defaultValue = "false") boolean direct) {
+                          @RequestParam(name="direct", defaultValue = "false") boolean direct) {
         return direct ? reasoner.klabService().directCaused(concept) : reasoner.klabService().caused(concept);
     }
 
     @PostMapping(ServicesAPI.REASONER.ADJACENT)
     public Concept adjacent(@RequestBody Concept concept,
-                            @RequestParam(defaultValue = "false") boolean direct) {
+                            @RequestParam(name="direct", defaultValue = "false") boolean direct) {
         return direct ? reasoner.klabService().directAdjacent(concept) :
                reasoner.klabService().adjacent(concept);
     }
 
     @PostMapping(ServicesAPI.REASONER.COMPRESENT)
     public Concept compresent(@RequestBody Concept concept,
-                              @RequestParam(defaultValue = "false") boolean direct) {
+                              @RequestParam(name="direct", defaultValue = "false") boolean direct) {
         return direct ? reasoner.klabService().directCompresent(concept) :
                reasoner.klabService().compresent(concept);
     }
@@ -312,7 +322,7 @@ public class ReasonerController {
 
     @PostMapping(ServicesAPI.REASONER.HAS_TRAIT)
     public boolean hasTrait(Semantics type, Concept trait,
-                            @RequestParam(defaultValue = "false") boolean direct) {
+                            @RequestParam(name="direct", defaultValue = "false") boolean direct) {
         return direct ? reasoner.klabService().hasDirectTrait(type, trait) :
                reasoner.klabService().hasTrait(type, trait);
     }
@@ -335,7 +345,7 @@ public class ReasonerController {
     }
 
     @PostMapping(ServicesAPI.REASONER.SEMANTIC_TYPE)
-    public SemanticType observableType(@RequestBody Concept observable, @RequestParam(defaultValue = "false"
+    public SemanticType observableType(@RequestBody Concept observable, @RequestParam(name="acceptTraits", defaultValue = "false"
     ) boolean acceptTraits) {
         return reasoner.klabService().observableType(observable, acceptTraits);
     }
@@ -442,7 +452,7 @@ public class ReasonerController {
 
     @PostMapping(ServicesAPI.REASONER.IMPLIED_ROLES)
     public @ResponseBody Collection<Concept> impliedRoles(@RequestBody Concept role,
-                                                          @RequestParam(defaultValue = "false") boolean includeRelationshipEndpoints) {
+                                                          @RequestParam(name="includeRelationshipEndpoints", defaultValue = "false") boolean includeRelationshipEndpoints) {
         return reasoner.klabService().impliedRoles(role, includeRelationshipEndpoints);
     }
 

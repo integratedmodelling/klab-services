@@ -500,7 +500,7 @@ public class GeometryImpl implements Geometry {
      *
      * @return the string representation for the geometry
      */
-    public String encode(Encoding... options) {
+    public String encode() {
 
         if (isEmpty()) {
             return "X";
@@ -681,7 +681,7 @@ public class GeometryImpl implements Geometry {
         }
 
         @Override
-        public String encode(Encoding... options) {
+        public String encode() {
             return encodeDimension(this);
         }
 

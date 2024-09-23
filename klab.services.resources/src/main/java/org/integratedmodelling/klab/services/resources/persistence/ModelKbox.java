@@ -116,7 +116,8 @@ public class ModelKbox extends ObservableKbox {
                     String ret =
                             "INSERT INTO model VALUES (" + primaryKey + ", " + "'" + cn(model.getServerId()) +
                                     "', " + "'"
-                                    + cn(model.getName()) + "', " + "'" + cn(model.getName()) + "', " + "'" + cn(model.getNamespaceId())
+                                    + cn(model.getName()) + "', " + "'" + cn(
+                                    model.getName()) + "', " + "'" + cn(model.getNamespaceId())
                                     + "', " + "'" + cn(model.getProjectId()) + "', " + tid + ", "
                                     + /* observation concept is obsolete oid
                              */ 0 + ", '" + (model.getScope().name()) + "', "
@@ -131,14 +132,17 @@ public class ModelKbox extends ObservableKbox {
                                     + (model.isTemporal() ? "TRUE" : "FALSE") + ", " + model.getTimeMultiplicity() + ", "
                                     + model.getSpaceMultiplicity() + ", " + model.getScaleMultiplicity() +
                                     ", " + "'"
-                                    + cn(model.getDereifyingAttribute()) + "', " + model.getMinSpatialScaleFactor() + ", "
+                                    + cn(
+                                    model.getDereifyingAttribute()) + "', " + model.getMinSpatialScaleFactor() + ", "
                                     + model.getMaxSpatialScaleFactor() + ", " + model.getMinTimeScaleFactor() + ", "
                                     + model.getMaxTimeScaleFactor() + ", " + "'"
                                     + (model.getShape() == null
                                        ? "GEOMETRYCOLLECTION EMPTY"
                                        :
-                                       ShapeImpl.promote(model.getShape()).getStandardizedGeometry().toString())
-                                    + "', '" + model.getObservationType() + "', '" + cn(model.getEnumeratedSpaceDomain()) +
+                                       ShapeImpl.promote(
+                                               model.getShape()).getStandardizedGeometry().toString())
+                                    + "', '" + model.getObservationType() + "', '" + cn(
+                                    model.getEnumeratedSpaceDomain()) +
                                     "', '"
                                     + cn(model.getEnumeratedSpaceLocation()) + "', "
                                     + (model.isSpecializedObservable() ? "TRUE" : "FALSE") + ");";
@@ -231,21 +235,21 @@ public class ModelKbox extends ObservableKbox {
         for (long l : oids) {
             ModelReference model = retrieveModel(l, context);
             if (model != null) {
-                if (model.getPermissions().checkAuthorization(context)) {
-                    Coverage coverage = resourceService.modelGeometry(model.getName());
-                    if (coverage != null && !coverage.checkConstraints(scale)) {
-                        resourceService.serviceScope().debug("model " + model.getName() + " of " + observable
-                                + " discarded because of coverage constraints mismatch");
-                        continue;
-                    }
-                    ret.add(model);
+                Coverage coverage = resourceService.modelGeometry(model.getName());
+                if (coverage != null && !coverage.checkConstraints(scale)) {
+                    resourceService.serviceScope().debug("model " + model.getName() + " of " + observable
+                            + " discarded because of coverage constraints mismatch");
+                    continue;
                 }
+                ret.add(model);
             }
         }
 
-        resourceService.serviceScope().info("model query for " + observable.getDescriptionType().name().toLowerCase() + " of "
-                + observable + " found " + (ret.size() == 1 ? ret.get(0).getName() : (ret.size() + " models"
-        )));
+        resourceService.serviceScope().info(
+                "model query for " + observable.getDescriptionType().name().toLowerCase() + " of "
+                        + observable + " found " + (ret.size() == 1 ? ret.get(
+                        0).getName() : (ret.size() + " models"
+                                                    )));
 
         return ret;
     }
@@ -301,7 +305,8 @@ public class ModelKbox extends ObservableKbox {
 
         String ret = "";
         String projectId = null;
-        String namespaceId = context.getConstraint(ResolutionConstraint.Type.ResolutionNamespace,
+        String namespaceId = context.getConstraint(
+                ResolutionConstraint.Type.ResolutionNamespace,
                 DUMMY_NAMESPACE_ID);
         if (!namespaceId.equals(DUMMY_NAMESPACE_ID)) {
             ret += "(model.namespaceid = '" + namespaceId + "')";
@@ -311,7 +316,8 @@ public class ModelKbox extends ObservableKbox {
         ret += (ret.isEmpty() ? "" : " OR ") + "((NOT model.scope = 'NAMESPACE') AND (NOT model.inscenario))";
 
         if (!context.getConstraints(ResolutionConstraint.Type.Scenarios, String.class).isEmpty()) {
-            ret += " OR (" + joinStringConditions("model.namespaceid",
+            ret += " OR (" + joinStringConditions(
+                    "model.namespaceid",
                     context.getConstraints(ResolutionConstraint.Type.Scenarios, String.class),
                     "OR") + ")";
         }
@@ -565,7 +571,8 @@ public class ModelKbox extends ObservableKbox {
         initialize(monitor);
         int n = 0;
         for (long oid : database
-                .queryIds("SELECT oid FROM model where namespaceid = '" + Utils.Escape.forSQL(namespaceId) + "';")) {
+                .queryIds("SELECT oid FROM model where namespaceid = '" + Utils.Escape.forSQL(
+                        namespaceId) + "';")) {
             deleteObjectWithId(oid, monitor);
             n++;
         }
@@ -659,7 +666,8 @@ public class ModelKbox extends ObservableKbox {
                 Concept type = observable.getSemantics();
                 if (isInstantiator) {
                     Concept context = scope.getService(Reasoner.class).inherent(type);
-                    if (context == null || !scope.getService(Reasoner.class).subsumes(context,
+                    if (context == null || !scope.getService(Reasoner.class).subsumes(
+                            context,
                             mainObservable.getSemantics())) {
                         type = observable.builder(monitor).of(mainObservable.getSemantics()).buildConcept();
                     }
@@ -801,17 +809,23 @@ public class ModelKbox extends ObservableKbox {
                 m.setInScenario(namespace.isScenario());
                 m.setReification(isInstantiator);
                 m.setResolved(model.getDependencies().isEmpty());
-                m.setHasDirectData(m.isResolved() && model.getObservables().get(0).getSemantics().is(SemanticType.QUALITY));
+                m.setHasDirectData(m.isResolved() && model.getObservables().get(0).getSemantics().is(
+                        SemanticType.QUALITY));
                 m.setHasDirectObjects(
-                        m.isResolved() && model.getObservables().get(0).getSemantics().is(SemanticType.DIRECT_OBSERVABLE));
+                        m.isResolved() && model.getObservables().get(0).getSemantics().is(
+                                SemanticType.DIRECT_OBSERVABLE));
 
-                m.setMinSpatialScaleFactor(model.getMetadata().get(Metadata.IM_MIN_SPATIAL_SCALE,
+                m.setMinSpatialScaleFactor(model.getMetadata().get(
+                        Metadata.IM_MIN_SPATIAL_SCALE,
                         Space.MIN_SCALE_RANK));
-                m.setMaxSpatialScaleFactor(model.getMetadata().get(Metadata.IM_MAX_SPATIAL_SCALE,
+                m.setMaxSpatialScaleFactor(model.getMetadata().get(
+                        Metadata.IM_MAX_SPATIAL_SCALE,
                         Space.MAX_SCALE_RANK));
-                m.setMinTimeScaleFactor(model.getMetadata().get(Metadata.IM_MIN_TEMPORAL_SCALE,
+                m.setMinTimeScaleFactor(model.getMetadata().get(
+                        Metadata.IM_MIN_TEMPORAL_SCALE,
                         Time.MIN_SCALE_RANK));
-                m.setMaxTimeScaleFactor(model.getMetadata().get(Metadata.IM_MAX_TEMPORAL_SCALE,
+                m.setMaxTimeScaleFactor(model.getMetadata().get(
+                        Metadata.IM_MAX_TEMPORAL_SCALE,
                         Time.MAX_SCALE_RANK));
 
                 m.setPrimaryObservable(first);
@@ -864,7 +878,8 @@ public class ModelKbox extends ObservableKbox {
             Concept specialized = scope.getService(Reasoner.class).directInherent(main.getSemantics());
             Concept oobsContext = scope.getService(Reasoner.class).inherent(oobs);
             if (specialized != null
-                    && (oobsContext == null || !scope.getService(Reasoner.class).subsumes(oobsContext,
+                    && (oobsContext == null || !scope.getService(Reasoner.class).subsumes(
+                    oobsContext,
                     specialized))) {
                 oobs = oobs.builder(monitor).of(specialized).build();
             }

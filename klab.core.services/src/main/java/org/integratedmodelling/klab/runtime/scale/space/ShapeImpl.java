@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
-import org.integratedmodelling.klab.api.geometry.Geometry.Encoding;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
@@ -41,9 +40,9 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     private static final long serialVersionUID = 5154895981013940462L;
 
-    private Geometry geometry;
+    protected Geometry geometry;
     transient private Geometry standardizedGeometry;
-    private static WKBWriter wkbWriter = new WKBWriter();
+    protected static WKBWriter wkbWriter = new WKBWriter();
 
     private EnvelopeImpl envelope;
     private Shape.Type geometryType = null;
@@ -53,9 +52,11 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     private boolean simplified = false;
 
     private ShapeImpl() {
+        setShape(List.of(1L));
     }
 
     public ShapeImpl(Geometry geometry, Projection projection) {
+        setShape(List.of(1L));
         this.geometry = geometry;
         this.projection = ProjectionImpl.promote(projection);
         this.envelope = EnvelopeImpl.create(geometry.getEnvelopeInternal(), this.projection);
@@ -166,15 +167,17 @@ public class ShapeImpl extends SpaceImpl implements Shape {
             return create(geometries.iterator().next(), projection);
         }
 
-        return create(SpaceImpl.gFactory.createGeometryCollection(geometries.toArray(new Geometry[0])),
+        return create(
+                SpaceImpl.gFactory.createGeometryCollection(geometries.toArray(new Geometry[0])),
                 projection);
     }
 
     public static Geometry makeCell(double x1, double y1, double x2, double y2) {
 
-        Coordinate[] pts = {new Coordinate(x1, y1), new Coordinate(x2, y1), new Coordinate(x2, y2), new Coordinate(x1
+        Coordinate[] pts = {new Coordinate(x1, y1), new Coordinate(x2, y1), new Coordinate(
+                x2, y2), new Coordinate(x1
                 , y2),
-                new Coordinate(x1, y1)};
+                            new Coordinate(x1, y1)};
 
         return SpaceImpl.gFactory.createPolygon(SpaceImpl.gFactory.createLinearRing(pts), null);
     }
@@ -238,9 +241,10 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     @Override
     public double getArea(Unit unit) {
-        return unit.convert(getMeteredShape().getArea(),
-                        ServiceConfiguration.INSTANCE.getService(UnitService.class).squareMeters())
-                .doubleValue();
+        return unit.convert(
+                           getMeteredShape().getArea(),
+                           ServiceConfiguration.INSTANCE.getService(UnitService.class).squareMeters())
+                   .doubleValue();
     }
 
     public Shape getCentroid() {
@@ -265,8 +269,10 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         Geometry g = null;
 
         try {
-            g = JTS.transform(geometry,
-                    CRS.findMathTransform(ProjectionImpl.promote(projection).getCoordinateReferenceSystem(),
+            g = JTS.transform(
+                    geometry,
+                    CRS.findMathTransform(
+                            ProjectionImpl.promote(projection).getCoordinateReferenceSystem(),
                             ProjectionImpl.promote(otherProjection).getCoordinateReferenceSystem()));
         } catch (Exception e) {
             throw new KlabValidationException(e);
@@ -282,7 +288,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     @Override
     public Shape intersection(Shape other) {
-        if ((projection != null || other.getProjection() != null) && !projection.equals(other.getProjection())) {
+        if ((projection != null || other.getProjection() != null) && !projection.equals(
+                other.getProjection())) {
             try {
                 other = other.transform(projection);
             } catch (KlabValidationException e) {
@@ -302,7 +309,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     @Override
     public Shape union(Shape other) {
-        if ((projection != null || other.getProjection() != null) && !projection.equals(other.getProjection())) {
+        if ((projection != null || other.getProjection() != null) && !projection.equals(
+                other.getProjection())) {
             try {
                 other = other.transform(projection);
             } catch (KlabValidationException e) {
@@ -315,8 +323,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     public boolean containsCoordinates(double x, double y) {
         checkPreparedShape();
         return preparedShape == null
-                ? geometry.contains(SpaceImpl.gFactory.createPoint(new Coordinate(x, y)))
-                : preparedShape.contains(SpaceImpl.gFactory.createPoint(new Coordinate(x, y)));
+               ? geometry.contains(SpaceImpl.gFactory.createPoint(new Coordinate(x, y)))
+               : preparedShape.contains(SpaceImpl.gFactory.createPoint(new Coordinate(x, y)));
     }
 
     private void checkPreparedShape() {
@@ -374,7 +382,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
                 geometry = new WKBReader().read(WKBReader.hexToBytes(s));
             }
         } catch (ParseException e) {
-            throw new KlabValidationException("error parsing " + (wkt ? "WKT" : "WBT") + ": " + e.getMessage());
+            throw new KlabValidationException(
+                    "error parsing " + (wkt ? "WKT" : "WBT") + ": " + e.getMessage());
         }
 
         this.projection = new ProjectionImpl(pcode);
@@ -478,7 +487,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     }
 
     public ReferencedEnvelope getJTSEnvelope() {
-        return new ReferencedEnvelope(geometry.getEnvelopeInternal(), projection.getCoordinateReferenceSystem());
+        return new ReferencedEnvelope(
+                geometry.getEnvelopeInternal(), projection.getCoordinateReferenceSystem());
     }
 
     // @Override
@@ -580,7 +590,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     }
 
     @Override
-    public String encode(Encoding... options) {
+    public String encode() {
         return "s2(1,1){shape=" + promote(this).getWKB() + "," + getEnvelope().encode() + ",proj="
                 + ProjectionImpl.promote(getProjection()).getCode() + "}";
     }
@@ -768,8 +778,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     }
 
     /**
-     * If the number of coordinates is higher than a passed threshold, simplify to the distance that retains the max
-     * number of subdivisions along the diagonal of the envelope.
+     * If the number of coordinates is higher than a passed threshold, simplify to the distance that retains
+     * the max number of subdivisions along the diagonal of the envelope.
      *
      * @param maxCoordinates
      * @param nDivisions
@@ -777,7 +787,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
      */
     public Shape simplifyIfNecessary(int maxCoordinates, int nDivisions) {
         if (geometry.getNumPoints() > maxCoordinates) {
-            double distance = Math.sqrt(Math.pow(getEnvelope().getWidth(), 2) + Math.pow(getEnvelope().getHeight(), 2))
+            double distance = Math.sqrt(
+                    Math.pow(getEnvelope().getWidth(), 2) + Math.pow(getEnvelope().getHeight(), 2))
                     / (double) nDivisions;
             return getSimplified(distance);
         }
@@ -785,8 +796,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     }
 
     /**
-     * Join the passed shapes into another shape of the passed type, optionally including or excluding the shapes
-     * themselves.
+     * Join the passed shapes into another shape of the passed type, optionally including or excluding the
+     * shapes themselves.
      * <p>
      * Assumes both shapes have the same projection.
      *
@@ -816,7 +827,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
                 merged = hull.getConvexHull().buffer(0);
                 break;
             default:
-                throw new IllegalArgumentException("cannot join two shapes into a " + type.name().toLowerCase());
+                throw new IllegalArgumentException(
+                        "cannot join two shapes into a " + type.name().toLowerCase());
         }
 
         if (merged != null && !includeSources) {
@@ -879,12 +891,16 @@ public class ShapeImpl extends SpaceImpl implements Shape {
             return (Extent<T>) copy();
         }
         if (how == LogicalConnector.UNION) {
-            return (Extent<T>) create(geometry.union(promote(shape.transform(this.projection)).getJTSGeometry()), this.projection);
+            return (Extent<T>) create(
+                    geometry.union(promote(shape.transform(this.projection)).getJTSGeometry()),
+                    this.projection);
         } else if (how == LogicalConnector.INTERSECTION) {
-            return (Extent<T>) create(geometry.intersection(promote(shape.transform(this.projection)).getJTSGeometry()),
+            return (Extent<T>) create(
+                    geometry.intersection(promote(shape.transform(this.projection)).getJTSGeometry()),
                     this.projection);
         } else if (how == LogicalConnector.EXCLUSION) {
-            return (Extent<T>) create(geometry.difference(promote(shape.transform(this.projection)).getJTSGeometry()),
+            return (Extent<T>) create(
+                    geometry.difference(promote(shape.transform(this.projection)).getJTSGeometry()),
                     this.projection);
         }
         throw new IllegalArgumentException("cannot merge a shape with " + other);
@@ -1043,6 +1059,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     public Unit getDimensionUnit() {
         return ServiceConfiguration.INSTANCE.getService(UnitService.class).squareMeters();
     }
+
     @Override
     public boolean matches(Collection<Constraint> constraints) {
         // TODO Auto-generated method stub
@@ -1067,7 +1084,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     @Override
     public boolean intersects(Space o) {
-        return geometry.intersects(promote(o.getGeometricShape().transform(this.projection)).getJTSGeometry());
+        return geometry.intersects(
+                promote(o.getGeometricShape().transform(this.projection)).getJTSGeometry());
     }
 
     @Override
@@ -1085,4 +1103,5 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     public String encode(String language) {
         return encodeCall().encode(language);
     }
+
 }

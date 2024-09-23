@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
-import org.integratedmodelling.klab.api.geometry.Geometry.Encoding;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
@@ -268,7 +267,7 @@ public class TimePeriodImpl implements TimePeriod {
 	}
 
 	@Override
-	public String encode(Encoding... options) {
+	public String encode() {
 		// TODO Auto-generated method stub
 		return null;
 	}

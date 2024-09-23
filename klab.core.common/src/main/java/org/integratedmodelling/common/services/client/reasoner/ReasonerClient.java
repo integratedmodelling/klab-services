@@ -164,7 +164,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     @Override
     public int semanticDistance(Semantics target, Semantics other, Semantics context) {
         return client.post(ServicesAPI.REASONER.DISTANCE, Lists.newArrayList(target.asConcept(),
-                other.asConcept(), context.asConcept()), Integer.class);
+                other.asConcept(), context == null ? null : context.asConcept()), Integer.class);
     }
 
     @Override

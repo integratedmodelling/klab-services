@@ -245,7 +245,7 @@ public class ScaleImpl implements Scale {
         } else if (DimensionScanner1D.class.isAssignableFrom(cls)) {
             return (T) new DimensionScanner1DImpl(this);
         } else if (Geometry.class.equals(cls)) {
-            return null; // TODO
+            return (T) Geometry.create(encode());
         } else if (Coverage.class.equals(cls)) {
             return (T) new CoverageImpl(this, 1.0);
         }
@@ -258,8 +258,13 @@ public class ScaleImpl implements Scale {
     }
 
     @Override
-    public String encode(Encoding... options) {
-        return as(Geometry.class).encode(options);
+    public String encode() {
+        StringBuilder ret = new StringBuilder();
+        for (Extent<?> extent : extents) {
+            if (extent instanceof ExtentImpl<?> extentImpl)
+            ret.append(extentImpl.encode());
+        }
+        return ret.toString();
     }
 
     @Override
@@ -502,8 +507,8 @@ public class ScaleImpl implements Scale {
         private static final long serialVersionUID = -8416028789360949571L;
 
         @Override
-        public String encode(Encoding... options) {
-            return ScaleImpl.this.encode(options);
+        public String encode() {
+            return ScaleImpl.this.encode();
         }
 
         public Scale with(Extent dimension) {

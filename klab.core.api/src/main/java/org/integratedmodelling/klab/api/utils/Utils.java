@@ -3976,7 +3976,6 @@ public class Utils {
         @SuppressWarnings({"unchecked", "rawtypes"})
         public static <T> T asType(Object ret, Class<?> cls) {
 
-
             if (cls.isAssignableFrom(ret.getClass())) {
                 return (T) ret;
             }
@@ -3989,7 +3988,11 @@ public class Utils {
                 }
             }
 
-            if (cls.isArray() && ret.getClass().isArray()) {
+            if (cls.isArray() && (ret.getClass().isArray() || Collection.class.isAssignableFrom(ret.getClass()))) {
+
+                if (Collection.class.isAssignableFrom(ret.getClass())) {
+                    ret = ((Collection)ret).toArray();
+                }
 
                 int length = Array.getLength(ret);
 

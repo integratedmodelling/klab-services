@@ -88,20 +88,6 @@ public interface Geometry extends Serializable, Locator {
     }
 
     /**
-     * Options for encoding to string.
-     *
-     * @author Ferd
-     */
-    public enum Encoding {
-        SKIP_GRID_SHAPE, /*
-         * if passed, time intervals will be encoded, including the "previous" time
-         * (according to resolution) if time is initialization of a time grid; no
-         * INITIALIZATION type will be compiled in the interval.
-         */
-        CONCRETE_TIME_INTERVALS
-    }
-
-    /**
      * Constant for non-dimensional (referenced but not distributed) return value of
      * {@link Dimension#getDimensionality()}.
      */
@@ -247,7 +233,7 @@ public interface Geometry extends Serializable, Locator {
          *
          * @return
          */
-        String encode(Encoding... options);
+        String encode();
 
         /**
          * Returns whether size > 1, dimension is regular, or any other parameter have been defined that make this
@@ -271,7 +257,7 @@ public interface Geometry extends Serializable, Locator {
      *
      * @return the encoded geometry
      */
-    String encode(Encoding... options);
+    String encode();
 
     /**
      * Generic means 'not completely defined', i.e. not usable for contextualization. This corresponds to the Greek
