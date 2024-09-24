@@ -71,8 +71,11 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
                     .build();
 
             this.graphDb = managementService.database(DEFAULT_DATABASE_NAME);
-            this.sessionFactory = new SessionFactory(new Configuration.Builder()
-                    .uri("neo4j://localhost:7687").build(), this.getClass().getPackageName());
+            this.sessionFactory = new SessionFactory(
+                    new Configuration.Builder()
+                                .encryptionLevel("DISABLED")
+                                .uri("bolt://localhost:7687").build(),
+                    this.getClass().getPackageName());
 
             Logging.INSTANCE.info("Embedded Neo4J database initialized");
 

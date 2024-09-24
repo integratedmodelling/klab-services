@@ -26,7 +26,8 @@ import java.util.Set;
 public interface DigitalTwin {
 
     /**
-     * The type of relationships in the graph. All relationship carry further information
+     * The type of relationships in the graph. All relationship carry further information, to be
+     * fully defined.
      */
     enum Relationship {
         Parent,
@@ -78,6 +79,8 @@ public interface DigitalTwin {
      * <p>
      * Submitting a resolved observation that does not belong or unresolved related will throw a
      * {@link org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException}.
+     * <p>
+     * TODO this must become an operation with a data packet that carries all the info to update provenance and everything else.
      *
      * @param observation  cannot be null, must be unresolved if the relationship is parent or null
      * @param related      may be null but if not, must be already submitted to the DT
@@ -179,7 +182,8 @@ public interface DigitalTwin {
                                         var year = timeDefinition.get("year");
                                         if (year instanceof Number number) {
                                             timeBuilder.year(number.intValue());
-                                        } else if (year instanceof Identifier identifier && "default".equals(identifier.getValue())) {
+                                        } else if (year instanceof Identifier identifier && "default".equals(
+                                                identifier.getValue())) {
                                             timeBuilder.year(TimeInstant.create().getYear());
                                         }
                                     }
