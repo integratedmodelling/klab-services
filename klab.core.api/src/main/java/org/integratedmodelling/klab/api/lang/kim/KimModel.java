@@ -9,14 +9,14 @@ import java.util.List;
 
 public interface KimModel extends KlabStatement, Resolvable {
 
-    /**
-     * Name for a model is taken from the primary observable. If that is named, the name of the observable
-     * becomes that of a model. Otherwise it should extract a sensible name and append -resolver or
-     * -instantiator.
-     *
-     * @return
-     */
-    String getName();
+//    /**
+//     * Name for a model is taken from the primary observable. If that is named, the name of the observable
+//     * becomes that of a model. Otherwise it should extract a sensible name and append -resolver or
+//     * -instantiator.
+//     *
+//     * @return
+//     */
+//    String getName();
 
     List<KimObservable> getDependencies();
 

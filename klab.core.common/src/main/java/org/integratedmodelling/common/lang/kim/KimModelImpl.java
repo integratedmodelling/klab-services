@@ -27,7 +27,7 @@ public class KimModelImpl extends KimStatementImpl implements KimModel {
     private String projectName;
     private boolean inactive;
     private Geometry coverage;
-    private String name;
+//    private String name;
 
     @Override
     public boolean isInactive() {
@@ -128,14 +128,14 @@ public class KimModelImpl extends KimStatementImpl implements KimModel {
         this.coverage = coverage;
     }
 
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
+//    @Override
+//    public String getName() {
+//        return name;
+//    }
+//
+//    public void setName(String name) {
+//        this.name = name;
+//    }
 
     @Override
     public void visit(Visitor visitor) {

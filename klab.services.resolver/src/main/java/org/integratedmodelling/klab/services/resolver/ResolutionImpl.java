@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -23,12 +24,15 @@ import java.text.NumberFormat;
 import java.util.*;
 
 /**
- * The resolution is the result of {@link Resolver#resolve(String, ContextScope)}. It contains the resolution
- * strategy for the top-level observable, resolved by zero or more models that are connected to all their
- * dependencies in a graph. In the graph, each link reports the portion of the context covered by the incoming
- * model (possibly partial), the dependency observable resolved, and the type of resolution (direct or
- * deferred to further observation with later merging). Deferred resolutions will need further resolution
- * after the dataflow has created the deferring observations.
+ * The resolution is the result of {@link Resolver#resolve(Observation, ContextScope)}. It contains the
+ * resolution strategy for the top-level observable, resolved by zero or more models that are connected to the
+ * resolution of all their dependencies in a graph. In the graph, each link reports the portion of the context
+ * covered by the incoming model (possibly partial), the dependency observable resolved, and the type of
+ * resolution: direct, i.e. final after computation, or deferring to further observations to be made in the
+ * context of the observation(s) resulting from the computation, which must be made later and may fail.
+ * Deferred resolution is invoked by the runtime on the same resolver, which will add nodes to the same
+ * resolution graph, and the observation task finalizes only after all deferred resolutions have completed
+ * successfully.
  *
  * @author Ferd
  */
@@ -84,7 +88,9 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
         }
 
         public String toString() {
-            return observable + "\n" + org.integratedmodelling.common.utils.Utils.Strings.capitalize(this.type.name().toLowerCase()) + " (" + NumberFormat.getPercentInstance().format(coverage.getCoverage()) + ")";
+            return observable + "\n" + org.integratedmodelling.common.utils.Utils.Strings.capitalize(
+                    this.type.name().toLowerCase()) + " (" + NumberFormat.getPercentInstance().format(
+                    coverage.getCoverage()) + ")";
         }
     }
 
@@ -187,7 +193,8 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
     public String toString() {
         StringBuffer ret = new StringBuffer(512);
         for (Pair<Resolvable, Coverage> resolved : resolution) {
-            ret.append(resolved.getFirst() + " [" + NumberFormat.getPercentInstance().format(resolved.getSecond().getCoverage()) + "]\n");
+            ret.append(resolved.getFirst() + " [" + NumberFormat.getPercentInstance().format(
+                    resolved.getSecond().getCoverage()) + "]\n");
             ret.append(printResolution(resolved.getFirst(), 3));
         }
         return ret.toString();
@@ -197,7 +204,10 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
         StringBuffer ret = new StringBuffer(512);
         for (ResolutionType type : ResolutionType.values()) {
             for (Triple<Resolvable, Resolvable, Coverage> resolved : getResolving(first, type)) {
-                ret.append(org.integratedmodelling.common.utils.Utils.Strings.spaces(i) + resolved.getFirst() + " [" + resolved.getSecond() + ": " + Utils.Strings.capitalize(type.name().toLowerCase()) + ", " + NumberFormat.getPercentInstance().format(resolved.getThird().getCoverage()) + "]\n");
+                ret.append(org.integratedmodelling.common.utils.Utils.Strings.spaces(
+                        i) + resolved.getFirst() + " [" + resolved.getSecond() + ": " + Utils.Strings.capitalize(
+                        type.name().toLowerCase()) + ", " + NumberFormat.getPercentInstance().format(
+                        resolved.getThird().getCoverage()) + "]\n");
                 String child = printResolution(resolved.getFirst(), i + 3);
                 if (!child.isBlank()) {
                     ret.append(child);

@@ -7,6 +7,8 @@ package org.integratedmodelling.klab.data.histogram;
 
 import org.json.simple.JSONArray;
 
+import java.util.Objects;
+
 public class Gap<T extends Target<T>> implements Comparable<Gap<T>> {
 
   public Gap(Bin<T> startBin, Bin<T> endBin, double weight) {
@@ -63,16 +65,13 @@ public class Gap<T extends Target<T>> implements Comparable<Gap<T>> {
     if (Double.doubleToLongBits(this._weight) != Double.doubleToLongBits(other._weight)) {
       return false;
     }
-    if (this._startBin != other._startBin && (this._startBin == null || !this._startBin.equals(other._startBin))) {
-      return false;
-    }
-    return true;
+    return Objects.equals(this._startBin, other._startBin);
   }
 
   @Override
   public int hashCode() {
     int hash = 7;
-    hash = 23 * hash + (int) (Double.doubleToLongBits(this._weight) ^ (Double.doubleToLongBits(this._weight) >>> 32));
+    hash = 23 * hash + Long.hashCode(Double.doubleToLongBits(this._weight));
     hash = 23 * hash + (this._startBin != null ? this._startBin.hashCode() : 0);
     return hash;
   }

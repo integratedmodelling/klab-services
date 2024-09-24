@@ -291,7 +291,7 @@ public enum LanguageAdapter {
         ret.setDeprecated(model.getDeprecation() != null);
         ret.setDeprecation(model.getDeprecation());
         ret.setUrn(namespace.getUrn() + "." + model.getName());
-        ret.setName(model.getName());
+//        ret.setName(model.getName());
         ret.setOffsetInDocument(model.getCodeOffset());
         ret.setLength(model.getCodeLength());
         ret.setProjectName(namespace.getProjectName());

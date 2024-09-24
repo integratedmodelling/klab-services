@@ -74,7 +74,7 @@ public enum KnowledgeRepository {
                     if ((res.getResourceVersion() == null && asset.getSecond() == null) ||
                             (res.getResourceVersion() != null && asset.getSecond()
                                     != null && asset.getSecond().compatible(res.getResourceVersion()))) {
-                        if (resultClass.isAssignableFrom(asset.getClass())) {
+                        if (resultClass.isAssignableFrom(asset.getFirst().getClass())) {
                             ret.add((T) asset.getFirst());
                             found = true;
                         }

@@ -32,12 +32,12 @@ public class TreeBinReservoir<T extends Target<T>> extends BinReservoir<T> {
 	public void insert(Bin<T> bin) {
 		addTotalCount(bin);
 		if (isFrozen() && getBins().size() == getMaxBins()) {
-			Double floorDiff = Double.MAX_VALUE;
+			double floorDiff = Double.MAX_VALUE;
 			Bin<T> floorBin = floor(bin.getMean());
 			if (floorBin != null) {
 				floorDiff = Math.abs(floorBin.getMean() - bin.getMean());
 			}
-			Double ceilDiff = Double.MAX_VALUE;
+			double ceilDiff = Double.MAX_VALUE;
 			Bin<T> ceilBin = ceiling(bin.getMean());
 			if (ceilBin != null) {
 				ceilDiff = Math.abs(ceilBin.getMean() - bin.getMean());

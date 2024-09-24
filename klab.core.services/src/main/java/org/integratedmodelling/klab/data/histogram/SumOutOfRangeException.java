@@ -5,8 +5,11 @@
  */
 package org.integratedmodelling.klab.data.histogram;
 
+import java.io.Serial;
+
 public class SumOutOfRangeException extends RuntimeException {
 
+	@Serial
 	private static final long serialVersionUID = 987685669915428993L;
 
 	public SumOutOfRangeException(String string) {

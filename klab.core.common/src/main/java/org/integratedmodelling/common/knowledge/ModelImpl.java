@@ -21,6 +21,7 @@ public class ModelImpl implements Model {
 	private Metadata metadata = Metadata.create();
 	private List<Annotation> annotations = new ArrayList<>();
 	private String namespace;
+	private String projectName;
 	private Type type;
 	private List<Observable> observables = new ArrayList<>();
 	private List<Observable> dependencies = new ArrayList<>();
@@ -140,5 +141,14 @@ public class ModelImpl implements Model {
 
 	public void setObserverType(Concept observerType) {
 		this.observerType = observerType;
+	}
+
+	@Override
+	public String getProjectName() {
+		return projectName;
+	}
+
+	public void setProjectName(String projectName) {
+		this.projectName = projectName;
 	}
 }

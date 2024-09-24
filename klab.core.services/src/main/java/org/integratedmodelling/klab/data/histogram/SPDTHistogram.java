@@ -1,5 +1,6 @@
 /**
- * Copyright 2013 BigML Licensed under the Apache License, Version 2.0 http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright 2013 BigML Licensed under the Apache License, Version 2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  */
 package org.integratedmodelling.klab.data.histogram;
 
@@ -15,18 +16,16 @@ import java.util.Map.Entry;
  * <a href="http://jmlr.csail.mit.edu/papers/v11/ben-haim10a.html"> Streaming
  * Parallel Decision Tree (SPDT)</a> algorithm.
  * <p>
- * The Histogram consumes numeric points and maintains a running approximation
- * of the dataset using the given number of bins. The methods
+ * The Histogram consumes numeric points and maintains a running approximation of the dataset using the given
+ * number of bins. The methods
  * <code>insert</code>, <code>sum</code>, and <code>uniform</code> are described
  * in detail in the SPDT paper.
  *
  * <p>
- * The histogram has an <code>insert</code> method which uses two parameters and
- * an <code>extendedSum</code> method which add the capabilities described in
- * <a href=
- * "http://research.engineering.wustl.edu/~tyrees/Publications_files/fr819-tyreeA.pdf">
- * Tyree's paper</a>. Along with Tyree's extension this histogram supports
- * inserts with categorical targets.
+ * The histogram has an <code>insert</code> method which uses two parameters and an <code>extendedSum</code>
+ * method which add the capabilities described in <a href=
+ * "http://research.engineering.wustl.edu/~tyrees/Publications_files/fr819-tyreeA.pdf"> Tyree's paper</a>.
+ * Along with Tyree's extension this histogram supports inserts with categorical targets.
  *
  * @author Adam Ashenfelter (ashenfelter@bigml.com)
  */
@@ -40,19 +39,16 @@ public class SPDTHistogram<T extends Target<T>> {
      *
      * @param maxBins           the maximum number of bins for this histogram
      * @param countWeightedGaps true if count weighted gaps are desired
-     * @param categories        if the histogram uses categorical targets then a
-     *                          collection of the possible category targets may be
-     *                          provided to increase performance
-     * @param groupTypes        if the histogram uses a group target then a
-     *                          collection group target types may be provided
-     * @param freezeThreshold   after this # of inserts, bin locations will
-     *                          'freeze', increasing the performance of future
-     *                          inserts
-     * @param reservoirType     selects the bin reservoir implementation, defaults
-     *                          to 'array' when # bins < 256 and 'tree' otherwise
+     * @param categories        if the histogram uses categorical targets then a collection of the possible
+     *                          category targets may be provided to increase performance
+     * @param groupTypes        if the histogram uses a group target then a collection group target types may
+     *                          be provided
+     * @param freezeThreshold   after this # of inserts, bin locations will 'freeze', increasing the
+     *                          performance of future inserts
+     * @param reservoirType     selects the bin reservoir implementation, defaults to 'array' when # bins <
+     *                          256 and 'tree' otherwise
      */
-    public SPDTHistogram(int maxBins, boolean countWeightedGaps, Collection<Object> categories,
-                         Collection<TargetType> groupTypes, Long freezeThreshold, BinReservoirType reservoirType) {
+    public SPDTHistogram(int maxBins, boolean countWeightedGaps, Collection<Object> categories, Collection<TargetType> groupTypes, Long freezeThreshold, BinReservoirType reservoirType) {
         if (reservoirType == BinReservoirType.tree || (reservoirType == null && maxBins > RESERVOIR_THRESHOLD)) {
             _bins = new TreeBinReservoir<T>(maxBins, countWeightedGaps, freezeThreshold);
         } else {
@@ -101,8 +97,7 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Inserts a new point into the histogram. The histogram returns itself after
-     * modification.
+     * Inserts a new point into the histogram. The histogram returns itself after modification.
      *
      * @param point the new point
      */
@@ -113,8 +108,8 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Inserts a new point with a numeric target into the histogram. The histogram
-     * returns itself after modification.
+     * Inserts a new point with a numeric target into the histogram. The histogram returns itself after
+     * modification.
      *
      * @param point  the new point
      * @param target the numeric target
@@ -124,8 +119,8 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Inserts a new point with a categorical target into the histogram. The
-     * histogram returns itself after modification.
+     * Inserts a new point with a categorical target into the histogram. The histogram returns itself after
+     * modification.
      *
      * @param point  the new point
      * @param target the categorical target
@@ -135,10 +130,10 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Inserts a new point with a group of targets into the histogram. A null group
-     * target is _not_ allowed. The histogram returns itself after modification.
+     * Inserts a new point with a group of targets into the histogram. A null group target is _not_ allowed.
+     * The histogram returns itself after modification.
      *
-     * @param point  the new point
+     * @param point the new point
      * @param group the group targets
      */
     public SPDTHistogram<T> insert(Double point, Collection<Object> group) throws MixedInsertException {
@@ -146,8 +141,8 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Inserts a new point with a categorical target into the histogram. Null target
-     * values are allowed. The histogram returns itself after modification.
+     * Inserts a new point with a categorical target into the histogram. Null target values are allowed. The
+     * histogram returns itself after modification.
      *
      * @param point  the new point
      * @param target the categorical target
@@ -165,8 +160,8 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Inserts a new point with a numeric target into the histogram. Null target
-     * values are allowed. The histogram returns itself after modification.
+     * Inserts a new point with a numeric target into the histogram. Null target values are allowed. The
+     * histogram returns itself after modification.
      *
      * @param point  the new point
      * @param target the categorical target
@@ -178,11 +173,11 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Inserts a new point with a group target into the histogram. A null group
-     * target is _not_ allowed. The histogram returns itself after modification.
+     * Inserts a new point with a group target into the histogram. A null group target is _not_ allowed. The
+     * histogram returns itself after modification.
      *
-     * @param point  the new point
-     * @param target the categorical target
+     * @param point the new point
+     * @param group the categorical target
      */
     public SPDTHistogram<T> insertGroup(Double point, Collection<Object> group) throws MixedInsertException {
         checkType(TargetType.group);
@@ -204,8 +199,7 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Inserts a new bin into the histogram. The histogram returns itself after
-     * modification.
+     * Inserts a new bin into the histogram. The histogram returns itself after modification.
      *
      * @param bin the new bin
      */
@@ -283,8 +277,8 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Returns a <code>SumResult</code> object which contains the approximate number
-     * of points less than <code>p</code> along with the sum of their targets.
+     * Returns a <code>SumResult</code> object which contains the approximate number of points less than
+     * <code>p</code> along with the sum of their targets.
      *
      * @param p the sum point
      */
@@ -363,8 +357,8 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Returns a <code>SumResult</code> object which contains the density estimate
-     * at the point <code>p</code> along with the density for the targets.
+     * Returns a <code>SumResult</code> object which contains the density estimate at the point <code>p</code>
+     * along with the density for the targets.
      *
      * @param p the density estimate point
      */
@@ -404,20 +398,21 @@ public class SPDTHistogram<T extends Target<T>> {
             double pDiff = higherBin.getMean() - lowerBin.getMean();
             double bpRatio = bDiff / pDiff;
 
-            NumericTarget countTarget = (NumericTarget) computeDensity(bpRatio, lowerBin.getMean(), higherBin.getMean(),
-                    new NumericTarget(lowerBin.getCount()), new NumericTarget(higherBin.getCount()));
+            NumericTarget countTarget = (NumericTarget) computeDensity(bpRatio, lowerBin.getMean(),
+                    higherBin.getMean(), new NumericTarget(lowerBin.getCount()),
+                    new NumericTarget(higherBin.getCount()));
             countDensity = countTarget.getSum();
 
-            targetDensity = (T) computeDensity(bpRatio, lowerBin.getMean(), higherBin.getMean(), lowerBin.getTarget(),
-                    higherBin.getTarget());
+            targetDensity = (T) computeDensity(bpRatio, lowerBin.getMean(), higherBin.getMean(),
+                    lowerBin.getTarget(), higherBin.getTarget());
         }
 
         return new SumResult<T>(countDensity, targetDensity);
     }
 
     /**
-     * Returns a <code>Target</code> object representing the average (or expected)
-     * target value for point <code>p</code>.
+     * Returns a <code>Target</code> object representing the average (or expected) target value for point
+     * <code>p</code>.
      *
      * @param p the density estimate point
      */
@@ -428,8 +423,7 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Returns a list containing split points that form bins with uniform
-     * membership.
+     * Returns a list containing split points that form bins with uniform membership.
      *
      * @param numberOfBins the desired number of uniform bins
      */
@@ -475,12 +469,10 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Merges a histogram into the current histogram. The histogram returns itself
-     * after modification.
+     * Merges a histogram into the current histogram. The histogram returns itself after modification.
      *
      * @param histogram the histogram to be merged
      */
-    @SuppressWarnings("unchecked")
     public SPDTHistogram<T> merge(SPDTHistogram<T> histogram) throws MixedInsertException {
         if (_indexMap == null && histogram._indexMap != null) {
             if (getBins().isEmpty()) {
@@ -608,13 +600,12 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Inserts count and target information for missing inputs. The histogram
-     * returns itself after modification.
+     * Inserts count and target information for missing inputs. The histogram returns itself after
+     * modification.
      *
      * @param count the number of missing values
      * @param count the target sum for the missing values
      */
-    @SuppressWarnings("unchecked")
     public SPDTHistogram<T> insertMissing(long count, T target) {
         if (_missingTarget == null) {
             _missingTarget = target;
@@ -640,8 +631,8 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Sets the minimum input value for the histogram. This method should only be
-     * used for histograms created by inserting pre-existing bins.
+     * Sets the minimum input value for the histogram. This method should only be used for histograms created
+     * by inserting pre-existing bins.
      *
      * @param minimum the minimum value observed by the histogram
      */
@@ -651,8 +642,8 @@ public class SPDTHistogram<T extends Target<T>> {
     }
 
     /**
-     * Sets the maximum input value for the histogram. This method should only be
-     * used for histograms created by inserting pre-existing bins.
+     * Sets the maximum input value for the histogram. This method should only be used for histograms created
+     * by inserting pre-existing bins.
      *
      * @param maximum the maximum value observed by the histogram
      */
@@ -683,7 +674,6 @@ public class SPDTHistogram<T extends Target<T>> {
         _pointToSumMap = null;
     }
 
-    @SuppressWarnings("unchecked")
     private void refreshCacheMaps() {
         T emptyTarget = (T) _bins.first().getTarget().init();
 
@@ -700,7 +690,8 @@ public class SPDTHistogram<T extends Target<T>> {
         Bin<T> lastBin = minBin;
         for (Bin<T> bin : getBins()) {
             sum = new SumResult<T>(sum.getCount() + (bin.getCount() + lastBin.getCount()) / 2,
-                    (T) sum.getTargetSum().clone().sum(bin.getTarget().clone().sum(lastBin.getTarget()).mult(0.5)));
+                    (T) sum.getTargetSum().clone().sum(
+                            bin.getTarget().clone().sum(lastBin.getTarget()).mult(0.5)));
             _sumToBinMap.put(sum.getCount(), bin);
             _pointToSumMap.put(bin.getMean(), sum);
             lastBin = bin;

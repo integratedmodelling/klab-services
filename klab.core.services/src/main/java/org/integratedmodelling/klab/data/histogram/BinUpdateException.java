@@ -5,8 +5,11 @@
  */
 package org.integratedmodelling.klab.data.histogram;
 
+import java.io.Serial;
+
 public class BinUpdateException extends Exception {
 
+	@Serial
 	private static final long serialVersionUID = -6432862697096059078L;
 
 	public BinUpdateException(String message) {

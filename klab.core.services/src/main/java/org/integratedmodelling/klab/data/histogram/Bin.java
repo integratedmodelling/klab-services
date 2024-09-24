@@ -118,7 +118,7 @@ public class Bin<T extends Target<T>> implements Comparable<Bin<T>> {
 	@Override
 	public int hashCode() {
 		int hash = 3;
-		hash = 97 * hash + (int) (Double.doubleToLongBits(_mean) ^ (Double.doubleToLongBits(_mean) >>> 32));
+		hash = 97 * hash + Long.hashCode(Double.doubleToLongBits(_mean));
 		return hash;
 	}
 

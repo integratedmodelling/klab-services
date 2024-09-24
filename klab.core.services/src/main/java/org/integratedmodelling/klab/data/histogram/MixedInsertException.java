@@ -5,8 +5,11 @@
  */
 package org.integratedmodelling.klab.data.histogram;
 
+import java.io.Serial;
+
 public class MixedInsertException extends RuntimeException {
 
+	@Serial
 	private static final long serialVersionUID = 4335186224822484731L;
 
 	public MixedInsertException() {

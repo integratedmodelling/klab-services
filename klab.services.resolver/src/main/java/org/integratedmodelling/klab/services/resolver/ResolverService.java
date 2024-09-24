@@ -4,6 +4,8 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.knowledge.ModelImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.runtime.ActuatorImpl;
+import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -20,6 +22,7 @@ import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -34,7 +37,6 @@ import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.resolver.Resolution.ResolutionType;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -42,8 +44,6 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.common.runtime.ActuatorImpl;
-import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
@@ -68,10 +68,10 @@ public class ResolverService extends BaseService implements Resolver {
      *
      * Version of the latest loaded object is kept for everything, including namespaces
      */
-    Map<String, Version> urnToVersion = Collections.synchronizedMap(new HashMap<>());
-    Map<String, Model> models = Collections.synchronizedMap(new HashMap<>());
-    Map<String, Observation> instances = Collections.synchronizedMap(new HashMap<>());
-    Parameters<String> defines = Parameters.createSynchronized();
+    //    Map<String, Version> urnToVersion = Collections.synchronizedMap(new HashMap<>());
+    //    Map<String, Model> models = Collections.synchronizedMap(new HashMap<>());
+    //    Map<String, Observation> instances = Collections.synchronizedMap(new HashMap<>());
+    //    Parameters<String> defines = Parameters.createSynchronized();
     private String hardwareSignature = Utils.Names.getHardwareId();
     private ResolverConfiguration configuration;
 
@@ -80,6 +80,9 @@ public class ResolverService extends BaseService implements Resolver {
         //        setProvideScopesAutomatically(true);
         ServiceConfiguration.INSTANCE.setMainService(this);
         readConfiguration(options);
+        KnowledgeRepository.INSTANCE.setProcessor(KlabAsset.KnowledgeClass.NAMESPACE, (ns) -> {
+            return loadNamespace((KimNamespace) ns, scope);
+        });
     }
 
     private void readConfiguration(ServiceStartupOptions options) {
@@ -129,7 +132,6 @@ public class ResolverService extends BaseService implements Resolver {
                                                 Message.Queue.Warnings) :
                                         EnumSet.noneOf(Message.Queue.class));
         return ret;
-
     }
 
     @Override
@@ -295,7 +297,8 @@ public class ResolverService extends BaseService implements Resolver {
 
         // see what the reasoner thinks of this observable
         for (ObservationStrategy strategy :
-                scope.getService(Reasoner.class).computeObservationStrategies(observation,
+                scope.getService(Reasoner.class).computeObservationStrategies(
+                        observation,
                         scope)) {
             // this merges any useful strategy and returns the coverage
             ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
@@ -352,18 +355,35 @@ public class ResolverService extends BaseService implements Resolver {
                     Find models and compile them in, merge resolutions until satisfied. We pass the scale
                     through scope constraints.
                      */
-                    scope = scope.withResolutionConstraints(
-                            ResolutionConstraint.of(ResolutionConstraint.Type.Geometry,
-                                    scale.as(Geometry.class)));
+                    List<ResolutionConstraint> constraints = new ArrayList<>();
+                    constraints.add(ResolutionConstraint.of(
+                            ResolutionConstraint.Type.Geometry,
+                            scale.as(Geometry.class)));
+                    if (parentModel != null) {
+                        constraints.add(ResolutionConstraint.of(
+                                ResolutionConstraint.Type.ResolutionNamespace,
+                                parentModel.getNamespace()));
+                        constraints.add(ResolutionConstraint.of(
+                                ResolutionConstraint.Type.ResolutionProject,
+                                parentModel.getProjectName()));
+                    }
+
+                    scope = scope.withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new));
 
                     ret = new ResolutionImpl(operation.getObservable(), scale, scope, parent);
+
                     for (Model model : queryModels(operation.getObservable(), scope, scale)) {
+
                         ResolutionImpl resolution = resolveModel(model, operation.getObservable(),
                                 scale,
                                 scope.withResolutionConstraints(
                                         ResolutionConstraint.of(
                                                 ResolutionConstraint.Type.ResolutionNamespace,
-                                                model.getNamespace())), parent);
+                                                model.getNamespace()),
+                                        ResolutionConstraint.of(
+                                                ResolutionConstraint.Type.ResolutionProject,
+                                                model.getProjectName())),
+                                parent);
                         coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
                         if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
                             continue;
@@ -527,7 +547,8 @@ public class ResolverService extends BaseService implements Resolver {
                 for (ResolutionType type : new ResolutionType[]{ResolutionType.DIRECT,
                                                                 ResolutionType.DEFER_INHERENCY,
                                                                 ResolutionType.DEFER_SEMANTICS}) {
-                    for (Triple<Resolvable, Resolvable, Coverage> resolved : resolution.getResolving(model,
+                    for (Triple<Resolvable, Resolvable, Coverage> resolved : resolution.getResolving(
+                            model,
                             type)) {
                         // alias is the dependency getName()
                         if (resolved.getFirst() instanceof Model m) {
@@ -565,7 +586,8 @@ public class ResolverService extends BaseService implements Resolver {
             compiled.put(observable.getReferenceName(), ret);
 
             // filters apply to references as well
-            for (Triple<Resolvable, Resolvable, Coverage> resolved : resolution.getResolving(model,
+            for (Triple<Resolvable, Resolvable, Coverage> resolved : resolution.getResolving(
+                    model,
                     ResolutionType.FILTER)) {
                 // TODO
             }
@@ -618,102 +640,94 @@ public class ResolverService extends BaseService implements Resolver {
         ret.setReference(true);
         return ret;
     }
+    //
+    //    @SuppressWarnings("unchecked")
+    //    public <T extends Resolvable> T resolveKnowledge(String urn, Scope scope) {
+    //
+    //        Knowledge ret = null;
+    //
+    //        var resources = scope.getService(ResourcesService.class);
+    //        var reasoner = scope.getService(Reasoner.class);
+    //
+    //        switch (Urn.classify(urn)) {
+    ////            case KIM_OBJECT:
+    ////                ResourceSet set = resources.resolve(urn, scope);
+    ////                if (set.getResults().size() == 1) {
+    ////                    ret = loadKnowledge(set, scope);
+    ////                }
+    ////                break;
+    //            case OBSERVABLE:
+    //                ret = reasoner.resolveObservable(urn);
+    //                break;
+    //            case RESOURCE:
+    //                // var resource = resources.resolveResource(urn, scope);
+    //                // TODO make a ModelImpl that observes this.
+    //                break;
+    //            case REMOTE_URL:
+    //            case UNKNOWN:
+    //                scope.error("cannot resolve URN '" + urn + "' to observable knowledge");
+    //                break;
+    //        }
+    //        return (T) ret;
+    //    }
 
-    @SuppressWarnings("unchecked")
-    public <T extends Resolvable> T resolveKnowledge(String urn, Scope scope) {
+    //    /**
+    //     * Return the first resource in results, or null.
+    //     *
+    //     * @param set
+    //     * @param scope
+    //     * @return
+    //     */
+    //    private Knowledge loadKnowledge(ResourceSet set, Scope scope) {
+    //        List<Knowledge> result = loadResourceSet(set, scope);
+    //        return result.size() > 0 ? result.get(0) : null;
+    //    }
 
-        Knowledge ret = null;
+    //    /**
+    //     * Load all the knowledge in the set from the respective services in scope, including resolving components
+    //     * if any.
+    //     *
+    //     * @param set
+    //     * @param scope
+    //     * @return
+    //     */
+    //    private List<Knowledge> loadResourceSet(ResourceSet set, Scope scope) {
+    //        List<Knowledge> ret = new ArrayList<>();
+    //        for (Resource namespace : set.getNamespaces()) {
+    //            loadNamespace(namespace, scope);
+    //        }
+    //        for (Resource result : set.getResults()) {
+    //            switch (result.getKnowledgeClass()) {
+    //                //                case INSTANCE:
+    //                //                    Instance instance = instances.get(result.getResourceUrn());
+    //                //                    if (instance != null) {
+    //                //                        ret.add(instance);
+    //                //                    }
+    //                //                    break;
+    //                case MODEL:
+    //                    Model model = models.get(result.getResourceUrn());
+    //                    if (model != null) {
+    //                        ret.add(model);
+    //                    }
+    //                    break;
+    //                default:
+    //                    break;
+    //            }
+    //        }
+    //        return ret;
+    //    }
 
-        var resources = scope.getService(ResourcesService.class);
-        var reasoner = scope.getService(Reasoner.class);
+    private List<Knowledge> loadNamespace(KimNamespace namespace, Scope scope) {
 
-        switch (Urn.classify(urn)) {
-            case KIM_OBJECT:
-                ResourceSet set = resources.resolve(urn, scope);
-                if (set.getResults().size() == 1) {
-                    ret = loadKnowledge(set, scope);
-                }
-                break;
-            case OBSERVABLE:
-                ret = reasoner.resolveObservable(urn);
-                break;
-            case RESOURCE:
-                // var resource = resources.resolveResource(urn, scope);
-                // TODO make a ModelImpl that observes this.
-                break;
-            case REMOTE_URL:
-            case UNKNOWN:
-                scope.error("cannot resolve URN '" + urn + "' to observable knowledge");
-                break;
-        }
-        return (T) ret;
-    }
+        System.out.println("LOADING THE NAMESPORP " + namespace);
 
-    /**
-     * Return the first resource in results, or null.
-     *
-     * @param set
-     * @param scope
-     * @return
-     */
-    private Knowledge loadKnowledge(ResourceSet set, Scope scope) {
-        List<Knowledge> result = loadResourceSet(set, scope);
-        return result.size() > 0 ? result.get(0) : null;
-    }
-
-    /**
-     * Load all the knowledge in the set from the respective services in scope, including resolving components
-     * if any.
-     *
-     * @param set
-     * @param scope
-     * @return
-     */
-    private List<Knowledge> loadResourceSet(ResourceSet set, Scope scope) {
         List<Knowledge> ret = new ArrayList<>();
-        for (Resource namespace : set.getNamespaces()) {
-            loadNamespace(namespace, scope);
-        }
-        for (Resource result : set.getResults()) {
-            switch (result.getKnowledgeClass()) {
-                //                case INSTANCE:
-                //                    Instance instance = instances.get(result.getResourceUrn());
-                //                    if (instance != null) {
-                //                        ret.add(instance);
-                //                    }
-                //                    break;
-                case MODEL:
-                    Model model = models.get(result.getResourceUrn());
-                    if (model != null) {
-                        ret.add(model);
-                    }
-                    break;
-                default:
-                    break;
-            }
+        for (KlabStatement statement : namespace.getStatements()) {
+            if (statement instanceof KimModel) {
+                ret.add(loadModel((KimModel) statement, scope));
+            } // TODO the rest (?) - also needs a symbol table etc
         }
         return ret;
-    }
-
-    private void loadNamespace(Resource namespaceResource, Scope scope) {
-        Version existing = urnToVersion.get(namespaceResource.getResourceUrn());
-        if (existing != null && existing.compatible(namespaceResource.getResourceVersion())) {
-            return;
-        }
-        var resources = scope.getService(ResourcesService.class);
-        var namespace = resources.resolveNamespace(namespaceResource.getResourceUrn(), scope);
-        if (namespace != null) {
-            for (KlabStatement statement : namespace.getStatements()) {
-                if (statement instanceof KimModel) {
-                    Model model = loadModel((KimModel) statement, scope);
-                    models.put(model.getUrn(), model);
-                } /*else if (statement instanceof KimInstance) {
-                    var instance = loadInstance((KimInstance) statement, scope);
-                    instances.put(instance.getUrn(), instance);
-                }*/
-            }
-            // TODO defines
-        }
     }
 
     //    private Observation loadInstance(KimInstance statement, Scope scope) {
@@ -781,31 +795,24 @@ public class ResolverService extends BaseService implements Resolver {
         var reasoner = scope.getService(Reasoner.class);
 
         ModelImpl model = new ModelImpl();
-        boolean isInstantiator =
-                !statement.getObservables().isEmpty() && statement.getObservables().getFirst().getSemantics().isCollective();
-
-        model.getAnnotations().addAll(statement.getAnnotations());
-        boolean first = true;
+        model.getAnnotations().addAll(statement.getAnnotations()); // FIXME process annotations
         for (KimObservable observable : statement.getObservables()) {
-            var obs = reasoner.declareObservable(observable);
-            model.getObservables().add(first && isInstantiator ? obs :
-                                       obs.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).build());
-            first = false;
+            model.getObservables().add(reasoner.declareObservable(observable));
         }
         for (KimObservable observable : statement.getDependencies()) {
             model.getDependencies().add(reasoner.declareObservable(observable));
         }
 
-        // TODO learners etc.
-        model.setUrn(statement.getNamespace() + "." + statement.getUrn());
-        model.setMetadata(statement.getMetadata());
+        // TODO learners, geometry covered etc.
+        model.setUrn(statement.getUrn());
+        model.setMetadata(
+                statement.getMetadata()); // FIXME add processed metadata with the existing symbol table
         model.getComputation().addAll(statement.getContextualization());
-        model.setUrn(statement.getNamespace() + "." + statement.getUrn());
         model.setNamespace(statement.getNamespace());
+        model.setProjectName(statement.getProjectName());
 
-        // FIXME putaroja
-        //        model.getActions().addAll(statement.getBehavior().getStatements());
-        //        model.setCoverage(createScaleFromBehavior(statement.getBehavior(), scope));
+        // FIXME use coverage from NS or model if any
+        model.setCoverage(Coverage.universal());
 
         return model;
     }
@@ -822,17 +829,16 @@ public class ResolverService extends BaseService implements Resolver {
     @Override
     public List<Model> queryModels(Observable observable, ContextScope scope, Scale scale) {
 
-        var ret = new ArrayList<Model>();
         var prioritizer = new PrioritizerImpl(scope, scale);
 
+        System.out.println("QUERYING MODELS FOR " + observable);
+
         // FIXME use virtual threads & join() to obtain a synchronized list of ResourceSet, then
-        //  use a merging strategy to get models one by one
+        //  use a merging strategy to get models one by one in their latest release
         var resources = scope.getService(ResourcesService.class);
 
         ResourceSet models = resources.queryModels(observable, scope);
-        for (KimModel model : KnowledgeRepository.INSTANCE.ingest(models, scope, KimModel.class)) {
-            System.out.println("GOT A FUCKER: " + model.getUrn());
-        }
+        var ret = new ArrayList<Model>(KnowledgeRepository.INSTANCE.ingest(models, scope, Model.class));
         ret.sort(prioritizer);
         return ret;
     }
@@ -862,7 +868,8 @@ public class ResolverService extends BaseService implements Resolver {
          * annotations) that are exposed to the admin API.
          */
         for (String pack : extensionPackages) {
-            ServiceConfiguration.INSTANCE.scanPackage(pack, Map.of(Library.class,
+            ServiceConfiguration.INSTANCE.scanPackage(pack, Map.of(
+                    Library.class,
                     ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
         }
 
@@ -982,7 +989,8 @@ public class ResolverService extends BaseService implements Resolver {
     private String encodeServiceCall(ServiceCall contextualizable, int offset,
                                      Map<String, String> resources) {
         // TODO extract resource parameters and substitute with variables
-        return org.integratedmodelling.common.utils.Utils.Strings.spaces(offset) + contextualizable.encode(Language.KDL);
+        return org.integratedmodelling.common.utils.Utils.Strings.spaces(offset) + contextualizable.encode(
+                Language.KDL);
     }
 
     /**

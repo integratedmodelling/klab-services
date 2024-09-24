@@ -728,7 +728,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         // FIXME use the observation's scale (pass the observation)
         for (ModelReference model : this.kbox.query(observable, scope)) {
             results.getResults().add(new ResourceSet.Resource(getUrl().toString(),
-                    model.getNamespaceId() + "." + model.getName(), model.getProjectUrn(),
+                    model.getName(), model.getProjectUrn(),
                     model.getVersion(),
                     KnowledgeClass.MODEL));
         }

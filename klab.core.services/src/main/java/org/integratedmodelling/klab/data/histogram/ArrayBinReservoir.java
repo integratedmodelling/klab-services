@@ -49,12 +49,12 @@ public class ArrayBinReservoir<T extends Target<T>> extends BinReservoir<T> {
 
 	@Override
 	public Bin<T> first() {
-		return _bins.get(0);
+		return _bins.getFirst();
 	}
 
 	@Override
 	public Bin<T> last() {
-		return _bins.get(_bins.size() - 1);
+		return _bins.getLast();
 	}
 
 	@Override

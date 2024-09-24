@@ -60,6 +60,13 @@ public interface Model extends Knowledge, Resolvable {
     String getNamespace();
 
     /**
+     * Project name is needed by the resolver for prioritization
+     *
+     * @return
+     */
+    String getProjectName();
+
+    /**
      * One of CONCEPT, TEXT, NUMBER, BOOLEAN or VOID if inactive because of error or offline resources.
      *
      * @return
