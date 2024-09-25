@@ -48,8 +48,4 @@ public class KnowledgeGraphNeo4JRAM  extends KnowledgeGraphNeo4j implements Know
 
     }
 
-    @Override
-    protected Driver driver() {
-        return null;
-    }
 }
