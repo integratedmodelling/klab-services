@@ -15,6 +15,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation;
 
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -37,7 +38,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Observation extends Knowledge, Artifact, Resolvable {
+public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAsset {
 
     static final long UNASSIGNED_ID = -1;
 

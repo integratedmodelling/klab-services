@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
@@ -258,7 +259,7 @@ public class JacksonConfiguration {
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class, Actuator.class,
                                       Notification.LexicalContext.class, ResolutionConstraint.class,
-                                      KimObservationStrategy.Operation.class,
+                                      KimObservationStrategy.Operation.class, RuntimeAsset.class,
                                       KimObservationStrategy.Filter.class, ObservationStrategy.class,
                                       ObservationStrategy.Operation.class}) {
             module.addSerializer(cls, new PolymorphicSerializer<>());

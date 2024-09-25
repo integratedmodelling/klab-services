@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
@@ -106,7 +107,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
  * @author ferdinando.villa
  * @since 0.10.0
  */
-public interface Dataflow<T extends Artifact> extends Serializable {
+public interface Dataflow<T extends Artifact> extends Serializable, RuntimeAsset {
 
     /**
      * An empty dataflow is a valid dataflow that produces an

@@ -5,16 +5,14 @@ import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
-import org.integratedmodelling.klab.api.data.GraphDatabase;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -27,17 +25,13 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
-import org.integratedmodelling.klab.services.runtime.neo4j.GraphDatabaseNeo4jEmbedded;
+import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JEmbedded;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 
-import java.io.Closeable;
 import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -47,7 +41,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     private String hardwareSignature =
             org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
     private RuntimeConfiguration configuration;
-    private GraphDatabase graphDatabase;
+    private KnowledgeGraph knowledgeGraph;
     private SystemLauncher systemLauncher;
 
     public RuntimeService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
@@ -78,12 +72,12 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     private boolean createGraphDatabase() {
         // TODO choose the DB from configuration - client or embedded server
         var path = BaseService.getConfigurationSubdirectory(startupOptions, "dt").toPath();
-        this.graphDatabase = new GraphDatabaseNeo4jEmbedded(path);
-        return this.graphDatabase.isOnline();
+        this.knowledgeGraph = new KnowledgeGraphNeo4JEmbedded(path);
+        return this.knowledgeGraph.isOnline();
     }
 
-    public GraphDatabase getGraphDatabase() {
-        return this.graphDatabase;
+    public KnowledgeGraph getGraphDatabase() {
+        return this.knowledgeGraph;
     }
 
     private void saveConfiguration() {
@@ -149,8 +143,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         if (systemLauncher != null) {
             systemLauncher.shutdown();
         }
-        if (graphDatabase != null) {
-            graphDatabase.shutdown();
+        if (knowledgeGraph != null) {
+            knowledgeGraph.shutdown();
         }
         return super.shutdown();
     }

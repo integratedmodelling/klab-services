@@ -1,11 +1,13 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.klab.api.data.GraphDatabase;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -14,6 +16,9 @@ import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.connectors.HttpConnector;
 import org.neo4j.dbms.api.DatabaseManagementService;
 import org.neo4j.dbms.api.DatabaseManagementServiceBuilder;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.ExecutableQuery;
+import org.neo4j.driver.GraphDatabase;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.io.ByteUnit;
 import org.neo4j.ogm.config.Configuration;
@@ -23,12 +28,13 @@ import org.neo4j.ogm.session.SessionFactory;
 import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 
 /**
  * A local, embedded, persistent k.LAB-instrumented, configurable Neo4j database. To work with the f'ing
  * community edition the database must be a singleton within the service, containing data for all contexts.
  */
-public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
+public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements KnowledgeGraph {
 
     private static final String DEFAULT_DATABASE_NAME = "klab";
     private DatabaseManagementService managementService;
@@ -40,8 +46,9 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
     private Session contextSession_ = null;
     private ContextScope scope_ = null;
     private GraphMapping.ContextMapping rootNode;
+    private Driver driver;
 
-    private GraphDatabaseNeo4jEmbedded(GraphDatabaseNeo4jEmbedded parent, ContextScope scope) {
+    private KnowledgeGraphNeo4JEmbedded(KnowledgeGraphNeo4JEmbedded parent, ContextScope scope) {
         this.managementService = parent.managementService;
         this.graphDb = parent.graphDb;
         this.sessionFactory = parent.sessionFactory;
@@ -50,12 +57,14 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
             this.contextSession_ = sessionFactory.openSession();
             this.scope_ = scope;
         }
+        this.driver = parent.driver;
+        this.contextualized = true;
     }
 
     /**
      * @param directory
      */
-    public GraphDatabaseNeo4jEmbedded(Path directory) {
+    public KnowledgeGraphNeo4JEmbedded(Path directory) {
 
         /*
          * TODO tie the performance parameters to runtime configuration
@@ -71,11 +80,14 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
                     .build();
 
             this.graphDb = managementService.database(DEFAULT_DATABASE_NAME);
+
             this.sessionFactory = new SessionFactory(
                     new Configuration.Builder()
                                 .encryptionLevel("DISABLED")
                                 .uri("bolt://localhost:7687").build(),
                     this.getClass().getPackageName());
+
+            this.driver = GraphDatabase.driver("bolt://localhost:7687");
 
             Logging.INSTANCE.info("Embedded Neo4J database initialized");
 
@@ -93,7 +105,7 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
     }
 
     @Override
-    public GraphDatabase contextualize(ContextScope scope) {
+    public KnowledgeGraph contextualize(ContextScope scope) {
 
         if (this.scope_ != null) {
 
@@ -119,19 +131,26 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
             }
         }
 
-        var ret = new GraphDatabaseNeo4jEmbedded(this, scope);
+        var ret = new KnowledgeGraphNeo4JEmbedded(this, scope);
         ret.rootNode = node;
+
+        initializeContext();
+
         return ret;
     }
 
     @Override
-    public boolean canDistribute() {
-        // for now. We should do this through the DT's API, without depending on the backend db.
-        return false;
+    public <T extends RuntimeAsset> T get(long id, Class<T> resultClass) {
+        return null;
     }
 
     @Override
-    public GraphDatabase merge(URL remoteDigitalTwinURL) {
+    public <T extends RuntimeAsset> List<T> get(RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
+        return List.of();
+    }
+
+    @Override
+    public KnowledgeGraph merge(URL remoteDigitalTwinURL) {
         return null;
     }
 
@@ -142,7 +161,7 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
 
     private Session session() {
         if (contextSession_ == null) {
-            throw new KlabIllegalStateException("DB session is null: GraphDatabaseNeo4jEmbedded used " +
+            throw new KlabIllegalStateException("DB session is null: KnowledgeGraphNeo4JEmbedded used " +
                     "without previous " +
                     "contextualization");
         }
@@ -153,7 +172,7 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
      * @param observation any observation, including relationships
      * @return
      */
-    @Override
+//    @Override
     public long add(Observation observation, Object relationshipSource, DigitalTwin.Relationship connection
             , Metadata relationshipMetadata) {
 
@@ -206,24 +225,12 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
     }
 
     @Override
-    public long link(Observation source, Observation destination, DigitalTwin.Relationship linkType,
-                     Metadata linkMetadata) {
-        return 0;
-    }
-
-    @Override
-    public long add(Actuator actuator, Actuator parent) {
-        return Observation.UNASSIGNED_ID;
-    }
-
-    @Override
-    public long add(Provenance.Node node, Provenance.Node parent) {
-        return Observation.UNASSIGNED_ID;
-    }
-
-    @Override
     public void shutdown() {
         managementService.shutdown();
     }
 
+//    @Override
+//    protected Driver driver() {
+//        return driver;
+//    }
 }

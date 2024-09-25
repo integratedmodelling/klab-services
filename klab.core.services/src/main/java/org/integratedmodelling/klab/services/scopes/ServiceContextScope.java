@@ -197,7 +197,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                 if (dataflow != null && !dataflow.isEmpty()) {
                     var provenance = runtime.runDataflow(dataflow, this);
                     System.out.println("RESOLVED CRAPPETTONE " + id);
-                    digitalTwin.finalizeObservation(observation, dataflow, provenance);
+                    finalizeObservation(observation, dataflow, provenance);
                 }
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionSuccessful, id);
             } catch (Throwable t) {
@@ -209,15 +209,19 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return ret;
     }
 
+    private void finalizeObservation(Observation observation, Dataflow<Observation> dataflow, Provenance provenance) {
+        // TODO do stuff in the knowledge graph
+    }
+
     public long submitObservation(Observation observation) {
         // TODO FIXME - create all the structure and metadata from the current context, parents and all
         // should we have the same for relationships? A context 'between" x and y where a relationship
         // can be observed? (wouldn't address collective relationships)
-
-        return digitalTwin.submit(observation, this.contextObservation,
-                DigitalTwin.Relationship.Parent,
-                // TODO TODO TODO - all the stuff
-                null);
+        return digitalTwin.knowledgeGraph().op(observation).run();
+//        return digitalTwin.submit(observation, this.contextObservation,
+//                DigitalTwin.Relationship.Parent,
+//                // TODO TODO TODO - all the stuff
+//                null);
     }
 
     @Override

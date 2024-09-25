@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Model;
@@ -84,14 +85,14 @@ import org.integratedmodelling.klab.api.knowledge.Resource;
  * @author Ferd
  * @version $Id: $Id
  */
-public interface Provenance {
+public interface Provenance extends RuntimeAsset {
 
 	/**
 	 * The generic provenance node.
 	 * 
 	 * @author Ferd
 	 */
-	abstract interface Node {
+	interface Node extends RuntimeAsset {
 
 		/**
 		 * Timestamp of creation or execution.

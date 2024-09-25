@@ -18,6 +18,7 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -60,7 +61,7 @@ import java.util.Queue;
  *
  * @author ferdinando.villa
  */
-public interface Actuator extends Plan, Serializable {
+public interface Actuator extends Plan, Serializable, RuntimeAsset {
 
     /**
      * Name of the service call that encodes deferred resolution when that must be included in the

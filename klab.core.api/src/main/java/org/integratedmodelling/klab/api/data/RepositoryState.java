@@ -61,7 +61,8 @@ public class RepositoryState {
      * command sequences, meant to be usable easily and safely by untrained or minimally trained users. When
      * these can't run due to conflict, they should report the problem without causing changes and advice
      * users to use the full Git implementation.
-     *
+     * <p>
+     * TODO add descriptions to each case for display, one day multi-lingual.
      * <p>
      * For now only COMMIT_AND_SWITCH expects a parameter, which will be passed in the parameters array.
      */

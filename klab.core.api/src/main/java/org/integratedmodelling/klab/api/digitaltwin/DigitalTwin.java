@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
 import org.integratedmodelling.klab.api.collections.Identifier;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -26,8 +27,8 @@ import java.util.Set;
 public interface DigitalTwin {
 
     /**
-     * The type of relationships in the graph. All relationship carry further information, to be
-     * fully defined.
+     * The type of relationships in the graph. All relationship carry further information, to be fully
+     * defined.
      */
     enum Relationship {
         Parent,
@@ -38,6 +39,8 @@ public interface DigitalTwin {
         RootObservation
     }
 
+    KnowledgeGraph knowledgeGraph();
+
     /**
      * Return the storage for all "datacube" content.
      *
@@ -45,28 +48,28 @@ public interface DigitalTwin {
      */
     StateStorage stateStorage();
 
-    /**
-     * Return a view of the graph that links observations using the passed relationships (all existing if none
-     * is specified). Some relationships may be computed on demand, and their presence in the graph when no
-     * relationship type is passed is not guaranteed.
-     *
-     * @return
-     */
-    ObservationGraph observationGraph(Relationship... relationships);
-
-    /**
-     * Return a view of the graph that only addresses the dataflow.
-     *
-     * @return
-     */
-    DataflowGraph dataflowGraph();
-
-    /**
-     * Return the view of the graph that represents provenance.
-     *
-     * @return
-     */
-    ProvenanceGraph provenanceGraph();
+    //    /**
+    //     * Return a view of the graph that links observations using the passed relationships (all existing if none
+    //     * is specified). Some relationships may be computed on demand, and their presence in the graph when no
+    //     * relationship type is passed is not guaranteed.
+    //     *
+    //     * @return
+    //     */
+    //    ObservationGraph observationGraph(Relationship... relationships);
+    //
+    //    /**
+    //     * Return a view of the graph that only addresses the dataflow.
+    //     *
+    //     * @return
+    //     */
+    //    DataflowGraph dataflowGraph();
+    //
+    //    /**
+    //     * Return the view of the graph that represents provenance.
+    //     *
+    //     * @return
+    //     */
+    //    ProvenanceGraph provenanceGraph();
 
     /**
      * Dispose of all storage and data, either in memory only or also on any attached storage. Whether the
@@ -74,33 +77,33 @@ public interface DigitalTwin {
      */
     void dispose();
 
-    /**
-     * Ingest an observation created externally. Return the unique ID of the observation in the DT.
-     * <p>
-     * Submitting a resolved observation that does not belong or unresolved related will throw a
-     * {@link org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException}.
-     * <p>
-     * TODO this must become an operation with a data packet that carries all the info to update provenance and everything else.
-     *
-     * @param observation  cannot be null, must be unresolved if the relationship is parent or null
-     * @param related      may be null but if not, must be already submitted to the DT
-     * @param relationship the relationship of the new observation to the second, must be non-null if related
-     *                     isn't
-     */
-    long submit(Observation observation, Observation related, Relationship relationship,
-                Metadata relationshipMetadata);
+    //    /**
+    //     * Ingest an observation created externally. Return the unique ID of the observation in the DT.
+    //     * <p>
+    //     * Submitting a resolved observation that does not belong or unresolved related will throw a
+    //     * {@link org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException}.
+    //     * <p>
+    //     * TODO this must become an operation with a data packet that carries all the info to update provenance and everything else.
+    //     *
+    //     * @param observation  cannot be null, must be unresolved if the relationship is parent or null
+    //     * @param related      may be null but if not, must be already submitted to the DT
+    //     * @param relationship the relationship of the new observation to the second, must be non-null if related
+    //     *                     isn't
+    //     */
+    //    long submit(Observation observation, Observation related, Relationship relationship,
+    //                Metadata relationshipMetadata);
+    //
+    //    /**
+    //     * @param resolved
+    //     * @param dataflow
+    //     * @param provenance
+    //     */
+    //    void finalizeObservation(Observation resolved, Dataflow<Observation> dataflow, Provenance provenance);
+    //
 
     /**
-     * @param resolved
-     * @param dataflow
-     * @param provenance
-     */
-    void finalizeObservation(Observation resolved, Dataflow<Observation> dataflow, Provenance provenance);
-
-    /**
-     * Assemble the passed parameters into an unresolved Observation, to be passed to
-     * {@link #submit(Observation, Observation, Relationship, Metadata)}  for resolution and insertion in the
-     * graph.
+     * Assemble the passed parameters into an unresolved Observation, to be inserted into the knowledge graph
+     * and resolved.
      * <p>
      * Accepts:
      *      TODO
