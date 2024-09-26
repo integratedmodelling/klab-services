@@ -20,6 +20,10 @@ import org.neo4j.driver.Driver;
 import org.neo4j.driver.ExecutableQuery;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Label;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.schema.IndexDefinition;
+import org.neo4j.graphdb.schema.Schema;
 import org.neo4j.io.ByteUnit;
 import org.neo4j.ogm.config.Configuration;
 import org.neo4j.ogm.session.Session;
@@ -39,26 +43,24 @@ public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements
     private static final String DEFAULT_DATABASE_NAME = "klab";
     private DatabaseManagementService managementService;
     private GraphDatabaseService graphDb;
-    private SessionFactory sessionFactory;
+//    private SessionFactory sessionFactory;
     private boolean online = true;
     // we use a session per context in normal usage, established through contextualize() which also sets up
     // the root nodes for the context
-    private Session contextSession_ = null;
-    private ContextScope scope_ = null;
-    private GraphMapping.ContextMapping rootNode;
-    private Driver driver;
+//    private Session contextSession_ = null;
+//    private GraphMapping.ContextMapping rootNode;
+//    private Driver driver;
 
     private KnowledgeGraphNeo4JEmbedded(KnowledgeGraphNeo4JEmbedded parent, ContextScope scope) {
         this.managementService = parent.managementService;
         this.graphDb = parent.graphDb;
-        this.sessionFactory = parent.sessionFactory;
+//        this.sessionFactory = parent.sessionFactory;
         this.online = parent.online;
-        if (this.online) {
-            this.contextSession_ = sessionFactory.openSession();
-            this.scope_ = scope;
-        }
+//        if (this.online) {
+//            this.contextSession_ = sessionFactory.openSession();
+            this.scope = scope;
+//        }
         this.driver = parent.driver;
-        this.contextualized = true;
     }
 
     /**
@@ -75,19 +77,24 @@ public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements
                     .setConfig(GraphDatabaseSettings.pagecache_memory, ByteUnit.mebiBytes(512))
                     .setConfig(GraphDatabaseSettings.transaction_timeout, Duration.ofSeconds(60))
                     .setConfig(GraphDatabaseSettings.preallocate_logical_logs, true)
-                    .setConfig(BoltConnector.enabled, true)
-                    .setConfig(HttpConnector.enabled, true)
+                    .setConfig(BoltConnector.enabled, true) // for the driver
+                    .setConfig(HttpConnector.enabled, true) // for debugging (?)
                     .build();
 
             this.graphDb = managementService.database(DEFAULT_DATABASE_NAME);
 
-            this.sessionFactory = new SessionFactory(
-                    new Configuration.Builder()
-                                .encryptionLevel("DISABLED")
-                                .uri("bolt://localhost:7687").build(),
-                    this.getClass().getPackageName());
+//            this.sessionFactory = new SessionFactory(
+//                    new Configuration.Builder()
+//                                .encryptionLevel("DISABLED")
+//                                .uri("bolt://localhost:7687").build(),
+//                    this.getClass().getPackageName());
 
+            // TODO this could just reimplement query() to use the DB directly and not expose the
+            //  connectors, losing debugging access outside the application
             this.driver = GraphDatabase.driver("bolt://localhost:7687");
+
+
+            configureDatabase();
 
             Logging.INSTANCE.info("Embedded Neo4J database initialized");
 
@@ -104,13 +111,29 @@ public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements
         }
     }
 
+    private void configureDatabase() {
+
+        // TODO all the needed indices
+
+//        IndexDefinition usernamesIndex;
+//        try ( Transaction tx = graphDb.beginTx() )
+//        {
+//            Schema schema = tx.schema();
+//            usernamesIndex = schema.indexFor(Label.label( "User" ) )
+//                                   .on( "username" )
+//                                   .withName( "usernames" )
+//                                   .create();
+//            tx.commit();
+//        }
+    }
+
     @Override
     public KnowledgeGraph contextualize(ContextScope scope) {
 
-        if (this.scope_ != null) {
+        if (this.scope != null) {
 
             // idempotence
-            if (this.scope_.getId().equals(scope.getId())) {
+            if (this.scope.getId().equals(scope.getId())) {
                 return this;
             }
 
@@ -118,23 +141,23 @@ public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements
                     "database");
         }
 
-        contextSession_ = this.sessionFactory.openSession();
-
-        var node = session().load(GraphMapping.ContextMapping.class, scope.getId());
-        if (node == null) {
-            node = GraphMapping.adapt(scope);
-            try (var transaction = session().beginTransaction()) {
-                session().save(node);
-                transaction.commit();
-            } catch (Throwable t) {
-                return this;
-            }
-        }
+//        contextSession_ = this.sessionFactory.openSession();
+//
+//        var node = session().load(GraphMapping.ContextMapping.class, scope.getId());
+//        if (node == null) {
+//            node = GraphMapping.adapt(scope);
+//            try (var transaction = session().beginTransaction()) {
+//                session().save(node);
+//                transaction.commit();
+//            } catch (Throwable t) {
+//                return this;
+//            }
+//        }
 
         var ret = new KnowledgeGraphNeo4JEmbedded(this, scope);
-        ret.rootNode = node;
+//        ret.rootNode = node;
 
-        initializeContext();
+        ret.initializeContext();
 
         return ret;
     }
@@ -159,70 +182,70 @@ public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements
         return this.online;
     }
 
-    private Session session() {
-        if (contextSession_ == null) {
-            throw new KlabIllegalStateException("DB session is null: KnowledgeGraphNeo4JEmbedded used " +
-                    "without previous " +
-                    "contextualization");
-        }
-        return contextSession_;
-    }
+//    private Session session() {
+//        if (contextSession_ == null) {
+//            throw new KlabIllegalStateException("DB session is null: KnowledgeGraphNeo4JEmbedded used " +
+//                    "without previous " +
+//                    "contextualization");
+//        }
+//        return contextSession_;
+//    }
 
-    /**
-     * @param observation any observation, including relationships
-     * @return
-     */
+//    /**
+//     * @param observation any observation, including relationships
+//     * @return
+//     */
 //    @Override
-    public long add(Observation observation, Object relationshipSource, DigitalTwin.Relationship connection
-            , Metadata relationshipMetadata) {
-
-
-        if (this.scope_ == null) {
-            throw new KlabIllegalStateException("cannot use a graph database in its non-contextualized " +
-                    "state");
-        }
-
-        var observationMapping = GraphMapping.adapt(observation);
-        try (var transaction = session().beginTransaction()) {
-            session().save(observationMapping);
-            var link = createLink(observationMapping, relationshipSource, connection);
-            if (link != null) {
-                session().save(link, 0);
-            }
-            transaction.commit();
-            return observationMapping.id;
-        } catch (Throwable t) {
-            scope_.error(t);
-        }
-
-        return Observation.UNASSIGNED_ID;
-    }
-
-    private GraphMapping.Link createLink(GraphMapping.ObservationMapping source, Object target,
-                                         DigitalTwin.Relationship connection) {
-        GraphMapping.Link ret = null;
-        DigitalTwin.Relationship defaultConnection = null;
-        if (target == null) {
-            var link = new GraphMapping.RootObservationLink();
-            link.context = rootNode;
-            link.observation = source;
-            defaultConnection = DigitalTwin.Relationship.RootObservation;
-            ret = link;
-        } else if (target instanceof Observation observation) {
-            var link = new GraphMapping.ObservationLink();
-            link.observation = source;
-            link.context = session().load(GraphMapping.ObservationMapping.class, observation.getId());
-            defaultConnection = DigitalTwin.Relationship.Parent;
-            ret = link;
-        }
-
-        if (ret != null) {
-            ret.timestamp = System.currentTimeMillis();
-            ret.type = connection == null ? defaultConnection : connection;
-        }
-
-        return ret;
-    }
+//    public long add(Observation observation, Object relationshipSource, DigitalTwin.Relationship connection
+//            , Metadata relationshipMetadata) {
+//
+//
+//        if (this.scope == null) {
+//            throw new KlabIllegalStateException("cannot use a graph database in its non-contextualized " +
+//                    "state");
+//        }
+//
+//        var observationMapping = GraphMapping.adapt(observation);
+//        try (var transaction = session().beginTransaction()) {
+//            session().save(observationMapping);
+//            var link = createLink(observationMapping, relationshipSource, connection);
+//            if (link != null) {
+//                session().save(link, 0);
+//            }
+//            transaction.commit();
+//            return observationMapping.id;
+//        } catch (Throwable t) {
+//            scope.error(t);
+//        }
+//
+//        return Observation.UNASSIGNED_ID;
+//    }
+//
+//    private GraphMapping.Link createLink(GraphMapping.ObservationMapping source, Object target,
+//                                         DigitalTwin.Relationship connection) {
+//        GraphMapping.Link ret = null;
+//        DigitalTwin.Relationship defaultConnection = null;
+//        if (target == null) {
+//            var link = new GraphMapping.RootObservationLink();
+//            link.context = rootNode;
+//            link.observation = source;
+//            defaultConnection = DigitalTwin.Relationship.RootObservation;
+//            ret = link;
+//        } else if (target instanceof Observation observation) {
+//            var link = new GraphMapping.ObservationLink();
+//            link.observation = source;
+//            link.context = session().load(GraphMapping.ObservationMapping.class, observation.getId());
+//            defaultConnection = DigitalTwin.Relationship.Parent;
+//            ret = link;
+//        }
+//
+//        if (ret != null) {
+//            ret.timestamp = System.currentTimeMillis();
+//            ret.type = connection == null ? defaultConnection : connection;
+//        }
+//
+//        return ret;
+//    }
 
     @Override
     public void shutdown() {

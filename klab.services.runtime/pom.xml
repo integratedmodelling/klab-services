@@ -54,27 +54,29 @@
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j</artifactId>
-            <version>5.22.0</version>
+            <version>5.20.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-spatial-index</artifactId>
-            <version>5.22.0</version>
+            <version>5.20.0</version>
         </dependency>
+<!--
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-bolt</artifactId>
             <version>5.22.0</version>
         </dependency>
+-->
         <dependency>
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
-            <version>5.22.0</version>
+            <version>5.20.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-record-storage-engine</artifactId>
-            <version>5.22.0</version>
+            <version>5.20.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
@@ -91,6 +93,13 @@
             <artifactId>neo4j-ogm-bolt-driver</artifactId>
             <version>4.0.10</version>
         </dependency>
+<!-- FUCK can't find it but this is what they say. Also would set GT at 30.2
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-spatial</artifactId>
+            <version>5.20.0</version>
+        </dependency>
+-->
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
@@ -112,5 +121,24 @@
             <artifactId>spring-boot-starter-tomcat</artifactId>
         </dependency>
     </dependencies>
-
+    <repositories>
+        <repository>
+            <id>java.net</id>
+            <name>Java.net repo</name>
+            <url>https://maven.java.net/service/local/repositories/releases/content/</url>
+        </repository>
+        <repository>
+            <id>osgeo</id>
+            <name>OSGeo Release Repository</name>
+            <url>https://repo.osgeo.org/repository/release/</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+        <repository>
+            <id>neo4j-contrib-releases</id>
+            <url>https://raw.github.com/neo4j-contrib/m2/master/releases</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+    </repositories>
 </project>
