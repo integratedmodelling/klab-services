@@ -1,26 +1,37 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Activity;
+import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
     protected ContextScope scope;
+    protected Agent agent;
+    protected String description;
 
-    record Step(OperationImpl.Type type, List<RuntimeAsset> targets, Map<String, Object> parameters) {}
+    record Step(OperationImpl.Type type, List<RuntimeAsset> targets, Map<String, Object> parameters) {
+    }
 
     class OperationImpl implements Operation {
 
         enum Type {
             CREATE,
             MODIFY,
-            LINK
+            LINK,
+            SELECT
         }
 
         List<Step> steps = new ArrayList<>();
@@ -32,7 +43,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
         @Override
         public Operation add(RuntimeAsset observation) {
-
+            this.steps.add(new Step(Type.CREATE, List.of(observation), Map.of()));
             return this;
         }
 
@@ -43,16 +54,17 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
         @Override
         public Operation set(RuntimeAsset source, Object... properties) {
+            this.steps.add(new Step(Type.MODIFY, List.of(source), Parameters.create(properties)));
             return this;
         }
 
         @Override
-        public Operation linkTo(RuntimeAsset asset, Object... linkData) {
+        public Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo, Object... linkData) {
             return this;
         }
 
         @Override
-        public Operation linkFrom(RuntimeAsset asset, Object... linkData) {
+        public Operation rootLink(RuntimeAsset asset, Object... linkData) {
             return this;
         }
     }
@@ -60,10 +72,37 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     protected abstract Map<String, Object> nodeProperties(long nodeId);
 
     @Override
-    public Operation op(Object... target) {
+    public Operation op(Agent agent, ContextScope scope, Object... targets) {
         OperationImpl ret = new OperationImpl();
-        if (target != null && target.length > 0) {
-
+        if (targets != null && targets.length > 0) {
+            for (var target : targets) {
+                switch (target) {
+                    case Observation observation -> {
+                        if (observation.getId() < 0) {
+                            ret.create(observation, scope);
+                        } else {
+                            ret.set(observation);
+                        }
+                        if (scope.getContextObservation() != null) {
+                            ret.link(
+                                    observation, scope.getContextObservation(),
+                                    DigitalTwin.Relationship.Parent);
+                        } else {
+                            ret.rootLink(observation);
+                        }
+                        if (scope.getObserver() != null) {
+                            ret.link(observation, scope.getObserver(), DigitalTwin.Relationship.Observer);
+                        }
+                    }
+                    case Agent newagent -> {
+                    }
+                    case Actuator actuator -> {
+                    }
+                    case Activity activity -> {
+                    }
+                    default -> throw new KlabInternalErrorException("Unexpected target in op");
+                }
+            }
         }
         return ret;
     }
@@ -72,7 +111,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
         long ret = Observation.UNASSIGNED_ID;
         for (var step : operation) {
-            switch(step.type) {
+            switch (step.type) {
                 case CREATE -> {
                     ret = create(step.targets, step.parameters);
                 }
@@ -95,8 +134,34 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
     protected abstract long modify(List<RuntimeAsset> targets, Map<String, Object> parameters);
 
+    /**
+     * Define all properties for the passed asset.
+     *
+     * @param asset
+     * @return
+     */
     protected Map<String, Object> asParameters(Object asset) {
-        return Map.of();
+        Map<String, Object> ret = new HashMap<>();
+        switch (asset) {
+            case Observation observation -> {
+                ret.putAll(observation.getMetadata());
+                ret.put("timestamp", observation.getTimestamp());
+                ret.put("name", observation.getName());
+                ret.put("updated", observation.getLastUpdate());
+                ret.put("type", observation.getType());
+                ret.put("urn", observation.getUrn());
+                ret.put("semantics", observation.getObservable().getUrn());
+            }
+            case Agent agent -> {
+            }
+            case Actuator actuator -> {
+            }
+            case Activity activity -> {
+            }
+            default -> throw new KlabInternalErrorException(
+                    "unexpected value for asParameters: " + asset.getClass().getCanonicalName());
+        }
+        return ret;
     }
 
     protected RuntimeAsset fromParameters(RuntimeAsset asset, Map<String, Object> parameters) {

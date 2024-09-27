@@ -114,7 +114,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
              * annotations) that are exposed to the admin API.
              */
             for (String pack : extensionPackages) {
-                ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
+                ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(
+                        Library.class,
                         ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
             }
 
@@ -214,7 +215,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                     Thread.ofVirtual().start(() -> {
                         for (var service : serviceSessionScope.getServices(serviceClass)) {
                             // if things are OK, the service repeats the ID back
-                            if (!serviceSessionScope.getId().equals(service.registerSession(serviceSessionScope))) {
+                            if (!serviceSessionScope.getId().equals(
+                                    service.registerSession(serviceSessionScope))) {
                                 fail.set(true);
                             }
                         }
@@ -225,7 +227,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             }
 
             if (fail.get()) {
-                serviceSessionScope.send(Notification.error("Error registering session with other services:" +
+                serviceSessionScope.send(Notification.error(
+                        "Error registering session with other services:" +
                                 " session is inoperative",
                         UI.Interactivity.DISPLAY));
                 serviceSessionScope.setOperative(false);
@@ -241,7 +244,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
         if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
-            serviceContextScope.setId(serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
+            serviceContextScope.setId(
+                    serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
             getScopeManager().registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
             serviceContextScope.setDigitalTwin(new DigitalTwinImpl(contextScope, getGraphDatabase()));
 
@@ -258,7 +262,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                     Thread.ofVirtual().start(() -> {
                         for (var service : serviceContextScope.getServices(serviceClass)) {
                             // if things are OK, the service repeats the ID back
-                            if (!serviceContextScope.getId().equals(service.registerContext(serviceContextScope))) {
+                            if (!serviceContextScope.getId().equals(
+                                    service.registerContext(serviceContextScope))) {
                                 fail.set(true);
                             }
                         }
@@ -269,7 +274,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             }
 
             if (fail.get()) {
-                serviceContextScope.send(Notification.error("Error registering context with other services:" +
+                serviceContextScope.send(Notification.error(
+                        "Error registering context with other services:" +
                                 " context is inoperative",
                         UI.Interactivity.DISPLAY));
                 serviceContextScope.setOperative(false);
@@ -285,7 +291,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     public long submit(Observation observation, ContextScope scope) {
 
         if (scope instanceof ServiceContextScope serviceContextScope) {
-            return serviceContextScope.submitObservation(observation);
+            return serviceContextScope.submitObservation(observation,
+                    serviceContextScope.getDigitalTwin().knowledgeGraph().user());
         }
 
         return -1L;

@@ -15,16 +15,23 @@ import java.util.Map;
 /**
  * TODO check spatial queries: https://www.lyonwj.com/blog/neo4j-spatial-procedures-congressional-boundaries
  *  and https://neo4j-contrib.github.io/spatial/0.24-neo4j-3.1/index.html
+ * <p>
+ *  TODO must figure out where the heck the neo4j-spatial-5.20.0.jar is (no, it's not in
+ *   https://github.com/neo4j-contrib/m2 nor in osgeo)
  */
 public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     protected Driver driver;
+    protected Agent user;
+    protected Agent klab;
 
     // all predefined Cypher queries
     interface Queries {
 
         String FIND_CONTEXT = "MATCH (ctx:Context {id: $contextId}) RETURN ctx";
         String FIND_BY_ID = "MATCH (n) WHERE id(n) = $id RETURN n";
+        String FIND_BY_PROPERTY = "MATCH (n) WHERE {property} = $value RETURN n";
+        // retrieve ID as records().getFirst().get(keys().getFirst()) ?
         String CREATE_WITH_PROPERTIES = "CREATE (n:{type}) SET n = $properties RETURN id(n)";
         String UPDATE_PROPERTIES = "MATCH (n) WHERE id(n) = $id SET n += $properties";
         String INITIALIZATION_QUERY = "CREATE\n"
@@ -32,19 +39,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 + "\t(ctx:Context {id: $contextId, name: $name, user: $username, created: $timestamp, expiration: $expirationType}),\n"
                 + "\t// main provenance and dataflow nodes\n"
                 + "\t(prov:Provenance), (df:Dataflow),\n"
-                + "\t(ctx)<-[:HAS_PROVENANCE]-(prov),\n"
-                + "\t(ctx)<-[:HAS_DATAFLOW]-(df),\n"
+                + "\t(ctx)-[:HAS_PROVENANCE]->(prov),\n"
+                + "\t(ctx)-[:HAS_DATAFLOW]->(df),\n"
                 + "\t// default agents within provenance\n"
                 + "\t(user:Agent {name: $username, type: 'USER'}),\n"
                 + "\t(klab:Agent {name: 'k.LAB', type: 'AI'}),\n"
-                + "\t(prov)<-[:HAS_AGENT]-(user),\n"
-                + "\t(prov)<-[:HAS_AGENT]-(klab),\n"
+                + "\t(prov)-[:HAS_AGENT]->(user),\n"
+                + "\t(prov)-[:HAS_AGENT]->(klab),\n"
                 + "\t// ACTIVITY that created the whole thing\n"
                 + "\t(creation:Activity {started: $timestamp, ended: $timestamp}),\n"
                 + "\t// created by user\n"
-                + "\t(creation)<-[:BY_AGENT]-(user),\n"
+                + "\t(creation)-[:BY_AGENT]->(user),\n"
                 + "\t(ctx)<-[:CREATED]-(creation),\n"
-                + "(prov)<-[:HAS_ACTIVITY]-(creation)";
+                + "(prov)-[:HAS_ACTIVITY]->(creation)";
     }
 
     protected EagerResult query(String query, Map<String, Object> parameters) {
@@ -62,10 +69,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
      * Ensure things are OK re: main agents and the like. Must be called only once
      */
     protected void initializeContext() {
+
         var result = query(Queries.FIND_CONTEXT, Map.of("contextId", scope.getId()));
+
         if (result.records().isEmpty()) {
             long timestamp = System.currentTimeMillis();
-            result = query(
+            query(
                     Queries.INITIALIZATION_QUERY,
                     Map.of(
                             "contextId", scope.getId(),
@@ -74,16 +83,27 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                             "username", scope.getUser().getUsername(),
                             "expirationType", /* TODO */ "DEFAULT"));
         }
+
+        this.user = adapt(query(
+                Queries.FIND_BY_PROPERTY.replace("{property}", "name"),
+                Map.of("name", scope.getUser().getUsername())), Agent.class);
+        this.klab = adapt(query(
+                Queries.FIND_BY_PROPERTY.replace("{property}", "name"),
+                Map.of("name", "k.LAB")), Agent.class);
+    }
+
+    protected <T extends RuntimeAsset> T adapt(EagerResult query, Class<T> agentClass) {
+        return null;
     }
 
     @Override
     public Agent user() {
-        return null;
+        return user;
     }
 
     @Override
     public Agent klab() {
-        return null;
+        return klab;
     }
 
     @Override
@@ -101,20 +121,21 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     @Override
     protected long create(List<RuntimeAsset> targets, Map<String, Object> parameters) {
+
         long ret = Observation.UNASSIGNED_ID;
         for (var target : targets) {
-            var type = switch(target) {
+            var type = switch (target) {
                 case Observation x -> "Observation";
                 case Actuator x -> "Actuator";
                 case Agent x -> "Agent";
                 case Plan x -> "Plan";
-                default -> throw new KlabIllegalArgumentException("Cannot store " + target.getClass() + " in knowledge graph");
+                default -> throw new KlabIllegalArgumentException(
+                        "Cannot store " + target.getClass() + " in knowledge graph");
             };
 
             var result = query(Queries.CREATE_WITH_PROPERTIES.replace("{type}", type), asParameters(target));
             if (result != null && result.records().size() == 1) {
-                var dio = result.records().getFirst().asMap();
-                System.out.println("NDO STA EL ID DEL CAZ");
+                ret = result.records().getFirst().get(result.keys().getFirst()).asLong();
             }
 
         }

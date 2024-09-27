@@ -76,17 +76,16 @@ public interface KnowledgeGraph {
          * @param linkData
          * @return
          */
-        Operation linkTo(RuntimeAsset asset, Object... linkData);
+        Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo, Object... linkData);
 
         /**
-         * Same as {@link #linkTo(RuntimeAsset, Object...)} but creates an incoming connection with the passed
-         * asset.
+         * Link the passed asset directly to the root object of reference - provenance, context or dataflow.
          *
          * @param asset
          * @param linkData
          * @return
          */
-        Operation linkFrom(RuntimeAsset asset, Object... linkData);
+        Operation rootLink(RuntimeAsset asset, Object... linkData);
 
     }
 
@@ -97,13 +96,14 @@ public interface KnowledgeGraph {
      * passed and their existence in the graph. No change is made to the graph until {@link Operation#run()}
      * is called.
      * <p>
-     * An agent should always be inserted in an operation chain, either here or through
-     * {@link Operation#set(RuntimeAsset, Object...)}. Implementations may throw exceptions if run() is called
-     * without an agent set, but have the option of defining a default agent.
      *
+     * @param agent  the agent that will own the activity created
+     * @param scope  the specific scope, whose observer and context will determine the links made
+     * @param target any additional parameters. A string will be interpreted as the description of the
+     *               activity generated.
      * @return an operation
      */
-    Operation op(Object... target);
+    Operation op(Agent agent, ContextScope scope, Object... target);
 
 
     /**

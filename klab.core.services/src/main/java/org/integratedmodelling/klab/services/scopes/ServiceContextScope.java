@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -181,7 +182,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             return null;
         }
 
-        var id = submitObservation(observation);
+        var id = submitObservation(observation, digitalTwin.knowledgeGraph().user());
 
         // create task before resolution starts so we guarantee a response
         var ret = newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
@@ -213,15 +214,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         // TODO do stuff in the knowledge graph
     }
 
-    public long submitObservation(Observation observation) {
-        // TODO FIXME - create all the structure and metadata from the current context, parents and all
-        // should we have the same for relationships? A context 'between" x and y where a relationship
-        // can be observed? (wouldn't address collective relationships)
-        return digitalTwin.knowledgeGraph().op(observation).run();
-//        return digitalTwin.submit(observation, this.contextObservation,
-//                DigitalTwin.Relationship.Parent,
-//                // TODO TODO TODO - all the stuff
-//                null);
+    public long submitObservation(Observation observation, Agent agent) {
+        return digitalTwin.knowledgeGraph().op(agent,this, observation).run();
     }
 
     @Override
