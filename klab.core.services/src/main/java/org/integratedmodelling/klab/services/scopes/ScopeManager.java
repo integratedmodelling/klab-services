@@ -222,7 +222,7 @@ public class ScopeManager {
 
         if (contextualization.observationPath() != null) {
             for (String observationId : contextualization.observationPath()) {
-                var observation = ret.getObservation(observationId, DirectObservation.class);
+                var observation = ret.getObservation(observationId);
                 if (observation == null) {
                     throw new KlabResourceAccessException("Observation with ID " + observationId + " not " +
                             "found in context " + ret.getName());
@@ -232,7 +232,7 @@ public class ScopeManager {
         }
 
         if (contextualization.observerId() != null) {
-            var observer = ret.getObservation(contextualization.observerId(), Observation.class);
+            var observer = ret.getObservation(contextualization.observerId());
             if (observer == null) {
                 throw new KlabResourceAccessException("Subject with ID " + contextualization.observerId() + " not found in " +
                         "context " + ret.getName());

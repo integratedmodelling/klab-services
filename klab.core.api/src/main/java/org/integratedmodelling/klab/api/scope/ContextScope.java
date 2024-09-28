@@ -163,7 +163,7 @@ public interface ContextScope extends SessionScope {
      * @param contextObservation
      * @return a scope focused on the passed observation.
      */
-    ContextScope within(DirectObservation contextObservation);
+    ContextScope within(Observation contextObservation);
 
     //    /**
     //     * Contextualize to a specific subclass of a trait, which is observed within the current context
@@ -361,14 +361,22 @@ public interface ContextScope extends SessionScope {
     Map<Observable, Observation> getObservations();
 
     /**
-     * Retrieve the observation that is recognized with the passed name in this context.
+     * If there is an observation of this observable in the knowledge graph, return it, otherwise return null.
+     * The observation may be resolved or not: if not, no resolution should be attempted because it already
+     * failed in this scope, or the observation is being resolved by another agent.
      *
-     * @param <T>
-     * @param localName
-     * @param cls
+     * @param observable
      * @return
      */
-    <T extends Observation> T getObservation(String localName, Class<T> cls);
+    Observation getObservation(Observable observable);
+
+    /**
+     * Retrieve the observation that is recognized with the passed name or URN in this context.
+     *
+     * @param urn
+     * @return
+     */
+    Observation getObservation(String urn);
 
     //    /**
     //     * When resolving, the resolution namespace that provides the resolution scope must be provided.

@@ -99,7 +99,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     //    protected abstract Map<String, Object> nodeProperties(long nodeId);
 
     @Override
-    public Operation op(Agent agent, ContextScope scope, Object... targets) {
+    public Operation activity(Agent agent, ContextScope scope, Object... targets) {
 
         OperationImpl ret = new OperationImpl();
 

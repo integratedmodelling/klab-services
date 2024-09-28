@@ -122,15 +122,15 @@ public interface Resolution {
      */
     List<Pair<Resolvable, Coverage>> getResolution();
 
-    /**
-     * The resolution keeps tabs on anything that has been resolved already, either through models or
-     * pre-existing observations. The result, if not null, contains all the knowledge used to resolve the
-     * observable in the scope.
-     *
-     * @param observable
-     * @return
-     */
-    Collection<Resolvable> getResolved(Observable observable);
+//    /**
+//     * The resolution keeps tabs on anything that has been resolved already, either through models or
+//     * pre-existing observations. The result, if not null, contains all the knowledge used to resolve the
+//     * observable in the scope.
+//     *
+//     * @param observable
+//     * @return
+//     */
+//    Collection<Resolvable> getResolved(Observable observable);
 
     /**
      * Return the collection of whatever resolves the passed model using the passed strategy. The order is

@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.Map;
 
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -29,15 +30,15 @@ public interface RuntimeService extends KlabService {
     }
 
     /**
-     * Submit an observation to the runtime in the passed scope. The result is the observation ID, which
-     * can be used to follow the resolution task progress through AMPQ messaging (if configured) or polling.
+     * Submit an observation to the runtime in the passed scope. Resolution will start after acceptance. The
+     * result is the observation ID, which can be used to follow the resolution task progress through AMPQ
+     * messaging (if configured) or polling.
      *
      * @param observation
      * @param scope
      * @return
      */
     long submit(Observation observation, ContextScope scope);
-
 
     /**
      * The main function of the runtime.

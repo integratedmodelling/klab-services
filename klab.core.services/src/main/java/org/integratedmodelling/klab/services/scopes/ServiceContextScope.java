@@ -5,7 +5,6 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -215,7 +214,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     public long submitObservation(Observation observation, Agent agent) {
-        return digitalTwin.knowledgeGraph().op(agent,this, observation).run();
+        return digitalTwin.knowledgeGraph().activity(agent,this, observation).run();
     }
 
     @Override
@@ -314,8 +313,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 //        return ret;
 //    }
 
+
     @Override
-    public <T extends Observation> T getObservation(String localName, Class<T> cls) {
+    public Observation getObservation(Observable observable) {
+        return null;
+    }
+
+    @Override
+    public Observation getObservation(String localName) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -355,7 +360,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public ContextScope within(DirectObservation contextObservation) {
+    public ContextScope within(Observation contextObservation) {
         ServiceContextScope ret = new ServiceContextScope(this);
         ret.contextObservation = contextObservation;
 //        ret.catalog = new HashMap<>(this.catalog);

@@ -288,12 +288,19 @@ public class ResolverService extends BaseService implements Resolver {
         }
 
         // done already, nothing to do here
-        if (parent.getResolved(observable) != null) {
-            return Coverage.universal();
-        }
+//        if (parent.getResolved(observable) != null) {
+//            return Coverage.universal();
+//        }
 
-        // TODO have the runtime make the observation!
-        Observation observation = null;
+        // this returns an existing observation (resolved or not) or a new one with the unresolved ID
+        Observation observation = requireObservation(observable, scope);
+
+        if (observation.isResolved()) {
+            // we have it: TODO must be in the resolution graph?
+            return Coverage.universal();
+        } else if (observation.getId() >= 0) {
+            return Coverage.empty();
+        }
 
         // see what the reasoner thinks of this observable
         for (ObservationStrategy strategy :
@@ -315,6 +322,24 @@ public class ResolverService extends BaseService implements Resolver {
             }
         }
 
+        return ret;
+    }
+
+    /**
+     * If the runtime contains the observation, return it (in resolved or unresolved status but with a
+     * valid ID). Otherwise create one in the geometry that the scope implies, with the unresolved
+     * ID, and return it for submission to the knowledge graph.
+     *
+     * @param observable
+     * @param scope
+     * @return a non-null observation
+     */
+    private Observation requireObservation(Observable observable, ContextScope scope) {
+        var ret = scope.getObservation(observable);
+        if (ret == null) {
+            // TODO determine the right geometry
+            // TODO create the observation prototype
+        }
         return ret;
     }
 
@@ -479,6 +504,12 @@ public class ResolverService extends BaseService implements Resolver {
             coverage = coverage.merge(model.getCoverage(), LogicalConnector.INTERSECTION);
         }
         for (Observable dependency : model.getDependencies()) {
+
+            /**
+             * TODO NOW - the scope must be adjusted for the observable based on the dependent
+             *  or substantial character
+             */
+
             Coverage depcoverage = resolveObservable(dependency, scale, scope, parent, model);
             coverage = coverage.merge(depcoverage, LogicalConnector.INTERSECTION);
             if (coverage.isEmpty()) {
@@ -718,8 +749,6 @@ public class ResolverService extends BaseService implements Resolver {
     //    }
 
     private List<Knowledge> loadNamespace(KimNamespace namespace, Scope scope) {
-
-        System.out.println("LOADING THE NAMESPORP " + namespace);
 
         List<Knowledge> ret = new ArrayList<>();
         for (KlabStatement statement : namespace.getStatements()) {

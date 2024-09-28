@@ -68,14 +68,9 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     //    }
 
     @Override
-    public ContextScope within(DirectObservation contextObservation) {
+    public ContextScope within(Observation contextObservation) {
         return null;
     }
-
-    //    @Override
-    //    public ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait) {
-    //        return null;
-    //    }
 
     @Override
     public ContextScope connect(URL remoteContext) {
@@ -146,7 +141,14 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public <T extends Observation> T getObservation(String localName, Class<T> cls) {
+    public Observation getObservation(Observable observable) {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public Observation getObservation(String localName) {
+        // TODO
         return null;
     }
 
@@ -160,37 +162,6 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     public Observation getObservation(long id) {
         return null;
     }
-
-    //    @Override
-    //    public String getResolutionNamespace() {
-    //        return "";
-    //    }
-    //
-    //    @Override
-    //    public String getResolutionProject() {
-    //        return "";
-    //    }
-    //
-    //    @Override
-    //    public Collection<String> getResolutionScenarios() {
-    //        return List.of();
-    //    }
-
-    //    @Override
-    //    public DirectObservation getResolutionObservation() {
-    //        return null;
-    //    }
-
-    //    @Override
-    //    public ContextScope withContextualizationData(Observation contextObservation, Scale scale,
-    //                                                  Map<String, String> localNames) {
-    //        return null;
-    //    }
-    //
-    //    @Override
-    //    public Map<Concept, Concept> getContextualizedPredicates() {
-    //        return Map.of();
-    //    }
 
     @Override
     public void close() {

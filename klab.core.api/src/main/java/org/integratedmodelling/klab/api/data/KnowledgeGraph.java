@@ -19,6 +19,11 @@ import java.util.List;
  */
 public interface KnowledgeGraph {
 
+    /**
+     * Operations are defined and run to modify the knowledge graph. The operation API guarantees the proper
+     * updating of provenance in the graph so that any modification is recorded, attributed and saves in
+     * replayable history.
+     */
     interface Operation {
 
         /**
@@ -42,8 +47,10 @@ public interface KnowledgeGraph {
         //        /**
         //         * Create a new asset based on the passed parameters, which may include
         //         * {@link org.integratedmodelling.klab.api.knowledge.Observable},
-        //         * {@link org.integratedmodelling.klab.api.geometry.Geometry} or {@link Metadata} for observations,
-        //         * {@link Observation} itself (in which case it will behave like {@link #add(RuntimeAsset)}) or
+        //         * {@link org.integratedmodelling.klab.api.geometry.Geometry} or {@link Metadata} for
+        //         observations,
+        //         * {@link Observation} itself (in which case it will behave like {@link #add
+        //         (RuntimeAsset)}) or
         //         * predefined {@link RuntimeAsset}s such as provenance nodes or actuators.
         //         * <p>
         //         * Sets the current link target to the created object.
@@ -77,7 +84,8 @@ public interface KnowledgeGraph {
          * @param linkData
          * @return
          */
-        Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo, DigitalTwin.Relationship relationship, Object... linkData);
+        Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo, DigitalTwin.Relationship relationship,
+                       Object... linkData);
 
         /**
          * Link the passed asset directly to the root object of reference - provenance, context or dataflow.
@@ -92,19 +100,22 @@ public interface KnowledgeGraph {
 
 
     /**
-     * Create an operation to be run on the graph. If no parameters are passed, the first target must be set
-     * manually on the returned operation. Otherwise the target will be set according to which parameters are
-     * passed and their existence in the graph. No change is made to the graph until {@link Operation#run()}
-     * is called.
+     * Create a new operation to be run on the graph, resulting in assets being created or modified, with
+     * recording of provenance information. As a result, even an atomic operation may add several assets and
+     * relationships. Unless the operation is empty, exactly one Activity node is always created at run().
+     * <p>
+     * If no parameters are passed, the first target must be set manually on the returned operation. Otherwise
+     * the target will be set according to which parameters are passed and their existence in the graph. No
+     * change is made to the graph until {@link Operation#run()} is called.
      * <p>
      *
-     * @param agent  the agent that will own the activity created
-     * @param scope  the specific scope, whose observer and context will determine the links made
-     * @param target any additional parameters. A string will be interpreted as the description of the
-     *               activity generated.
-     * @return an operation
+     * @param agent   the agent that will own the activity created
+     * @param scope   the specific scope, whose observer and context will determine the links made
+     * @param targets any additional parameters. A string will be interpreted as the description of the
+     *                activity generated.
+     * @return a graph modification operation description ready for run()
      */
-    Operation op(Agent agent, ContextScope scope, Object... target);
+    Operation activity(Agent agent, ContextScope scope, Object... targets);
 
     /**
      * Remove all data relative to the currently contextualized scope. Graph becomes unusable after this is
@@ -179,7 +190,8 @@ public interface KnowledgeGraph {
      * @param <T>
      * @return
      */
-    <T extends RuntimeAsset> List<T> get(RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass);
+    <T extends RuntimeAsset> List<T> get(RuntimeAsset source, DigitalTwin.Relationship linkType,
+                                         Class<T> resultClass);
 
     /**
      * Build a federated graph resulting from merging with the URL pointing to a remote digital twin.
