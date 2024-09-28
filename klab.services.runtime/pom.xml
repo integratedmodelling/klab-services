@@ -8,7 +8,7 @@
     </parent>
     <artifactId>klab.services.runtime</artifactId>
     <properties>
-        <neo4j-version>5.20.0</neo4j-version>
+        <neo4j-version>5.23.0</neo4j-version>
     </properties>
     <build>
         <plugins>

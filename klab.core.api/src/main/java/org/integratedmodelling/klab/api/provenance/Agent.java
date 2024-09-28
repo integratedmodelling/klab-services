@@ -27,6 +27,6 @@ import org.integratedmodelling.klab.api.identities.Identity;
  * @author Ferd
  * @version $Id: $Id
  */
-public interface Agent extends Provenance.Node, Identity {
+public interface Agent extends Provenance.Node {
 
 }

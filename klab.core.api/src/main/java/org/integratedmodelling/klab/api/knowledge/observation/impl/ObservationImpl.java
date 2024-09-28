@@ -144,11 +144,11 @@ public class ObservationImpl implements Observation {
         return this.id;
     }
 
-    @Override
-    public long getTimestamp() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
+//    @Override
+//    public long getTimestamp() {
+//        // TODO Auto-generated method stub
+//        return 0;
+//    }
 
     @Override
     public boolean isEmpty() {

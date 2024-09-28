@@ -40,11 +40,6 @@ public class ActuatorImpl implements Actuator {
     }
 
     @Override
-    public long getTimestamp() {
-        return this.timestamp;
-    }
-
-    @Override
     public boolean isEmpty() {
         return this.empty;
     }

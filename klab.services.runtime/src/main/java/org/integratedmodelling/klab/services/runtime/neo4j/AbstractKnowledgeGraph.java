@@ -19,13 +19,14 @@ import java.util.Map;
 public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
     protected ContextScope scope;
-    protected Agent agent;
-    protected String description;
 
     record Step(OperationImpl.Type type, List<RuntimeAsset> targets, Map<String, Object> parameters) {
     }
 
     class OperationImpl implements Operation {
+
+        private Agent agent;
+        private String description;
 
         enum Type {
             CREATE,
@@ -34,7 +35,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
             SELECT
         }
 
-        List<Step> steps = new ArrayList<>();
+        private List<Step> steps = new ArrayList<>();
 
         @Override
         public long run() {
@@ -47,10 +48,11 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
             return this;
         }
 
-        @Override
-        public Operation create(Object... parameters) {
-            return this;
-        }
+        //        @Override
+        //        public Operation create(Object... parameters) {
+        ////            this.steps.add(new Step(Type.CREATE, List.of(observation), Map.of()));
+        //            return this;
+        //        }
 
         @Override
         public Operation set(RuntimeAsset source, Object... properties) {
@@ -59,7 +61,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
 
         @Override
-        public Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo, Object... linkData) {
+        public Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo, DigitalTwin.Relationship relationship, Object... linkData) {
+            this.steps.add(new Step(Type.LINK, List.of(assetFrom, assetTo), Parameters.create(linkData)));
             return this;
         }
 
@@ -67,19 +70,47 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         public Operation rootLink(RuntimeAsset asset, Object... linkData) {
             return this;
         }
+
+        public Agent getAgent() {
+            return agent;
+        }
+
+        public void setAgent(Agent agent) {
+            this.agent = agent;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public List<Step> getSteps() {
+            return steps;
+        }
+
+        public void setSteps(List<Step> steps) {
+            this.steps = steps;
+        }
     }
 
-    protected abstract Map<String, Object> nodeProperties(long nodeId);
+    //    protected abstract Map<String, Object> nodeProperties(long nodeId);
 
     @Override
     public Operation op(Agent agent, ContextScope scope, Object... targets) {
+
         OperationImpl ret = new OperationImpl();
+
+        ret.setAgent(agent);
+
         if (targets != null && targets.length > 0) {
             for (var target : targets) {
                 switch (target) {
                     case Observation observation -> {
                         if (observation.getId() < 0) {
-                            ret.create(observation, scope);
+                            ret.add(observation);
                         } else {
                             ret.set(observation);
                         }
@@ -94,12 +125,11 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                             ret.link(observation, scope.getObserver(), DigitalTwin.Relationship.Observer);
                         }
                     }
-                    case Agent newagent -> {
-                    }
                     case Actuator actuator -> {
                     }
                     case Activity activity -> {
                     }
+                    case String string -> ret.setDescription(string);
                     default -> throw new KlabInternalErrorException("Unexpected target in op");
                 }
             }
@@ -145,10 +175,9 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         switch (asset) {
             case Observation observation -> {
                 ret.putAll(observation.getMetadata());
-                ret.put("timestamp", observation.getTimestamp());
                 ret.put("name", observation.getName());
                 ret.put("updated", observation.getLastUpdate());
-                ret.put("type", observation.getType());
+                ret.put("type", observation.getType().name());
                 ret.put("urn", observation.getUrn());
                 ret.put("semantics", observation.getObservable().getUrn());
             }
@@ -164,9 +193,9 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         return ret;
     }
 
-    protected RuntimeAsset fromParameters(RuntimeAsset asset, Map<String, Object> parameters) {
-        return asset;
-    }
+    //    protected RuntimeAsset fromParameters(RuntimeAsset asset, Map<String, Object> parameters) {
+    //        return asset;
+    //    }
 
 
     /**

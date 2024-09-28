@@ -1,11 +1,11 @@
 package org.integratedmodelling.klab.api.data;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Agent;
-import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.scope.UserScope;
 
 import java.net.URL;
 import java.util.List;
@@ -39,19 +39,19 @@ public interface KnowledgeGraph {
          */
         Operation add(RuntimeAsset observation);
 
-        /**
-         * Create a new asset based on the passed parameters, which may include
-         * {@link org.integratedmodelling.klab.api.knowledge.Observable},
-         * {@link org.integratedmodelling.klab.api.geometry.Geometry} or {@link Metadata} for observations,
-         * {@link Observation} itself (in which case it will behave like {@link #add(RuntimeAsset)}) or
-         * predefined {@link RuntimeAsset}s such as provenance nodes or actuators.
-         * <p>
-         * Sets the current link target to the created object.
-         *
-         * @param parameters
-         * @return
-         */
-        Operation create(Object... parameters);
+        //        /**
+        //         * Create a new asset based on the passed parameters, which may include
+        //         * {@link org.integratedmodelling.klab.api.knowledge.Observable},
+        //         * {@link org.integratedmodelling.klab.api.geometry.Geometry} or {@link Metadata} for observations,
+        //         * {@link Observation} itself (in which case it will behave like {@link #add(RuntimeAsset)}) or
+        //         * predefined {@link RuntimeAsset}s such as provenance nodes or actuators.
+        //         * <p>
+        //         * Sets the current link target to the created object.
+        //         *
+        //         * @param parameters
+        //         * @return
+        //         */
+        //        Operation create(Object... parameters);
 
         /**
          * Sets an existing asset as the target for future links or updates called on the operation. If
@@ -72,11 +72,12 @@ public interface KnowledgeGraph {
          * When returning, the target is still set as before the link call, so that various link calls can be
          * chained.
          *
-         * @param asset
+         * @param assetFrom
+         * @param assetTo
          * @param linkData
          * @return
          */
-        Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo, Object... linkData);
+        Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo, DigitalTwin.Relationship relationship, Object... linkData);
 
         /**
          * Link the passed asset directly to the root object of reference - provenance, context or dataflow.
@@ -105,6 +106,12 @@ public interface KnowledgeGraph {
      */
     Operation op(Agent agent, ContextScope scope, Object... target);
 
+    /**
+     * Remove all data relative to the currently contextualized scope. Graph becomes unusable after this is
+     * called, and runtime exceptions will be thrown if the graph is not contextualized or any other method is
+     * called.
+     */
+    void deleteContext();
 
     /**
      * Returns the user agent asset from the provenance graph, which is created automatically when a
@@ -125,8 +132,18 @@ public interface KnowledgeGraph {
     Agent klab();
 
     /**
+     * Return a list of context IDs and creation timestamps for each context existing in the graph. This can
+     * be called on the main graph or the contextualized graph with the same result.
+     *
+     * @param scope user to which the contexts belong. May be null, in which case all contexts will be
+     *              returned.
+     * @return a list of matching IDs and creation timestamps
+     */
+    List<Pair<String, Long>> getExistingContexts(UserScope scope);
+
+    /**
      * Clear the knowledge graph - if contextualized, clear all the assets linked to the context, otherwise
-     * everything.
+     * delete everything.
      */
     void clear();
 
@@ -164,14 +181,6 @@ public interface KnowledgeGraph {
      */
     <T extends RuntimeAsset> List<T> get(RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass);
 
-    //    /**
-    //     * If true, the database can create a new database by merging with the URL of another digital twin,
-    //     * enabling federated DTs.
-    //     *
-    //     * @return true if distribution of DTs is enabled
-    //     */
-    //    boolean canDistribute();
-
     /**
      * Build a federated graph resulting from merging with the URL pointing to a remote digital twin.
      *
@@ -187,26 +196,9 @@ public interface KnowledgeGraph {
      */
     boolean isOnline();
 
-    //    /**
-    //     * Add a new observation to the graph, optionally linking to context (if other params are null) or
-    //     * contextual observation. The return value <em>must</em> become the ID of the observation.
-    //     *
-    //     * @param observation          the new observation, whose {@link Observation#getId()} <em>must</em> return
-    //     *                             {@link Observation#UNASSIGNED_ID} before the call.
-    //     * @param relationshipSource   can be null
-    //     * @param connection           cn be null
-    //     * @param relationshipMetadata can be null
-    //     * @return the ID for the new observation, which must be manually added to the passed peer.
-    //     */
-    //    long add(Observation observation, Object relationshipSource, DigitalTwin.Relationship connection,
-    //             Metadata relationshipMetadata);
-    //
-    //    long link(Observation source, Observation destination, DigitalTwin.Relationship linkType,
-    //              Metadata linkMetadata);
-    //
-    //    long add(Actuator actuator, Actuator parent);
-    //
-    //    long add(Provenance.Node node, Provenance.Node parent);
-
+    /**
+     * Do anything needed to shut down the graph. Should be called at end of VM on the non-contextualized
+     * graph; can also clean up temporary info for a single context scope.
+     */
     void shutdown();
 }
