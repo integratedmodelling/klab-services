@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.view.modeler.views.ContextView;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.ContextViewController;
@@ -136,6 +137,13 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
 
             if ("__NULL__".equals(sessionNumberOrId)) {
 
+                var runtime = KlabCLI.INSTANCE.user().getService(RuntimeService.class);
+                for (var session : runtime.getSessionInfo(KlabCLI.INSTANCE.user())) {
+                    // TODO this is the proper way
+                }
+
+                // FIXME below is the wrong way. Engine should only have a current session, the selected
+                //  runtime knows the rest.
                 int n = 1;
                 if (KlabCLI.INSTANCE.modeler().getOpenSessions().isEmpty()) {
                     out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow No sessions|@ "));
@@ -209,8 +217,10 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
 
         @Override
         public void run() {
-            // lists the contexts
-            System.out.println("Hola");
+            var runtime = KlabCLI.INSTANCE.user().getService(RuntimeService.class);
+            for (var session : runtime.getSessionInfo(KlabCLI.INSTANCE.user())) {
+
+            }
         }
 
     }

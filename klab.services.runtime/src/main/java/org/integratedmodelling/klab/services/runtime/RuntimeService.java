@@ -291,15 +291,16 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     public long submit(Observation observation, ContextScope scope) {
 
         if (scope instanceof ServiceContextScope serviceContextScope) {
-            return serviceContextScope.submitObservation(observation,
-                    serviceContextScope.getDigitalTwin().knowledgeGraph().user());
+//            return serviceContextScope.submitObservation(observation,
+//                    serviceContextScope.getDigitalTwin().knowledgeGraph().user());
         }
 
         return -1L;
     }
 
     @Override
-    public Provenance runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
+    public Provenance runDataflow(Dataflow<Observation> dataflow, KnowledgeGraph.Operation activity,
+                                  ContextScope contextScope) {
         return null;
     }
 

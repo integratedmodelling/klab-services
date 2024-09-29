@@ -94,16 +94,18 @@ public interface KnowledgeGraph {
          * @param scope
          * @return
          */
-        Operation success(ContextScope scope);
+        Operation success(ContextScope scope, RuntimeAsset... assets);
 
         /**
          * Call after run() when the activity has finished with errors to ensure that all info in the
          * knowledge graph reflect what has gone wrong.
          *
          * @param scope
+         * @param assets anything pertinent, assets, exceptions and the like
+         *
          * @return
          */
-        Operation fail(ContextScope scope);
+        Operation fail(ContextScope scope, Object... assets);
 
     }
 
@@ -114,7 +116,7 @@ public interface KnowledgeGraph {
      * <p>
      * If no parameters are passed, the first target must be set manually on the returned operation. Otherwise
      * the target will be set according to which parameters are passed and their existence in the graph. No
-     * change is made to the graph until {@link Operation#run()} is called.
+     * change is made to the graph until {@link Operation#run(ContextScope)} is called.
      * <p>
      * Obtaining and running an operation (i.e. creating a new Activity in the knowledge graph) will also
      * reset the idle time counter to 0 for those scopes whose expiration is IDLE_TIME. Operations may be

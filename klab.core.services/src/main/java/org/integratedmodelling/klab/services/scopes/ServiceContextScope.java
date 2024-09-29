@@ -34,23 +34,24 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     private Observation observer;
     private Observation contextObservation;
-//    private Set<String> resolutionScenarios = new LinkedHashSet<>();
-//    private Scale geometry = Scale.empty();
-//    @Deprecated
-//    private String resolutionNamespace;
-//    @Deprecated
-//    private String resolutionProject;
-//    @Deprecated
-//    private Map<Observable, Observation> catalog;
-//    @Deprecated
-//    private Map<String, Observable> namedCatalog = new HashMap<>();
-//    @Deprecated
-//    private Map<Concept, Concept> contextualizedPredicates = new HashMap<>();
+    //    private Set<String> resolutionScenarios = new LinkedHashSet<>();
+    //    private Scale geometry = Scale.empty();
+    //    @Deprecated
+    //    private String resolutionNamespace;
+    //    @Deprecated
+    //    private String resolutionProject;
+    //    @Deprecated
+    //    private Map<Observable, Observation> catalog;
+    //    @Deprecated
+    //    private Map<String, Observable> namedCatalog = new HashMap<>();
+    //    @Deprecated
+    //    private Map<Concept, Concept> contextualizedPredicates = new HashMap<>();
     private URL url;
     private DigitalTwin digitalTwin;
     // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
     protected ServiceContextScope parent;
-    protected Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints = new LinkedHashMap<>();
+    protected Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
+            new LinkedHashMap<>();
 
     // This uses the SAME catalog, which should only be redefined when changing context or perspective
     private ServiceContextScope(ServiceContextScope parent) {
@@ -58,11 +59,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.parent = parent;
         this.observer = parent.observer;
         this.contextObservation = parent.contextObservation;
-//        this.catalog = parent.catalog;
-//        this.namedCatalog.putAll(parent.namedCatalog);
-//        this.contextualizedPredicates.putAll(parent.contextualizedPredicates);
-//        this.resolutionScenarios.addAll(parent.resolutionScenarios);
-//        this.resolutionNamespace = parent.resolutionNamespace;
+        //        this.catalog = parent.catalog;
+        //        this.namedCatalog.putAll(parent.namedCatalog);
+        //        this.contextualizedPredicates.putAll(parent.contextualizedPredicates);
+        //        this.resolutionScenarios.addAll(parent.resolutionScenarios);
+        //        this.resolutionNamespace = parent.resolutionNamespace;
         this.digitalTwin = parent.digitalTwin;
         this.resolutionConstraints.putAll(parent.resolutionConstraints);
     }
@@ -100,7 +101,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.observer = null; // NAAH parent.getUser();
         this.data = Parameters.create();
         this.data.putAll(parent.data);
-//        this.catalog = new HashMap<>();
+        //        this.catalog = new HashMap<>();
         /*
          * TODO choose the services if this context or user requires specific ones
          */
@@ -153,24 +154,24 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     //        return geometry;
     //    }
 
-//    @Override
-//    public ServiceContextScope withScenarios(String... scenarios) {
-//        ServiceContextScope ret = new ServiceContextScope(this);
-//        if (scenarios == null) {
-//            ret.resolutionScenarios = null;
-//        }
-//        this.resolutionScenarios = new HashSet<>();
-//        for (String scenario : scenarios) {
-//            ret.resolutionScenarios.add(scenario);
-//        }
-//        return ret;
-//    }
+    //    @Override
+    //    public ServiceContextScope withScenarios(String... scenarios) {
+    //        ServiceContextScope ret = new ServiceContextScope(this);
+    //        if (scenarios == null) {
+    //            ret.resolutionScenarios = null;
+    //        }
+    //        this.resolutionScenarios = new HashSet<>();
+    //        for (String scenario : scenarios) {
+    //            ret.resolutionScenarios.add(scenario);
+    //        }
+    //        return ret;
+    //    }
 
     @Override
     public ServiceContextScope withObserver(Observation observer) {
         ServiceContextScope ret = new ServiceContextScope(this);
         ret.observer = observer;
-//        ret.catalog = new HashMap<>(this.catalog);
+        //        ret.catalog = new HashMap<>(this.catalog);
         return ret;
     }
 
@@ -181,7 +182,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             return null;
         }
 
-        var id = submitObservation(observation, digitalTwin.knowledgeGraph().user());
+        // root-level activity when user is the agent. Inside resolution the activity may have children
+        var activity = digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().user(), this,
+                observation);
+
+        var id = activity.run(this);
 
         // create task before resolution starts so we guarantee a response
         var ret = newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
@@ -195,13 +200,13 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             try {
                 var dataflow = resolver.resolve(observation, this);
                 if (dataflow != null && !dataflow.isEmpty()) {
-                    var provenance = runtime.runDataflow(dataflow, this);
+                    var provenance = runtime.runDataflow(dataflow, activity, this);
                     System.out.println("RESOLVED CRAPPETTONE " + id);
-                    finalizeObservation(observation, dataflow, provenance);
+                    activity.success(this,observation, dataflow, provenance);
                 }
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionSuccessful, id);
             } catch (Throwable t) {
-                System.out.println("RESOLVING INKULÉ " + id);
+                activity.fail(this,observation, t);
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted, id);
             }
         });
@@ -209,13 +214,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return ret;
     }
 
-    private void finalizeObservation(Observation observation, Dataflow<Observation> dataflow, Provenance provenance) {
+    private void finalizeObservation(Observation observation, Dataflow<Observation> dataflow,
+                                     Provenance provenance) {
         // TODO do stuff in the knowledge graph
     }
 
-    public long submitObservation(Observation observation, Agent agent) {
-        return digitalTwin.knowledgeGraph().activity(agent,this, observation).run(this);
-    }
+    //    public long submitObservation(Observation observation, Agent agent) {
+    //        return digitalTwin.knowledgeGraph().activity(agent,this, observation).run(this);
+    //    }
 
     @Override
     public Provenance getProvenance() {
@@ -250,10 +256,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return null;
     }
 
-//    @Override
-//    public Map<Concept, Concept> getContextualizedPredicates() {
-//        return contextualizedPredicates;
-//    }
+    //    @Override
+    //    public Map<Concept, Concept> getContextualizedPredicates() {
+    //        return contextualizedPredicates;
+    //    }
 
     @Override
     public Collection<Observation> getOutgoingRelationshipsOf(Observation observation) {
@@ -272,46 +278,46 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         // TODO use the DT
         return Map.of();
     }
-//
-//    @Override
-//    public String getResolutionNamespace() {
-//        return resolutionNamespace;
-//    }
-//
-//    public String getResolutionProject() {
-//        return resolutionProject;
-//    }
-//
-//    public void setResolutionProject(String resolutionProject) {
-//        this.resolutionProject = resolutionProject;
-//    }
-//
-//    @Override
-//    public Set<String> getResolutionScenarios() {
-//        return resolutionScenarios;
-//    }
+    //
+    //    @Override
+    //    public String getResolutionNamespace() {
+    //        return resolutionNamespace;
+    //    }
+    //
+    //    public String getResolutionProject() {
+    //        return resolutionProject;
+    //    }
+    //
+    //    public void setResolutionProject(String resolutionProject) {
+    //        this.resolutionProject = resolutionProject;
+    //    }
+    //
+    //    @Override
+    //    public Set<String> getResolutionScenarios() {
+    //        return resolutionScenarios;
+    //    }
 
     //    @Override
     //    public Observation getResolutionObservation() {
     //        return contextObservation;
     //    }
 
-//    @Override
-//    public ContextScope withContextualizationData(Observation contextObservation, Scale scale,
-//                                                  Map<String, String> localNames) {
-//        if (scale == null && localNames.isEmpty()) {
-//            return this;
-//        }
-//        ServiceContextScope ret = new ServiceContextScope(this);
-//        ret.contextObservation = contextObservation;
-//        if (scale != null) {
-//            ret.geometry = scale;
-//        }
-//        if (!localNames.isEmpty()) {
-//            this.namedCatalog = Utils.Maps.translateKeys(namedCatalog, localNames);
-//        }
-//        return ret;
-//    }
+    //    @Override
+    //    public ContextScope withContextualizationData(Observation contextObservation, Scale scale,
+    //                                                  Map<String, String> localNames) {
+    //        if (scale == null && localNames.isEmpty()) {
+    //            return this;
+    //        }
+    //        ServiceContextScope ret = new ServiceContextScope(this);
+    //        ret.contextObservation = contextObservation;
+    //        if (scale != null) {
+    //            ret.geometry = scale;
+    //        }
+    //        if (!localNames.isEmpty()) {
+    //            this.namedCatalog = Utils.Maps.translateKeys(namedCatalog, localNames);
+    //        }
+    //        return ret;
+    //    }
 
 
     @Override
@@ -363,28 +369,28 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     public ContextScope within(Observation contextObservation) {
         ServiceContextScope ret = new ServiceContextScope(this);
         ret.contextObservation = contextObservation;
-//        ret.catalog = new HashMap<>(this.catalog);
+        //        ret.catalog = new HashMap<>(this.catalog);
         return ret;
     }
 
-//    @Override
-//    public ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait) {
-//        ServiceContextScope ret = new ServiceContextScope(this);
-//        ret.contextualizedPredicates.put(abstractTrait, concreteTrait);
-//        return ret;
-//    }
+    //    @Override
+    //    public ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait) {
+    //        ServiceContextScope ret = new ServiceContextScope(this);
+    //        ret.contextualizedPredicates.put(abstractTrait, concreteTrait);
+    //        return ret;
+    //    }
 
     @Override
     public ContextScope between(Observation source, Observation target) {
         return null;
     }
 
-//    @Override
-//    public ContextScope withResolutionNamespace(String namespace) {
-//        ServiceContextScope ret = new ServiceContextScope(this);
-//        ret.resolutionNamespace = namespace;
-//        return ret;
-//    }
+    //    @Override
+    //    public ContextScope withResolutionNamespace(String namespace) {
+    //        ServiceContextScope ret = new ServiceContextScope(this);
+    //        ret.resolutionNamespace = namespace;
+    //        return ret;
+    //    }
 
     @Override
     public ContextScope withResolutionConstraints(ResolutionConstraint... resolutionConstraints) {
@@ -418,7 +424,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         if (constraint == null || constraint.size() == 0) {
             return defaultValue;
         }
-        return (T)constraint.payload(defaultValue.getClass()).getFirst();
+        return (T) constraint.payload(defaultValue.getClass()).getFirst();
     }
 
     @Override
@@ -427,7 +433,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         if (constraint == null || constraint.size() == 0) {
             return null;
         }
-        return (T)constraint.payload(resultClass).getFirst();
+        return (T) constraint.payload(resultClass).getFirst();
     }
 
     @Override

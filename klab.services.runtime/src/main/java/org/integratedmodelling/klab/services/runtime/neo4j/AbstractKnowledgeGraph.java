@@ -76,13 +76,13 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
 
         @Override
-        public Operation success(ContextScope scope) {
+        public Operation success(ContextScope scope, RuntimeAsset... assets) {
             finalizeOperation(this, scope, true);
             return this;
         }
 
         @Override
-        public Operation fail(ContextScope scope) {
+        public Operation fail(ContextScope scope, Object... objects) {
             finalizeOperation(this, scope, false);
             return this;
         }

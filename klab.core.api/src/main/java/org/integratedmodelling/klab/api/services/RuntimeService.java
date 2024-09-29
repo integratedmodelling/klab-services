@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -45,10 +46,15 @@ public interface RuntimeService extends KlabService {
     /**
      * The main function of the runtime.
      *
+     * FIXME have it return a coverage
+     *
+     * @param dataflow
+     * @param operation the activity that ran this. The dataflow will create child activity of it.
      * @param contextScope
+     *
      * @return
      */
-    Provenance runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope);
+    Provenance runDataflow(Dataflow<Observation> dataflow, KnowledgeGraph.Operation operation, ContextScope contextScope);
 
 
     /**
