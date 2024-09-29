@@ -188,7 +188,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
     }
 
-    @Override
+//    @Override
     protected long link(List<RuntimeAsset> targets, Map<String, Object> parameters) {
 
         System.out.println("LINK THESE FUCKERS");
@@ -196,7 +196,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return 0;
     }
 
-    @Override
+//    @Override
     protected long create(List<RuntimeAsset> targets, Map<String, Object> parameters) {
 
         long ret = Observation.UNASSIGNED_ID;
@@ -230,13 +230,43 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return ret;
     }
 
+
     @Override
+    protected long runOperation(OperationImpl operation, ContextScope scope) {
+
+        long ret = Observation.UNASSIGNED_ID;
+        for (var step : operation.getSteps()) {
+            switch (step.type()) {
+                case CREATE -> {
+                    ret = create(step.targets(), step.parameters());
+                }
+                case MODIFY -> {
+                    ret = modify(step.targets(), step.parameters());
+                }
+                case LINK -> {
+                    ret = link(step.targets(), step.parameters());
+                }
+            }
+            return ret;
+        }
+
+        return Observation.UNASSIGNED_ID;
+    }
+
+//    protected abstract long create(List<RuntimeAsset> targets, Map<String, Object> parameters);
+//
+//    protected abstract long link(List<RuntimeAsset> targets, Map<String, Object> parameters);
+//
+//    protected abstract long modify(List<RuntimeAsset> targets, Map<String, Object> parameters);
+
+
+//    @Override
     protected long modify(List<RuntimeAsset> targets, Map<String, Object> parameters) {
         return 0;
     }
 
     @Override
     protected void finalizeOperation(OperationImpl operation, ContextScope scope, boolean b) {
-        // TODO! Move here all activity update
+        // TODO! Update activity with status and time
     }
 }

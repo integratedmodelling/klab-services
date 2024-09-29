@@ -214,7 +214,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     public long submitObservation(Observation observation, Agent agent) {
-        return digitalTwin.knowledgeGraph().activity(agent,this, observation).run();
+        return digitalTwin.knowledgeGraph().activity(agent,this, observation).run(this);
     }
 
     @Override

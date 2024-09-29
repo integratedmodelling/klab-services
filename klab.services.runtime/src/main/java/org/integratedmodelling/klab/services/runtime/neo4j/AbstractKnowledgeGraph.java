@@ -9,6 +9,8 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
+import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
+import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 
@@ -24,10 +26,11 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     record Step(OperationImpl.Type type, List<RuntimeAsset> targets, Map<String, Object> parameters) {
     }
 
-    class OperationImpl implements Operation {
+    public class OperationImpl implements Operation {
 
-        private Agent agent;
+        private AgentImpl agent;
         private String description;
+        private ActivityImpl activity;
 
         enum Type {
             CREATE,
@@ -39,8 +42,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         private List<Step> steps = new ArrayList<>();
 
         @Override
-        public long run() {
-            return runOperation(steps);
+        public long run(ContextScope scope) {
+            return runOperation(this, scope);
         }
 
         @Override
@@ -89,7 +92,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
 
         public void setAgent(Agent agent) {
-            this.agent = agent;
+            this.agent = Agent.promote(agent);
         }
 
         public String getDescription() {
@@ -108,6 +111,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
             this.steps = steps;
         }
     }
+
+    protected abstract long runOperation(OperationImpl operation, ContextScope scope);
 
     protected abstract void finalizeOperation(OperationImpl operation, ContextScope scope, boolean b);
 
@@ -151,33 +156,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
         return ret;
     }
-
-    long runOperation(List<Step> operation) {
-
-        long ret = Observation.UNASSIGNED_ID;
-        for (var step : operation) {
-            switch (step.type) {
-                case CREATE -> {
-                    ret = create(step.targets, step.parameters);
-                }
-                case MODIFY -> {
-                    ret = modify(step.targets, step.parameters);
-                }
-                case LINK -> {
-                    ret = link(step.targets, step.parameters);
-                }
-            }
-            return ret;
-        }
-
-        return Observation.UNASSIGNED_ID;
-    }
-
-    protected abstract long create(List<RuntimeAsset> targets, Map<String, Object> parameters);
-
-    protected abstract long link(List<RuntimeAsset> targets, Map<String, Object> parameters);
-
-    protected abstract long modify(List<RuntimeAsset> targets, Map<String, Object> parameters);
 
     /**
      * Define all properties for the passed asset.

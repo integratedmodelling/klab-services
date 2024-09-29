@@ -39,7 +39,7 @@ public interface KnowledgeGraph {
          *
          * @return a valid ID or {@link Observation#UNASSIGNED_ID}
          */
-        long run();
+        long run(ContextScope scope);
 
         /**
          * Add the passed runtime asset, which must not be part of the graph already.
@@ -53,8 +53,8 @@ public interface KnowledgeGraph {
 
         /**
          * Sets an existing asset as the target for future links or updates called on the operation. If
-         * properties are passed that differ from the existing ones, an update is performed at {@link #run()}
-         * and the appropriate provenance records are inserted in the graph.
+         * properties are passed that differ from the existing ones, an update is performed at
+         * {@link #run(ContextScope)} and the appropriate provenance records are inserted in the graph.
          *
          * @param source
          * @return
