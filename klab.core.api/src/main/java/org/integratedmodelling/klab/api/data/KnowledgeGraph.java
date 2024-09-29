@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 
 import java.net.URL;
 import java.util.List;
@@ -16,6 +17,12 @@ import java.util.List;
  * and provenance nodes, all implementing {@link RuntimeAsset}. Implementations must use this interface only,
  * to implement persistent or non-persistent, distributed or local digital twin operation according to
  * configuration.
+ * <p>
+ * The way this is intended is that a {@link org.integratedmodelling.klab.api.services.RuntimeService}
+ * contains a main knowledge graph, initialized at startup, which is {@link #contextualize(ContextScope)}d to
+ * obtain the knowledge graph for each observation scope. The API depends on this behavior so that persistent
+ * sessions and contexts that have not expired can be retrieved for a given {@link UserScope} by the
+ * respective service calls.
  */
 public interface KnowledgeGraph {
 
@@ -43,22 +50,6 @@ public interface KnowledgeGraph {
          * @return
          */
         Operation add(RuntimeAsset observation);
-
-        //        /**
-        //         * Create a new asset based on the passed parameters, which may include
-        //         * {@link org.integratedmodelling.klab.api.knowledge.Observable},
-        //         * {@link org.integratedmodelling.klab.api.geometry.Geometry} or {@link Metadata} for
-        //         observations,
-        //         * {@link Observation} itself (in which case it will behave like {@link #add
-        //         (RuntimeAsset)}) or
-        //         * predefined {@link RuntimeAsset}s such as provenance nodes or actuators.
-        //         * <p>
-        //         * Sets the current link target to the created object.
-        //         *
-        //         * @param parameters
-        //         * @return
-        //         */
-        //        Operation create(Object... parameters);
 
         /**
          * Sets an existing asset as the target for future links or updates called on the operation. If
@@ -96,8 +87,25 @@ public interface KnowledgeGraph {
          */
         Operation rootLink(RuntimeAsset asset, Object... linkData);
 
-    }
+        /**
+         * Call after run() when the activity has finished without errors to ensure that all info in the
+         * knowledge graph is up to date from a successful run.
+         *
+         * @param scope
+         * @return
+         */
+        Operation success(ContextScope scope);
 
+        /**
+         * Call after run() when the activity has finished with errors to ensure that all info in the
+         * knowledge graph reflect what has gone wrong.
+         *
+         * @param scope
+         * @return
+         */
+        Operation fail(ContextScope scope);
+
+    }
 
     /**
      * Create a new operation to be run on the graph, resulting in assets being created or modified, with
@@ -108,6 +116,12 @@ public interface KnowledgeGraph {
      * the target will be set according to which parameters are passed and their existence in the graph. No
      * change is made to the graph until {@link Operation#run()} is called.
      * <p>
+     * Obtaining and running an operation (i.e. creating a new Activity in the knowledge graph) will also
+     * reset the idle time counter to 0 for those scopes whose expiration is IDLE_TIME. Operations may be
+     * invoked on the scope by the API user, but also triggered by applications, behaviors etc.
+     * <p>
+     * When the operation has run, call success() or fail() to update the knowledge graph with any IDs and
+     * states.
      *
      * @param agent   the agent that will own the activity created
      * @param scope   the specific scope, whose observer and context will determine the links made
@@ -150,7 +164,7 @@ public interface KnowledgeGraph {
      *              returned.
      * @return a list of matching IDs and creation timestamps
      */
-    List<Pair<String, Long>> getExistingContexts(UserScope scope);
+    List<ContextInfo> getExistingContexts(UserScope scope);
 
     /**
      * Clear the knowledge graph - if contextualized, clear all the assets linked to the context, otherwise

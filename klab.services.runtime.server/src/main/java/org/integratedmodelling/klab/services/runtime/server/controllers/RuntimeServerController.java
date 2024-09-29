@@ -5,6 +5,8 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
+import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
+import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.runtime.server.RuntimeServer;
@@ -13,6 +15,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @Secured(Role.USER)
@@ -37,5 +40,13 @@ public class RuntimeServerController {
             return task.trackingKey();
         }
         throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+    }
+
+    @GetMapping(ServicesAPI.RUNTIME.GET_SESSION_INFO)
+    public @ResponseBody List<SessionInfo> getSessionInfo(Principal principal) {
+        if (principal instanceof EngineAuthorization authorization) {
+            return runtimeService.klabService().getSessionInfo(authorization.getScope());
+        }
+        return List.of();
     }
 }

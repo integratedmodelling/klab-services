@@ -15,7 +15,6 @@ public interface SessionScope extends UserScope {
         return Type.SESSION;
     }
 
-
     /**
      * A session may represent a raw session, a script or an application. In each case a name is supplied and
      * can be retrieved. The name may not be unique.

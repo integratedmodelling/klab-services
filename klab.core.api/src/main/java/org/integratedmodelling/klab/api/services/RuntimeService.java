@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services;
 
 import java.net.URI;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -11,6 +12,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 
 /**
  * The runtime service holds the actual digital twins referred to by context scopes. Client scopes will
@@ -72,6 +74,14 @@ public interface RuntimeService extends KlabService {
         return true;
     }
 
+    /**
+     * Retrieve information for all the active sessions accessible to the passed scope.
+     *
+     * @param scope any scope, which will define visibility. User scopes with admin role will obtain
+     *              everything.
+     * @return the list of sessions with their contexts
+     */
+    List<SessionInfo> getSessionInfo(Scope scope);
 
     interface Admin {
 

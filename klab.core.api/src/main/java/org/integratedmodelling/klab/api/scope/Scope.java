@@ -13,31 +13,49 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 /**
  * The scope is a communication channel that holds all information about the knowledge environment in the
  * service. That includes other services, which must be set into the scope in either an embedded or client
- * implementation and are made available through {@link #getService(Class)}. Scopes are passed to most
- * functions in k.LAB.
+ * implementation and are made available through {@link #getService(Class)}. A scope of the appropriate class
+ * are a required argument to most calls in the k.LAB API.
  * <p>
  * There are three major classes of scope: authentication produces a {@link UserScope}, which can spawn
- * sessions and applications as "child" scopes. Within these, {@link ContextScope}s are used to make and
- * manage observations. In addition, a {@link ServiceScope} is used by each service to access logging, the
- * owning identity, and other services.
+ * sessions and applications as "child" {@link SessionScope}s. Within these, {@link ContextScope}s are used to
+ * create and maintain the environments where observations are made, serving as a handle to a "digital twin"
+ * that manages a dynamic, semantic knowledge graph (the "context"). In addition, a {@link ServiceScope} is
+ * used by each service to access logging, the owning identity, and other services.
  * <p>
- * The scope API exposes an agent handle through {@link #getAgent()} which is used to communicate with an
- * underlying software agent, incarnating the identity that owns the scope in a reactive environment.
- * According to implementation, the agent may or may not be present.
+ * The scope can be seen as an underlying software agent, incarnating the identity that owns the scope in a
+ * reactive environment. According to implementation, a reactive agent may or may not be physically
+ * implemented (in the reference implementation, agents are created on demand and they run k.Actors
+ * behaviors).
  * <p>
- * In a server context, the authentication mechanism is responsible for maintaing a valid hierarchy of scopes
- * based on the authorization token. Scopes should never be transferred through REST calls (they do not
- * implement Serializable on purpose) unless embedded in authorization tokens, from which they should be
- * extracted and sent to calls that require scopes. A "remote" scope MUST implement {@link #send(Object...)}
- * and the logging methods (with the possible exception of {@link #debug(Object...)}) so that they communicate
- * their arguments to the client-side scope using a suitable RPC mechanism.
+ * In a service context, the authentication mechanism is responsible for maintaining a valid hierarchy of
+ * scopes based on the authorization token, which must generate a valid {@link UserScope}. Scopes are not
+ * serialized for communication between services, but are replicated explicitly by the originating service
+ * into any other service that must be aware of them, using the
+ * {@link org.integratedmodelling.klab.api.ServicesAPI#CREATE_SESSION} and
+ * {@link org.integratedmodelling.klab.api.ServicesAPI#CREATE_CONTEXT} calls, after which they are referred to
+ * through the {@link org.integratedmodelling.klab.api.ServicesAPI#SCOPE_HEADER} in REST calls that require
+ * scopes below the user level. Each service maintains the state it needs to operate. The originator of
+ * {@link SessionScope}s and {@link ContextScope} is always the
+ * {@link org.integratedmodelling.klab.api.services.RuntimeService}.
  * <p>
- * At the moment, there is no requirement for the remote scope to be able to communicate with a remote agent
- * in case {@link #getAgent()} isn't null at the client side. This may become a requirement in the future.
+ * A "remote" scope implements {@link #send(Object...)} and the logging methods inherited from {@link Channel}
+ * so that they can communicate across services to their peer scopes using a suitable RPC mechanism (the
+ * reference implementation uses AMPQ messaging and separate queues for different event streams). The RPC
+ * mechanism is crucial to connect observation scopes into distributed digital twins.
+ * <p>
+ * Scopes expire according to their expiration type returned by {@link #getExpiration()}. Services are
+ * configured to define the details and may refuse scope creation requests that require unsupported expiration
+ * types.
  *
  * @author Ferd
  */
-public abstract interface Scope extends Channel {
+public interface Scope extends Channel {
+
+    enum Expiration {
+        IDLE_TIME,
+        AT_CLOSE,
+        EXPLICIT
+    }
 
     enum Status {
         WAITING, STARTED, CHANGED, FINISHED, ABORTED, INTERRUPTED, EMPTY
@@ -65,6 +83,13 @@ public abstract interface Scope extends Channel {
     }
 
     /**
+     * The expiration type for the scope. The details (e.g. the idle time) depend on service configuration.
+     *
+     * @return
+     */
+    Expiration getExpiration();
+
+    /**
      * All scope except a {@link UserScope} have a non-null parent scope. A {@link ContextScope} is the only
      * one that can have another scope of its same class as parent.
      *
@@ -78,7 +103,6 @@ public abstract interface Scope extends Channel {
      * @return
      */
     Parameters<String> getData();
-
 
 
     /**

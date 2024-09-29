@@ -1,26 +1,23 @@
 package org.integratedmodelling.klab.api.scope;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
-import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Future;
 
 /**
- * The scope for a context and any observations made within it. The context scope is the handle to the
- * "digital twin" of the observations made in it and contains all the methods that give access to the
- * observation, dataflow and provenance graphs. These are available from the GraphQL API served by the
+ * The scope for an observation context and any observations made within it. The observation scope is the
+ * handle to the "digital twin" of the observations made in it and contains all the methods that give access
+ * to the observation, dataflow and provenance graphs. These are available from the GraphQL API served by the
  * {@link org.integratedmodelling.klab.api.services.RuntimeService}.
  * <p>
  * The context scope always has an observer that can be switched to another when making observations. The
@@ -136,26 +133,6 @@ public interface ContextScope extends SessionScope {
      */
     ContextScope withObserver(Observation observer);
 
-    //    /**
-    //     * Return a new observation scope that sets the passed scenarios for any future observation.
-    //     *
-    //     * @param scenarios
-    //     * @return
-    //     * @deprecated use resolution constraints
-    //     */
-    //    ContextScope withScenarios(String... scenarios);
-
-    //    /**
-    //     * Return a new context scope with the passed namespace of resolution. Used by the resolver or to
-    //     * fine-tune resolution, prioritizing models in the passed namespace and the enclosing project.
-    //     *
-    //     * @param namespace
-    //     * @return
-    //     * @deprecated use resolution constraints
-    //     */
-    //    ContextScope withResolutionNamespace(String namespace);
-
-
     /**
      * Return a scope focused on a specific context observation. The focus determines the observations found
      * and made, and filters the dataflow and provenance returned.
@@ -164,26 +141,6 @@ public interface ContextScope extends SessionScope {
      * @return a scope focused on the passed observation.
      */
     ContextScope within(Observation contextObservation);
-
-    //    /**
-    //     * Contextualize to a specific subclass of a trait, which is observed within the current context
-    //     * observation, and defaults to the passed value overall if the resolution fails. The trait
-    //     becomes a
-    //     * constraint in the iteration of the scale, making the iterators skip any state where the trait
-    //     may be
-    //     * different from the one set through this method.
-    //     * <p>
-    //     * Using this method will trigger resolution and computation for each new base trait subsuming
-    //     * abstractTrait. Implementations may make its resolution lazy or not.
-    //     *
-    //     * @param abstractTrait subsuming value, may be concrete but will be observed if absent, so if
-    //     concrete
-    //     *                      the base trait will be observed instead.
-    //     * @param concreteTrait the fill value, may be abstract as long as it's subsumed by abstractTrait
-    //     * @return a new context scope that only considers the passed incarnation of the trait.
-    //     * @deprecated use resolution constraints
-    //     */
-    //    ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait);
 
     /**
      * Return a new context with source and target set to create and resolve a relationship.
@@ -326,15 +283,6 @@ public interface ContextScope extends SessionScope {
      */
     Collection<Observation> getChildrenOf(Observation observation);
 
-    //    /**
-    //     * Return mappings for any predicates contextualized with
-    //     * {@link #withContextualizedPredicate(Concept, Concept)} at context creation.
-    //     *
-    //     * @deprecated merge into resolution constraints
-    //     * @return the contextualized predicates mapping
-    //     */
-    //    Map<Concept, Concept> getContextualizedPredicates();
-
     /**
      * Inspect the network graph of the current context, returning all relationships that have the passed
      * subject as target.
@@ -361,9 +309,14 @@ public interface ContextScope extends SessionScope {
     Map<Observable, Observation> getObservations();
 
     /**
-     * If there is an observation of this observable in the knowledge graph, return it, otherwise return null.
-     * The observation may be resolved or not: if not, no resolution should be attempted because it already
-     * failed in this scope, or the observation is being resolved by another agent.
+     * If there is an observation of this observable in the knowledge graph under this scope, return it,
+     * otherwise return null. The observation may be resolved or not: if not, no resolution should be
+     * attempted because it already failed in this scope, or the observation is being resolved by another
+     * agent.
+     * <p>
+     * This and {@link #getObservation(String)} are the only methods that return previously made observations
+     * in the scope. Any kind of complex query (including these) can be made through the GraphQL endpoint in
+     * the runtime.
      *
      * @param observable
      * @return
@@ -371,64 +324,17 @@ public interface ContextScope extends SessionScope {
     Observation getObservation(Observable observable);
 
     /**
-     * Retrieve the observation that is recognized with the passed name or URN in this context.
+     * Retrieve the observation that is recognized with the passed name or URN in this scope.
+     * <p>
+     * This and {@link #getObservation(Observable)} are the only methods that return previously made
+     * observations in the scope. Any kind of complex query (including these) can be made through the GraphQL
+     * endpoint in the runtime.
      *
-     * @param urn
-     * @return
+     * @param urn can be a URN, a formal name for a direct observation, or just the observation ID (as a
+     *            string) as long as it's unique and unambiguous.
+     * @return the observation or null
      */
     Observation getObservation(String urn);
-
-    //    /**
-    //     * When resolving, the resolution namespace that provides the resolution scope must be provided.
-    //     In other
-    //     * situations this will be null.
-    //     *
-    //     * @return
-    //     * @deprecated use resolution constraints
-    //     */
-    //    String getResolutionNamespace();
-
-    //    /**
-    //     * Same as {@link #getResolutionNamespace()}, reporting the project in scope during resolution.
-    //     *
-    //     * @return
-    //     * @deprecated use resolution constraints
-    //     */
-    //    String getResolutionProject();
-
-    //    /**
-    //     * Any scenarios set during the resolution.
-    //     *
-    //     * @return
-    //     * @deprecated use resolution constraints
-    //     */
-    //    Collection<String> getResolutionScenarios();
-    //
-    //    /**
-    //     * A context is born "empty" and since k.LAB 0.12 does not have a root observation, but when used in
-    //     * resolution may acquire a root observation which serves as context for the resolution.
-    //     *
-    //     * @return
-    //     * @deprecated use the context but the geometry of resolution is the observer's for substantials,
-    //     and the
-    //     * context observation's for dependents
-    //     */
-    //    DirectObservation getResolutionObservation();
-
-    //    /**
-    //     * Create a new scope if necessary where the catalog uses the passed local names and the scale,
-    //     if not
-    //     * null, is the passed one. Called before each actuator's functors are executed and passed to the
-    //     functor
-    //     * executor.
-    //     *
-    //     * @param scale      may be null, meaning that the original scale is unchanged
-    //     * @param localNames if empty, the catalog remains the same
-    //     * @return a localized context or this one if nothing needs to change
-    //     * @deprecated revise, at best this should be non-API and only at service side
-    //     */
-    //    ContextScope withContextualizationData(Observation contextObservation, Scale scale, Map<String,
-    //            String> localNames);
 
     /**
      * Set resolution constraints here. Returns a new scope with all the constraints added to the ones in
@@ -503,7 +409,7 @@ public interface ContextScope extends SessionScope {
      * @param scope
      * @return
      */
-    public static String getScopeId(ContextScope scope) {
+    static String getScopeId(ContextScope scope) {
 
         StringBuffer ret = new StringBuffer(512);
 
@@ -531,24 +437,6 @@ public interface ContextScope extends SessionScope {
         if (scope.getObserver() != null) {
             ret.append("#").append(scope.getObserver().getId());
         }
-
-        //        if (!scope.getResolutionScenarios().isEmpty()) {
-        //            ret.append("@").append(Utils.Strings.join(scope.getResolutionScenarios(), ","));
-        //        }
-
-        //        if (!scope.getContextualizedPredicates().isEmpty()) {
-        //            ret.append("&");
-        //            StringBuffer buf = new StringBuffer();
-        //            for (Concept key : scope.getContextualizedPredicates().keySet()) {
-        //                buf.append((buf.isEmpty() ? "" : ",") + key.getUrn() + "=" + scope
-        //                .getContextualizedPredicates().get(key).getUrn());
-        //            }
-        //            ret.append(buf);
-        //        }
-
-        //        if (scope.getResolutionNamespace() != null) {
-        //            ret.append("$").append(scope.getResolutionNamespace());
-        //        }
 
         return ret.toString();
     }
@@ -580,35 +468,8 @@ public interface ContextScope extends SessionScope {
         String scopeId = null;
         String[] observationPath = null;
         String observerId = null;
-        //        String[] scenarioUrns = null;
-        //        String resolutionNamespace = null;
-        //        Map<String, String> traitIncarnations = null;
 
         if (scopeToken != null) {
-
-            //            if (scopeToken.contains("$")) {
-            //                String[] split = scopeToken.split("\\@");
-            //                scopeToken = split[0];
-            //                resolutionNamespace = split[1];
-            //            }
-
-            //            if (scopeToken.contains("&")) {
-            //                String[] split = scopeToken.split("\\@");
-            //                scopeToken = split[0];
-            //                traitIncarnations = new LinkedHashMap<>();
-            //                for (var pair : split[1].split(",")) {
-            //                    String[] pp = pair.split("=");
-            //                    traitIncarnations.put(pp[0], pp[1]);
-            //                }
-            //            }
-
-            //            // separate out scenarios
-            //            if (scopeToken.contains("@")) {
-            //                String[] split = scopeToken.split("@");
-            //                scopeToken = split[0];
-            //                scenarioUrns = split[1].split(",");
-            //            }
-
             // Separate out observer path if any
             if (scopeToken.contains("#")) {
                 String[] split = scopeToken.split("#");

@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -71,6 +72,18 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
             return this;
         }
 
+        @Override
+        public Operation success(ContextScope scope) {
+            finalizeOperation(this, scope, true);
+            return this;
+        }
+
+        @Override
+        public Operation fail(ContextScope scope) {
+            finalizeOperation(this, scope, false);
+            return this;
+        }
+
         public Agent getAgent() {
             return agent;
         }
@@ -95,6 +108,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
             this.steps = steps;
         }
     }
+
+    protected abstract void finalizeOperation(OperationImpl operation, ContextScope scope, boolean b);
 
     //    protected abstract Map<String, Object> nodeProperties(long nodeId);
 
@@ -177,8 +192,11 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                 ret.putAll(observation.getMetadata());
                 ret.put("name", observation.getName());
                 ret.put("updated", observation.getLastUpdate());
+                ret.put("resolved", observation.isResolved());
                 ret.put("type", observation.getType().name());
                 ret.put("urn", observation.getUrn());
+                ret.put("semantictype", SemanticType.fundamentalType(
+                        observation.getObservable().getSemantics().getType()).name());
                 ret.put("semantics", observation.getObservable().getUrn());
             }
             case Agent agent -> {

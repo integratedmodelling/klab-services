@@ -21,6 +21,7 @@ import java.util.List;
 public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl implements ReactiveScope {
 
     protected KActorsBehavior.Ref agent;
+    protected Expiration expiration = Expiration.AT_CLOSE;
 
     public AbstractReactiveScopeImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity, isSender, isReceiver);
@@ -84,4 +85,12 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl imp
         throw new KlabInternalErrorException("wrong message with class " + message.getMessageClass() + " " + "sent to ReactiveScope::ask");
     }
 
+    @Override
+    public Expiration getExpiration() {
+        return expiration;
+    }
+
+    public void setExpiration(Expiration expiration) {
+        this.expiration = expiration;
+    }
 }

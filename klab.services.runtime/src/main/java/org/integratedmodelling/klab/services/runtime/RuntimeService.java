@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
+import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
@@ -36,7 +37,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RuntimeService extends BaseService implements org.integratedmodelling.klab.api.services.RuntimeService, org.integratedmodelling.klab.api.services.RuntimeService.Admin {
-
 
     private String hardwareSignature =
             org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
@@ -69,14 +69,14 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         }
     }
 
-    private boolean createGraphDatabase() {
+    private boolean createMainKnowledgeGraph() {
         // TODO choose the DB from configuration - client or embedded server
         var path = BaseService.getConfigurationSubdirectory(startupOptions, "dt").toPath();
         this.knowledgeGraph = new KnowledgeGraphNeo4JEmbedded(path);
         return this.knowledgeGraph.isOnline();
     }
 
-    public KnowledgeGraph getGraphDatabase() {
+    public KnowledgeGraph getMainKnowledgeGraph() {
         return this.knowledgeGraph;
     }
 
@@ -100,7 +100,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         extensionPackages.add("org.integratedmodelling.klab.runtime");
         extensionPackages.add("org.integratedmodelling.klab.runtime.temporary");
 
-        if (createGraphDatabase()) {
+        if (createMainKnowledgeGraph()) {
 
             /*
              * Check for updates, load and scan all new plug-ins, returning the main packages to scan
@@ -247,7 +247,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             serviceContextScope.setId(
                     serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
             getScopeManager().registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
-            serviceContextScope.setDigitalTwin(new DigitalTwinImpl(contextScope, getGraphDatabase()));
+            serviceContextScope.setDigitalTwin(new DigitalTwinImpl(contextScope, getMainKnowledgeGraph()));
 
             if (serviceContextScope.getServices(RuntimeService.class).isEmpty()) {
                 // add self as the runtime service, which is needed by the slave scopes
@@ -303,4 +303,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         return null;
     }
 
+    @Override
+    public List<SessionInfo> getSessionInfo(Scope scope) {
+        return List.of();
+    }
 }

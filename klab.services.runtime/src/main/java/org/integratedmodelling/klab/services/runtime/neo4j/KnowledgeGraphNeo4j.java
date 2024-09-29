@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import org.checkerframework.checker.units.qual.C;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -12,8 +13,10 @@ import org.integratedmodelling.klab.api.provenance.Plan;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.provenance.impl.PlanImpl;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.EagerResult;
 
@@ -92,7 +95,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                             "name", scope.getName(),
                             "timestamp", timestamp,
                             "username", scope.getUser().getUsername(),
-                            "expirationType", /* TODO */ "DEFAULT"));
+                            "expirationType", scope.getExpiration().name()));
         }
 
         this.user = adapt(
@@ -154,19 +157,24 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     @Override
-    public List<Pair<String, Long>> getExistingContexts(UserScope scope) {
+    public List<ContextInfo> getExistingContexts(UserScope scope) {
 
-        var ret = new ArrayList<Pair<String, Long>>();
+        var ret = new ArrayList<ContextInfo>();
         var result = scope == null
                      ? query(
-                             "match (c:Context)<-[:CREATED]-(a:Activity) return c.id as contextId, a.start as startTime",
-                             Map.of())
+                "match (c:Context)<-[:CREATED]-(a:Activity) return c.id as contextId, a.start as startTime",
+                Map.of())
                      : query(
-                             "match (c:Context {user: $username})<-[:CREATED]-(a:Activity) return c.id as contextId, a.start as startTime",
+                             "match (c:Context {user: $username})<-[:CREATED]-(a:Activity) return c.name as contextName, c.id as contextId, a.start as startTime",
                              Map.of("username", scope.getUser().getUsername()));
 
         for (var record : result.records()) {
-            ret.add(Pair.of(record.get("contextId").asString(), record.get("startTime").asLong()));
+            ContextInfo info = new ContextInfo();
+            info.setId(record.get("contextId").asString());
+            info.setName(record.get("contextName").asString());
+            info.setCreationTime(record.get("startTime").asLong());
+            // TODO the rest
+            ret.add(info);
         }
         return ret;
     }
@@ -204,7 +212,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             };
 
             var props = asParameters(target);
-            var result = query(Queries.CREATE_WITH_PROPERTIES.replace("{type}", type),
+            var result = query(
+                    Queries.CREATE_WITH_PROPERTIES.replace("{type}", type),
                     Map.of("properties", asParameters(target)));
             if (result != null && result.records().size() == 1) {
                 ret = result.records().getFirst().get(result.keys().getFirst()).asLong();
@@ -212,8 +221,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                     observation.setId(ret);
                     observation.setUrn(scope.getId() + "." + ret);
                     props.put("urn", observation.getUrn());
-                    query(Queries.UPDATE_PROPERTIES.replace("{type}", type),
-                            Map.of("id", ret,"properties", props));
+                    query(
+                            Queries.UPDATE_PROPERTIES.replace("{type}", type),
+                            Map.of("id", ret, "properties", props));
                 }
             }
         }
@@ -225,13 +235,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return 0;
     }
 
-
-    //    @Override
-    //    protected Map<String, Object> nodeProperties(long nodeId) {
-    //        var result = query(Queries.FIND_BY_ID, Map.of("id", nodeId));
-    //        if (result != null && !result.records().isEmpty()) {
-    //            return result.records().getFirst().asMap();
-    //        }
-    //        return Map.of();
-    //    }
+    @Override
+    protected void finalizeOperation(OperationImpl operation, ContextScope scope, boolean b) {
+        // TODO! Move here all activity update
+    }
 }

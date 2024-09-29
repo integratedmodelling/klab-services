@@ -333,6 +333,7 @@ public interface ServicesAPI {
 
         }
 
+        String GET_SESSION_INFO = "/sessions";
 
         /**
          * The GraphQL endpoint for digital twin access.

@@ -25,6 +25,7 @@ public abstract class AbstractDelegatingScope implements Scope {
     Parameters<String> data = Parameters.create();
     Status status = Status.EMPTY;
     Scope parentScope;
+    private Expiration expiration = Expiration.AT_CLOSE;
 
     public AbstractDelegatingScope(Channel delegateChannel) {
         this.delegateChannel = delegateChannel;
@@ -151,5 +152,14 @@ public abstract class AbstractDelegatingScope implements Scope {
     public BiConsumer<Channel, Message>[] listeners() {
         return delegateChannel instanceof ChannelImpl channel ?
                channel.listeners().toArray(BiConsumer[]::new) : null;
+    }
+
+    @Override
+    public Expiration getExpiration() {
+        return expiration;
+    }
+
+    public void setExpiration(Expiration expiration) {
+        this.expiration = expiration;
     }
 }
