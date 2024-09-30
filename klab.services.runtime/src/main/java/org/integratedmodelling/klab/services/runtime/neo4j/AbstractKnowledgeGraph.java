@@ -24,7 +24,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
     protected ContextScope scope;
 
-    record Step(OperationImpl.Type type, List<RuntimeAsset> targets, Map<String, Object> parameters) {
+    record Step(OperationImpl.Type type, List<RuntimeAsset> targets, Object[] parameters) {
     }
 
     public class OperationImpl implements Operation {
@@ -53,19 +53,19 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
         @Override
         public Operation add(RuntimeAsset observation) {
-            this.steps.add(new Step(Type.CREATE, List.of(observation), Map.of()));
+            this.steps.add(new Step(Type.CREATE, List.of(observation), null));
             return this;
         }
 
         @Override
         public Operation set(RuntimeAsset source, Object... properties) {
-            this.steps.add(new Step(Type.MODIFY, List.of(source), Parameters.create(properties)));
+            this.steps.add(new Step(Type.MODIFY, List.of(source), properties));
             return this;
         }
 
         @Override
         public Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo, DigitalTwin.Relationship relationship, Object... linkData) {
-            this.steps.add(new Step(Type.LINK, List.of(assetFrom, assetTo), Parameters.create(linkData)));
+            this.steps.add(new Step(Type.LINK, List.of(assetFrom, assetTo), linkData));
             return this;
         }
 

@@ -4,6 +4,7 @@ import org.checkerframework.checker.units.qual.C;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -21,6 +22,7 @@ import org.neo4j.driver.Driver;
 import org.neo4j.driver.EagerResult;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -66,6 +68,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 + "\t(ctx)<-[:CREATED]-(creation),\n"
                 + "(prov)-[:HAS_ACTIVITY]->(creation)";
         String GET_AGENT_BY_NAME = "match (ctx:Context {id: $contextId})-->(prov:Provenance)-[:HAS_AGENT]->(a:Agent {name: $agentName}) RETURN a";
+        String LINK_ASSETS = "match (n:{fromLabel}}), (c:{toLabel}}) WHERE n.{fromKeyProperty} = $fromKey AND c.{toKeyProperty}} = $toKey CREATE (c)-[r:{relationshipLabel}}]->(n) return r";
     }
 
     protected EagerResult query(String query, Map<String, Object> parameters) {
@@ -186,19 +189,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
     }
 
-    //    @Override
-    protected long link(List<RuntimeAsset> targets, Map<String, Object> parameters) {
-
-        System.out.println("LINK THESE FUCKERS");
-
-        return 0;
-    }
-
-    //    @Override
-//    protected long create(List<RuntimeAsset> targets, Map<String, Object> parameters) {
+//    //    @Override
+//    protected long link(List<RuntimeAsset> targets, Map<String, Object> parameters) {
 //
-//        return ret;
+//        System.out.println("LINK THESE FUCKERS");
+//
+//        return 0;
 //    }
+
+    //    @Override
+    //    protected long create(List<RuntimeAsset> targets, Map<String, Object> parameters) {
+    //
+    //        return ret;
+    //    }
 
 
     @Override
@@ -212,16 +215,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 case CREATE -> {
 
                     for (var target : step.targets()) {
-                        var type = switch (target) {
-                            case Observation x -> "Observation";
-                            case Activity x -> "Activity";
-                            case Actuator x -> "Actuator";
-                            case Agent x -> "Agent";
-                            case Plan x -> "Plan";
-                            default -> throw new KlabIllegalArgumentException(
-                                    "Cannot store " + target.getClass() + " in knowledge graph");
-                        };
 
+                        var type = getLabel(target);
                         var props = asParameters(target);
                         var result = query(
                                 Queries.CREATE_WITH_PROPERTIES.replace("{type}", type),
@@ -240,13 +235,25 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                     }
                 }
                 case MODIFY -> {
-                    ret = modify(step.targets(), step.parameters());
+
+
+//                    ret = modify(step.targets(), step.parameters());
                 }
                 case LINK -> {
 
-                    // match (n:Diocan), (c:Context) WHERE n.porco = 'Dio' AND c.id = '1io3bjbpr.1ioau1c8g' CREATE (c)-[r:DIOCAN]->(n) return r
+                    DigitalTwin.Relationship relationship;
+                    var props = new HashMap<String, Object>();
 
-                    ret = link(step.targets(), step.parameters());
+                    for (int i = 0; i < step.parameters().length; i++) {
+                        var arg = step.parameters()[i];
+                        if (arg instanceof DigitalTwin.Relationship dr) {
+                            relationship = dr;
+                        } else {
+                            props.put(arg.toString(), step.parameters()[++i]);
+                        }
+                    }
+
+//                    ret = link(step.targets(), step.parameters());
                 }
             }
             return ret;
@@ -261,11 +268,22 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     //
     //    protected abstract long modify(List<RuntimeAsset> targets, Map<String, Object> parameters);
 
+private String getLabel(Object target) {
+    return switch (target) {
+        case Observation x -> "Observation";
+        case Activity x -> "Activity";
+        case Actuator x -> "Actuator";
+        case Agent x -> "Agent";
+        case Plan x -> "Plan";
+        default -> throw new KlabIllegalArgumentException(
+                "Cannot store " + target.getClass() + " in knowledge graph");
+    };
+}
 
-    //    @Override
-    protected long modify(List<RuntimeAsset> targets, Map<String, Object> parameters) {
-        return 0;
-    }
+//    //    @Override
+//    protected long modify(List<RuntimeAsset> targets, Map<String, Object> parameters) {
+//        return 0;
+//    }
 
     @Override
     protected void finalizeOperation(OperationImpl operation, ContextScope scope, boolean b) {
