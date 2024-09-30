@@ -11,10 +11,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
-import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 import java.util.Map;
 import java.util.Set;
@@ -31,12 +29,17 @@ public interface DigitalTwin {
      * defined.
      */
     enum Relationship {
-        Parent,
-        Affects,
-        Connects,
-        EmergesFrom,
-        Observer,
-        RootObservation
+        HAS_PARENT,
+        AFFECTED,
+        EMERGED_FROM,
+        HAS_OBSERVER,
+        HAS_PLAN,
+        BY_AGENT,
+        CREATED,
+        HAS_DATAFLOW,
+        HAS_PROVENANCE,
+        HAS_ACTIVITY,
+        HAS_CHILD
     }
 
     KnowledgeGraph knowledgeGraph();

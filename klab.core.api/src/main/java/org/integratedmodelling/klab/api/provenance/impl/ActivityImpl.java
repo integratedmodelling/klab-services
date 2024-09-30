@@ -5,22 +5,87 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeIns
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
+    private long start;
+    private long end;
+    private List<Long> schedulerTime = new ArrayList<>();
+    private long size;
+    private long credits;
+    private Type type;
+    private String description;
+    private long id;
+
     @Override
     public long getStart() {
-        return 0;
+        return start;
+    }
+
+    public void setStart(long start) {
+        this.start = start;
     }
 
     @Override
     public long getEnd() {
-        return 0;
+        return end;
+    }
+
+    public void setEnd(long end) {
+        this.end = end;
     }
 
     @Override
-    public long getSchedulerTime() {
-        return 0;
+    public List<Long> getSchedulerTime() {
+        return schedulerTime;
+    }
+
+    public void setSchedulerTime(List<Long> schedulerTime) {
+        this.schedulerTime = schedulerTime;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
+    public long getCredits() {
+        return credits;
+    }
+
+    public void setCredits(long credits) {
+        this.credits = credits;
+    }
+
+    @Override
+    public Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 }

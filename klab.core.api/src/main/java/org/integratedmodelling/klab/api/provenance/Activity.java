@@ -14,6 +14,7 @@
 package org.integratedmodelling.klab.api.provenance;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -22,13 +23,24 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeIns
 
 /**
  * Activity (process). Primary processes produce artifacts. Secondary processes (after creation) may modify
- * them. Activities in k.LAB represent each execution of an actuator, which represents a IPlan (part of the
- * overall plan that is the IActuator).
+ * them. Activities in k.LAB should always be linked to (1) the root provenance node for a context scope
+ * through the main provenance node or a parent activity; (2) the agent that engendered them; and (3) the plan
+ * represented by a dataflow or actuator. The latter can be optional if the activity is explicit and the actor
+ * is a user, unless we want to capture the user's intention.
+ * <p>
+ * To optimize the provenance graph, actions that are repeated by the scheduler will not generate a new
+ * activity but add a timestamp to {@link #getSchedulerTime()};
  *
  * @author Ferd
  * @version $Id: $Id
  */
 public interface Activity extends Provenance.Node {
+
+    enum Type {
+        INITIALIZATION, RESOLUTION, CONTEXTUALIZATION
+    }
+
+    Type getType();
 
     /**
      * System time of start.
@@ -45,11 +57,34 @@ public interface Activity extends Provenance.Node {
     long getEnd();
 
     /**
-     * Scheduler time of action. Zero if agent is not the k.LAB scheduler.
+     * A quantification of the¶ "size" of the activity in any metric that can be compared across the
+     * provenance graph.
      *
      * @return
      */
-    long getSchedulerTime();
+    long getSize();
 
+    /**
+     * The number of k.LAB credits expended during the activity.
+     *
+     * @return
+     */
+    long getCredits();
+
+    /**
+     * Logs each time that the action was executed (in lieu of having an action per each execution). Empty for
+     * any action that wasn't called by the scheduler. If not empty the first time could be initialization or
+     * after, based on the occurrent character of the linked observation.
+     *
+     * @return
+     */
+    List<Long> getSchedulerTime();
+
+    /**
+     * Optional description for human consumption and report generation.
+     *
+     * @return
+     */
+    String getDescription();
 
 }

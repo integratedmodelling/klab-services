@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -30,7 +31,11 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
         private AgentImpl agent;
         private String description;
-        private ActivityImpl activity;
+        private ActivityImpl activity = new ActivityImpl();
+        /*
+         list of the object created with their locator in the query (field -> value)
+         */
+        private Map<RuntimeAsset, Pair<String, Object>> assetLocators = new HashMap<>();
 
         enum Type {
             CREATE,
@@ -51,12 +56,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
             this.steps.add(new Step(Type.CREATE, List.of(observation), Map.of()));
             return this;
         }
-
-        //        @Override
-        //        public Operation create(Object... parameters) {
-        ////            this.steps.add(new Step(Type.CREATE, List.of(observation), Map.of()));
-        //            return this;
-        //        }
 
         @Override
         public Operation set(RuntimeAsset source, Object... properties) {
@@ -110,6 +109,30 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         public void setSteps(List<Step> steps) {
             this.steps = steps;
         }
+
+        public void setAgent(AgentImpl agent) {
+            this.agent = agent;
+        }
+
+        public ActivityImpl getActivity() {
+            return activity;
+        }
+
+        public void setActivity(ActivityImpl activity) {
+            this.activity = activity;
+        }
+
+        /**
+         * Register an asset after it has been created in the graph so that it can be located in a successive
+         * query at finalization.
+         *
+         * @param asset the asset to register
+         * @param field the field that identifies it in a query
+         * @param key the value of the field that uniquely identifies the assed
+         */
+        public void registerAsset(RuntimeAsset asset, String field, Object key) {
+
+        }
     }
 
     protected abstract long runOperation(OperationImpl operation, ContextScope scope);
@@ -124,34 +147,46 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         OperationImpl ret = new OperationImpl();
 
         ret.setAgent(agent);
-
+        boolean hasParent = false;
         if (targets != null && targets.length > 0) {
             for (var target : targets) {
                 switch (target) {
                     case Observation observation -> {
                         if (observation.getId() < 0) {
                             ret.add(observation);
+                            ret.activity.setType(Activity.Type.INITIALIZATION);
                         } else {
                             ret.set(observation);
                         }
                         if (scope.getContextObservation() != null) {
                             ret.link(
                                     observation, scope.getContextObservation(),
-                                    DigitalTwin.Relationship.Parent);
+                                    DigitalTwin.Relationship.HAS_PARENT);
                         } else {
                             ret.rootLink(observation);
                         }
                         if (scope.getObserver() != null) {
-                            ret.link(observation, scope.getObserver(), DigitalTwin.Relationship.Observer);
+                            ret.link(observation, scope.getObserver(), DigitalTwin.Relationship.HAS_OBSERVER);
                         }
                     }
-                    case Actuator actuator -> {
-                    }
                     case Activity activity -> {
+                        // this is the parent activity
+                        ret.link(ret.activity, activity, DigitalTwin.Relationship.HAS_PARENT);
+                        hasParent = true;
                     }
-                    case String string -> ret.setDescription(string);
+                    case Actuator actuator -> {
+                        ret.add(actuator);
+                        ret.link(ret.activity, actuator, DigitalTwin.Relationship.HAS_PLAN);
+                        // TODO must have ID of observation: link to the obs it contextualizes. Activity becomes a
+                        // contextualization.
+                    }
+                    case String string -> ret.activity.setDescription(string);
                     default -> throw new KlabInternalErrorException("Unexpected target in op");
                 }
+            }
+
+            if (!hasParent) {
+                ret.rootLink(ret.activity, DigitalTwin.Relationship.HAS_PARENT);
             }
         }
         return ret;

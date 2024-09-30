@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -175,6 +176,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return ret;
     }
 
+
+
     @Override
     public Task<Observation, Long> observe(Observation observation) {
 
@@ -182,9 +185,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             return null;
         }
 
+        return observe(observation, null);
+
+    }
+
+    private Task<Observation, Long> observe(Observation observation, Activity parentActivity) {
+
         // root-level activity when user is the agent. Inside resolution the activity may have children
         var activity = digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().user(), this,
-                observation);
+                observation, parentActivity);
 
         var id = activity.run(this);
 
@@ -212,6 +221,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         });
 
         return ret;
+
     }
 
     private void finalizeObservation(Observation observation, Dataflow<Observation> dataflow,

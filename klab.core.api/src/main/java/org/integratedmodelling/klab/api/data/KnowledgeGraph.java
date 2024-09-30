@@ -102,7 +102,6 @@ public interface KnowledgeGraph {
          *
          * @param scope
          * @param assets anything pertinent, assets, exceptions and the like
-         *
          * @return
          */
         Operation fail(ContextScope scope, Object... assets);
@@ -128,7 +127,8 @@ public interface KnowledgeGraph {
      * @param agent   the agent that will own the activity created
      * @param scope   the specific scope, whose observer and context will determine the links made
      * @param targets any additional parameters. A string will be interpreted as the description of the
-     *                activity generated.
+     *                activity generated. An activity will be interpreted as the parent for the activity
+     *                generated.
      * @return a graph modification operation description ready for run()
      */
     Operation activity(Agent agent, ContextScope scope, Object... targets);

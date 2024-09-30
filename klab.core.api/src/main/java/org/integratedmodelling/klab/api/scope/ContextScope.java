@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.scope;
 
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
@@ -42,7 +43,7 @@ import java.util.concurrent.Future;
  *
  * @author Ferd
  */
-public interface ContextScope extends SessionScope {
+public interface ContextScope extends SessionScope, RuntimeAsset {
 
     @Override
     default Type getType() {

@@ -1,8 +1,12 @@
 package org.integratedmodelling.klab.api.data;
 
 /**
- * A runtime asset is something that can be indexed by the "digital twin" in the context and supports listeners that
- * track lifecycle events. Includes Storage and other assets that must be explicitly managed and disposed of.
+ * A runtime asset is anything that can be part of the {@link KnowledgeGraph} managed by the
+ * {@link org.integratedmodelling.klab.api.digitaltwin.DigitalTwin}. Runtime assets are the nodes in the
+ * knowledge graph, which guarantees the consistency of all assets and their connection to provenance.
+ * <p>
+ * For now this is just a tag interface. It will contain methods to subscribe to events relative to the
+ * asset through the messaging subsystem.
  */
 public interface RuntimeAsset {
     // TODO listeners and subscriptions mechanism

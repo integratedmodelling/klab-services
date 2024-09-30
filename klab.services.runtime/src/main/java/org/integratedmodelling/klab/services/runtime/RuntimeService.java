@@ -289,12 +289,9 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
     @Override
     public long submit(Observation observation, ContextScope scope) {
-
         if (scope instanceof ServiceContextScope serviceContextScope) {
-//            return serviceContextScope.submitObservation(observation,
-//                    serviceContextScope.getDigitalTwin().knowledgeGraph().user());
+            return serviceContextScope.observe(observation).trackingKey();
         }
-
         return -1L;
     }
 

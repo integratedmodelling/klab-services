@@ -60,7 +60,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 + "\t(prov)-[:HAS_AGENT]->(user),\n"
                 + "\t(prov)-[:HAS_AGENT]->(klab),\n"
                 + "\t// ACTIVITY that created the whole thing\n"
-                + "\t(creation:Activity {start: $timestamp, end: $timestamp, name: 'Init'}),\n"
+                + "\t(creation:Activity {start: $timestamp, end: $timestamp, name: 'Initialization'}),\n"
                 + "\t// created by user\n"
                 + "\t(creation)-[:BY_AGENT]->(user),\n"
                 + "\t(ctx)<-[:CREATED]-(creation),\n"
@@ -111,7 +111,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     @Override
     public void deleteContext() {
         query(Queries.REMOVE_CONTEXT, Map.of("contextId", scope.getId()));
-        scope = null; // unusable from now on
     }
 
     protected <T extends RuntimeAsset> List<T> adapt(EagerResult query, Class<T> cls) {
@@ -141,7 +140,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 var instance = new PlanImpl();
                 ret.add((T) instance);
             }
-
         }
         return ret;
     }
@@ -188,7 +186,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
     }
 
-//    @Override
+    //    @Override
     protected long link(List<RuntimeAsset> targets, Map<String, Object> parameters) {
 
         System.out.println("LINK THESE FUCKERS");
@@ -196,54 +194,58 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return 0;
     }
 
-//    @Override
-    protected long create(List<RuntimeAsset> targets, Map<String, Object> parameters) {
-
-        long ret = Observation.UNASSIGNED_ID;
-        for (var target : targets) {
-            var type = switch (target) {
-                case Observation x -> "Observation";
-                case Activity x -> "Activity";
-                case Actuator x -> "Actuator";
-                case Agent x -> "Agent";
-                case Plan x -> "Plan";
-                default -> throw new KlabIllegalArgumentException(
-                        "Cannot store " + target.getClass() + " in knowledge graph");
-            };
-
-            var props = asParameters(target);
-            var result = query(
-                    Queries.CREATE_WITH_PROPERTIES.replace("{type}", type),
-                    Map.of("properties", asParameters(target)));
-            if (result != null && result.records().size() == 1) {
-                ret = result.records().getFirst().get(result.keys().getFirst()).asLong();
-                if (target instanceof ObservationImpl observation) {
-                    observation.setId(ret);
-                    observation.setUrn(scope.getId() + "." + ret);
-                    props.put("urn", observation.getUrn());
-                    query(
-                            Queries.UPDATE_PROPERTIES.replace("{type}", type),
-                            Map.of("id", ret, "properties", props));
-                }
-            }
-        }
-        return ret;
-    }
+    //    @Override
+//    protected long create(List<RuntimeAsset> targets, Map<String, Object> parameters) {
+//
+//        return ret;
+//    }
 
 
     @Override
     protected long runOperation(OperationImpl operation, ContextScope scope) {
 
+        // TODO use a transaction for the entire sequence of operations
+
         long ret = Observation.UNASSIGNED_ID;
         for (var step : operation.getSteps()) {
             switch (step.type()) {
                 case CREATE -> {
-                    ret = create(step.targets(), step.parameters());
+
+                    for (var target : step.targets()) {
+                        var type = switch (target) {
+                            case Observation x -> "Observation";
+                            case Activity x -> "Activity";
+                            case Actuator x -> "Actuator";
+                            case Agent x -> "Agent";
+                            case Plan x -> "Plan";
+                            default -> throw new KlabIllegalArgumentException(
+                                    "Cannot store " + target.getClass() + " in knowledge graph");
+                        };
+
+                        var props = asParameters(target);
+                        var result = query(
+                                Queries.CREATE_WITH_PROPERTIES.replace("{type}", type),
+                                Map.of("properties", asParameters(target)));
+                        if (result != null && result.records().size() == 1) {
+                            ret = result.records().getFirst().get(result.keys().getFirst()).asLong();
+                            if (target instanceof ObservationImpl observation) {
+                                observation.setId(ret);
+                                observation.setUrn(scope.getId() + "." + ret);
+                                props.put("urn", observation.getUrn());
+                                query(
+                                        Queries.UPDATE_PROPERTIES.replace("{type}", type),
+                                        Map.of("id", ret, "properties", props));
+                            }
+                        }
+                    }
                 }
                 case MODIFY -> {
                     ret = modify(step.targets(), step.parameters());
                 }
                 case LINK -> {
+
+                    // match (n:Diocan), (c:Context) WHERE n.porco = 'Dio' AND c.id = '1io3bjbpr.1ioau1c8g' CREATE (c)-[r:DIOCAN]->(n) return r
+
                     ret = link(step.targets(), step.parameters());
                 }
             }
@@ -253,14 +255,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return Observation.UNASSIGNED_ID;
     }
 
-//    protected abstract long create(List<RuntimeAsset> targets, Map<String, Object> parameters);
-//
-//    protected abstract long link(List<RuntimeAsset> targets, Map<String, Object> parameters);
-//
-//    protected abstract long modify(List<RuntimeAsset> targets, Map<String, Object> parameters);
+    //    protected abstract long create(List<RuntimeAsset> targets, Map<String, Object> parameters);
+    //
+    //    protected abstract long link(List<RuntimeAsset> targets, Map<String, Object> parameters);
+    //
+    //    protected abstract long modify(List<RuntimeAsset> targets, Map<String, Object> parameters);
 
 
-//    @Override
+    //    @Override
     protected long modify(List<RuntimeAsset> targets, Map<String, Object> parameters) {
         return 0;
     }
