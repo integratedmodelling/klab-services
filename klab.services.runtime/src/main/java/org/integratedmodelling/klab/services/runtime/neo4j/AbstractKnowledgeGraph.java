@@ -266,16 +266,16 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     //        return asset;
     //    }
 
-
-    /**
-     * Extract all POD properties and metadata fields from an asset to pass to the operation unless
-     * overridden.
-     *
-     * @param asset
-     * @return
-     */
-    protected Object[] getProperties(RuntimeAsset asset, Object... overridingProperties) {
-        return new Object[]{};
-    }
+//
+//    /**
+//     * Extract all POD properties and metadata fields from an asset to pass to the operation unless
+//     * overridden.
+//     *
+//     * @param asset
+//     * @return
+//     */
+//    protected Object[] getProperties(RuntimeAsset asset, Object... overridingProperties) {
+//        return new Object[]{};
+//    }
 
 }

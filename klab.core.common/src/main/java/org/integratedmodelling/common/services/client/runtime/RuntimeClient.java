@@ -173,7 +173,6 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     @Override
     public Observation getObservation(Observable observable, ContextScope contextScope) {
-        // TODO this should use the GraphQL
         return null;
     }
 
