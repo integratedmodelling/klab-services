@@ -67,13 +67,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 + "\t(prov)-[:HAS_AGENT]->(user),\n"
                 + "\t(prov)-[:HAS_AGENT]->(klab),\n"
                 + "\t// ACTIVITY that created the whole thing\n"
-                + "\t(creation:Activity {start: $timestamp, end: $timestamp, name: 'Initialization'}),\n"
+                + "\t(creation:Activity {start: $timestamp, end: $timestamp, name: 'INITIALIZATION'}),\n"
                 + "\t// created by user\n"
                 + "\t(creation)-[:BY_AGENT]->(user),\n"
                 + "\t(ctx)<-[:CREATED]-(creation),\n"
                 + "(prov)-[:HAS_CHILD]->(creation)";
         String GET_AGENT_BY_NAME = "match (ctx:Context {id: $contextId})-->(prov:Provenance)-[:HAS_AGENT]->(a:Agent {name: $agentName}) RETURN a";
-        String LINK_ASSETS = "match (n:{fromLabel}), (c:{toLabel}) WHERE n.{fromKeyProperty} = $fromKey AND c.{toKeyProperty} = $toKey CREATE (c)-[r:{relationshipLabel}]->(n) return r";
+        String LINK_ASSETS = "match (n:{fromLabel}), (c:{toLabel}) WHERE n.{fromKeyProperty} = $fromKey AND c.{toKeyProperty} = $toKey CREATE (n)-[r:{relationshipLabel}]->(c) return r";
     }
 
     protected EagerResult query(String query, Map<String, Object> parameters) {
@@ -124,11 +124,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     /**
-     *
      * @param query
      * @param cls
-     * @return
      * @param <T>
+     * @return
      */
     protected <T extends RuntimeAsset> List<T> adapt(EagerResult query, Class<T> cls) {
         List<T> ret = new ArrayList<>();
@@ -149,7 +148,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             if (Agent.class.isAssignableFrom(cls)) {
 
                 var instance = new AgentImpl();
-                instance.setName(node.get("a.name").asString());
+                instance.setName(node.get("name").asString());
                 instance.setEmpty(false);
 
                 ret.add((T) instance);
@@ -367,8 +366,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
          */
         for (long asset : created) {
             query(
-                    "match (n:Activity), (c) WHERE id(n) = $fromId AND id(c) = $toId CREATE (c)-[r:CREATED]->(n) return r",
-                    Map.of("fromId", operation.getActivity().getId(), "toId", created));
+                    "match (n:Activity), (c) WHERE id(n) = $fromId AND id(c) = $toId CREATE (n)-[r:CREATED]->(c) return r",
+                    Map.of("fromId", operation.getActivity().getId(), "toId", asset));
         }
 
         /*
@@ -376,14 +375,16 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
          */
         for (long plan : plans) {
             query(
-                    "match (n:Activity), (c:Plan) WHERE id(n) = $fromId AND id(c) = $toId CREATE (c)-[r:HAS_PLAN]->(n) return r",
-                    Map.of("fromId", operation.getActivity().getId(), "toId", created));
+                    "match (n:Activity), (c:Plan) WHERE id(n) = $fromId AND id(c) = $toId CREATE (n)-[r:HAS_PLAN]->(c) return r",
+                    Map.of("fromId", operation.getActivity().getId(), "toId", plan));
         }
 
         // link the activity to the agent
         query(
-                "match (n:Activity), (c:Agent) WHERE id(n) = $fromId AND c.name = $agentName CREATE (c)-[r:BY_AGENT]->(n) return r",
-                Map.of("fromId", operation.getActivity().getId(), "toId", operation.getAgent().getName()));
+                "match (n:Activity), (c:Agent) WHERE id(n) = $fromId AND c.name = $agentName CREATE (n)-[r:BY_AGENT]->(c) return r",
+                Map.of(
+                        "fromId", operation.getActivity().getId(), "agentName",
+                        operation.getAgent().getName()));
 
         return ret;
     }

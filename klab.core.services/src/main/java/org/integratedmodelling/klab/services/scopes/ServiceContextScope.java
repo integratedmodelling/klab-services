@@ -186,7 +186,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
         // root-level activity when user is the agent. Inside resolution the activity may have children
         var activity = digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().user(), this,
-                observation, parentActivity);
+                observation, Activity.Type.INSTANTIATION, parentActivity);
 
         var id = activity.run(this);
 

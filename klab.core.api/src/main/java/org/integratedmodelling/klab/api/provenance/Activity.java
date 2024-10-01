@@ -37,7 +37,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeIns
 public interface Activity extends Provenance.Node {
 
     enum Type {
-        INITIALIZATION, RESOLUTION, CONTEXTUALIZATION
+        INITIALIZATION, RESOLUTION, CONTEXTUALIZATION, INSTANTIATION
     }
 
     Type getType();
