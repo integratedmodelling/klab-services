@@ -17,6 +17,7 @@
  */
 package org.integratedmodelling.klab.api.services.runtime;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
@@ -150,17 +151,17 @@ public interface Dataflow<T extends Artifact> extends Serializable, RuntimeAsset
      */
     Parameters<String> getResources();
 
-    /**
-     * Modifies this dataflow by merging in another dataflow computed to resolve some
-     * {@link Knowledge} in the passed scope. This will add to the actuator that
-     * corresponds to the context observation in the scope, or to the main dataflow
-     * computations if the scope points to the root of the context. The coverage of the
-     * dataflow may be modified accordingly.
-     *
-     * @param dataflow
-     * @param scope
-     */
-    void add(Dataflow<T> dataflow, ContextScope scope);
+//    /**
+//     * Modifies this dataflow by merging in another dataflow computed to resolve some
+//     * {@link Knowledge} in the passed scope. This will add to the actuator that
+//     * corresponds to the context observation in the scope, or to the main dataflow
+//     * computations if the scope points to the root of the context. The coverage of the
+//     * dataflow may be modified accordingly.
+//     *
+//     * @param dataflow
+//     * @param scope
+//     */
+//    void add(Dataflow<T> dataflow, ContextScope scope);
 
     /**
      * Return a new empty dataflow.
@@ -172,6 +173,7 @@ public interface Dataflow<T extends Artifact> extends Serializable, RuntimeAsset
     public static <T extends Artifact> Dataflow<T> empty(Class<T> resultClass) {
         return new Dataflow<T>() {
 
+            @Serial
             private static final long serialVersionUID = -1115441423700817816L;
 
             @Override
@@ -193,10 +195,10 @@ public interface Dataflow<T extends Artifact> extends Serializable, RuntimeAsset
             public Parameters<String> getResources() {
                 return Parameters.create();
             }
-
-            @Override
-            public void add(Dataflow<T> dataflow, ContextScope scope) {
-            }
+//
+//            @Override
+//            public void add(Dataflow<T> dataflow, ContextScope scope) {
+//            }
 
         };
     }

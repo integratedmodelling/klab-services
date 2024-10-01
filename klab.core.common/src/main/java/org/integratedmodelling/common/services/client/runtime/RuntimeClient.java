@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -167,6 +168,12 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     @Override
     public Provenance runDataflow(Dataflow<Observation> dataflow, KnowledgeGraph.Operation activity,
                                   ContextScope contextScope) {
+        return null;
+    }
+
+    @Override
+    public Observation getObservation(Observable observable, ContextScope contextScope) {
+        // TODO this should use the GraphQL
         return null;
     }
 

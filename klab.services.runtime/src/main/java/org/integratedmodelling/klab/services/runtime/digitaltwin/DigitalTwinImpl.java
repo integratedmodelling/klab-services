@@ -1,30 +1,25 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.digitaltwin.*;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
+import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
 import org.integratedmodelling.klab.runtime.storage.StateStorageImpl;
 
 public class DigitalTwinImpl implements DigitalTwin {
 
     KnowledgeGraph knowledgeGraph;
     StateStorage stateStorage;
-//    ObservationGraph observationGraph;
-//    DataflowGraph dataflowGraph;
-//    ProvenanceGraph provenanceGraph;
+    ContextScope rootScope;
 
     public DigitalTwinImpl(ContextScope scope, KnowledgeGraph database) {
+        this.rootScope = scope;
         this.knowledgeGraph = database.contextualize(scope);
-//        this.observationGraph = new ObservationGraphImpl(database, scope);
-//        this.dataflowGraph = new DataflowGraphImpl(database, scope);
-//        this.provenanceGraph = new ProvenanceGraphImpl(database, scope);
         this.stateStorage = new StateStorageImpl(scope);
     }
 
@@ -38,56 +33,19 @@ public class DigitalTwinImpl implements DigitalTwin {
         return this.stateStorage;
     }
 
-//    @Override
-//    public ObservationGraph observationGraph(Relationship... relationships) {
-//        // TODO filter or compute
-//        return this.observationGraph;
-//    }
-//
-//    @Override
-//    public DataflowGraph dataflowGraph() {
-//        return this.dataflowGraph;
-//    }
-//
-//    @Override
-//    public ProvenanceGraph provenanceGraph() {
-//        return this.provenanceGraph;
-//    }
+    @Override
+    public Provenance getProvenanceGraph(ContextScope context) {
+        return new ProvenanceGraph(this.knowledgeGraph, this.rootScope);
+    }
+
+    @Override
+    public Dataflow<Observation> getDataflowGraph(ContextScope context) {
+        return new DataflowGraph(this.knowledgeGraph, this.rootScope);
+    }
 
     @Override
     public void dispose() {
         // TODO. Persistence depends on the database passed at initialization.
     }
-
-//    @Override
-//    public long submit(Observation observation, Observation related, Relationship relationship,
-//                       Metadata relationshipMetadata) {
-//
-//        if (observation instanceof ObservationImpl observationImpl) {
-//
-//            long ret = this.knowledgeGraph.add(observation, related, relationship, relationshipMetadata);
-//            observationImpl.setId(ret);
-//            if (related != null) {
-//                if (related.getId() == Observation.UNASSIGNED_ID) {
-//                    throw new KlabIllegalArgumentException("The linked observation must have been added to " +
-//                            "the graph before");
-//                }
-//                this.knowledgeGraph.link(observation, related, relationship, relationshipMetadata);
-//            }
-//            return ret;
-//        }
-//
-//        throw new KlabInternalErrorException("Database functions called with unknow implementation of " +
-//                "Observation");
-//    }
-
-//    @Override
-//    public void finalizeObservation(Observation resolved, Dataflow<Observation> dataflow,
-//                                    Provenance provenance) {
-//
-//        // TODO update stored observation with resolved flag = true; store the dataflow and
-//        //  provenance where they belong in the graph.
-//
-//    }
 
 }

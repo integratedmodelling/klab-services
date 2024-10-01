@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -18,7 +19,6 @@ public class ActuatorImpl implements Actuator {
     private static final long serialVersionUID = 2500101522003062757L;
     private long id;
     private long timestamp;
-    private boolean empty;
     private String name;
     private String alias;
     private Type type;
@@ -32,16 +32,11 @@ public class ActuatorImpl implements Actuator {
     private String observer;
     private Geometry coverage = Geometry.EMPTY;
     private Parameters<String> data = Parameters.create();
-    private Queue<ObservationStrategyObsolete> deferrals = new ConcurrentLinkedQueue<>();
+    private Queue<ObservationStrategy> deferrals = new ConcurrentLinkedQueue<>();
 
     @Override
     public long getId() {
         return this.id;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return this.empty;
     }
 
     @Override
@@ -107,10 +102,6 @@ public class ActuatorImpl implements Actuator {
         this.timestamp = timestamp;
     }
 
-    public void setEmpty(boolean empty) {
-        this.empty = empty;
-    }
-
     public void setName(String name) {
         this.name = name;
     }
@@ -161,7 +152,7 @@ public class ActuatorImpl implements Actuator {
     }
 
     @Override
-    public Queue<ObservationStrategyObsolete> getDeferrals() {
+    public Queue<ObservationStrategy> getDeferrals() {
         return this.deferrals;
     }
 

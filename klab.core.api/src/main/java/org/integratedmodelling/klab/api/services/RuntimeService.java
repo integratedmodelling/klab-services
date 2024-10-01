@@ -56,6 +56,15 @@ public interface RuntimeService extends KlabService {
      */
     Provenance runDataflow(Dataflow<Observation> dataflow, KnowledgeGraph.Operation operation, ContextScope contextScope);
 
+    /**
+     * Retrieve the observation with the passed observable in the passed scope.
+     *
+     * @param observable
+     * @param contextScope
+     * @return
+     */
+    Observation getObservation(Observable observable, ContextScope contextScope);
+
 
     /**
      * All services publish capabilities and have a call to obtain them. Must list all the available

@@ -24,7 +24,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
     protected ContextScope scope;
 
-    record Step(OperationImpl.Type type, List<RuntimeAsset> targets, Object[] parameters) {
+    public record Step(OperationImpl.Type type, List<RuntimeAsset> targets, Object[] parameters) {
     }
 
     public class OperationImpl implements Operation {
@@ -37,11 +37,25 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
          */
         private Map<RuntimeAsset, Pair<String, Object>> assetLocators = new HashMap<>();
 
+        public String getAssetKeyProperty(RuntimeAsset asset) {
+            if (assetLocators.containsKey(asset)) {
+                return assetLocators.get(asset).getFirst();
+            }
+            throw new KlabInternalErrorException("Unregistered asset in graph operation: " + asset);
+        }
+
+        public Object getAssetKey(RuntimeAsset asset) {
+            if (assetLocators.containsKey(asset)) {
+                return assetLocators.get(asset).getSecond();
+            }
+            throw new KlabInternalErrorException("Unregistered asset in graph operation: " + asset);
+        }
+
         enum Type {
             CREATE,
             MODIFY,
             LINK,
-            SELECT
+            ROOT_LINK
         }
 
         private List<Step> steps = new ArrayList<>();
@@ -52,14 +66,14 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
 
         @Override
-        public Operation add(RuntimeAsset observation) {
-            this.steps.add(new Step(Type.CREATE, List.of(observation), null));
+        public Operation add(RuntimeAsset asset) {
+            this.steps.add(new Step(Type.CREATE, List.of(asset), null));
             return this;
         }
 
         @Override
-        public Operation set(RuntimeAsset source, Object... properties) {
-            this.steps.add(new Step(Type.MODIFY, List.of(source), properties));
+        public Operation set(RuntimeAsset asset, Object... properties) {
+            this.steps.add(new Step(Type.MODIFY, List.of(asset), properties));
             return this;
         }
 
@@ -71,6 +85,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
         @Override
         public Operation rootLink(RuntimeAsset asset, Object... linkData) {
+            this.steps.add(new Step(Type.ROOT_LINK, List.of(asset), linkData));
             return this;
         }
 
@@ -128,10 +143,10 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
          *
          * @param asset the asset to register
          * @param field the field that identifies it in a query
-         * @param key the value of the field that uniquely identifies the assed
+         * @param key   the value of the field that uniquely identifies the assed
          */
         public void registerAsset(RuntimeAsset asset, String field, Object key) {
-
+            assetLocators.put(asset, Pair.of(field, key));
         }
     }
 
@@ -146,10 +161,19 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
         OperationImpl ret = new OperationImpl();
 
+        // first thing is to add the activity we represent
+        ret.add(ret.activity);
+
         ret.setAgent(agent);
         boolean hasParent = false;
         if (targets != null && targets.length > 0) {
             for (var target : targets) {
+
+                // allow nulls and ignore them for fluency in calls
+                if (target == null) {
+                    continue;
+                }
+
                 switch (target) {
                     case Observation observation -> {
                         if (observation.getId() < 0) {
@@ -181,6 +205,9 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                         // contextualization.
                     }
                     case String string -> ret.activity.setDescription(string);
+                    // override activity type
+                    case Activity.Type type -> ret.activity.setType(type);
+                    // TODO the plan: should include the resolution constraints in the scope
                     default -> throw new KlabInternalErrorException("Unexpected target in op");
                 }
             }
@@ -213,10 +240,21 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                 ret.put("semantics", observation.getObservable().getUrn());
             }
             case Agent agent -> {
+                // TODO
             }
             case Actuator actuator -> {
+                // TODO
             }
             case Activity activity -> {
+                ret.putAll(activity.getMetadata());
+                ret.put("credits", activity.getCredits());
+                ret.put("description", activity.getDescription());
+                ret.put("end", activity.getEnd());
+                ret.put("start", activity.getStart());
+                ret.put("schedulerTime", activity.getSchedulerTime());
+                ret.put("size", activity.getSize());
+                ret.put("type", activity.getType().name());
+                ret.put("name", activity.getName());
             }
             default -> throw new KlabInternalErrorException(
                     "unexpected value for asParameters: " + asset.getClass().getCanonicalName());

@@ -210,6 +210,19 @@ public interface KnowledgeGraph {
                                          Class<T> resultClass);
 
     /**
+     * Query starting at the point implied by the scope and return matching objects using the query parameters
+     * passed.
+     *
+     * @param scope
+     * @param resultClass     Can be an individual object (Observation, Actuator or Provenance node) or an
+     *                        entire Dataflow or Provenance
+     * @param queryParameters
+     * @param <T>
+     * @return
+     */
+    <T extends RuntimeAsset> List<T> get(ContextScope scope, Class<T> resultClass, Object... queryParameters);
+
+    /**
      * Build a federated graph resulting from merging with the URL pointing to a remote digital twin.
      *
      * @param remoteDigitalTwinURL

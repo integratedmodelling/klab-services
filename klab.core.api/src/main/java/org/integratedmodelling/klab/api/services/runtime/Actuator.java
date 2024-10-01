@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -61,7 +62,7 @@ import java.util.Queue;
  *
  * @author ferdinando.villa
  */
-public interface Actuator extends Plan, Serializable, RuntimeAsset {
+public interface Actuator extends Serializable, RuntimeAsset {
 
     /**
      * Name of the service call that encodes deferred resolution when that must be included in the
@@ -218,5 +219,5 @@ public interface Actuator extends Plan, Serializable, RuntimeAsset {
      *
      * @return
      */
-    Queue<ObservationStrategyObsolete> getDeferrals();
+    Queue<ObservationStrategy> getDeferrals();
 }

@@ -7,6 +7,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -296,9 +297,15 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     @Override
-    public Provenance runDataflow(Dataflow<Observation> dataflow, KnowledgeGraph.Operation activity,
+    public Provenance runDataflow(Dataflow<Observation> dataflow, /* Nullable */ KnowledgeGraph.Operation activity,
                                   ContextScope contextScope) {
         return null;
+    }
+
+    @Override
+    public Observation getObservation(Observable observable, ContextScope contextScope) {
+        var ret = knowledgeGraph.get(contextScope, Observation.class, "semantics", observable.getUrn());
+        return ret.isEmpty() ? null : ret.getFirst();
     }
 
     @Override

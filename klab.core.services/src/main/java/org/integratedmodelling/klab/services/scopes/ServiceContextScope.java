@@ -8,7 +8,6 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.provenance.Activity;
-import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -60,11 +59,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.parent = parent;
         this.observer = parent.observer;
         this.contextObservation = parent.contextObservation;
-        //        this.catalog = parent.catalog;
-        //        this.namedCatalog.putAll(parent.namedCatalog);
-        //        this.contextualizedPredicates.putAll(parent.contextualizedPredicates);
-        //        this.resolutionScenarios.addAll(parent.resolutionScenarios);
-        //        this.resolutionNamespace = parent.resolutionNamespace;
         this.digitalTwin = parent.digitalTwin;
         this.resolutionConstraints.putAll(parent.resolutionConstraints);
     }
@@ -99,10 +93,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     ServiceContextScope(ServiceSessionScope parent) {
         super(parent);
-        this.observer = null; // NAAH parent.getUser();
+        this.observer = null;
         this.data = Parameters.create();
         this.data.putAll(parent.data);
-        //        this.catalog = new HashMap<>();
         /*
          * TODO choose the services if this context or user requires specific ones
          */
@@ -229,14 +222,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         // TODO do stuff in the knowledge graph
     }
 
-    //    public long submitObservation(Observation observation, Agent agent) {
-    //        return digitalTwin.knowledgeGraph().activity(agent,this, observation).run(this);
-    //    }
-
     @Override
     public Provenance getProvenance() {
-        // TODO Auto-generated method stub
-        return null;
+        return digitalTwin.getProvenanceGraph(this);
     }
 
     @Override
@@ -247,7 +235,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     @Override
     public Dataflow<Observation> getDataflow() {
-        return null;
+        return digitalTwin.getDataflowGraph(this);
     }
 
     @Override

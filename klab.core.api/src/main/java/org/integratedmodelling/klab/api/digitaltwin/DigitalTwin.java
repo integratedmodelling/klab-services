@@ -11,8 +11,11 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
+import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +45,31 @@ public interface DigitalTwin {
         HAS_CHILD
     }
 
+    /**
+     * The full knowledge graph, including observations, actuators and provenance
+     *
+     * @return
+     */
     KnowledgeGraph knowledgeGraph();
+
+    /**
+     * The provenance graph contextualized to the passed context.
+     *
+     * @param context can be null for the entire provenance graph (effect is the same as passing the original
+     *                context scope)
+     * @return the graph starting at the passed contextualization
+     */
+    Provenance getProvenanceGraph(ContextScope context);
+
+    /**
+     * The dataflow graph contextualized to the passed context. This is extracted from the
+     * provenance graph
+     *
+     * @param context can be null for the entire dataflow (effect is the same as passing the original
+     *                context scope)
+     * @return the dataflow starting at the passed contextualization
+     */
+    Dataflow<Observation> getDataflowGraph(ContextScope context);
 
     /**
      * Return the storage for all "datacube" content.
@@ -51,58 +78,11 @@ public interface DigitalTwin {
      */
     StateStorage stateStorage();
 
-    //    /**
-    //     * Return a view of the graph that links observations using the passed relationships (all existing if none
-    //     * is specified). Some relationships may be computed on demand, and their presence in the graph when no
-    //     * relationship type is passed is not guaranteed.
-    //     *
-    //     * @return
-    //     */
-    //    ObservationGraph observationGraph(Relationship... relationships);
-    //
-    //    /**
-    //     * Return a view of the graph that only addresses the dataflow.
-    //     *
-    //     * @return
-    //     */
-    //    DataflowGraph dataflowGraph();
-    //
-    //    /**
-    //     * Return the view of the graph that represents provenance.
-    //     *
-    //     * @return
-    //     */
-    //    ProvenanceGraph provenanceGraph();
-
     /**
      * Dispose of all storage and data, either in memory only or also on any attached storage. Whether the
      * disposal is permanent depends on the graph database used and its configuration.
      */
     void dispose();
-
-    //    /**
-    //     * Ingest an observation created externally. Return the unique ID of the observation in the DT.
-    //     * <p>
-    //     * Submitting a resolved observation that does not belong or unresolved related will throw a
-    //     * {@link org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException}.
-    //     * <p>
-    //     * TODO this must become an operation with a data packet that carries all the info to update provenance and everything else.
-    //     *
-    //     * @param observation  cannot be null, must be unresolved if the relationship is parent or null
-    //     * @param related      may be null but if not, must be already submitted to the DT
-    //     * @param relationship the relationship of the new observation to the second, must be non-null if related
-    //     *                     isn't
-    //     */
-    //    long submit(Observation observation, Observation related, Relationship relationship,
-    //                Metadata relationshipMetadata);
-    //
-    //    /**
-    //     * @param resolved
-    //     * @param dataflow
-    //     * @param provenance
-    //     */
-    //    void finalizeObservation(Observation resolved, Dataflow<Observation> dataflow, Provenance provenance);
-    //
 
     /**
      * Assemble the passed parameters into an unresolved Observation, to be inserted into the knowledge graph

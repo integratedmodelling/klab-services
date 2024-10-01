@@ -54,9 +54,4 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
     public void shutdown() {
 
     }
-
-//    @Override
-//    protected Driver driver() {
-//        return null;
-//    }
 }

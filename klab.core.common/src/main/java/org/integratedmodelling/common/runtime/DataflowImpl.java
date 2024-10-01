@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.runtime;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +14,7 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 public class DataflowImpl implements Dataflow<Observation> {
 
+    @Serial
     private static final long serialVersionUID = 873406284216826384L;
 
     private boolean empty;
@@ -56,7 +58,6 @@ public class DataflowImpl implements Dataflow<Observation> {
         this.resources = resources;
     }
 
-    @Override
     public void add(Dataflow<Observation> dataflow, ContextScope scope) {
 
         /*

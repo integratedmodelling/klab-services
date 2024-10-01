@@ -17,6 +17,7 @@ package org.integratedmodelling.klab.api.provenance;
 
 import java.util.*;
 
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -47,12 +48,24 @@ public interface Provenance extends RuntimeAsset, Iterable<Activity> {
     interface Node extends RuntimeAsset {
 
         /**
+         * The ID of the node is the same as the ID of the relationship or actuator it relates to.
+         *
+         * @return
+         */
+        long getId();
+        /**
          * Name is not unique and is just for human consumption. The internal identification of each node is
          * the provenance graph's problem.
          *
          * @return
          */
         String getName();
+
+        /**
+         * All nodes can carry POD metadata
+         * @return
+         */
+        Metadata getMetadata();
 
         /**
          * Dataflows that end in disappointment produce empty nodes.

@@ -6,11 +6,14 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Plan;
+import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.provenance.impl.PlanImpl;
@@ -20,6 +23,7 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.EagerResult;
+import org.neo4j.driver.Value;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,6 +42,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     protected Driver driver;
     protected Agent user;
     protected Agent klab;
+    protected String rootContextId;
 
     // all predefined Cypher queries
     interface Queries {
@@ -53,7 +58,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 + "\t// main context node\n"
                 + "\t(ctx:Context {id: $contextId, name: $name, user: $username, created: $timestamp, expiration: $expirationType}),\n"
                 + "\t// main provenance and dataflow nodes\n"
-                + "\t(prov:Provenance {name: 'Provenance'}), (df:Dataflow {name: 'Dataflow'}),\n"
+                + "\t(prov:Provenance {name: 'Provenance', id: $contextId + '.PROVENANCE'}), (df:Dataflow {name: 'Dataflow', id: $contextId + '.DATAFLOW'}),\n"
                 + "\t(ctx)-[:HAS_PROVENANCE]->(prov),\n"
                 + "\t(ctx)-[:HAS_DATAFLOW]->(df),\n"
                 + "\t// default agents within provenance\n"
@@ -66,9 +71,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 + "\t// created by user\n"
                 + "\t(creation)-[:BY_AGENT]->(user),\n"
                 + "\t(ctx)<-[:CREATED]-(creation),\n"
-                + "(prov)-[:HAS_ACTIVITY]->(creation)";
+                + "(prov)-[:HAS_CHILD]->(creation)";
         String GET_AGENT_BY_NAME = "match (ctx:Context {id: $contextId})-->(prov:Provenance)-[:HAS_AGENT]->(a:Agent {name: $agentName}) RETURN a";
-        String LINK_ASSETS = "match (n:{fromLabel}}), (c:{toLabel}}) WHERE n.{fromKeyProperty} = $fromKey AND c.{toKeyProperty}} = $toKey CREATE (c)-[r:{relationshipLabel}}]->(n) return r";
+        String LINK_ASSETS = "match (n:{fromLabel}), (c:{toLabel}) WHERE n.{fromKeyProperty} = $fromKey AND c.{toKeyProperty} = $toKey CREATE (c)-[r:{relationshipLabel}]->(n) return r";
     }
 
     protected EagerResult query(String query, Map<String, Object> parameters) {
@@ -86,6 +91,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
      * Ensure things are OK re: main agents and the like. Must be called only once
      */
     protected void initializeContext() {
+
+        this.rootContextId = scope.getId();
 
         var result = query(Queries.FIND_CONTEXT, Map.of("contextId", scope.getId()));
 
@@ -116,15 +123,33 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         query(Queries.REMOVE_CONTEXT, Map.of("contextId", scope.getId()));
     }
 
+    /**
+     *
+     * @param query
+     * @param cls
+     * @return
+     * @param <T>
+     */
     protected <T extends RuntimeAsset> List<T> adapt(EagerResult query, Class<T> cls) {
         List<T> ret = new ArrayList<>();
 
         for (var record : query.records()) {
 
+            Value node = null;
+            Map<String, Object> properties = new HashMap<>();
+            if (!record.values().isEmpty()) {
+                // must be one field for the node
+                node = record.values().getFirst();
+            }
+
+            if (node == null) {
+                continue;
+            }
+
             if (Agent.class.isAssignableFrom(cls)) {
 
                 var instance = new AgentImpl();
-                instance.setName(record.get("name", (String) null));
+                instance.setName(node.get("a.name").asString());
                 instance.setEmpty(false);
 
                 ret.add((T) instance);
@@ -132,15 +157,20 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             } else if (Observation.class.isAssignableFrom(cls)) {
                 var instance = new ObservationImpl();
 
+                // TODO
+
                 ret.add((T) instance);
             } else if (Activity.class.isAssignableFrom(cls)) {
                 var instance = new ActivityImpl();
+                // TODO
                 ret.add((T) instance);
             } else if (Actuator.class.isAssignableFrom(cls)) {
                 var instance = new ActuatorImpl();
+                // TODO
                 ret.add((T) instance);
             } else if (Plan.class.isAssignableFrom(cls)) {
                 var instance = new PlanImpl();
+                // TODO
                 ret.add((T) instance);
             }
         }
@@ -189,25 +219,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
     }
 
-//    //    @Override
-//    protected long link(List<RuntimeAsset> targets, Map<String, Object> parameters) {
-//
-//        System.out.println("LINK THESE FUCKERS");
-//
-//        return 0;
-//    }
-
-    //    @Override
-    //    protected long create(List<RuntimeAsset> targets, Map<String, Object> parameters) {
-    //
-    //        return ret;
-    //    }
-
-
     @Override
     protected long runOperation(OperationImpl operation, ContextScope scope) {
 
-        // TODO use a transaction for the entire sequence of operations
+        operation.registerAsset(scope, "id", scope.getId());
+
+        /*
+        TODO use a transaction for the whole sequence!
+        First pass defines the activity. If we have one in the targets, that is the parent activity to
+        link it to.
+         */
+
+        List<Long> created = new ArrayList<>();
+        List<Long> plans = new ArrayList<>();
 
         long ret = Observation.UNASSIGNED_ID;
         for (var step : operation.getSteps()) {
@@ -225,25 +249,47 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                             ret = result.records().getFirst().get(result.keys().getFirst()).asLong();
                             if (target instanceof ObservationImpl observation) {
                                 observation.setId(ret);
+                                created.add(ret);
                                 observation.setUrn(scope.getId() + "." + ret);
+                                props.put("id", ret);
                                 props.put("urn", observation.getUrn());
                                 query(
                                         Queries.UPDATE_PROPERTIES.replace("{type}", type),
                                         Map.of("id", ret, "properties", props));
+                            } else if (target instanceof ActuatorImpl actuator) {
+                                actuator.setId(ret);
+                                created.add(ret);
+                                props.put("id", ret);
+                                query(
+                                        Queries.UPDATE_PROPERTIES.replace("{type}", type),
+                                        Map.of("id", ret, "properties", props));
+                            } else if (target instanceof ActivityImpl activity) {
+                                activity.setId(ret);
+                                props.put("id", ret);
+                                query(
+                                        Queries.UPDATE_PROPERTIES.replace("{type}", type),
+                                        Map.of("id", ret, "properties", props));
+                            } else if (target instanceof PlanImpl plan) {
+                                plan.setId(ret);
+                                plans.add(ret);
+                                props.put("id", ret);
+                                query(
+                                        Queries.UPDATE_PROPERTIES.replace("{type}", type),
+                                        Map.of("id", ret, "properties", props));
                             }
+
+                            operation.registerAsset(target, "id", ret);
                         }
                     }
                 }
                 case MODIFY -> {
-
-
-//                    ret = modify(step.targets(), step.parameters());
+                    // TODO - do we need this here? maybe with scheduling - for now it's only at finalization
+                    throw new KlabUnimplementedException("target setting or graph modification");
                 }
                 case LINK -> {
 
-                    DigitalTwin.Relationship relationship;
+                    DigitalTwin.Relationship relationship = null;
                     var props = new HashMap<String, Object>();
-
                     for (int i = 0; i < step.parameters().length; i++) {
                         var arg = step.parameters()[i];
                         if (arg instanceof DigitalTwin.Relationship dr) {
@@ -253,40 +299,137 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                         }
                     }
 
-//                    ret = link(step.targets(), step.parameters());
+                    if (relationship != null && step.targets().size() == 2) {
+
+                        var query = Queries.LINK_ASSETS
+                                .replace("{relationshipLabel}", relationship.name())
+                                .replace("{fromLabel}", getLabel(step.targets().getFirst()))
+                                .replace("{toLabel}", getLabel(step.targets().getLast()))
+                                .replace(
+                                        "{fromKeyProperty}",
+                                        operation.getAssetKeyProperty(step.targets().getFirst()))
+                                .replace(
+                                        "{toKeyProperty}",
+                                        operation.getAssetKeyProperty(step.targets().getLast()));
+
+                        query(query, Map.of("fromKey", operation.getAssetKey(step.targets().getFirst()),
+                                "toKey", operation.getAssetKey(step.targets().getLast())));
+                    }
+                }
+                case ROOT_LINK -> {
+
+                    if (step.targets().getFirst() instanceof Observation observation) {
+
+                        var query = Queries.LINK_ASSETS
+                                .replace("{relationshipLabel}", DigitalTwin.Relationship.HAS_CHILD.name())
+                                .replace("{fromLabel}", "Context")
+                                .replace("{toLabel}", "Observation")
+                                .replace("{fromKeyProperty}", "id")
+                                .replace("{toKeyProperty}", "id");
+
+                        query(query, Map.of("fromKey", rootContextId, "toKey", observation.getId()));
+
+                    } else if (step.targets().getFirst() instanceof Actuator actuator) {
+
+                        var query = Queries.LINK_ASSETS
+                                .replace("{relationshipLabel}", DigitalTwin.Relationship.HAS_CHILD.name())
+                                .replace("{fromLabel}", "Dataflow")
+                                .replace("{toLabel}", "Actuator")
+                                .replace("{fromKeyProperty}", "id")
+                                .replace("{toKeyProperty}", "id");
+
+                        query(
+                                query,
+                                Map.of("fromKey", rootContextId + ".DATAFLOW", "toKey", actuator.getId()));
+
+                    } else if (step.targets().getFirst() instanceof Activity activity) {
+
+                        var query = Queries.LINK_ASSETS
+                                .replace("{relationshipLabel}", DigitalTwin.Relationship.HAS_CHILD.name())
+                                .replace("{fromLabel}", "Provenance")
+                                .replace("{toLabel}", "Activity")
+                                .replace("{fromKeyProperty}", "id")
+                                .replace("{toKeyProperty}", "id");
+
+                        query(
+                                query,
+                                Map.of("fromKey", rootContextId + ".PROVENANCE", "toKey", activity.getId()));
+
+                    } else {
+                        throw new KlabInternalErrorException("unexpected root link request");
+                    }
                 }
             }
-            return ret;
         }
 
-        return Observation.UNASSIGNED_ID;
+        /*
+        Link created assets to the activity
+         */
+        for (long asset : created) {
+            query(
+                    "match (n:Activity), (c) WHERE id(n) = $fromId AND id(c) = $toId CREATE (c)-[r:CREATED]->(n) return r",
+                    Map.of("fromId", operation.getActivity().getId(), "toId", created));
+        }
+
+        /*
+        Link any plans to the activity (should be one at most)
+         */
+        for (long plan : plans) {
+            query(
+                    "match (n:Activity), (c:Plan) WHERE id(n) = $fromId AND id(c) = $toId CREATE (c)-[r:HAS_PLAN]->(n) return r",
+                    Map.of("fromId", operation.getActivity().getId(), "toId", created));
+        }
+
+        // link the activity to the agent
+        query(
+                "match (n:Activity), (c:Agent) WHERE id(n) = $fromId AND c.name = $agentName CREATE (c)-[r:BY_AGENT]->(n) return r",
+                Map.of("fromId", operation.getActivity().getId(), "toId", operation.getAgent().getName()));
+
+        return ret;
     }
 
-    //    protected abstract long create(List<RuntimeAsset> targets, Map<String, Object> parameters);
-    //
-    //    protected abstract long link(List<RuntimeAsset> targets, Map<String, Object> parameters);
-    //
-    //    protected abstract long modify(List<RuntimeAsset> targets, Map<String, Object> parameters);
-
-private String getLabel(Object target) {
-    return switch (target) {
-        case Observation x -> "Observation";
-        case Activity x -> "Activity";
-        case Actuator x -> "Actuator";
-        case Agent x -> "Agent";
-        case Plan x -> "Plan";
-        default -> throw new KlabIllegalArgumentException(
-                "Cannot store " + target.getClass() + " in knowledge graph");
-    };
-}
-
-//    //    @Override
-//    protected long modify(List<RuntimeAsset> targets, Map<String, Object> parameters) {
-//        return 0;
-//    }
+    private String getLabel(Object target) {
+        return switch (target) {
+            case Observation x -> "Observation";
+            case Activity x -> "Activity";
+            case Actuator x -> "Actuator";
+            case Agent x -> "Agent";
+            case Plan x -> "Plan";
+            default -> throw new KlabIllegalArgumentException(
+                    "Cannot store " + target.getClass() + " in knowledge graph");
+        };
+    }
 
     @Override
     protected void finalizeOperation(OperationImpl operation, ContextScope scope, boolean b) {
         // TODO! Update activity with status and time
+        System.out.println("FINALIZE THIS SHIT");
+    }
+
+    @Override
+    public <T extends RuntimeAsset> List<T> get(ContextScope scope, Class<T> resultClass, Object... queryParameters) {
+
+        System.out.println("PUTO CANE");
+
+        /**
+         * TODO starting point based on context and request class
+         *
+         * If Observation.class: context or obs in context so that there is 1 hop (if countable -> non-collective countable,
+         * skip the container).
+         *
+         * If Actuator, same thing using the ID of the passed observation
+         *
+         * If Provenance node, same thing
+         */
+
+        /**
+         * TODO build query
+         */
+
+        /**
+         * TODO adapt result
+         */
+
+        return List.of();
     }
 }

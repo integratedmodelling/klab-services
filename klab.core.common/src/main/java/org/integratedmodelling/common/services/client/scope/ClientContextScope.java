@@ -142,8 +142,8 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     @Override
     public Observation getObservation(Observable observable) {
-        // TODO
-        return null;
+        var runtime = getService(RuntimeService.class);
+        return runtime.getObservation(observable, this);
     }
 
     @Override
