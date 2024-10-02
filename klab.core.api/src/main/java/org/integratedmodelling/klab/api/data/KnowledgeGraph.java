@@ -26,12 +26,21 @@ import java.util.List;
  */
 public interface KnowledgeGraph {
 
+
     /**
      * Operations are defined and run to modify the knowledge graph. The operation API guarantees the proper
      * updating of provenance in the graph so that any modification is recorded, attributed and saves in
      * replayable history.
      */
     interface Operation {
+
+        /**
+         * Any operation on the KG is done by someone or something, dutifully recorded in the
+         * provenance.
+         *
+         * @return
+         */
+        Agent getAgent();
 
         /**
          * Run the operation as configured and return the ID of the last object created or modified, or
@@ -221,6 +230,15 @@ public interface KnowledgeGraph {
      * @return
      */
     <T extends RuntimeAsset> List<T> get(ContextScope scope, Class<T> resultClass, Object... queryParameters);
+
+    /**
+     * Find an agent by name. If the agent is not found, create it with the passed name. If the name is null,
+     * return a default agent for the implementation.
+     *
+     * @param agentName
+     * @return
+     */
+    Agent requireAgent(String agentName);
 
     /**
      * Build a federated graph resulting from merging with the URL pointing to a remote digital twin.

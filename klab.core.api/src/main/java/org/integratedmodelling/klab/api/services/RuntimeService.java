@@ -43,9 +43,13 @@ public interface RuntimeService extends KlabService {
      *
      * @param observation
      * @param scope
+     * @param startResolution if true, invoke the resolver and run the resolving dataflow, otherwise just add
+     *                        the asset to the graph
+     * @param agentName       the name of the agent requesting the observation, for provenance recording. Null
+     *                        can be passed but shouldn't.
      * @return
      */
-    long submit(Observation observation, ContextScope scope, boolean startResolution);
+    long submit(Observation observation, ContextScope scope, boolean startResolution, String agentName);
 
     /**
      * The main function of the runtime.
@@ -64,12 +68,12 @@ public interface RuntimeService extends KlabService {
      * Retrieve any assets from the knowledge graph in the digital twin matching a given class and some query
      * objects.
      *
-     * @param contextScope the scope for the request, which will determine the point in the knowledge graph to
-     *                     start searching from
-     * @param assetClass   the type of asset requested
-     * @param queryParameters   any objects that will identify one or more assets of the passed type in the passed
-     *                     scope, such as an observable, a string for a name or a geometry. All passed objects
-     *                     will restrict the search.
+     * @param contextScope    the scope for the request, which will determine the point in the knowledge graph
+     *                        to start searching from
+     * @param assetClass      the type of asset requested
+     * @param queryParameters any objects that will identify one or more assets of the passed type in the
+     *                        passed scope, such as an observable, a string for a name or a geometry. All
+     *                        passed objects will restrict the search.
      * @param <T>
      * @return
      */

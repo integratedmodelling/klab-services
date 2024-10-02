@@ -71,7 +71,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     @Override
     public Task<Observation, Long> observe(Observation observation) {
         var runtime = getService(RuntimeService.class);
-        long taskId = runtime.submit(observation, this, true);
+        long taskId = runtime.submit(observation, this, true, getUser().getUsername());
         return newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
                 Message.MessageType.ResolutionSuccessful), Observation.class, taskId); // event
     }

@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
@@ -45,7 +46,7 @@ public class RuntimeServerController {
                 var task = contextScope.observe(resolutionRequest.getObservation());
                 return task.trackingKey();
             } else if (contextScope instanceof ServiceContextScope serviceContextScope) {
-                return serviceContextScope.insertIntoKnowledgeGraph(resolutionRequest.getObservation());
+                return serviceContextScope.insertIntoKnowledgeGraph(resolutionRequest.getObservation(), resolutionRequest.getAgentName());
             }
         }
         throw new KlabInternalErrorException("Unexpected implementation of request authorization");

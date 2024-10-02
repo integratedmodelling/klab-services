@@ -523,4 +523,16 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         return adapt(result, resultClass);
     }
+
+    @Override
+    public Agent requireAgent(String agentName) {
+        if ("k.LAB".equals(agentName)) {
+            return klab;
+        } else if (scope.getUser().getUsername().equals(agentName)) {
+            return user;
+        } else if (agentName != null) {
+            // TODO create agent
+        }
+        return user;
+    }
 }

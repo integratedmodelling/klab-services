@@ -17,6 +17,7 @@ public class ResolutionRequest {
     private Observation observation;
     private Observable observable;
     private boolean startResolution;
+    private String agentName; // for provenance when needed. Agents are identified by name
     private List<ResolutionConstraint> resolutionConstraints = new ArrayList<>();
 
     public Observation getObservation() {
@@ -49,6 +50,14 @@ public class ResolutionRequest {
 
     public void setStartResolution(boolean startResolution) {
         this.startResolution = startResolution;
+    }
+
+    public String getAgentName() {
+        return agentName;
+    }
+
+    public void setAgentName(String agentName) {
+        this.agentName = agentName;
     }
 }
 

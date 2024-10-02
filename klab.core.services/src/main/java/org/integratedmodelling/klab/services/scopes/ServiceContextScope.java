@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.provenance.Activity;
+import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -439,17 +440,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         }
     }
 
-    public long insertIntoKnowledgeGraph(Observation observation) {
-        System.out.println("PORCK");
-
-        // insert obs in the knowledge graph
-
-        // establish URN and ID
-
-        // if it's a state, allocate storage with the URN
-
-        // return the ID
-
-        return Observation.UNASSIGNED_ID;
+    public long insertIntoKnowledgeGraph(Observation observation, String agentName) {
+        return digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().requireAgent(agentName),
+                this).add(observation).run(this);
     }
 }

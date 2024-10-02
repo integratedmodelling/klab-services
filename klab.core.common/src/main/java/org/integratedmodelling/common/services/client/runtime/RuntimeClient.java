@@ -163,10 +163,12 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public long submit(Observation observation, ContextScope scope, boolean startResolution) {
+    public long submit(Observation observation, ContextScope scope, boolean startResolution,
+                       String agentName) {
         ResolutionRequest resolutionRequest = new ResolutionRequest();
         resolutionRequest.setObservation(observation);
         resolutionRequest.setStartResolution(startResolution);
+        resolutionRequest.setAgentName(agentName);
         resolutionRequest.setResolutionConstraints(scope.getResolutionConstraints());
         return client.withScope(scope).post(ServicesAPI.RUNTIME.OBSERVE, resolutionRequest, Long.class);
     }
@@ -189,7 +191,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public <T extends RuntimeAsset> List<T> retrieveAssets(ContextScope contextScope, Class<T> assetClass, Object... queryParameters) {
+    public <T extends RuntimeAsset> List<T> retrieveAssets(ContextScope contextScope, Class<T> assetClass,
+                                                           Object... queryParameters) {
         AssetRequest request = new AssetRequest();
         RuntimeAsset.Type type = RuntimeAsset.Type.forClass(assetClass);
 
@@ -199,7 +202,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
                 case Observation observation -> request.setContextObservation(observation);
                 case Long id -> request.setId(id);
                 case String string -> request.setName(string);
-                case Geometry geometry-> request.setGeometry(geometry);
+                case Geometry geometry -> request.setGeometry(geometry);
                 case Metadata metadata -> request.getMetadata().putAll(metadata);
                 case RuntimeAsset.Type assetType -> type = assetType;
                 default -> throw new KlabIllegalStateException("Unexpected value: " + object);
@@ -207,7 +210,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         }
         request.setKnowledgeClass(type);
 
-        return client.withScope(contextScope).postCollection(ServicesAPI.RUNTIME.RETRIEVE_ASSET, request, assetClass);
+        return client.withScope(contextScope).postCollection(ServicesAPI.RUNTIME.RETRIEVE_ASSET, request,
+                assetClass);
     }
 
     public GraphQLClient graphClient() {
