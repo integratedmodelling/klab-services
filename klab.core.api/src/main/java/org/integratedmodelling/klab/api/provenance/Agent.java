@@ -13,6 +13,7 @@
  */
 package org.integratedmodelling.klab.api.provenance;
 
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 
@@ -26,6 +27,10 @@ import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
  * @version $Id: $Id
  */
 public interface Agent extends Provenance.Node {
+
+    default RuntimeAsset.Type classify() {
+        return Type.AGENT;
+    }
 
     static AgentImpl promote(Agent agent) {
         if (agent instanceof AgentImpl agentImpl) {

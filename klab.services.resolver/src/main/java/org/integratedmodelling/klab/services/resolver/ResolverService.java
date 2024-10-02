@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -28,10 +29,7 @@ import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.services.Language;
-import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.resolver.Resolution.ResolutionType;
@@ -158,10 +156,7 @@ public class ResolverService extends BaseService implements Resolver {
      */
     public Resolution computeResolution(Observation observation, ContextScope scope) {
 
-        var resolutionGeometry = ContextScope.getResolutionGeometry(scope);
-        if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
-            resolutionGeometry = observation.getGeometry();
-        }
+        var resolutionGeometry = scope.getObservationGeometry(observation);
 
         if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
             return ResolutionImpl.empty(observation, scope);
@@ -335,12 +330,20 @@ public class ResolverService extends BaseService implements Resolver {
      * @return a non-null observation
      */
     private Observation requireObservation(Observable observable, ContextScope scope) {
-        var ret = scope.getObservation(observable);
-        if (ret == null) {
-            // TODO determine the right geometry
-            // TODO create the observation prototype
+        var ret = scope.query(Observation.class, observable);
+        if (ret.isEmpty()) {
+
+            var newObs = DigitalTwin.createObservation(scope,observable);
+            if (SemanticType.isSubstantial(observable.getSemantics().getType())) {
+                // TODO determine the right geometry and add it
+
+            }
+            var id = scope.getService(RuntimeService.class).submit(newObs, scope, false);
+            if (id >= 0) {
+                ret = scope.query(Observation.class, observable);
+            }
         }
-        return ret;
+        return ret.isEmpty() ? null : ret.getFirst();
     }
 
     /**

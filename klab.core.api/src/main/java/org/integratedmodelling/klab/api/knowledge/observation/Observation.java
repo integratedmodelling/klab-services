@@ -42,6 +42,10 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
 
     static final long UNASSIGNED_ID = -1;
 
+    default RuntimeAsset.Type classify() {
+        return RuntimeAsset.Type.OBSERVATION;
+    }
+
     /**
      * The ID of an observation is a positive long for efficiency. Paths such as 3.44.234 identify observation
      * hierarchies to reconstruct scopes. An ID of -1L means that the observation is unassigned to the
@@ -107,7 +111,7 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
         return EMPTY_OBSERVATION;
     }
 
-    Geometry getObserverGeometry();
+//    Geometry getObserverGeometry();
 
     Object getValue();
 }

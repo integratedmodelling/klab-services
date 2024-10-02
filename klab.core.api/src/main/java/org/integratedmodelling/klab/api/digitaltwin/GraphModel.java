@@ -23,13 +23,14 @@ public class GraphModel {
 
         interface GraphQL {
 
-            record Query(String queryPattern, String resultTarget, String[] variables) {}
-//
-//            Query OBSERVE = new Query( """
-//                    mutation Observe {
-//                        observe(observation: $observation)
-//                    }
-//                    """, "observe", new String[] {"observation"});
+            record Query(String queryPattern, String resultTarget, String[] variables) {
+            }
+            //
+            //            Query OBSERVE = new Query( """
+            //                    mutation Observe {
+            //                        observe(observation: $observation)
+            //                    }
+            //                    """, "observe", new String[] {"observation"});
 
         }
     }
@@ -106,9 +107,8 @@ public class GraphModel {
     public static ObservationInput adapt(org.integratedmodelling.klab.api.knowledge.observation.Observation observation, ContextScope scope) {
         // TODO needs model/resource URN and metadata
         return new ObservationInput(observation.getName(), observation.getObservable().getUrn(),
-                observation.getGeometry().encode(), Utils.Data.asString(observation.getValue()),
-                observation.getObserverGeometry() == null ? null :
-                observation.getObserverGeometry().encode(), scope.getResolutionConstraints());
+                observation.getGeometry().encode(), Utils.Data.asString(observation.getValue()), null,
+                scope.getResolutionConstraints());
     }
 
 }

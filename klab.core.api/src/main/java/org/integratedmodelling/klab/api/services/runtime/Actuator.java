@@ -64,6 +64,11 @@ import java.util.Queue;
  */
 public interface Actuator extends Serializable, RuntimeAsset {
 
+
+    default RuntimeAsset.Type classify() {
+        return Type.ACTUATOR;
+    }
+
     /**
      * Name of the service call that encodes deferred resolution when that must be included in the
      * computation.

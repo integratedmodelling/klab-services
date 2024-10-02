@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
@@ -21,7 +22,7 @@ public class ActuatorImpl implements Actuator {
     private long timestamp;
     private String name;
     private String alias;
-    private Type type;
+    private Artifact.Type type;
     private Observable observable;
     private List<Actuator> children = new ArrayList<>();
     private List<ServiceCall> computation = new ArrayList<>();
@@ -50,7 +51,7 @@ public class ActuatorImpl implements Actuator {
     }
 
     @Override
-    public Type getType() {
+    public Artifact.Type getType() {
         return this.type;
     }
 
@@ -110,7 +111,7 @@ public class ActuatorImpl implements Actuator {
         this.alias = alias;
     }
 
-    public void setType(Type type) {
+    public void setType(Artifact.Type type) {
         this.type = type;
     }
 

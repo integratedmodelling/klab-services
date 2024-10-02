@@ -79,6 +79,7 @@ public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements
             //  connectors, losing debugging access outside the application
             this.driver = GraphDatabase.driver("bolt://localhost:7687");
 
+            this.driver.verifyConnectivity();
 
             configureDatabase();
 
@@ -127,19 +128,6 @@ public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements
                     "database");
         }
 
-//        contextSession_ = this.sessionFactory.openSession();
-//
-//        var node = session().load(GraphMapping.ContextMapping.class, scope.getId());
-//        if (node == null) {
-//            node = GraphMapping.adapt(scope);
-//            try (var transaction = session().beginTransaction()) {
-//                session().save(node);
-//                transaction.commit();
-//            } catch (Throwable t) {
-//                return this;
-//            }
-//        }
-
         var ret = new KnowledgeGraphNeo4JEmbedded(this, scope);
 //        ret.rootNode = node;
 
@@ -168,78 +156,10 @@ public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements
         return this.online;
     }
 
-//    private Session session() {
-//        if (contextSession_ == null) {
-//            throw new KlabIllegalStateException("DB session is null: KnowledgeGraphNeo4JEmbedded used " +
-//                    "without previous " +
-//                    "contextualization");
-//        }
-//        return contextSession_;
-//    }
-
-//    /**
-//     * @param observation any observation, including relationships
-//     * @return
-//     */
-//    @Override
-//    public long add(Observation observation, Object relationshipSource, DigitalTwin.Relationship connection
-//            , Metadata relationshipMetadata) {
-//
-//
-//        if (this.scope == null) {
-//            throw new KlabIllegalStateException("cannot use a graph database in its non-contextualized " +
-//                    "state");
-//        }
-//
-//        var observationMapping = GraphMapping.adapt(observation);
-//        try (var transaction = session().beginTransaction()) {
-//            session().save(observationMapping);
-//            var link = createLink(observationMapping, relationshipSource, connection);
-//            if (link != null) {
-//                session().save(link, 0);
-//            }
-//            transaction.commit();
-//            return observationMapping.id;
-//        } catch (Throwable t) {
-//            scope.error(t);
-//        }
-//
-//        return Observation.UNASSIGNED_ID;
-//    }
-//
-//    private GraphMapping.Link createLink(GraphMapping.ObservationMapping source, Object target,
-//                                         DigitalTwin.Relationship connection) {
-//        GraphMapping.Link ret = null;
-//        DigitalTwin.Relationship defaultConnection = null;
-//        if (target == null) {
-//            var link = new GraphMapping.RootObservationLink();
-//            link.context = rootNode;
-//            link.observation = source;
-//            defaultConnection = DigitalTwin.Relationship.RootObservation;
-//            ret = link;
-//        } else if (target instanceof Observation observation) {
-//            var link = new GraphMapping.ObservationLink();
-//            link.observation = source;
-//            link.context = session().load(GraphMapping.ObservationMapping.class, observation.getId());
-//            defaultConnection = DigitalTwin.Relationship.Parent;
-//            ret = link;
-//        }
-//
-//        if (ret != null) {
-//            ret.timestamp = System.currentTimeMillis();
-//            ret.type = connection == null ? defaultConnection : connection;
-//        }
-//
-//        return ret;
-//    }
 
     @Override
     public void shutdown() {
         managementService.shutdown();
     }
 
-//    @Override
-//    protected Driver driver() {
-//        return driver;
-//    }
 }

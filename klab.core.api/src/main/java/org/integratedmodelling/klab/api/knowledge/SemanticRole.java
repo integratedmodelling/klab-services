@@ -67,7 +67,7 @@ public enum SemanticRole {
     public boolean appliesTo(SemanticType type) {
         switch (this) {
             case ADJACENT:
-                return type.isCountable();
+                return type.isSubstantial();
             case CAUSANT:
                 break;
             case CAUSED:

@@ -62,11 +62,10 @@ public interface DigitalTwin {
     Provenance getProvenanceGraph(ContextScope context);
 
     /**
-     * The dataflow graph contextualized to the passed context. This is extracted from the
-     * provenance graph
+     * The dataflow graph contextualized to the passed context. This is extracted from the provenance graph
      *
-     * @param context can be null for the entire dataflow (effect is the same as passing the original
-     *                context scope)
+     * @param context can be null for the entire dataflow (effect is the same as passing the original context
+     *                scope)
      * @return the dataflow starting at the passed contextualization
      */
     Dataflow<Observation> getDataflowGraph(ContextScope context);
@@ -88,13 +87,14 @@ public interface DigitalTwin {
      * Assemble the passed parameters into an unresolved Observation, to be inserted into the knowledge graph
      * and resolved.
      * <p>
-     * Accepts:
-     *      TODO
+     * Accepts all the needed elements for the observation, including geometry, observable and the like. If
+     * two geometries are passed, the second is the observer's (FIXME that should be deprecated). In dependent
+     * observations, the geometry may be omitted and the geometry of the owning substantial will be used.
      *
      * @param resolvables
      * @return
      */
-    static Observation createObservation(Scope scope, Object... resolvables) {
+    static ObservationImpl createObservation(Scope scope, Object... resolvables) {
 
         final Set<String> knownKeys = Set.of("observation", "semantics", "space", "time");
 
@@ -212,7 +212,7 @@ public interface DigitalTwin {
             return ret;
         }
 
-        return Observation.empty();
+        return null;
     }
 
 

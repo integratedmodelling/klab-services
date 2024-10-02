@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.scopes;
 
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -170,7 +171,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
 
-
     @Override
     public Task<Observation, Long> observe(Observation observation) {
 
@@ -201,14 +201,18 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         Thread.ofVirtual().start(() -> {
             try {
                 var dataflow = resolver.resolve(observation, this);
-                if (dataflow != null && !dataflow.isEmpty()) {
-                    var provenance = runtime.runDataflow(dataflow, activity, this);
-                    System.out.println("RESOLVED CRAPPETTONE " + id);
-                    activity.success(this,observation, dataflow, provenance);
+                if (dataflow != null) {
+                    if (!dataflow.isEmpty()) {
+                        /* TODO return value */
+                        runtime.runDataflow(dataflow, activity, this);
+                    }
+                    activity.success(this, observation, dataflow);
+                } else {
+                    activity.fail(this, observation);
                 }
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionSuccessful, id);
             } catch (Throwable t) {
-                activity.fail(this,observation, t);
+                activity.fail(this, observation, t);
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted, id);
             }
         });
@@ -272,61 +276,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public Map<Observable, Observation> getObservations() {
-        // TODO use the DT
-        return Map.of();
-    }
-    //
-    //    @Override
-    //    public String getResolutionNamespace() {
-    //        return resolutionNamespace;
-    //    }
-    //
-    //    public String getResolutionProject() {
-    //        return resolutionProject;
-    //    }
-    //
-    //    public void setResolutionProject(String resolutionProject) {
-    //        this.resolutionProject = resolutionProject;
-    //    }
-    //
-    //    @Override
-    //    public Set<String> getResolutionScenarios() {
-    //        return resolutionScenarios;
-    //    }
-
-    //    @Override
-    //    public Observation getResolutionObservation() {
-    //        return contextObservation;
-    //    }
-
-    //    @Override
-    //    public ContextScope withContextualizationData(Observation contextObservation, Scale scale,
-    //                                                  Map<String, String> localNames) {
-    //        if (scale == null && localNames.isEmpty()) {
-    //            return this;
-    //        }
-    //        ServiceContextScope ret = new ServiceContextScope(this);
-    //        ret.contextObservation = contextObservation;
-    //        if (scale != null) {
-    //            ret.geometry = scale;
-    //        }
-    //        if (!localNames.isEmpty()) {
-    //            this.namedCatalog = Utils.Maps.translateKeys(namedCatalog, localNames);
-    //        }
-    //        return ret;
-    //    }
-
-
-    @Override
-    public Observation getObservation(Observable observable) {
-        return null;
-    }
-
-    @Override
-    public Observation getObservation(String localName) {
-        // TODO Auto-generated method stub
-        return null;
+    public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
+        return getService(RuntimeService.class).retrieveAssets(this, resultClass, queryData);
     }
 
     @Override
@@ -486,5 +437,19 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                 }
             }
         }
+    }
+
+    public long insertIntoKnowledgeGraph(Observation observation) {
+        System.out.println("PORCK");
+
+        // insert obs in the knowledge graph
+
+        // establish URN and ID
+
+        // if it's a state, allocate storage with the URN
+
+        // return the ID
+
+        return Observation.UNASSIGNED_ID;
     }
 }

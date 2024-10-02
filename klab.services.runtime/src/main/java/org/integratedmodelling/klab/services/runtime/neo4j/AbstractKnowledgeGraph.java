@@ -35,7 +35,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         /*
          list of the object created with their locator in the query (field -> value)
          */
-        private Map<RuntimeAsset, Pair<String, Object>> assetLocators = new HashMap<>();
+        private Map<Object, Pair<String, Object>> assetLocators = new HashMap<>();
 
         public String getAssetKeyProperty(RuntimeAsset asset) {
             if (assetLocators.containsKey(asset)) {
@@ -78,7 +78,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
 
         @Override
-        public Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo, DigitalTwin.Relationship relationship, Object... linkData) {
+        public Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo,
+                              DigitalTwin.Relationship relationship, Object... linkData) {
             this.steps.add(new Step(Type.LINK, List.of(assetFrom, assetTo), linkData));
             return this;
         }
@@ -145,16 +146,23 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
          * @param field the field that identifies it in a query
          * @param key   the value of the field that uniquely identifies the assed
          */
-        public void registerAsset(RuntimeAsset asset, String field, Object key) {
+        public void registerAsset(Object asset, String field, Object key) {
             assetLocators.put(asset, Pair.of(field, key));
         }
     }
 
     protected abstract long runOperation(OperationImpl operation, ContextScope scope);
 
-    protected abstract void finalizeOperation(OperationImpl operation, ContextScope scope, boolean b);
-
-    //    protected abstract Map<String, Object> nodeProperties(long nodeId);
+    /**
+     * Call at the end of each activity on the result of {@link #activity(Agent, ContextScope, Object...)}, passing any
+     * assets that must be updated or added to the graph.
+     * @param operation
+     * @param scope
+     * @param success
+     * @param resultsToUpdate
+     */
+    protected abstract void finalizeOperation(OperationImpl operation, ContextScope scope, boolean success,
+                                              RuntimeAsset... resultsToUpdate);
 
     @Override
     public Operation activity(Agent agent, ContextScope scope, Object... targets) {
@@ -201,7 +209,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                     case Actuator actuator -> {
                         ret.add(actuator);
                         ret.link(ret.activity, actuator, DigitalTwin.Relationship.HAS_PLAN);
-                        // TODO must have ID of observation: link to the obs it contextualizes. Activity becomes a
+                        // TODO must have ID of observation: link to the obs it contextualizes. Activity
+                        //  becomes a
                         // contextualization.
                     }
                     case String string -> ret.activity.setDescription(string);
@@ -261,21 +270,5 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
         return ret;
     }
-
-    //    protected RuntimeAsset fromParameters(RuntimeAsset asset, Map<String, Object> parameters) {
-    //        return asset;
-    //    }
-
-//
-//    /**
-//     * Extract all POD properties and metadata fields from an asset to pass to the operation unless
-//     * overridden.
-//     *
-//     * @param asset
-//     * @return
-//     */
-//    protected Object[] getProperties(RuntimeAsset asset, Object... overridingProperties) {
-//        return new Object[]{};
-//    }
 
 }

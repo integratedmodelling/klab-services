@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.scope;
 
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
@@ -10,6 +11,7 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.net.URL;
 import java.util.*;
@@ -43,7 +45,7 @@ import java.util.concurrent.Future;
  *
  * @author Ferd
  */
-public interface ContextScope extends SessionScope, RuntimeAsset {
+public interface ContextScope extends SessionScope {
 
     @Override
     default Type getType() {
@@ -266,6 +268,16 @@ public interface ContextScope extends SessionScope, RuntimeAsset {
     ContextScope getRootContextScope();
 
     /**
+     * The main method to retrieve anything visible to this scope from the knowledge graph.
+     *
+     * @param resultClass
+     * @param queryData
+     * @return
+     * @param <T>
+     */
+    <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData);
+
+    /**
      * Return the parent observation of the passed observation. The runtime context maintains the logical
      * structure graph (ignores grouping of artifacts).
      *
@@ -301,41 +313,6 @@ public interface ContextScope extends SessionScope, RuntimeAsset {
      * @return a {@link java.util.Collection} object.
      */
     Collection<Observation> getIncomingRelationshipsOf(Observation observation);
-
-    /**
-     * Return the observations in this scope as a map indexed by observable.
-     *
-     * @return
-     */
-    Map<Observable, Observation> getObservations();
-
-    /**
-     * If there is an observation of this observable in the knowledge graph under this scope, return it,
-     * otherwise return null. The observation may be resolved or not: if not, no resolution should be
-     * attempted because it already failed in this scope, or the observation is being resolved by another
-     * agent.
-     * <p>
-     * This and {@link #getObservation(String)} are the only methods that return previously made observations
-     * in the scope. Any kind of complex query (including these) can be made through the GraphQL endpoint in
-     * the runtime.
-     *
-     * @param observable
-     * @return
-     */
-    Observation getObservation(Observable observable);
-
-    /**
-     * Retrieve the observation that is recognized with the passed name or URN in this scope.
-     * <p>
-     * This and {@link #getObservation(Observable)} are the only methods that return previously made
-     * observations in the scope. Any kind of complex query (including these) can be made through the GraphQL
-     * endpoint in the runtime.
-     *
-     * @param urn can be a URN, a formal name for a direct observation, or just the observation ID (as a
-     *            string) as long as it's unique and unambiguous.
-     * @return the observation or null
-     */
-    Observation getObservation(String urn);
 
     /**
      * Set resolution constraints here. Returns a new scope with all the constraints added to the ones in
@@ -394,7 +371,7 @@ public interface ContextScope extends SessionScope, RuntimeAsset {
      * @param observationPath if there is a focal observation ID, the path to the observation
      * @param observerId      if there is an observer field after #, the path to the observer
      */
-    record ScopeData(Scope.Type type, String scopeId, String[] observationPath, String observerId
+    record ScopeData(Scope.Type type, String scopeId, long[] observationPath, long observerId
                      /*, String[] scenarioUrns, Map<String, String> traitIncarnations,
                      String resolutionNamespace*/) {
         public boolean empty() {
@@ -451,10 +428,30 @@ public interface ContextScope extends SessionScope, RuntimeAsset {
                 resolutionGeometry = scope.getContextObservation().getGeometry();
             }
             if ((resolutionGeometry == null || resolutionGeometry.isEmpty()) && scope.getObserver() != null) {
-                resolutionGeometry = scope.getObserver().getObserverGeometry();
+                resolutionGeometry = scope.getObserver().getGeometry();
             }
         }
         return resolutionGeometry;
+    }
+
+    default Geometry getObservationGeometry(Observation observation) {
+
+        var geometry = observation.getGeometry();
+        if (geometry == null) {
+            if (observation.getType().isDependent() && getContextObservation() != null) {
+                geometry = getContextObservation().getGeometry();
+            }
+            // override if collective and substantial
+            if (observation.getObservable().isCollective() && getObserver() != null && getObserver().getGeometry() != null) {
+                geometry = getObserver().getGeometry();
+            }
+        }
+
+        if (geometry == null) {
+            throw new KlabIllegalStateException("Geometry cannot be attributed for observation " + observation + " based on scope");
+        }
+
+        return geometry;
     }
 
     /**
@@ -467,22 +464,26 @@ public interface ContextScope extends SessionScope, RuntimeAsset {
 
         Scope.Type type = Scope.Type.USER;
         String scopeId = null;
-        String[] observationPath = null;
-        String observerId = null;
+        long[] observationPath = null;
+        long observerId = Observation.UNASSIGNED_ID;
 
         if (scopeToken != null) {
             // Separate out observer path if any
             if (scopeToken.contains("#")) {
                 String[] split = scopeToken.split("#");
                 scopeToken = split[0];
-                observerId = split[1];
+                observerId = Long.parseLong(split[1]);
             }
 
             var path = scopeToken.split("\\.");
             type = path.length > 1 ? Scope.Type.CONTEXT : Scope.Type.SESSION;
             scopeId = path.length == 1 ? path[0] : (path[0] + "." + path[1]);
             if (path.length > 2) {
-                observationPath = Arrays.copyOfRange(path, 2, path.length);
+                List<Long> longs = new ArrayList<>();
+                for (int i = 2; i < path.length; i++) {
+                    longs.add(Long.parseLong(path[i]));
+                }
+                observationPath = Utils.Numbers.longArrayFromCollection(longs);
             }
         }
 

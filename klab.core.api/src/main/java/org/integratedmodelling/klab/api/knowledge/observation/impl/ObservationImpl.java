@@ -99,7 +99,7 @@ public class ObservationImpl implements Observation {
     }
 
     @Override
-    public Type getType() {
+    public Artifact.Type getType() {
         return observable.getArtifactType();
     }
 
@@ -214,10 +214,10 @@ public class ObservationImpl implements Observation {
         this.geometry = geometry;
     }
 
-    @Override
-    public Geometry getObserverGeometry() {
-        return observerGeometry;
-    }
+//    @Override
+//    public Geometry getObserverGeometry() {
+//        return observerGeometry;
+//    }
 
     public void setObserverGeometry(Geometry observerGeometry) {
         this.observerGeometry = observerGeometry;

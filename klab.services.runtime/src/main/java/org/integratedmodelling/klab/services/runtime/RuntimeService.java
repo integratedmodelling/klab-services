@@ -6,6 +6,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -289,9 +290,11 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     @Override
-    public long submit(Observation observation, ContextScope scope) {
+    public long submit(Observation observation, ContextScope scope, boolean startResolution) {
         if (scope instanceof ServiceContextScope serviceContextScope) {
-            return serviceContextScope.observe(observation).trackingKey();
+            return startResolution
+                   ? serviceContextScope.observe(observation).trackingKey()
+                   : serviceContextScope.insertIntoKnowledgeGraph(observation);
         }
         return -1L;
     }
@@ -303,9 +306,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     @Override
-    public Observation getObservation(Observable observable, ContextScope contextScope) {
-        var ret = knowledgeGraph.get(contextScope, Observation.class, "semantics", observable.getUrn());
-        return ret.isEmpty() ? null : ret.getFirst();
+    public <T extends RuntimeAsset> List<T> retrieveAssets(ContextScope contextScope, Class<T> assetClass, Object... queryParameters) {
+        return knowledgeGraph.get(contextScope, assetClass, queryParameters);
     }
 
     @Override

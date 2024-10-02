@@ -2,6 +2,7 @@ package org.integratedmodelling.common.services.client.scope;
 
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
@@ -57,16 +58,6 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         return this;
     }
 
-    //    @Override
-    //    public ContextScope withScenarios(String... scenarios) {
-    //        return this;
-    //    }
-    //
-    //    @Override
-    //    public ContextScope withResolutionNamespace(String namespace) {
-    //        return this;
-    //    }
-
     @Override
     public ContextScope within(Observation contextObservation) {
         return null;
@@ -80,7 +71,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     @Override
     public Task<Observation, Long> observe(Observation observation) {
         var runtime = getService(RuntimeService.class);
-        long taskId = runtime.submit(observation, this);
+        long taskId = runtime.submit(observation, this, true);
         return newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
                 Message.MessageType.ResolutionSuccessful), Observation.class, taskId); // event
     }
@@ -136,20 +127,8 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public Map<Observable, Observation> getObservations() {
-        return Map.of();
-    }
-
-    @Override
-    public Observation getObservation(Observable observable) {
-        var runtime = getService(RuntimeService.class);
-        return runtime.getObservation(observable, this);
-    }
-
-    @Override
-    public Observation getObservation(String localName) {
-        // TODO
-        return null;
+    public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
+        return getService(RuntimeService.class).retrieveAssets(this, resultClass, queryData);
     }
 
     /**

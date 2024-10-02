@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.api.provenance.impl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 
-public class ProvenanceNodeImpl implements Provenance.Node {
+public abstract class ProvenanceNodeImpl implements Provenance.Node {
 
     private long id;
     private String name;

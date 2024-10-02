@@ -18,6 +18,10 @@ public interface Storage extends RuntimeAsset {
         BOOLEAN
     }
 
+    default RuntimeAsset.Type classify() {
+        return RuntimeAsset.Type.ARTIFACT;
+    }
+
     Type getType();
 
     Histogram getHistogram();

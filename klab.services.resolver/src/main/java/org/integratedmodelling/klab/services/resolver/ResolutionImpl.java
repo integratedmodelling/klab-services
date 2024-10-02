@@ -106,10 +106,11 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
         super(ResolutionImpl.ResolutionEdge.class);
         this.resolvable = root;
         // pre-resolved observations. Can't use better idioms for apparent bug in Java type system.
-        for (Observable o : scope.getObservations().keySet()) {
+        for (var o : scope.query(Observation.class)) {
             Set<Resolvable> set = new HashSet<>();
-            set.add(scope.getObservations().get(o));
-            resolved.put(o, set);
+            // TODO REVISE - PROBABLY UNNECESSARY
+//            set.add(scope.getObservations().get(o));
+            resolved.put(o.getObservable(), set);
         }
     }
 
@@ -125,6 +126,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
 
         super(ResolutionImpl.ResolutionEdge.class);
         this.resolving.addAll(parent.resolving);
+        // TODO REVISE - PROBABLY UNNECESSARY
         this.resolved.putAll(parent.resolved);
         this.resolvable = root;
     }

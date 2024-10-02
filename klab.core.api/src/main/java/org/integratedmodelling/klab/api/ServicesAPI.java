@@ -346,6 +346,11 @@ public interface ServicesAPI {
          * {@link org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest} instance.
          */
         String OBSERVE = "/observe";
+
+        /**
+         * POST endpoint to retrieve one or more assets from the digital twin based on a query
+         */
+        String RETRIEVE_ASSET = "/asset";
     }
 
     public interface RESOURCES {

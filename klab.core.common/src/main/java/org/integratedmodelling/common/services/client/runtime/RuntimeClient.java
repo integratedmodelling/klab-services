@@ -7,7 +7,11 @@ import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -20,6 +24,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.runtime.*;
+import org.integratedmodelling.klab.api.services.runtime.objects.AssetRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.rest.ServiceReference;
@@ -158,9 +163,10 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public long submit(Observation observation, ContextScope scope) {
+    public long submit(Observation observation, ContextScope scope, boolean startResolution) {
         ResolutionRequest resolutionRequest = new ResolutionRequest();
         resolutionRequest.setObservation(observation);
+        resolutionRequest.setStartResolution(startResolution);
         resolutionRequest.setResolutionConstraints(scope.getResolutionConstraints());
         return client.withScope(scope).post(ServicesAPI.RUNTIME.OBSERVE, resolutionRequest, Long.class);
     }
@@ -168,11 +174,6 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     @Override
     public Provenance runDataflow(Dataflow<Observation> dataflow, KnowledgeGraph.Operation activity,
                                   ContextScope contextScope) {
-        return null;
-    }
-
-    @Override
-    public Observation getObservation(Observable observable, ContextScope contextScope) {
         return null;
     }
 
@@ -185,6 +186,28 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     @Override
     public List<SessionInfo> getSessionInfo(Scope scope) {
         return client.withScope(scope).getCollection(ServicesAPI.RUNTIME.GET_SESSION_INFO, SessionInfo.class);
+    }
+
+    @Override
+    public <T extends RuntimeAsset> List<T> retrieveAssets(ContextScope contextScope, Class<T> assetClass, Object... queryParameters) {
+        AssetRequest request = new AssetRequest();
+        RuntimeAsset.Type type = RuntimeAsset.Type.forClass(assetClass);
+
+        for (var object : queryParameters) {
+            switch (object) {
+                case Observable observable -> request.setObservable(observable);
+                case Observation observation -> request.setContextObservation(observation);
+                case Long id -> request.setId(id);
+                case String string -> request.setName(string);
+                case Geometry geometry-> request.setGeometry(geometry);
+                case Metadata metadata -> request.getMetadata().putAll(metadata);
+                case RuntimeAsset.Type assetType -> type = assetType;
+                default -> throw new KlabIllegalStateException("Unexpected value: " + object);
+            }
+        }
+        request.setKnowledgeClass(type);
+
+        return client.withScope(contextScope).postCollection(ServicesAPI.RUNTIME.RETRIEVE_ASSET, request, assetClass);
     }
 
     public GraphQLClient graphClient() {

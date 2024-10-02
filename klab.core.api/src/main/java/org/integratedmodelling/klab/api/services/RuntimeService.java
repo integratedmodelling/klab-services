@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -33,38 +34,47 @@ public interface RuntimeService extends KlabService {
     }
 
     /**
-     * Submit an observation to the runtime in the passed scope. Resolution will start after acceptance. The
-     * result is the observation ID, which can be used to follow the resolution task progress through AMPQ
-     * messaging (if configured) or polling.
+     * Submit an observation to the runtime in the passed scope. If startResolution is true, resolution will
+     * start after insertion in the knowledge graph. API calls will normally want to start the resolution;
+     * passing false is normally done only by the resolver itself, to create the observations that will later
+     * be resolved explicitly. In all cases the return value is the observation ID, which can be used to
+     * follow the resolution task progress through AMPQ messaging (if resolving and configured) or for polling
+     * and retrieval.
      *
      * @param observation
      * @param scope
      * @return
      */
-    long submit(Observation observation, ContextScope scope);
+    long submit(Observation observation, ContextScope scope, boolean startResolution);
 
     /**
      * The main function of the runtime.
-     *
+     * <p>
      * FIXME have it return a coverage
      *
      * @param dataflow
-     * @param operation the activity that ran this. The dataflow will create child activity of it.
+     * @param operation    the activity that ran this. The dataflow will create child activity of it.
      * @param contextScope
-     *
      * @return
      */
-    Provenance runDataflow(Dataflow<Observation> dataflow, KnowledgeGraph.Operation operation, ContextScope contextScope);
+    Provenance runDataflow(Dataflow<Observation> dataflow, KnowledgeGraph.Operation operation,
+                           ContextScope contextScope);
 
     /**
-     * Retrieve the observation with the passed observable in the passed scope.
+     * Retrieve any assets from the knowledge graph in the digital twin matching a given class and some query
+     * objects.
      *
-     * @param observable
-     * @param contextScope
+     * @param contextScope the scope for the request, which will determine the point in the knowledge graph to
+     *                     start searching from
+     * @param assetClass   the type of asset requested
+     * @param queryParameters   any objects that will identify one or more assets of the passed type in the passed
+     *                     scope, such as an observable, a string for a name or a geometry. All passed objects
+     *                     will restrict the search.
+     * @param <T>
      * @return
      */
-    Observation getObservation(Observable observable, ContextScope contextScope);
-
+    <T extends RuntimeAsset> List<T> retrieveAssets(ContextScope contextScope, Class<T> assetClass,
+                                                    Object... queryParameters);
 
     /**
      * All services publish capabilities and have a call to obtain them. Must list all the available

@@ -14,6 +14,7 @@
 package org.integratedmodelling.klab.api.knowledge;
 
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -49,6 +50,10 @@ import java.util.List;
  * @version $Id: $Id
  */
 public interface Artifact extends Provenance.Node, Iterable<Artifact> {
+
+    default RuntimeAsset.Type classify() {
+        return RuntimeAsset.Type.ARTIFACT;
+    }
 
     /**
      * All non-semantic artifact types produced, contextualized or validated. Used in various

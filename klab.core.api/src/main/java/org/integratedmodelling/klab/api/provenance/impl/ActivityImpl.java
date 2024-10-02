@@ -1,13 +1,9 @@
 package org.integratedmodelling.klab.api.provenance.impl;
 
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.provenance.Activity;
-import org.integratedmodelling.klab.api.provenance.Agent;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
@@ -16,7 +12,7 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     private List<Long> schedulerTime = new ArrayList<>();
     private long size;
     private long credits;
-    private Type type;
+    private Activity.Type type;
     private String description;
     private long id;
 
@@ -64,11 +60,11 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     }
 
     @Override
-    public Type getType() {
+    public Activity.Type getType() {
         return type;
     }
 
-    public void setType(Type type) {
+    public void setType(Activity.Type type) {
         this.type = type;
     }
 

@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
@@ -19,16 +20,14 @@ import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.provenance.impl.PlanImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.EagerResult;
 import org.neo4j.driver.Value;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * TODO check spatial queries: https://www.lyonwj.com/blog/neo4j-spatial-procedures-congressional-boundaries
@@ -159,10 +158,17 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
             } else if (Observation.class.isAssignableFrom(cls)) {
                 var instance = new ObservationImpl();
+                var reasoner = scope.getService(Reasoner.class);
 
-                // TODO
+                instance.setUrn(node.get("urn").asString());
+                instance.setName(node.get("name").asString());
+                instance.setObservable(reasoner.resolveObservable(node.get("semantics").asString()));
+                instance.setResolved(node.get("resolved").asBoolean());
+                instance.setId(node.get("id").asLong());
+                // TODO geometry, metadata etc
 
                 ret.add((T) instance);
+
             } else if (Activity.class.isAssignableFrom(cls)) {
                 var instance = new ActivityImpl();
                 // TODO
@@ -252,28 +258,55 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                         if (result != null && result.records().size() == 1) {
                             ret = result.records().getFirst().get(result.keys().getFirst()).asLong();
                             if (target instanceof ObservationImpl observation) {
+
                                 observation.setId(ret);
                                 created.add(ret);
                                 observation.setUrn(scope.getId() + "." + ret);
                                 props.put("id", ret);
                                 props.put("urn", observation.getUrn());
+                                // TODO generate the IDs internally and skip this
                                 query(
                                         Queries.UPDATE_PROPERTIES.replace("{type}", type),
                                         Map.of("id", ret, "properties", props));
+
+                                // TODO store spatial and temporal boundaries or ideally the geometry as is
+                                //  using neo4j-spatial, hoping it appears on maven central
+                                var geometry = scope.getObservationGeometry(observation).encode();
+                                var georecord = query("MATCH (g:Geometry {definition: $definition}) RETURN g",
+                                        Map.of("definition", geometry));
+
+                                if (georecord.records().isEmpty()) {
+                                    query("MATCH (o:Observation {id: $observationId}) CREATE (g:Geometry " +
+                                                    "{definition: $definition}), (o)-[:HAS_GEOMETRY]->(g)",
+                                            Map.of("observationId", ret, "definition", geometry));
+                                } else {
+                                    query("MATCH (o:Observation {id: $observationId}), (g:Geometry " +
+                                                    "{definition: $definition}) CREATE (o)" +
+                                                    "-[:HAS_GEOMETRY]->(g)",
+                                            Map.of("observationId", ret, "definition", geometry));
+                                }
+
                             } else if (target instanceof ActuatorImpl actuator) {
+
+                                // TODO generate the ID and skip the update query
                                 actuator.setId(ret);
                                 created.add(ret);
                                 props.put("id", ret);
+
                                 query(
                                         Queries.UPDATE_PROPERTIES.replace("{type}", type),
                                         Map.of("id", ret, "properties", props));
                             } else if (target instanceof ActivityImpl activity) {
+
+                                // TODO generate the ID and skip the update query
                                 activity.setId(ret);
                                 props.put("id", ret);
                                 query(
                                         Queries.UPDATE_PROPERTIES.replace("{type}", type),
                                         Map.of("id", ret, "properties", props));
                             } else if (target instanceof PlanImpl plan) {
+
+                                // TODO generate the ID and skip the update query
                                 plan.setId(ret);
                                 plans.add(ret);
                                 props.put("id", ret);
@@ -429,48 +462,65 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     @Override
-    protected void finalizeOperation(OperationImpl operation, ContextScope scope, boolean b) {
-        // TODO! Update activity with status and time
+    protected void finalizeOperation(OperationImpl operation, ContextScope scope, boolean success,
+                                     RuntimeAsset... results) {
+
+        var props = asParameters(operation.getActivity());
+        props.put("end", System.currentTimeMillis());
+        query(Queries.UPDATE_PROPERTIES.replace("{type}", "Activity"),
+                Map.of("id", operation.getActivity().getId(), "properties", props));
+
+        for (var asset : results) {
+            // TODO
+        }
+
         System.out.println("FINALIZE THIS SHIT");
     }
 
     @Override
     public <T extends RuntimeAsset> List<T> get(ContextScope scope, Class<T> resultClass,
-                                                Object... queryParameters) {
+                                                Object... queriables) {
 
-        Map<String, Object> queryArgument = new HashMap<>();
-        if (queryParameters != null) {
-            for (var paramater : queryParameters) {
-
+        Map<String, Object> queryParameters = new LinkedHashMap<>();
+        if (queriables != null) {
+            for (var parameter : queriables) {
+                if (parameter instanceof Observable observable) {
+                    queryParameters.put("semantics", observable.getSemantics().getUrn());
+                } // TODO hostia
             }
         }
 
+        StringBuilder locator = new StringBuilder("MATCH (c:Context {id: " + scope.getId() + "})");
+        var scopeData = ContextScope.parseScopeId(scope.getId());
+        for (var observationId : scopeData.observationPath()) {
+            locator.append("-[:HAS_CHILD]->(Observation {id: ").append(observationId).append("})");
+        }
+        if (scopeData.observerId() != Observation.UNASSIGNED_ID) {
+            // TODO needs a locator for the obs to POSTPONE to the query with reversed direction
+            // .....(n..)<-[:HAS_OBSERVER]-(observer:Observation {id: ...})
+        }
+
+        /*
+         * build the final query
+         */
         String label = getLabel(resultClass);
-        String baseQuery = "";
+        StringBuilder query = new StringBuilder(locator).append("->(n:").append(label);
 
+        if (!queryParameters.isEmpty()) {
+            query.append(" {");
+            int n = 0;
+            for (var key : queryParameters.keySet()) {
+                if (n > 0) {
+                    query.append(", ");
+                }
+                query.append(key).append(": $").append(key);
+                n++;
+            }
+            query.append("}");
+        }
 
+        var result = query(query.append(") return n").toString(), queryParameters);
 
-
-        /**
-         * TODO starting point based on context and request class
-         *
-         * If Observation.class: context or obs in context so that there is 1 hop (if countable ->
-         * non-collective countable,
-         * skip the container).
-         *
-         * If Actuator, same thing using the ID of the passed observation
-         *
-         * If Provenance node, same thing
-         */
-
-        /**
-         * TODO build query
-         */
-
-        /**
-         * TODO adapt result
-         */
-
-        return List.of();
+        return adapt(result, resultClass);
     }
 }

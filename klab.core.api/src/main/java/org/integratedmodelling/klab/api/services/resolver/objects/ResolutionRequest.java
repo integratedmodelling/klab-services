@@ -8,12 +8,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The resolution constraints come from the scope beyond the content of the scope token.
+ * Request for the runtime to add an observation to the knowledge graph and optionally resolve it. The
+ * resolution constraints come from the scope, creating a new content scope at server side from the root
+ * context scope pointed to by the scope token.
  */
 public class ResolutionRequest {
 
     private Observation observation;
     private Observable observable;
+    private boolean startResolution;
     private List<ResolutionConstraint> resolutionConstraints = new ArrayList<>();
 
     public Observation getObservation() {
@@ -38,6 +41,14 @@ public class ResolutionRequest {
 
     public void setObservable(Observable observable) {
         this.observable = observable;
+    }
+
+    public boolean isStartResolution() {
+        return startResolution;
+    }
+
+    public void setStartResolution(boolean startResolution) {
+        this.startResolution = startResolution;
     }
 }
 

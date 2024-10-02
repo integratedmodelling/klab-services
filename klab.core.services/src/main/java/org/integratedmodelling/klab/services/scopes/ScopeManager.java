@@ -221,28 +221,24 @@ public class ScopeManager {
         ContextScope ret = rootScope;
 
         if (contextualization.observationPath() != null) {
-            for (String observationId : contextualization.observationPath()) {
-                var observation = ret.getObservation(observationId);
-                if (observation == null) {
+            for (var observationId : contextualization.observationPath()) {
+                var observation = ret.query(Observation.class,observationId);
+                if (observation.isEmpty()) {
                     throw new KlabResourceAccessException("Observation with ID " + observationId + " not " +
                             "found in context " + ret.getName());
                 }
-                ret = ret.within(observation);
+                ret = ret.within(observation.getFirst());
             }
         }
 
-        if (contextualization.observerId() != null) {
-            var observer = ret.getObservation(contextualization.observerId());
-            if (observer == null) {
+        if (contextualization.observerId() != Observation.UNASSIGNED_ID) {
+            var observer = ret.query(Observation.class,contextualization.observerId());
+            if (observer.isEmpty()) {
                 throw new KlabResourceAccessException("Subject with ID " + contextualization.observerId() + " not found in " +
                         "context " + ret.getName());
             }
-            ret = ret.withObserver(observer);
+            ret = ret.withObserver(observer.getFirst());
         }
-
-//        if (contextualization.scenarioUrns() != null) {
-//            ret = ret.withScenarios(contextualization.scenarioUrns());
-//        }
 
         return ret;
     }

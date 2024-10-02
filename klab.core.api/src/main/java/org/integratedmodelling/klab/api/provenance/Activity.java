@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
@@ -35,6 +36,10 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeIns
  * @version $Id: $Id
  */
 public interface Activity extends Provenance.Node {
+
+    default RuntimeAsset.Type classify() {
+        return RuntimeAsset.Type.ACTIVITY;
+    }
 
     enum Type {
         INITIALIZATION, RESOLUTION, CONTEXTUALIZATION, INSTANTIATION

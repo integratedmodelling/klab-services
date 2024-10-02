@@ -347,8 +347,14 @@ public enum SemanticType {
         return this == MONETARY_VALUE;
     }
 
-    public boolean isCountable() {
+    public boolean isSubstantial() {
         return DIRECT_OBSERVABLE_TYPES.contains(this);
+    }
+
+    public static boolean isSubstantial(Set<SemanticType> type) {
+        var set = EnumSet.copyOf(type);
+        set.retainAll(DIRECT_OBSERVABLE_TYPES);
+        return !set.isEmpty();
     }
 
     public boolean isPredicate() {

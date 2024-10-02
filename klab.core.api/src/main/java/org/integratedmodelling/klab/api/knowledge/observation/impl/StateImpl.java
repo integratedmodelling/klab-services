@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.impl;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
 import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -58,7 +59,7 @@ public abstract class StateImpl extends ObservationImpl implements State {
 //	}
 
 	@Override
-	public State as(Type type) {
+	public State as(Artifact.Type type) {
 		// TODO Auto-generated method stub
 		return null;
 	}

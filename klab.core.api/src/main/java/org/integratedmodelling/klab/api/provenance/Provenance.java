@@ -40,6 +40,11 @@ import org.integratedmodelling.klab.api.knowledge.Resource;
  */
 public interface Provenance extends RuntimeAsset, Iterable<Activity> {
 
+    default RuntimeAsset.Type classify() {
+        return Type.PROVENANCE;
+    }
+
+
     /**
      * The generic provenance node.
      *
