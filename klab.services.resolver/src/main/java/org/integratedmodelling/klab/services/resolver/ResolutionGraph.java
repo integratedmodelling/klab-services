@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.resolver;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resolvable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -33,7 +34,7 @@ import java.util.Map;
  */
 public class ResolutionGraph extends DefaultDirectedGraph<Resolvable, ResolutionGraph.ResolutionEdge> {
 
-    public ResolutionGraph() {
+    public ResolutionGraph(Observation observation) {
         super(ResolutionEdge.class);
     }
 
