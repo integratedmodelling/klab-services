@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -27,6 +28,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
+import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -155,8 +157,7 @@ public class ResolverService extends BaseService implements Resolver {
      * @param scope
      * @return
      */
-    public Resolution computeResolution(Observation observation, ContextScope scope,
-                                        KnowledgeGraph.Operation operation) {
+    public Resolution computeResolution(Observation observation, ContextScope scope) {
 
         var resolutionGeometry = scope.getObservationGeometry(observation);
 
@@ -167,7 +168,11 @@ public class ResolverService extends BaseService implements Resolver {
         var scale = Scale.create(resolutionGeometry, scope);
 
         ResolutionImpl ret = new ResolutionImpl(observation.getObservable(), scale, scope);
-        resolveObservation(observation, scale, scope, ret, null, operation);
+        var coverage = resolveObservation(observation, scale, scope, ret, null);
+
+        if (!coverage.isRelevant()) {
+            ret.setEmpty();
+        }
 
         return ret;
 
@@ -226,8 +231,7 @@ public class ResolverService extends BaseService implements Resolver {
     //    }
 
     private Coverage resolveObservation(Observation observation, Scale scale, ContextScope scope,
-                                        ResolutionImpl parent, Model parentModel,
-                                        KnowledgeGraph.Operation operation) {
+                                        ResolutionImpl parent, Model parentModel) {
 
         var observable = observation.getObservable();
         Coverage ret = Coverage.create(scale, 0.0);
@@ -241,8 +245,7 @@ public class ResolverService extends BaseService implements Resolver {
         for (ObservationStrategy strategy :
                 scope.getService(Reasoner.class).computeObservationStrategies(observation, scope)) {
             // this merges any useful strategy and returns the coverage
-            ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel,
-                    operation);
+            ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
             ret = ret.merge(resolution.getCoverage(), LogicalConnector.UNION);
             if (ret.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
                 continue;
@@ -270,8 +273,7 @@ public class ResolverService extends BaseService implements Resolver {
      * @return
      */
     private Coverage resolveObservable(Observable observable, Scale scale, ContextScope scope,
-                                       ResolutionImpl parent, Model parentModel,
-                                       KnowledgeGraph.Operation operation) {
+                                       ResolutionImpl parent, Model parentModel) {
 
         /**
          * Make graph merging parent Set coverage to scale, 0; Strategies/models: foreach model:
@@ -288,7 +290,7 @@ public class ResolverService extends BaseService implements Resolver {
         }
 
         // this returns an existing observation (resolved or not) or a new one with the unresolved ID
-        Observation observation = requireObservation(observable, scope, operation);
+        Observation observation = requireObservation(observable, scope);
 
         if (observation.isResolved()) {
             // we have it: TODO must be in the resolution graph?
@@ -303,8 +305,7 @@ public class ResolverService extends BaseService implements Resolver {
                         observation,
                         scope)) {
             // this merges any useful strategy and returns the coverage
-            ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel,
-                    operation);
+            ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
             ret = ret.merge(resolution.getCoverage(), LogicalConnector.UNION);
             if (ret.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
                 continue;
@@ -330,8 +331,7 @@ public class ResolverService extends BaseService implements Resolver {
      * @param scope
      * @return a non-null observation
      */
-    private Observation requireObservation(Observable observable, ContextScope scope,
-                                           KnowledgeGraph.Operation operation) {
+    private Observation requireObservation(Observable observable, ContextScope scope) {
         var ret = scope.query(Observation.class, observable);
         if (ret.isEmpty()) {
 
@@ -340,13 +340,17 @@ public class ResolverService extends BaseService implements Resolver {
                 // TODO determine the right geometry and add it
 
             }
-            var id = scope.getService(RuntimeService.class).submit(newObs, scope, false,
-                    operation.getAgent().getName());
+            var id = scope.getService(RuntimeService.class).submit(newObs, scope, false);
             if (id >= 0) {
                 ret = scope.query(Observation.class, observable);
             }
         }
-        return ret.isEmpty() ? null : ret.getFirst();
+
+        if (ret.isEmpty()) {
+            throw new KlabInternalErrorException("Observation of " + observable.getUrn() + " couldn't be instantiated");
+        }
+
+        return ret.getFirst();
     }
 
     /**
@@ -363,7 +367,7 @@ public class ResolverService extends BaseService implements Resolver {
     private ResolutionImpl resolveStrategy(ObservationStrategy strategy, Scale scale,
                                            ContextScope scope,
                                            ResolutionImpl parent,
-                                           Model parentModel, KnowledgeGraph.Operation activity) {
+                                           Model parentModel) {
 
         var coverage = Coverage.create(scale, 0.0);
         ResolutionImpl ret = null;
@@ -414,7 +418,7 @@ public class ResolverService extends BaseService implements Resolver {
                                         ResolutionConstraint.of(
                                                 ResolutionConstraint.Type.ResolutionProject,
                                                 model.getProjectName())),
-                                parent, activity);
+                                parent);
                         coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
                         if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
                             continue;
@@ -502,7 +506,7 @@ public class ResolverService extends BaseService implements Resolver {
      * @return
      */
     private ResolutionImpl resolveModel(Model model, Resolvable observable, Scale scale, ContextScope scope,
-                                        ResolutionImpl parent, KnowledgeGraph.Operation operation) {
+                                        ResolutionImpl parent) {
 
         ResolutionImpl ret = new ResolutionImpl(observable, scale, scope, parent);
         Coverage coverage = Coverage.create(scale, 1.0);
@@ -516,7 +520,7 @@ public class ResolverService extends BaseService implements Resolver {
              *  or substantial character
              */
 
-            Coverage depcoverage = resolveObservable(dependency, scale, scope, parent, model, operation);
+            Coverage depcoverage = resolveObservable(dependency, scale, scope, parent, model);
             coverage = coverage.merge(depcoverage, LogicalConnector.INTERSECTION);
             if (coverage.isEmpty()) {
                 break;
@@ -530,11 +534,6 @@ public class ResolverService extends BaseService implements Resolver {
 
         DataflowImpl ret = new DataflowImpl();
         Actuator rootActuator = null;
-        //        if (knowledge instanceof Instance) {
-        //            // create void actuator to wrap the instance
-        //            // add to dataflow
-        //        }
-
         Map<String, Actuator> compiled = new HashMap<>();
 
         for (Pair<Resolvable, Coverage> root : resolution.getResolution()) {

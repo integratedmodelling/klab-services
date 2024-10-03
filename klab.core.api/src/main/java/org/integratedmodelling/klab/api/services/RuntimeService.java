@@ -49,7 +49,7 @@ public interface RuntimeService extends KlabService {
      *                        can be passed but shouldn't.
      * @return
      */
-    long submit(Observation observation, ContextScope scope, boolean startResolution, String agentName);
+    long submit(Observation observation, ContextScope scope, boolean startResolution);
 
     /**
      * The main function of the runtime.
@@ -61,8 +61,7 @@ public interface RuntimeService extends KlabService {
      * @param contextScope
      * @return
      */
-    Provenance runDataflow(Dataflow<Observation> dataflow, KnowledgeGraph.Operation operation,
-                           ContextScope contextScope);
+    Provenance runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope);
 
     /**
      * Retrieve any assets from the knowledge graph in the digital twin matching a given class and some query

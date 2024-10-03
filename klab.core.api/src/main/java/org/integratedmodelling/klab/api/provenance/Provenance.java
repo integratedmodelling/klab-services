@@ -19,10 +19,14 @@ import java.util.*;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.Semantics;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 
 /**
  * Provenance in k.LAB aligns with the Open Provenance Model (OPM), described in detail at
@@ -58,6 +62,7 @@ public interface Provenance extends RuntimeAsset, Iterable<Activity> {
          * @return
          */
         long getId();
+
         /**
          * Name is not unique and is just for human consumption. The internal identification of each node is
          * the provenance graph's problem.
@@ -68,6 +73,7 @@ public interface Provenance extends RuntimeAsset, Iterable<Activity> {
 
         /**
          * All nodes can carry POD metadata
+         *
          * @return
          */
         Metadata getMetadata();
@@ -167,5 +173,50 @@ public interface Provenance extends RuntimeAsset, Iterable<Activity> {
 
         };
     }
+
+    /**
+     * An agent must be defined in resolution constraints during resolution. This extracts it and returns it,
+     * also throwing a {@link org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException} if the
+     * agent is not defined.
+     *
+     * @param scope
+     * @return
+     */
+    static Agent getAgent(ContextScope scope) {
+        for (var constraint : scope.getResolutionConstraints()) {
+            if (constraint.getType() == ResolutionConstraint.Type.Provenance) {
+                for (var node : constraint.payload(Provenance.Node.class)) {
+                    if (node instanceof Agent agent) {
+                        return agent;
+                    }
+                }
+            }
+        }
+        throw new KlabInternalErrorException("Resolution constraint in scope " + scope.getId() + " do not " +
+                "contain an agent");
+    }
+
+    /**
+     * An activity must be defined in resolution constraints during resolution. This extracts it and returns
+     * it, also throwing a {@link org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException} if
+     * the activity is not defined.
+     *
+     * @param scope
+     * @return
+     */
+    static Activity getActivity(ContextScope scope) {
+        for (var constraint : scope.getResolutionConstraints()) {
+            if (constraint.getType() == ResolutionConstraint.Type.Provenance) {
+                for (var node : constraint.payload(Provenance.Node.class)) {
+                    if (node instanceof Activity activity) {
+                        return activity;
+                    }
+                }
+            }
+        }
+        throw new KlabInternalErrorException("Resolution constraint in scope " + scope.getId() + " do not " +
+                "contain an agent");
+    }
+
 
 }

@@ -31,6 +31,7 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
         controller.registerView(this);
     }
 
+    @Deprecated
     private List<String> observationsMade = new ArrayList<>();
 
     @CommandLine.Spec
@@ -70,7 +71,7 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
                 out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow No previous observations|@ "));
             }
             for (var urn : observationsMade) {
-                out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow" + n + ".|@ " + urn));
+                out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow " + n + ".|@ " + urn));
             }
             return;
         }
@@ -83,6 +84,8 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
                 err.println("No previous observation at index " + n);
                 return;
             }
+            // FIXME use SessionInfo for everything, remove any state from the controller and engine except
+            //  the current session/ctx
             urn = observationsMade.get(n);
         } else {
             observationsMade.add(urn);

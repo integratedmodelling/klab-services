@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.services.resolver;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionConstraintImpl;
 
@@ -25,6 +26,7 @@ import java.util.List;
  * resolution based on the lexical scope of a model being resolved</li>
  * <li>defining priority scenarios to use first as resolution sources;</li>
  * <li>forcing the use of a specified model for a specified observable;</li>
+ * <li>communicating the current provenance scope including activity, agent and plan;</li>
  * <li>communicating externally set concrete predicates to expand an abstract predicate in an observable
  * instead of observing the abstract predicate first. </li>
  * <li>communicating interactively defined parameters to substitute defaults for the contextualizers in the
@@ -55,7 +57,8 @@ public interface ResolutionConstraint extends Serializable {
         ConcretePredicates(Concept.class, true),
         Whitelist(String.class, false),
         Blacklist(String.class, false),
-        Parameters(Parameters.class, true);
+        Parameters(Parameters.class, true),
+        Provenance(org.integratedmodelling.klab.api.provenance.Provenance.Node.class, false);
 
         /**
          * Class of intended data types, used for runtime validation

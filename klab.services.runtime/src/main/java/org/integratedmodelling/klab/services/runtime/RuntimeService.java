@@ -290,20 +290,17 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     @Override
-    public long submit(Observation observation, ContextScope scope, boolean startResolution,
-                       String agentName) {
+    public long submit(Observation observation, ContextScope scope, boolean startResolution) {
         if (scope instanceof ServiceContextScope serviceContextScope) {
             return startResolution
                    ? serviceContextScope.observe(observation).trackingKey()
-                   : serviceContextScope.insertIntoKnowledgeGraph(observation, agentName);
+                   : serviceContextScope.insertIntoKnowledgeGraph(observation);
         }
         return -1L;
     }
 
     @Override
-    public Provenance runDataflow(Dataflow<Observation> dataflow, /* Nullable
-    */ KnowledgeGraph.Operation activity,
-                                  ContextScope contextScope) {
+    public Provenance runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
         return null;
     }
 

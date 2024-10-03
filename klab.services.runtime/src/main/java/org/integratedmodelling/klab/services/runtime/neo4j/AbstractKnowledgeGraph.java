@@ -77,6 +77,32 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
             return this;
         }
 
+        /**
+         * Link the asset to where it pertains on the scope with the pertaining relationship:
+         *
+         * <ol>
+         * <li>If the scope is focused on an observation and the asset is an observation, link it to that;
+         * </li>
+         * <li>If the asset is an observation and the scope is the root context scope, link it to the
+         * context</li>
+         * <li>If the asset is an Activity, link it to the Provenance or to the Activity that created the
+         * observation the scope is
+         * focused on;</li>
+         * <li>If the asset is an actuator, link it either to the Dataflow or to the Actuator with
+         * the same ID of the observation the scope is focused on;</li>
+         * <li>throw {@link org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException} in
+         * any other situation.</li>
+         * </ol>
+         *
+         * @param asset
+         * @param scope
+         * @return
+         */
+        public Operation link(RuntimeAsset asset, ContextScope scope) {
+            // TODO
+            return this;
+        }
+
         @Override
         public Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo,
                               DigitalTwin.Relationship relationship, Object... linkData) {
@@ -154,8 +180,9 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     protected abstract long runOperation(OperationImpl operation, ContextScope scope);
 
     /**
-     * Call at the end of each activity on the result of {@link #activity(Agent, ContextScope, Object...)}, passing any
-     * assets that must be updated or added to the graph.
+     * Call at the end of each activity on the result of {@link #activity(Agent, ContextScope, Object...)},
+     * passing any assets that must be updated or added to the graph.
+     *
      * @param operation
      * @param scope
      * @param success

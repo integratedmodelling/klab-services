@@ -163,19 +163,17 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public long submit(Observation observation, ContextScope scope, boolean startResolution,
-                       String agentName) {
+    public long submit(Observation observation, ContextScope scope, boolean startResolution) {
         ResolutionRequest resolutionRequest = new ResolutionRequest();
         resolutionRequest.setObservation(observation);
         resolutionRequest.setStartResolution(startResolution);
-        resolutionRequest.setAgentName(agentName);
+        resolutionRequest.setAgentName(Provenance.getAgent(scope).getName());
         resolutionRequest.setResolutionConstraints(scope.getResolutionConstraints());
         return client.withScope(scope).post(ServicesAPI.RUNTIME.OBSERVE, resolutionRequest, Long.class);
     }
 
     @Override
-    public Provenance runDataflow(Dataflow<Observation> dataflow, KnowledgeGraph.Operation activity,
-                                  ContextScope contextScope) {
+    public Provenance runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
         return null;
     }
 

@@ -205,7 +205,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                 if (dataflow != null) {
                     if (!dataflow.isEmpty()) {
                         /* TODO return value */
-                        runtime.runDataflow(dataflow, activity, this);
+                        runtime.runDataflow(dataflow, this);
                     }
                     activity.success(this, observation, dataflow);
                 } else {
@@ -343,7 +343,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     //    }
 
     @Override
-    public ContextScope withResolutionConstraints(ResolutionConstraint... resolutionConstraints) {
+    public ServiceContextScope withResolutionConstraints(ResolutionConstraint... resolutionConstraints) {
         ServiceContextScope ret = new ServiceContextScope(this);
         if (resolutionConstraints == null) {
             ret.resolutionConstraints.clear();
@@ -440,8 +440,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         }
     }
 
-    public long insertIntoKnowledgeGraph(Observation observation, String agentName) {
-        return digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().requireAgent(agentName),
-                this).add(observation).run(this);
+    public long insertIntoKnowledgeGraph(Observation observation) {
+        return digitalTwin.knowledgeGraph().activity(Provenance.getAgent(this),
+                this, Activity.Type.INSTANTIATION).add(observation).run(this);
     }
+
 }

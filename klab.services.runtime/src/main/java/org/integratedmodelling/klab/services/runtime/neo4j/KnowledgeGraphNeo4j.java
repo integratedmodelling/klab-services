@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.provenance.impl.PlanImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -79,7 +80,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 " c.{toKeyProperty} = $toKey CREATE (n)-[r:{relationshipLabel}]->(c) return r";
     }
 
-    protected EagerResult query(String query, Map<String, Object> parameters) {
+    protected EagerResult query(String query, Map<String, Object> parameters, Scope scope) {
         if (isOnline()) {
             try {
                 return driver.executableQuery(query).withParameters(parameters).execute();
@@ -97,7 +98,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         this.rootContextId = scope.getId();
 
-        var result = query(Queries.FIND_CONTEXT, Map.of("contextId", scope.getId()));
+        var result = query(Queries.FIND_CONTEXT, Map.of("contextId", scope.getId()), scope);
 
         if (result.records().isEmpty()) {
             long timestamp = System.currentTimeMillis();
@@ -108,22 +109,24 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                             "name", scope.getName(),
                             "timestamp", timestamp,
                             "username", scope.getUser().getUsername(),
-                            "expirationType", scope.getExpiration().name()));
+                            "expirationType", scope.getExpiration().name()),
+                    scope);
         }
 
         this.user = adapt(
                 query(
                         Queries.GET_AGENT_BY_NAME,
-                        Map.of("contextId", scope.getId(), "agentName", scope.getUser().getUsername())),
-                Agent.class).getFirst();
+                        Map.of("contextId", scope.getId(), "agentName", scope.getUser().getUsername()),
+                        scope),
+                Agent.class, scope).getFirst();
         this.klab = adapt(query(
                 Queries.GET_AGENT_BY_NAME,
-                Map.of("contextId", scope.getId(), "agentName", "k.LAB")), Agent.class).getFirst();
+                Map.of("contextId", scope.getId(), "agentName", "k.LAB"), scope), Agent.class, scope).getFirst();
     }
 
     @Override
     public void deleteContext() {
-        query(Queries.REMOVE_CONTEXT, Map.of("contextId", scope.getId()));
+        query(Queries.REMOVE_CONTEXT, Map.of("contextId", scope.getId()), scope);
     }
 
     /**
@@ -132,7 +135,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
      * @param <T>
      * @return
      */
-    protected <T extends RuntimeAsset> List<T> adapt(EagerResult query, Class<T> cls) {
+    protected <T extends RuntimeAsset> List<T> adapt(EagerResult query, Class<T> cls, Scope scope) {
         List<T> ret = new ArrayList<>();
 
         for (var record : query.records()) {
@@ -203,11 +206,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         var result = scope == null
                      ? query(
                 "match (c:Context)<-[:CREATED]-(a:Activity) return c.id as contextId, a.start as startTime",
-                Map.of())
+                Map.of(), scope)
                      : query(
                              "match (c:Context {user: $username})<-[:CREATED]-(a:Activity) return c.name as" +
                                      " contextName, c.id as contextId, a.start as startTime",
-                             Map.of("username", scope.getUser().getUsername()));
+                             Map.of("username", scope.getUser().getUsername()), scope);
 
         for (var record : result.records()) {
             ContextInfo info = new ContextInfo();
@@ -225,7 +228,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         if (scope == null) {
             driver.executableQuery("MATCH (n) DETACH DELETE n").execute();
         } else {
-            query(Queries.REMOVE_CONTEXT, Map.of("contextId", scope.getId()));
+            query(Queries.REMOVE_CONTEXT, Map.of("contextId", scope.getId()), scope);
         }
     }
 
@@ -254,7 +257,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                         var props = asParameters(target);
                         var result = query(
                                 Queries.CREATE_WITH_PROPERTIES.replace("{type}", type),
-                                Map.of("properties", asParameters(target)));
+                                Map.of("properties", asParameters(target)), scope);
                         if (result != null && result.records().size() == 1) {
                             ret = result.records().getFirst().get(result.keys().getFirst()).asLong();
                             if (target instanceof ObservationImpl observation) {
@@ -267,23 +270,23 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                                 // TODO generate the IDs internally and skip this
                                 query(
                                         Queries.UPDATE_PROPERTIES.replace("{type}", type),
-                                        Map.of("id", ret, "properties", props));
+                                        Map.of("id", ret, "properties", props), scope);
 
                                 // TODO store spatial and temporal boundaries or ideally the geometry as is
                                 //  using neo4j-spatial, hoping it appears on maven central
                                 var geometry = scope.getObservationGeometry(observation).encode();
                                 var georecord = query("MATCH (g:Geometry {definition: $definition}) RETURN g",
-                                        Map.of("definition", geometry));
+                                        Map.of("definition", geometry), scope);
 
                                 if (georecord.records().isEmpty()) {
                                     query("MATCH (o:Observation {id: $observationId}) CREATE (g:Geometry " +
                                                     "{definition: $definition}), (o)-[:HAS_GEOMETRY]->(g)",
-                                            Map.of("observationId", ret, "definition", geometry));
+                                            Map.of("observationId", ret, "definition", geometry), scope);
                                 } else {
                                     query("MATCH (o:Observation {id: $observationId}), (g:Geometry " +
                                                     "{definition: $definition}) CREATE (o)" +
                                                     "-[:HAS_GEOMETRY]->(g)",
-                                            Map.of("observationId", ret, "definition", geometry));
+                                            Map.of("observationId", ret, "definition", geometry), scope);
                                 }
 
                             } else if (target instanceof ActuatorImpl actuator) {
@@ -295,7 +298,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
                                 query(
                                         Queries.UPDATE_PROPERTIES.replace("{type}", type),
-                                        Map.of("id", ret, "properties", props));
+                                        Map.of("id", ret, "properties", props), scope);
                             } else if (target instanceof ActivityImpl activity) {
 
                                 // TODO generate the ID and skip the update query
@@ -303,7 +306,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                                 props.put("id", ret);
                                 query(
                                         Queries.UPDATE_PROPERTIES.replace("{type}", type),
-                                        Map.of("id", ret, "properties", props));
+                                        Map.of("id", ret, "properties", props), scope);
                             } else if (target instanceof PlanImpl plan) {
 
                                 // TODO generate the ID and skip the update query
@@ -312,7 +315,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                                 props.put("id", ret);
                                 query(
                                         Queries.UPDATE_PROPERTIES.replace("{type}", type),
-                                        Map.of("id", ret, "properties", props));
+                                        Map.of("id", ret, "properties", props), scope);
                             }
 
                             operation.registerAsset(target, "id", ret);
@@ -350,7 +353,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                                         operation.getAssetKeyProperty(step.targets().getLast()));
 
                         query(query, Map.of("fromKey", operation.getAssetKey(step.targets().getFirst()),
-                                "toKey", operation.getAssetKey(step.targets().getLast())));
+                                "toKey", operation.getAssetKey(step.targets().getLast())), scope);
                     }
                 }
                 case ROOT_LINK -> {
@@ -364,7 +367,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                                 .replace("{fromKeyProperty}", "id")
                                 .replace("{toKeyProperty}", "id");
 
-                        query(query, Map.of("fromKey", rootContextId, "toKey", observation.getId()));
+                        query(query, Map.of("fromKey", rootContextId, "toKey", observation.getId()), scope);
 
                     } else if (step.targets().getFirst() instanceof Actuator actuator) {
 
@@ -377,7 +380,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
                         query(
                                 query,
-                                Map.of("fromKey", rootContextId + ".DATAFLOW", "toKey", actuator.getId()));
+                                Map.of("fromKey", rootContextId + ".DATAFLOW", "toKey", actuator.getId()),
+                                scope);
 
                     } else if (step.targets().getFirst() instanceof Activity activity) {
 
@@ -390,7 +394,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
                         query(
                                 query,
-                                Map.of("fromKey", rootContextId + ".PROVENANCE", "toKey", activity.getId()));
+                                Map.of("fromKey", rootContextId + ".PROVENANCE", "toKey", activity.getId())
+                                , scope);
 
                     } else {
                         throw new KlabInternalErrorException("unexpected root link request");
@@ -406,7 +411,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             query(
                     "match (n:Activity), (c) WHERE id(n) = $fromId AND id(c) = $toId CREATE (n)" +
                             "-[r:CREATED]->(c) return r",
-                    Map.of("fromId", operation.getActivity().getId(), "toId", asset));
+                    Map.of("fromId", operation.getActivity().getId(), "toId", asset), scope);
         }
 
         /*
@@ -416,7 +421,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             query(
                     "match (n:Activity), (c:Plan) WHERE id(n) = $fromId AND id(c) = $toId CREATE (n)" +
                             "-[r:HAS_PLAN]->(c) return r",
-                    Map.of("fromId", operation.getActivity().getId(), "toId", plan));
+                    Map.of("fromId", operation.getActivity().getId(), "toId", plan), scope);
         }
 
         // link the activity to the agent
@@ -425,7 +430,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                         "-[r:BY_AGENT]->(c) return r",
                 Map.of(
                         "fromId", operation.getActivity().getId(), "agentName",
-                        operation.getAgent().getName()));
+                        operation.getAgent().getName()), scope);
 
         return ret;
     }
@@ -468,13 +473,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         var props = asParameters(operation.getActivity());
         props.put("end", System.currentTimeMillis());
         query(Queries.UPDATE_PROPERTIES.replace("{type}", "Activity"),
-                Map.of("id", operation.getActivity().getId(), "properties", props));
+                Map.of("id", operation.getActivity().getId(), "properties", props), scope);
 
         for (var asset : results) {
             // TODO
         }
 
-        System.out.println("FINALIZE THIS SHIT");
+        System.out.println((success ? "YEAH " : "FUCK ") + ": FINALIZE THIS SHIT");
     }
 
     @Override
@@ -490,10 +495,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             }
         }
 
-        StringBuilder locator = new StringBuilder("MATCH (c:Context {id: " + scope.getId() + "})");
+        StringBuilder locator = new StringBuilder("MATCH (c:Context {id: $contextId})");
         var scopeData = ContextScope.parseScopeId(scope.getId());
-        for (var observationId : scopeData.observationPath()) {
-            locator.append("-[:HAS_CHILD]->(Observation {id: ").append(observationId).append("})");
+        if (scopeData.observationPath() != null) {
+            for (var observationId : scopeData.observationPath()) {
+                locator.append("-[:HAS_CHILD]->(Observation {id: ").append(observationId).append("})");
+            }
         }
         if (scopeData.observerId() != Observation.UNASSIGNED_ID) {
             // TODO needs a locator for the obs to POSTPONE to the query with reversed direction
@@ -501,10 +508,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
 
         /*
-         * build the final query
+         * build the final query. For now the relationship is always HAS_CHILD and this only navigates child
+         * hierarchies.
          */
         String label = getLabel(resultClass);
-        StringBuilder query = new StringBuilder(locator).append("->(n:").append(label);
+        StringBuilder query = new StringBuilder(locator).append("-[:HAS_CHILD]->(n:").append(label);
 
         if (!queryParameters.isEmpty()) {
             query.append(" {");
@@ -519,9 +527,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             query.append("}");
         }
 
-        var result = query(query.append(") return n").toString(), queryParameters);
+        queryParameters.put("contextId", scope.getId());
+        var result = query(query.append(") return n").toString(), queryParameters, scope);
 
-        return adapt(result, resultClass);
+        return adapt(result, resultClass, scope);
     }
 
     @Override

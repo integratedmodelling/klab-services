@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -28,12 +29,23 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     private Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
             new LinkedHashMap<>();
 
+    /**
+     * The default client scope has the user as the embedded agent.
+     *
+     * @param parent
+     * @param contextName
+     * @param runtimeService
+     */
     public ClientContextScope(ClientUserScope parent, String contextName, RuntimeService runtimeService) {
         super(parent, contextName, runtimeService);
+        resolutionConstraints.put(ResolutionConstraint.Type.Provenance,
+                ResolutionConstraint.of(ResolutionConstraint.Type.Provenance,
+                        Agent.create(parent.getUser().getUsername())));
     }
 
     private ClientContextScope(ClientContextScope parent) {
         super(parent, parent.name, parent.runtimeService);
+        resolutionConstraints.putAll(parent.resolutionConstraints);
         // this will have been reset by super to the user's id
         setId(parent.getId());
     }
@@ -71,7 +83,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     @Override
     public Task<Observation, Long> observe(Observation observation) {
         var runtime = getService(RuntimeService.class);
-        long taskId = runtime.submit(observation, this, true, getUser().getUsername());
+        long taskId = runtime.submit(observation, this, true);
         return newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
                 Message.MessageType.ResolutionSuccessful), Observation.class, taskId); // event
     }
