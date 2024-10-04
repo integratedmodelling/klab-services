@@ -55,6 +55,7 @@ import java.util.*;
 
 public class ResolverService extends BaseService implements Resolver {
 
+    private static final String RESOLUTION_GRAPH_KEY = "__RESOLUTION_GRAPH__";
     /**
      * FIXME this should be modifiable at the scope level
      */
@@ -75,6 +76,11 @@ public class ResolverService extends BaseService implements Resolver {
     //    Parameters<String> defines = Parameters.createSynchronized();
     private String hardwareSignature = Utils.Names.getHardwareId();
     private ResolverConfiguration configuration;
+
+    // OBVIOUSLY temporary - when all done, merge its methods with this and remove the porker and the old
+    // dirt.
+    private ResolverPorker porker = new ResolverPorker();
+
 
     public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
         super(scope, Type.RESOLVER, options);
@@ -137,11 +143,18 @@ public class ResolverService extends BaseService implements Resolver {
 
     @Override
     public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
-        var resolution = computeResolution(observation, contextScope);
-        if (!resolution.isEmpty()) {
-            return compile(observation, resolution, contextScope);
+
+        var ret = porker.resolve(observation, contextScope);
+        if (!ret.isEmpty()) {
+            // TODO compile the porker's result. Could use a compiler for cleanliness and plug-ability.
+            return Dataflow.empty(Observation.class);
         }
         return Dataflow.empty(Observation.class);
+        //        var resolution = computeResolution(observation, contextScope);
+        //        if (!resolution.isEmpty()) {
+        //            return compile(observation, resolution, contextScope);
+        //        }
+        //        return Dataflow.empty(Observation.class);
     }
 
     @Override
@@ -347,7 +360,8 @@ public class ResolverService extends BaseService implements Resolver {
         }
 
         if (ret.isEmpty()) {
-            throw new KlabInternalErrorException("Observation of " + observable.getUrn() + " couldn't be instantiated");
+            throw new KlabInternalErrorException("Observation of " + observable.getUrn() + " couldn't be " +
+                    "instantiated");
         }
 
         return ret.getFirst();
@@ -1064,6 +1078,8 @@ public class ResolverService extends BaseService implements Resolver {
     @Override
     public String registerContext(ContextScope contextScope) {
 
+        contextScope.getData().put(RESOLUTION_GRAPH_KEY, ResolutionGraph.create(contextScope));
+
         if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
             if (contextScope.getId() == null) {
@@ -1078,4 +1094,9 @@ public class ResolverService extends BaseService implements Resolver {
         throw new KlabIllegalArgumentException("unexpected scope class");
 
     }
+
+    public static ResolutionGraph getResolutionGraph(ContextScope scope) {
+        return scope.getData().get(RESOLUTION_GRAPH_KEY, ResolutionGraph.class);
+    }
+
 }

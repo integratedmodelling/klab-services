@@ -69,6 +69,18 @@ public interface ServicesAPI {
     String CREATE_CONTEXT = "/createContext";
 
     /**
+     * Release a session. Invoked by the master session (in the runtime) on all services where a slave session
+     * was created.
+     */
+    String RELEASE_SESSION = "/releaseSession";
+
+    /**
+     * Release a context. Invoked by the master context (in the runtime) on all services where a slave context
+     * was created.
+     */
+    String RELEASE_CONTEXT = "/releaseContext";
+
+    /**
      * General administration endpoints common to all services
      */
     interface ADMIN {

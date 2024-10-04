@@ -15,7 +15,7 @@ import java.util.List;
  *
  * @author Ferd
  */
-public interface ObservationStrategy extends Knowledge {
+public interface ObservationStrategy extends Knowledge, Resolvable {
 
     /**
      * The definition of one or more operations that compose the strategy. Different operations will leave
