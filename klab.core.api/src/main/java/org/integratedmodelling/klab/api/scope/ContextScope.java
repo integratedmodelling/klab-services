@@ -272,8 +272,8 @@ public interface ContextScope extends SessionScope {
      *
      * @param resultClass
      * @param queryData
-     * @return
      * @param <T>
+     * @return
      */
     <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData);
 
@@ -401,7 +401,7 @@ public interface ContextScope extends SessionScope {
             while (rootContext.getParentScope() instanceof ContextScope parentContext) {
                 if (parentContext.getContextObservation() == null) {
                     break;
-                } else {
+                } else if (cobs.isEmpty() || cobs.getLast().getId() != parentContext.getContextObservation().getId()) {
                     cobs.add(parentContext.getContextObservation());
                 }
                 rootContext = parentContext;

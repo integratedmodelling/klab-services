@@ -99,11 +99,10 @@ public interface DigitalTwin {
         final Set<String> knownKeys = Set.of("observation", "semantics", "space", "time");
 
         String name = null;
-        Geometry geometry = Geometry.EMPTY;
+        Geometry geometry = null;
         Observable observable = null;
         String resourceUrn = null;
         String modelUrn = null;
-        Geometry observerGeometry = null;
         String defaultValue = null;
         Metadata metadata = Metadata.create();
 
@@ -112,11 +111,7 @@ public interface DigitalTwin {
                 if (o instanceof Observable obs) {
                     observable = obs;
                 } else if (o instanceof Geometry geom) {
-                    if (geometry == null) {
-                        geometry = geom;
-                    } else {
-                        observerGeometry = geom;
-                    }
+                    geometry = geom;
                 } else if (o instanceof String string) {
                     if (name == null) {
                         name = string;
@@ -205,7 +200,6 @@ public interface DigitalTwin {
             ret.setGeometry(geometry);
             ret.setMetadata(metadata);
             ret.setObservable(observable);
-            ret.setObserverGeometry(observerGeometry);
             ret.setUrn(resourceUrn == null ? modelUrn : resourceUrn);
             ret.setValue(defaultValue);
             ret.setName(name);

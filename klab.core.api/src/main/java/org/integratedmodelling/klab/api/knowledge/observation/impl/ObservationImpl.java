@@ -33,7 +33,6 @@ public class ObservationImpl implements Observation {
     private Observable observable;
     private Geometry geometry;
     private Metadata metadata = Metadata.create();
-    private Geometry observerGeometry;
     private long id = UNASSIGNED_ID;
     private String urn;
     private boolean resolved;
@@ -214,15 +213,6 @@ public class ObservationImpl implements Observation {
         this.geometry = geometry;
     }
 
-//    @Override
-//    public Geometry getObserverGeometry() {
-//        return observerGeometry;
-//    }
-
-    public void setObserverGeometry(Geometry observerGeometry) {
-        this.observerGeometry = observerGeometry;
-    }
-
     @Override
     public Object getValue() {
         return value;
@@ -246,7 +236,6 @@ public class ObservationImpl implements Observation {
                 "observable=" + observable +
                 ", geometry=" + geometry +
                 ", metadata=" + metadata +
-                ", observerGeometry=" + observerGeometry +
                 ", id=" + id +
                 ", urn='" + urn + '\'' +
                 ", resolved=" + resolved +

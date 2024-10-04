@@ -169,7 +169,7 @@ public class ResolverPorker {
             // add any deferrals to the compiled strategy node
             if (!ret.isEmpty()) {
                 for (var deferral : operation.getContextualStrategies()) {
-                    
+
                 }
             }
         }
@@ -183,7 +183,8 @@ public class ResolverPorker {
         var ret = graph.createChild(model, scaleToCover);
 
         scope = scope.withResolutionConstraints(
-                ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionNamespace, model.getNamespace()),
+                ResolutionConstraint.of(
+                        ResolutionConstraint.Type.ResolutionNamespace, model.getNamespace()),
                 ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionProject, model.getProjectName()));
 
         boolean complete = false;
@@ -240,7 +241,8 @@ public class ResolverPorker {
             scope = scope.within(context);
         }
 
-        return Pair.of(scope.withResolutionConstraints(/* TODO */), scale);
+        return Pair.of(scope.withResolutionConstraints(ResolutionConstraint.of(
+                ResolutionConstraint.Type.Geometry, scale.as(Geometry.class))), scale);
     }
 
     private ResolutionGraph resolve(Observable observable, Scale scaleToCover, ResolutionGraph graph,

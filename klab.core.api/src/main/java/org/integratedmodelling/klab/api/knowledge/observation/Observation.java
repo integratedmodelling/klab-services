@@ -111,7 +111,5 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
         return EMPTY_OBSERVATION;
     }
 
-//    Geometry getObserverGeometry();
-
     Object getValue();
 }
