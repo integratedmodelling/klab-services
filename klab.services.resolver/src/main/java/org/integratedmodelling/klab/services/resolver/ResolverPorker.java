@@ -259,7 +259,7 @@ public class ResolverPorker {
         }
 
         // resolve the observation in the scope
-        return resolve(observation, scope, graph);
+        return resolve(observation, contextualizedScope.getFirst(), graph);
     }
 
     /**

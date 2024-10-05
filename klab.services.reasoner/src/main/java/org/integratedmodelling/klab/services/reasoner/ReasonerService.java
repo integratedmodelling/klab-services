@@ -1557,10 +1557,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 return null;
             }
             String valueCode = switch (value) {
-                case KimConcept kimConcept -> "(" + kimConcept.getUrn() + ")";
-                case KimObservable kimConcept -> "(" + kimConcept.getUrn() + ")";
-                case Concept kimConcept -> "(" + kimConcept.getUrn() + ")";
-                case Observable kimConcept -> "(" + kimConcept.getUrn() + ")";
+                case KimConcept kimConcept -> /*"(" + */kimConcept.getUrn()/* + ")"*/;
+                case KimObservable kimConcept -> /*"(" + */kimConcept.getUrn() /*+ ")"*/;
+                case Concept kimConcept -> /*"(" + */kimConcept.getUrn()/* + ")"*/;
+                case Observable kimConcept -> /*"(" + */kimConcept.getUrn()/* + ")"*/;
                 case String string -> "\"" + Utils.Escape.forDoubleQuotedString(string, false) + "\"";
                 default -> value.toString();
             };
