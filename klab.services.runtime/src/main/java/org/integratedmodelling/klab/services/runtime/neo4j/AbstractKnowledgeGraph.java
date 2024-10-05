@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import org.apache.groovy.util.Arrays;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -34,19 +35,29 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         private ActivityImpl activity = new ActivityImpl();
         /*
          list of the object created with their locator in the query (field -> value)
+         FIXME this is lame - rewrite
          */
         private Map<Object, Pair<String, Object>> assetLocators = new HashMap<>();
 
         public String getAssetKeyProperty(RuntimeAsset asset) {
+
             if (assetLocators.containsKey(asset)) {
                 return assetLocators.get(asset).getFirst();
             }
+
+            if (asset.getId() > 0) {
+                return "id";
+            }
+
             throw new KlabInternalErrorException("Unregistered asset in graph operation: " + asset);
         }
 
         public Object getAssetKey(RuntimeAsset asset) {
             if (assetLocators.containsKey(asset)) {
                 return assetLocators.get(asset).getSecond();
+            }
+            if (asset.getId() > 0) {
+                return asset.getId();
             }
             throw new KlabInternalErrorException("Unregistered asset in graph operation: " + asset);
         }
@@ -106,7 +117,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         @Override
         public Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo,
                               DigitalTwin.Relationship relationship, Object... linkData) {
-            this.steps.add(new Step(Type.LINK, List.of(assetFrom, assetTo), linkData));
+            this.steps.add(new Step(Type.LINK, List.of(assetFrom, assetTo),
+                    Arrays.concat(new Object[]{relationship}, linkData)));
             return this;
         }
 

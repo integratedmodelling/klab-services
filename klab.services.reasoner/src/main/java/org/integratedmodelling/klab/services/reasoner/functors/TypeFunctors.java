@@ -10,6 +10,8 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.integratedmodelling.klab.services.reasoner.internal.ObservableBuilder;
 
+import java.util.List;
+
 /**
  * Functor family for type checking and inspection, used by filters in observation strategies
  */
@@ -40,12 +42,23 @@ public class TypeFunctors {
         return semantics.asConcept().isCollective();
     }
 
-    @KlabFunction(name = "arity.single", version = Version.CURRENT, description = "Check if an observable is " +
+    @KlabFunction(name = "operator.splitfirst", version = Version.CURRENT, description = "Remove the first " +
+            "attribute from an observable and return the two parts", type = {Artifact.Type.CONCEPT})
+    public List<Concept> splitFirst(Semantics semantics) {
+        /**
+         * TODO TODO TODO
+         */
+        return List.of(semantics.asConcept(), semantics.asConcept());
+    }
+
+    @KlabFunction(name = "arity.single", version = Version.CURRENT, description = "Check if an observable " +
+            "is " +
             "concrete", type = {Artifact.Type.CONCEPT})
     public Semantics changeArityToSingle(Semantics semantics) {
 
         if (semantics.asConcept().isCollective()) {
-            ObservableBuilder builder = new ObservableBuilder(semantics.asConcept(), reasoner.serviceScope(), (ReasonerService) reasoner);
+            ObservableBuilder builder = new ObservableBuilder(semantics.asConcept(),
+                    reasoner.serviceScope(), (ReasonerService) reasoner);
             builder.collective(false);
             return builder.build();
         }
@@ -53,12 +66,14 @@ public class TypeFunctors {
         return semantics;
     }
 
-    @KlabFunction(name = "arity.collective", version = Version.CURRENT, description = "Check if an observable is " +
+    @KlabFunction(name = "arity.collective", version = Version.CURRENT, description = "Check if an " +
+            "observable is " +
             "concrete", type = {Artifact.Type.CONCEPT})
     public Semantics changeArityToCollective(Semantics semantics) {
 
         if (!semantics.asConcept().isCollective()) {
-            ObservableBuilder builder = new ObservableBuilder(semantics.asConcept(), reasoner.serviceScope(), (ReasonerService) reasoner);
+            ObservableBuilder builder = new ObservableBuilder(semantics.asConcept(),
+                    reasoner.serviceScope(), (ReasonerService) reasoner);
             builder.collective(true);
             return builder.build();
         }

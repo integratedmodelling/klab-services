@@ -166,6 +166,11 @@ public interface Dataflow<T extends Artifact> extends Serializable, RuntimeAsset
     public static <T extends Artifact> Dataflow<T> empty(Class<T> resultClass) {
         return new Dataflow<T>() {
 
+            @Override
+            public long getId() {
+                return 0;
+            }
+
             @Serial
             private static final long serialVersionUID = -1115441423700817816L;
 

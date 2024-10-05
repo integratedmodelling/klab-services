@@ -195,7 +195,6 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
                 GeometryImpl.PARAMETER_SPACE_RESOURCE_URN,
                 String.class);
         var bboxDefinition = dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_BOUNDINGBOX);
-        //        var spatialShape = dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_SHAPE);
         var pointDefinition = dimension.getParameters().get(
                 GeometryImpl.PARAMETER_SPACE_LONLAT,
                 String.class);

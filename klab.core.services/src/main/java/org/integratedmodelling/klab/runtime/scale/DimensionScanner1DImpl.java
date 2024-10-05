@@ -115,7 +115,7 @@ public class DimensionScanner1DImpl implements DimensionScanner1D {
     }
 
     @Override
-    public String encode() {
+    public String encode(Encoder... encoders) {
         return null;
     }
 

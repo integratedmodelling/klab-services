@@ -1,20 +1,18 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
-import org.checkerframework.checker.units.qual.C;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Plan;
-import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.provenance.impl.PlanImpl;
@@ -24,6 +22,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
+import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.EagerResult;
 import org.neo4j.driver.Value;
@@ -135,7 +134,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
      * @param <T>
      * @return
      */
-    protected <T extends RuntimeAsset> List<T> adapt(EagerResult query, Class<T> cls, Scope scope) {
+    protected <T> List<T> adapt(EagerResult query, Class<T> cls, Scope scope) {
+
         List<T> ret = new ArrayList<>();
 
         for (var record : query.records()) {
@@ -160,6 +160,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 ret.add((T) instance);
 
             } else if (Observation.class.isAssignableFrom(cls)) {
+
                 var instance = new ObservationImpl();
                 var reasoner = scope.getService(Reasoner.class);
 
@@ -168,7 +169,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 instance.setObservable(reasoner.resolveObservable(node.get("semantics").asString()));
                 instance.setResolved(node.get("resolved").asBoolean());
                 instance.setId(node.get("id").asLong());
-                // TODO geometry, metadata etc
+
+                // SHIT, THE GEOMETRY - geometry, metadata etc
+                var gResult = query("MATCH (o:Observation)-[:HAS_GEOMETRY]->(g:Geometry) WHERE id" +
+                        "(o) = $id RETURN g", Map.of("id", node.get("id").asLong()), scope);
+
+                if (gResult == null || !gResult.records().isEmpty()) {
+                    instance.setGeometry(adapt(gResult, Geometry.class, scope).getFirst());
+                }
 
                 ret.add((T) instance);
 
@@ -184,6 +192,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 var instance = new PlanImpl();
                 // TODO
                 ret.add((T) instance);
+            } else if (Geometry.class.isAssignableFrom(cls)) {
+                ret.add((T) Geometry.create(node.get("definition").asString()));
             }
         }
         return ret;
@@ -274,11 +284,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
                                 // TODO store spatial and temporal boundaries or ideally the geometry as is
                                 //  using neo4j-spatial, hoping it appears on maven central
-                                var geometry = scope.getObservationGeometry(observation).encode();
-                                var georecord = query("MATCH (g:Geometry {definition: $definition}) RETURN g",
+                                var geometry = encodeGeometry(scope.getObservationGeometry(observation));
+                                var geoRecord = query("MATCH (g:Geometry {definition: $definition}) RETURN g",
                                         Map.of("definition", geometry), scope);
 
-                                if (georecord.records().isEmpty()) {
+                                if (geoRecord.records().isEmpty()) {
                                     query("MATCH (o:Observation {id: $observationId}) CREATE (g:Geometry " +
                                                     "{definition: $definition}), (o)-[:HAS_GEOMETRY]->(g)",
                                             Map.of("observationId", ret, "definition", geometry), scope);
@@ -435,6 +445,17 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return ret;
     }
 
+    private String encodeGeometry(Geometry observationGeometry) {
+
+        /**
+         * Ensure that the shape parameter is in WKB
+         */
+        var ret = observationGeometry.encode(ShapeImpl.wkbEncoder);
+
+        return ret;
+
+    }
+
     private String getLabel(Object target) {
 
         if (target instanceof Class<?> cls) {
@@ -491,12 +512,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             for (var parameter : queriables) {
                 if (parameter instanceof Observable observable) {
                     queryParameters.put("semantics", observable.getSemantics().getUrn());
-                } // TODO hostia
+                } else if (parameter instanceof Long id) {
+                    queryParameters.put("id", id);
+                }// TODO hostia
             }
         }
 
+        if (queryParameters.containsKey("id") && RuntimeAsset.class.isAssignableFrom(resultClass)) {
+            return adapt(query(Queries.FIND_BY_ID, queryParameters, scope), resultClass, scope);
+        }
+
         StringBuilder locator = new StringBuilder("MATCH (c:Context {id: $contextId})");
-        var scopeData = ContextScope.parseScopeId(scope.getId());
+        var scopeData = ContextScope.parseScopeId(ContextScope.getScopeId(scope));
         if (scopeData.observationPath() != null) {
             for (var observationId : scopeData.observationPath()) {
                 locator.append("-[:HAS_CHILD]->(Observation {id: ").append(observationId).append("})");

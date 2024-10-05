@@ -32,6 +32,11 @@ public class BooleanStorage implements Storage {
 
     }
 
+    @Override
+    public long getId() {
+        return 0;
+    }
+
     /**
      * A quick-access buffer that simply addresses a dimension using a long. Obtained through
      * {@link #getSliceBuffer(Locator)}.

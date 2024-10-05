@@ -49,12 +49,12 @@ public class ScopeManager {
      * graph, using only the IDs.
      */
     private Map<String, ServiceUserScope> scopes = Collections.synchronizedMap(new HashMap<>());
-    /**
-     * ScopeID->ScopeID means that the scope with the source ID is a child scope of the target, and all are in
-     * the scopes map. Closing one scope should recursively close all the children and free every bit of data
-     * associated with each of them.
-     */
-    private Graph<String, DefaultEdge> scopeGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
+//    /**
+//     * ScopeID->ScopeID means that the scope with the source ID is a child scope of the target, and all are in
+//     * the scopes map. Closing one scope should recursively close all the children and free every bit of data
+//     * associated with each of them.
+//     */
+//    private Graph<String, DefaultEdge> scopeGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
     private Map<String, Long> idleScopeTime = Collections.synchronizedMap(new HashMap<>());
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 

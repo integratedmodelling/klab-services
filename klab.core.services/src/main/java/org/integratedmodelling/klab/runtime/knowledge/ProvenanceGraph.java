@@ -57,4 +57,9 @@ public class ProvenanceGraph implements Provenance {
     public Iterator<Activity> iterator() {
         return null;
     }
+
+    @Override
+    public long getId() {
+        return 0;
+    }
 }

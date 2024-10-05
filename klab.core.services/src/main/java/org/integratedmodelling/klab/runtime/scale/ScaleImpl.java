@@ -258,7 +258,7 @@ public class ScaleImpl implements Scale {
     }
 
     @Override
-    public String encode() {
+    public String encode(Encoder... encoders) {
         StringBuilder ret = new StringBuilder();
         for (Extent<?> extent : extents) {
             if (extent instanceof ExtentImpl<?> extentImpl)
@@ -507,11 +507,11 @@ public class ScaleImpl implements Scale {
         private static final long serialVersionUID = -8416028789360949571L;
 
         @Override
-        public String encode() {
-            return ScaleImpl.this.encode();
+        public String encode(Encoder... encoders) {
+            return ScaleImpl.this.encode(encoders);
         }
 
-        public Scale with(Extent dimension) {
+        public Scale with(Extent<?> dimension) {
             return ScaleImpl.this.with(dimension);
         }
 

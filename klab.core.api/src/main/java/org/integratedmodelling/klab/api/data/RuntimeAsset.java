@@ -68,5 +68,7 @@ public interface RuntimeAsset {
         }
     }
 
+    long getId();
+
     Type classify();
 }

@@ -27,4 +27,8 @@ public class BoxingStorage implements Storage {
 		return null;
 	}
 
+	@Override
+	public long getId() {
+		return 0;
+	}
 }

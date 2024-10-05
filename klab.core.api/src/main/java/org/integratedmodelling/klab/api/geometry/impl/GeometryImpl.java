@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimQuantity;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.*;
+import java.util.function.BiFunction;
 
 public class GeometryImpl implements Geometry {
 
@@ -298,7 +299,16 @@ public class GeometryImpl implements Geometry {
 
     public static final String PARAMETER_TIME_COVERAGE_END = "coverageend";
 
-    private static String encodeDimension(Dimension dim) {
+    private static String encodeDimension(Dimension dim, Encoder... encoders) {
+
+        Map<String, Encoder> encoderMap = new HashMap<>();
+        if (encoders != null) {
+            for (var encoder : encoders) {
+                if (encoder.dimension() == dim.getType()) {
+                    encoderMap.put(encoder.key(), encoder);
+                }
+            }
+        }
 
         String ret = "";
         ret += dim.getType() == Dimension.Type.SPACE
@@ -322,7 +332,9 @@ public class GeometryImpl implements Geometry {
             List<String> keys = new ArrayList<>(dim.getParameters().keySet());
             Collections.sort(keys);
             for (String key : keys) {
-                ret += (first ? "" : ",") + key + "=" + encodeVal(dim.getParameters().get(key));
+                ret += (first ? "" : ",") + key + "=" + (encoderMap.containsKey(key) ?
+                                                         encoderMap.get(key).encode(dim.getParameters().get(key)) :
+                                                         encodeVal(dim.getParameters().get(key)));
                 first = false;
             }
             ret += "}";
@@ -498,9 +510,11 @@ public class GeometryImpl implements Geometry {
      * Encode into a string representation. Keys in parameter maps are sorted so the results can be compared
      * for equality.
      *
+     * @param encoders if passed, each parameter will be matched to an encoder by dimension type and parameter
+     *                 name; if found, the encoder will be used to encode the value.
      * @return the string representation for the geometry
      */
-    public String encode() {
+    public String encode(Encoder... encoders) {
 
         if (isEmpty()) {
             return "X";
@@ -522,10 +536,10 @@ public class GeometryImpl implements Geometry {
 
         String ret = granularity == Granularity.MULTIPLE ? "#" : "";
         for (Dimension dim : dims) {
-            ret += encodeDimension(dim);
+            ret += encodeDimension(dim, encoders);
         }
         if (child != null) {
-            ret += "," + child.encode();
+            ret += "," + child.encode(encoders);
         }
         return ret;
     }
@@ -539,8 +553,11 @@ public class GeometryImpl implements Geometry {
         return false;
     }
 
-    private static String encodeVal(Object val) {
+    public static String encodeVal(Object val) {
         String ret = "";
+        if (val instanceof Collection<?> collection) {
+            val = collection.toArray();
+        }
         if (val.getClass().isArray()) {
             ret = "[";
             if (double[].class.isAssignableFrom(val.getClass())) {
@@ -856,7 +873,7 @@ public class GeometryImpl implements Geometry {
         if (space == null) {
             throw new KlabIllegalStateException("cannot set spatial parameters on a geometry without space");
         }
-        space.getParameters().put(PARAMETER_SPACE_BOUNDINGBOX, new double[]{minX, maxX, minY, maxY});
+        space.getParameters().put(PARAMETER_SPACE_BOUNDINGBOX, GeometryImpl.encodeVal(new double[]{minX, maxX, minY, maxY}));
         return this;
     }
 
@@ -1176,16 +1193,17 @@ public class GeometryImpl implements Geometry {
         return val.replaceAll("&comma;", ",").replaceAll("&eq;", "=");
     }
 
-//    /**
-//     * Translate separators used in geometries into harmless entities so that they won't cause conflict in
-//     * parameters transmitted as text.
-//     *
-//     * @param val
-//     * @return
-//     */
-//    public static String encodeForSerialization(String val) {
-//        return val.replaceAll(",", "&comma;").replaceAll("=", "&eq;");
-//    }
+    //    /**
+    //     * Translate separators used in geometries into harmless entities so that they won't cause
+    //     conflict in
+    //     * parameters transmitted as text.
+    //     *
+    //     * @param val
+    //     * @return
+    //     */
+    //    public static String encodeForSerialization(String val) {
+    //        return val.replaceAll(",", "&comma;").replaceAll("=", "&eq;");
+    //    }
 
     private static Class<?> getParameterPODType(String kvp) {
         switch (kvp) {

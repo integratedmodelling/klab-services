@@ -21,6 +21,7 @@ public class DataflowImpl implements Dataflow<Observation> {
     private Coverage coverage;
     private Parameters<String> resources = Parameters.create();
     private List<Actuator> computation = new ArrayList<>();
+    private long id;
 
     @Override
     public boolean isEmpty() {
@@ -105,4 +106,12 @@ public class DataflowImpl implements Dataflow<Observation> {
 
     }
 
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
 }

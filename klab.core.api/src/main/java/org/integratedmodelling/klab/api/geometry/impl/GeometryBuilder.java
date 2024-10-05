@@ -194,7 +194,7 @@ public class GeometryBuilder {
          * Bounding box as a double[]{minX, maxX, minY, maxY}; lat/lon use lon as x axis
          */
         public SpaceBuilder boundingBox(double x1, double x2, double y1, double y2) {
-            space.getParameters().put(GeometryImpl.PARAMETER_SPACE_BOUNDINGBOX, List.of(x1, x2, y1, y2));
+            space.getParameters().put(GeometryImpl.PARAMETER_SPACE_BOUNDINGBOX, GeometryImpl.encodeVal(new double[]{x1, x2, y1, y2}));
             return this;
         }
 
@@ -210,7 +210,7 @@ public class GeometryBuilder {
 
         public SpaceBuilder resolution(Quantity gridResolution) {
             space.setRegular(true);
-            space.getParameters().put(GeometryImpl.PARAMETER_SPACE_GRIDRESOLUTION, gridResolution);
+            space.getParameters().put(GeometryImpl.PARAMETER_SPACE_GRIDRESOLUTION, gridResolution.toString());
             return this;
         }
 
@@ -255,7 +255,7 @@ public class GeometryBuilder {
      * specify a WKT polygon using the k.LAB conventions (preceded by the EPSG: projection).
      *
      * @param urn
-     * @param resolution a string in the format "1 km"
+     * @param resolution a string in the format "1.km"
      * @return
      */
     public GeometryBuilder grid(String urn, String resolution) {

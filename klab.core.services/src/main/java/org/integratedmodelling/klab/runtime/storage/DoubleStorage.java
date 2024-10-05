@@ -21,6 +21,11 @@ import java.util.TreeMap;
  */
 public class DoubleStorage implements Storage {
 
+    @Override
+    public long getId() {
+        return 0;
+    }
+
     @FunctionalInterface
     public interface OffsetToDoubleFunction {
         public double applyToOffset(Offset offset);

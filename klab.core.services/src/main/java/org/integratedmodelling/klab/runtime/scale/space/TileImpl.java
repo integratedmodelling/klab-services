@@ -87,8 +87,7 @@ public class TileImpl extends ShapeImpl implements Tile {
     @Override
     public String encode() {
         return "S2(" + grid.getXCells() + "," + grid.getYCells() + "){" + getEnvelope().encode()
-                + ",shape=" + WKBWriter.toHex(wkbWriter.write(geometry)) + ",proj="
-                + getProjection().getCode() + "}";
+                + ",shape=" + promote(this).asWKB() + "}";
 
     }
 }

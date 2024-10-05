@@ -268,10 +268,10 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 
         if (target.getStart() != null) {
             if (target.getEnd() != null) {
-                args += "," + GeometryImpl.PARAMETER_TIME_PERIOD + "=[" + target.getStart().getMilliseconds() + " "
-                        + target.end.getMilliseconds() + "]";
+                args += "," + GeometryImpl.PARAMETER_TIME_START + "=" + target.getStart().getMilliseconds();
+                args += "," + GeometryImpl.PARAMETER_TIME_END + "=" + target.end.getMilliseconds();
             } else {
-                args += "," + GeometryImpl.PARAMETER_TIME_LOCATOR + "=" + target.getEnd().getMilliseconds();
+                args += "," + GeometryImpl.PARAMETER_TIME_LOCATOR + "=" + target.getStart().getMilliseconds();
             }
         }
         if (target.step != null) {

@@ -42,7 +42,31 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     protected Geometry geometry;
     transient private Geometry standardizedGeometry;
-    protected static WKBWriter wkbWriter = new WKBWriter();
+    public static WKBWriter wkbWriter = new WKBWriter();
+    public static WKTReader wktReader = new WKTReader();
+    public static org.integratedmodelling.klab.api.geometry.Geometry.Encoder wkbEncoder =
+            new org.integratedmodelling.klab.api.geometry.Geometry.Encoder() {
+        @Override
+        public org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type dimension() {
+            return org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type.SPACE;
+        }
+
+        @Override
+        public String key() {
+            return "shape";
+        }
+
+        @Override
+        public String encode(Object value) {
+            if (value instanceof org.locationtech.jts.geom.Geometry geom) {
+                return WKBWriter.toHex(ShapeImpl.wkbWriter.write(geom));
+            } else if (value instanceof String string && string.contains("(")) {
+                var shape = ShapeImpl.create(string);
+                return shape.asWKB();
+            }
+            return value == null ? null : value.toString();
+        }
+    };
 
     private EnvelopeImpl envelope;
     private Shape.Type geometryType = null;
@@ -589,10 +613,18 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         return WKBWriter.toHex(wkbWriter.write(geometry));
     }
 
+    /**
+     * WKB code WITH projection
+     *
+     * @return the WKB code
+     */
+    public String asWKB() {
+        return projection.getCode() + " " + WKBWriter.toHex(wkbWriter.write(geometry));
+    }
+
     @Override
     public String encode() {
-        return "s2(1,1){shape=" + promote(this).getWKB() + "," + getEnvelope().encode() + ",proj="
-                + ProjectionImpl.promote(getProjection()).getCode() + "}";
+        return "s2(1,1){shape=" + promote(this).asWKB() + "}";
     }
 
     // @Override
@@ -816,7 +848,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         switch (type) {
             case LINESTRING:
                 merged = aj.getFactory().createLineString(
-                        new Coordinate[]{aj.getCentroid().getCoordinates()[0], bj.getCentroid().getCoordinates()[0]});
+                        new Coordinate[]{aj.getCentroid().getCoordinates()[0],
+                                         bj.getCentroid().getCoordinates()[0]});
                 break;
             case POLYGON:
             case MULTIPOLYGON:

@@ -49,4 +49,8 @@ public class DataflowGraph implements Dataflow<Observation> {
         return null;
     }
 
+    @Override
+    public long getId() {
+        return 0;
+    }
 }
