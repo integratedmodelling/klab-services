@@ -124,7 +124,7 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
             if (adopt) {
                 if (cov.getFirst() != null) {
                     adopted.add(cov.getFirst());
-                } else if (this.extent(cov.getFirst().getType()) != null) {
+                } else if (cov.getFirst() != null && this.extent(cov.getFirst().getType()) != null) {
                     adopted.add(this.extent(cov.getFirst().getType()));
                 }
                 this.adoptExtents(adopted);
@@ -180,6 +180,13 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
         throw new IllegalArgumentException("this coverage does not contain the dimension " + dimension);
     }
 
+    private static boolean isUniversal(Scale scale) {
+        return switch (scale) {
+            case Coverage coverage -> coverage.isUniversal();
+            default -> scale.getExtents().isEmpty();
+        };
+    }
+
     @Override
     public Coverage merge(Scale other, LogicalConnector how) {
 
@@ -188,7 +195,7 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
          */
         if (isUniversal()) {
             return other instanceof CoverageImpl ? ((CoverageImpl) other).withGain(1.0) : new CoverageImpl(other, 1.0, 1.0);
-        } else if (other instanceof Coverage && ((Coverage) other).isUniversal()) {
+        } else if (isUniversal(other)) {
             return this.withGain(1.0);
         } else if (other instanceof Coverage && ((Coverage) other).isEmpty()) {
             return how == LogicalConnector.INTERSECTION

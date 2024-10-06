@@ -67,19 +67,41 @@ public class ResolutionGraph {
         }
 
         this.parent = parent;
+
         /**
          * Models are resolved from full down, intersecting the coverage of the dependencies. Everything
          * else is resolved from zero up, uniting the coverages.
          */
         this.target = target;
         this.targetCoverage = Coverage.create(scaleToCover, target instanceof Model ? 1.0 : 0.0);
+        var tc = getCoverage(target);
+        if (tc != null) {
+            this.targetCoverage = targetCoverage.merge(tc, LogicalConnector.INTERSECTION);
+        }
+
         this.rootScope = parent.rootScope;
         Graphs.addAllVertices(this.graph, parent.graph.vertexSet());
         Graphs.addAllEdges(this.graph, parent.graph, parent.graph.edgeSet());
         this.resolutionCatalog.putAll(parent.resolutionCatalog);
     }
 
+    private Scale getCoverage(Resolvable target) {
+        return switch (target) {
+            case Model model -> model.getCoverage();
+            case Observation observation -> Scale.create(observation.getGeometry());
+            default -> null;
+        };
+    }
+
+    /**
+     * Merge the coverage and return the result without setting the coverage in the graph, just invoked for
+     * testing stop conditions.
+     *
+     * @param resolution
+     * @return
+     */
     public Coverage checkCoverage(ResolutionGraph resolution) {
+
         if (resolution.isEmpty()) {
             return Coverage.empty();
         }
@@ -97,6 +119,22 @@ public class ResolutionGraph {
         System.out.println("ACCEPTING SLAVE INTO PARENT, MERGE GRAPH INTO PARENT'S, MERGE COVERAGE AND " +
                 "UPDATE CATALOG");
         System.out.println("RETURN TRUE IF COVERAGE IS COMPLETE");
+        // TODO is this right? We may be at 0 coverage and should take whatever is resolved from the other
+        //  without changing our extents.
+
+        /*
+        Our resolvable is resolved by the child's
+         */
+
+        /*
+        ...by the amount determined in its coverage, "painting" the incoming extents onto ours.
+         */
+        this.targetCoverage = this.targetCoverage.merge(childGraph.targetCoverage,
+                this.target instanceof Model ? LogicalConnector.INTERSECTION : LogicalConnector.UNION);
+
+        /*
+        if our coverage is satisfactory, signal that the merge has done all we need
+         */
         return targetCoverage.isComplete();
     }
 
@@ -106,7 +144,8 @@ public class ResolutionGraph {
      * resolve the target.
      */
     public void accept(Resolvable resolvable, Coverage finalCoverage) {
-        System.out.println("ACCEPTING EXISTING RESOLVABLE, JUST MAKE LINK AND SET COVERAGE");
+        System.out.println("ACCEPTING EXISTING RESOLVABLE INTO SAME GRAPH FOR THIS RESOLVABLE - JUST CREATE" +
+                " THE LINK FROM THE TARGET TO THE RESOLVABLE AND SET THE COVERAGE");
     }
 
     public static ResolutionGraph create(ContextScope rootScope) {
@@ -160,7 +199,7 @@ public class ResolutionGraph {
         while (target != null && !(target.target instanceof Observation)) {
             target = target.parent;
         }
-        return target == null ? null : (Observation)target.target;
+        return target == null ? null : (Observation) target.target;
     }
 
     public static class ResolutionEdge extends DefaultEdge {

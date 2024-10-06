@@ -166,15 +166,17 @@ public class ResolverPorker {
                 }
             }
 
-            // add any deferrals to the compiled strategy node
             if (!ret.isEmpty()) {
+
+                // add any deferrals to the compiled strategy node and return it
                 for (var deferral : operation.getContextualStrategies()) {
 
                 }
             }
         }
 
-        return ResolutionGraph.empty();
+
+        return ret;
     }
 
     private ResolutionGraph resolve(Model model, Scale scaleToCover, ResolutionGraph graph,
@@ -187,7 +189,7 @@ public class ResolverPorker {
                         ResolutionConstraint.Type.ResolutionNamespace, model.getNamespace()),
                 ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionProject, model.getProjectName()));
 
-        boolean complete = false;
+        boolean complete = model.getDependencies().isEmpty();
         List<ResolutionGraph> modelGraphs = new ArrayList<>();
         for (var dependency : model.getDependencies()) {
 
@@ -201,20 +203,13 @@ public class ResolverPorker {
                 }
             }
             modelGraphs.add(dependencyResolution);
-            if (cov.isComplete()) {
-                complete = true;
-                break;
-            }
         }
 
-        if (complete) {
-            for (var modelGraph : modelGraphs) {
-                ret.merge(modelGraph);
-            }
-        } else {
-            return ResolutionGraph.empty();
+        for (var modelGraph : modelGraphs) {
+            ret.merge(modelGraph);
         }
-        return ResolutionGraph.empty();
+
+        return ret;
     }
 
     private Pair<ContextScope, Scale> contextualizeScope(ContextScope originalScope, Observable observable,
