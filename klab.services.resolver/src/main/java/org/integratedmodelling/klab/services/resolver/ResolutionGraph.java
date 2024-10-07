@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
+import org.w3.xlink.XlinkFactory;
 
 import java.util.*;
 
@@ -80,8 +81,6 @@ public class ResolutionGraph {
         }
 
         this.rootScope = parent.rootScope;
-        Graphs.addAllVertices(this.graph, parent.graph.vertexSet());
-        Graphs.addAllEdges(this.graph, parent.graph, parent.graph.edgeSet());
         this.resolutionCatalog.putAll(parent.resolutionCatalog);
     }
 
@@ -118,13 +117,16 @@ public class ResolutionGraph {
     public boolean merge(ResolutionGraph childGraph) {
         System.out.println("ACCEPTING SLAVE INTO PARENT, MERGE GRAPH INTO PARENT'S, MERGE COVERAGE AND " +
                 "UPDATE CATALOG");
-        System.out.println("RETURN TRUE IF COVERAGE IS COMPLETE");
-        // TODO is this right? We may be at 0 coverage and should take whatever is resolved from the other
-        //  without changing our extents.
+
+        Graphs.addAllVertices(this.graph, childGraph.graph.vertexSet());
+        Graphs.addAllEdges(this.graph, childGraph.graph, childGraph.graph.edgeSet());
 
         /*
         Our resolvable is resolved by the child's
          */
+        this.graph.addVertex(this.target);
+        this.graph.addVertex(childGraph.target);
+        this.graph.addEdge(childGraph.target, this.target, new ResolutionEdge(childGraph.targetCoverage));
 
         /*
         ...by the amount determined in its coverage, "painting" the incoming extents onto ours.
@@ -203,7 +205,13 @@ public class ResolutionGraph {
     }
 
     public static class ResolutionEdge extends DefaultEdge {
+
         public Coverage coverage;
+
+        public ResolutionEdge() {}
+        public ResolutionEdge(Coverage coverage) {
+            this.coverage = coverage;
+        }
     }
 
 }

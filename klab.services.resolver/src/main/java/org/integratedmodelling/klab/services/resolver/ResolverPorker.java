@@ -9,6 +9,8 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.provenance.Agent;
+import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -66,6 +68,9 @@ public class ResolverPorker {
 
         ResolutionGraph ret = parentGraph.createChild(observation, scale);
         boolean complete = false;
+
+        scope = scope.withResolutionConstraints(ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, Agent.create(AgentImpl.KLAB_AGENT_NAME)));
+
         List<ResolutionGraph> strategyGraphs = new ArrayList<>();
         for (ObservationStrategy strategy :
                 scope.getService(Reasoner.class).computeObservationStrategies(observation, scope)) {
@@ -91,7 +96,6 @@ public class ResolverPorker {
 
         return ResolutionGraph.empty();
     }
-
 
     private ResolutionGraph resolve(ObservationStrategy observationStrategy, Scale scaleToCover,
                                     ResolutionGraph graph, ContextScope scope) {
