@@ -160,7 +160,17 @@ public class ResolverPorker {
                 }
                 case APPLY -> {
 
-                    // TODO resolve the contextualizables first
+                    // TODO resolve the contextualizables first - runtime must know them. Another
+                    //  thing that the runtime client should cache. OR we could resolve them here
+                    //  and pass the info to the runtime given that the scope has the same services
+                    //  and access.
+                    //  The right place for this is likely to be the KnowledgeRepository. We can
+                    //  send the merge of all ResultSet to the runtime along with the dataflow.
+
+                    // RUNTIME contains its own NATIVE contextualizers provided in capabilities
+
+                    // DATAFLOW comes with a ResourceSet for all the needed resources encountered,
+                    // merged along the calls. No need to put that in the KG.
 
                     ret.getContextualization().addAll(operation.getContextualizables());
                 }
