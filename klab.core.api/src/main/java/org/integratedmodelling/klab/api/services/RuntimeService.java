@@ -9,10 +9,12 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 
@@ -78,6 +80,19 @@ public interface RuntimeService extends KlabService {
      */
     <T extends RuntimeAsset> List<T> retrieveAssets(ContextScope contextScope, Class<T> assetClass,
                                                     Object... queryParameters);
+
+    /**
+     * Use the resources service and the plug-in system to handle a model proposal from the resolver. The
+     * incoming request will propose to use resources, functions and the like; the runtime may provide some of
+     * those natively or use the resources services to locate them and load them. If the empty resource set is
+     * returned, it should contain informative notifications and the resolver will look for a different
+     * strategy.
+     *
+     * @param contextualizables
+     * @param scope
+     * @return
+     */
+    ResourceSet resolveContextualizables(List<Contextualizable> contextualizables, ContextScope scope);
 
     /**
      * All services publish capabilities and have a call to obtain them. Must list all the available

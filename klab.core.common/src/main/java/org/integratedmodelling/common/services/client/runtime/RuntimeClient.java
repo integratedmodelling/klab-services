@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -23,6 +24,7 @@ import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.AssetRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
@@ -210,6 +212,21 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
         return client.withScope(contextScope).postCollection(ServicesAPI.RUNTIME.RETRIEVE_ASSET, request,
                 assetClass);
+    }
+
+    @Override
+    public ResourceSet resolveContextualizables(List<Contextualizable> contextualizables,
+                                                ContextScope scope) {
+
+        /**
+         * Only send over those that will need resolution at the runtime side. No need to send a lookup
+         * table or classification asset.
+         */
+        List<Contextualizable> request =
+                contextualizables.stream().filter(contextualizable -> contextualizable.getResourceUrn() != null || contextualizable.getServiceCall() != null).toList();
+
+        return client.withScope(scope).post(ServicesAPI.RUNTIME.RESOLVE_CONTEXTUALIZERS, request,
+                ResourceSet.class);
     }
 
     public GraphQLClient graphClient() {

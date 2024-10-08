@@ -19,7 +19,6 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * Runtime scope for all k.Actors statements. Root scopes are for each action.

@@ -809,7 +809,7 @@ public class ModelKbox extends ObservableKbox {
                 m.setInScenario(namespace.isScenario());
                 m.setReification(isInstantiator);
                 m.setResolved(model.getDependencies().isEmpty());
-                m.setHasDirectData(m.isResolved() && model.getObservables().get(0).getSemantics().is(
+                m.setHasDirectData(m.isResolved() && model.getObservables().getFirst().getSemantics().is(
                         SemanticType.QUALITY));
                 m.setHasDirectObjects(
                         m.isResolved() && model.getObservables().get(0).getSemantics().is(

@@ -1410,7 +1410,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 if (!resourceService.capabilities(scope).getServiceId().equals(resource.getServiceId())) {
                     resourceService =
                             services.computeIfAbsent(changes.getServices().get(resource.getServiceId()),
-                                    url -> new ResourcesClient(url, scope.getIdentity(), this, settingsForSlaveServices));
+                                    url -> new ResourcesClient(url, scope.getIdentity(), this,
+                                            settingsForSlaveServices));
                 }
 
                 var notifications = new ArrayList<Notification>();
@@ -1434,7 +1435,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 if (!resourceService.capabilities(scope).getServiceId().equals(resource.getServiceId())) {
                     resourceService =
                             services.computeIfAbsent(changes.getServices().get(resource.getServiceId()),
-                                    url -> new ResourcesClient(url, scope.getIdentity(), this, settingsForSlaveServices));
+                                    url -> new ResourcesClient(url, scope.getIdentity(), this,
+ settingsForSlaveServices));
                 }
 
                 var notifications = new ArrayList<Notification>();

@@ -363,7 +363,15 @@ public interface ServicesAPI {
          * POST endpoint to retrieve one or more assets from the digital twin based on a query
          */
         String RETRIEVE_ASSET = "/asset";
+
+        /**
+         * POST endpoint that takes a list of contextualizer references and returns the
+         * ResourceSet that specifies whether those will be available to the runtime. Could
+         * just return a boolean but we use the isEmpty() and insert the
+         */
+        String RESOLVE_CONTEXTUALIZERS = "/resolve";
     }
+
 
     public interface RESOURCES {
 

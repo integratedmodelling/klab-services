@@ -8,8 +8,8 @@ import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -308,6 +309,27 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     public <T extends RuntimeAsset> List<T> retrieveAssets(ContextScope contextScope, Class<T> assetClass,
                                                            Object... queryParameters) {
         return knowledgeGraph.get(contextScope, assetClass, queryParameters);
+    }
+
+    @Override
+    public ResourceSet resolveContextualizables(List<Contextualizable> contextualizables,
+                                                ContextScope scope) {
+
+        ResourceSet ret = new ResourceSet();
+
+        /**
+         * These are the contextualizables that need resolution at the runtime side, the others come with
+         * their definition and are directly inserted in the dataflow
+         */
+        for (var contextualizable : contextualizables) {
+            if (contextualizable.getServiceCall() != null) {
+                // TODO
+            } else if (contextualizable.getResourceUrn() != null) {
+                // TODO
+            }
+        }
+
+        return ret;
     }
 
     @Override

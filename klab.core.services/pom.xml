@@ -124,6 +124,12 @@
             <version>${avro.version}</version>
         </dependency>
 
+        <!-- this is used for testing and debugging only -->
+        <dependency>
+            <groupId>com.github.tomnelson</groupId>
+            <artifactId>jungrapht-visualization</artifactId>
+            <version>1.4</version>
+        </dependency>
 
         <!-- plugin management for extension components -->
         <dependency>

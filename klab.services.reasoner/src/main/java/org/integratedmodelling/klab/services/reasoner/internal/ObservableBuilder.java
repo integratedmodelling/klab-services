@@ -566,7 +566,7 @@ public class ObservableBuilder implements Observable.Builder {
                 removedRoles.add(SemanticRole.TEMPORAL_INHERENT);
             }
         }
-        if (ret.removed.size() > 0) {
+        if (!ret.removed.isEmpty()) {
             List<String> declarations = new ArrayList<>();
             for (Concept r : ret.removed) {
                 declarations.add(r.getUrn());
@@ -643,7 +643,7 @@ public class ObservableBuilder implements Observable.Builder {
                 removedRoles.add(SemanticRole.TEMPORAL_INHERENT);
             }
         }
-        if (ret.removed.size() > 0) {
+        if (!ret.removed.isEmpty()) {
             List<String> declarations = new ArrayList<>();
             for (Concept r : ret.removed) {
                 declarations.add(r.getUrn());
@@ -721,7 +721,7 @@ public class ObservableBuilder implements Observable.Builder {
                 removedRoles.add(SemanticRole.TEMPORAL_INHERENT);
             }
         }
-        if (ret.removed.size() > 0) {
+        if (!ret.removed.isEmpty()) {
             List<String> declarations = new ArrayList<>();
             for (Concept r : ret.removed) {
                 declarations.add(r.getUrn());
@@ -1335,8 +1335,8 @@ public class ObservableBuilder implements Observable.Builder {
 
             ret.setUrn(ret.getUrn() + " " + valueOperator.declaration);
 
-            opId.append((opId.length() == 0) ? "" : "_").append(valueOperator.textForm);
-            cdId.append((cdId.length() == 0) ? "" : "_").append(valueOperator.textForm);
+            opId.append((opId.isEmpty()) ? "" : "_").append(valueOperator.textForm);
+            cdId.append((cdId.isEmpty()) ? "" : "_").append(valueOperator.textForm);
 
             /*
              * turn these into their parsed form so we have their properly computed
@@ -1352,8 +1352,8 @@ public class ObservableBuilder implements Observable.Builder {
 
                 ret.setUrn(ret.getUrn() + " " + ((Concept) valueOperand).getUrn());
 
-                opId.append((opId.length() == 0) ? "" : "_").append(((Concept) valueOperand).getReferenceName());
-                cdId.append((cdId.length() == 0) ? "" : "_").append(((Concept) valueOperand).displayName().replaceAll("\\-", "_").replaceAll(" ", "_"));
+                opId.append((opId.isEmpty()) ? "" : "_").append(((Concept) valueOperand).getReferenceName());
+                cdId.append((cdId.isEmpty()) ? "" : "_").append(((Concept) valueOperand).displayName().replaceAll("\\-", "_").replaceAll(" ", "_"));
 
                 if (name == null) {
                     ret.setName(ret.getName() + "_"
@@ -1364,8 +1364,8 @@ public class ObservableBuilder implements Observable.Builder {
             } else if (valueOperand instanceof Observable) {
 
                 ret.setUrn(ret.getUrn() + " (" + ((Observable) valueOperand).getUrn() + ")");
-                opId.append((opId.length() == 0) ? "" : "_").append(((Observable) valueOperand).getReferenceName());
-                cdId.append((cdId.length() == 0) ? "" : "_").append(((Observable) valueOperand).displayName());
+                opId.append((opId.isEmpty()) ? "" : "_").append(((Observable) valueOperand).getReferenceName());
+                cdId.append((cdId.isEmpty()) ? "" : "_").append(((Observable) valueOperand).displayName());
 
             } else {
 
@@ -1373,8 +1373,8 @@ public class ObservableBuilder implements Observable.Builder {
 
                     ret.setUrn(ret.getUrn() + " " + valueOperand);
 
-                    opId.append((opId.length() == 0) ? "" : "_").append(getCodeForm(valueOperand, true));
-                    cdId.append((cdId.length() == 0) ? "" : "_").append(getCodeForm(valueOperand, false));
+                    opId.append((opId.isEmpty()) ? "" : "_").append(getCodeForm(valueOperand, true));
+                    cdId.append((cdId.isEmpty()) ? "" : "_").append(getCodeForm(valueOperand, false));
                 }
             }
 
@@ -1382,11 +1382,11 @@ public class ObservableBuilder implements Observable.Builder {
 
         }
 
-        if (opId.length() > 0) {
+        if (!opId.isEmpty()) {
             ret.setReferenceName(ret.getReferenceName() + "_" + opId);
         }
 
-        if (cdId.length() > 0) {
+        if (!cdId.isEmpty()) {
             ret.setName(ret.getName() + "_" + cdId);
         }
 

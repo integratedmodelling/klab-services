@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.services.resolver;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -16,7 +15,6 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
-import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
@@ -164,17 +162,21 @@ public class ResolverPorker {
                 }
                 case APPLY -> {
 
-                    // TODO resolve the contextualizables first - runtime must know them. Another
-                    //  thing that the runtime client should cache. OR we could resolve them here
-                    //  and pass the info to the runtime given that the scope has the same services
-                    //  and access.
-                    //  The right place for this is likely to be the KnowledgeRepository. We can
-                    //  send the merge of all ResultSet to the runtime along with the dataflow.
+                    var runtime = scope.getService(RuntimeService.class);
+                    /**
+                     * We ask the runtime to resolve all the contextualizables as a single
+                     * operation. This will enable using anything that's supported natively
+                     * in the runtime as well as using the resources service to locate and install
+                     * any needed components or resources.
+                     */
+                    ResourceSet requirements =
+                            runtime.resolveContextualizables(operation.getContextualizables(), scope);
 
-                    // RUNTIME contains its own NATIVE contextualizers provided in capabilities
-
-                    // DATAFLOW comes with a ResourceSet for all the needed resources encountered,
-                    // merged along the calls. No need to put that in the KG.
+                    if (requirements.isEmpty()) {
+                        // TODO add the notifications from the resource set so that they can be
+                        // part of the resolution
+                        return ResolutionGraph.empty();
+                    }
 
                     ret.getContextualization().addAll(operation.getContextualizables());
                 }

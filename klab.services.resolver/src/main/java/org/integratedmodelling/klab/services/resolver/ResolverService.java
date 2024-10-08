@@ -3,14 +3,13 @@ package org.integratedmodelling.klab.services.resolver;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.knowledge.ModelImpl;
+import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
-import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -28,7 +27,6 @@ import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
-import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -859,6 +857,13 @@ public class ResolverService extends BaseService implements Resolver {
         model.getComputation().addAll(statement.getContextualization());
         model.setNamespace(statement.getNamespace());
         model.setProjectName(statement.getProjectName());
+
+        for (var resourceUrn : statement.getResourceUrns()) {
+            model.getComputation().add(new ContextualizableImpl(resourceUrn));
+        }
+        for (var contextualizer : statement.getContextualization()) {
+            model.getComputation().add(contextualizer);
+        }
 
         // FIXME use coverage from NS or model if any
         model.setCoverage(Coverage.universal());

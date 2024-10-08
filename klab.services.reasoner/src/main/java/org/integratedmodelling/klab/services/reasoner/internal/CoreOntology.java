@@ -107,7 +107,7 @@ public class CoreOntology {
                 var implemented = Sets.intersection(concept.getType(), SemanticType.DECLARABLE_TYPES);
                 if (implemented.size() > 1) {
                     scope.warn("Inconsistent worldview: the fundamental type for core concept " + concept.getNamespace() + ":" + concept.getUrn() + " is ambiguous: " + implemented);
-                } else if (implemented.size() == 0) {
+                } else if (implemented.isEmpty()) {
                     scope.warn("Inconsistent worldview: can't establish the fundamental type for core " +
                             "concept " + concept.getNamespace() + ":" + concept.getUrn() + " (" + concept.getUpperConceptDefined() + ")");
                 } else {

@@ -50,7 +50,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
  * semantically-unaware workflow system, as long as the T type is a non-semantic
  * {@link Artifact}. In that case, the {@link Observable} in each {@link Actuator} it
  * contains can be used as "semantic metadata" and artifacts can be labeled using its
- * {@link Observable#getUrn()} method, or its {@link Observable#getName()} stated name.
+ * {@link Observable#getResourceUrn()} method, or its {@link Observable#getName()} stated name.
  * <p>
  * A dataflow exposes a list of top-level {@link Actuator actuator}s, each of which
  * contains a chain of "child" actuators. The actuators in the child hierarchy belonging

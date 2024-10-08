@@ -33,7 +33,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     private KimClassification classification;
     private KimLookupTable lookupTable;
     private String accordingTo;
-    private String urn;
+    private String resourceUrn;
     private Collection<Pair<String, Artifact.Type>> inputs;
     private Parameters<String> parameters = Parameters.create();
     private Collection<String> interactiveParameters = new ArrayList<>();
@@ -44,6 +44,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     private Geometry geometry;
     private boolean variable;
     private boolean empty;
+    private String urn;
 
     public ContextualizableImpl() {
     }
@@ -52,6 +53,9 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
         this.serviceCall = serviceCall;
     }
 
+    public ContextualizableImpl(String resourceUrn) {
+        this.resourceUrn = resourceUrn;
+    }
 
     @Override
     public Type getType() {
@@ -108,9 +112,13 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
         return this.accordingTo;
     }
 
-    @Override
     public String getUrn() {
-        return this.urn;
+        return urn;
+    }
+
+    @Override
+    public String getResourceUrn() {
+        return this.resourceUrn;
     }
 
     @Override
@@ -205,6 +213,10 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
 
     public void setAccordingTo(String accordingTo) {
         this.accordingTo = accordingTo;
+    }
+
+    public void setResourceUrn(String urn) {
+        this.resourceUrn = urn;
     }
 
     public void setUrn(String urn) {

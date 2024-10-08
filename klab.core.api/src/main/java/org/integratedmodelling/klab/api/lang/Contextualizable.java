@@ -339,7 +339,7 @@ public interface Contextualizable extends KlabStatement {
      *
      * @return the urn
      */
-    String getUrn();
+    String getResourceUrn();
 
     /**
      * Resources such as expressions or URN-specified remote computations may have requirements that must be
