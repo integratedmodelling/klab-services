@@ -77,7 +77,7 @@ public class ResolverService extends BaseService implements Resolver {
 
     // OBVIOUSLY temporary - when all done, merge its methods with this and remove the porker and the old
     // dirt.
-    private ResolverPorker porker = new ResolverPorker();
+    private ResolutionCompiler resolutionCompiler = new ResolutionCompiler();
 
 
     public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
@@ -97,10 +97,8 @@ public class ResolverService extends BaseService implements Resolver {
         } else {
             // make an empty config
             this.configuration = new ResolverConfiguration();
-            //            this.configuration.setServicePath("resources");
-            //            this.configuration.setLocalResourcePath("local");
-            //            this.configuration.setPublicResourcePath("public");
             this.configuration.setServiceId(UUID.randomUUID().toString());
+            // TODO anything else we need
             saveConfiguration();
         }
     }
@@ -142,7 +140,7 @@ public class ResolverService extends BaseService implements Resolver {
     @Override
     public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
 
-        var ret = porker.resolve(observation, contextScope);
+        var ret = resolutionCompiler.resolve(observation, contextScope);
         if (!ret.isEmpty()) {
             // TODO compile the porker's result. Could use a compiler for cleanliness and plug-ability.
             return Dataflow.empty(Observation.class);

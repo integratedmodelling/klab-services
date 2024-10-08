@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * Obviously a placeholder for the resolver 2.0
  */
-public class ResolverPorker {
+public class ResolutionCompiler {
 
     private double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
 

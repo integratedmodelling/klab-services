@@ -11,7 +11,9 @@ import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
+import org.jgrapht.graph.AbstractBaseGraph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.w3.xlink.XlinkFactory;
@@ -60,6 +62,11 @@ public class ResolutionGraph {
     private ResolutionGraph(ContextScope rootScope) {
         this.rootScope = rootScope;
     }
+
+    public Graph<Resolvable, ResolutionEdge> graph() {
+        return this.graph;
+    }
+
 
     private ResolutionGraph(Resolvable target, Scale scaleToCover, ResolutionGraph parent) {
 
@@ -110,13 +117,12 @@ public class ResolutionGraph {
     }
 
     /**
-     * Accept the resolution contained in the passed graph for its target, adding our resolvable to the graph
-     * and updating the target coverage and the catalog. Return true if our own target coverage is made
-     * complete by the merge.
+     * Accept the resolution contained in the passed graph for its target, adding all sub-resolvables
+     * collected along the way, then add our resolvable to the graph and updating the target coverage
+     * according to the kind of merge (uniting for alternative observables, intersecting for model
+     * dependencies) and the catalog. Return true if our own target coverage is made complete by the merge.
      */
     public boolean merge(ResolutionGraph childGraph) {
-        System.out.println("ACCEPTING SLAVE INTO PARENT, MERGE GRAPH INTO PARENT'S, MERGE COVERAGE AND " +
-                "UPDATE CATALOG");
 
         Graphs.addAllVertices(this.graph, childGraph.graph.vertexSet());
         Graphs.addAllEdges(this.graph, childGraph.graph, childGraph.graph.edgeSet());
@@ -133,6 +139,10 @@ public class ResolutionGraph {
          */
         this.targetCoverage = this.targetCoverage.merge(childGraph.targetCoverage,
                 this.target instanceof Model ? LogicalConnector.INTERSECTION : LogicalConnector.UNION);
+
+        /*
+        TODO UPDATE THE CATALOG WITH THE NATIVE COVERAGE OF THE TARGET
+         */
 
         /*
         if our coverage is satisfactory, signal that the merge has done all we need
@@ -208,7 +218,9 @@ public class ResolutionGraph {
 
         public Coverage coverage;
 
-        public ResolutionEdge() {}
+        public ResolutionEdge() {
+        }
+
         public ResolutionEdge(Coverage coverage) {
             this.coverage = coverage;
         }
