@@ -105,11 +105,11 @@ public class ResolverClient extends ServiceClient implements Resolver {
     //        .class);
     //    }
 
-    @Override
-    public List<Model> queryModels(Observable observable, ContextScope scope, Scale scale) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+//    @Override
+//    public List<Model> queryModels(Observable observable, ContextScope scope, Scale scale) {
+//        // TODO Auto-generated method stub
+//        return null;
+//    }
 
     //    @Override
     //    public Dataflow<Observation> compile(Resolvable resolved, Resolution resolution, ContextScope

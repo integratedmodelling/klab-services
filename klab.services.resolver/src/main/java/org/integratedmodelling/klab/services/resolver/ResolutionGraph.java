@@ -46,6 +46,7 @@ public class ResolutionGraph {
     private Resolvable target;
     private Coverage targetCoverage;
     private ContextScope rootScope;
+    @Deprecated
     private List<Contextualizable> contextualization = new ArrayList<>();
     private DefaultDirectedGraph<Resolvable, ResolutionGraph.ResolutionEdge> graph =
             new DefaultDirectedGraph<>(ResolutionEdge.class);
@@ -173,6 +174,7 @@ public class ResolutionGraph {
     /**
      * Add to this if operations must be compiled in the dataflow after resolution.
      *
+     * @deprecated no need, the strategy and the models are in the graph
      * @return
      */
     public List<Contextualizable> getContextualization() {

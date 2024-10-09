@@ -162,6 +162,9 @@ public class ResolutionCompiler {
                 }
                 case APPLY -> {
 
+                    // TODO only needs to resolve but then the strategy gets in the graph, so
+                    //  no need to add anything to it.
+
                     var runtime = scope.getService(RuntimeService.class);
                     /**
                      * We ask the runtime to resolve all the contextualizables as a single
@@ -178,6 +181,7 @@ public class ResolutionCompiler {
                         return ResolutionGraph.empty();
                     }
 
+                    // DEPRECATED //
                     ret.getContextualization().addAll(operation.getContextualizables());
                 }
             }
