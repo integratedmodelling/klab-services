@@ -186,7 +186,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             setSize(400, 320);
             setVisible(true);
         }
-
     }
 
     public static class Annotations {

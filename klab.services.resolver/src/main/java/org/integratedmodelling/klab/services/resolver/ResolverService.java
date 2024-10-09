@@ -78,7 +78,7 @@ public class ResolverService extends BaseService implements Resolver {
     // OBVIOUSLY temporary - when all done, merge its methods with this and remove the porker and the old
     // dirt.
     private ResolutionCompiler resolutionCompiler = new ResolutionCompiler();
-
+    private DataflowCompiler dataflowCompiler = new DataflowCompiler();
 
     public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
         super(scope, Type.RESOLVER, options);
@@ -129,28 +129,21 @@ public class ResolverService extends BaseService implements Resolver {
         ret.setServiceId(configuration.getServiceId());
         ret.setServiceName("Resolver");
         ret.setBrokerURI((embeddedBroker != null && embeddedBroker.isOnline()) ? embeddedBroker.getURI() :
-                         configuration.getBrokerURI());
+                configuration.getBrokerURI());
         ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(getUrl()) ?
-                                        EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
-                                                Message.Queue.Warnings) :
-                                        EnumSet.noneOf(Message.Queue.class));
+                EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
+                        Message.Queue.Warnings) :
+                EnumSet.noneOf(Message.Queue.class));
         return ret;
     }
 
     @Override
     public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
-
         var ret = resolutionCompiler.resolve(observation, contextScope);
         if (!ret.isEmpty()) {
-            // TODO compile the porker's result. Could use a compiler for cleanliness and plug-ability.
-            return Dataflow.empty(Observation.class);
+            return dataflowCompiler.compile(ret, contextScope);
         }
         return Dataflow.empty(Observation.class);
-        //        var resolution = computeResolution(observation, contextScope);
-        //        if (!resolution.isEmpty()) {
-        //            return compile(observation, resolution, contextScope);
-        //        }
-        //        return Dataflow.empty(Observation.class);
     }
 
     @Override
@@ -158,34 +151,34 @@ public class ResolverService extends BaseService implements Resolver {
         return configuration.getServiceId();
     }
 
-    /**
-     * Top-level resolution, resolve and return an independent resolution graph. This creates a new resolution
-     * graph which will contain any observations that were already resolved within the context observation in
-     * the scope, if any.
-     *
-     * @param scope
-     * @return
-     */
-    public Resolution computeResolution(Observation observation, ContextScope scope) {
-
-        var resolutionGeometry = scope.getObservationGeometry(observation);
-
-        if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
-            return ResolutionImpl.empty(observation, scope);
-        }
-
-        var scale = Scale.create(resolutionGeometry, scope);
-
-        ResolutionImpl ret = new ResolutionImpl(observation.getObservable(), scale, scope);
-        var coverage = resolveObservation(observation, scale, scope, ret, null);
-
-        if (!coverage.isRelevant()) {
-            ret.setEmpty();
-        }
-
-        return ret;
-
-    }
+//    /**
+//     * Top-level resolution, resolve and return an independent resolution graph. This creates a new resolution
+//     * graph which will contain any observations that were already resolved within the context observation in
+//     * the scope, if any.
+//     *
+//     * @param scope
+//     * @return
+//     */
+//    public Resolution computeResolution(Observation observation, ContextScope scope) {
+//
+//        var resolutionGeometry = scope.getObservationGeometry(observation);
+//
+//        if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
+//            return ResolutionImpl.empty(observation, scope);
+//        }
+//
+//        var scale = Scale.create(resolutionGeometry, scope);
+//
+//        ResolutionImpl ret = new ResolutionImpl(observation.getObservable(), scale, scope);
+//        var coverage = resolveObservation(observation, scale, scope, ret, null);
+//
+//        if (!coverage.isRelevant()) {
+//            ret.setEmpty();
+//        }
+//
+//        return ret;
+//
+//    }
 
     //    /**
     //     * Top-level resolution, resolve and return an independent resolution graph. This creates a new
@@ -239,305 +232,305 @@ public class ResolverService extends BaseService implements Resolver {
     //
     //    }
 
-    private Coverage resolveObservation(Observation observation, Scale scale, ContextScope scope,
-                                        ResolutionImpl parent, Model parentModel) {
+//    private Coverage resolveObservation(Observation observation, Scale scale, ContextScope scope,
+//                                        ResolutionImpl parent, Model parentModel) {
+//
+//        var observable = observation.getObservable();
+//        Coverage ret = Coverage.create(scale, 0.0);
+//
+//        // observation may have been resolved already. Also it could be being resolved from upstream, and
+//        // infinite recursion is fun but helps nobody.
+//        if (observation.isResolved() || parent.checkResolving(observable)) {
+//            return Coverage.universal();
+//        }
+//
+//        for (ObservationStrategy strategy :
+//                scope.getService(Reasoner.class).computeObservationStrategies(observation, scope)) {
+//            // this merges any useful strategy and returns the coverage
+//            ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
+//            ret = ret.merge(resolution.getCoverage(), LogicalConnector.UNION);
+//            if (ret.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
+//                continue;
+//            }
+//            if (ret.isRelevant()) {
+//                // merge the resolution with the parent resolution
+//                parent.merge(parentModel, resolution, ResolutionType.DIRECT);
+//                if (parent.getCoverage().isComplete()) {
+//                    break;
+//                }
+//            }
+//        }
+//
+//        return ret;
+//    }
 
-        var observable = observation.getObservable();
-        Coverage ret = Coverage.create(scale, 0.0);
+//
+//    /**
+//     * We always resolve an observable first. This only reports coverage as it does not directly create a
+//     * resolution graph; this is done when resolving a model, which creates a graph and merges it with the
+//     * parent graph if successful.
+//     *
+//     * @param observable
+//     * @param parent
+//     * @return
+//     */
+//    private Coverage resolveObservable(Observable observable, Scale scale, ContextScope scope,
+//                                       ResolutionImpl parent, Model parentModel) {
+//
+//        /**
+//         * Make graph merging parent Set coverage to scale, 0; Strategies/models: foreach model:
+//         * resolve to new graph for same observable and add coverage; merge(union) if gain is
+//         * significant break when models are finished or coverage is complete if graph.coverage is
+//         * sufficient, merge into parent at parent model (root if null) return coverage is
+//         * sufficient
+//         */
+//        Coverage ret = Coverage.create(scale, 0.0);
+//
+//        // infinite recursion is nice but wastes time
+//        if (parent.checkResolving(observable)) {
+//            return Coverage.universal();
+//        }
+//
+//        // this returns an existing observation (resolved or not) or a new one with the unresolved ID
+//        Observation observation = requireObservation(observable, scope);
+//
+//        if (observation.isResolved()) {
+//            // we have it: TODO must be in the resolution graph?
+//            return Coverage.universal();
+//        } else if (observation.getId() >= 0) {
+//            return Coverage.empty();
+//        }
+//
+//        // see what the reasoner thinks of this observable
+//        for (ObservationStrategy strategy :
+//                scope.getService(Reasoner.class).computeObservationStrategies(
+//                        observation,
+//                        scope)) {
+//            // this merges any useful strategy and returns the coverage
+//            ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
+//            ret = ret.merge(resolution.getCoverage(), LogicalConnector.UNION);
+//            if (ret.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
+//                continue;
+//            }
+//            if (ret.isRelevant()) {
+//                // merge the resolution with the parent resolution
+//                parent.merge(parentModel, resolution, ResolutionType.DIRECT);
+//                if (parent.getCoverage().isComplete()) {
+//                    break;
+//                }
+//            }
+//        }
+//
+//        return ret;
+//    }
 
-        // observation may have been resolved already. Also it could be being resolved from upstream, and
-        // infinite recursion is fun but helps nobody.
-        if (observation.isResolved() || parent.checkResolving(observable)) {
-            return Coverage.universal();
-        }
+//    /**
+//     * If the runtime contains the observation, return it (in resolved or unresolved status but with a valid
+//     * ID). Otherwise create one in the geometry that the scope implies, with the unresolved ID, and return it
+//     * for submission to the knowledge graph.
+//     *
+//     * @param observable
+//     * @param scope
+//     * @return a non-null observation
+//     */
+//    private Observation requireObservation(Observable observable, ContextScope scope) {
+//        var ret = scope.query(Observation.class, observable);
+//        if (ret.isEmpty()) {
+//
+//            var newObs = DigitalTwin.createObservation(scope, observable);
+//            if (SemanticType.isSubstantial(observable.getSemantics().getType())) {
+//                // TODO determine the right geometry and add it
+//
+//            }
+//            var id = scope.getService(RuntimeService.class).submit(newObs, scope, false);
+//            if (id >= 0) {
+//                ret = scope.query(Observation.class, observable);
+//            }
+//        }
+//
+//        if (ret.isEmpty()) {
+//            throw new KlabInternalErrorException("Observation of " + observable.getUrn() + " couldn't be " +
+//                    "instantiated");
+//        }
+//
+//        return ret.getFirst();
+//    }
 
-        for (ObservationStrategy strategy :
-                scope.getService(Reasoner.class).computeObservationStrategies(observation, scope)) {
-            // this merges any useful strategy and returns the coverage
-            ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
-            ret = ret.merge(resolution.getCoverage(), LogicalConnector.UNION);
-            if (ret.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
-                continue;
-            }
-            if (ret.isRelevant()) {
-                // merge the resolution with the parent resolution
-                parent.merge(parentModel, resolution, ResolutionType.DIRECT);
-                if (parent.getCoverage().isComplete()) {
-                    break;
-                }
-            }
-        }
+//    /**
+//     * Resolve a single observation strategy; if the resolution succeeds, merge the resolution with the
+//     * parent.
+//     *
+//     * @param strategy
+//     * @param scale
+//     * @param scope
+//     * @param parent
+//     * @param parentModel
+//     * @return
+//     */
+//    private ResolutionImpl resolveStrategy(ObservationStrategy strategy, Scale scale,
+//                                           ContextScope scope,
+//                                           ResolutionImpl parent,
+//                                           Model parentModel) {
+//
+//        var coverage = Coverage.create(scale, 0.0);
+//        ResolutionImpl ret = null;
+//
+//        for (var operation : strategy.getOperations()) {
+//            switch (operation.getType()) {
+//                case RESOLVE -> {
+//                    /*
+//                    Additional resolution for a different observable, have the runtime produce the
+//                    observation, if resolved we're done, otherwise invoke resolution recursively
+//                     */
+//                    ret = new ResolutionImpl(operation.getObservable(), scale, scope,
+//                            parent);
+//                    // TODO have the runtime create the observation
+//                    // TODO resolve it and merge the resolution
+//                }
+//                case OBSERVE -> {
+//
+//                    /*
+//                    Find models and compile them in, merge resolutions until satisfied. We pass the scale
+//                    through scope constraints.
+//                     */
+//                    List<ResolutionConstraint> constraints = new ArrayList<>();
+//                    constraints.add(ResolutionConstraint.of(
+//                            ResolutionConstraint.Type.Geometry,
+//                            scale.as(Geometry.class)));
+//                    if (parentModel != null) {
+//                        constraints.add(ResolutionConstraint.of(
+//                                ResolutionConstraint.Type.ResolutionNamespace,
+//                                parentModel.getNamespace()));
+//                        constraints.add(ResolutionConstraint.of(
+//                                ResolutionConstraint.Type.ResolutionProject,
+//                                parentModel.getProjectName()));
+//                    }
+//
+//                    scope = scope.withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new));
+//
+//                    ret = new ResolutionImpl(operation.getObservable(), scale, scope, parent);
+//
+//                    for (Model model : queryModels(operation.getObservable(), scope, scale)) {
+//
+//                        ResolutionImpl resolution = resolveModel(model, operation.getObservable(),
+//                                scale,
+//                                scope.withResolutionConstraints(
+//                                        ResolutionConstraint.of(
+//                                                ResolutionConstraint.Type.ResolutionNamespace,
+//                                                model.getNamespace()),
+//                                        ResolutionConstraint.of(
+//                                                ResolutionConstraint.Type.ResolutionProject,
+//                                                model.getProjectName())),
+//                                parent);
+//                        coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
+//                        if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
+//                            continue;
+//                        }
+//                        // merge the model at root level within the local resolution
+//                        resolution.merge(model, coverage, operation.getObservable(), ResolutionType.DIRECT);
+//                        if (coverage.isRelevant()) {
+//                            // merge the resolution with the parent resolution
+//                            ret.merge(parentModel, resolution, ResolutionType.DIRECT);
+//                            if (parent.getCoverage().isComplete()) {
+//                                break;
+//                            }
+//                        }
+//                    }
+//
+//                }
+//                case APPLY -> {
+//                    // resolve the contextualizers merging the necessary resource set, coverage is
+//                    // unchanged unless contextualizers are not available
+//                }
+//            }
+//
+//            // add any deferrals to the compiled strategy node
+//            if (!ret.isEmpty()) {
+//                for (var deferral : operation.getContextualStrategies()) {
+//
+//                }
+//            }
+//        }
+//
+//        return ret;
+//
+//        //        ResolutionImpl ret = new ResolutionImpl(strategy.getOriginalObservable(), scale, scope,
+//        //        parent);
+//        //
+//        //        for (Pair<ObservationStrategyObsolete.Operation, ObservationStrategyObsolete.Arguments>
+//        //        operation :
+//        //                strategy) {
+//        //            switch (operation.getFirst()) {
+//        //                case OBSERVE -> {
+//        //                    for (Model model : queryModels(operation.getSecond().observable(), scope,
+//        //                    scale)) {
+//        //                        ResolutionImpl resolution = resolveModel(model, strategy
+//        //                        .getOriginalObservable(),
+//        //                                scale,
+//        //                                scope.withResolutionNamespace(model.getNamespace()), parent);
+//        //                        coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
+//        //                        if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
+//        //                            continue;
+//        //                        }
+//        //                        // merge the model at root level within the local resolution
+//        //                        resolution.merge(model, coverage, strategy.getOriginalObservable(),
+//        //                                ResolutionType.DIRECT);
+//        //                        if (coverage.isRelevant()) {
+//        //                            // merge the resolution with the parent resolution
+//        //                            ret.merge(parentModel, resolution, ResolutionType.DIRECT);
+//        //                            if (parent.getCoverage().isComplete()) {
+//        //                                break;
+//        //                            }
+//        //                        }
+//        //                    }
+//        //                }
+//        //                case RESOLVE -> {
+//        //
+//        //                }
+//        //                case APPLY -> {
+//        //                }
+//        //                case CONCRETIZE -> {
+//        //                    // TODO deprecated?
+//        //                }
+//        //            }
+//        //        }
+//        //
+//        //        return ret;
+//        //        return null;
+//    }
 
-        return ret;
-    }
-
-
-    /**
-     * We always resolve an observable first. This only reports coverage as it does not directly create a
-     * resolution graph; this is done when resolving a model, which creates a graph and merges it with the
-     * parent graph if successful.
-     *
-     * @param observable
-     * @param parent
-     * @return
-     */
-    private Coverage resolveObservable(Observable observable, Scale scale, ContextScope scope,
-                                       ResolutionImpl parent, Model parentModel) {
-
-        /**
-         * Make graph merging parent Set coverage to scale, 0; Strategies/models: foreach model:
-         * resolve to new graph for same observable and add coverage; merge(union) if gain is
-         * significant break when models are finished or coverage is complete if graph.coverage is
-         * sufficient, merge into parent at parent model (root if null) return coverage is
-         * sufficient
-         */
-        Coverage ret = Coverage.create(scale, 0.0);
-
-        // infinite recursion is nice but wastes time
-        if (parent.checkResolving(observable)) {
-            return Coverage.universal();
-        }
-
-        // this returns an existing observation (resolved or not) or a new one with the unresolved ID
-        Observation observation = requireObservation(observable, scope);
-
-        if (observation.isResolved()) {
-            // we have it: TODO must be in the resolution graph?
-            return Coverage.universal();
-        } else if (observation.getId() >= 0) {
-            return Coverage.empty();
-        }
-
-        // see what the reasoner thinks of this observable
-        for (ObservationStrategy strategy :
-                scope.getService(Reasoner.class).computeObservationStrategies(
-                        observation,
-                        scope)) {
-            // this merges any useful strategy and returns the coverage
-            ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
-            ret = ret.merge(resolution.getCoverage(), LogicalConnector.UNION);
-            if (ret.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
-                continue;
-            }
-            if (ret.isRelevant()) {
-                // merge the resolution with the parent resolution
-                parent.merge(parentModel, resolution, ResolutionType.DIRECT);
-                if (parent.getCoverage().isComplete()) {
-                    break;
-                }
-            }
-        }
-
-        return ret;
-    }
-
-    /**
-     * If the runtime contains the observation, return it (in resolved or unresolved status but with a valid
-     * ID). Otherwise create one in the geometry that the scope implies, with the unresolved ID, and return it
-     * for submission to the knowledge graph.
-     *
-     * @param observable
-     * @param scope
-     * @return a non-null observation
-     */
-    private Observation requireObservation(Observable observable, ContextScope scope) {
-        var ret = scope.query(Observation.class, observable);
-        if (ret.isEmpty()) {
-
-            var newObs = DigitalTwin.createObservation(scope, observable);
-            if (SemanticType.isSubstantial(observable.getSemantics().getType())) {
-                // TODO determine the right geometry and add it
-
-            }
-            var id = scope.getService(RuntimeService.class).submit(newObs, scope, false);
-            if (id >= 0) {
-                ret = scope.query(Observation.class, observable);
-            }
-        }
-
-        if (ret.isEmpty()) {
-            throw new KlabInternalErrorException("Observation of " + observable.getUrn() + " couldn't be " +
-                    "instantiated");
-        }
-
-        return ret.getFirst();
-    }
-
-    /**
-     * Resolve a single observation strategy; if the resolution succeeds, merge the resolution with the
-     * parent.
-     *
-     * @param strategy
-     * @param scale
-     * @param scope
-     * @param parent
-     * @param parentModel
-     * @return
-     */
-    private ResolutionImpl resolveStrategy(ObservationStrategy strategy, Scale scale,
-                                           ContextScope scope,
-                                           ResolutionImpl parent,
-                                           Model parentModel) {
-
-        var coverage = Coverage.create(scale, 0.0);
-        ResolutionImpl ret = null;
-
-        for (var operation : strategy.getOperations()) {
-            switch (operation.getType()) {
-                case RESOLVE -> {
-                    /*
-                    Additional resolution for a different observable, have the runtime produce the
-                    observation, if resolved we're done, otherwise invoke resolution recursively
-                     */
-                    ret = new ResolutionImpl(operation.getObservable(), scale, scope,
-                            parent);
-                    // TODO have the runtime create the observation
-                    // TODO resolve it and merge the resolution
-                }
-                case OBSERVE -> {
-
-                    /*
-                    Find models and compile them in, merge resolutions until satisfied. We pass the scale
-                    through scope constraints.
-                     */
-                    List<ResolutionConstraint> constraints = new ArrayList<>();
-                    constraints.add(ResolutionConstraint.of(
-                            ResolutionConstraint.Type.Geometry,
-                            scale.as(Geometry.class)));
-                    if (parentModel != null) {
-                        constraints.add(ResolutionConstraint.of(
-                                ResolutionConstraint.Type.ResolutionNamespace,
-                                parentModel.getNamespace()));
-                        constraints.add(ResolutionConstraint.of(
-                                ResolutionConstraint.Type.ResolutionProject,
-                                parentModel.getProjectName()));
-                    }
-
-                    scope = scope.withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new));
-
-                    ret = new ResolutionImpl(operation.getObservable(), scale, scope, parent);
-
-                    for (Model model : queryModels(operation.getObservable(), scope, scale)) {
-
-                        ResolutionImpl resolution = resolveModel(model, operation.getObservable(),
-                                scale,
-                                scope.withResolutionConstraints(
-                                        ResolutionConstraint.of(
-                                                ResolutionConstraint.Type.ResolutionNamespace,
-                                                model.getNamespace()),
-                                        ResolutionConstraint.of(
-                                                ResolutionConstraint.Type.ResolutionProject,
-                                                model.getProjectName())),
-                                parent);
-                        coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
-                        if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
-                            continue;
-                        }
-                        // merge the model at root level within the local resolution
-                        resolution.merge(model, coverage, operation.getObservable(), ResolutionType.DIRECT);
-                        if (coverage.isRelevant()) {
-                            // merge the resolution with the parent resolution
-                            ret.merge(parentModel, resolution, ResolutionType.DIRECT);
-                            if (parent.getCoverage().isComplete()) {
-                                break;
-                            }
-                        }
-                    }
-
-                }
-                case APPLY -> {
-                    // resolve the contextualizers merging the necessary resource set, coverage is
-                    // unchanged unless contextualizers are not available
-                }
-            }
-
-            // add any deferrals to the compiled strategy node
-            if (!ret.isEmpty()) {
-                for (var deferral : operation.getContextualStrategies()) {
-
-                }
-            }
-        }
-
-        return ret;
-
-        //        ResolutionImpl ret = new ResolutionImpl(strategy.getOriginalObservable(), scale, scope,
-        //        parent);
-        //
-        //        for (Pair<ObservationStrategyObsolete.Operation, ObservationStrategyObsolete.Arguments>
-        //        operation :
-        //                strategy) {
-        //            switch (operation.getFirst()) {
-        //                case OBSERVE -> {
-        //                    for (Model model : queryModels(operation.getSecond().observable(), scope,
-        //                    scale)) {
-        //                        ResolutionImpl resolution = resolveModel(model, strategy
-        //                        .getOriginalObservable(),
-        //                                scale,
-        //                                scope.withResolutionNamespace(model.getNamespace()), parent);
-        //                        coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
-        //                        if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
-        //                            continue;
-        //                        }
-        //                        // merge the model at root level within the local resolution
-        //                        resolution.merge(model, coverage, strategy.getOriginalObservable(),
-        //                                ResolutionType.DIRECT);
-        //                        if (coverage.isRelevant()) {
-        //                            // merge the resolution with the parent resolution
-        //                            ret.merge(parentModel, resolution, ResolutionType.DIRECT);
-        //                            if (parent.getCoverage().isComplete()) {
-        //                                break;
-        //                            }
-        //                        }
-        //                    }
-        //                }
-        //                case RESOLVE -> {
-        //
-        //                }
-        //                case APPLY -> {
-        //                }
-        //                case CONCRETIZE -> {
-        //                    // TODO deprecated?
-        //                }
-        //            }
-        //        }
-        //
-        //        return ret;
-        //        return null;
-    }
-
-    /**
-     * Parent is for the observable, model gets added if it contributes, then its dependencies
-     *
-     * @param model
-     * @param scale
-     * @param scope
-     * @param parent
-     * @return
-     */
-    private ResolutionImpl resolveModel(Model model, Resolvable observable, Scale scale, ContextScope scope,
-                                        ResolutionImpl parent) {
-
-        ResolutionImpl ret = new ResolutionImpl(observable, scale, scope, parent);
-        Coverage coverage = Coverage.create(scale, 1.0);
-        if (!model.getCoverage().isEmpty()) {
-            coverage = coverage.merge(model.getCoverage(), LogicalConnector.INTERSECTION);
-        }
-        for (Observable dependency : model.getDependencies()) {
-
-            /**
-             * TODO NOW - the scope must be adjusted for the observable based on the dependent
-             *  or substantial character
-             */
-
-            Coverage depcoverage = resolveObservable(dependency, scale, scope, parent, model);
-            coverage = coverage.merge(depcoverage, LogicalConnector.INTERSECTION);
-            if (coverage.isEmpty()) {
-                break;
-            }
-        }
-        return ret.withCoverage(coverage);
-    }
+//    /**
+//     * Parent is for the observable, model gets added if it contributes, then its dependencies
+//     *
+//     * @param model
+//     * @param scale
+//     * @param scope
+//     * @param parent
+//     * @return
+//     */
+//    private ResolutionImpl resolveModel(Model model, Resolvable observable, Scale scale, ContextScope scope,
+//                                        ResolutionImpl parent) {
+//
+//        ResolutionImpl ret = new ResolutionImpl(observable, scale, scope, parent);
+//        Coverage coverage = Coverage.create(scale, 1.0);
+//        if (!model.getCoverage().isEmpty()) {
+//            coverage = coverage.merge(model.getCoverage(), LogicalConnector.INTERSECTION);
+//        }
+//        for (Observable dependency : model.getDependencies()) {
+//
+//            /**
+//             * TODO NOW - the scope must be adjusted for the observable based on the dependent
+//             *  or substantial character
+//             */
+//
+//            Coverage depcoverage = resolveObservable(dependency, scale, scope, parent, model);
+//            coverage = coverage.merge(depcoverage, LogicalConnector.INTERSECTION);
+//            if (coverage.isEmpty()) {
+//                break;
+//            }
+//        }
+//        return ret.withCoverage(coverage);
+//    }
 
     //    @Override
     public Dataflow<Observation> compile(Resolvable knowledge, Resolution resolution, ContextScope scope) {
@@ -591,8 +584,8 @@ public class ResolverService extends BaseService implements Resolver {
 
                 // dependencies first
                 for (ResolutionType type : new ResolutionType[]{ResolutionType.DIRECT,
-                                                                ResolutionType.DEFER_INHERENCY,
-                                                                ResolutionType.DEFER_SEMANTICS}) {
+                        ResolutionType.DEFER_INHERENCY,
+                        ResolutionType.DEFER_SEMANTICS}) {
                     for (Triple<Resolvable, Resolvable, Coverage> resolved : resolution.getResolving(
                             model,
                             type)) {
@@ -670,8 +663,7 @@ public class ResolverService extends BaseService implements Resolver {
         return (scope.getContextObservation() == null ? "" : (scope.getContextObservation().getId() + "."))
                 + observable.getDescriptionType().name().toLowerCase() + "." + observable.getReferenceName() + "."
                 + (observable.getObserver() == null ? scope.getIdentity().getId() :
-                   ("_as_" + observable.getObserver().codeName()));
-
+                ("_as_" + observable.getObserver().codeName()));
     }
 
     /**
@@ -869,31 +861,31 @@ public class ResolverService extends BaseService implements Resolver {
         return model;
     }
 
-    /**
-     * Query all the resource servers available in the scope to find the models that can observe the passed
-     * observable. The result should be ranked in decreasing order of fit to the context and the
-     * RESOLUTION_SCORE ranking should be in their metadata.
-     *
-     * @param observable
-     * @param scope
-     * @return
-     */
-    @Override
-    public List<Model> queryModels(Observable observable, ContextScope scope, Scale scale) {
-
-        var prioritizer = new PrioritizerImpl(scope, scale);
-
-        System.out.println("QUERYING MODELS FOR " + observable);
-
-        // FIXME use virtual threads & join() to obtain a synchronized list of ResourceSet, then
-        //  use a merging strategy to get models one by one in their latest release
-        var resources = scope.getService(ResourcesService.class);
-
-        ResourceSet models = resources.queryModels(observable, scope);
-        var ret = new ArrayList<Model>(KnowledgeRepository.INSTANCE.ingest(models, scope, Model.class));
-        ret.sort(prioritizer);
-        return ret;
-    }
+//    /**
+//     * Query all the resource servers available in the scope to find the models that can observe the passed
+//     * observable. The result should be ranked in decreasing order of fit to the context and the
+//     * RESOLUTION_SCORE ranking should be in their metadata.
+//     *
+//     * @param observable
+//     * @param scope
+//     * @return
+//     */
+//    @Override
+//    public List<Model> queryModels(Observable observable, ContextScope scope, Scale scale) {
+//
+//        var prioritizer = new PrioritizerImpl(scope, scale);
+//
+//        System.out.println("QUERYING MODELS FOR " + observable);
+//
+//        // FIXME use virtual threads & join() to obtain a synchronized list of ResourceSet, then
+//        //  use a merging strategy to get models one by one in their latest release
+//        var resources = scope.getService(ResourcesService.class);
+//
+//        ResourceSet models = resources.queryModels(observable, scope);
+//        var ret = new ArrayList<Model>(KnowledgeRepository.INSTANCE.ingest(models, scope, Model.class));
+//        ret.sort(prioritizer);
+//        return ret;
+//    }
 
     @Override
     public void initializeService() {
@@ -1031,8 +1023,8 @@ public class ResolverService extends BaseService implements Resolver {
 
         ret.append(ofs + ")" + (actuator.getAlias() == null ? "" : (" named " + actuator.getAlias()))
                 + (actuator.getObservable().getObserver() == null
-                   ? ""
-                   : (" as " + actuator.getObservable().getObserver().getName()))
+                ? ""
+                : (" as " + actuator.getObservable().getObserver().getName()))
                 + "\n");
 
         return ret;

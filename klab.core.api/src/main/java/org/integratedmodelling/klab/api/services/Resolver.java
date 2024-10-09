@@ -102,21 +102,21 @@ public interface Resolver extends KlabService {
         return false;
     }
 
-    /**
-     * Query all the resource servers available to find models that can observe the passed observable in the
-     * scope. The result should be merged to keep the latest available versions and ranked in decreasing order
-     * of fit to the context. Once the choice is made the result should be used to populate the inner
-     * knowledge repository, updating only when higher versions become available. Resolution metadata for each
-     * model resolved (optionally including those not chosen) should be available for inspection, reporting
-     * and debugging in the resolution graph connected to the {@link ContextScope}.
-     *
-     * @param observable
-     * @param scope
-     * @param scale       we pass a scale explicitly during resolution chains that may be covering the scope
-     *                    partially.
-     * @return
-     */
-    List<Model> queryModels(Observable observable, ContextScope scope, Scale scale);
+//    /**
+//     * Query all the resource servers available to find models that can observe the passed observable in the
+//     * scope. The result should be merged to keep the latest available versions and ranked in decreasing order
+//     * of fit to the context. Once the choice is made the result should be used to populate the inner
+//     * knowledge repository, updating only when higher versions become available. Resolution metadata for each
+//     * model resolved (optionally including those not chosen) should be available for inspection, reporting
+//     * and debugging in the resolution graph connected to the {@link ContextScope}.
+//     *
+//     * @param observable
+//     * @param scope
+//     * @param scale       we pass a scale explicitly during resolution chains that may be covering the scope
+//     *                    partially.
+//     * @return
+//     */
+//    List<Model> queryModels(Observable observable, ContextScope scope, Scale scale);
 
     /**
      * Resolver administration functions.
