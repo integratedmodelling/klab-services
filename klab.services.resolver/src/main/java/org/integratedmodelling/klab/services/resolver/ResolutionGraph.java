@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.AbstractBaseGraph;
@@ -46,11 +47,13 @@ public class ResolutionGraph {
     private Resolvable target;
     private Coverage targetCoverage;
     private ContextScope rootScope;
-    @Deprecated
-    private List<Contextualizable> contextualization = new ArrayList<>();
     private DefaultDirectedGraph<Resolvable, ResolutionGraph.ResolutionEdge> graph =
             new DefaultDirectedGraph<>(ResolutionEdge.class);
     private ResolutionGraph parent;
+
+    // these are only used in the root graph. They collect the merged dependencies of all
+    // strategies and models, added only after the runtime has successfully resolved them.
+    private ResourceSet dependencies = new ResourceSet();
 
     /**
      * A catalog per observable of all resolving sources seen, used by merging their native coverage with any
@@ -98,6 +101,18 @@ public class ResolutionGraph {
             case Observation observation -> Scale.create(observation.getGeometry());
             default -> null;
         };
+    }
+
+    public ResourceSet getDependencies() {
+        return rootGraph().dependencies;
+    }
+
+    private ResolutionGraph rootGraph() {
+        var ret = this;
+        while (ret.parent != null) {
+            ret = ret.parent;
+        }
+        return ret;
     }
 
     /**
@@ -171,16 +186,6 @@ public class ResolutionGraph {
         return ret;
     }
 
-    /**
-     * Add to this if operations must be compiled in the dataflow after resolution.
-     *
-     * @deprecated no need, the strategy and the models are in the graph
-     * @return
-     */
-    public List<Contextualizable> getContextualization() {
-        return contextualization;
-    }
-
     public boolean isEmpty() {
         return empty;
     }
@@ -214,6 +219,10 @@ public class ResolutionGraph {
             target = target.parent;
         }
         return target == null ? null : (Observation) target.target;
+    }
+
+    public void setDependencies(ResourceSet dependencies) {
+        rootGraph().dependencies = dependencies;
     }
 
     public static class ResolutionEdge extends DefaultEdge {

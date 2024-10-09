@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 public class DataflowCompiler {
 
     public Dataflow<Observation> compile(ResolutionGraph resolutionGraph, ContextScope scope) {
+
         return Dataflow.empty(Observation.class);
     }
 

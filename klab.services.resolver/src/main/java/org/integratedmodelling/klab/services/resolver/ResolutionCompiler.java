@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -162,27 +163,24 @@ public class ResolutionCompiler {
                 }
                 case APPLY -> {
 
-                    // TODO only needs to resolve but then the strategy gets in the graph, so
-                    //  no need to add anything to it.
-
-                    var runtime = scope.getService(RuntimeService.class);
                     /**
                      * We ask the runtime to resolve all the contextualizables as a single
                      * operation. This will enable using anything that's supported natively
                      * in the runtime as well as using the resources service to locate and install
                      * any needed components or resources.
+                     *
+                     * The strategy goes in the graph so there is no need for further storage of the
+                     * contextualizers.
                      */
+                    var runtime = scope.getService(RuntimeService.class);
                     ResourceSet requirements =
                             runtime.resolveContextualizables(operation.getContextualizables(), scope);
 
                     if (requirements.isEmpty()) {
-                        // TODO add the notifications from the resource set so that they can be
-                        // part of the resolution
                         return ResolutionGraph.empty();
                     }
 
-                    // DEPRECATED //
-                    ret.getContextualization().addAll(operation.getContextualizables());
+                    ret.setDependencies(Utils.Resources.merge(ret.getDependencies(), requirements));
                 }
             }
 
@@ -213,7 +211,23 @@ public class ResolutionCompiler {
         List<ResolutionGraph> modelGraphs = new ArrayList<>();
         for (var dependency : model.getDependencies()) {
 
+            /*
+            first check that all contextualizers are supported
+             */
+            var runtime = scope.getService(RuntimeService.class);
+            ResourceSet requirements =
+                    runtime.resolveContextualizables(model.getComputation(), scope);
+
+            if (requirements.isEmpty()) {
+                return ResolutionGraph.empty();
+            }
+            ret.setDependencies(Utils.Resources.merge(ret.getDependencies(), requirements));
+
+            /*
+            if contextualizers are feasible, continue resolving
+             */
             var dependencyResolution = resolve(dependency, scaleToCover, ret, scope);
+
             var cov = ret.checkCoverage(dependencyResolution);
             if (!cov.isRelevant()) {
                 if (dependency.isOptional()) {
