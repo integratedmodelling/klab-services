@@ -305,8 +305,8 @@ public class NDCursor {
     }
 
     public long defineDimensions(List<Long> extents) {
-        this.extents = Utils.Numbers.longArrayFromCollection(extents);
-        dimensions = extents == null ? 0 : extents.size();
+        this.dimensions = extents == null ? 0 : extents.size();
+        this.extents = extents == null? new long[0] : Utils.Numbers.longArrayFromCollection(extents);
         return initializeStrides();
     }
 
