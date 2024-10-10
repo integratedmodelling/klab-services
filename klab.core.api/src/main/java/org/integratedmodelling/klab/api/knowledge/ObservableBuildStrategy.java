@@ -103,22 +103,22 @@ public class ObservableBuildStrategy implements Observable.Builder {
         }
 
         public Operation(OperationType operationType, Unit unit) {
-            this.type = type;
+            this.type = operationType;
             this.unit = unit;
         }
 
         public Operation(OperationType operationType, Currency unit) {
-            this.type = type;
+            this.type = operationType;
             this.currency = unit;
         }
 
         public Operation(OperationType operationType, NumericRange unit) {
-            this.type = type;
+            this.type = operationType;
             this.range = unit;
         }
 
         public Operation(OperationType operationType, Pair<ValueOperator, Object> unit) {
-            this.type = type;
+            this.type = operationType;
             this.valueOperation = unit;
         }
 
