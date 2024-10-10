@@ -75,6 +75,7 @@ public class ResourceImpl implements Resource {
 //		this.exportFormats.putAll(other.exportFormats);
         this.categorizables.addAll(other.categorizables);
         this.codelists.addAll(other.codelists);
+        this.localProjectName = other.localProjectName;
     }
 
     public String getUrn() {
