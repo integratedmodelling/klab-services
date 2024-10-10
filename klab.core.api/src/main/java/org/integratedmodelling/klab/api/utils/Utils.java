@@ -288,7 +288,7 @@ public class Utils {
                 Map<String, ResourceSet.Resource> rrsl = new LinkedHashMap<>();
                 Map<String, ResourceSet.Resource> ront = new LinkedHashMap<>();
                 Map<String, ResourceSet.Resource> roob = new LinkedHashMap<>();
-                Set<String> rurn = new HashSet<>();
+                //Set<String> rurn = new HashSet<>();
 
                 for (ResourceSet set : resourceSets) {
 
@@ -1592,9 +1592,7 @@ public class Utils {
             double ret = 0;
             for (double v : data) {
                 if (!Double.isNaN(v)) {
-                    if (!Double.isNaN(v)) {
-                        ret += v;
-                    }
+                    ret += v;
                 }
             }
             return ret;
@@ -1605,10 +1603,8 @@ public class Utils {
             double ret = 0;
             for (double v : data) {
                 if (!Double.isNaN(v)) {
-                    if (!Double.isNaN(v)) {
-                        ret += v;
-                        n++;
-                    }
+                    ret += v;
+                    n++;
                 }
             }
             return ret / (double) n;
