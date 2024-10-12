@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
@@ -18,8 +19,8 @@ public class DataflowImpl implements Dataflow<Observation> {
     private static final long serialVersionUID = 873406284216826384L;
 
     private boolean empty;
+    private ResourceSet dependencies;
     private Coverage coverage;
-    private Parameters<String> resources = Parameters.create();
     private List<Actuator> computation = new ArrayList<>();
     private long id;
 
@@ -51,12 +52,12 @@ public class DataflowImpl implements Dataflow<Observation> {
     }
 
     @Override
-    public Parameters<String> getResources() {
-        return resources;
+    public ResourceSet getDependencies() {
+        return dependencies;
     }
 
-    public void setResources(Parameters<String> resources) {
-        this.resources = resources;
+    public void setDependencies(ResourceSet dependencies) {
+        this.dependencies = dependencies;
     }
 
     public void add(Dataflow<Observation> dataflow, ContextScope scope) {

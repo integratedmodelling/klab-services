@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
@@ -31,6 +32,11 @@ public class DataflowGraph implements Dataflow<Observation> {
     }
 
     @Override
+    public ResourceSet getDependencies() {
+        return null;
+    }
+
+    @Override
     public Geometry getCoverage() {
         return null;
     }
@@ -38,11 +44,6 @@ public class DataflowGraph implements Dataflow<Observation> {
     @Override
     public List<Actuator> getComputation() {
         return List.of();
-    }
-
-    @Override
-    public Parameters<String> getResources() {
-        return null;
     }
 
     public DataflowImpl adapt() {

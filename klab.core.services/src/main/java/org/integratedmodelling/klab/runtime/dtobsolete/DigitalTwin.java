@@ -241,11 +241,11 @@ public class DigitalTwin implements Closeable {
             data.scale = Scale.create(scope.getContextObservation().getGeometry());
             data.contextObservation = contextObservation;
 
-            var customScale = dataflow.getResources().get((actuator.getId() + "_dataflow"), Scale.class);
-            if (customScale != null) {
-                // FIXME why the heck is this an Object and I have to cast?
-                data.scale = data.scale.merge((Scale) customScale, LogicalConnector.INTERSECTION);
-            }
+//            var customScale = dataflow.getResources().get((actuator.getId() + "_dataflow"), Scale.class);
+//            if (customScale != null) {
+//                // FIXME why the heck is this an Object and I have to cast?
+//                data.scale = data.scale.merge((Scale) customScale, LogicalConnector.INTERSECTION);
+//            }
 
             for (Actuator child : actuator.getChildren()) {
                 if (child.isInput() && !child.getName().equals(child.getAlias())) {

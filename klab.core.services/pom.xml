@@ -124,13 +124,6 @@
             <version>${avro.version}</version>
         </dependency>
 
-        <!-- this is used for testing and debugging only -->
-        <dependency>
-            <groupId>com.github.vlsi.mxgraph</groupId>
-            <artifactId>jgraphx</artifactId>
-            <version>4.2.2</version>
-        </dependency>
-
         <!-- plugin management for extension components -->
         <dependency>
             <groupId>org.pf4j</groupId>

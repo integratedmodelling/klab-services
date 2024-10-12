@@ -23,11 +23,35 @@ public class DataflowCompiler {
 
     public Dataflow<Observation> compile(ResolutionGraph resolutionGraph, ContextScope scope) {
 
-        return Dataflow.empty(Observation.class);
+        if (resolutionGraph.isEmpty()) {
+            return Dataflow.empty(Observation.class);
+        }
+
+
+
+        var ret = new DataflowImpl();
+        for (var node : resolutionGraph.rootNodes()) {
+            ret.getComputation().add(compileActuator(node, resolutionGraph));
+
+        /*
+        Compute total coverage (should be done during compilation) as intersection over the cache
+        Set it into dataflow (if null, set, else intersect)
+         */
+
+        }
+
+        return ret;
+    }
+
+    private Actuator compileActuator(Resolvable resolvable, ResolutionGraph resolutionGraph) {
+
+
+        return null;
+
     }
 
 
-//    public Dataflow<Observation> compile(Resolvable knowledge, Resolution resolution, ContextScope scope) {
+    //    public Dataflow<Observation> compile(Resolvable knowledge, Resolution resolution, ContextScope scope) {
 //
 //        DataflowImpl ret = new DataflowImpl();
 //        Actuator rootActuator = null;

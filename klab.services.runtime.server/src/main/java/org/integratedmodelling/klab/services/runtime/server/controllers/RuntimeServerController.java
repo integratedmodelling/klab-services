@@ -4,10 +4,12 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.objects.AssetRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
@@ -79,6 +81,16 @@ public class RuntimeServerController {
             if (request.getName() != null) queryParameters.add(request.getName());
             return runtimeService.klabService().retrieveAssets(contextScope,
                     request.getKnowledgeClass().assetClass, queryParameters.toArray());
+        }
+        throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+    }
+
+    @PostMapping(ServicesAPI.RUNTIME.RESOLVE_CONTEXTUALIZERS)
+    public @ResponseBody ResourceSet resolveContextualizers(@RequestBody List<Contextualizable> contextualizables, Principal principal) {
+        if (principal instanceof EngineAuthorization authorization) {
+            var contextScope =
+                    authorization.getScope(ContextScope.class);
+            return runtimeService.klabService().resolveContextualizables(contextualizables, contextScope);
         }
         throw new KlabInternalErrorException("Unexpected implementation of request authorization");
     }

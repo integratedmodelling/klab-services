@@ -218,6 +218,10 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     public ResourceSet resolveContextualizables(List<Contextualizable> contextualizables,
                                                 ContextScope scope) {
 
+        if (contextualizables.isEmpty()) {
+            return new ResourceSet();
+        }
+
         /**
          * Only send over those that will need resolution at the runtime side. No need to send a lookup
          * table or classification asset.

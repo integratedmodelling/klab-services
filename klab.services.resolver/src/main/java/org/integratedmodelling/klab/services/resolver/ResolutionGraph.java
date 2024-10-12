@@ -225,6 +225,16 @@ public class ResolutionGraph {
         rootGraph().dependencies = dependencies;
     }
 
+    public List<Resolvable> rootNodes() {
+        List<Resolvable> ret = new ArrayList<>();
+        for (Resolvable l : graph().vertexSet()) {
+            if (graph.incomingEdgesOf(l).isEmpty()) {
+                ret.add(l);
+            }
+        }
+        return ret;
+    }
+
     public static class ResolutionEdge extends DefaultEdge {
 
         public Coverage coverage;

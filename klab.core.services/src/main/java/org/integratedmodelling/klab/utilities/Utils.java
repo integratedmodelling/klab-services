@@ -27,166 +27,17 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UI;
-import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultDirectedGraph;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
-import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
-import com.mxgraph.swing.mxGraphComponent;
-import com.mxgraph.view.mxGraph;
-
-import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
 public class Utils extends org.integratedmodelling.common.utils.Utils {
-
-        public static class Graphs {
-
-        public enum Layout {
-            HIERARCHICAL, RADIALTREE, SIMPLE, SPRING
-        }
-
-        public static void show(Graph<?, ?> graph, String title) {
-            show(graph, title, Layout.SPRING);
-        }
-
-        public static void show(Graph<?, ?> graph, String title, Layout layout) {
-
-            SwingUtilities.invokeLater(new Runnable() {
-
-                @Override
-                public void run() {
-                    @SuppressWarnings("unchecked")
-                    GraphPanel panel = new GraphPanel(title, (Graph<Object, Object>) graph, layout);
-                    panel.showGraph();
-                }
-
-            });
-        }
-
-        @SuppressWarnings("unchecked")
-        private static <E> Graph<?, ?> adaptContribGraph(Graph<?, E> graph,
-                                                         Class<? extends E> edgeClass) {
-
-            DefaultDirectedGraph<Object, E> ret = new DefaultDirectedGraph<Object, E>(edgeClass);
-            for (Object o : graph.vertexSet()) {
-                ret.addVertex(o);
-            }
-            for (Object e : graph.edgeSet()) {
-                ret.addEdge(graph.getEdgeSource((E) e), graph.getEdgeTarget((E) e), (E) e);
-            }
-            return ret;
-        }
-
-//        /**
-//         * Show the dependency graph in the loader.
-//         */
-//        public static void showDependencies() {
-//            show(((KimLoader) Resources.INSTANCE.getLoader()).getDependencyGraph(), "Dependencies", DefaultEdge.class);
-//        }
-
-        /**
-         * Return whether precursor has a directed edge to dependent in graph.
-         *
-         * @param <V>
-         * @param <E>
-         * @param dependent
-         * @param precursor
-         * @param graph
-         * @return true if dependency exists
-         */
-        public static <V, E> boolean dependsOn(V dependent, V precursor, Graph<V, E> graph) {
-
-            for (E o : graph.incomingEdgesOf(dependent)) {
-                if (graph.getEdgeSource(o).equals(precursor)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        /**
-         * Shallow copy of graph into another.
-         *
-         * @param <V>
-         * @param <E>
-         * @param graph
-         * @param newGraph
-         * @return same graph passed as receiver
-         */
-        public static <V, E> Graph<V, E> copy(Graph<V, E> graph, Graph<V, E> newGraph) {
-            for (V vertex : graph.vertexSet()) {
-                newGraph.addVertex(vertex);
-            }
-            for (E edge : graph.edgeSet()) {
-                newGraph.addEdge(graph.getEdgeSource(edge), graph.getEdgeTarget(edge), edge);
-            }
-            return newGraph;
-        }
-
-    }
-
-    static class GraphPanel extends JFrame {
-
-        /**
-         *
-         */
-        private static final long serialVersionUID = -2707712944901661771L;
-
-        public GraphPanel(String title, Graph<Object, Object> sourceGraph, Graphs.Layout layout) {
-
-            super(title);
-
-            mxGraph graph = new mxGraph();
-            Object parent = graph.getDefaultParent();
-            graph.getModel().beginUpdate();
-
-            try {
-
-                Map<Object, Object> vertices = new HashMap<>();
-                for (Object v : sourceGraph.vertexSet()) {
-                    vertices.put(v, graph.insertVertex(parent, null, v.toString(), 20, 20, v.toString().length() * 6, 30));
-                }
-                for (Object v : sourceGraph.edgeSet()) {
-                    graph.insertEdge(parent, null, v.toString(), vertices.get(sourceGraph.getEdgeSource(v)),
-                            vertices.get(sourceGraph.getEdgeTarget(v)));
-                }
-
-            } finally {
-                graph.getModel().endUpdate();
-            }
-
-            switch (layout) {
-                case HIERARCHICAL:
-                    break;
-                case RADIALTREE:
-                    break;
-                case SIMPLE:
-                    break;
-                case SPRING:
-                    new mxHierarchicalLayout(graph).execute(graph.getDefaultParent());
-                    break;
-                default:
-                    break;
-
-            }
-
-            mxGraphComponent graphComponent = new mxGraphComponent(graph);
-            getContentPane().add(graphComponent);
-        }
-
-        public void showGraph() {
-            setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            setSize(400, 320);
-            setVisible(true);
-        }
-    }
 
     public static class Annotations {
 
@@ -571,15 +422,13 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * {@link org.integratedmodelling.klab.api.knowledge.organization.Workspace}, they can be converted
          * into {@link org.integratedmodelling.klab.api.services.resources.ResourceSet} by a resources server
          * that knows mutual dependencies.
-         *
+         * <p>
          * FIXME these are often wrong. Must return:
          *    for pull: all changes w.r.t. head before pull (I think it does id)
          *    for commit: only those changes that come from the fetch before commit
          *    reset: what was reset in head + whatever comes from the pull after
-         *
-         *    All the changed paths should be reported in an INFO notification
-         *
-         *
+         * <p>
+         * All the changed paths should be reported in an INFO notification
          */
         public static class Modifications {
 
@@ -970,8 +819,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
             try (org.eclipse.jgit.api.Git result =
                          org.eclipse.jgit.api.Git.cloneRepository().setURI(url)
-                                                 .setCredentialsProvider(credentialsProvider)
-                                                 .setBranch(branch).setDirectory(pdir).call()) {
+                                 .setCredentialsProvider(credentialsProvider)
+                                 .setBranch(branch).setDirectory(pdir).call()) {
 
                 Logging.INSTANCE.info("cloned Git repository: " + result.getRepository());
 
