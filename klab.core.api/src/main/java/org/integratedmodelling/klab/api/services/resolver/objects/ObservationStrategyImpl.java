@@ -61,6 +61,14 @@ public class ObservationStrategyImpl implements ObservationStrategy {
         public void setContextualStrategies(List<List<Operation>> contextualStrategies) {
             this.contextualStrategies = contextualStrategies;
         }
+
+        @Override
+        public String toString() {
+            return  type +
+                    (observable != null ? (" " + observable) : "") +
+                    (contextualizables.isEmpty() ? "" : (" " + contextualizables)) +
+                    (contextualStrategies.isEmpty() ? "" : (" *->" + contextualStrategies.size()));
+        }
     }
 
     @Override
@@ -118,15 +126,9 @@ public class ObservationStrategyImpl implements ObservationStrategy {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ObservationStrategyImpl that = (ObservationStrategyImpl) o;
-        return Objects.equals(urn, that.urn);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(urn);
+    public String toString() {
+        return "(S) " +
+                "urn='" + urn + '\'' +
+                ", operations=" + operations;
     }
 }

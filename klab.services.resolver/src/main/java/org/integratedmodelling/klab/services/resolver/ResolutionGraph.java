@@ -148,7 +148,7 @@ public class ResolutionGraph {
          */
         this.graph.addVertex(this.target);
         this.graph.addVertex(childGraph.target);
-        this.graph.addEdge(childGraph.target, this.target, new ResolutionEdge(childGraph.targetCoverage));
+        this.graph.addEdge(this.target, childGraph.target, new ResolutionEdge(childGraph.targetCoverage));
 
         /*
         ...by the amount determined in its coverage, "painting" the incoming extents onto ours.

@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.resolver;
 
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -27,7 +28,7 @@ public class DataflowCompiler {
             return Dataflow.empty(Observation.class);
         }
 
-
+        System.out.println(Utils.Graphs.dump(resolutionGraph.graph()));
 
         var ret = new DataflowImpl();
         for (var node : resolutionGraph.rootNodes()) {
@@ -158,13 +159,13 @@ public class DataflowCompiler {
 //        // TODO
 //        return null;
 //    }
-
-    private ServiceCall getServiceCall(Contextualizable computation) {
-        if (computation.getServiceCall() != null) {
-            return computation.getServiceCall();
-        }
-        return null;
-    }
+//
+//    private ServiceCall getServiceCall(Contextualizable computation) {
+//        if (computation.getServiceCall() != null) {
+//            return computation.getServiceCall();
+//        }
+//        return null;
+//    }
 
     /*
      * The actuator ID is also the observation ID when the actuator runs. It reflects the context

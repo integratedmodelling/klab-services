@@ -232,15 +232,6 @@ public class ObservationImpl implements Observation {
 
     @Override
     public String toString() {
-        return "ObservationImpl{" +
-                "observable=" + observable +
-                ", geometry=" + geometry +
-                ", metadata=" + metadata +
-                ", id=" + id +
-                ", urn='" + urn + '\'' +
-                ", resolved=" + resolved +
-                ", value=" + value +
-                ", name='" + name + '\'' +
-                '}';
+        return "(OBS) " + observable  + " [#" + geometry.size() + "]";
     }
 }

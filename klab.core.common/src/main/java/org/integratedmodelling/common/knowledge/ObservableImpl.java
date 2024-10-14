@@ -490,7 +490,7 @@ public class ObservableImpl implements Observable {
 
     @Override
     public String toString() {
-        return org.integratedmodelling.common.utils.Utils.Strings.capitalize(getDescriptionType().getVerbalForm().toLowerCase()) + " " + urn;
+        return "(O) " + urn;
     }
 
 }

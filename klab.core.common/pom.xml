@@ -18,6 +18,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
+
+        <!-- this is used for testing and debugging only -->
+        <dependency>
+            <groupId>com.github.vlsi.mxgraph</groupId>
+            <artifactId>jgraphx</artifactId>
+            <version>4.2.2</version>
+        </dependency>
+
         <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.core.api</artifactId>
