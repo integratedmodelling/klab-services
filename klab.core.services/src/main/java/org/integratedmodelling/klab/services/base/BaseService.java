@@ -74,7 +74,6 @@ public abstract class BaseService implements KlabService {
         settingsForSlaveServices.put(Engine.Setting.LAUNCH_PRODUCT, false);
 
         this.scope = scope;
-        this.localName = localName;
         this.type = serviceType;
         this.startupOptions = options;
         try {
