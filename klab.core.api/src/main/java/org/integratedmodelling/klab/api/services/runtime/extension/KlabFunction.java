@@ -38,6 +38,8 @@ public @interface KlabFunction {
 
         Artifact.Type[] type();
 
+        String unit() default "";
+
         String description();
 
         String dataflowLabel() default "";
@@ -112,5 +114,7 @@ public @interface KlabFunction {
     Argument[] parameters() default {};
 
     Artifact.Type[] type();
+
+    String unit() default "";
 
 }
