@@ -2062,7 +2062,7 @@ public class WorkspaceManager {
             if (this.configuration.getWorkspaces().get(project.workspace) != null) {
                 this.configuration.getWorkspaces().get(project.workspace).remove(projectName);
             }
-            workspace.getProjects().remove(project);
+            workspace.getProjects().remove(project.externalProject);
             saveConfiguration();
         }
 
