@@ -38,7 +38,6 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     @Override
     protected void copyInfo(ServiceUserScope other) {
         super.copyInfo(other);
-        this.name = name;
         this.data.putAll(other.data);
     }
 
