@@ -14,7 +14,7 @@ import org.integratedmodelling.klab.api.lang.Annotation;
  * naming contextualizers in its computation.
  * 
  * @author ferdinando.villa
- *
+ * @deprecated
  */
 public interface KdlActuator extends KdlStatement {
 

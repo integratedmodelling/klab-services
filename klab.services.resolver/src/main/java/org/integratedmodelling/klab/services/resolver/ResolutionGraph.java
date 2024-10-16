@@ -172,6 +172,9 @@ public class ResolutionGraph {
      * resolve the target.
      */
     public void accept(Resolvable resolvable, Coverage finalCoverage) {
+
+        // resolvable is in the graph already
+
         System.out.println("ACCEPTING EXISTING RESOLVABLE INTO SAME GRAPH FOR THIS RESOLVABLE - JUST CREATE" +
                 " THE LINK FROM THE TARGET TO THE RESOLVABLE AND SET THE COVERAGE");
     }

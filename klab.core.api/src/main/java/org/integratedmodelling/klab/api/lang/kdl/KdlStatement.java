@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import org.integratedmodelling.klab.api.lang.Statement;
 
+@Deprecated
 public interface KdlStatement extends Statement {
 
 	/**

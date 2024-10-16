@@ -21,6 +21,8 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.File;
 import java.net.URL;
@@ -446,6 +448,16 @@ public interface ResourcesService extends KlabService {
          * @return the resource URN, potentially modified w.r.t. the one in the request.
          */
         ResourceSet createResource(Resource resource, UserScope scope);
+
+        /**
+         * Create a resource from a dataflow, storing it in serialized form. The dataflow must be fully resolved and all
+         * dependencies must be stated.
+         *
+         * @param dataflow
+         * @param scope
+         * @return
+         */
+        ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope);
 
         /**
          * Add a resource with file content to those managed by this service. Resource is invisible from the

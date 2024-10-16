@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -29,6 +30,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
@@ -667,18 +669,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return null;
     }
 
-    //    @Override
-    //    public boolean publishProject(String projectUrl, ResourcePrivileges permissions) {
-    //        // TODO Auto-generated method stub
-    //        return false;
-    //    }
-    //
-    //    @Override
-    //    public boolean unpublishProject(String projectUrl) {
-    //        // TODO Auto-generated method stub
-    //        return false;
-    //    }
-
     @Override
     public List<ResourceSet> manageRepository(String projectName, RepositoryState.Operation operation,
                                               String... arguments) {
@@ -688,6 +678,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public ResourceSet createResource(Resource resource, UserScope scope) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope) {
         return null;
     }
 

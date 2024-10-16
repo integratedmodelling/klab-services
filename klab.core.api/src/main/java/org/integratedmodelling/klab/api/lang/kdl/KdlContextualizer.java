@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.lang.kdl;
 
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 
+@Deprecated
 public interface KdlContextualizer {
 
 	/**

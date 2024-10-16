@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -28,6 +29,7 @@ import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequ
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
@@ -408,6 +410,11 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public ResourceSet createResource(Resource resource, UserScope scope) {
+        return null;
+    }
+
+    @Override
+    public ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope) {
         return null;
     }
 

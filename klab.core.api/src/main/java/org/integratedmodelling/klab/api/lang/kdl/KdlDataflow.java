@@ -7,7 +7,7 @@ import java.util.List;
  * A dataflow contains zero or more actuator specifications and some specified metadata.
  * 
  * @author Ferd
- *
+ * @deprecated
  */
 public interface KdlDataflow extends KdlStatement {
 
