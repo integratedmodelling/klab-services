@@ -248,9 +248,9 @@ public class DigitalTwin implements Closeable {
 //            }
 
             for (Actuator child : actuator.getChildren()) {
-                if (child.isInput() && !child.getName().equals(child.getAlias())) {
-                    data.localNames.put(child.getName(), child.getAlias());
-                }
+//                if (child.isInput() && !child.getName().equals(child.getAlias())) {
+//                    data.localNames.put(child.getName(), child.getAlias());
+//                }
             }
 
             Executor executor = null;
@@ -422,9 +422,9 @@ public class DigitalTwin implements Closeable {
             }
         }
 
-        while (!actuator.getDeferrals().isEmpty()) {
-
-        }
+//        while (!actuator.getDeferrals().isEmpty()) {
+//
+//        }
 
         return true;
     }

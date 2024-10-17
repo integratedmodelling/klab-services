@@ -866,11 +866,11 @@ public class ResolverService extends BaseService implements Resolver {
          * ? coverage
          */
 
-        ret.append(ofs + ")" + (actuator.getAlias() == null ? "" : (" named " + actuator.getAlias()))
-                + (actuator.getObservable().getObserver() == null
-                ? ""
-                : (" as " + actuator.getObservable().getObserver().getName()))
-                + "\n");
+//        ret.append(ofs + ")" + (actuator.getAlias() == null ? "" : (" named " + actuator.getAlias()))
+//                + (actuator.getObservable().getObserver() == null
+//                ? ""
+//                : (" as " + actuator.getObservable().getObserver().getName()))
+//                + "\n");
 
         return ret;
     }

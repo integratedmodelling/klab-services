@@ -29,14 +29,6 @@
 
     <dependencies>
 
-        <!-- test dependencies -->
-        <dependency>
-            <groupId>org.integratedmodelling</groupId>
-            <artifactId>klab.services.resources</artifactId>
-            <version>${klab.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <!-- rdf4j-rio-turtle used by Caliper at the moment -->
         <dependency>
             <groupId>org.eclipse.rdf4j</groupId>

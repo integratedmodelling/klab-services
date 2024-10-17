@@ -32,7 +32,7 @@ public class DataflowGraph implements Dataflow<Observation> {
     }
 
     @Override
-    public ResourceSet getDependencies() {
+    public ResourceSet getRequirements() {
         return null;
     }
 

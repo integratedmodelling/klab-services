@@ -1,39 +1,37 @@
 package org.integratedmodelling.common.runtime;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
+
 public class ActuatorImpl implements Actuator {
 
+    @Serial
     private static final long serialVersionUID = 2500101522003062757L;
     private long id;
-    private long timestamp;
+//    private long timestamp;
     private String name;
-    private String alias;
+//    private String alias;
     private Artifact.Type type;
     private Observable observable;
+    private String strategyUrn;
     private List<Actuator> children = new ArrayList<>();
     private List<ServiceCall> computation = new ArrayList<>();
-    private boolean input;
-    private boolean output;
+//    private boolean input;
+//    private boolean output;
     private boolean reference;
-    private boolean deferred;
-    private String observer;
+//    private boolean deferred;
+//    private String observer;
     private Geometry coverage = Geometry.EMPTY;
     private Parameters<String> data = Parameters.create();
-    private Queue<ObservationStrategy> deferrals = new ConcurrentLinkedQueue<>();
+//    private Queue<ObservationStrategy> deferrals = new ConcurrentLinkedQueue<>();
 
     @Override
     public long getId() {
@@ -45,10 +43,10 @@ public class ActuatorImpl implements Actuator {
         return this.name;
     }
 
-    @Override
-    public String getAlias() {
-        return this.alias;
-    }
+//    @Override
+//    public String getAlias() {
+//        return this.alias;
+//    }
 
     @Override
     public Artifact.Type getType() {
@@ -70,14 +68,24 @@ public class ActuatorImpl implements Actuator {
         return this.computation;
     }
 
-    @Override
-    public boolean isInput() {
-        return this.input;
-    }
+//    @Override
+//    public boolean isInput() {
+//        return this.input;
+//    }
+//
+//    @Override
+//    public boolean isOutput() {
+//        return this.output;
+//    }
+
 
     @Override
-    public boolean isOutput() {
-        return this.output;
+    public String getStrategyUrn() {
+        return strategyUrn;
+    }
+
+    public void setStrategyUrn(String strategyUrn) {
+        this.strategyUrn = strategyUrn;
     }
 
     @Override
@@ -99,17 +107,17 @@ public class ActuatorImpl implements Actuator {
         this.id = id;
     }
 
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
+//    public void setTimestamp(long timestamp) {
+//        this.timestamp = timestamp;
+//    }
 
     public void setName(String name) {
         this.name = name;
     }
-
-    public void setAlias(String alias) {
-        this.alias = alias;
-    }
+//
+//    public void setAlias(String alias) {
+//        this.alias = alias;
+//    }
 
     public void setType(Artifact.Type type) {
         this.type = type;
@@ -127,13 +135,13 @@ public class ActuatorImpl implements Actuator {
         this.computation = computation;
     }
 
-    public void setInput(boolean input) {
-        this.input = input;
-    }
-
-    public void setOutput(boolean output) {
-        this.output = output;
-    }
+//    public void setInput(boolean input) {
+//        this.input = input;
+//    }
+//
+//    public void setOutput(boolean output) {
+//        this.output = output;
+//    }
 
     public void setReference(boolean reference) {
         this.reference = reference;
@@ -147,28 +155,28 @@ public class ActuatorImpl implements Actuator {
         this.data = data;
     }
 
-    @Override
-    public String getObserver() {
-        return observer;
-    }
+//    @Override
+//    public String getObserver() {
+//        return observer;
+//    }
+//
+//    @Override
+//    public Queue<ObservationStrategy> getDeferrals() {
+//        return this.deferrals;
+//    }
 
-    @Override
-    public Queue<ObservationStrategy> getDeferrals() {
-        return this.deferrals;
-    }
+//    public void setObserver(String observer) {
+//        this.observer = observer;
+//    }
 
-    public void setObserver(String observer) {
-        this.observer = observer;
-    }
-
-    @Override
-    public boolean isDeferred() {
-        return deferred;
-    }
-
-    public void setDeferred(boolean deferred) {
-        this.deferred = deferred;
-    }
+//    @Override
+//    public boolean isDeferred() {
+//        return deferred;
+//    }
+//
+//    public void setDeferred(boolean deferred) {
+//        this.deferred = deferred;
+//    }
 
     @Override
     public String toString() {

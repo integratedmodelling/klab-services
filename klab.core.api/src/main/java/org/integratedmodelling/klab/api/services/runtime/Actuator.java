@@ -64,19 +64,20 @@ import java.util.Queue;
  */
 public interface Actuator extends Serializable, RuntimeAsset {
 
-
     default RuntimeAsset.Type classify() {
         return Type.ACTUATOR;
     }
 
     /**
      * Name of the service call that encodes deferred resolution when that must be included in the
-     * computation.
+     * computation. This will appear as a service call whose only parameter will be the contextualized
+     * observation strategy.
      */
     static final String DEFERRED_STRATEGY_CALL = "klab.internal.deferred";
 
     /**
-     * The ID of the actuator must be the same as that of the observation it handles.
+     * The ID of the actuator must be the same as that of the observation it handles. It is specific to the
+     * DT and shouldn't be propagated to the serialized form.
      *
      * @return the observation's ID.
      */
@@ -94,12 +95,22 @@ public interface Actuator extends Serializable, RuntimeAsset {
     String getName();
 
     /**
-     * The local name and "user-level" name for the actuator, correspondent to the simple name associated with
-     * the semantics or to its renaming through 'named' when used as a dependency.
+     * Each actuator can bring with itself arbitrary data that can be referenced by ID in the computations
+     * downstream. This includes observations, geometries, internal or user-modifiable parameters with values or
+     * defaults for the service calls harvested from the models, as well as contextualized classifications and lookup tables defined
+     * in models and needed for computation.
      *
-     * @return the alias or null
+     * @return
      */
-    String getAlias();
+    Parameters<String> getData();
+
+//    /**
+//     * The local name and "user-level" name for the actuator, correspondent to the simple name associated with
+//     * the semantics or to its renaming through 'named' when used as a dependency.
+//     *
+//     * @return the alias or null
+//     */
+//    String getAlias();
 
     /**
      * Each actuator reports the artifact type of the observation it produces. Pure resolvers (e.g. the
@@ -110,18 +121,6 @@ public interface Actuator extends Serializable, RuntimeAsset {
      * @return
      */
     Artifact.Type getType();
-
-    /**
-     * If the actuator is deferred, the observable is not resolved but must be resolved within the parent
-     * actuator (the deferring actuator) once the latter has produced observations. If the deferring actuator
-     * is for a concrete direct observable, the deferred observable will be resolved within each instance; if
-     * it's for an abstract observable, the deferred observable will be substituted with the results of
-     * resolving each concrete observable resulting from its resolution, potentially applying its computations
-     * to merge the results.
-     *
-     * @return
-     */
-    boolean isDeferred();
 
     /**
      * Although actuators belong to the runtime and use no reasoning, they have an observable, which in case
@@ -158,21 +157,28 @@ public interface Actuator extends Serializable, RuntimeAsset {
      */
     List<ServiceCall> getComputation();
 
-    /**
-     * If true, this actuator represents a named input that will need to be connected to an artifact from the
-     * computation context.
-     *
-     * @return
-     */
-    boolean isInput();
+//    /**
+//     * If true, this actuator represents a named input that will need to be connected to an artifact from the
+//     * computation context.
+//     *
+//     * @return
+//     */
+//    boolean isInput();
+//
+//    /**
+//     * If true, this actuator represents an exported output that will need to be connected to an artifact from
+//     * the computation context.
+//     *
+//     * @return
+//     */
+//    boolean isOutput();
 
     /**
-     * If true, this actuator represents an exported output that will need to be connected to an artifact from
-     * the computation context.
+     * The URN of the observation strategy that produced this actuator, if any. Only used for provenance compilation.
      *
      * @return
      */
-    boolean isOutput();
+    String getStrategyUrn();
 
     /**
      * If true, this actuator is a reference to another which has been defined before it in order of
@@ -195,34 +201,26 @@ public interface Actuator extends Serializable, RuntimeAsset {
      */
     Geometry getCoverage();
 
-    /**
-     * Each actuator can bring with itself arbitrary data that can be referenced by ID in the computations
-     * downstream. This includes tables such as classifications and lookup tables defined in models and needed
-     * for computation.
-     *
-     * @return
-     */
-    Parameters<String> getData();
 
-    /**
-     * The observer on behalf of whom the observations are made. If null, the "objective" point of view of the
-     * current session user is meant.
-     *
-     * @return
-     */
-    String getObserver();
-
-    /**
-     * An actuator in a dataflow that is still being resolved may have deferrals, which are specific
-     * observables that must be resolved in the context of the actuator's output observation, and are passed
-     * to the resolver after making the observation and setting it as the context of resolution. The resulting
-     * dataflow is appended to the actuator after resolution.
-     * <p>
-     * A dataflow that has deferrals anywhere in the chain cannot be serialized as it is not a valid
-     * algorithm.
-     * </p>
-     *
-     * @return
-     */
-    Queue<ObservationStrategy> getDeferrals();
+//    /**
+//     * The observer on behalf of whom the observations are made. If null, the "objective" point of view of the
+//     * current session user is meant.
+//     *
+//     * @return
+//     */
+//    String getObserver();
+//
+//    /**
+//     * An actuator in a dataflow that is still being resolved may have deferrals, which are specific
+//     * observables that must be resolved in the context of the actuator's output observation, and are passed
+//     * to the resolver after making the observation and setting it as the context of resolution. The resulting
+//     * dataflow is appended to the actuator after resolution.
+//     * <p>
+//     * A dataflow that has deferrals anywhere in the chain cannot be serialized as it is not a valid
+//     * algorithm.
+//     * </p>
+//     *
+//     * @return
+//     */
+//    Queue<ObservationStrategy> getDeferrals();
 }

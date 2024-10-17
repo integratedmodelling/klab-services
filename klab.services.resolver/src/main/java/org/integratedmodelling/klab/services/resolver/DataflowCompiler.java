@@ -8,8 +8,10 @@ import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -17,7 +19,9 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DataflowCompiler {
@@ -30,10 +34,10 @@ public class DataflowCompiler {
 
         System.out.println(Utils.Graphs.dump(resolutionGraph.graph()));
 
+        Map<Observable, String> catalog = new HashMap<>();
         var ret = new DataflowImpl();
         for (var node : resolutionGraph.rootNodes()) {
-            ret.getComputation().add(compileActuator(node, resolutionGraph));
-
+            ret.getComputation().addAll(compileActuator(node, resolutionGraph, null, null, null, catalog));
         /*
         Compute total coverage (should be done during compilation) as intersection over the cache
         Set it into dataflow (if null, set, else intersect)
@@ -44,10 +48,31 @@ public class DataflowCompiler {
         return ret;
     }
 
-    private Actuator compileActuator(Resolvable resolvable, ResolutionGraph resolutionGraph) {
+    private List<Actuator> compileActuator(Resolvable resolvable, ResolutionGraph resolutionGraph, Coverage geometry, Observation observation, String strategyUrn, Map<Observable, String> catalog) {
+        List<Actuator> ret = new ArrayList<>();
+        if (resolvable instanceof ObservationStrategy observationStrategy) {
 
+            if (geometry.isEmpty()) {
+                // TODO defer
+            }
 
-        return null;
+            for (var edge : resolutionGraph.graph().incomingEdgesOf(resolvable)) {
+                ret.addAll(compileActuator(resolutionGraph.graph().getEdgeSource(edge), resolutionGraph, geometry, observation, observationStrategy.getUrn(), catalog));
+            }
+        } else if (resolvable instanceof Observation obs) {
+            for (var edge : resolutionGraph.graph().incomingEdgesOf(resolvable)) {
+                ret.addAll(compileActuator(resolutionGraph.graph().getEdgeSource(edge), resolutionGraph, Coverage.create(Scale.create(obs.getGeometry()), 1.0), obs, strategyUrn, catalog));
+            }
+        } else if (resolvable instanceof Model model) {
+            /*
+            at this point the resolvable can only be a model
+             */
+            ActuatorImpl actuator = new ActuatorImpl();
+
+            actuator.setStrategyUrn(strategyUrn);
+        }
+
+        return ret;
 
     }
 
@@ -182,7 +207,7 @@ public class DataflowCompiler {
         return (scope.getContextObservation() == null ? "" : (scope.getContextObservation().getId() + "."))
                 + observable.getDescriptionType().name().toLowerCase() + "." + observable.getReferenceName() + "."
                 + (observable.getObserver() == null ? scope.getIdentity().getId() :
-                   ("_as_" + observable.getObserver().codeName()));
+                ("_as_" + observable.getObserver().codeName()));
     }
 
     /**

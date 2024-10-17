@@ -22,7 +22,6 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -122,7 +121,7 @@ public interface Dataflow<T extends Artifact> extends Serializable, RuntimeAsset
      *
      * @return
      */
-    ResourceSet getDependencies();
+    ResourceSet getRequirements();
 
     /**
      * The geometry is the total coverage of this dataflow, resulting from compounding the coverage of all the
@@ -143,17 +142,6 @@ public interface Dataflow<T extends Artifact> extends Serializable, RuntimeAsset
      * @return
      */
     List<Actuator> getComputation();
-
-    //    /**
-    //     * Any named resources used in the dataflow as contextualizer call parameters. These
-    //     * are serialized statements for classifications, lookup table definitions etc. The
-    //     * runtime must be prepared to match variable names in service calls to the contents
-    //     * of this map before executing the call.
-    //     *
-    //     * @return
-    //     */
-    //    Parameters<String> getResources();
-
 
     /**
      * Return a new empty dataflow.
@@ -179,7 +167,7 @@ public interface Dataflow<T extends Artifact> extends Serializable, RuntimeAsset
             }
 
             @Override
-            public ResourceSet getDependencies() {
+            public ResourceSet getRequirements() {
                 return ResourceSet.empty();
             }
 
