@@ -330,14 +330,14 @@ public enum LanguageAdapter {
         return ret;
     }
 
-    private Contextualizable adaptContextualizable(ParsedObject contextualizable, KimNamespace namespace) {
+    private Contextualizable adaptContextualizable(ModelSyntax.Contextualization contextualizable, KimNamespace namespace) {
 
         var ret = new ContextualizableImpl();
 
-        if (contextualizable instanceof FunctionCallSyntax functionCallSyntax) {
+        if (contextualizable.getContextualizable() instanceof FunctionCallSyntax functionCallSyntax) {
             ret.setServiceCall(adaptServiceCall(functionCallSyntax, namespace.getUrn(),
                     namespace.getProjectName(), KlabAsset.KnowledgeClass.MODEL));
-        } else if (contextualizable instanceof ExpressionSyntax expressionSyntax) {
+        } else if (contextualizable.getContextualizable() instanceof ExpressionSyntax expressionSyntax) {
             ret.setExpression(adaptExpression(expressionSyntax, namespace));
         } else {
             throw new KlabUnimplementedException("contextualizable " + contextualizable);
