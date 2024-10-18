@@ -233,39 +233,39 @@ public class DigitalTwin implements Closeable {
     public boolean registerActuator(Actuator actuator, Dataflow dataflow, ContextScope scope,
                                     DirectObservation contextObservation) {
 
-        var data = observationData.get(actuator.getId());
-        if (data == null && /* shouldn't happen */ !actuator.isReference()) {
-            data = new ObservationData();
-            data.actuator = actuator;
-//            data.observation = createObservation(actuator, contextObservation, scope);
-            data.scale = Scale.create(scope.getContextObservation().getGeometry());
-            data.contextObservation = contextObservation;
-
-//            var customScale = dataflow.getResources().get((actuator.getId() + "_dataflow"), Scale.class);
-//            if (customScale != null) {
-//                // FIXME why the heck is this an Object and I have to cast?
-//                data.scale = data.scale.merge((Scale) customScale, LogicalConnector.INTERSECTION);
+//        var data = observationData.get(actuator.getId());
+//        if (data == null && /* shouldn't happen */ !actuator.isReference()) {
+//            data = new ObservationData();
+//            data.actuator = actuator;
+////            data.observation = createObservation(actuator, contextObservation, scope);
+//            data.scale = Scale.create(scope.getContextObservation().getGeometry());
+//            data.contextObservation = contextObservation;
+//
+////            var customScale = dataflow.getResources().get((actuator.getId() + "_dataflow"), Scale.class);
+////            if (customScale != null) {
+////                // FIXME why the heck is this an Object and I have to cast?
+////                data.scale = data.scale.merge((Scale) customScale, LogicalConnector.INTERSECTION);
+////            }
+//
+//            for (Actuator child : actuator.getChildren()) {
+////                if (child.isInput() && !child.getName().equals(child.getAlias())) {
+////                    data.localNames.put(child.getName(), child.getAlias());
+////                }
 //            }
-
-            for (Actuator child : actuator.getChildren()) {
-//                if (child.isInput() && !child.getName().equals(child.getAlias())) {
-//                    data.localNames.put(child.getName(), child.getAlias());
+//
+//            Executor executor = null;
+//            for (var computation : data.actuator.getComputation()) {
+//                var step = createExecutor(actuator, data.observation, computation, scope, executor);
+//                if (executor != step) {
+//                    data.executors.add(step);
 //                }
-            }
-
-            Executor executor = null;
-            for (var computation : data.actuator.getComputation()) {
-                var step = createExecutor(actuator, data.observation, computation, scope, executor);
-                if (executor != step) {
-                    data.executors.add(step);
-                }
-                executor = step;
-            }
-
-            observationData.put(actuator.getId(), data);
-
-            return true;
-        }
+//                executor = step;
+//            }
+//
+//            observationData.put(actuator.getId(), data);
+//
+//            return true;
+//        }
 
         return false;
     }
@@ -490,7 +490,6 @@ public class DigitalTwin implements Closeable {
 //        return ret;
 //    }
 
-
     /**
      * Establish the order of execution and the possible parallelism. Each root actuator should be sorted by
      * dependency and appended in order to the result list along with its order of execution. Successive roots
@@ -518,7 +517,7 @@ public class DigitalTwin implements Closeable {
             Set<Actuator> group = new HashSet<>();
             while (order.hasNext()) {
                 Actuator next = order.next();
-                if (!next.isReference()) {
+                if (next.getActuatorType() != Actuator.Type.REFERENCE) {
                     var data = observationData.get(next.getId());
                     if (!data.executors.isEmpty()) {
                         ret.add(Pair.of(next, (executionOrder = checkExecutionOrder(executionOrder, next,
@@ -527,7 +526,6 @@ public class DigitalTwin implements Closeable {
                 }
             }
         }
-
         return ret;
     }
 

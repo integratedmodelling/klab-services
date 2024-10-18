@@ -238,6 +238,12 @@ public class ResolutionGraph {
         return ret;
     }
 
+    /**
+     * The RESOLVED_BY edge, only including the resolution coverage for now. Each resolvable may
+     * have >1 resolving nodes, successively covering the extents up to "sufficient" coverage.
+     *
+     * TODO must add the local "name" for the resolving object if one is needed
+     */
     public static class ResolutionEdge extends DefaultEdge {
 
         public Coverage coverage;

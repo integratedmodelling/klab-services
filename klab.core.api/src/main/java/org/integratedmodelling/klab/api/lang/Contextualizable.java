@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.lang.kim.KimClassification;
 import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
@@ -16,7 +17,7 @@ import java.util.Set;
 
 /**
  * FIXME all this is obsolete. Should be a light wrapper without all those methods.
- *
+ * <p>
  * A contextualizable is the declaration of a resource that can be compiled into a processing step for a
  * dataflow. In k.IM this can represent:
  * <p>
@@ -36,7 +37,7 @@ import java.util.Set;
  * It is the runtime's task to turn any computable resource into a uniform k.DL
  * service call. The call produces a IContextualizer that is inserted in a
  * dataflow.
- *
+ * <p>
  * FIXME this should merely be a tag interface that tags standard KimAssets. The contextualization
  * mode/trigger should be kept in the model independently.
  *
@@ -108,7 +109,7 @@ public interface Contextualizable extends KlabStatement {
     /**
      * The data structure describing interactive parameters. It's a javabean with only strings for values, so
      * that it can be easily serialized for communication.
-     *
+     * <p>
      * FIXME we should just keep an annotation for this and use it if it's there. No reason for this to be
      *  here, either.
      *
@@ -215,7 +216,7 @@ public interface Contextualizable extends KlabStatement {
         public String toString() {
             return "InteractiveParameter [id=" + id + ", functionId=" + functionId + ", description=" + description
                     + ", label=" + label + ", type=" + type + ", initialValue=" + initialValue + ", values" +
-					"=" + values
+                    "=" + values
                     + "]";
         }
 
@@ -340,6 +341,14 @@ public interface Contextualizable extends KlabStatement {
      * @return the urn
      */
     String getResourceUrn();
+
+    /**
+     * Contextualization requires a trip back to the resolver to resolve a contextualization strategy
+     * in the current contextualization context.
+     *
+     * @return
+     */
+    ObservationStrategy getObservationStrategy();
 
     /**
      * Resources such as expressions or URN-specified remote computations may have requirements that must be

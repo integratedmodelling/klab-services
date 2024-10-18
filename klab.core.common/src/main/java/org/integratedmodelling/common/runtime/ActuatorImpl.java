@@ -16,22 +16,15 @@ public class ActuatorImpl implements Actuator {
     @Serial
     private static final long serialVersionUID = 2500101522003062757L;
     private long id;
-//    private long timestamp;
     private String name;
-//    private String alias;
     private Artifact.Type type;
     private Observable observable;
     private String strategyUrn;
     private List<Actuator> children = new ArrayList<>();
     private List<ServiceCall> computation = new ArrayList<>();
-//    private boolean input;
-//    private boolean output;
-    private boolean reference;
-//    private boolean deferred;
-//    private String observer;
     private Geometry coverage = Geometry.EMPTY;
     private Parameters<String> data = Parameters.create();
-//    private Queue<ObservationStrategy> deferrals = new ConcurrentLinkedQueue<>();
+    private Actuator.Type actuatorType;
 
     @Override
     public long getId() {
@@ -42,11 +35,6 @@ public class ActuatorImpl implements Actuator {
     public String getName() {
         return this.name;
     }
-
-//    @Override
-//    public String getAlias() {
-//        return this.alias;
-//    }
 
     @Override
     public Artifact.Type getType() {
@@ -68,17 +56,6 @@ public class ActuatorImpl implements Actuator {
         return this.computation;
     }
 
-//    @Override
-//    public boolean isInput() {
-//        return this.input;
-//    }
-//
-//    @Override
-//    public boolean isOutput() {
-//        return this.output;
-//    }
-
-
     @Override
     public String getStrategyUrn() {
         return strategyUrn;
@@ -86,11 +63,6 @@ public class ActuatorImpl implements Actuator {
 
     public void setStrategyUrn(String strategyUrn) {
         this.strategyUrn = strategyUrn;
-    }
-
-    @Override
-    public boolean isReference() {
-        return this.reference;
     }
 
     @Override
@@ -107,18 +79,9 @@ public class ActuatorImpl implements Actuator {
         this.id = id;
     }
 
-//    public void setTimestamp(long timestamp) {
-//        this.timestamp = timestamp;
-//    }
-
     public void setName(String name) {
         this.name = name;
     }
-//
-//    public void setAlias(String alias) {
-//        this.alias = alias;
-//    }
-
     public void setType(Artifact.Type type) {
         this.type = type;
     }
@@ -134,19 +97,6 @@ public class ActuatorImpl implements Actuator {
     public void setComputation(List<ServiceCall> computation) {
         this.computation = computation;
     }
-
-//    public void setInput(boolean input) {
-//        this.input = input;
-//    }
-//
-//    public void setOutput(boolean output) {
-//        this.output = output;
-//    }
-
-    public void setReference(boolean reference) {
-        this.reference = reference;
-    }
-
     public void setCoverage(Geometry coverage) {
         this.coverage = coverage;
     }
@@ -155,28 +105,14 @@ public class ActuatorImpl implements Actuator {
         this.data = data;
     }
 
-//    @Override
-//    public String getObserver() {
-//        return observer;
-//    }
-//
-//    @Override
-//    public Queue<ObservationStrategy> getDeferrals() {
-//        return this.deferrals;
-//    }
+    @Override
+    public Type getActuatorType() {
+        return actuatorType;
+    }
 
-//    public void setObserver(String observer) {
-//        this.observer = observer;
-//    }
-
-//    @Override
-//    public boolean isDeferred() {
-//        return deferred;
-//    }
-//
-//    public void setDeferred(boolean deferred) {
-//        this.deferred = deferred;
-//    }
+    public void setActuatorType(Type actuatorType) {
+        this.actuatorType = actuatorType;
+    }
 
     @Override
     public String toString() {

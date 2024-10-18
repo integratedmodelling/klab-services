@@ -64,8 +64,26 @@ import java.util.Queue;
  */
 public interface Actuator extends Serializable, RuntimeAsset {
 
+    enum Type {
+        /**
+         * Resolve an existing observation identified by the same ID of this actuator
+         */
+        RESOLVE,
+        /**
+         * Resolve an observation that should be created in the runtime if it is not
+         * present. This is relevant when the dataflow is executed from a stored serialized
+         * form.
+         */
+        OBSERVE,
+        /**
+         * The actuator merely references an observation that is handled by another observation and has been
+         * contextualized when this actuator is encountered.
+         */
+        REFERENCE
+    }
+
     default RuntimeAsset.Type classify() {
-        return Type.ACTUATOR;
+        return RuntimeAsset.Type.ACTUATOR;
     }
 
     /**
@@ -82,6 +100,13 @@ public interface Actuator extends Serializable, RuntimeAsset {
      * @return the observation's ID.
      */
     long getId();
+
+    /**
+     * Used to discriminate observations as k.LAB-build vs. user-provided when compiling the actuator into a persistent serializable form.
+     *
+     * @return
+     */
+    Actuator.Type getActuatorType();
 
     /**
      * All actuators have a name that corresponds 1-to-1 to the semantics it was created to resolve
@@ -179,17 +204,6 @@ public interface Actuator extends Serializable, RuntimeAsset {
      * @return
      */
     String getStrategyUrn();
-
-    /**
-     * If true, this actuator is a reference to another which has been defined before it in order of
-     * computation, and has produced its observation by the time this actuator is called into a
-     * contextualization. It only serves as a placeholder with a possibly different alias to define the local
-     * identifier of the original observation. Reference actuators are otherwise empty, with no children and
-     * no computation.
-     *
-     * @return
-     */
-    boolean isReference();
 
     /**
      * The actuator's geometry is a merge of the native coverage of all models downstream of the actuator.

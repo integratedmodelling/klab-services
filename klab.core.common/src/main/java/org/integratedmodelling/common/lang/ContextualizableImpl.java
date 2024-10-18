@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -38,6 +39,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     private Parameters<String> parameters = Parameters.create();
     private Collection<String> interactiveParameters = new ArrayList<>();
     private Contextualizable condition;
+    private ObservationStrategy observationStrategy;
     private Pair<ValueMediator, ValueMediator> conversion;
     private boolean negated;
     private boolean mediation;
@@ -261,6 +263,15 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
 
     public void setEmpty(boolean empty) {
         this.empty = empty;
+    }
+
+    @Override
+    public ObservationStrategy getObservationStrategy() {
+        return observationStrategy;
+    }
+
+    public void setObservationStrategy(ObservationStrategy observationStrategy) {
+        this.observationStrategy = observationStrategy;
     }
 
     @Override

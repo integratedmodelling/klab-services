@@ -67,7 +67,6 @@ public class ResolverService extends BaseService implements Resolver {
     // OBVIOUSLY temporary - when all done, merge its methods with this and remove the porker and the old
     // dirt.
     private ResolutionCompiler resolutionCompiler = new ResolutionCompiler();
-    private DataflowCompiler dataflowCompiler = new DataflowCompiler();
 
     public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
         super(scope, Type.RESOLVER, options);
@@ -130,7 +129,7 @@ public class ResolverService extends BaseService implements Resolver {
     public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
         var ret = resolutionCompiler.resolve(observation, contextScope);
         if (!ret.isEmpty()) {
-            return dataflowCompiler.compile(ret, contextScope);
+            return new DataflowCompiler(ret, contextScope).compile();
         }
         return Dataflow.empty(Observation.class);
     }
