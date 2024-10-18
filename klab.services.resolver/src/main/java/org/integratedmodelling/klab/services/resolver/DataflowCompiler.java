@@ -162,7 +162,7 @@ public class DataflowCompiler {
     void compileModel(Actuator observationActuator, Observation observation, Scale scale,
                       ObservationStrategy observationStrategy, Model model) {
 
-        for (var edge : resolutionGraph.graph().outgoingEdgesOf(observationStrategy)) {
+        for (var edge : resolutionGraph.graph().outgoingEdgesOf(model)) {
 
             var child = resolutionGraph.graph().getEdgeTarget(edge);
             var coverage = edge.coverage;

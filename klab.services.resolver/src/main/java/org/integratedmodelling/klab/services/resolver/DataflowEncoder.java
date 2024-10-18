@@ -35,9 +35,9 @@ public class DataflowEncoder {
     private void encodeActuator(Actuator actuator, PrintWriter outWriter, int indent) {
 
         String spacer = Utils.Strings.spaces(indent);
-        String dspacer = Utils.Strings.spaces(indent * 2);
+        String dspacer = Utils.Strings.spaces(indent + 3);
 
-        outWriter.append(spacer).append(actuator.getActuatorType().name().toLowerCase());
+        outWriter.append(spacer).append(actuator.getActuatorType().name().toLowerCase()).append(" ");
         outWriter.append(actuator.getActuatorType() == Actuator.Type.RESOLVE
                 ? ("obs" + actuator.getId())
                 : actuator.getObservable().getUrn())
@@ -52,7 +52,7 @@ public class DataflowEncoder {
         if (!actuator.getChildren().isEmpty()) {
             outWriter.append(dspacer).append("(\n");
             for (var child : actuator.getChildren()) {
-                encodeActuator(child, outWriter, indent * 3);
+                encodeActuator(child, outWriter, indent + 3);
             }
             outWriter.append(dspacer).append(")\n");
         }
