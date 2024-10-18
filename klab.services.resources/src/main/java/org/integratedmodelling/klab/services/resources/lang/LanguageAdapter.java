@@ -1,15 +1,19 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
+import org.integratedmodelling.common.lang.ContextualizableImpl;
+import org.integratedmodelling.common.lang.ExpressionCodeImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.lang.kim.*;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -291,7 +295,7 @@ public enum LanguageAdapter {
         ret.setDeprecated(model.getDeprecation() != null);
         ret.setDeprecation(model.getDeprecation());
         ret.setUrn(namespace.getUrn() + "." + model.getName());
-//        ret.setName(model.getName());
+        //        ret.setName(model.getName());
         ret.setOffsetInDocument(model.getCodeOffset());
         ret.setLength(model.getCodeLength());
         ret.setProjectName(namespace.getProjectName());
@@ -327,7 +331,27 @@ public enum LanguageAdapter {
     }
 
     private Contextualizable adaptContextualizable(ParsedObject contextualizable, KimNamespace namespace) {
-        return null;
+
+        var ret = new ContextualizableImpl();
+
+        if (contextualizable instanceof FunctionCallSyntax functionCallSyntax) {
+            ret.setServiceCall(adaptServiceCall(functionCallSyntax, namespace.getUrn(),
+                    namespace.getProjectName(), KlabAsset.KnowledgeClass.MODEL));
+        } else if (contextualizable instanceof ExpressionSyntax expressionSyntax) {
+            ret.setExpression(adaptExpression(expressionSyntax, namespace));
+        } else {
+            throw new KlabUnimplementedException("contextualizable " + contextualizable);
+        }
+
+        return ret;
+    }
+
+    private ExpressionCode adaptExpression(ExpressionSyntax expressionSyntax, KimNamespace namespace) {
+        var ret = new ExpressionCodeImpl();
+        ret.setCode(expressionSyntax.getCode());
+        ret.setForcedScalar(expressionSyntax.isScalar());
+        ret.setLanguage(expressionSyntax.getLanguage());
+        return ret;
     }
     //
     //    private KlabStatement adaptInstance(InstanceSyntax instance, KimNamespace namespace) {

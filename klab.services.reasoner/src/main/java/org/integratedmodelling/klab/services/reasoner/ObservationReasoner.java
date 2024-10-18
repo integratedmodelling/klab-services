@@ -98,6 +98,7 @@ public class ObservationReasoner {
 
         for (var strategy : observationStrategies) {
 
+
             QuickSemanticFilter filter = quickFilters.get(strategy.getUrn());
 
             if (filter.fixedVariablesUsed.contains("context") && scope.getContextObservation() == null) {

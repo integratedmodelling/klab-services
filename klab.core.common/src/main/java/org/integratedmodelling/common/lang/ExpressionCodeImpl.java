@@ -2,6 +2,8 @@ package org.integratedmodelling.common.lang;
 
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 
+import java.io.Serial;
+
 /**
  * Just a wrapper for some code and an optional language identifier. Used
  * explicitly only where code must be distinguished from other string values,
@@ -12,6 +14,7 @@ import org.integratedmodelling.klab.api.lang.ExpressionCode;
  */
 public class ExpressionCodeImpl implements ExpressionCode {
 
+	@Serial
 	private static final long serialVersionUID = -8760044805799296995L;
 
 	private String code;
