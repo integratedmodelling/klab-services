@@ -26,9 +26,10 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
     @Serial
     private static final long serialVersionUID = 8447771460330621498L;
 
-    protected String urn;
-    protected ParametersImpl<String> parameters = new ParametersImpl<>();
-    protected Set<String> interactiveParameterIds = new HashSet<>();
+    private String urn;
+    private ParametersImpl<String> parameters = new ParametersImpl<>();
+    private Set<String> interactiveParameterIds = new HashSet<>();
+    private String sourceCode;
 
     public ServiceCallImpl() {
     }
@@ -55,7 +56,11 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
     @Override
     public String encode(String language) {
 
-        //		if (sourceCode() == null || sourceCode().trim().isEmpty()) {
+        if (sourceCode != null) {
+            // if this comes from a language, make it easy
+            return sourceCode;
+        }
+
         String ret = urn + "(";
         int i = 0;
         for (String key : parameters.keySet()) {
@@ -73,9 +78,14 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
         }
         ret += ")";
         return ret;
-        //		}
-        //
-        //		return sourceCode();
+    }
+
+    public String getSourceCode() {
+        return sourceCode;
+    }
+
+    public void setSourceCode(String sourceCode) {
+        this.sourceCode = sourceCode;
     }
 
     @Override

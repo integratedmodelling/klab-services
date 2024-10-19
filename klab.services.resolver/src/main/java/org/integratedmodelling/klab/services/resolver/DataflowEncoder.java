@@ -51,17 +51,28 @@ public class DataflowEncoder {
 
         if (!actuator.getChildren().isEmpty()) {
             outWriter.append(dspacer).append("(\n");
+            int i = 0;
             for (var child : actuator.getChildren()) {
-                encodeActuator(child, outWriter, indent + 3);
+                encodeActuator(child, outWriter, indent + 6);
+                if (i < actuator.getChildren().size() - 1) {
+                    outWriter.append(",");
+                }
+                i++;
             }
             outWriter.append(dspacer).append(")\n");
         }
 
         if (!actuator.getComputation().isEmpty()) {
             outWriter.append(dspacer).append("apply\n");
+            int i = 0;
             for (var computation : actuator.getComputation()) {
-                outWriter.append(spacer).append(dspacer).append(computation.encode(Language.KIM)).append("\n");
+                outWriter.append(spacer).append(dspacer).append(computation.encode(Language.KIM)).append(i < (actuator.getComputation().size() - 1) ? ",\n" : "\n");
+                i++;
             }
+        }
+
+        if (indent == 0) {
+            outWriter.append(";");
         }
 
     }
@@ -70,8 +81,15 @@ public class DataflowEncoder {
     }
 
     private void encodePreamble(PrintWriter outWriter) {
-        outWriter.append("dataflow " + scope.getId());
+        outWriter.append("dataflow " + sanitize(scope.getName() == null ? scope.getId() : scope.getName()));
         outWriter.append("\n;");
+    }
+
+    private String sanitize(String name) {
+        return "dio.porco";
+//        var ret = name.replace(" ", ".").toLowerCase();
+//        // TODO more
+//        return ret;
     }
 
 }

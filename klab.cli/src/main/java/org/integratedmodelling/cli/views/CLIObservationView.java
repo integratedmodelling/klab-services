@@ -31,8 +31,8 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
         controller.registerView(this);
     }
 
-    @Deprecated
-    private List<String> observationsMade = new ArrayList<>();
+//    @Deprecated
+//    private List<String> observationsMade = new ArrayList<>();
 
     @CommandLine.Spec
     CommandLine.Model.CommandSpec commandSpec;
@@ -66,13 +66,13 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
         PrintWriter err = commandSpec.commandLine().getErr();
 
         if (observables == null || observables.isEmpty()) {
-            int n = 1;
-            if (observationsMade.isEmpty()) {
-                out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow No previous observations|@ "));
-            }
-            for (var urn : observationsMade) {
-                out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow " + n + ".|@ " + urn));
-            }
+//            int n = 1;
+//            if (observationsMade.isEmpty()) {
+//                out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow No previous observations|@ "));
+//            }
+//            for (var urn : observationsMade) {
+//                out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow " + n + ".|@ " + urn));
+//            }
             return;
         }
 
@@ -80,15 +80,15 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
 
         if (Utils.Numbers.encodesInteger(urn)) {
             int n = Integer.parseInt(urn) - 1;
-            if (n < 0 || observationsMade.size() >= n) {
-                err.println("No previous observation at index " + n);
-                return;
-            }
-            // FIXME use SessionInfo for everything, remove any state from the controller and engine except
-            //  the current session/ctx
-            urn = observationsMade.get(n);
+//            if (n < 0 || observationsMade.size() >= n) {
+//                err.println("No previous observation at index " + n);
+//                return;
+//            }
+//            // FIXME use SessionInfo for everything, remove any state from the controller and engine except
+//            //  the current session/ctx
+//            urn = observationsMade.get(n);
         } else {
-            observationsMade.add(urn);
+//            observationsMade.add(urn);
         }
 
         var resources = KlabCLI.INSTANCE.user().getService(ResourcesService.class);

@@ -2,16 +2,17 @@ package org.integratedmodelling.klab.services.resources.lang;
 
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.lang.ExpressionCodeImpl;
+import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.lang.kim.*;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -20,6 +21,7 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.languages.RangeLiteral;
 import org.integratedmodelling.languages.api.*;
 
 import java.util.*;
@@ -275,6 +277,14 @@ public enum LanguageAdapter {
             case ObservableSyntax observableSyntax -> {
                 yield adaptObservable(observableSyntax, namespace, projectName, documentClass);
             }
+            case RangeLiteral rangeLiteral -> {
+                var range = new NumericRangeImpl();
+                range.setLowerBound(rangeLiteral.getFrom().doubleValue());
+                range.setUpperBound(rangeLiteral.getTo().doubleValue());
+                range.setLowerExclusive(!rangeLiteral.isLeftInclusive());
+                range.setUpperOpen(!rangeLiteral.isRightInclusive());
+                yield range;
+            }
             default -> {
                 yield object;
             }
@@ -334,12 +344,17 @@ public enum LanguageAdapter {
 
         var ret = new ContextualizableImpl();
 
+        ret.setOffsetInDocument(contextualizable.getCodeOffset());
+        ret.setLength(contextualizable.getCodeLength());
+        ret.setNamespace(namespace.getUrn());
+
         if (contextualizable.getContextualizable() instanceof FunctionCallSyntax functionCallSyntax) {
             ret.setServiceCall(adaptServiceCall(functionCallSyntax, namespace.getUrn(),
                     namespace.getProjectName(), KlabAsset.KnowledgeClass.MODEL));
         } else if (contextualizable.getContextualizable() instanceof ExpressionSyntax expressionSyntax) {
             ret.setExpression(adaptExpression(expressionSyntax, namespace));
         } else {
+            // TODO all others
             throw new KlabUnimplementedException("contextualizable " + contextualizable);
         }
 
@@ -529,6 +544,7 @@ public enum LanguageAdapter {
         ret.setNamespace(namespace);
         ret.setProjectName(projectName);
         ret.setUrn(functionCallSyntax.getName());
+        ret.setSourceCode(functionCallSyntax.encode());
 
         for (String key : functionCallSyntax.getArguments().keySet()) {
             ret.getParameters().put(key, adaptValue(functionCallSyntax.getArguments().get(key), namespace,

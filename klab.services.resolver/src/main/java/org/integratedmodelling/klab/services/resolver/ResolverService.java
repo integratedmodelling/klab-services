@@ -688,16 +688,16 @@ public class ResolverService extends BaseService implements Resolver {
         model.setUrn(statement.getUrn());
         model.setMetadata(
                 statement.getMetadata()); // FIXME add processed metadata with the existing symbol table
-        model.getComputation().addAll(statement.getContextualization());
         model.setNamespace(statement.getNamespace());
         model.setProjectName(statement.getProjectName());
 
+        // TODO any literal value must be added first
+
         for (var resourceUrn : statement.getResourceUrns()) {
+            // FIXME this should be one multi-resource contextualizable
             model.getComputation().add(new ContextualizableImpl(resourceUrn));
         }
-        for (var contextualizer : statement.getContextualization()) {
-            model.getComputation().add(contextualizer);
-        }
+        model.getComputation().addAll(statement.getContextualization());
 
         // FIXME use coverage from NS or model if any
         model.setCoverage(Coverage.universal());

@@ -4,6 +4,7 @@ import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
@@ -93,7 +94,7 @@ public class DataflowCompiler {
         ret.setObservable(observation.getObservable());
         ret.setId(observation.getId());
         ret.setActuatorType(strategy == null ? Actuator.Type.RESOLVE : Actuator.Type.OBSERVE);
-        ret.setCoverage(coverage);
+        ret.setCoverage(coverage.as(Geometry.class));
 
         if (strategy != null) {
             ret.setStrategyUrn(strategy.getUrn());
