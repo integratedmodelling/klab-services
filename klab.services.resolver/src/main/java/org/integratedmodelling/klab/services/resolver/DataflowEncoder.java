@@ -39,34 +39,36 @@ public class DataflowEncoder {
 
         outWriter.append(spacer).append(actuator.getActuatorType().name().toLowerCase()).append(" ");
         outWriter.append(actuator.getActuatorType() == Actuator.Type.RESOLVE
-                ? ("obs" + actuator.getId())
-                : actuator.getObservable().getUrn())
-                .append("\n");
+                        ? ("obs" + actuator.getId())
+                        : actuator.getObservable().getUrn());
 
         if (actuator.getStrategyUrn() != null) {
-            outWriter.append(dspacer).append("using ").append(actuator.getStrategyUrn());
+            outWriter.append("\n").append(dspacer).append("using ").append(actuator.getStrategyUrn());
         }
 
-        outWriter.append("\n");
-
         if (!actuator.getChildren().isEmpty()) {
-            outWriter.append(dspacer).append("(\n");
+            outWriter.append("\n").append(dspacer).append("(\n");
             int i = 0;
             for (var child : actuator.getChildren()) {
                 encodeActuator(child, outWriter, indent + 6);
-                if (i < actuator.getChildren().size() - 1) {
-                    outWriter.append(",");
+                if (i < (actuator.getChildren().size() - 1)) {
+                    outWriter.append(",\n");
                 }
                 i++;
             }
-            outWriter.append(dspacer).append(")\n");
+            outWriter.append("\n").append(dspacer).append(")");
         }
 
         if (!actuator.getComputation().isEmpty()) {
-            outWriter.append(dspacer).append("apply\n");
+            outWriter.append("\n").append(dspacer).append("apply");
             int i = 0;
             for (var computation : actuator.getComputation()) {
-                outWriter.append(spacer).append(dspacer).append(computation.encode(Language.KIM)).append(i < (actuator.getComputation().size() - 1) ? ",\n" : "\n");
+                if (actuator.getComputation().size() > 1) {
+                    outWriter.append("\n").append(spacer).append(dspacer);
+                } else {
+                    outWriter.append(" ");
+                }
+                outWriter.append(computation.encode(Language.KIM)).append(i < (actuator.getComputation().size() - 1) ? "," : "");
                 i++;
             }
         }
