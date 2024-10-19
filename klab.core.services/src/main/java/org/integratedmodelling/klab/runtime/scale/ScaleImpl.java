@@ -363,7 +363,7 @@ public class ScaleImpl implements Scale {
     }
 
     @Override
-    public Scale merge(Scale other, LogicalConnector how) {
+    public Geometry merge(Scale other, LogicalConnector how) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -606,7 +606,7 @@ public class ScaleImpl implements Scale {
         }
 
         @Override
-        public Scale merge(Scale other, LogicalConnector how) {
+        public Geometry merge(Scale other, LogicalConnector how) {
             return ScaleImpl.this.merge(other, how);
         }
 

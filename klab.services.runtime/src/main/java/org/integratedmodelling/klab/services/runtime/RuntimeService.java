@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -301,7 +302,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     @Override
-    public Provenance runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
+    public Coverage runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
         return null;
     }
 

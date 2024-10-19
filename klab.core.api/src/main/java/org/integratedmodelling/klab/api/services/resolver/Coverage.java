@@ -13,15 +13,15 @@
  */
 package org.integratedmodelling.klab.api.services.resolver;
 
-import java.util.Collection;
-
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent.Constraint;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent.Constraint;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+
+import java.util.Collection;
 
 /**
  * A {@code Coverage} is a scale that only uses collapsed extents ({@link #size()} == 1}) and keeps
@@ -38,7 +38,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * scales an asset can be used in. This includes specific extents, resolutions, or ranges thereof for each of
  * the extents, or the statement that a specific extent must be present without further specification.
  * <p>
- * A {@code Coverage} redefines the {@link Scale#merge(TopologicallyComparable, LogicalConnector)} method to
+ * A {@code Coverage} defines the {@link #merge(Scale, LogicalConnector)} method differenty from {@link Scale} to
  * only perform a union when the resulting coverage adds enough coverage. The {@link #getGain()} can be called
  * on the result to check if the merge produced any significant increment or decrement in coverage.
  * <p>
@@ -50,7 +50,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * @author Ferd
  * @version $Id: $Id
  */
-public interface Coverage extends Scale {
+public interface Coverage extends Geometry {
 
     /**
      * Return the proportion of total coverage as a double 0-1. It is the product of the coverages for all the
@@ -83,8 +83,8 @@ public interface Coverage extends Scale {
      * <p>
      * Must not modify the original scales.
      */
-    @Override
-    Coverage merge(Scale coverage, LogicalConnector how);
+//    @Override
+    Coverage merge(Geometry coverage, LogicalConnector how);
 
     /**
      * Like {@link #merge(Scale, LogicalConnector)} but only merges extents, without building merged

@@ -128,7 +128,7 @@ public interface Scale extends Geometry, Topology<Scale> {
      * <p>
      * Must not modify the original scales.
      */
-    Scale merge(Scale other, LogicalConnector how);
+    Geometry merge(Scale other, LogicalConnector how);
 
     /**
      * Return the scale at the beginning of time, or the scale itself if there is no time at all.
@@ -222,7 +222,7 @@ public interface Scale extends Geometry, Topology<Scale> {
     }
 
     public static Scale create(Geometry geometry) {
-        return create(geometry, null);
+        return geometry == null ? null : create(geometry, null);
     }
 
     /**

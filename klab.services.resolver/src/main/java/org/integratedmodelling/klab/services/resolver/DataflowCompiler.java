@@ -88,7 +88,7 @@ public class DataflowCompiler {
      * @return
      */
 
-    Actuator compileObservation(Observation observation, Scale coverage, ObservationStrategy strategy) {
+    Actuator compileObservation(Observation observation, Geometry coverage, ObservationStrategy strategy) {
 
         var ret = new ActuatorImpl();
         ret.setObservable(observation.getObservable());
@@ -129,7 +129,7 @@ public class DataflowCompiler {
      * @param observationStrategy
      * @return
      */
-    void compileStrategy(Actuator observationActuator, Observation observation, Scale scale,
+    void compileStrategy(Actuator observationActuator, Observation observation, Geometry scale,
                          ObservationStrategy observationStrategy) {
 
         for (var edge : resolutionGraph.graph().outgoingEdgesOf(observationStrategy)) {
@@ -160,7 +160,7 @@ public class DataflowCompiler {
      * @param observationStrategy
      * @param model
      */
-    void compileModel(Actuator observationActuator, Observation observation, Scale scale,
+    void compileModel(Actuator observationActuator, Observation observation, Geometry scale,
                       ObservationStrategy observationStrategy, Model model) {
 
         for (var edge : resolutionGraph.graph().outgoingEdgesOf(model)) {

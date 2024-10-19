@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.*;
@@ -175,7 +176,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public Provenance runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
+    public Coverage runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
         return null;
     }
 

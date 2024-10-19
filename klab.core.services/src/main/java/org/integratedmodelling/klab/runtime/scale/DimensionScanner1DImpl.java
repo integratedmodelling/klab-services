@@ -86,7 +86,7 @@ public class DimensionScanner1DImpl implements DimensionScanner1D {
         return originalScale.mergeContext(scale, dimensions);
     }
 
-    public Scale merge(Scale other, LogicalConnector how) {
+    public Geometry merge(Scale other, LogicalConnector how) {
         return originalScale.merge(other, how);
     }
 

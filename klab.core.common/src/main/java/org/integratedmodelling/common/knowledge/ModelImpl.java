@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
@@ -25,7 +26,7 @@ public class ModelImpl implements Model {
 	private Type type;
 	private List<Observable> observables = new ArrayList<>();
 	private List<Observable> dependencies = new ArrayList<>();
-	private Scale coverage;
+	private Geometry coverage;
 	private List<Contextualizable> computation = new ArrayList<>();
 	private DescriptionType descriptionType;
 	private Concept observerType;
@@ -66,7 +67,7 @@ public class ModelImpl implements Model {
 	}
 
 	@Override
-	public Scale getCoverage() {
+	public Geometry getCoverage() {
 		return this.coverage;
 	}
 
@@ -98,7 +99,7 @@ public class ModelImpl implements Model {
 		this.dependencies = dependencies;
 	}
 
-	public void setCoverage(Scale coverage) {
+	public void setCoverage(Geometry coverage) {
 		this.coverage = coverage;
 	}
 

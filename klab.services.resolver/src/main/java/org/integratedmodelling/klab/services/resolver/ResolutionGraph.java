@@ -97,7 +97,7 @@ public class ResolutionGraph {
 
     private Scale getCoverage(Resolvable target) {
         return switch (target) {
-            case Model model -> model.getCoverage();
+            case Model model -> Scale.create(model.getCoverage());
             case Observation observation -> Scale.create(observation.getGeometry());
             default -> null;
         };

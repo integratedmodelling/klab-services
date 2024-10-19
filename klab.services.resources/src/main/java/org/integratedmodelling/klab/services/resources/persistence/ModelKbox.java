@@ -694,7 +694,7 @@ public class ModelKbox extends ObservableKbox {
     private Collection<ModelReference> getModelDescriptors(KimModel model, Scope monitor) {
 
         List<ModelReference> ret = new ArrayList<>();
-        Coverage scale = resourceService.modelGeometry(model.getUrn());
+        Scale scale = Scale.create(resourceService.modelGeometry(model.getUrn()));
 
         Shape spaceExtent = null;
         Time timeExtent = null;

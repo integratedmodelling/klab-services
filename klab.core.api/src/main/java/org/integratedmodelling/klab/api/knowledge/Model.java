@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.knowledge;
 
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -111,7 +112,7 @@ public interface Model extends Knowledge, Resolvable {
      *
      * @return
      */
-    Scale getCoverage();
+    Geometry getCoverage();
 
     /**
      * If the model (or the containing namespace) is stated as <code>observed by</code> some type, return it

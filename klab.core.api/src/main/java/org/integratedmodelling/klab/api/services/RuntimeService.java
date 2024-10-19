@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
@@ -55,15 +56,13 @@ public interface RuntimeService extends KlabService {
 
     /**
      * The main function of the runtime.
-     * <p>
-     * FIXME have it return a coverage
      *
      * @param dataflow
      * @param operation    the activity that ran this. The dataflow will create child activity of it.
      * @param contextScope
      * @return
      */
-    Provenance runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope);
+    Coverage runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope);
 
     /**
      * Retrieve any assets from the knowledge graph in the digital twin matching a given class and some query

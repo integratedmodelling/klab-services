@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent.Constraint;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -188,21 +189,23 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
     }
 
     @Override
-    public Coverage merge(Scale other, LogicalConnector how) {
+    public Coverage merge(Geometry other, LogicalConnector how) {
+
+        var scale = Scale.create(other);
 
         /*
          * trivial cases first
          */
         if (isUniversal()) {
-            return other instanceof CoverageImpl ? ((CoverageImpl) other).withGain(1.0) : new CoverageImpl(other, 1.0, 1.0);
-        } else if (isUniversal(other)) {
+            return other instanceof CoverageImpl ? ((CoverageImpl) other).withGain(1.0) : new CoverageImpl(scale, 1.0, 1.0);
+        } else if (isUniversal(scale)) {
             return this.withGain(1.0);
         } else if (other instanceof Coverage && ((Coverage) other).isEmpty()) {
             return how == LogicalConnector.INTERSECTION
                     ? ((CoverageImpl) empty(this.asScale())).withGain(isEmpty() ? 0 : -1)
                     : withGain(1.0);
         } else if (isEmpty() && other instanceof CoverageImpl) {
-            return how == LogicalConnector.INTERSECTION ? empty(other) : ((CoverageImpl) other).withGain(1.0);
+            return how == LogicalConnector.INTERSECTION ? empty(scale) : ((CoverageImpl) other).withGain(1.0);
         }
 
         // // no need for suffering if either is 0 and we're intersecting
