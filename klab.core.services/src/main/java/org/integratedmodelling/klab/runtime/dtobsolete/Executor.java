@@ -55,7 +55,7 @@ abstract class Executor implements BiConsumer<Observation, ContextScope> {
         // TODO
     }
 
-    public Executor(Type type, Parallelism parallelism, BoxingValueResolver iresolver) {
+    public Executor(Type type, Parallelism parallelism, BoxingValueResolver<?> iresolver) {
         this(type, parallelism);
         // TODO
     }

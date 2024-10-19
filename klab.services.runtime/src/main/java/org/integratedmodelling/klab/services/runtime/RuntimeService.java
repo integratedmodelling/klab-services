@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
+import com.google.common.collect.ImmutableList;
+import org.apache.commons.collections.IteratorUtils;
 import org.apache.groovy.util.Maps;
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
@@ -20,6 +23,7 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -35,10 +39,16 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.traverse.TopologicalOrderIterator;
 
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class RuntimeService extends BaseService implements org.integratedmodelling.klab.api.services.RuntimeService, org.integratedmodelling.klab.api.services.RuntimeService.Admin {
 
@@ -295,15 +305,77 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     public long submit(Observation observation, ContextScope scope, boolean startResolution) {
         if (scope instanceof ServiceContextScope serviceContextScope) {
             return startResolution
-                   ? serviceContextScope.observe(observation).trackingKey()
-                   : serviceContextScope.insertIntoKnowledgeGraph(observation);
+                    ? serviceContextScope.observe(observation).trackingKey()
+                    : serviceContextScope.insertIntoKnowledgeGraph(observation);
         }
         return -1L;
     }
 
     @Override
     public Coverage runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
+
+        /*
+        Load or confirm availability of all needed resources and create any non-existing observations
+         */
+
+        /*
+        find contextualization scale and hook point from the scope
+         */
+
+        /**
+         * Run each actuator set in order
+         */
+        for (var rootActuator : dataflow.getComputation()) {
+            run(rootActuator, contextScope);
+        }
+
+        /*
+        intersect coverage from dataflow with contextualization scale
+         */
+
         return null;
+    }
+
+    private void run(Actuator rootActuator, ContextScope scope) {
+
+        /*
+        Turn the actuator hierarchy into a flat list in dependency order. Both actuator containment and reference count as
+        dependencies between observations.
+         */
+        for (Actuator actuator : computeActuatorOrder(rootActuator, scope)) {
+
+            System.out.printf("ZOPPA");
+        /*
+        run the actuator sequence, marking all correspondent observations as resolved
+         */
+
+        /*
+        Submit the actuator and its provenance info to the digital twin
+         */
+
+        }
+
+    }
+
+    private List<Actuator> computeActuatorOrder(Actuator rootActuator, ContextScope scope) {
+        Graph<Actuator, DefaultEdge> dependencyGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
+        Map<Long, Actuator> cache = new HashMap<>();
+        loadGraph(rootActuator, dependencyGraph, cache);
+        // keep the actuators that do nothing so we can tag their observation as resolved
+        return ImmutableList.copyOf(new TopologicalOrderIterator<>(dependencyGraph));
+    }
+
+    private void loadGraph(Actuator rootActuator, Graph<Actuator, DefaultEdge> dependencyGraph, Map<Long, Actuator> cache) {
+        cache.put(rootActuator.getId(), rootActuator);
+        dependencyGraph.addVertex(rootActuator);
+        for (Actuator child : rootActuator.getChildren()) {
+            if (child.getActuatorType() == Actuator.Type.REFERENCE) {
+                dependencyGraph.addEdge(cache.get(child.getId()), rootActuator);
+            } else {
+                loadGraph(child, dependencyGraph, cache);
+                dependencyGraph.addEdge(child, rootActuator);
+            }
+        }
     }
 
     @Override
