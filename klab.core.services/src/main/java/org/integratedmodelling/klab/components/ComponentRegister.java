@@ -23,12 +23,16 @@ import org.integratedmodelling.klab.extension.KlabComponent;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
 public class ComponentRegister {
 
+    private Map<String, ComponentDescriptor> components = new LinkedHashMap<>();
+    private Map<String, LibraryDescriptor> libraries = new LinkedHashMap<>();
+    private Map<String, AdapterDescriptor> adapters = new LinkedHashMap<>();
 
     record AdapterDescriptor(String name) {
     }
@@ -53,13 +57,22 @@ public class ComponentRegister {
         var adapters = new ArrayList<AdapterDescriptor>();
 
         scanPackage(component, Map.of(
-                Library.class, (annotation, cls) -> registerLibrary(component, (Library) annotation, cls, libraries),
+                Library.class, (annotation, cls) -> registerLibrary(component, (Library) annotation, cls,
+                        libraries),
                 ResourceAdapter.class, (annotation, cls) -> registerAdapter(component,
                         (ResourceAdapter) annotation, cls, adapters)));
 
+        /*
+        TODO handle versions and use multivalue map with comparator<urn, version>
+         */
+        libraries.forEach(libraryDescriptor -> this.libraries.put(libraryDescriptor.name, libraryDescriptor));
+        adapters.forEach(adapterDescriptor -> this.adapters.put(adapterDescriptor.name, adapterDescriptor));
+        this.components.put(componentName, new ComponentDescriptor(componentName, componentVersion, libraries,
+                adapters));
     }
 
-    private void registerLibrary(KlabComponent component, Library annotation, Class<?> cls, List<LibraryDescriptor> libraries) {
+    private void registerLibrary(KlabComponent component, Library annotation, Class<?> cls,
+                                 List<LibraryDescriptor> libraries) {
 
         String namespacePrefix = Library.CORE_LIBRARY.equals(annotation.name()) ? "" :
                                  (annotation.name() + ".");
@@ -72,9 +85,11 @@ public class ComponentRegister {
                         clss.getAnnotation(KlabFunction.class), clss,
                         null));
             } else if (clss.isAnnotationPresent(Verb.class)) {
-                prototypes.add(createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class), clss, null));
+                prototypes.add(createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class), clss,
+                        null));
             } else if (clss.isAnnotationPresent(KlabAnnotation.class)) {
-                prototypes.add(createAnnotationPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation.class)
+                prototypes.add(createAnnotationPrototype(namespacePrefix,
+                        clss.getAnnotation(KlabAnnotation.class)
                         , clss,
                         null));
             }
@@ -87,18 +102,21 @@ public class ComponentRegister {
                         method.getAnnotation(KlabFunction.class), cls,
                         method));
             } else if (method.isAnnotationPresent(KlabAnnotation.class)) {
-                prototypes.add(createAnnotationPrototype(namespacePrefix, cls.getAnnotation(KlabAnnotation.class),
+                prototypes.add(createAnnotationPrototype(namespacePrefix,
+                        cls.getAnnotation(KlabAnnotation.class),
                         cls,
                         method));
             } else if (method.isAnnotationPresent(Verb.class)) {
-                prototypes.add(createVerbPrototype(namespacePrefix, cls.getAnnotation(Verb.class), cls, method));
+                prototypes.add(createVerbPrototype(namespacePrefix, cls.getAnnotation(Verb.class), cls,
+                        method));
             }
         }
 
         libraries.add(new LibraryDescriptor(annotation.name(), annotation.description(), prototypes));
     }
 
-    private void registerAdapter(KlabComponent component, ResourceAdapter annotation, Class<?> cls, List<AdapterDescriptor> adapters) {
+    private void registerAdapter(KlabComponent component, ResourceAdapter annotation, Class<?> cls,
+                                 List<AdapterDescriptor> adapters) {
         System.out.println("ZIO PORCO ADAPTER " + annotation.name());
     }
 
@@ -132,7 +150,8 @@ public class ComponentRegister {
             for (Class<? extends Annotation> ah : annotationHandlers.keySet()) {
                 for (ClassInfo routeClassInfo : scanResult.getClassesWithAnnotation(ah)) {
                     try {
-                        Class<?> cls = Class.forName(routeClassInfo.getName(), false, component.getWrapper().getPluginClassLoader());
+                        Class<?> cls = Class.forName(routeClassInfo.getName(), false,
+                                component.getWrapper().getPluginClassLoader());
                         Annotation annotation = cls.getAnnotation(ah);
                         if (annotation != null) {
                             annotationHandlers.get(ah).accept(annotation, cls);
