@@ -53,16 +53,17 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.utils.Utils.OS;
+import org.integratedmodelling.klab.components.ComponentRegister;
 import org.integratedmodelling.klab.components.LocalComponentRepository;
 import org.integratedmodelling.klab.data.mediation.CurrencyServiceImpl;
 import org.integratedmodelling.klab.data.mediation.UnitServiceImpl;
+import org.integratedmodelling.klab.extension.KlabComponent;
 import org.integratedmodelling.klab.runtime.language.LanguageService;
 import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
 import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
 import org.integratedmodelling.klab.runtime.scale.space.ProjectionImpl;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
-import org.pf4j.DefaultPluginManager;
-import org.pf4j.PluginManager;
+import org.pf4j.*;
 import org.pf4j.update.PluginInfo;
 import org.pf4j.update.UpdateManager;
 
@@ -80,7 +81,6 @@ import java.util.logging.Level;
 /**
  * TODO Rename and factor away all the duplicated methods with the Configuration available in the api package
  *
- *
  * @author Ferd
  * @version $Id: $Id
  */
@@ -88,8 +88,8 @@ public enum ServiceConfiguration {
 
     INSTANCE;
 
-    final PluginManager componentManager = new DefaultPluginManager();
-    UpdateManager componentUpdateManager;
+    private PluginManager componentManager;
+    private UpdateManager componentUpdateManager;
     private Map<Class<?>, Map<Set<Object>, Service>> services = new HashMap<>();
     private Map<String, Authority> authorities = new HashMap<>();
     private KlabService mainService;
@@ -362,8 +362,33 @@ public enum ServiceConfiguration {
         registerService(new UnitServiceImpl(), UnitService.class);
         registerService(new CurrencyServiceImpl(), CurrencyService.class);
         registerService(new LanguageService(), Language.class);
-
     }
+
+    /**
+     * Call to initialize and use the plugin system. No plugins will be discovered unless this is called. This
+     * finds but does not load the configured plugins.
+     *
+     * @param pluginRoot
+     */
+    public void initializeComponents(File pluginRoot, ComponentRegister register) {
+        this.componentManager = new DefaultPluginManager(pluginRoot.toPath());
+        this.componentManager.loadPlugins();
+        // TODO configuration
+        for (var wrapper : this.componentManager.getPlugins()) {
+             Plugin plugin = wrapper.getPlugin();
+             if (plugin instanceof KlabComponent component) {
+                    register.registerComponent(component);
+             }
+        }
+
+        this.componentManager.addPluginStateListener(new PluginStateListener() {
+            @Override
+            public void pluginStateChanged(PluginStateEvent event) {
+                System.out.println("HOLA! Plugin state: " + event);
+            }
+        });
+    }
+
 
     public void setMainService(KlabService service) {
         this.mainService = service;
@@ -929,7 +954,8 @@ public enum ServiceConfiguration {
     }
 
     public String getProductsBranch() {
-        return getProperty(ServiceConfiguration.KLAB_PRODUCTS_BRANCH, ServiceConfiguration.DEFAULT_PRODUCTS_BRANCH);
+        return getProperty(ServiceConfiguration.KLAB_PRODUCTS_BRANCH,
+                ServiceConfiguration.DEFAULT_PRODUCTS_BRANCH);
     }
 
     public URL getLocalComponentRepositoryURL(String servicePath) {

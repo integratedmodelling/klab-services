@@ -4,7 +4,6 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 import org.integratedmodelling.common.authentication.Authentication;
-import org.integratedmodelling.common.authentication.scope.AbstractDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
@@ -67,7 +66,6 @@ public abstract class BaseService implements KlabService {
     protected BaseService(AbstractServiceDelegatingScope scope, KlabService.Type serviceType,
                           ServiceStartupOptions options) {
 
-
         settingsForSlaveServices.put(Engine.Setting.POLLING, "on");
         settingsForSlaveServices.put(Engine.Setting.POLLING_INTERVAL, 15);
         settingsForSlaveServices.put(Engine.Setting.LOG_EVENTS, true);
@@ -102,29 +100,6 @@ public abstract class BaseService implements KlabService {
             throw new KlabIOException(e);
         }
     }
-
-    //    /**
-    //     * If this returns true, the service will instruct the {@link ScopeManager} to automatically
-    //     create scope
-    //     * hierarchies when scope headers are received for session and context scopes that are unknown,
-    //     as long as
-    //     * the request is not anonymous or is otherwise privileged. Default is false.
-    //     *
-    //     * @return true if scopes can be created automatically
-    //     */
-    //    public boolean isProvideScopesAutomatically() {
-    //        return provideScopesAutomatically;
-    //    }
-
-    //    /**
-    //     * Set the flag returned by {@link #isProvideScopesAutomatically()}.
-    //     *
-    //     * @param b
-    //     */
-    //    protected void setProvideScopesAutomatically(boolean b) {
-    //        this.provideScopesAutomatically = b;
-    //    }
-
 
     public EmbeddedBroker getEmbeddedBroker() {
         return embeddedBroker;

@@ -25,8 +25,11 @@ public class Generators {
             elevation or slope. As the generator works in RAM, this should not be used on very large grids.""",
                   geometry = "S2", type = Type.NUMBER, version = Version.CURRENT,
                   parameters = {
-                    @KlabFunction.Argument(name = "range", type = Type.RANGE, description = "The " + "min-max range " + "of the values produced. Default is 0 to 4000", optional = true),
-                    @KlabFunction.Argument(name = "detail", type = Type.NUMBER, description = "Controls the " + "amount of detail in the generated structure. Default is 8, " + "appropriate " + "for " + "elevation", optional = true), @KlabFunction.Argument(name = "roughness", type = Type.NUMBER, description = "Controls the " + "roughness of the generated terrain. Default is 0.55, appropriate" + " for " + "elevation", optional = true)})
+                    @KlabFunction.Argument(name = "range", type = Type.RANGE, description = "The  min-max range of the values produced. Default is 0 to 4000", optional = true),
+                    @KlabFunction.Argument(name = "detail", type = Type.NUMBER, description = "Controls the amount of detail in the generated structure. Default is 8, appropriate "
+                            + "for geographical elevation", optional = true),
+                    @KlabFunction.Argument(name = "roughness", type = Type.NUMBER, description = "Controls the roughness of the generated terrain. Default is 0.55, appropriate" +
+                            " for geographical elevation", optional = true)})
     public static class FractalTerrain implements Resolver<State> {
 
         @Override

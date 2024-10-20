@@ -26,7 +26,6 @@ public class DataflowEncoder {
         encodePreamble(outWriter);
         outWriter.append("\n");
         encodeDefinitions(outWriter);
-//        outWriter.append("\n");
         for (Actuator actuator : dataflow.getComputation()) {
             encodeActuator(actuator, outWriter, 0);
         }
@@ -34,20 +33,20 @@ public class DataflowEncoder {
 
     private void encodeActuator(Actuator actuator, PrintWriter outWriter, int indent) {
 
-        String spacer = Utils.Strings.spaces(indent);
-        String dspacer = Utils.Strings.spaces(indent + 3);
+        String singleSpacer = Utils.Strings.spaces(indent);
+        String doubleSpacer = Utils.Strings.spaces(indent + 3);
 
-        outWriter.append(spacer).append(actuator.getActuatorType().name().toLowerCase()).append(" ");
+        outWriter.append(singleSpacer).append(actuator.getActuatorType().name().toLowerCase()).append(" ");
         outWriter.append(actuator.getActuatorType() == Actuator.Type.RESOLVE
                         ? ("obs" + actuator.getId())
                         : actuator.getObservable().getUrn());
 
         if (actuator.getStrategyUrn() != null) {
-            outWriter.append("\n").append(dspacer).append("using ").append(actuator.getStrategyUrn());
+            outWriter.append("\n").append(doubleSpacer).append("using ").append(actuator.getStrategyUrn());
         }
 
         if (!actuator.getChildren().isEmpty()) {
-            outWriter.append("\n").append(dspacer).append("(\n");
+            outWriter.append("\n").append(doubleSpacer).append("(\n");
             int i = 0;
             for (var child : actuator.getChildren()) {
                 encodeActuator(child, outWriter, indent + 6);
@@ -56,15 +55,15 @@ public class DataflowEncoder {
                 }
                 i++;
             }
-            outWriter.append("\n").append(dspacer).append(")");
+            outWriter.append("\n").append(doubleSpacer).append(")");
         }
 
         if (!actuator.getComputation().isEmpty()) {
-            outWriter.append("\n").append(dspacer).append("apply");
+            outWriter.append("\n").append(doubleSpacer).append("apply");
             int i = 0;
             for (var computation : actuator.getComputation()) {
                 if (actuator.getComputation().size() > 1) {
-                    outWriter.append("\n").append(spacer).append(dspacer);
+                    outWriter.append("\n").append(singleSpacer).append(doubleSpacer);
                 } else {
                     outWriter.append(" ");
                 }
