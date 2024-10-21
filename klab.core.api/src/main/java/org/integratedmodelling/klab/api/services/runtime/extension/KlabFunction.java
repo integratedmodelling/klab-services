@@ -22,6 +22,11 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
  * The functions can be used in k.IM, k.Actors and the observation language. This cannot be used to create
  * implementations for k.Actors <em>actions</em>, which must be tagged with {@link Verb} instead.
  *
+ * TODO missing fields (to substitute some booleans):
+ *  ComputationContextType (sic) i.e. processes Observation, Value, Resource, Concept
+ *  ProcessingType (Producer, Filter, Consumer) i.e. what it takes and produces and how
+ *  Use in addition to Geometry and Artifact Type
+ *
  * @author Ferd
  */
 @Documented
