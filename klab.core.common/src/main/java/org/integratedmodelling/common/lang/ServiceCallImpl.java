@@ -4,6 +4,7 @@ import org.integratedmodelling.common.lang.kim.KimStatementImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classification;
@@ -13,7 +14,7 @@ import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.Encodeable;
-import org.integratedmodelling.klab.api.lang.Prototype;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -30,6 +31,7 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
     private ParametersImpl<String> parameters = new ParametersImpl<>();
     private Set<String> interactiveParameterIds = new HashSet<>();
     private String sourceCode;
+    private Version requiredVersion;
 
     public ServiceCallImpl() {
     }
@@ -170,11 +172,11 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
         return n;
     }
 
-    @Override
-    public Prototype getPrototype() {
-        //        IExtensionService exts = Services.INSTANCE.getService(IExtensionService.class);
-        return null; // exts == null ? null : exts.getPrototype(name);
-    }
+    //    @Override
+    //    public ServiceInfo getPrototype() {
+    //        //        IExtensionService exts = Services.INSTANCE.getService(IExtensionService.class);
+    //        return null; // exts == null ? null : exts.getPrototype(name);
+    //    }
 
 
     public Set<String> getInteractiveParameterIds() {
@@ -227,6 +229,15 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
     @Override
     public ServiceCall withNamedParameters(Object... keyValuePairList) {
         return new ServiceCallImpl(this.getUrn(), Parameters.create(keyValuePairList));
+    }
+
+    @Override
+    public Version getRequiredVersion() {
+        return requiredVersion;
+    }
+
+    public void setRequiredVersion(Version requiredVersion) {
+        this.requiredVersion = requiredVersion;
     }
 
     @Override

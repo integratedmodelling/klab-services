@@ -79,8 +79,8 @@ public class ObservationReasoner {
     public ObservationReasoner(ReasonerService reasonerService) {
         this.reasoner = reasonerService;
         // ensure the core functor library is read. Plugins may add more.
-        ServiceConfiguration.INSTANCE.scanLibraries("org.integratedmodelling.klab.services.reasoner" +
-                ".functors");
+        reasonerService.getComponentRegistry().loadExtensions("org.integratedmodelling.klab.services" +
+                ".reasoner.functors");
     }
 
     /**
@@ -292,9 +292,9 @@ public class ObservationReasoner {
                         ret.semanticTypesWhitelist.add(SemanticType.fundamentalType(match.getMatch().getType()));
                     }
                     if (match.getMatch().isCollective()) {
-                        nCollective ++;
+                        nCollective++;
                     } else {
-                        nNoncollective ++;
+                        nNoncollective++;
                     }
                     variables.addAll(match.getMatch().getPatternVariables());
                 }

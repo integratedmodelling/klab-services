@@ -1,11 +1,13 @@
 package org.integratedmodelling.klab.rest;
 
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ResourceAdapterReference {
+public class AdapterInfo {
 
 	public static class OperationReference {
 		private String name;
@@ -41,7 +43,7 @@ public class ResourceAdapterReference {
 	private String name;
 	private String description;
 	private String label;
-	private ServicePrototype parameters;
+	private ServiceInfo parameters;
 	private boolean universal;
 	private Map<String, String> exportCapabilities = new HashMap<>();
 	private boolean multipleResources;
@@ -52,11 +54,11 @@ public class ResourceAdapterReference {
 	@Deprecated // unused - REMOVE when all nodes and engines are updated
 	private boolean fileBased;
 	
-	public ServicePrototype getParameters() {
+	public ServiceInfo getParameters() {
 		return parameters;
 	}
 
-	public void setParameters(ServicePrototype parameters) {
+	public void setParameters(ServiceInfo parameters) {
 		this.parameters = parameters;
 	}
 

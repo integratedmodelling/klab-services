@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.lang.Prototype;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 
 import java.io.Serializable;
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.List;
  * A Geometry is the declaration of the topological dimensions for the artifacts specified by (or allowed
  * for) a
  * resource or computation (for example a resource identified by a URN) or by a
- * {@link Prototype#getGeometry() service prototype} declared in k.DL or through annotations). When used in
+ * {@link ServiceInfo#getGeometry() service prototype} declared in k.DL or through annotations). When used in
  * such a
  * declarative fashion it may have a granularity > 1, meaning that it describes a multiplicity of
  * resources, and one
@@ -93,7 +93,7 @@ import java.util.List;
  * <p>
  * denotes a non-temporal set of irregular points in space. This notation assumes that all dimensions of a
  * topology are
- * either regular or irregolar.
+ * either regular or irregular.
  *
  * @author fvilla
  */

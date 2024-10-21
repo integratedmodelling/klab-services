@@ -16,11 +16,8 @@ package org.integratedmodelling.klab.configuration;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
-import javassist.Modifier;
-import org.apache.groovy.util.Maps;
 import org.integratedmodelling.common.knowledge.ModelBuilderImpl;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
-import org.integratedmodelling.common.lang.PrototypeImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
@@ -32,44 +29,32 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
-import org.integratedmodelling.klab.api.lang.Prototype;
-import org.integratedmodelling.klab.api.lang.Prototype.FunctionType;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.extension.KlabAnnotation;
-import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
-import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction.Argument;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
-import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.utils.Utils.OS;
-import org.integratedmodelling.klab.components.ComponentRegister;
-import org.integratedmodelling.klab.components.LocalComponentRepository;
 import org.integratedmodelling.klab.data.mediation.CurrencyServiceImpl;
 import org.integratedmodelling.klab.data.mediation.UnitServiceImpl;
-import org.integratedmodelling.klab.extension.KlabComponent;
+//import org.integratedmodelling.klab.runtime.language.LanguageService;
 import org.integratedmodelling.klab.runtime.language.LanguageService;
 import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
 import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
 import org.integratedmodelling.klab.runtime.scale.space.ProjectionImpl;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
-import org.pf4j.*;
-import org.pf4j.update.PluginInfo;
-import org.pf4j.update.UpdateManager;
+import org.integratedmodelling.klab.services.base.BaseService;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -88,21 +73,20 @@ public enum ServiceConfiguration {
 
     INSTANCE;
 
-    private PluginManager componentManager;
-    private UpdateManager componentUpdateManager;
     private Map<Class<?>, Map<Set<Object>, Service>> services = new HashMap<>();
     private Map<String, Authority> authorities = new HashMap<>();
     private KlabService mainService;
-    /**
-     * Standard library loader. Must be registered explicitly when calling {@link #scanPackage(String, Map)}.
-     * Not registering this along with the {@link Library} annotation can lead to interesting behaviors.
-     */
-    public BiConsumer<Annotation, Class<?>> LIBRARY_LOADER = (annotation, cls) -> {
-        var languageService = getService(Language.class);
-        for (Prototype prototype : loadLibrary((Library) annotation, cls)) {
-            ((LanguageService) languageService).declare(prototype);
-        }
-    };
+    //    /**
+    //     * Standard library loader. Must be registered explicitly when calling {@link #scanPackage
+    //     (String, Map)}.
+    //     * Not registering this along with the {@link Library} annotation can lead to interesting behaviors.
+    //     */
+    ////    public BiConsumer<Annotation, Class<?>> LIBRARY_LOADER = (annotation, cls) -> {
+    ////        var languageService = getService(Language.class);
+    ////        for (ServiceInfo serviceInfo : loadLibrary((Library) annotation, cls)) {
+    ////            ((LanguageService) languageService).declare(serviceInfo);
+    ////        }
+    ////    };
 
     static {
 
@@ -364,215 +348,206 @@ public enum ServiceConfiguration {
         registerService(new LanguageService(), Language.class);
     }
 
-    /**
-     * Call to initialize and use the plugin system. No plugins will be discovered unless this is called. This
-     * finds but does not load the configured plugins.
-     *
-     * @param pluginRoot
-     */
-    public void initializeComponents(File pluginRoot, ComponentRegister register) {
-        this.componentManager = new DefaultPluginManager(pluginRoot.toPath());
-        this.componentManager.loadPlugins();
-        // TODO configuration
-        for (var wrapper : this.componentManager.getPlugins()) {
-             Plugin plugin = wrapper.getPlugin();
-             if (plugin instanceof KlabComponent component) {
-                    register.registerComponent(component);
-             }
-        }
-
-        this.componentManager.addPluginStateListener(new PluginStateListener() {
-            @Override
-            public void pluginStateChanged(PluginStateEvent event) {
-                System.out.println("HOLA! Plugin state: " + event);
-            }
-        });
-    }
-
 
     public void setMainService(KlabService service) {
         this.mainService = service;
-    }
-
-    public List<Prototype> loadLibrary(Library annotation, Class<?> cls) {
-
-        List<Prototype> ret = new ArrayList<>();
-        String namespacePrefix = Library.CORE_LIBRARY.equals(annotation.name()) ? "" :
-                                 (annotation.name() + ".");
-
-        for (Class<?> clss : cls.getClasses()) {
-            if (clss.isAnnotationPresent(KlabFunction.class)) {
-                ret.add(createContextualizerPrototype(namespacePrefix,
-                        clss.getAnnotation(KlabFunction.class), clss,
-                        null));
-            } else if (clss.isAnnotationPresent(Verb.class)) {
-                ret.add(createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class), clss, null));
-            } else if (clss.isAnnotationPresent(KlabAnnotation.class)) {
-                ret.add(createAnnotationPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation.class)
-                        , clss,
-                        null));
+        if (service instanceof BaseService baseService) {
+            var serv = getService(Language.class);
+            if (serv instanceof LanguageService languageService) {
+                languageService.setComponentRegistry(baseService.getComponentRegistry());
             }
         }
-
-        // annotated methods
-        for (Method method : cls.getDeclaredMethods()) {
-            if (Modifier.isPublic(method.getModifiers()) && method.isAnnotationPresent(KlabFunction.class)) {
-                ret.add(createContextualizerPrototype(namespacePrefix,
-                        method.getAnnotation(KlabFunction.class), cls,
-                        method));
-            } else if (method.isAnnotationPresent(KlabAnnotation.class)) {
-                ret.add(createAnnotationPrototype(namespacePrefix, cls.getAnnotation(KlabAnnotation.class),
-                        cls,
-                        method));
-            } else if (method.isAnnotationPresent(Verb.class)) {
-                ret.add(createVerbPrototype(namespacePrefix, cls.getAnnotation(Verb.class), cls, method));
-            }
-        }
-        return ret;
     }
 
-    public Prototype createVerbPrototype(String namespacePrefix, Verb annotation, Class<?> clss,
-                                         Method method) {
-        // TODO
-        return null;
-    }
-
-    public Prototype createContextualizerPrototype(String namespacePrefix, KlabFunction annotation,
-                                                   Class<?> clss,
-                                                   Method method) {
-
-        var ret = new PrototypeImpl();
-
-        ret.setName(namespacePrefix + annotation.name());
-        ret.setDescription(annotation.description());
-        ret.setFilter(annotation.filter());
-        ret.setImplementation(clss);
-        ret.setExecutorMethod(method == null ? null : method.getName());
-        ret.setGeometry(annotation.geometry().isEmpty() ? null : Geometry.create(annotation.geometry()));
-        ret.setLabel(annotation.dataflowLabel());
-        ret.setReentrant(annotation.reentrant());
-        ret.setFunctionType(FunctionType.FUNCTION);
-
-        for (Artifact.Type a : annotation.type()) {
-            ret.getType().add(a);
-        }
-
-        for (Argument argument : annotation.parameters()) {
-            var arg = createArgument(argument);
-            ret.getArguments().put(arg.getName(), arg);
-        }
-        for (Argument argument : annotation.exports()) {
-            var arg = createArgument(argument);
-            ret.getImports().add(arg);
-        }
-        for (Argument argument : annotation.imports()) {
-            var arg = createArgument(argument);
-            ret.getExports().add(arg);
-        }
-
-        return ret;
-    }
-
-    public Prototype createAnnotationPrototype(String namespacePrefix, KlabAnnotation annotation,
-                                               Class<?> clss,
-                                               Method method) {
-
-        var ret = new PrototypeImpl();
-
-        ret.setName(namespacePrefix + annotation.name());
-        ret.setDescription(annotation.description());
-        ret.setImplementation(clss);
-        ret.setExecutorMethod(method == null ? null : method.getName());
-        ret.setFunctionType(FunctionType.ANNOTATION);
-        for (KnowledgeClass kcl : annotation.targets()) {
-            ret.getTargets().add(kcl);
-        }
-
-        for (Argument argument : annotation.parameters()) {
-            var arg = createArgument(argument);
-            ret.getArguments().put(arg.getName(), arg);
-        }
-
-        return ret;
-    }
-
-    private PrototypeImpl.ArgumentImpl createArgument(Argument argument) {
-        var arg = new PrototypeImpl.ArgumentImpl();
-        arg.setName(argument.name());
-        arg.setDescription(argument.description());
-        arg.setOptional(argument.optional());
-        arg.setConst(argument.constant());
-        arg.setArtifact(argument.artifact());
-        for (Artifact.Type a : argument.type()) {
-            arg.getType().add(a);
-        }
-        return arg;
-    }
-
-    /**
-     * Check for updates and load all registered components; return the set of packages to scan from them.
-     * <p>
-     * TODO!
-     *
-     * @return
-     */
-    public Set<String> updateAndLoadComponents(String serviceName) {
-
-        Set<String> ret = new LinkedHashSet<>();
-        if (componentUpdateManager == null) {
-            componentUpdateManager = new UpdateManager(componentManager, new ArrayList<>());
-            componentUpdateManager.addRepository(new LocalComponentRepository(serviceName));
-        }
-
-        if (componentUpdateManager.hasUpdates()) {
-            List<PluginInfo> updates = componentUpdateManager.getUpdates();
-            Logging.INSTANCE.debug("Found {} updates", updates.size());
-            for (PluginInfo plugin : updates) {
-                Logging.INSTANCE.debug("Found update for plugin '{}'", plugin.id);
-                PluginInfo.PluginRelease lastRelease = componentUpdateManager.getLastPluginRelease(plugin.id);
-                String lastVersion = lastRelease.version;
-                String installedVersion = componentManager.getPlugin(plugin.id).getDescriptor().getVersion();
-                Logging.INSTANCE.debug("Update plugin '{}' from version {} to version {}", plugin.id,
-                        installedVersion,
-                        lastVersion);
-                boolean updated = componentUpdateManager.updatePlugin(plugin.id, lastVersion);
-                if (updated) {
-                    Logging.INSTANCE.debug("Updated plugin '{}'", plugin.id);
-                } else {
-                    Logging.INSTANCE.error("Cannot update plugin '{}'", plugin.id);
-                }
-            }
-        } else {
-            Logging.INSTANCE.debug("No updates found");
-        }
-
-        // check for available (new) plugins
-        if (componentUpdateManager.hasAvailablePlugins()) {
-            List<PluginInfo> availablePlugins = componentUpdateManager.getAvailablePlugins();
-            Logging.INSTANCE.debug("Found {} available plugins", availablePlugins.size());
-            for (PluginInfo plugin : availablePlugins) {
-                Logging.INSTANCE.debug("Found available plugin '{}'", plugin.id);
-                PluginInfo.PluginRelease lastRelease = componentUpdateManager.getLastPluginRelease(plugin.id);
-                String lastVersion = lastRelease.version;
-                Logging.INSTANCE.debug("Install plugin '{}' with version {}", plugin.id, lastVersion);
-                boolean installed = componentUpdateManager.installPlugin(plugin.id, lastVersion);
-                if (installed) {
-                    Logging.INSTANCE.debug("Installed plugin '{}'", plugin.id);
-                } else {
-                    Logging.INSTANCE.error("Cannot install plugin '{}'", plugin.id);
-                }
-            }
-        } else {
-            Logging.INSTANCE.debug("No available plugins found");
-        }
-
-        // Disable temporarily - creates issues in modeler
-        //
-        componentManager.loadPlugins();
-
-        return ret;
-
-    }
+    //    public List<ServiceInfo> loadLibrary(Library annotation, Class<?> cls) {
+    //
+    //        List<ServiceInfo> ret = new ArrayList<>();
+    //        String namespacePrefix = Library.CORE_LIBRARY.equals(annotation.name()) ? "" :
+    //                                 (annotation.name() + ".");
+    //
+    //        for (Class<?> clss : cls.getClasses()) {
+    //            if (clss.isAnnotationPresent(KlabFunction.class)) {
+    //                ret.add(createContextualizerPrototype(namespacePrefix,
+    //                        clss.getAnnotation(KlabFunction.class), clss,
+    //                        null));
+    //            } else if (clss.isAnnotationPresent(Verb.class)) {
+    //                ret.add(createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class), clss,
+    //                null));
+    //            } else if (clss.isAnnotationPresent(KlabAnnotation.class)) {
+    //                ret.add(createAnnotationPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation
+    //                .class)
+    //                        , clss,
+    //                        null));
+    //            }
+    //        }
+    //
+    //        // annotated methods
+    //        for (Method method : cls.getDeclaredMethods()) {
+    //            if (Modifier.isPublic(method.getModifiers()) && method.isAnnotationPresent(KlabFunction
+    //            .class)) {
+    //                ret.add(createContextualizerPrototype(namespacePrefix,
+    //                        method.getAnnotation(KlabFunction.class), cls,
+    //                        method));
+    //            } else if (method.isAnnotationPresent(KlabAnnotation.class)) {
+    //                ret.add(createAnnotationPrototype(namespacePrefix, cls.getAnnotation(KlabAnnotation
+    //                .class),
+    //                        cls,
+    //                        method));
+    //            } else if (method.isAnnotationPresent(Verb.class)) {
+    //                ret.add(createVerbPrototype(namespacePrefix, cls.getAnnotation(Verb.class), cls,
+    //                method));
+    //            }
+    //        }
+    //        return ret;
+    //    }
+    //
+    //    public ServiceInfo createVerbPrototype(String namespacePrefix, Verb annotation, Class<?> clss,
+    //                                           Method method) {
+    //        // TODO
+    //        return null;
+    //    }
+    //
+    //    public ServiceInfo createContextualizerPrototype(String namespacePrefix, KlabFunction annotation,
+    //                                                     Class<?> clss,
+    //                                                     Method method) {
+    //
+    //        var ret = new ServiceInfoImpl();
+    //
+    //        ret.setName(namespacePrefix + annotation.name());
+    //        ret.setDescription(annotation.description());
+    //        ret.setFilter(annotation.filter());
+    //        ret.setImplementation(clss);
+    //        ret.setExecutorMethod(method == null ? null : method.getName());
+    //        ret.setGeometry(annotation.geometry().isEmpty() ? null : Geometry.create(annotation.geometry
+    //        ()));
+    //        ret.setLabel(annotation.dataflowLabel());
+    //        ret.setReentrant(annotation.reentrant());
+    //        ret.setFunctionType(FunctionType.FUNCTION);
+    //
+    //        for (Artifact.Type a : annotation.type()) {
+    //            ret.getType().add(a);
+    //        }
+    //
+    //        for (Argument argument : annotation.parameters()) {
+    //            var arg = createArgument(argument);
+    //            ret.getArguments().put(arg.getName(), arg);
+    //        }
+    //        for (Argument argument : annotation.exports()) {
+    //            var arg = createArgument(argument);
+    //            ret.getImports().add(arg);
+    //        }
+    //        for (Argument argument : annotation.imports()) {
+    //            var arg = createArgument(argument);
+    //            ret.getExports().add(arg);
+    //        }
+    //
+    //        return ret;
+    //    }
+    //
+    //    public ServiceInfo createAnnotationPrototype(String namespacePrefix, KlabAnnotation annotation,
+    //                                                 Class<?> clss,
+    //                                                 Method method) {
+    //
+    //        var ret = new ServiceInfoImpl();
+    //
+    //        ret.setName(namespacePrefix + annotation.name());
+    //        ret.setDescription(annotation.description());
+    //        ret.setImplementation(clss);
+    //        ret.setExecutorMethod(method == null ? null : method.getName());
+    //        ret.setFunctionType(FunctionType.ANNOTATION);
+    //        for (KnowledgeClass kcl : annotation.targets()) {
+    //            ret.getTargets().add(kcl);
+    //        }
+    //
+    //        for (Argument argument : annotation.parameters()) {
+    //            var arg = createArgument(argument);
+    //            ret.getArguments().put(arg.getName(), arg);
+    //        }
+    //
+    //        return ret;
+    //    }
+    //
+    //    private ServiceInfoImpl.ArgumentImpl createArgument(Argument argument) {
+    //        var arg = new ServiceInfoImpl.ArgumentImpl();
+    //        arg.setName(argument.name());
+    //        arg.setDescription(argument.description());
+    //        arg.setOptional(argument.optional());
+    //        arg.setConst(argument.constant());
+    //        arg.setArtifact(argument.artifact());
+    //        for (Artifact.Type a : argument.type()) {
+    //            arg.getType().add(a);
+    //        }
+    //        return arg;
+    //    }
+    //
+    //    /**
+    //     * Check for updates and load all registered components; return the set of packages to scan from
+    //     them.
+    //     * <p>
+    //     * TODO!
+    //     *
+    //     * @return
+    //     */
+    //    public Set<String> updateAndLoadComponents(String serviceName) {
+    //
+    //        Set<String> ret = new LinkedHashSet<>();
+    //        if (componentUpdateManager == null) {
+    //            componentUpdateManager = new UpdateManager(componentManager, new ArrayList<>());
+    //            componentUpdateManager.addRepository(new LocalComponentRepository(serviceName));
+    //        }
+    //
+    //        if (componentUpdateManager.hasUpdates()) {
+    //            List<PluginInfo> updates = componentUpdateManager.getUpdates();
+    //            Logging.INSTANCE.debug("Found {} updates", updates.size());
+    //            for (PluginInfo plugin : updates) {
+    //                Logging.INSTANCE.debug("Found update for plugin '{}'", plugin.id);
+    //                PluginInfo.PluginRelease lastRelease = componentUpdateManager.getLastPluginRelease
+    //                (plugin.id);
+    //                String lastVersion = lastRelease.version;
+    //                String installedVersion = componentManager.getPlugin(plugin.id).getDescriptor()
+    //                .getVersion();
+    //                Logging.INSTANCE.debug("Update plugin '{}' from version {} to version {}", plugin.id,
+    //                        installedVersion,
+    //                        lastVersion);
+    //                boolean updated = componentUpdateManager.updatePlugin(plugin.id, lastVersion);
+    //                if (updated) {
+    //                    Logging.INSTANCE.debug("Updated plugin '{}'", plugin.id);
+    //                } else {
+    //                    Logging.INSTANCE.error("Cannot update plugin '{}'", plugin.id);
+    //                }
+    //            }
+    //        } else {
+    //            Logging.INSTANCE.debug("No updates found");
+    //        }
+    //
+    //        // check for available (new) plugins
+    //        if (componentUpdateManager.hasAvailablePlugins()) {
+    //            List<PluginInfo> availablePlugins = componentUpdateManager.getAvailablePlugins();
+    //            Logging.INSTANCE.debug("Found {} available plugins", availablePlugins.size());
+    //            for (PluginInfo plugin : availablePlugins) {
+    //                Logging.INSTANCE.debug("Found available plugin '{}'", plugin.id);
+    //                PluginInfo.PluginRelease lastRelease = componentUpdateManager.getLastPluginRelease
+    //                (plugin.id);
+    //                String lastVersion = lastRelease.version;
+    //                Logging.INSTANCE.debug("Install plugin '{}' with version {}", plugin.id, lastVersion);
+    //                boolean installed = componentUpdateManager.installPlugin(plugin.id, lastVersion);
+    //                if (installed) {
+    //                    Logging.INSTANCE.debug("Installed plugin '{}'", plugin.id);
+    //                } else {
+    //                    Logging.INSTANCE.error("Cannot install plugin '{}'", plugin.id);
+    //                }
+    //            }
+    //        } else {
+    //            Logging.INSTANCE.debug("No available plugins found");
+    //        }
+    //
+    //        // Disable temporarily - creates issues in modeler
+    //        //
+    //        componentManager.loadPlugins();
+    //
+    //        return ret;
+    //
+    //    }
 
     /**
      * Single scanning loop for all registered annotations in a package. Done on the main codebase and in each
@@ -652,15 +627,15 @@ public enum ServiceConfiguration {
         return ret == null ? defaultValue : ret;
     }
 
-    /**
-     * Simple call to scan a named package for all @Library annotations in it.
-     *
-     * @param pack
-     */
-    public void scanLibraries(String pack) {
-        ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
-                ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
-    }
+    //    /**
+    //     * Simple call to scan a named package for all @Library annotations in it.
+    //     *
+    //     * @param pack
+    //     */
+    //    public void scanLibraries(String pack) {
+    //        ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
+    //                ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
+    //    }
 
     /**
      * Non-API Save the properties after making changes from outside configuration. Should be used only

@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
@@ -60,6 +61,7 @@ public abstract class BaseService implements KlabService {
     private ScopeManager _scopeManager;
     private boolean initialized;
     private boolean operational;
+    private ComponentRegistry componentRegister = new ComponentRegistry();
 
     protected Parameters<Engine.Setting> settingsForSlaveServices = Parameters.createSynchronized();
 
@@ -81,6 +83,10 @@ public abstract class BaseService implements KlabService {
             throw new KlabIllegalStateException(e);
         }
         createServiceSecret();
+    }
+
+    public ComponentRegistry getComponentRegistry() {
+        return componentRegister;
     }
 
     protected ServiceStartupOptions getStartupOptions() {

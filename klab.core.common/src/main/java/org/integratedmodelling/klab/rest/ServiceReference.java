@@ -50,7 +50,7 @@ public class ServiceReference {
     //	}
 
     public ServiceReference(NodeCapabilities capabilities) {
-        for (ResourceAdapterReference adapter : capabilities.getResourceAdapters()) {
+        for (AdapterInfo adapter : capabilities.getResourceAdapters()) {
             this.adapters.add(adapter.getName());
         }
         this.id = capabilities.getName();

@@ -1,9 +1,6 @@
 package org.integratedmodelling.klab.services.runtime;
 
-import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.collect.ImmutableList;
-import org.apache.commons.collections.IteratorUtils;
-import org.apache.groovy.util.Maps;
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
@@ -14,7 +11,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -27,7 +23,6 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -47,8 +42,6 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 public class RuntimeService extends BaseService implements org.integratedmodelling.klab.api.services.RuntimeService, org.integratedmodelling.klab.api.services.RuntimeService.Admin {
 
@@ -111,8 +104,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
          * Components
          */
         Set<String> extensionPackages = new LinkedHashSet<>();
-        extensionPackages.add("org.integratedmodelling.klab.runtime");
-        extensionPackages.add("org.integratedmodelling.klab.runtime.temporary");
+        //        extensionPackages.add("org.integratedmodelling.klab.runtime");
+        //        extensionPackages.add("org.integratedmodelling.klab.runtime.temporary");
 
         if (createMainKnowledgeGraph()) {
 
@@ -122,16 +115,15 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
              */
             //        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
 
-            /*
-             * Scan all packages registered under the parent package of all k.LAB services. TODO all
-             * assets from there should be given default permissions (or those encoded with their
-             * annotations) that are exposed to the admin API.
-             */
-            for (String pack : extensionPackages) {
-                ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(
-                        Library.class,
-                        ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
-            }
+            // TODO internal libraries
+            getComponentRegistry().loadExtensions("org.integratedmodelling.klab.runtime");
+            getComponentRegistry().initializeComponents(BaseService.getConfigurationSubdirectory(startupOptions, "components"));
+
+            //            for (String pack : extensionPackages) {
+            //                ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(
+            //                        Library.class,
+            //                        ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
+            //            }
 
             serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable
                     , capabilities(serviceScope()));
@@ -305,8 +297,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     public long submit(Observation observation, ContextScope scope, boolean startResolution) {
         if (scope instanceof ServiceContextScope serviceContextScope) {
             return startResolution
-                    ? serviceContextScope.observe(observation).trackingKey()
-                    : serviceContextScope.insertIntoKnowledgeGraph(observation);
+                   ? serviceContextScope.observe(observation).trackingKey()
+                   : serviceContextScope.insertIntoKnowledgeGraph(observation);
         }
         return -1L;
     }
@@ -339,7 +331,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     private void run(Actuator rootActuator, ContextScope scope) {
 
         /*
-        Turn the actuator hierarchy into a flat list in dependency order. Both actuator containment and reference count as
+        Turn the actuator hierarchy into a flat list in dependency order. Both actuator containment and
+        reference count as
         dependencies between observations.
          */
         for (Actuator actuator : computeActuatorOrder(rootActuator, scope)) {
@@ -365,7 +358,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         return ImmutableList.copyOf(new TopologicalOrderIterator<>(dependencyGraph));
     }
 
-    private void loadGraph(Actuator rootActuator, Graph<Actuator, DefaultEdge> dependencyGraph, Map<Long, Actuator> cache) {
+    private void loadGraph(Actuator rootActuator, Graph<Actuator, DefaultEdge> dependencyGraph, Map<Long,
+            Actuator> cache) {
         cache.put(rootActuator.getId(), rootActuator);
         dependencyGraph.addVertex(rootActuator);
         for (Actuator child : rootActuator.getChildren()) {

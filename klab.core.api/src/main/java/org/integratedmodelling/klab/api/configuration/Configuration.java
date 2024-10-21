@@ -16,7 +16,7 @@ package org.integratedmodelling.klab.api.configuration;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.lang.Prototype;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -208,8 +208,8 @@ public enum Configuration {
 
     }
 
-    public Prototype createVerbPrototype(String namespacePrefix, Verb annotation, Class<?> clss,
-                                         Method method) {
+    public ServiceInfo createVerbPrototype(String namespacePrefix, Verb annotation, Class<?> clss,
+                                           Method method) {
         // TODO
         return null;
     }

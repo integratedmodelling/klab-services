@@ -67,6 +67,49 @@ public class ResourcesConfiguration implements Serializable {
 
     }
 
+    public static class ComponentConfiguration implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = -8966889570222340019L;
+        private ResourcePrivileges privileges;
+        private String doi;
+        private int revisionTier;
+        private String localPath;
+
+        public ResourcePrivileges getPrivileges() {
+            return privileges;
+        }
+
+        public void setPrivileges(ResourcePrivileges privileges) {
+            this.privileges = privileges;
+        }
+
+        public String getDoi() {
+            return doi;
+        }
+
+        public void setDoi(String doi) {
+            this.doi = doi;
+        }
+
+        public int getRevisionTier() {
+            return revisionTier;
+        }
+
+        public void setRevisionTier(int revisionTier) {
+            this.revisionTier = revisionTier;
+        }
+
+        public String getLocalPath() {
+            return localPath;
+        }
+
+        public void setLocalPath(String localPath) {
+            this.localPath = localPath;
+        }
+
+    }
+
     public static class ProjectConfiguration implements Serializable {
 
         @Serial
@@ -209,6 +252,12 @@ public class ResourcesConfiguration implements Serializable {
      */
     private Map<String, ResourceConfiguration> resourceConfiguration = new HashMap<>();
 
+    /**
+     * And for components, which are very similar to resources but list all the services
+     * and adapters they provide
+     */
+    private Map<String, ComponentConfiguration> componentConfiguration = new HashMap<>();
+
     public String getServicePath() {
         return servicePath;
     }
@@ -263,5 +312,21 @@ public class ResourcesConfiguration implements Serializable {
 
     public void setServiceId(String serviceId) {
         this.serviceId = serviceId;
+    }
+
+    public Map<String, ResourceConfiguration> getResourceConfiguration() {
+        return resourceConfiguration;
+    }
+
+    public void setResourceConfiguration(Map<String, ResourceConfiguration> resourceConfiguration) {
+        this.resourceConfiguration = resourceConfiguration;
+    }
+
+    public Map<String, ComponentConfiguration> getComponentConfiguration() {
+        return componentConfiguration;
+    }
+
+    public void setComponentConfiguration(Map<String, ComponentConfiguration> componentConfiguration) {
+        this.componentConfiguration = componentConfiguration;
     }
 }

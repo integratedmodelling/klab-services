@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
-import org.integratedmodelling.klab.api.lang.Prototype;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabAnnotation;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
@@ -16,11 +16,11 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.logging.Level;
 
-public class PrototypeImpl implements Prototype {
+public class ServiceInfoImpl implements ServiceInfo {
 
     private static final long serialVersionUID = -9168391783660976848L;
 
-    public static class ArgumentImpl implements Prototype.Argument {
+    public static class ArgumentImpl implements ServiceInfo.Argument {
 
         private static final long serialVersionUID = -6573430853944135837L;
         private String name;
@@ -190,7 +190,7 @@ public class PrototypeImpl implements Prototype {
     // stable ordering reflecting that of the declaration
     private Map<String, ArgumentImpl> arguments = new LinkedHashMap<>();
     private String description;
-    private Class<?> implementation;
+//    private Class<?> implementation;
     private List<Type> type = new ArrayList<>();
     private Geometry geometry;
     private boolean distributed;
@@ -203,7 +203,7 @@ public class PrototypeImpl implements Prototype {
     private List<ArgumentImpl> outputAnnotations = new ArrayList<>();
     private boolean isConst;
     private boolean reentrant;
-    private String executorMethod;
+//    private String executorMethod;
     private FunctionType functionType;
     private Set<KnowledgeClass> targets = EnumSet.noneOf(KnowledgeClass.class);
 
@@ -259,7 +259,7 @@ public class PrototypeImpl implements Prototype {
     }
 
     @Override
-    public List<Prototype.Argument> listArguments() {
+    public List<ServiceInfo.Argument> listArguments() {
         return new ArrayList<>(arguments.values());
     }
 
@@ -524,10 +524,10 @@ public class PrototypeImpl implements Prototype {
         return ret;
     }
 
-    @Override
-    public Class<?> executorClass() {
-        return implementation;
-    }
+//    @Override
+//    public Class<?> executorClass() {
+//        return implementation;
+//    }
 
     @Override
     public boolean isDistributed() {
@@ -599,13 +599,13 @@ public class PrototypeImpl implements Prototype {
         return isConst;
     }
 
-    public Class<?> getImplementation() {
-        return implementation;
-    }
-
-    public void setImplementation(Class<?> implementation) {
-        this.implementation = implementation;
-    }
+//    public Class<?> getImplementation() {
+//        return implementation;
+//    }
+//
+//    public void setImplementation(Class<?> implementation) {
+//        this.implementation = implementation;
+//    }
 
     public List<ArgumentImpl> getInputAnnotations() {
         return inputAnnotations;
@@ -643,13 +643,13 @@ public class PrototypeImpl implements Prototype {
         this.filter = filter;
     }
 
-    public String getExecutorMethod() {
-        return executorMethod;
-    }
-
-    public void setExecutorMethod(String executorMethod) {
-        this.executorMethod = executorMethod;
-    }
+//    public String getExecutorMethod() {
+//        return executorMethod;
+//    }
+//
+//    public void setExecutorMethod(String executorMethod) {
+//        this.executorMethod = executorMethod;
+//    }
 
     public FunctionType getFunctionType() {
         return functionType;
@@ -670,17 +670,15 @@ public class PrototypeImpl implements Prototype {
 
 
 
-    public Prototype createContextualizerPrototype(String namespacePrefix, KlabFunction annotation,
-                                                   Class<?> clss,
-                                                   Method method) {
+    public ServiceInfo createContextualizerPrototype(String namespacePrefix, KlabFunction annotation) {
 
-        var ret = new PrototypeImpl();
+        var ret = new ServiceInfoImpl();
 
         ret.setName(namespacePrefix + annotation.name());
         ret.setDescription(annotation.description());
         ret.setFilter(annotation.filter());
-        ret.setImplementation(clss);
-        ret.setExecutorMethod(method == null ? null : method.getName());
+//        ret.setImplementation(clss);
+//        ret.setExecutorMethod(method == null ? null : method.getName());
         ret.setGeometry(annotation.geometry().isEmpty() ? null : Geometry.create(annotation.geometry()));
         ret.setLabel(annotation.dataflowLabel());
         ret.setReentrant(annotation.reentrant());
@@ -706,16 +704,14 @@ public class PrototypeImpl implements Prototype {
         return ret;
     }
 
-    public Prototype createAnnotationPrototype(String namespacePrefix, KlabAnnotation annotation,
-                                               Class<?> clss,
-                                               Method method) {
+    public ServiceInfo createAnnotationPrototype(String namespacePrefix, KlabAnnotation annotation) {
 
-        var ret = new PrototypeImpl();
+        var ret = new ServiceInfoImpl();
 
         ret.setName(namespacePrefix + annotation.name());
         ret.setDescription(annotation.description());
-        ret.setImplementation(clss);
-        ret.setExecutorMethod(method == null ? null : method.getName());
+//        ret.setImplementation(clss);
+//        ret.setExecutorMethod(method == null ? null : method.getName());
         ret.setFunctionType(FunctionType.ANNOTATION);
         for (KnowledgeClass kcl : annotation.targets()) {
             ret.getTargets().add(kcl);
@@ -729,8 +725,8 @@ public class PrototypeImpl implements Prototype {
         return ret;
     }
 
-    private PrototypeImpl.ArgumentImpl createArgument(KlabFunction.Argument argument) {
-        var arg = new PrototypeImpl.ArgumentImpl();
+    private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Argument argument) {
+        var arg = new ServiceInfoImpl.ArgumentImpl();
         arg.setName(argument.name());
         arg.setDescription(argument.description());
         arg.setOptional(argument.optional());

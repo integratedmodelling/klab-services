@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.services.resources;
 
 import com.google.common.collect.Sets;
-import org.checkerframework.checker.units.qual.C;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -35,7 +34,6 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
-import org.integratedmodelling.klab.components.ComponentRegister;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
@@ -98,8 +96,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private ModelKbox kbox;
     // set to true when the connected reasoner becomes operational
     private boolean semanticSearchAvailable = false;
-    private ComponentRegister componentRegister = new ComponentRegister();
-
     /*
      * "fair" read/write lock to ensure no reading during updates
      */
@@ -137,7 +133,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         /*
         initialize the plugin system to handle components
          */
-        ServiceConfiguration.INSTANCE.initializeComponents(getConfigurationSubdirectory(options, "components"), this.componentRegister);
+        getComponentRegistry().initializeComponents(getConfigurationSubdirectory(options, "components"));
 
     }
 

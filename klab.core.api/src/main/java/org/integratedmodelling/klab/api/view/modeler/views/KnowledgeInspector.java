@@ -1,9 +1,6 @@
 package org.integratedmodelling.klab.api.view.modeler.views;
 
-import org.integratedmodelling.klab.api.data.mediation.classification.Classification;
 import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.lang.Prototype;
-import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.View;

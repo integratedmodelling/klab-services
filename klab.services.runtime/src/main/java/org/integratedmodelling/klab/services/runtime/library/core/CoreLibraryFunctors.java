@@ -25,10 +25,6 @@ import java.util.List;
  * the functors through their {@link ServiceCall}s. Each service call must correspond to those built by the
  * {@link org.integratedmodelling.klab.api.services.CoreLibrary} service implemented across communicating
  * k.LAB services.
- * <p>
- * TODO find an elegant way to prescribe the prototypes from within the
- * {@link org.integratedmodelling.klab.api.services.CoreLibrary} service and validate the functors upon
- * loading.
  */
 @Library(name = Klab.StandardLibrary.KlabCore.NAMESPACE, description = "")
 public class CoreLibraryFunctors {
@@ -37,7 +33,7 @@ public class CoreLibraryFunctors {
     public static class Resources {
 
         // TODO
-        @KlabFunction(version = Version.CURRENT, name = Klab.StandardLibrary.KlabCore.URN_RESOLVER,
+        @KlabFunction(name = Klab.StandardLibrary.KlabCore.URN_RESOLVER,
                       dataflowLabel =
                               "Resource", description = "Contextualize a quality resource to obtain data",
                       parameters = {
@@ -67,7 +63,7 @@ public class CoreLibraryFunctors {
 
         }
 
-        @KlabFunction(version = Version.CURRENT, name = Klab.StandardLibrary.KlabCore.LUT_RESOLVER,
+        @KlabFunction(name = Klab.StandardLibrary.KlabCore.LUT_RESOLVER,
                       dataflowLabel =
                               "Lookup table", description = "Compute outputs by looking up dependency " +
                 "values in a table",
@@ -83,7 +79,7 @@ public class CoreLibraryFunctors {
             }
         }
 
-        @KlabFunction(version = Version.CURRENT, name = Klab.StandardLibrary.KlabCore.URN_INSTANTIATOR,
+        @KlabFunction(name = Klab.StandardLibrary.KlabCore.URN_INSTANTIATOR,
                       dataflowLabel = "Resource", description = "Contextualize a Type.OBJECT resource to " +
                 "obtain " +
                 "objects", parameters = {

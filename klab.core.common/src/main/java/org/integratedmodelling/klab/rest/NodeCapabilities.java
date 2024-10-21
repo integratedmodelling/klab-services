@@ -26,7 +26,7 @@ public class NodeCapabilities {
 	private Set<String> resourceNamespaces = new LinkedHashSet<>();
 	private Set<String> resourceCatalogs = new LinkedHashSet<>();
 	private List<String> mirrors = new ArrayList<>();
-	private List<ResourceAdapterReference> resourceAdapters = new ArrayList<>();
+	private List<AdapterInfo> resourceAdapters = new ArrayList<>();
 	private long refreshFrequencyMillis;
 	private int loadFactor;
 	private boolean online;
@@ -136,11 +136,11 @@ public class NodeCapabilities {
 				+ ", loadFactor=" + loadFactor + "]";
 	}
 
-	public List<ResourceAdapterReference> getResourceAdapters() {
+	public List<AdapterInfo> getResourceAdapters() {
 		return resourceAdapters;
 	}
 
-	public void setResourceAdapters(List<ResourceAdapterReference> resourceAdapters) {
+	public void setResourceAdapters(List<AdapterInfo> resourceAdapters) {
 		this.resourceAdapters = resourceAdapters;
 	}
 

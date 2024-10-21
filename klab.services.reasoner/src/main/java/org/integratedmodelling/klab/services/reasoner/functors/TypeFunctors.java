@@ -24,25 +24,25 @@ public class TypeFunctors {
         this.reasoner = reasoner;
     }
 
-    @KlabFunction(name = "concrete", version = Version.CURRENT, description = "Check if an observable is " +
+    @KlabFunction(name = "concrete", description = "Check if an observable is " +
             "concrete", type = {Artifact.Type.BOOLEAN})
     public boolean isConcrete(Semantics semantics) {
         return !semantics.isAbstract();
     }
 
-    @KlabFunction(name = "abstract", version = Version.CURRENT, description = "Check if an observable is " +
+    @KlabFunction(name = "abstract", description = "Check if an observable is " +
             "concrete", type = {Artifact.Type.BOOLEAN})
     public boolean isAbstract(Semantics semantics) {
         return semantics.isAbstract();
     }
 
-    @KlabFunction(name = "collective", version = Version.CURRENT, description = "Check if an observable is " +
+    @KlabFunction(name = "collective", description = "Check if an observable is " +
             "concrete", type = {Artifact.Type.BOOLEAN})
     public boolean isCollective(Semantics semantics) {
         return semantics.asConcept().isCollective();
     }
 
-    @KlabFunction(name = "operator.splitfirst", version = Version.CURRENT, description = "Remove the first " +
+    @KlabFunction(name = "operator.splitfirst", description = "Remove the first " +
             "attribute from an observable and return the two parts", type = {Artifact.Type.CONCEPT})
     public List<Concept> splitFirst(Semantics semantics) {
         /**
@@ -51,7 +51,7 @@ public class TypeFunctors {
         return List.of(semantics.asConcept(), semantics.asConcept());
     }
 
-    @KlabFunction(name = "arity.single", version = Version.CURRENT, description = "Check if an observable " +
+    @KlabFunction(name = "arity.single", description = "Check if an observable " +
             "is " +
             "concrete", type = {Artifact.Type.CONCEPT})
     public Semantics changeArityToSingle(Semantics semantics) {
@@ -66,7 +66,7 @@ public class TypeFunctors {
         return semantics;
     }
 
-    @KlabFunction(name = "arity.collective", version = Version.CURRENT, description = "Check if an " +
+    @KlabFunction(name = "arity.collective", description = "Check if an " +
             "observable is " +
             "concrete", type = {Artifact.Type.CONCEPT})
     public Semantics changeArityToCollective(Semantics semantics) {
