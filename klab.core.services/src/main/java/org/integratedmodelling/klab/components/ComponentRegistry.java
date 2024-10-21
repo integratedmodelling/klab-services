@@ -28,7 +28,6 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.extension.KlabComponent;
 import org.pf4j.*;
-import org.pf4j.update.UpdateManager;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
@@ -42,7 +41,11 @@ public class ComponentRegistry {
 
     private static final String LOCAL_SERVICE_COMPONENT = "internal.local.service.component";
     private PluginManager componentManager;
-    private UpdateManager componentUpdateManager;
+
+    // we keep the local services and adapters in here
+    private ComponentDescriptor localComponentDescriptor = new ComponentDescriptor(LOCAL_SERVICE_COMPONENT, Version.CURRENT_VERSION,
+            new ArrayList<>(),
+            new ArrayList<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
 
     /**
      * Component descriptors, uniquely identified by id + version
@@ -53,13 +56,9 @@ public class ComponentRegistry {
      * adapters.
      */
     private MultiValuedMap<String, ComponentDescriptor> serviceFinder = new HashSetValuedHashMap<>();
-
+    private MultiValuedMap<String, ComponentDescriptor> annotationFinder = new HashSetValuedHashMap<>();
+    private MultiValuedMap<String, ComponentDescriptor> verbFinder = new HashSetValuedHashMap<>();
     private Map<Class<?>, Object> globalInstances = new HashMap<>();
-
-
-    //    private Map<String, LibraryDescriptor> libraries = new LinkedHashMap<>();
-    //    private Map<String, AdapterDescriptor> adapters = new LinkedHashMap<>();
-
 
     record AdapterDescriptor(String name /* TODO */) {
     }
@@ -71,7 +70,9 @@ public class ComponentRegistry {
     }
 
     record ComponentDescriptor(String id, Version version, List<LibraryDescriptor> libraries,
-                               List<AdapterDescriptor> adapters) {
+                               List<AdapterDescriptor> adapters, Map<String, FunctionDescriptor> services,
+                               Map<String, FunctionDescriptor> annotations,
+                               Map<String, FunctionDescriptor> verbs) {
 
         @Override
         public boolean equals(Object o) {
@@ -88,8 +89,7 @@ public class ComponentRegistry {
     }
 
     /**
-     * This descriptor contains everything needed to execute a service, including the
-     * service info.
+     * This descriptor contains everything needed to execute a service, including the service info.
      */
     public static class FunctionDescriptor {
         public ServiceInfo serviceInfo;
@@ -101,21 +101,32 @@ public class ComponentRegistry {
         // check call style: 1 = call, scope, prototype; 2 = call, scope; 3 = custom, matched at
         // each call
         public int methodCall;
-        public  boolean staticMethod;
+        public boolean staticMethod;
         public boolean staticClass;
         public boolean error;
     }
 
     /**
-     * Return the function descriptor that corresponds to the passed call, considering any
-     * version requirements and arguments. If no version requirements are present, return the
-     * highest version among the compatible ones.
+     * Return the function descriptor that corresponds to the passed call, considering any version
+     * requirements and arguments. If no version requirements are present, return the highest version among
+     * the compatible ones.
+     *
      * @param call
      * @return
      */
     public FunctionDescriptor getFunctionDescriptor(ServiceCall call) {
-        // TODO dio crosta
-        return null;
+        var version = call.getRequiredVersion();
+        ComponentDescriptor target = null;
+        for (var component : serviceFinder.get(call.getUrn())) {
+            if (version == null) {
+                if (target == null || component.version.greater(target.version)) {
+                    target = component;
+                }
+            } else if (version.compatible(component.version)){
+                target = component;
+            }
+        }
+        return target == null ? null : target.services.get(call.getUrn());
     }
 
     /**
@@ -136,7 +147,24 @@ public class ComponentRegistry {
                         adapters)));
 
         var componentDescriptor = new ComponentDescriptor(componentName, componentVersion, libraries,
-                adapters);
+                adapters, new HashMap<>(), new HashMap<>(), new HashMap<>());
+
+        // update catalog
+        for (var library : componentDescriptor.libraries) {
+            for (var service : library.services) {
+                serviceFinder.put(service.getFirst().getName(), componentDescriptor);
+                componentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
+            }
+            for (var service : library.annotations) {
+                annotationFinder.put(service.getFirst().getName(), componentDescriptor);
+                componentDescriptor.annotations().put(service.getFirst().getName(), service.getSecond());
+            }
+            for (var service : library.verbs) {
+                verbFinder.put(service.getFirst().getName(), componentDescriptor);
+                componentDescriptor.verbs().put(service.getFirst().getName(), service.getSecond());
+            }
+        }
+
         this.components.put(componentName, componentDescriptor);
         // TODO fill in the finder catalogue
     }
@@ -503,11 +531,26 @@ public class ComponentRegistry {
                 (annotation, cls) -> registerAdapter((ResourceAdapter) annotation, cls,
                         adapters)));
 
-        var componentDescriptor = new ComponentDescriptor(LOCAL_SERVICE_COMPONENT, Version.CURRENT_VERSION,
-                libraries,
-                adapters);
-        this.components.put(LOCAL_SERVICE_COMPONENT, componentDescriptor);
+        localComponentDescriptor.libraries.addAll(libraries);
+        localComponentDescriptor.adapters.addAll(adapters);
 
+        this.components.put(LOCAL_SERVICE_COMPONENT, localComponentDescriptor);
+
+        // update catalog
+        for (var library : localComponentDescriptor.libraries) {
+            for (var service : library.services) {
+                serviceFinder.put(service.getFirst().getName(), localComponentDescriptor);
+                localComponentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
+            }
+            for (var service : library.annotations) {
+                annotationFinder.put(service.getFirst().getName(), localComponentDescriptor);
+                localComponentDescriptor.annotations().put(service.getFirst().getName(), service.getSecond());
+            }
+            for (var service : library.verbs) {
+                verbFinder.put(service.getFirst().getName(), localComponentDescriptor);
+                localComponentDescriptor.verbs().put(service.getFirst().getName(), service.getSecond());
+            }
+        }
 
     }
 
