@@ -13,6 +13,7 @@ import com.jcraft.jsch.JSch;
 import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.view.mxGraph;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.HttpMultipartMode;
@@ -406,9 +407,11 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                         final int statusCode = response.getStatusLine().getStatusCode();
 
                         if (statusCode == 200) {
-                            return parseResponse(response.getEntity().toString(), resultClass);
+                            return parseResponse(IOUtils.toString(response.getEntity().getContent(),
+                                    StandardCharsets.UTF_8), resultClass);
                         } else {
-                            var log = parseResponse(response.getEntity().toString(), Map.class);
+                            var log = parseResponse(IOUtils.toString(response.getEntity().getContent(),
+                                    StandardCharsets.UTF_8), Map.class);
                             // TODO do something with the error response (which should be better and
                             //  contain a stack trace)
                         }

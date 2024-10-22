@@ -97,7 +97,11 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
                 } else if ("jar".equals(Utils.Files.getFileExtension(sourceFile)) || "zip".equals(Utils.Files.getFileExtension(sourceFile))) {
                     // TODO use other archive extensions
                     if (service instanceof ResourcesService.Admin admin) {
-                        admin.createResource(sourceFile, KlabCLI.INSTANCE.user());
+                        var result = admin.createResource(sourceFile, KlabCLI.INSTANCE.user());
+                        for (var notification : result.getNotifications()) {
+                            // TODO show nicely in console
+                            System.out.println(notification.getLevel() + ": " + notification.getMessage());
+                        }
                     } else {
                         throw new KlabIllegalStateException("Cannot perform admin operations on this service");
                     }
@@ -111,7 +115,6 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
             2. If no arguments, list rights
             3. If arguments, set rights and report
              */
-            System.out.println("list rights");
         }
     }
 
