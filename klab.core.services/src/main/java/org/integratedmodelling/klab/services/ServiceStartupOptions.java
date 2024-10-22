@@ -67,6 +67,12 @@ public class ServiceStartupOptions implements StartupOptions {
     @Option(name = "-port", usage = "http port for REST communication", metaVar = "<INT>")
     int port = -1;
 
+    @Option(name = "-maxFileSize", usage = "maximum upload file size", metaVar = "<SIMPLE_STRING>")
+    String maxMultipartFileSize = "-1";
+
+    @Option(name = "-maxRequestSize", usage = "maximum upload file size", metaVar = "<SIMPLE_STRING>")
+    String maxMultipartRequestSize = "-1";
+
     @Option(name = "-help", usage = "print command line options and exit")
     boolean help;
 
@@ -366,6 +372,22 @@ public class ServiceStartupOptions implements StartupOptions {
 
     public void setServiceHostUrl(String serviceHostUrl) {
         this.serviceHostUrl = serviceHostUrl;
+    }
+
+    public String getMaxMultipartFileSize() {
+        return maxMultipartFileSize;
+    }
+
+    public void setMaxMultipartFileSize(String maxMultipartFileSize) {
+        this.maxMultipartFileSize = maxMultipartFileSize;
+    }
+
+    public String getMaxMultipartRequestSize() {
+        return maxMultipartRequestSize;
+    }
+
+    public void setMaxMultipartRequestSize(String maxMultipartRequestSize) {
+        this.maxMultipartRequestSize = maxMultipartRequestSize;
     }
 
 }

@@ -123,7 +123,7 @@ public class ResourceAdminController {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             var scope = auth.getScope(UserScope.class);
             try {
-                File tempDir = Files.createTempDirectory("tmpDirPrefix").toFile();
+                File tempDir = Files.createTempDirectory("klab").toFile();
                 File resourcePath = new File(tempDir + File.separator + file.getOriginalFilename());
                 FileUtils.copyInputStreamToFile(file.getInputStream(), resourcePath);
                 ret = admin.createResource(resourcePath, scope);

@@ -22,7 +22,6 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.File;
 import java.net.URL;
@@ -450,8 +449,8 @@ public interface ResourcesService extends KlabService {
         ResourceSet createResource(Resource resource, UserScope scope);
 
         /**
-         * Create a resource from a dataflow, storing it in serialized form. The dataflow must be fully resolved and all
-         * dependencies must be stated.
+         * Create a resource from a dataflow, storing it in serialized form. The dataflow must be fully
+         * resolved and all dependencies must be stated.
          *
          * @param dataflow
          * @param scope
@@ -460,12 +459,15 @@ public interface ResourcesService extends KlabService {
         ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope);
 
         /**
-         * Add a resource with file content to those managed by this service. Resource is invisible from the
-         * outside until published. The resource adapter must be available to the service.
+         * Add a resource with file content or a k.LAB component to those managed by this service. Resource is
+         * invisible from the outside until published. The resource adapter must be available to the service.
          *
          * @param resourcePath the directory or zip file that contains the resource files. A resource.json
-         *                     file must be present, along with anything else required by the adapter.
-         * @return the resource URN, potentially modified w.r.t. the one in the request.
+         *                     file must be present, along with anything else required by the adapter. If the
+         *                     file is a .jar file, the resource is assumed to be a component and is treated
+         *                     as such.
+         * @return the result including the resource URN in results, potentially modified w.r.t. the one in
+         * the request. If a component, the URN is the plugin name from the jar manifest.
          */
         ResourceSet createResource(File resourcePath, UserScope scope);
 

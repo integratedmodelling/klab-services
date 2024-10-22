@@ -13,6 +13,15 @@ import com.jcraft.jsch.JSch;
 import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.view.mxGraph;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -67,7 +76,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         /*
         Find out which nodes are "root"
          */
-            List<V> roots= new ArrayList<>();
+            List<V> roots = new ArrayList<>();
             for (V vertex : graph.vertexSet()) {
                 if (graph.incomingEdgesOf(vertex).isEmpty()) {
                     roots.add(vertex);
@@ -87,7 +96,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         }
 
-        private static <V, E> void dump(V root, Graph<V,E> graph, StringBuffer buffer, int offset) {
+        private static <V, E> void dump(V root, Graph<V, E> graph, StringBuffer buffer, int offset) {
 
             var spacer = Utils.Strings.spaces(offset);
             buffer.append(spacer).append(root.toString()).append("\n");
@@ -125,12 +134,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return ret;
         }
 
-//        /**
-//         * Show the dependency graph in the loader.
-//         */
-//        public static void showDependencies() {
-//            show(((KimLoader) Resources.INSTANCE.getLoader()).getDependencyGraph(), "Dependencies", DefaultEdge.class);
-//        }
+        //        /**
+        //         * Show the dependency graph in the loader.
+        //         */
+        //        public static void showDependencies() {
+        //            show(((KimLoader) Resources.INSTANCE.getLoader()).getDependencyGraph(),
+        //            "Dependencies", DefaultEdge.class);
+        //        }
 
         /**
          * Return whether precursor has a directed edge to dependent in graph.
@@ -192,10 +202,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
                     Map<Object, Object> vertices = new HashMap<>();
                     for (Object v : sourceGraph.vertexSet()) {
-                        vertices.put(v, graph.insertVertex(parent, null, v.toString(), 20, 20, v.toString().length() * 6, 30));
+                        vertices.put(v, graph.insertVertex(parent, null, v.toString(), 20, 20,
+                                v.toString().length() * 6, 30));
                     }
                     for (Object v : sourceGraph.edgeSet()) {
-                        graph.insertEdge(parent, null, v.toString(), vertices.get(sourceGraph.getEdgeSource(v)),
+                        graph.insertEdge(parent, null, v.toString(),
+                                vertices.get(sourceGraph.getEdgeSource(v)),
                                 vertices.get(sourceGraph.getEdgeTarget(v)));
                     }
 
@@ -352,6 +364,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 return List.of();
             }
 
+
             /**
              * GET helper that sets all headers and automatically handles JSON marshalling.
              *
@@ -360,7 +373,71 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
              * @param <T>
              * @return
              */
-            public <T> T post(String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+            public <T> T upload(String apiRequest, File upload, Class<T> resultClass, Object... parameters) {
+
+                var options = new Options();
+                var params = makeKeyMap(options, parameters);
+                var apiCall = substituteTemplateParameters(apiRequest, params);
+
+                responseHeaders.clear();
+
+                try {
+                    final MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                    builder.setMode(HttpMultipartMode.RFC6532);
+                    builder.addPart("file", new FileBody(upload));
+                    builder.addPart("fileName", new StringBody(Utils.Files.getFileName(upload)));
+                    final HttpEntity entity = builder.build();
+                    HttpPost post = new HttpPost(URI.create(uri + apiCall + encodeParameters(params)));
+                    post.setHeader(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass));
+
+                    if (authorization != null) {
+                        post.setHeader(HttpHeaders.AUTHORIZATION, authorization);
+                    }
+
+                    for (String header : headers.keySet()) {
+                        post.setHeader(header, headers.get(header));
+                    }
+
+                    post.setEntity(entity);
+                    try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+
+                        var response = client.execute(post);
+
+                        final int statusCode = response.getStatusLine().getStatusCode();
+
+                        if (statusCode == 200) {
+                            return parseResponse(response.getEntity().toString(), resultClass);
+                        } else {
+                            var log = parseResponse(response.getEntity().toString(), Map.class);
+                            // TODO do something with the error response (which should be better and
+                            //  contain a stack trace)
+                        }
+                    } catch (Throwable diocane) {
+                        System.out.println("DIOCANE");
+                        throw diocane;
+                    }
+                } catch (Throwable e) {
+                    if (scope != null) {
+                        scope.error(e, options.silent ? Notification.Mode.Silent :
+                                       Notification.Mode.Normal);
+                    } else {
+                        //                        e.printStackTrace();
+                    }
+                }
+                return null;
+            }
+
+
+            /**
+             * GET helper that sets all headers and automatically handles JSON marshalling.
+             *
+             * @param apiRequest
+             * @param resultClass
+             * @param <T>
+             * @return
+             */
+            public <T> T post(String apiRequest, Object payload, Class<T> resultClass, Object...
+                    parameters) {
 
                 var options = new Options();
                 var params = makeKeyMap(options, parameters);
@@ -400,12 +477,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                         return parseResponse(response.body(), resultClass);
                     } else {
                         var log = parseResponse(response.body(), Map.class);
-                        // TODO do something with the error response (which should be better and contain a stack trace)
+                        // TODO do something with the error response (which should be better and
+                        //  contain a stack trace)
                     }
 
                 } catch (Throwable e) {
                     if (scope != null) {
-                        scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+                        scope.error(e, options.silent ? Notification.Mode.Silent :
+                                       Notification.Mode.Normal);
                     } else {
                         //                        e.printStackTrace();
                     }
@@ -414,7 +493,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 return null;
             }
 
-            public <T> List<T> postCollection(String apiRequest, Object payload, Class<T> resultClass,
+            public <
+                    T> List<T> postCollection(String apiRequest, Object payload, Class<T> resultClass,
                                               Object... parameters) {
 
                 var options = new Options();
@@ -456,7 +536,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
                 } catch (Throwable e) {
                     if (scope != null) {
-                        scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+                        scope.error(e, options.silent ? Notification.Mode.Silent :
+                                       Notification.Mode.Normal);
                     } else {
                         //                        e.printStackTrace();
                     }
@@ -481,7 +562,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
              * @param parameters
              * @return
              */
-            private String substituteTemplateParameters(String request, Map<String, Object> parameters) {
+            private String substituteTemplateParameters(String request, Map<String,
+                    Object> parameters) {
                 var ret = request;
                 var toRemove = new HashSet<String>();
                 for (String key : parameters.keySet()) {
@@ -525,7 +607,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                             continue;
                         }
                         if (i == parameters.length - 1) {
-                            throw new KlabIllegalArgumentException("Utils.Maps.makeKeyMap: unmatched keys " +
+                            throw new KlabIllegalArgumentException("Utils.Maps.makeKeyMap: unmatched " +
+                                    "keys " +
                                     "in " +
                                     "argument list");
                         }
@@ -540,7 +623,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
              *
              * @return
              */
-            public boolean isAlive()  {
+            public boolean isAlive() {
                 var host = this.uri.getHost();
                 var port = this.uri.getPort();
                 try (var socket = new Socket(host, port)) {
@@ -591,7 +674,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
                 } catch (Throwable e) {
                     if (scope != null) {
-                        scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+                        scope.error(e, options.silent ? Notification.Mode.Silent :
+                                       Notification.Mode.Normal);
                     } else {
                         //                        e.printStackTrace();
                     }
@@ -601,7 +685,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 return null;
             }
 
-            public <T> List<T> getCollection(String apiRequest, Class<T> resultClass, Object... parameters) {
+            public <T> List<T> getCollection(String apiRequest, Class<T> resultClass, Object...
+                    parameters) {
 
                 var options = new Options();
                 var params = makeKeyMap(options, parameters);
@@ -627,7 +712,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
                 } catch (Throwable e) {
                     if (scope != null) {
-                        scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+                        scope.error(e, options.silent ? Notification.Mode.Silent :
+                                       Notification.Mode.Normal);
                     } else {
                         //                        e.printStackTrace();
                     }
@@ -654,7 +740,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 responseHeaders.clear();
 
                 try {
-                    var requestBuilder = HttpRequest.newBuilder().PUT(HttpRequest.BodyPublishers.noBody());
+                    var requestBuilder =
+                            HttpRequest.newBuilder().PUT(HttpRequest.BodyPublishers.noBody());
                     if (authorization != null) {
                         requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
                     }
@@ -672,7 +759,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
                 } catch (Throwable e) {
                     if (scope != null) {
-                        scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+                        scope.error(e, options.silent ? Notification.Mode.Silent :
+                                       Notification.Mode.Normal);
                     } else {
                         //                        e.printStackTrace();
                     }
@@ -900,7 +988,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
             @Override
-            public void serialize(Object nullKey, JsonGenerator jsonGenerator, SerializerProvider unused) throws IOException {
+            public void serialize(Object nullKey, JsonGenerator jsonGenerator,
+                                  SerializerProvider unused) throws IOException {
                 jsonGenerator.writeFieldName("");
             }
         }
@@ -1398,7 +1487,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             if (parameters != null) {
                 for (int i = 0; i < parameters.length; i++) {
                     if (i == parameters.length - 1) {
-                        throw new KlabIllegalArgumentException("Utils.Maps.makeKeyMap: unmatched keys in " +
+                        throw new KlabIllegalArgumentException("Utils.Maps.makeKeyMap: unmatched keys " +
+                                "in " +
                                 "argument list");
                     }
                     ret.put(parameters[i].toString(), parameters[++i]);
@@ -1990,7 +2080,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @param length            of type int indicating the length of pattern
          * @return true if matches otherwise false
          */
-        private boolean isExpressionMatching(String textString, int stringStartIndex, String patternString,
+        private boolean isExpressionMatching(String textString, int stringStartIndex,
+                                             String patternString,
                                              int patternStartIndex,
                                              int length) {
             while (length-- > 0) {
@@ -2225,7 +2316,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 ObjectMapper objectMapper = new ObjectMapper();
                 objectMapper.enable(SerializationFeature.INDENT_OUTPUT); // pretty print
                 objectMapper.enable(SerializationFeature.WRITE_NULL_MAP_VALUES); // pretty print
-                objectMapper.enable(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED); // pretty print
+                objectMapper.enable(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED); // pretty
+                // print
                 objectMapper.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
                             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
                 objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

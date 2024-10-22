@@ -156,6 +156,8 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
             props.put("server.port", "" + options.getPort());
             props.put("spring.main.banner-mode", "off");
             props.put("server.servlet.contextPath", options.getContextPath());
+            props.put("spring.servlet.multipart.max-file-size", options.getMaxMultipartFileSize());
+            props.put("spring.servlet.multipart.max-request-size", options.getMaxMultipartRequestSize());
             app.setDefaultProperties(props);
             app.run(options.getArguments());
             //            Environment environment = this.context.getEnvironment();

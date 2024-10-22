@@ -693,8 +693,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public ResourceSet createResource(File resourcePath, UserScope scope) {
-        // TODO Auto-generated method stub
-        // Concept
+
+        if ("jar".equals(Utils.Files.getFileExtension(resourcePath))) {
+            return getComponentRegistry().installComponent(resourcePath, scope);
+        } else {
+
+        }
+
         return null;
     }
 

@@ -19,15 +19,15 @@ import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
-@Command(name = "resources", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-        "Commands to find, list, access and manipulate resources.", ""}, subcommands =
-                 {Resources.List.class, Resources.Query.class, Resources.Services.class,
-                  Resources.Workspace.class, Resources.Rights.class,
-                  Resources.Project.class, Resources.Components.class, Resources.Resolve.class})
+//@Command(name = "resources", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+//        "Commands to find, list, access and manipulate resources.", ""}, subcommands =
+//                 {Resources.List.class, Resources.Query.class, Resources.Services.class,
+//                  Resources.Workspace.class, Resources.Rights.class,
+//                  Resources.Project.class, Resources.Components.class, Resources.Resolve.class})
 public class Resources {
 
-    @Command(name = "services", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-            "List and describe all the available resource services.", ""}, subcommands = {})
+//    @Command(name = "services", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+//            "List and describe all the available resource services.", ""}, subcommands = {})
     public static class Services implements Runnable {
 
         @Override
@@ -37,8 +37,8 @@ public class Resources {
         }
     }
 
-    @Command(name = "rights", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-            "List and describe all the available resource services.", ""}, subcommands = {})
+//    @Command(name = "rights", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+//            "List and describe all the available resource services.", ""}, subcommands = {})
     public static class Rights implements Runnable {
 
         @Option(names = {"-s", "--service"}, defaultValue = "local" /* TODO initialize at null */,
@@ -70,8 +70,8 @@ public class Resources {
         }
     }
 
-    @Command(name = "query", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-            "Query models that resolve a passed observable", ""}, subcommands = {})
+//    @Command(name = "query", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+//            "Query models that resolve a passed observable", ""}, subcommands = {})
     public static class Query implements Runnable {
 
         @Option(names = {"-s", "--service"}, defaultValue = "local" /* TODO initialize at null */,
@@ -124,8 +124,8 @@ public class Resources {
         }
     }
 
-    @Command(name = "resolve", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-            "Resolve a URN and describe the resulting resource set.", ""}, subcommands = {})
+//    @Command(name = "resolve", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+//            "Resolve a URN and describe the resulting resource set.", ""}, subcommands = {})
     public static class Resolve implements Runnable {
 
         @Option(names = {"-s", "--service"}, defaultValue = "local" /* TODO initialize at null */,
@@ -203,8 +203,8 @@ public class Resources {
 
     }
 
-    @Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-            "List and describe local or remote resources.", ""}, subcommands = {})
+//    @Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+//            "List and describe local or remote resources.", ""}, subcommands = {})
     public static class List implements Runnable {
 
         @Option(names = {"-s", "--service"}, defaultValue = "local", description = {"Resource service to " +

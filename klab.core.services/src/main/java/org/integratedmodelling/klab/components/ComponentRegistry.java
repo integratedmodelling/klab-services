@@ -21,12 +21,14 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabAnnotation;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.extension.KlabComponent;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.pf4j.*;
 
 import java.io.File;
@@ -34,6 +36,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.BiConsumer;
 
@@ -41,9 +46,11 @@ public class ComponentRegistry {
 
     private static final String LOCAL_SERVICE_COMPONENT = "internal.local.service.component";
     private PluginManager componentManager;
+    private File pluginPath = null;
 
     // we keep the local services and adapters in here
-    private ComponentDescriptor localComponentDescriptor = new ComponentDescriptor(LOCAL_SERVICE_COMPONENT, Version.CURRENT_VERSION,
+    private ComponentDescriptor localComponentDescriptor = new ComponentDescriptor(LOCAL_SERVICE_COMPONENT,
+            Version.CURRENT_VERSION,
             new ArrayList<>(),
             new ArrayList<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
 
@@ -86,6 +93,11 @@ public class ComponentRegistry {
         public int hashCode() {
             return Objects.hash(id, version);
         }
+
+        public Notification extractInfo() {
+            return Notification.info("Component " + id() + " [" + version + "]: " + services().size() +
+                    "services, " + adapters.size() + " adapters, " + annotations.size() + " annotations");
+        }
     }
 
     /**
@@ -106,6 +118,49 @@ public class ComponentRegistry {
         public boolean error;
     }
 
+    public ResourceSet installComponent(File resourcePath, Scope scope) {
+
+        // TODO allow same path with different versions and replacing same version
+
+        var ret = new ResourceSet();
+        try {
+            var pluginId = componentManager.loadPlugin(resourcePath.toPath());
+            var plugin = componentManager.getPlugin(pluginId);
+            ResourceSet.Resource result = new ResourceSet.Resource("SERVICE ID TODO", pluginId, null,
+                    Version.create(plugin.getDescriptor().getVersion()),
+                    KlabAsset.KnowledgeClass.COMPONENT);
+
+            // TODO dependencies
+
+            Plugin component = plugin.getPlugin();
+            if (component instanceof KlabComponent comp) {
+                var info = registerComponent(comp);
+                ret.getNotifications().add(info.extractInfo());
+                ret.getResults().add(result);
+
+                if (pluginPath != null) {
+                    componentManager.unloadPlugin(pluginId);
+                    var pluginDestination =
+                            new File(pluginPath + File.separator + Utils.Files.getFileName(resourcePath));
+                    Files.copy(resourcePath.toPath(), pluginDestination.toPath(),
+                            StandardCopyOption.REPLACE_EXISTING);
+                    // descriptor is already OK, just reload in the manager
+                    componentManager.loadPlugin(pluginDestination.toPath());
+                }
+
+            } else {
+                ret.getNotifications().add(Notification.error("Plugin " + Utils.Files.getFileName(resourcePath) + " is " +
+                        "not a valid k.LAB component"));
+                ret.setEmpty(true);
+            }
+        } catch (Throwable t) {
+            ret.getNotifications().add(Notification.create(t));
+            ret.setEmpty(true);
+        }
+        return ret;
+    }
+
+
     /**
      * Return the function descriptor that corresponds to the passed call, considering any version
      * requirements and arguments. If no version requirements are present, return the highest version among
@@ -122,7 +177,7 @@ public class ComponentRegistry {
                 if (target == null || component.version.greater(target.version)) {
                     target = component;
                 }
-            } else if (version.compatible(component.version)){
+            } else if (version.compatible(component.version)) {
                 target = component;
             }
         }
@@ -131,10 +186,12 @@ public class ComponentRegistry {
 
     /**
      * Discover and register all the extensions provided by this component but do not start it.
+     * <p>
+     * TODO make this return ComponentInfo
      *
      * @param component
      */
-    public void registerComponent(KlabComponent component) {
+    public ComponentDescriptor registerComponent(KlabComponent component) {
 
         var componentName = component.getName();
         var componentVersion = component.getVersion();
@@ -166,7 +223,8 @@ public class ComponentRegistry {
         }
 
         this.components.put(componentName, componentDescriptor);
-        // TODO fill in the finder catalogue
+
+        return componentDescriptor;
     }
 
     private void registerLibrary(Library annotation, Class<?> cls,
@@ -563,6 +621,7 @@ public class ComponentRegistry {
     public void initializeComponents(File pluginRoot) {
         this.componentManager = new DefaultPluginManager(pluginRoot.toPath());
         this.componentManager.loadPlugins();
+        this.pluginPath = pluginRoot;
         // TODO configuration
         for (var wrapper : this.componentManager.getPlugins()) {
             Plugin plugin = wrapper.getPlugin();

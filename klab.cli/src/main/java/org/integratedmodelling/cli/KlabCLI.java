@@ -1,6 +1,7 @@
 package org.integratedmodelling.cli;
 
 import org.integratedmodelling.cli.views.CLIObservationView;
+import org.integratedmodelling.cli.views.CLIResourcesView;
 import org.integratedmodelling.cli.views.CLIServicesView;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
@@ -89,7 +90,7 @@ public enum KlabCLI {
 
     public <T extends KlabService> T service(String service, Class<T> serviceClass) {
         if (service == null || "local".equals(service)) {
-            return engine().serviceScope().getService(serviceClass);
+            return user().getService(serviceClass);
         } // TODO
         return null;
     }
@@ -97,17 +98,17 @@ public enum KlabCLI {
     /**
      * Top-level command that just prints help.
      */
-    @Command(name = "", description = {
-            "k.LAB interactive shell with completion and autosuggestions. "
-                    + "Hit @|magenta <TAB>|@ to see available commands.",
-            "Hit @|magenta ALT-S|@ to toggle tailtips.", ""}, footer = {"", "Press Ctrl-D to exit."},
-             subcommands = {
-                     Auth.class, Expressions.class, Reasoner.class, /*Report.class, Resolver.class,*/
-                     Resources.class, Shutdown.class, Credentials.class,
-                     CLIServicesView.class, Run.class, PicocliCommands.ClearScreen.class,
-                     CommandLine.HelpCommand.class, Set.class,
-                     /*Session.class, */CLIObservationView.class, Components.class, Test.class, Run.Alias.class,
-                     Run.Unalias.class})
+    @Command(name = "", description = {"k.LAB interactive shell with completion and autosuggestions. " +
+                                               "Hit @|magenta <TAB>|@ to see available commands.", "Hit " +
+                                               "@|magenta ALT-S|@ to toggle tailtips.", ""}, footer = {"",
+                                                                                                       "Press Ctrl-D to exit."},
+             subcommands = {Auth.class, Expressions.class, Reasoner.class, /*Report.class, Resolver.class,*/
+                            Shutdown.class, Credentials.class, CLIServicesView.class, Run.class,
+                            PicocliCommands.ClearScreen.class,
+                            CommandLine.HelpCommand.class, Set.class,/*Session.class,
+                            */CLIObservationView.class,
+                            CLIResourcesView.class, Components.class, Test.class, Run.Alias.class,
+                            Run.Unalias.class})
     static class CliCommands implements Runnable {
 
         PrintWriter out;
@@ -121,13 +122,9 @@ public enum KlabCLI {
         }
     }
 
-    @Command(name = "run", mixinStandardHelpOptions = true, description = {"Run scripts, test cases and " +
-                                                                                   "applications.",
-                                                                           "Uses autocompletion for " +
-                                                                                   "behavior and test case " +
-                                                                                   "names.",
-                                                                           ""}, subcommands =
-                     {Run.List.class, Run.Purge.class})
+    @Command(name = "run", mixinStandardHelpOptions = true, description =
+            {"Run scripts, test cases and " + "applications.", "Uses autocompletion for " + "behavior and " +
+                    "test case " + "names.", ""}, subcommands = {Run.List.class, Run.Purge.class})
     static class Run /* extends Monitor */ implements Runnable {
 
         java.util.Set<SessionScope> running = new LinkedHashSet<>();
@@ -137,14 +134,20 @@ public enum KlabCLI {
         @Spec
         CommandSpec commandSpec;
 
-        @Option(names = {"-s", "--synchronous"}, defaultValue = "false", description = {
-                "Run in synchronous mode, returning to the prompt when the script has finished running."},
-                required =
-                        false)
+        @Option(names = {"-s", "--synchronous"}, defaultValue = "false", description = {"Run in synchronous" +
+                                                                                                " mode, " +
+                                                                                                "returning " +
+                                                                                                "to the " +
+                                                                                                "prompt " +
+                                                                                                "when the " +
+                                                                                                "script has" +
+                                                                                                " finished " +
+                                                                                                "running."}
+                , required = false)
         boolean synchronous;
 
-        @Parameters(description = {"The full name of one or more script, test case or application.",
-                                   "If not present locally, resolve through the k.LAB network."})
+        @Parameters(description = {"The full name of one or more script, test case or application.", "If " +
+                "not present locally, resolve through the k.LAB network."})
         java.util.List<String> scriptNames = new ArrayList<>();
 
         public Run() {
@@ -218,14 +221,13 @@ public enum KlabCLI {
 
             int n = 1;
             for (SessionScope scope : running) {
-                commandSpec.commandLine().getOut()
-                           .println("   " + n++ + ". " + scope.getName() + " [" + scope.getStatus() + "]");
+                commandSpec.commandLine().getOut().println("   " + n++ + ". " + scope.getName() + " [" + scope.getStatus() + "]");
             }
 
         }
 
-        @Command(name = "list", mixinStandardHelpOptions = true, description = {"List all running behaviors" +
-                                                                                        "."})
+        @Command(name = "list", mixinStandardHelpOptions = true, description = {"List all running " +
+                                                                                        "behaviors" + "."})
         static class List implements Runnable {
 
             @ParentCommand
@@ -238,10 +240,9 @@ public enum KlabCLI {
 
         }
 
-        @Command(name = "alias", mixinStandardHelpOptions = true, description = {"Define an alias for a " +
-                                                                                         "command.",
-                                                                                 "Use @x to store option -x"},
-                 subcommands = {Alias.List.class, Alias.Clear.class})
+        @Command(name = "alias", mixinStandardHelpOptions = true, description =
+                {"Define an alias for a " + "command.", "Use @x to store option -x"}, subcommands =
+                         {Alias.List.class, Alias.Clear.class})
         static class Alias implements Runnable {
 
             @Command(name = "list", mixinStandardHelpOptions = true, description = {"List all aliases."})
@@ -253,8 +254,7 @@ public enum KlabCLI {
                 public void run() {
                     for (String alias : Run.aliases.keySet()) {
                         commandSpec.commandLine().getOut().println(Ansi.AUTO.string("@|bold " + alias +
-                                "|@: " +
-                                "@|green " + Run.aliases.get(alias) + "|@"));
+                                "|@: " + "@|green " + Run.aliases.get(alias) + "|@"));
                     }
                 }
             }
@@ -284,8 +284,7 @@ public enum KlabCLI {
                 if (arguments == null || arguments.size() == 0) {
                     for (String alias : Run.aliases.keySet()) {
                         commandSpec.commandLine().getOut().println(Ansi.AUTO.string("@|bold " + alias +
-                                "|@: " +
-                                "@|green " + Run.aliases.get(alias) + "|@"));
+                                "|@: " + "@|green " + Run.aliases.get(alias) + "|@"));
                     }
                     return;
                 }
@@ -299,7 +298,7 @@ public enum KlabCLI {
                         arguments.set(i, "-" + arguments.get(i).substring(1));
                     }
                 }
-                String value = Utils.Strings.join(arguments.subList(1, arguments.size())," ");
+                String value = Utils.Strings.join(arguments.subList(1, arguments.size()), " ");
                 Run.aliases.put(alias, value);
                 Run.storeAliases();
             }
@@ -319,14 +318,14 @@ public enum KlabCLI {
 
         }
 
-        @Command(name = "purge", mixinStandardHelpOptions = true, description = {
-                "Remove finished or aborted behaviors from the list."})
+        @Command(name = "purge", mixinStandardHelpOptions = true, description = {"Remove finished or " +
+                                                                                         "aborted behaviors" +
+                                                                                         " from the list."})
         static class Purge implements Runnable {
 
-            @Parameters(description = {
-                    "The numeric ID of the scripts we want to purge. No argument removes all that have " +
-                            "finished.",
-                    "Run \"run list\" to know the IDs."})
+            @Parameters(description = {"The numeric ID of the scripts we want to purge. No argument removes" +
+                                               " all that have " + "finished.", "Run \"run list\" to know " +
+                                               "the IDs."})
             java.util.List<Integer> appIds = new ArrayList<>();
 
             @ParentCommand
@@ -369,9 +368,8 @@ public enum KlabCLI {
             INSTANCE.modeler.setOption(ModelerImpl.Option.UseAnsiEscapeSequences, true);
 
 
-            Supplier<Path> workDir = () -> Paths
-                    .get(System.getProperty("user.home") + File.separator + ".klab" + File.separator +
-                            "kcli");
+            Supplier<Path> workDir = () -> Paths.get(System.getProperty("user.home") + File.separator +
+                    ".klab" + File.separator + "kcli");
 
             // jline built-in commands
             workDir.get().toFile().mkdirs();
@@ -397,8 +395,7 @@ public enum KlabCLI {
                 KlabCompleter completer = new KlabCompleter(systemRegistry.completer());
                 History history = new DefaultHistory();
                 LineReader reader =
-                        LineReaderBuilder.builder().terminal(terminal).completer(completer).parser(parser)
-                                         .variable(LineReader.LIST_MAX, 50) // candidates
+                        LineReaderBuilder.builder().terminal(terminal).completer(completer).parser(parser).variable(LineReader.LIST_MAX, 50) // candidates
                                          .history(history).build();
 
                 builtins.setLineReader(reader);
@@ -466,8 +463,7 @@ public enum KlabCLI {
 
                         if (aliased) {
                             // print the actual line in grey + italic
-                            INSTANCE.commandLine.getOut().println(Ansi.AUTO.string("@|gray" + line
-                                    + "|@"));
+                            INSTANCE.commandLine.getOut().println(Ansi.AUTO.string("@|gray" + line + "|@"));
                         }
 
                         systemRegistry.execute(line);

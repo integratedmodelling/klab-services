@@ -45,11 +45,13 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     private static final long serialVersionUID = 4305387731730961701L;
 
-    public ResourcesClient(URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
+    public ResourcesClient(URL url, Identity identity, KlabService owner,
+                           Parameters<Engine.Setting> settings) {
         super(Type.RESOURCES, url, identity, List.of(), settings, owner);
     }
 
-    public ResourcesClient(URL url, Identity identity, List<ServiceReference> services, Parameters<Engine.Setting> settings, BiConsumer<Channel,
+    public ResourcesClient(URL url, Identity identity, List<ServiceReference> services,
+                           Parameters<Engine.Setting> settings, BiConsumer<Channel,
             Message>... listeners) {
         super(Type.RESOURCES, url, identity, settings, services, listeners);
     }
@@ -420,7 +422,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public ResourceSet createResource(File resourcePath, UserScope scope) {
-        return null;
+        return client.withScope(scope).upload(ServicesAPI.RESOURCES.ADMIN.UPLOAD_RESOURCE, resourcePath,
+                ResourceSet.class);
     }
 
     @Override
