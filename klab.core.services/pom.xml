@@ -124,13 +124,15 @@
             <version>${avro.version}</version>
         </dependency>
 
-        <!-- plugin management for extension components -->
-        <!-- https://mvnrepository.com/artifact/org.pf4j/pf4j -->
+<!--
+        &lt;!&ndash; plugin management for extension components &ndash;&gt;
+        &lt;!&ndash; https://mvnrepository.com/artifact/org.pf4j/pf4j &ndash;&gt;
         <dependency>
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
             <version>3.12.1</version>
         </dependency>
+-->
 
         <!-- spatial H2 database for kboxes -->
         <dependency>

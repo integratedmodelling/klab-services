@@ -132,13 +132,17 @@ public class ResolutionGraph {
                                                                     LogicalConnector.UNION);
     }
 
+    public boolean merge(ResolutionGraph childGraph) {
+        return merge(childGraph, null);
+    }
+
     /**
      * Accept the resolution contained in the passed graph for its target, adding all sub-resolvables
      * collected along the way, then add our resolvable to the graph and updating the target coverage
      * according to the kind of merge (uniting for alternative observables, intersecting for model
      * dependencies) and the catalog. Return true if our own target coverage is made complete by the merge.
      */
-    public boolean merge(ResolutionGraph childGraph) {
+    public boolean merge(ResolutionGraph childGraph, String localName) {
 
         Graphs.addAllVertices(this.graph, childGraph.graph.vertexSet());
         Graphs.addAllEdges(this.graph, childGraph.graph, childGraph.graph.edgeSet());
@@ -148,7 +152,7 @@ public class ResolutionGraph {
          */
         this.graph.addVertex(this.target);
         this.graph.addVertex(childGraph.target);
-        this.graph.addEdge(this.target, childGraph.target, new ResolutionEdge(childGraph.targetCoverage, null));
+        this.graph.addEdge(this.target, childGraph.target, new ResolutionEdge(childGraph.targetCoverage, localName));
 
         /*
         ...by the amount determined in its coverage, "painting" the incoming extents onto ours.

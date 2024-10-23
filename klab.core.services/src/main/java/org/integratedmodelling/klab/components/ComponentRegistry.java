@@ -282,7 +282,7 @@ public class ComponentRegistry {
 
         if (method != null) {
             ret.method = method;
-            ret.methodCall = 1;
+            ret.methodCall = 3;
             if (java.lang.reflect.Modifier.isStatic(ret.method.getModifiers()) || serviceInfo.isReentrant()) {
                 // use a global class instance
                 ret.mainClassInstance = createGlobalClassInstance(ret);
@@ -333,6 +333,7 @@ public class ComponentRegistry {
                             ret.implementation.getDeclaredConstructor(getParameterClasses(serviceInfo, ret));
                     ret.methodCall = 1;
                 } catch (NoSuchMethodException | SecurityException e) {
+                    // move along
                 }
                 if (ret.constructor == null) {
                     try {
@@ -341,6 +342,7 @@ public class ComponentRegistry {
                                         ret));
                         ret.methodCall = 2;
                     } catch (NoSuchMethodException | SecurityException e) {
+                        // move along
                     }
                 }
                 if (ret.constructor == null) {

@@ -383,16 +383,35 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                                                 ContextScope scope) {
 
         ResourceSet ret = new ResourceSet();
-
+        // TODO FIXME USE ALL SERVICES
+        var resourcesService = scope.getService(ResourcesService.class);
         /**
          * These are the contextualizables that need resolution at the runtime side, the others come with
          * their definition and are directly inserted in the dataflow
          */
         for (var contextualizable : contextualizables) {
             if (contextualizable.getServiceCall() != null) {
-                // TODO
+                var resolution =
+                        resourcesService.resolveServiceCall(contextualizable.getServiceCall().getUrn(),
+                                scope);
+                if (resolution.isEmpty()) {
+                    return resolution;
+                }
+                /*
+                we load directly and report errors if not
+                 */
+                if (getComponentRegistry().loadComponents(resolution, scope)) {
+                    ret = Utils.Resources.merge(ret, resolution);
+                } else {
+                    return Utils.Resources.createEmpty(Notification.error("Runtime: errors ingesting " +
+                            "resolved component for service " + contextualizable.getServiceCall().getUrn()));
+                }
             } else if (contextualizable.getResourceUrn() != null) {
-                // TODO
+                //                var resolution = resourcesService.resolveRe(contextualizable
+                //                .getServiceCall().getUrn(), scope);
+                //                if (resolution.isEmpty()) {
+                //                    return resolution;
+                //                }
             }
         }
 

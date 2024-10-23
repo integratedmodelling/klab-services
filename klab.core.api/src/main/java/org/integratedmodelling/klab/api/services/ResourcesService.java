@@ -462,12 +462,16 @@ public interface ResourcesService extends KlabService {
          * Add a resource with file content or a k.LAB component to those managed by this service. Resource is
          * invisible from the outside until published. The resource adapter must be available to the service.
          *
-         * @param resourcePath the directory or zip file that contains the resource files. A resource.json
-         *                     file must be present, along with anything else required by the adapter. If the
-         *                     file is a .jar file, the resource is assumed to be a component and is treated
-         *                     as such.
+         * @param resourcePath the URL to a local or remote directory or archive file that contains the resource
+         *                     files. A resource.json file must be present, along with anything else required
+         *                     by the adapter. If the file is a .jar file, the resource is assumed to be a
+         *                     component and is treated as such.
          * @return the result including the resource URN in results, potentially modified w.r.t. the one in
          * the request. If a component, the URN is the plugin name from the jar manifest.
+         *
+         * TODO should have another that takes a URL, working the same way but also storing the
+         *  URL and checking for updates. Could recognize a Maven configuration and automatically
+         *  check for new versions as well.
          */
         ResourceSet createResource(File resourcePath, UserScope scope);
 

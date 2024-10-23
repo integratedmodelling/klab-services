@@ -8,14 +8,21 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Function;
 
 /**
  * Services may be locally implemented or clients to remote services: each service implementation should
@@ -433,4 +440,6 @@ public interface KlabService extends Service {
      */
     ExternalAuthenticationCredentials.CredentialInfo addCredentials(String host,
                                                                     ExternalAuthenticationCredentials credentials, Scope scope);
+
+
 }

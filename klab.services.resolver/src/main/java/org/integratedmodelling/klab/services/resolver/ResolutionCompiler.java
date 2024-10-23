@@ -208,7 +208,7 @@ public class ResolutionCompiler {
                 ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionProject, model.getProjectName()));
 
         boolean complete = model.getDependencies().isEmpty();
-        List<ResolutionGraph> modelGraphs = new ArrayList<>();
+        List<Pair<ResolutionGraph, String>> modelGraphs = new ArrayList<>();
         for (var dependency : model.getDependencies()) {
 
             /*
@@ -236,11 +236,11 @@ public class ResolutionCompiler {
                     return ResolutionGraph.empty();
                 }
             }
-            modelGraphs.add(dependencyResolution);
+            modelGraphs.add(Pair.of(dependencyResolution, dependency.getStatedName()));
         }
 
         for (var modelGraph : modelGraphs) {
-            ret.merge(modelGraph);
+            ret.merge(modelGraph.getFirst(), modelGraph.getSecond());
         }
 
         return ret;

@@ -422,7 +422,7 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
     @CommandLine.Command(name = "components", mixinStandardHelpOptions = true, version = Version.CURRENT,
                          description =
                                  {"Components operations", ""}, subcommands =
-                                 {CLIResourcesView.Components.Remove.class,
+                                 {CLIResourcesView.Components.Update.class,
                                   CLIResourcesView.Components.Remove.class})
     public static class Components implements Runnable {
 
@@ -434,7 +434,7 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
         @CommandLine.Command(name = "update", mixinStandardHelpOptions = true, version = Version.CURRENT,
                              description = {
-                                     "Add a new component to the scope of a service.", ""}, subcommands = {})
+                                     "Check for updates in a resource's original repository and optionally load it.", ""}, subcommands = {})
         public static class Update implements Runnable {
 
             @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {

@@ -17,6 +17,8 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -38,6 +40,8 @@ import java.text.StringCharacterIterator;
 import java.util.List;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -395,11 +399,43 @@ public class Utils {
             return false;
         }
 
+
+        /**
+         * Utility method to merge the results of parallel calls to the same method across all services of a
+         * passed type and return the merged result.
+         *
+         * @param scope
+         * @param request
+         * @return
+         */
+        public static <T extends KlabService> ResourceSet queryResources(Scope scope, Class<T> serviceClass,
+                                                                         Function<T, ResourceSet> request) {
+            ResourceSet ret = new ResourceSet();
+            List<Callable<ResourceSet>> tasks = new ArrayList<>();
+            for (var service : scope.getServices(serviceClass)) {
+                tasks.add(() -> request.apply(service));
+            }
+
+            try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+                for (var result : executorService.invokeAll(tasks)) {
+                    ret = Utils.Resources.merge(ret, result.get());
+                }
+            } catch (Throwable t) {
+                ret.setEmpty(true);
+                ret.getNotifications().add(Notification.error("Error while executing multiple service " +
+                        "requests", t));
+            }
+
+            return ret;
+        }
+
+
         public static String dump(ResourceSet resourceSet) {
 
             StringBuilder ret = new StringBuilder(2048);
 
-            ret.append("ResourceSet workspace=").append(resourceSet.getWorkspace()).append(", #notifications=").append(resourceSet.getNotifications().size());
+            ret.append("ResourceSet workspace=").append(resourceSet.getWorkspace()).append(", " +
+                    "#notifications=").append(resourceSet.getNotifications().size());
             boolean first = true;
             for (var resource : resourceSet.getOntologies()) {
                 ret.append("\n   ").append(resource.getKnowledgeClass()).append(" ").append(resource.getResourceUrn()).append(" #notifications=").append(resource.getNotifications().size());
@@ -441,12 +477,13 @@ public class Utils {
 
         /**
          * Check if a resource with this URN and type is already present in the resource set
+         *
          * @param resource
          * @return
          */
         public static boolean contains(ResourceSet resourceSet, ResourceSet.Resource resource) {
 
-            for (var r : switch(resource.getKnowledgeClass()) {
+            for (var r : switch (resource.getKnowledgeClass()) {
                 case RESOURCE -> resourceSet.getResources();
                 case NAMESPACE -> resourceSet.getNamespaces();
                 case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION, COMPONENT -> resourceSet.getBehaviors();
@@ -2271,8 +2308,8 @@ public class Utils {
          * </p>
          *
          * <p>
-         * For a word based algorithm, see org.apache.commons.lang3.text.WordUtils#capitalize(String).
-         * A {@code null} input String returns {@code null}.
+         * For a word based algorithm, see org.apache.commons.lang3.text.WordUtils#capitalize(String). A
+         * {@code null} input String returns {@code null}.
          * </p>
          *
          * <pre>
@@ -2798,7 +2835,6 @@ public class Utils {
         /**
          * Ad-hoc behavior in need for generalization: insert the patch after every newline unless the
          * previous line was empty.
-         *
          */
         public static String insertBeginning(String string, String patch, Function<String, Boolean> filter) {
             String lines[] = string.split("\\r?\\n");
@@ -3736,7 +3772,6 @@ public class Utils {
         /**
          * Flatten any collections in the source collection and accumulate values after conversion to T in the
          * destination collection.
-         *
          */
         public static <T> void collectValues(Collection<?> source, Collection<? extends T> destination,
                                              Class<T> class1) {
@@ -3983,7 +4018,7 @@ public class Utils {
             if (cls.isArray() && (ret.getClass().isArray() || Collection.class.isAssignableFrom(ret.getClass()))) {
 
                 if (Collection.class.isAssignableFrom(ret.getClass())) {
-                    ret = ((Collection)ret).toArray();
+                    ret = ((Collection) ret).toArray();
                 }
 
                 int length = Array.getLength(ret);
@@ -4124,6 +4159,7 @@ public class Utils {
 
         /**
          * Split into comma-separated tokens and parse each as a double
+         *
          * @param s
          * @return
          */
