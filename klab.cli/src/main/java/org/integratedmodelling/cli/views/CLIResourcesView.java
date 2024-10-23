@@ -75,7 +75,7 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
     @CommandLine.Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT,
                          description = {
-            "List and describe local or remote resources.", ""}, subcommands = {})
+                                 "List and describe local or remote resources.", ""}, subcommands = {})
     public static class List implements Runnable {
 
         @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {"Resource service to " +
@@ -254,83 +254,76 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
     @CommandLine.Command(name = "project", mixinStandardHelpOptions = true, version = Version.CURRENT,
                          description = {
-            "Workspace operations", ""}, subcommands = {Resources.Project.List.class,
-                                                        Resources.Project.Add.class,
-                                                        Resources.Project.Remove.class})
-    public static class Project {
+                                 "Project operations", ""}, subcommands = {CLIResourcesView.Project.Add.class,
+                                                                             CLIResourcesView.Project.Remove.class})
+    public static class Project implements Runnable {
 
-        @CommandLine.Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT,
-                             description = {
-                "List and describe local projects.", ""}, subcommands = {})
-        public static class List implements Runnable {
+        @CommandLine.Spec
+        CommandLine.Model.CommandSpec commandSpec;
 
-            @CommandLine.Spec
-            CommandLine.Model.CommandSpec commandSpec;
+        @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
+                "Resource service " +
+                        "to connect" +
+                        " to"},
+                            required = false)
+        private String service;
 
-            @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
-                    "Resource service " +
-                                                                                                            "to connect" +
-                                                                                                            " to"},
-                                required = false)
-            private String service;
+        @CommandLine.Option(names = {"-v", "--verbose"}, defaultValue = "false", description = {"List project " +
+                                                                                                        "contents " +
+                                                                                                        "and " +
+                                                                                                        "metadata"}
+                , required = false)
+        private boolean verbose;
 
-            @CommandLine.Option(names = {"-v", "--verbose"}, defaultValue = "false", description = {"List project " +
-                                                                                                            "contents " +
-                                                                                                            "and " +
-                                                                                                            "metadata"}
-                    , required = false)
-            private boolean verbose;
+        @Override
+        public void run() {
 
-            @Override
-            public void run() {
+            PrintWriter out = commandSpec.commandLine().getOut();
+            PrintWriter err = commandSpec.commandLine().getErr();
 
-                PrintWriter out = commandSpec.commandLine().getOut();
-                PrintWriter err = commandSpec.commandLine().getErr();
+            var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
+            if (service instanceof ResourcesService.Admin) {
+                for (var project :
+                        ((ResourcesService.Admin) service).listProjects(KlabCLI.INSTANCE.engine().serviceScope())) {
+                    out.println("   " + project.getUrn());
+                    if (verbose) {
 
-                var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-                if (service instanceof ResourcesService.Admin) {
-                    for (var project :
-                            ((ResourcesService.Admin) service).listProjects(KlabCLI.INSTANCE.engine().serviceScope())) {
-                        out.println("   " + project.getUrn());
-                        if (verbose) {
-
-                            boolean first = true;
-                            for (var ontology : project.getOntologies()) {
-                                if (first) {
-                                    out.println("   Ontologies:");
-                                }
-                                out.println("      " + ontology.getUrn());
-                                first = false;
+                        boolean first = true;
+                        for (var ontology : project.getOntologies()) {
+                            if (first) {
+                                out.println("   Ontologies:");
                             }
-                            first = true;
-                            for (var namespace : project.getNamespaces()) {
-                                if (first) {
-                                    out.println("   Namespaces::");
-                                }
-                                out.println("      " + namespace.getUrn());
-                                first = false;
+                            out.println("      " + ontology.getUrn());
+                            first = false;
+                        }
+                        first = true;
+                        for (var namespace : project.getNamespaces()) {
+                            if (first) {
+                                out.println("   Namespaces::");
                             }
-                            for (var behavior : project.getBehaviors()) {
-                                if (first) {
-                                    out.println("   Behaviors::");
-                                }
-                                out.println("      " + behavior.getUrn());
-                                first = false;
+                            out.println("      " + namespace.getUrn());
+                            first = false;
+                        }
+                        for (var behavior : project.getBehaviors()) {
+                            if (first) {
+                                out.println("   Behaviors::");
                             }
-                            for (var app : project.getApps()) {
-                                if (first) {
-                                    out.println("   Applications:");
-                                }
-                                out.println("      " + app.getUrn());
-                                first = false;
+                            out.println("      " + behavior.getUrn());
+                            first = false;
+                        }
+                        for (var app : project.getApps()) {
+                            if (first) {
+                                out.println("   Applications:");
                             }
-                            for (var testcase : project.getTestCases()) {
-                                if (first) {
-                                    out.println("   Test cases:");
-                                }
-                                out.println("      " + testcase.getUrn());
-                                first = false;
+                            out.println("      " + app.getUrn());
+                            first = false;
+                        }
+                        for (var testcase : project.getTestCases()) {
+                            if (first) {
+                                out.println("   Test cases:");
                             }
+                            out.println("      " + testcase.getUrn());
+                            first = false;
                         }
                     }
                 }
@@ -339,21 +332,21 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
         @CommandLine.Command(name = "add", mixinStandardHelpOptions = true, version = Version.CURRENT,
                              description = {
-                "Add a new project to the scope of this service.", ""}, subcommands = {})
+                                     "Add a new project to the scope of this service.", ""}, subcommands = {})
         public static class Add implements Runnable {
 
             @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
                     "Resource service " +
-                                                                                                            "to connect" +
-                                                                                                            " to"},
+                            "to connect" +
+                            " to"},
                                 required = false)
             private String service;
 
             @CommandLine.Option(names = {"-w", "--workspace"}, defaultValue = "local", description = {
                     "Workspace for " +
-                                                                                                              "the " +
-                                                                                                              "imported" +
-                                                                                                              " project"
+                            "the " +
+                            "imported" +
+                            " project"
             }, required = false)
             private String workspace;
 
@@ -404,13 +397,13 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
         @CommandLine.Command(name = "remove", mixinStandardHelpOptions = true, version = Version.CURRENT,
                              description =
-                {"Remove a project from this service.", ""}, subcommands = {})
+                                     {"Remove a project from this service.", ""}, subcommands = {})
         public static class Remove implements Runnable {
 
             @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
                     "Resource service " +
-                                                                                                            "to connect" +
-                                                                                                            " to"},
+                            "to connect" +
+                            " to"},
                                 required = false)
             private String service;
             @CommandLine.Parameters
@@ -428,39 +421,26 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
     @CommandLine.Command(name = "components", mixinStandardHelpOptions = true, version = Version.CURRENT,
                          description =
-            {"Components operations", ""}, subcommands = {Resources.Components.List.class,
-                                                          Resources.Components.Add.class,
-                                                          Resources.Components.Remove.class})
-    public static class Components {
+                                 {"Components operations", ""}, subcommands =
+                                 {CLIResourcesView.Components.Remove.class,
+                                  CLIResourcesView.Components.Remove.class})
+    public static class Components implements Runnable {
 
-        @CommandLine.Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT,
-                             description = {
-                "List and describe service components.", ""}, subcommands = {})
-        public static class List implements Runnable {
-
-            @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
-                    "Resource service " +
-                                                                                                            "to connect" +
-                                                                                                            " to"},
-                                required = false)
-            private String service;
-
-            @Override
-            public void run() {
-
-            }
-
+        @Override
+        public void run() {
+            // TODO list components, also in verbose mode
         }
 
-        @CommandLine.Command(name = "add", mixinStandardHelpOptions = true, version = Version.CURRENT,
+
+        @CommandLine.Command(name = "update", mixinStandardHelpOptions = true, version = Version.CURRENT,
                              description = {
-                "Add a new component to the scope of a service.", ""}, subcommands = {})
-        public static class Add implements Runnable {
+                                     "Add a new component to the scope of a service.", ""}, subcommands = {})
+        public static class Update implements Runnable {
 
             @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
                     "Resource service " +
-                                                                                                            "to connect" +
-                                                                                                            " to"},
+                            "to connect" +
+                            " to"},
                                 required = false)
             private String service;
 
@@ -477,13 +457,13 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
         @CommandLine.Command(name = "remove", mixinStandardHelpOptions = true, version = Version.CURRENT,
                              description =
-                {"Remove a component from a service.", ""}, subcommands = {})
+                                     {"Remove a component from a service.", ""}, subcommands = {})
         public static class Remove implements Runnable {
 
             @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
                     "Resource service " +
-                                                                                                            "to connect" +
-                                                                                                            " to"},
+                            "to connect" +
+                            " to"},
                                 required = false)
             private String service;
 
@@ -499,13 +479,13 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
     @CommandLine.Command(name = "workspace", mixinStandardHelpOptions = true, version = Version.CURRENT,
                          description =
-            {"Workspace operations", ""}, subcommands = {Resources.Workspace.List.class,
-                                                         Resources.Workspace.Remove.class})
+                                 {"Workspace operations", ""}, subcommands = {Resources.Workspace.List.class,
+                                                                              Resources.Workspace.Remove.class})
     public static class Workspace {
 
         @CommandLine.Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT,
                              description = {
-                "List and describe local workspaces.", ""}, subcommands = {})
+                                     "List and describe local workspaces.", ""}, subcommands = {})
         public static class List implements Runnable {
 
             @CommandLine.Option(names = {"-v", "--verbose"}, defaultValue = "false", description = {"List projects in " +
@@ -515,8 +495,8 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
             @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
                     "Resource service " +
-                                                                                                            "to connect" +
-                                                                                                            " to"},
+                            "to connect" +
+                            " to"},
                                 required = false)
             private String service;
 
@@ -537,13 +517,13 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
         @CommandLine.Command(name = "remove", mixinStandardHelpOptions = true, version = Version.CURRENT,
                              description =
-                {"Remove a workspace from this service.", ""}, subcommands = {})
+                                     {"Remove a workspace from this service.", ""}, subcommands = {})
         public static class Remove implements Runnable {
 
             @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
                     "Resource service " +
-                                                                                                            "to connect" +
-                                                                                                            " to"},
+                            "to connect" +
+                            " to"},
                                 required = false)
             private String service;
             @CommandLine.Parameters
