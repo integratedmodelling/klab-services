@@ -1,7 +1,6 @@
 package org.integratedmodelling.cli.views;
 
 import org.integratedmodelling.cli.KlabCLI;
-import org.integratedmodelling.cli.Resources;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -479,8 +478,8 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
     @CommandLine.Command(name = "workspace", mixinStandardHelpOptions = true, version = Version.CURRENT,
                          description =
-                                 {"Workspace operations", ""}, subcommands = {Resources.Workspace.List.class,
-                                                                              Resources.Workspace.Remove.class})
+                                 {"Workspace operations", ""}, subcommands = {CLIResourcesView.Workspace.List.class,
+                                                                              CLIResourcesView.Workspace.Remove.class})
     public static class Workspace {
 
         @CommandLine.Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT,

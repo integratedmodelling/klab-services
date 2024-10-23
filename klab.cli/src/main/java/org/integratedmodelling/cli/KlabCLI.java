@@ -1,6 +1,7 @@
 package org.integratedmodelling.cli;
 
 import org.integratedmodelling.cli.views.CLIObservationView;
+import org.integratedmodelling.cli.views.CLIReasonerView;
 import org.integratedmodelling.cli.views.CLIResourcesView;
 import org.integratedmodelling.cli.views.CLIServicesView;
 import org.integratedmodelling.common.utils.Utils;
@@ -8,14 +9,11 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.modeler.ModelerImpl;
 import org.jline.builtins.ConfigurationPath;
 import org.jline.console.SystemRegistry;
@@ -102,7 +100,7 @@ public enum KlabCLI {
                                                "Hit @|magenta <TAB>|@ to see available commands.", "Hit " +
                                                "@|magenta ALT-S|@ to toggle tailtips.", ""}, footer = {"",
                                                                                                        "Press Ctrl-D to exit."},
-             subcommands = {Auth.class, Expressions.class, Reasoner.class, /*Report.class, Resolver.class,*/
+             subcommands = {Auth.class, Expressions.class, CLIReasonerView.class, /*Report.class, Resolver.class,*/
                             Shutdown.class, Credentials.class, CLIServicesView.class, Run.class,
                             PicocliCommands.ClearScreen.class,
                             CommandLine.HelpCommand.class, Set.class,/*Session.class,
