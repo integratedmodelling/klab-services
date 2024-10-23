@@ -225,17 +225,17 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public KimNamespace resolveNamespace(String urn, Scope scope) {
-        return client.get(ServicesAPI.RESOURCES.RESOLVE_NAMESPACE_URN, KimNamespace.class, "urn", urn);
+        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_NAMESPACE_URN, KimNamespace.class, "urn", urn);
     }
 
     @Override
     public KimOntology resolveOntology(String urn, Scope scope) {
-        return client.get(ServicesAPI.RESOURCES.RESOLVE_ONTOLOGY_URN, KimOntology.class, "urn", urn);
+        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_ONTOLOGY_URN, KimOntology.class, "urn", urn);
     }
 
     @Override
     public KimObservationStrategyDocument resolveObservationStrategyDocument(String urn, Scope scope) {
-        return client.get(ServicesAPI.RESOURCES.RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN,
+        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN,
                 KimObservationStrategyDocument.class, "urn", urn);
     }
 
@@ -246,23 +246,23 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public KActorsBehavior resolveBehavior(String urn, Scope scope) {
-        return client.get(ServicesAPI.RESOURCES.RESOLVE_BEHAVIOR_URN, KActorsBehavior.class, "urn", urn);
+        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_BEHAVIOR_URN, KActorsBehavior.class, "urn", urn);
     }
 
     @Override
     public Resource resolveResource(String urn, Scope scope) {
-        return client.get(ServicesAPI.RESOURCES.RESOURCE, Resource.class, "urn", urn);
+        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOURCE, Resource.class, "urn", urn);
     }
 
     @Override
     public Workspace resolveWorkspace(String urn, Scope scope) {
-        return client.get(ServicesAPI.RESOURCES.RESOLVE_WORKSPACE_URN, Workspace.class, "urn", urn);
+        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_WORKSPACE_URN, Workspace.class, "urn", urn);
     }
 
     @Override
     public ResourceSet resolveServiceCall(String name, Scope scope) {
-        // TODO
-        return null;
+        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_SERVICE_CALL, ResourceSet.class, "name",
+                name);
     }
 
     @Override
