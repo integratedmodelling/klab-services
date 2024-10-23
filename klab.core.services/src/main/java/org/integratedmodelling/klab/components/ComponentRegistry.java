@@ -8,6 +8,7 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -44,14 +45,14 @@ import java.util.function.BiConsumer;
 
 public class ComponentRegistry {
 
-    private static final String LOCAL_SERVICE_COMPONENT = "internal.local.service.component";
+    public static final String LOCAL_SERVICE_COMPONENT = "internal.local.service.component";
     private PluginManager componentManager;
     private File pluginPath = null;
 
     // we keep the local services and adapters in here
     private ComponentDescriptor localComponentDescriptor = new ComponentDescriptor(LOCAL_SERVICE_COMPONENT,
             Version.CURRENT_VERSION,
-            new ArrayList<>(),
+            "Natively available services", ResourcePrivileges.PUBLIC, new ArrayList<>(),
             new ArrayList<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
 
     /**
@@ -67,19 +68,26 @@ public class ComponentRegistry {
     private MultiValuedMap<String, ComponentDescriptor> verbFinder = new HashSetValuedHashMap<>();
     private Map<Class<?>, Object> globalInstances = new HashMap<>();
 
-    record AdapterDescriptor(String name /* TODO */) {
+    public List<ComponentDescriptor> resolveServiceCall(String name, Version version) {
+        List<ComponentDescriptor> ret = new ArrayList<>();
+        return ret;
     }
 
-    record LibraryDescriptor(String name, String description,
-                             List<Pair<ServiceInfo, FunctionDescriptor>> services,
-                             List<Pair<ServiceInfo, FunctionDescriptor>> annotations,
-                             List<Pair<ServiceInfo, FunctionDescriptor>> verbs) {
+    public record AdapterDescriptor(String name /* TODO */) {
     }
 
-    record ComponentDescriptor(String id, Version version, List<LibraryDescriptor> libraries,
-                               List<AdapterDescriptor> adapters, Map<String, FunctionDescriptor> services,
-                               Map<String, FunctionDescriptor> annotations,
-                               Map<String, FunctionDescriptor> verbs) {
+    public record LibraryDescriptor(String name, String description,
+                                    List<Pair<ServiceInfo, FunctionDescriptor>> services,
+                                    List<Pair<ServiceInfo, FunctionDescriptor>> annotations,
+                                    List<Pair<ServiceInfo, FunctionDescriptor>> verbs) {
+    }
+
+    public record ComponentDescriptor(String id, Version version, String description,
+                                      ResourcePrivileges permissions, List<LibraryDescriptor> libraries,
+                                      List<AdapterDescriptor> adapters,
+                                      Map<String, FunctionDescriptor> services,
+                                      Map<String, FunctionDescriptor> annotations,
+                                      Map<String, FunctionDescriptor> verbs) {
 
         @Override
         public boolean equals(Object o) {
@@ -197,14 +205,18 @@ public class ComponentRegistry {
         var componentVersion = component.getVersion();
         var libraries = new ArrayList<LibraryDescriptor>();
         var adapters = new ArrayList<AdapterDescriptor>();
+        var license = component.getWrapper().getDescriptor().getLicense();
+        var description = component.getWrapper().getDescriptor().getPluginDescription();
+        var permissions = ResourcePrivileges.create(license == null ? "*" : license);
 
         scanPackage(component, Map.of(Library.class, (annotation, cls) -> registerLibrary(
                         (Library) annotation, cls, libraries), ResourceAdapter.class,
                 (annotation, cls) -> registerAdapter((ResourceAdapter) annotation, cls,
                         adapters)));
 
-        var componentDescriptor = new ComponentDescriptor(componentName, componentVersion, libraries,
-                adapters, new HashMap<>(), new HashMap<>(), new HashMap<>());
+        var componentDescriptor = new ComponentDescriptor(componentName, componentVersion, description,
+                permissions, libraries, adapters, new HashMap<>(), new HashMap<>(),
+                new HashMap<>());
 
         // update catalog
         for (var library : componentDescriptor.libraries) {

@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -199,11 +200,12 @@ public interface ResourcesService extends KlabService {
     /**
      * Resolve a component (and possibly its dependencies) that provides the passed service call.
      *
-     * @param name
-     * @param scope
+     * @param name    URN of the service call
+     * @param version can be null, in which case the results will reflect the latest available
+     * @param scope   requesting identity
      * @return
      */
-    ResourceSet resolveServiceCall(String name, Scope scope);
+    ResourceSet resolveServiceCall(String name, Version version, Scope scope);
 
     /**
      * Inquire about resource availability for the passed urn and scope. Should work for all types of assets.
@@ -462,13 +464,13 @@ public interface ResourcesService extends KlabService {
          * Add a resource with file content or a k.LAB component to those managed by this service. Resource is
          * invisible from the outside until published. The resource adapter must be available to the service.
          *
-         * @param resourcePath the URL to a local or remote directory or archive file that contains the resource
-         *                     files. A resource.json file must be present, along with anything else required
-         *                     by the adapter. If the file is a .jar file, the resource is assumed to be a
-         *                     component and is treated as such.
+         * @param resourcePath the URL to a local or remote directory or archive file that contains the
+         *                     resource files. A resource.json file must be present, along with anything else
+         *                     required by the adapter. If the file is a .jar file, the resource is assumed to
+         *                     be a component and is treated as such.
          * @return the result including the resource URN in results, potentially modified w.r.t. the one in
          * the request. If a component, the URN is the plugin name from the jar manifest.
-         *
+         * <p>
          * TODO should have another that takes a URL, working the same way but also storing the
          *  URL and checking for updates. Could recognize a Maven configuration and automatically
          *  check for new versions as well.

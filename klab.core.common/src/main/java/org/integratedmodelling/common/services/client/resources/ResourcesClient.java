@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -225,12 +226,14 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public KimNamespace resolveNamespace(String urn, Scope scope) {
-        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_NAMESPACE_URN, KimNamespace.class, "urn", urn);
+        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_NAMESPACE_URN, KimNamespace.class,
+                "urn", urn);
     }
 
     @Override
     public KimOntology resolveOntology(String urn, Scope scope) {
-        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_ONTOLOGY_URN, KimOntology.class, "urn", urn);
+        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_ONTOLOGY_URN, KimOntology.class,
+                "urn", urn);
     }
 
     @Override
@@ -246,7 +249,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public KActorsBehavior resolveBehavior(String urn, Scope scope) {
-        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_BEHAVIOR_URN, KActorsBehavior.class, "urn", urn);
+        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_BEHAVIOR_URN,
+                KActorsBehavior.class, "urn", urn);
     }
 
     @Override
@@ -256,13 +260,15 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public Workspace resolveWorkspace(String urn, Scope scope) {
-        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_WORKSPACE_URN, Workspace.class, "urn", urn);
+        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_WORKSPACE_URN, Workspace.class,
+                "urn", urn);
     }
 
     @Override
-    public ResourceSet resolveServiceCall(String name, Scope scope) {
-        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_SERVICE_CALL, ResourceSet.class, "name",
-                name);
+    public ResourceSet resolveServiceCall(String name, Version version, Scope scope) {
+        return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_SERVICE_CALL, ResourceSet.class,
+                "name",
+                name, "version", (version == null ? null : version.toString()));
     }
 
     @Override

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.KlabData;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
@@ -135,8 +136,10 @@ public class ResourcesProviderController {
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_SERVICE_CALL)
     public @ResponseBody ResourceSet resolveServiceCall(@PathVariable("name") String name,
+                                                        @PathVariable(value = "version", required = false) String version,
                                                         Principal principal) {
-        return resourcesServer.klabService().resolveServiceCall(name,
+        Version v = version == null ? null : Version.create(version);
+        return resourcesServer.klabService().resolveServiceCall(name, v,
                 principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
     }
 

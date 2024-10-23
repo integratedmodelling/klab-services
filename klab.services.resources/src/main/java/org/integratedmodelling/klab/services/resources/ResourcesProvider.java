@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -34,6 +35,7 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
+import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
@@ -299,10 +301,21 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet resolveServiceCall(String name, Scope scope) {
-        // TODO
-        var ret = new ResourceSet();
-        ret.setEmpty(true);
+    public ResourceSet resolveServiceCall(String name, Version version, Scope scope) {
+
+        ResourceSet ret = new ResourceSet();
+        boolean empty = true;
+        for (var component : getComponentRegistry().resolveServiceCall(name, version)) {
+            if (component.permissions().checkAuthorization(scope)) {
+                empty = false;
+                ret.getResults().add(new ResourceSet.Resource(this.serviceId(), component.id(), null,
+                        component.version(),
+                        KnowledgeClass.COMPONENT));
+            }
+        }
+
+        ret.setEmpty(empty);
+
         return ret;
     }
 

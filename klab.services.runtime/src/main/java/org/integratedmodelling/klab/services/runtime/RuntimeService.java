@@ -393,6 +393,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             if (contextualizable.getServiceCall() != null) {
                 var resolution =
                         resourcesService.resolveServiceCall(contextualizable.getServiceCall().getUrn(),
+                                contextualizable.getServiceCall().getRequiredVersion(),
                                 scope);
                 if (resolution.isEmpty()) {
                     return resolution;
