@@ -207,27 +207,24 @@ public class ResolutionCompiler {
                         ResolutionConstraint.Type.ResolutionNamespace, model.getNamespace()),
                 ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionProject, model.getProjectName()));
 
+        // check that all contextualizers are supported
+        var runtime = scope.getService(RuntimeService.class);
+        ResourceSet requirements =
+                runtime.resolveContextualizables(model.getComputation(), scope);
+
+        if (requirements.isEmpty()) {
+            return ResolutionGraph.empty();
+        }
+        ret.setDependencies(Utils.Resources.merge(ret.getDependencies(), requirements));
+
+        /*
+        resolve all dependencies
+         */
         boolean complete = model.getDependencies().isEmpty();
         List<Pair<ResolutionGraph, String>> modelGraphs = new ArrayList<>();
         for (var dependency : model.getDependencies()) {
 
-            /*
-            first check that all contextualizers are supported
-             */
-            var runtime = scope.getService(RuntimeService.class);
-            ResourceSet requirements =
-                    runtime.resolveContextualizables(model.getComputation(), scope);
-
-            if (requirements.isEmpty()) {
-                return ResolutionGraph.empty();
-            }
-            ret.setDependencies(Utils.Resources.merge(ret.getDependencies(), requirements));
-
-            /*
-            if contextualizers are feasible, continue resolving
-             */
             var dependencyResolution = resolve(dependency, scaleToCover, ret, scope);
-
             var cov = ret.checkCoverage(dependencyResolution);
             if (!cov.isRelevant()) {
                 if (dependency.isOptional()) {
