@@ -6,6 +6,7 @@ import io.github.classgraph.ScanResult;
 import javassist.Modifier;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.apache.commons.io.IOUtils;
 import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -34,6 +35,8 @@ import org.integratedmodelling.klab.utilities.Utils;
 import org.pf4j.*;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -492,6 +495,7 @@ public class ComponentRegistry {
      * @return
      */
     public boolean loadComponents(ResourceSet resourceSet, Scope scope) {
+
         Set<String> available = new HashSet<>();
         for (var result : resourceSet.getResults()) {
             if (result.getKnowledgeClass() == KlabAsset.KnowledgeClass.COMPONENT) {
@@ -517,11 +521,22 @@ public class ComponentRegistry {
                     return false;
                 }
 
-                
+                File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
+                try (var input = service.retrieveResource(result.getResourceUrn(), result.getAccessKey(),
+                        "application/java-archive", scope); var output = new FileOutputStream(plugin)) {
+                    IOUtils.copy(input, output);
+                } catch (IOException e) {
+                    scope.error(e);
+                    return false;
+                }
+                loadComponents(plugin);
             }
         }
 
-        return false;
+        // hopefully this is OK with plugins that have started already
+        componentManager.startPlugins();
+
+        return true;
     }
 
     public void scanPackage(String[] internalPackages, Map<Class<? extends Annotation>, BiConsumer<Annotation
@@ -675,8 +690,21 @@ public class ComponentRegistry {
     }
 
     /**
+     * Call this one if you plan on USING the plugin; call {@link #initializeComponents(File)} if you want to
+     * build the plugin archive but not load the plugins themselves. This one is for working with the plugins,
+     * the other for hosting and serving plugins. One or the other must be called before anything else.
+     *
+     * @param pluginRoot
+     */
+    public void loadComponents(File pluginRoot) {
+        initializeComponents(pluginRoot);
+        componentManager.startPlugins();
+    }
+
+    /**
      * Call to initialize and use the plugin system. No plugins will be discovered unless this is called. This
-     * finds but does not load the configured plugins.
+     * finds but does not load the configured plugins. Call this one at initialization or
+     * {@link #loadComponents(File)} but not both.
      *
      * @param pluginRoot
      */

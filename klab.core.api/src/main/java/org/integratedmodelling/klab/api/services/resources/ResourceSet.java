@@ -73,6 +73,7 @@ public class ResourceSet implements Serializable {
         private List<Notification> notifications = new ArrayList<>();
         private String projectUrn;
         private RepositoryState repositoryState;
+        private String accessKey;
 
         public Resource() {
         }
@@ -162,6 +163,14 @@ public class ResourceSet implements Serializable {
 
         public void setRepositoryState(RepositoryState repositoryState) {
             this.repositoryState = repositoryState;
+        }
+
+        public String getAccessKey() {
+            return accessKey;
+        }
+
+        public void setAccessKey(String accessKey) {
+            this.accessKey = accessKey;
         }
 
         @Override
