@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
@@ -29,6 +30,8 @@ import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -377,6 +380,11 @@ public abstract class BaseService implements KlabService {
 
     public boolean isInitialized() {
         return this.initialized;
+    }
+
+    @Override
+    public InputStream retrieveResource(String urn, String accessKey, String format, Scope scope) {
+        throw new KlabUnimplementedException("Cannot retrieve asset " + urn);
     }
 
 }

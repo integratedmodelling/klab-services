@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -50,6 +51,8 @@ public class ComponentRegistry {
     private File pluginPath = null;
 
     // we keep the local services and adapters in here
+    // FIXME the permissions should come from the external permission system, not as the internal
+    //  Plugin-License
     private ComponentDescriptor localComponentDescriptor = new ComponentDescriptor(LOCAL_SERVICE_COMPONENT,
             Version.CURRENT_VERSION,
             "Natively available services", ResourcePrivileges.PUBLIC, new ArrayList<>(),
@@ -70,6 +73,22 @@ public class ComponentRegistry {
 
     public List<ComponentDescriptor> resolveServiceCall(String name, Version version) {
         List<ComponentDescriptor> ret = new ArrayList<>();
+        ComponentDescriptor target = null;
+        for (var component : serviceFinder.get(name)) {
+            if (version == null) {
+                if (target == null || component.version.greater(target.version)) {
+                    target = component;
+                }
+            } else if (version.compatible(component.version)) {
+                target = component;
+            }
+        }
+        if (target != null) {
+            /*
+            TODO add all dependencies first
+             */
+            ret.add(target);
+        }
         return ret;
     }
 
@@ -207,7 +226,7 @@ public class ComponentRegistry {
         var adapters = new ArrayList<AdapterDescriptor>();
         var license = component.getWrapper().getDescriptor().getLicense();
         var description = component.getWrapper().getDescriptor().getPluginDescription();
-        var permissions = ResourcePrivileges.create(license == null ? "*" : license);
+        var permissions = license == null ? ResourcePrivileges.PUBLIC : ResourcePrivileges.create(license);
 
         scanPackage(component, Map.of(Library.class, (annotation, cls) -> registerLibrary(
                         (Library) annotation, cls, libraries), ResourceAdapter.class,
@@ -473,6 +492,35 @@ public class ComponentRegistry {
      * @return
      */
     public boolean loadComponents(ResourceSet resourceSet, Scope scope) {
+        Set<String> available = new HashSet<>();
+        for (var result : resourceSet.getResults()) {
+            if (result.getKnowledgeClass() == KlabAsset.KnowledgeClass.COMPONENT) {
+                for (var existing : components.get(result.getResourceUrn())) {
+                    if (result.getResourceVersion() == null || existing.version().compatible(result.getResourceVersion())) {
+                        available.add(result.getResourceUrn());
+                    }
+                }
+            }
+        }
+
+        // if we get here, we need to retrieve and load the component
+        if (available.size() == resourceSet.getResults().size()) {
+            return true;
+        }
+
+        for (var result : resourceSet.getResults()) {
+
+            if (!available.contains(result.getResourceUrn())) {
+                // load from service
+                var service = scope.getService(result.getServiceId(), ResourcesService.class);
+                if (service == null) {
+                    return false;
+                }
+
+                
+            }
+        }
+
         return false;
     }
 

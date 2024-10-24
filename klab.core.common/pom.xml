@@ -27,6 +27,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>2.9.0</version>
+        </dependency>
+        <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.core.api</artifactId>
             <version>${klab.version}</version>

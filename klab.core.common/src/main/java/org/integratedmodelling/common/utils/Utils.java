@@ -15,6 +15,7 @@ import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.view.mxGraph;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntity;
@@ -23,6 +24,8 @@ import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypes;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -292,6 +295,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 this.headers.put(header, value);
             }
 
+
             static class Options {
                 public boolean silent = false;
                 // TODO
@@ -365,6 +369,49 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 return List.of();
             }
 
+            /**
+             * Download something into a file. If there is a "format" parameter, it must be a valid media
+             * type which will also determine the extension of the file.
+             *
+             * @param apiRequest
+             * @param parameters
+             * @return
+             */
+            public File download(String apiRequest, Object... parameters) {
+                try {
+                    var options = new Options();
+                    var params = makeKeyMap(options, parameters);
+                    var apiCall = substituteTemplateParameters(apiRequest, params);
+
+                    String mediaType = params.containsKey("format") ? params.get("format").toString() :
+                                       MediaType.OCTET_STREAM.type();
+                    String fileExtension =
+                            params.containsKey("format") ?
+                            MimeTypes.getDefaultMimeTypes().forName(params.get("format").toString()).getExtension() : "bin";
+
+                    var ret = File.createTempFile("klab", "." + fileExtension);
+                    var request = new HttpGet(URI.create(uri + apiCall + encodeParameters(params)));
+                    request.setHeader(HttpHeaders.ACCEPT, mediaType);
+                    if (authorization != null) {
+                        request.setHeader(HttpHeaders.AUTHORIZATION, authorization);
+                    }
+                    for (var header : headers.keySet()) {
+                        request.setHeader(header, headers.get(header));
+                    }
+                    try (var client = HttpClientBuilder.create().build()) {
+                        var response = client.execute(request);
+                        HttpEntity entity = response.getEntity();
+                        if (entity != null) {
+                            try (var output = new FileOutputStream(ret)) {
+                                entity.writeTo(output);
+                            }
+                        }
+                        return ret;
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
 
             /**
              * GET helper that sets all headers and automatically handles JSON marshalling.

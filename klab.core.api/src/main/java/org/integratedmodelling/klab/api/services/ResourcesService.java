@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 import java.io.File;
+import java.io.OutputStream;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
@@ -318,7 +319,7 @@ public interface ResourcesService extends KlabService {
      * {@link ResourceSet#getResults()}) along with the needed resources, namespaces and behaviors needed to
      * run them. Prioritization and final resource access happens in the resolver.
      *
-     * @param observation
+     * @param observable
      * @param scope
      * @return
      */

@@ -314,6 +314,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             }
         }
 
+        if (!empty) {
+            ret.getServices().put(this.serviceId(), this.getUrl());
+        }
+
         ret.setEmpty(empty);
 
         return ret;

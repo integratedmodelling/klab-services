@@ -1,5 +1,7 @@
 package org.integratedmodelling.common.services.client;
 
+import com.google.common.io.FileBackedOutputStream;
+import org.glassfish.grizzly.streams.Input;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
@@ -29,8 +31,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.*;
@@ -239,10 +240,12 @@ public abstract class ServiceClient implements KlabService {
          * Service scopes are non-messaging at service side, but if the services are local, messaging
          * happens through the user scope used for admin calls. Messages sent to the service-side user
          * scope use service channels intercepted here, set up when the service becomes available based on
-         * capabilities. We disable all messaging passing isReceiver = false if the service client is operating
+         * capabilities. We disable all messaging passing isReceiver = false if the service client is
+         * operating
          * within a service.
          */
-        Channel channel = local ? new MessagingChannelImpl(this.authentication.getFirst(), false, ownerService != null) :
+        Channel channel = local ? new MessagingChannelImpl(this.authentication.getFirst(), false,
+                ownerService != null) :
                           new ChannelImpl(this.authentication.getFirst());
 
         this.scope = new AbstractServiceDelegatingScope(channel) {
@@ -448,4 +451,13 @@ public abstract class ServiceClient implements KlabService {
         return scope.defaultQueues();
     }
 
+    @Override
+    public InputStream retrieveResource(String urn, String accessKey, String format, Scope scope) {
+        try {
+            return new FileInputStream(client.withScope(scope).download(ServicesAPI.DOWNLOAD_ASSET, "urn", urn
+                    , "format", format, "key", accessKey));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

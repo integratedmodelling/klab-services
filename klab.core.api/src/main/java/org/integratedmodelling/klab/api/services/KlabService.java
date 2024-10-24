@@ -13,6 +13,8 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URL;
@@ -441,5 +443,25 @@ public interface KlabService extends Service {
     ExternalAuthenticationCredentials.CredentialInfo addCredentials(String host,
                                                                     ExternalAuthenticationCredentials credentials, Scope scope);
 
+    /**
+     * Generic retrieval of any URN-specified asset as a stream. Used whenever the context requires it, for
+     * example to download a component jar, a resource archive for mirroring, project archive, output result
+     * or anything else.
+     * <p>
+     * Admits an accessKey parameter to access resources that are made available only on purpose and for a
+     * limited time. The access key, if any, is reported in the {@link ResourceSet.Resource} that advertises
+     * the content.
+     * <p>
+     * A format may be passed in lieu of context negotiation when alternative formats are available. It should
+     * be a known MediaType string and should match the Content-Type header in REST calls to this service..
+     *
+     * @param urn       the URN of the resource
+     * @param accessKey can be null if the resource is accessible and stable
+     * @param format    can be null if there is no option for format, or be a recognized file format for the
+     *                  output
+     * @param scope     the scope that gives access to the resource
+     * @return
+     */
+    InputStream retrieveResource(String urn, String accessKey, String format, Scope scope);
 
 }

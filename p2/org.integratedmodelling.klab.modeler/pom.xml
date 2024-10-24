@@ -80,6 +80,14 @@
                                             </instructions>
                                         </artifact>
                                         <artifact>
+                                            <id>org.apache.tika:tika-core:jar:2.9.0</id>
+                                            <override>true</override>
+                                            <source>true</source>
+                                            <instructions>
+                                                <_noee>true</_noee>
+                                            </instructions>
+                                        </artifact>
+                                        <artifact>
                                             <id>org.apfloat:apfloat:jar:1.10.1</id>
                                             <override>true</override>
                                             <source>true</source>

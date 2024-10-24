@@ -81,6 +81,12 @@ public interface ServicesAPI {
     String RELEASE_CONTEXT = "/releaseContext";
 
     /**
+     * Asset stream download for all services that have assets to download, using URN and content negotiation
+     * for specifics
+     */
+    String DOWNLOAD_ASSET = "/downloadAsset/{urn}";
+
+    /**
      * General administration endpoints common to all services
      */
     interface ADMIN {
@@ -365,9 +371,9 @@ public interface ServicesAPI {
         String RETRIEVE_ASSET = "/asset";
 
         /**
-         * POST endpoint that takes a list of contextualizer references and returns the
-         * ResourceSet that specifies whether those will be available to the runtime. Could
-         * just return a boolean but we use the isEmpty() and insert the
+         * POST endpoint that takes a list of contextualizer references and returns the ResourceSet that
+         * specifies whether those will be available to the runtime. Could just return a boolean but we use
+         * the isEmpty() and insert the
          */
         String RESOLVE_CONTEXTUALIZERS = "/resolve";
     }

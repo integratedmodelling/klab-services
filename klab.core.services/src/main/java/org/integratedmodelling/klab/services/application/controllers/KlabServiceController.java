@@ -1,15 +1,20 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
+import org.h2.util.IOUtils;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.security.Principal;
 
 /**
@@ -50,6 +55,21 @@ public class KlabServiceController {
     @GetMapping(ServicesAPI.STATUS)
     public KlabService.ServiceStatus status() {
         return instance.klabService().status();
+    }
+
+
+    @GetMapping(ServicesAPI.DOWNLOAD_ASSET)
+    public void downloadAsset(String urn, String format, String accessKey, HttpServletResponse response,
+                              Principal principal) {
+        if (principal instanceof EngineAuthorization authorization) {
+            response.setContentType(format == null ? MediaType.APPLICATION_OCTET_STREAM.getType() : format);
+            try (var input = instance.klabService().retrieveResource(urn, accessKey, format,
+                    authorization.getScope())) {
+                IOUtils.copy(input, response.getOutputStream());
+            } catch (IOException e) {
+                throw new KlabInternalErrorException(e);
+            }
+        }
     }
 
 
