@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.identities.Group;
@@ -452,10 +453,12 @@ public abstract class ServiceClient implements KlabService {
     }
 
     @Override
-    public InputStream retrieveResource(String urn, String accessKey, String format, Scope scope) {
+    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
+                                        Scope scope) {
         try {
             return new FileInputStream(client.withScope(scope).download(ServicesAPI.DOWNLOAD_ASSET, "urn", urn
-                    , "format", format, "key", accessKey));
+                    , "format", format, "key", accessKey, "version", (version == null ? null :
+                                                                      version.toString())));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }

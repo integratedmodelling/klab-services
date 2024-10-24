@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.h2.util.IOUtils;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
@@ -12,6 +13,8 @@ import org.integratedmodelling.klab.services.application.security.ServiceAuthori
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
@@ -59,11 +62,17 @@ public class KlabServiceController {
 
 
     @GetMapping(ServicesAPI.DOWNLOAD_ASSET)
-    public void downloadAsset(String urn, String format, String accessKey, HttpServletResponse response,
+    public void downloadAsset(@PathVariable(name="urn") String urn,
+                              @RequestParam(name = "format", required = false) String format,
+                              @RequestParam(name="version", required = false) String version,
+                              @RequestParam(name="accessKey", required = false) String accessKey,
+                              HttpServletResponse response,
                               Principal principal) {
         if (principal instanceof EngineAuthorization authorization) {
             response.setContentType(format == null ? MediaType.APPLICATION_OCTET_STREAM.getType() : format);
-            try (var input = instance.klabService().retrieveResource(urn, accessKey, format,
+            try (var input = instance.klabService().retrieveResource(urn, (version == null ? null :
+                                                                           Version.create(version)),
+                    accessKey, format,
                     authorization.getScope())) {
                 IOUtils.copy(input, response.getOutputStream());
             } catch (IOException e) {

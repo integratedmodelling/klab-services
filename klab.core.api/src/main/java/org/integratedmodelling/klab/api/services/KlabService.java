@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCre
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.scope.*;
@@ -456,12 +457,13 @@ public interface KlabService extends Service {
      * be a known MediaType string and should match the Content-Type header in REST calls to this service..
      *
      * @param urn       the URN of the resource
+     * @param version   version; null for latest
      * @param accessKey can be null if the resource is accessible and stable
      * @param format    can be null if there is no option for format, or be a recognized file format for the
      *                  output
      * @param scope     the scope that gives access to the resource
      * @return
      */
-    InputStream retrieveResource(String urn, String accessKey, String format, Scope scope);
+    InputStream retrieveResource(String urn, Version version, String accessKey, String format, Scope scope);
 
 }

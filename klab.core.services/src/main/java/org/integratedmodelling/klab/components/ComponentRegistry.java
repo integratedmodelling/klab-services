@@ -56,10 +56,11 @@ public class ComponentRegistry {
     // we keep the local services and adapters in here
     // FIXME the permissions should come from the external permission system, not as the internal
     //  Plugin-License
-    private ComponentDescriptor localComponentDescriptor = new ComponentDescriptor(LOCAL_SERVICE_COMPONENT,
-            Version.CURRENT_VERSION,
-            "Natively available services", ResourcePrivileges.PUBLIC, new ArrayList<>(),
-            new ArrayList<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
+    private final ComponentDescriptor localComponentDescriptor =
+            new ComponentDescriptor(LOCAL_SERVICE_COMPONENT,
+                    Version.CURRENT_VERSION,
+                    "Natively available services", null, ResourcePrivileges.PUBLIC, new ArrayList<>(),
+                    new ArrayList<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
 
     /**
      * Component descriptors, uniquely identified by id + version
@@ -105,6 +106,7 @@ public class ComponentRegistry {
     }
 
     public record ComponentDescriptor(String id, Version version, String description,
+                                      File sourceArchive,
                                       ResourcePrivileges permissions, List<LibraryDescriptor> libraries,
                                       List<AdapterDescriptor> adapters,
                                       Map<String, FunctionDescriptor> services,
@@ -229,6 +231,8 @@ public class ComponentRegistry {
         var adapters = new ArrayList<AdapterDescriptor>();
         var license = component.getWrapper().getDescriptor().getLicense();
         var description = component.getWrapper().getDescriptor().getPluginDescription();
+        var sourceArchive = component.getWrapper().getPluginPath() == null ? null :
+                            component.getWrapper().getPluginPath().toFile();
         var permissions = license == null ? ResourcePrivileges.PUBLIC : ResourcePrivileges.create(license);
 
         scanPackage(component, Map.of(Library.class, (annotation, cls) -> registerLibrary(
@@ -237,6 +241,7 @@ public class ComponentRegistry {
                         adapters)));
 
         var componentDescriptor = new ComponentDescriptor(componentName, componentVersion, description,
+                sourceArchive,
                 permissions, libraries, adapters, new HashMap<>(), new HashMap<>(),
                 new HashMap<>());
 
@@ -488,6 +493,31 @@ public class ComponentRegistry {
     public void loadComponent(KlabComponent component) {
     }
 
+
+    /**
+     * Retrieve a component in a given version or the latest. TODO use this in other methods that use the
+     * logic.
+     *
+     * @param urn
+     * @param version
+     * @return
+     */
+    public ComponentDescriptor getComponent(String urn, Version version) {
+
+        ComponentDescriptor ret = null;
+        for (var component : serviceFinder.get(urn)) {
+            if (version == null) {
+                if (ret == null || component.version.greater(ret.version)) {
+                    ret = component;
+                }
+            } else if (version.compatible(component.version)) {
+                ret = component;
+            }
+        }
+        return ret;
+
+    }
+
     /**
      * Load any component in the passed resource set that is not already present.
      *
@@ -522,7 +552,8 @@ public class ComponentRegistry {
                 }
 
                 File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
-                try (var input = service.retrieveResource(result.getResourceUrn(), result.getAccessKey(),
+                try (var input = service.retrieveResource(result.getResourceUrn(),
+                        result.getResourceVersion(), result.getAccessKey(),
                         "application/java-archive", scope); var output = new FileOutputStream(plugin)) {
                     IOUtils.copy(input, output);
                 } catch (IOException e) {

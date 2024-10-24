@@ -9,6 +9,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -383,7 +384,7 @@ public abstract class BaseService implements KlabService {
     }
 
     @Override
-    public InputStream retrieveResource(String urn, String accessKey, String format, Scope scope) {
+    public InputStream retrieveResource(String urn, Version version, String accessKey, String format, Scope scope) {
         throw new KlabUnimplementedException("Cannot retrieve asset " + urn);
     }
 

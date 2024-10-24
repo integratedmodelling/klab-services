@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
@@ -25,6 +26,7 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -515,6 +517,11 @@ public class EngineImpl implements Engine, PropertyHolder {
     public ExternalAuthenticationCredentials.CredentialInfo addCredentials(String host,
                                                                            ExternalAuthenticationCredentials credentials, Scope scope) {
         return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
+    }
+
+    @Override
+    public InputStream retrieveResource(String urn, Version version, String accessKey, String format, Scope scope) {
+        return null;
     }
 
     @Override
