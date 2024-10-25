@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.runtime;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -13,9 +14,19 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
  */
 public class ExecutionContext {
 
+    public interface Operation {
+
+    }
+
+    public interface ScalarOperation extends Operation {
+
+        void add(ServiceCall scalarProcessingStep);
+
+    }
+
     private final Actuator actuator;
     private final ContextScope scope;
-    private final Observation observation;
+//    private final Observation observation;
     private final DigitalTwin digitalTwin;
     private boolean empty;
 
