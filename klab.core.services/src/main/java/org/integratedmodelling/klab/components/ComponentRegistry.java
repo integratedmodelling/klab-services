@@ -505,7 +505,7 @@ public class ComponentRegistry {
     public ComponentDescriptor getComponent(String urn, Version version) {
 
         ComponentDescriptor ret = null;
-        for (var component : serviceFinder.get(urn)) {
+        for (var component : components.get(urn)) {
             if (version == null) {
                 if (ret == null || component.version.greater(ret.version)) {
                     ret = component;

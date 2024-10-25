@@ -7,7 +7,9 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -306,19 +308,23 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     @Override
     public Coverage runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
 
+        
+        var digitalTwin = getDigitalTwin(contextScope);
+
         /*
         Load or confirm availability of all needed resources and create any non-existing observations
          */
 
+
         /*
-        find contextualization scale and hook point from the scope
+        find contextualization scale and hook point into the DT from the scope
          */
 
         /**
          * Run each actuator set in order
          */
         for (var rootActuator : dataflow.getComputation()) {
-            run(rootActuator, contextScope);
+            run(rootActuator, contextScope, digitalTwin);
         }
 
         /*
@@ -328,23 +334,36 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         return null;
     }
 
-    private void run(Actuator rootActuator, ContextScope scope) {
+    private DigitalTwin getDigitalTwin(ContextScope contextScope) {
+        if (contextScope instanceof ServiceContextScope serviceContextScope) {
+            return serviceContextScope.getDigitalTwin();
+        }
+        throw new KlabInternalErrorException("Digital twin is inaccessible because of unexpected scope implementation");
+    }
+
+    private void run(Actuator rootActuator, ContextScope scope, DigitalTwin digitalTwin) {
+
+        ExecutionContext executionContext = new ExecutionContext(rootActuator, (ServiceContextScope) scope, digitalTwin);
 
         /*
         Turn the actuator hierarchy into a flat list in dependency order. Both actuator containment and
         reference count as
         dependencies between observations.
          */
+        ExecutionContext currentContext = executionContext;
         for (Actuator actuator : computeActuatorOrder(rootActuator, scope)) {
 
-            System.out.printf("ZOPPA");
-        /*
-        run the actuator sequence, marking all correspondent observations as resolved
-         */
+            currentContext = currentContext.runActuator(actuator);
 
-        /*
-        Submit the actuator and its provenance info to the digital twin
-         */
+            if (currentContext.isEmpty()) {
+                scope.error(currentContext.statusLine(), currentContext.errorCode(),
+                        currentContext.errorContext(), currentContext.statusInfo());
+                break;
+            }
+
+            /*
+            Observation was computed: submit the actuator and its provenance info to the digital twin
+             */
 
         }
 

@@ -33,6 +33,7 @@ public enum Klab {
      * resulting actions.
      */
     public enum ErrorCode {
+        NO_ERROR,
         RESOURCE_VALIDATION,
         UNRESOLVED_REFERENCE,
         CIRCULAR_REFERENCES,
@@ -48,6 +49,7 @@ public enum Klab {
         NAMESPACE,
         ONTOLOGY,
         RESOURCE,
+        RUNTIME,
         OBSERVATION_STRATEGY,
         BEHAVIOR,
         RESOURCES_SERVICE

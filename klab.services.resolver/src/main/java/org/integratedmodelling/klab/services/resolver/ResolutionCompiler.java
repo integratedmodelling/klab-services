@@ -215,7 +215,7 @@ public class ResolutionCompiler {
         if (requirements.isEmpty()) {
             return ResolutionGraph.empty();
         }
-        ret.setDependencies(Utils.Resources.merge(ret.getDependencies(), requirements));
+        ret.setDependencies(Utils.Resources.merge(requirements, ret.getDependencies()));
 
         /*
         resolve all dependencies
