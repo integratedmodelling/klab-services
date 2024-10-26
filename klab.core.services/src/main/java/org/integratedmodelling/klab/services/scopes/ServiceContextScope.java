@@ -1,15 +1,21 @@
 package org.integratedmodelling.klab.services.scopes;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.provenance.Activity;
-import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -24,6 +30,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 /**
  * The service-side {@link ContextScope}. Does most of the heavy lifting in the runtime service through the
@@ -33,6 +40,10 @@ import java.util.*;
  * Maintained by the {@link ScopeManager}
  */
 public class ServiceContextScope extends ServiceSessionScope implements ContextScope {
+
+    // TODO make this configurable
+    private static long MAX_CACHED_OBSERVATIONS = 100;
+    private static long MAX_CACHED_GEOMETRIES = 20;
 
     private Observation observer;
     private Observation contextObservation;
@@ -55,6 +66,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     protected Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
             new LinkedHashMap<>();
 
+    LoadingCache<Long, Observation> observationCache;
+
     // This uses the SAME catalog, which should only be redefined when changing context or perspective
     private ServiceContextScope(ServiceContextScope parent) {
         super(parent);
@@ -62,6 +75,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.observer = parent.observer;
         this.contextObservation = parent.contextObservation;
         this.digitalTwin = parent.digitalTwin;
+        this.observationCache = parent.observationCache;
         this.resolutionConstraints.putAll(parent.resolutionConstraints);
     }
 
@@ -98,6 +112,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.observer = null;
         this.data = Parameters.create();
         this.data.putAll(parent.data);
+        // TODO do the same for scales, from the geometries in the knowledge graph
+        this.observationCache =
+                CacheBuilder.newBuilder().maximumSize(MAX_CACHED_OBSERVATIONS).build(new CacheLoader<Long,
+                        Observation>() {
+            @Override
+            public Observation load(Long key) throws Exception {
+                return digitalTwin.knowledgeGraph().get(key, Observation.class);
+            }
+        });
         /*
          * TODO choose the services if this context or user requires specific ones
          */
@@ -126,13 +149,20 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     /**
      * Retrieve the observation with the passed ID straight from the digital twin. This is non-API and is the
-     * fastest way.
+     * fastest way. The knowledge graph should in turn cache scales, so that no geometries are created
+     * unnecessarily.
+     *
+     * TODO check if the caching logic should be entirely within the knowledge graph (probably).
      *
      * @param id
      * @return
      */
-    private Observation getObservation(long id) {
-        return null;
+    public Observation getObservation(long id) {
+        try {
+            return observationCache.get(id);
+        } catch (ExecutionException e) {
+            throw new KlabInternalErrorException(e);
+        }
     }
 
     @Override
@@ -444,17 +474,18 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
         var activity = digitalTwin.knowledgeGraph().activity(Provenance.getAgent(this),
                 this, Activity.Type.INSTANTIATION).add(observation);
-         if (getContextObservation() != null) {
-            activity = activity.link(getContextObservation(), observation, DigitalTwin.Relationship.HAS_CHILD);
-         } else {
-             activity = activity.rootLink(observation);
-         }
+        if (getContextObservation() != null) {
+            activity = activity.link(getContextObservation(), observation,
+                    DigitalTwin.Relationship.HAS_CHILD);
+        } else {
+            activity = activity.rootLink(observation);
+        }
 
-         if (getObserver() != null) {
-             activity = activity.link(observation, getObserver(), DigitalTwin.Relationship.HAS_OBSERVER);
-         }
+        if (getObserver() != null) {
+            activity = activity.link(observation, getObserver(), DigitalTwin.Relationship.HAS_OBSERVER);
+        }
 
-         return activity.run(this);
+        return activity.run(this);
     }
 
 }

@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime;
 
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -25,8 +26,8 @@ public class ExecutionContext {
     }
 
     private final Actuator actuator;
-    private final ContextScope scope;
-//    private final Observation observation;
+    private final ServiceContextScope scope;
+    private final Observation observation;
     private final DigitalTwin digitalTwin;
     private boolean empty;
 
@@ -36,6 +37,10 @@ public class ExecutionContext {
         this.digitalTwin = digitalTwin;
         // set or create the observation
         if (actuator.getId() != Observation.UNASSIGNED_ID) {
+            this.observation = scope.getObservation(actuator.getId());
+        } else {
+            throw new KlabUnimplementedException("Creating observations when running external dataflows");
+            // TODO this is needed for external dataflows
         }
     }
 

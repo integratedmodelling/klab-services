@@ -5,11 +5,14 @@ import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.knowledge.DescriptionType;
+import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -442,4 +445,169 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     public List<SessionInfo> getSessionInfo(Scope scope) {
         return List.of();
     }
+
+
+    // PORTED FROM PREVIOUS
+
+    /**
+     * Establish the order of execution and the possible parallelism. Each root actuator should be sorted by
+     * dependency and appended in order to the result list along with its order of execution. Successive roots
+     * can refer to the previous roots but they must be executed sequentially.
+     * <p>
+     * The DigitalTwin is asked to register the actuator in the scope and prepare the environment and state
+     * for its execution, including defining its contextualization scale in context.
+     *
+     * @param dataflow
+     * @return
+     */
+    private List<Pair<Actuator, Integer>> sortComputation(Dataflow<Observation> dataflow, ExecutionContext executionContext,
+                                                          ContextScope scope) {
+        List<Pair<Actuator, Integer>> ret = new ArrayList<>();
+        for (Actuator root : dataflow.getComputation()) {
+            int executionOrder = 0;
+            Map<String, Actuator> branch = new HashMap<>();
+            collectActuators(Collections.singletonList(root), dataflow, scope, null, branch);
+            var dependencyGraph = createDependencyGraph(branch);
+            TopologicalOrderIterator<Actuator, DefaultEdge> order =
+                    new TopologicalOrderIterator<>(dependencyGraph);
+
+            // group by dependency w.r.t. the previous group and assign the execution order based on the
+            // group index, so that we know what we can execute in parallel
+            Set<Actuator> group = new HashSet<>();
+            while (order.hasNext()) {
+                Actuator next = order.next();
+                if (next.getActuatorType() != Actuator.Type.REFERENCE) {
+                    // FIXME PASS THE ExecutionContext and find the actuator in there
+//                    var data = observationData.get(next.getId());
+//                    if (!data.executors.isEmpty()) {
+//                        ret.add(Pair.of(next, (executionOrder = checkExecutionOrder(executionOrder, next,
+//                                dependencyGraph, group))));
+//                    }
+                }
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * If the actuator depends on any in the currentGroup, empty the group and increment the order; otherwise,
+     * add it to the group and return the same order.
+     *
+     * @param executionOrder
+     * @param current
+     * @param dependencyGraph
+     * @param currentGroup
+     * @return
+     */
+    private int checkExecutionOrder(int executionOrder, Actuator current,
+                                    Graph<Actuator, DefaultEdge> dependencyGraph,
+                                    Set<Actuator> currentGroup) {
+        boolean dependency = false;
+        for (Actuator previous : currentGroup) {
+            for (var edge : dependencyGraph.incomingEdgesOf(current)) {
+                if (currentGroup.contains(dependencyGraph.getEdgeSource(edge))) {
+                    dependency = true;
+                    break;
+                }
+            }
+        }
+
+        if (dependency) {
+            currentGroup.clear();
+            return executionOrder + 1;
+        }
+
+        currentGroup.add(current);
+
+        return executionOrder;
+    }
+
+    private void collectActuators(List<Actuator> actuators, Dataflow<Observation> dataflow, ContextScope scope,
+                                  Observation contextObservation, Map<String, Actuator> ret) {
+        var context = contextObservation;
+        for (Actuator actuator : actuators) {
+            if (registerActuator(actuator, dataflow, scope, contextObservation)) {
+                /*
+                 * TODO compile a list of all services + versions, validate the actuator, create
+                 * any needed notifications and a table of translations for local names
+                 */
+                if (actuator.getObservable().getDescriptionType() == DescriptionType.ACKNOWLEDGEMENT) {
+//                    var odata = this.observationData.get(actuator.getId());
+//                    context = (DirectObservation) odata.observation;
+                }
+                //                ret.put(actuator.getId(), actuator);
+            }
+            collectActuators(actuator.getChildren(), dataflow, scope, context, ret);
+        }
+    }
+
+    /**
+     * Build and return the dependency graph for the passed actuators. Save externally if appropriate -
+     * caching does create issues in contextualization and scheduling.
+     *
+     * @return
+     */
+    public Graph<Actuator, DefaultEdge> createDependencyGraph(Map<String, Actuator> actuators) {
+        Graph<Actuator, DefaultEdge> ret = new DefaultDirectedGraph<>(DefaultEdge.class);
+        for (Actuator actuator : actuators.values()) {
+            ret.addVertex(actuator);
+            for (Actuator child : actuator.getChildren()) {
+                var ref = actuators.get(child.getId());
+                if (ref != null) {
+                    ret.addVertex(ref);
+                    ret.addEdge(child, actuator);
+                }
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Register an actuator and create all support info before execution. Return true if the actuator is new
+     * and has computations.
+     *
+     * @param actuator
+     * @param scope
+     * @return
+     */
+    public boolean registerActuator(Actuator actuator, Dataflow<Observation> dataflow, ContextScope scope,
+                                    Observation contextObservation) {
+
+        //        var data = observationData.get(actuator.getId());
+        //        if (data == null && /* shouldn't happen */ !actuator.isReference()) {
+        //            data = new ObservationData();
+        //            data.actuator = actuator;
+        ////            data.observation = createObservation(actuator, contextObservation, scope);
+        //            data.scale = Scale.create(scope.getContextObservation().getGeometry());
+        //            data.contextObservation = contextObservation;
+        //
+        ////            var customScale = dataflow.getResources().get((actuator.getId() + "_dataflow"), Scale.class);
+        ////            if (customScale != null) {
+        ////                // FIXME why the heck is this an Object and I have to cast?
+        ////                data.scale = data.scale.merge((Scale) customScale, LogicalConnector.INTERSECTION);
+        ////            }
+        //
+        //            for (Actuator child : actuator.getChildren()) {
+        ////                if (child.isInput() && !child.getName().equals(child.getAlias())) {
+        ////                    data.localNames.put(child.getName(), child.getAlias());
+        ////                }
+        //            }
+        //
+        //            Executor executor = null;
+        //            for (var computation : data.actuator.getComputation()) {
+        //                var step = createExecutor(actuator, data.observation, computation, scope, executor);
+        //                if (executor != step) {
+        //                    data.executors.add(step);
+        //                }
+        //                executor = step;
+        //            }
+        //
+        //            observationData.put(actuator.getId(), data);
+        //
+        //            return true;
+        //        }
+
+        return false;
+    }
+
 }
