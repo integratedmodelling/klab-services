@@ -1,15 +1,11 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.runtime.language.LanguageService;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExecutorOperation implements ExecutionContext.Operation {
 
-    protected List<ServiceCall> serviceCallList = new ArrayList<>();
-
-    public ExecutorOperation(ServiceCall process) {
-        serviceCallList.add(process);
-    }
-}

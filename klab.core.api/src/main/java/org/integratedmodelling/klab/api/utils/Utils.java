@@ -405,6 +405,7 @@ public class Utils {
          * passed type and return the merged result.
          *
          * @param scope
+         * @param serviceClass
          * @param request
          * @return
          */
@@ -428,7 +429,6 @@ public class Utils {
 
             return ret;
         }
-
 
         public static String dump(ResourceSet resourceSet) {
 

@@ -24,27 +24,6 @@ public class LanguageService implements Language {
 
     private ComponentRegistry componentRegistry;
 
-    //    class FunctionDescriptor {
-    //        ServiceInfo serviceInfo;
-    //        Class<?> implementation;
-    //        Object mainClassInstance;
-    //        Object wrappingClassInstance;
-    //        Method method;
-    //        Constructor<?> constructor;
-    //        // check call style: 1 = call, scope, prototype; 2 = call, scope; 3 = custom, matched at
-    //        // each call
-    //        int methodCall;
-    //        boolean staticMethod;
-    //        boolean staticClass;
-    //        public boolean error;
-    //
-    //    }
-    //
-    //    private Map<String, FunctionDescriptor> functions = new HashMap<>();
-    //    private Map<String, FunctionDescriptor> annotations = new HashMap<>();
-    //    private Map<String, FunctionDescriptor> verbs = new HashMap<>();
-    //    private Map<Class<?>, Object> globalInstances = new HashMap<>();
-
     @Override
     public Descriptor describe(String expression, String language, Scope scope, CompilerOption... options) {
         // TODO Auto-generated method stub
