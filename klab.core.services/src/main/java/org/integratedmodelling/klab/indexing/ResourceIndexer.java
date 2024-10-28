@@ -147,7 +147,7 @@ public class ResourceIndexer {
 
 			for (ScoreDoc hit : hits) {
 
-				Document document = searcher.doc(hit.doc);
+				Document document = searcher.storedFields().document(hit.doc);
 
 				if (!ids.contains(document.get("id"))) {
 

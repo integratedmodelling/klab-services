@@ -376,7 +376,7 @@ public class Indexer {
 
                 for (ScoreDoc hit : hits) {
 
-                    Document document = searcher.doc(hit.doc);
+                    Document document = searcher.storedFields().document(hit.doc);
                     Concept concept = scope.getService(Reasoner.class).resolveConcept(document.get("id"));
                     SemanticMatch.Type matchType = SemanticMatch.Type.values()[Integer
                             .parseInt(document.get("vmtype"))];
@@ -487,7 +487,7 @@ public class Indexer {
 
                     for (ScoreDoc hit : hits) {
 
-                        Document document = searcher.doc(hit.doc);
+                        Document document = searcher.storedFields().document(hit.doc);
 
                         SemanticMatch.Type matchType = SemanticMatch.Type.values()[Integer
                                 .parseInt(document.get("vmtype"))];

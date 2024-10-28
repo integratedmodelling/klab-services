@@ -189,13 +189,13 @@
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-suggest</artifactId>
-            <version>9.9.2</version>
+            <version>10.0.0</version>
         </dependency>
         <!-- query parser is just for testing at the moment -->
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-queryparser</artifactId>
-            <version>9.8.0</version>
+            <version>10.0.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit -->
