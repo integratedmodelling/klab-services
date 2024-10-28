@@ -181,21 +181,22 @@
         </dependency>
 
         <!-- Lucene for indexing -->
+        <!-- older version to avoid conflicts with Neo4k -->
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
-            <version>10.0.0</version>
+            <version>9.11.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-suggest</artifactId>
-            <version>10.0.0</version>
+            <version>9.11.1</version>
         </dependency>
         <!-- query parser is just for testing at the moment -->
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-queryparser</artifactId>
-            <version>10.0.0</version>
+            <version>9.11.1</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit -->
