@@ -187,7 +187,7 @@ public abstract class GenericRAMIndexer<T> {
 			TopDocs docs = searcher.search(buildQuery(query), maxResults);
 			ScoreDoc[] hits = docs.scoreDocs;
 			for (ScoreDoc hit : hits) {
-				Document document = searcher.doc(hit.doc);
+				Document document = searcher.storedFields().document(hit.doc);
 				if (!ids.contains(document.get("id"))) {
 					ret.add(data.get(document.get("id")));
 					ids.add(document.get("id"));
