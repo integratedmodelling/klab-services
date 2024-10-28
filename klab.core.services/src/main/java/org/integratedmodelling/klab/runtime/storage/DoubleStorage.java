@@ -31,6 +31,14 @@ public class DoubleStorage implements Storage {
         public double applyToOffset(Offset offset);
     }
 
+    public interface OffsetToFloatFunction {
+        public float applyToOffset(Offset offset);
+    }
+
+    public interface OffsetToBooleanFunction {
+        public boolean applyToOffset(Offset offset);
+    }
+
     private final Scale scale;
     long sliceSize;
     private NavigableMap<Long, DirectSliceBuffer> buffers = new TreeMap<>();

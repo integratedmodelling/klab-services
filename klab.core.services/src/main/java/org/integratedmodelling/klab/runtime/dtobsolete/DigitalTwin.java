@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Language;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -340,9 +341,9 @@ public class DigitalTwin implements Closeable {
      * instead of checking at every step).
      */
 
-    public DigitalTwin(ContextScope scope) {
+    public DigitalTwin(RuntimeService service, ContextScope scope) {
         this.scope = scope;
-        this.storageScope = new StateStorageImpl(scope);
+        this.storageScope = new StateStorageImpl(service,scope);
     }
 
     /**

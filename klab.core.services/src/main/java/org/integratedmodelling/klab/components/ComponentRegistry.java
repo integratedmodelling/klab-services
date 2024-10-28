@@ -560,7 +560,7 @@ public class ComponentRegistry {
                     scope.error(e);
                     return false;
                 }
-                loadComponents(plugin);
+                loadComponents(pluginPath);
             }
         }
 

@@ -258,7 +258,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             serviceContextScope.setId(
                     serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
             getScopeManager().registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
-            serviceContextScope.setDigitalTwin(new DigitalTwinImpl(contextScope, getMainKnowledgeGraph()));
+            serviceContextScope.setDigitalTwin(new DigitalTwinImpl(this, contextScope, getMainKnowledgeGraph()));
 
             if (serviceContextScope.getServices(RuntimeService.class).isEmpty()) {
                 // add self as the runtime service, which is needed by the slave scopes

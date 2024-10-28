@@ -25,6 +25,10 @@ import java.util.List;
  * the functors through their {@link ServiceCall}s. Each service call must correspond to those built by the
  * {@link org.integratedmodelling.klab.api.services.CoreLibrary} service implemented across communicating
  * k.LAB services.
+ * <p>
+ * @deprecated the StandardLibrary.KlabCore enum should suffice, implemented in the
+ *  runtime and specifically translated by the executors and mappers. Each enum should contain the
+ *   scalar/vector nature and the needed <parameter,type> pairs for dataflow validation.
  */
 @Library(name = Klab.StandardLibrary.KlabCore.NAMESPACE, description = "")
 public class CoreLibraryFunctors {

@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
 import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
@@ -17,10 +18,10 @@ public class DigitalTwinImpl implements DigitalTwin {
     StateStorage stateStorage;
     ContextScope rootScope;
 
-    public DigitalTwinImpl(ContextScope scope, KnowledgeGraph database) {
+    public DigitalTwinImpl(RuntimeService service, ContextScope scope, KnowledgeGraph database) {
         this.rootScope = scope;
         this.knowledgeGraph = database.contextualize(scope);
-        this.stateStorage = new StateStorageImpl(scope);
+        this.stateStorage = new StateStorageImpl(service, scope);
     }
 
     @Override
