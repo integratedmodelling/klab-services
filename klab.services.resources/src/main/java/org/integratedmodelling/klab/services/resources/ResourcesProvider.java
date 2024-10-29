@@ -7,6 +7,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -729,13 +730,38 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public ResourceSet createResource(File resourcePath, UserScope scope) {
 
-        if ("jar".equals(Utils.Files.getFileExtension(resourcePath))) {
-            return getComponentRegistry().installComponent(resourcePath, scope);
-        } else {
+        KnowledgeClass knowledgeClass = null;
+        File sourceFile = null;
+        String urn = null;
+        ResourceSet ret = null;
 
+        if ("jar".equals(Utils.Files.getFileExtension(resourcePath))) {
+            var imported = getComponentRegistry().installComponent(resourcePath, scope);
+            knowledgeClass = KnowledgeClass.COMPONENT;
+            sourceFile = imported.getFirst().sourceArchive();
+            urn = imported.getFirst().id();
+            ret = imported.getSecond();
+        } else {
+            // TODO resource, mirror archive
         }
 
-        return null;
+        if (urn != null) {
+            // initial resource permissions
+            var status = new ResourceStatus();
+            if (scope.getIdentity() instanceof UserIdentity user) {
+                status.getPrivileges().getAllowedUsers().add(user.getUsername());
+                status.setOwner(user.getUsername());
+            }
+            status.setFileLocation(sourceFile);
+            status.setKnowledgeClass(knowledgeClass);
+            status.setReviewStatus(0);
+            status.setType(ResourceStatus.Type.AVAILABLE);
+            status.setLegacy(false);
+            catalog.put(urn, status);
+            db.commit();
+        }
+
+        return ret;
     }
 
     @Override

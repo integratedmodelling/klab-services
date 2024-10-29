@@ -31,9 +31,6 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
         controller.registerView(this);
     }
 
-//    @Deprecated
-//    private List<String> observationsMade = new ArrayList<>();
-
     @CommandLine.Spec
     CommandLine.Model.CommandSpec commandSpec;
 

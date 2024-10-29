@@ -150,11 +150,12 @@ public class ComponentRegistry {
         public boolean error;
     }
 
-    public ResourceSet installComponent(File resourcePath, Scope scope) {
+    public Pair<ComponentDescriptor, ResourceSet> installComponent(File resourcePath, Scope scope) {
 
         // TODO allow same path with different versions and replacing same version
 
         var ret = new ResourceSet();
+        ComponentDescriptor info = null;
         try {
             var pluginId = componentManager.loadPlugin(resourcePath.toPath());
             var plugin = componentManager.getPlugin(pluginId);
@@ -166,7 +167,7 @@ public class ComponentRegistry {
 
             Plugin component = plugin.getPlugin();
             if (component instanceof KlabComponent comp) {
-                var info = registerComponent(comp);
+                info = registerComponent(comp);
                 ret.getNotifications().add(info.extractInfo());
                 ret.getResults().add(result);
 
@@ -189,7 +190,7 @@ public class ComponentRegistry {
             ret.getNotifications().add(Notification.create(t));
             ret.setEmpty(true);
         }
-        return ret;
+        return Pair.of(info, ret);
     }
 
 

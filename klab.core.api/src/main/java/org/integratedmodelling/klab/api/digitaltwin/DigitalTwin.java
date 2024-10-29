@@ -46,7 +46,8 @@ public interface DigitalTwin {
     }
 
     /**
-     * The full knowledge graph, including observations, actuators and provenance
+     * The full knowledge graph, including observations, actuators and provenance, referring to this digital
+     * twin.
      *
      * @return
      */
