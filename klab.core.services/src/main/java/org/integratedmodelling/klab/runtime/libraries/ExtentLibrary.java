@@ -106,7 +106,7 @@ public class ExtentLibrary {
         if (shape != null) {
             if (resolution != null) {
                 Grid grid = GridImpl.create(resolution, squareCells);
-                ret = TileImpl.create(shape, grid);
+                ret = TileImpl.create(shape, grid, true);
             } else {
                 ret = shape;
             }

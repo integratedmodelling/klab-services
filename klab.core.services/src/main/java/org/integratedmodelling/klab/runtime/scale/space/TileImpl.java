@@ -40,9 +40,9 @@ public class TileImpl extends ShapeImpl implements Tile {
         super(ShapeImpl.create(geometry, projection));
     }
 
-    public TileImpl(Shape shape, Grid grid) {
+    public TileImpl(Shape shape, Grid grid, boolean adjust) {
         super(ShapeImpl.promote(shape));
-        this.grid = grid.locate(this.getEnvelope());
+        this.grid = adjust ? grid.locate(this.getEnvelope()) : grid;
         this.size = this.grid.size();
         setShape(Arrays.asList(this.grid.getXCells(), this.grid.getYCells()));
     }
@@ -80,8 +80,8 @@ public class TileImpl extends ShapeImpl implements Tile {
         return ret.encode(language);
     }
 
-    public static TileImpl create(Shape shape, Grid grid) {
-        return new TileImpl(shape, grid);
+    public static TileImpl create(Shape shape, Grid grid, boolean adjust) {
+        return new TileImpl(shape, grid, adjust);
     }
 
     @Override

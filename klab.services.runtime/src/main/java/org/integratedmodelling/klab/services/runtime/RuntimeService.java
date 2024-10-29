@@ -311,7 +311,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     @Override
     public Coverage runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
 
-
         var digitalTwin = getDigitalTwin(contextScope);
 
         /*
@@ -331,7 +330,9 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                     dataflow,
                     contextScope), (ServiceContextScope) contextScope, digitalTwin, getComponentRegistry());
             if (!executionSequence.isEmpty()) {
-                executionSequence.run();
+                if (!executionSequence.run()) {
+                    return Coverage.empty();
+                }
             }
         }
 

@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projec
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.services.UnitService;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.locationtech.jts.geom.Point;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -107,6 +108,30 @@ public class GridImpl implements Grid {
         this.declaredResolutionM = resolutionInM;
         this.assertedResolution = Quantity.of(resolutionInM, "m");
         adjustEnvelope(envelope, resolutionInM, makeCellsSquare);
+    }
+
+    /**
+     * One between envelope and shape may be null, in which case the other will be used. If both are non-null,
+     * the envelope determines the boundaries and the shape is used only for masking. The squareCells is computed
+     * by equality.
+     *
+     * @param envelope
+     * @param shape
+     * @param xCells
+     * @param yCells
+     */
+    public GridImpl(Envelope envelope, Shape shape, long xCells, long yCells) {
+
+        if (envelope == null) {
+            envelope = shape.getEnvelope();
+        }
+        this.xCells = xCells;
+        this.yCells = yCells;
+        this.xCellSize = (envelope.getMaxX() - envelope.getMinX())/this.xCells;
+        this.yCellSize = (envelope.getMaxY() - envelope.getMinY())/this.yCells;
+        this.squareCells = Utils.Numbers.equal(this.xCellSize, this.yCellSize);
+        this.size = this.xCells * this.yCells;
+        this.projection = ProjectionImpl.promote(envelope.getProjection());
     }
 
     /**

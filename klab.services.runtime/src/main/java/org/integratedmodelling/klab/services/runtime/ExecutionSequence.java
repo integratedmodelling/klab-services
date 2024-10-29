@@ -24,6 +24,7 @@ import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
 import org.integratedmodelling.klab.runtime.storage.FloatStorage;
 import org.integratedmodelling.klab.runtime.storage.KeyedStorage;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.ojalgo.concurrent.Parallelism;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -42,6 +43,10 @@ public class ExecutionSequence {
     private final ComponentRegistry componentRegistry;
     private List<List<ExecutorOperation>> sequence = new ArrayList<>();
     private boolean empty;
+    // the context for the next operation. Starts at the observation and doesn't normally change but implementations
+    // may change it when they return a non-null, non-POD object.
+    // TODO check if this should be a RuntimeAsset or even an Observation.
+    private Object currentExecutionContext;
 
     private ExecutionSequence(List<Pair<Actuator, Integer>> pairs, ServiceContextScope contextScope,
                               DigitalTwin digitalTwin, ComponentRegistry componentRegistry) {
@@ -74,10 +79,28 @@ public class ExecutionSequence {
         return new ExecutionSequence(pairs, contextScope, digitalTwin, componentRegistry);
     }
 
-    public void run() {
+    public boolean run() {
         for (var operationGroup : sequence) {
-
+            // groups are sequential; grouped items are parallel. Empty groups are currently possible although
+            // they should be filtered out, but we leave them for completeness for now as they don't really bother
+            // anyone.
+            if (operationGroup.size() == 1) {
+                if (!operationGroup.getFirst().run()) {
+                    return false;
+                }
+            } else if (!operationGroup.isEmpty()) {
+                if (scope.getParallelism() == Parallelism.ONE) {
+                    for (var operation : operationGroup) {
+                        if (!operation.run()) {
+                            return false;
+                        }
+                    }
+                } else {
+                    // TODO virtual threads, launch all, wait for finish or failure
+                }
+            }
         }
+        return true;
     }
 
 
@@ -123,6 +146,7 @@ public class ExecutionSequence {
                     }
 
                     // we can be pretty sure that this will be a scale by now
+                    // FIXME actually it's not. And we should cache scales.
                     var scale = Scale.create(observation.getGeometry());
                     Storage storage = digitalTwin.stateStorage().getExistingStorage(observation, Storage.class);
                     /**
@@ -187,7 +211,16 @@ public class ExecutionSequence {
                                 return true;
                             });
                         } else if (descriptor.mainClassInstance != null) {
-
+                            executors.add(() -> {
+                                try {
+                                    var context = descriptor.method.invoke(descriptor.mainClassInstance, runArguments.toArray());
+                                    setExecutionContext(context == null ? observation : context);
+                                    return true;
+                                } catch (Exception e) {
+                                    scope.error(e /* TODO tracing parameters */);
+                                }
+                                return true;
+                            });
                         }
 
                     }
@@ -204,9 +237,18 @@ public class ExecutionSequence {
         }
 
 
+        public boolean run() {
+            for (var executor : executors) {
+                if (!executor.get()) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     private void setExecutionContext(Object returnedValue) {
+        this.currentExecutionContext = returnedValue;
     }
 
     //    public ExecutionSequence(Actuator rootActuator, ServiceContextScope scope, DigitalTwin

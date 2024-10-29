@@ -209,7 +209,15 @@ public class StateStorageImpl implements StateStorage {
 
     @Override
     public <T extends Storage> T promoteStorage(Observation observation, Storage existingStorage, Class<T> storageClass) {
-        // TODO
+
+        if (existingStorage == null) {
+            return getOrCreateStorage(observation, storageClass);
+        } else if (storageClass.isAssignableFrom(existingStorage.getClass())) {
+            return (T)existingStorage;
+        }
+
+        // TODO create a casting delegate or throw an exception
+
         return null;
     }
 }

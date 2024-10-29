@@ -137,11 +137,6 @@ public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements
     }
 
     @Override
-    public <T extends RuntimeAsset> T get(long id, Class<T> resultClass) {
-        return null;
-    }
-
-    @Override
     public <T extends RuntimeAsset> List<T> get(RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
         return List.of();
     }

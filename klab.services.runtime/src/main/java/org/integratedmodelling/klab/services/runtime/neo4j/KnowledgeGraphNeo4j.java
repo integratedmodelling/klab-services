@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -10,6 +13,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Plan;
@@ -42,7 +46,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     protected Agent user;
     protected Agent klab;
     protected String rootContextId;
-
     // all predefined Cypher queries
     interface Queries {
 
@@ -447,10 +450,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     private String encodeGeometry(Geometry observationGeometry) {
 
-        /**
-         * Ensure that the shape parameter is in WKB
+        /*
+         * Ensure that the shape parameter is in WKB and any prescriptive grid parameters are resolved.
+         * TODO we should cache the geometries and scales, then reuse them.
          */
-        var ret = observationGeometry.encode(ShapeImpl.wkbEncoder);
+        var ret = Scale.create(observationGeometry).encode(ShapeImpl.wkbEncoder);
 
         return ret;
 

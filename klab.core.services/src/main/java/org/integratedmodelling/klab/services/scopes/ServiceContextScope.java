@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
+import org.ojalgo.concurrent.Parallelism;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -488,4 +489,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return activity.run(this);
     }
 
+    public Parallelism getParallelism() {
+        // TODO
+        return Parallelism.ONE;
+    }
 }

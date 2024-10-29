@@ -1,11 +1,16 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.apache.groovy.util.Arrays;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
@@ -19,10 +24,23 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
+
+    protected static int MAX_CACHED_OBSERVATIONS = 400;
+
     protected ContextScope scope;
+    protected LoadingCache<Long, RuntimeAsset> assetCache =
+            CacheBuilder.newBuilder().maximumSize(MAX_CACHED_OBSERVATIONS).build(new CacheLoader<Long,
+                    RuntimeAsset>() {
+                @Override
+                public RuntimeAsset load(Long key) throws Exception {
+                    return getAssetForKey(key);
+                }
+            });
+
 
     public record Step(OperationImpl.Type type, List<RuntimeAsset> targets, Object[] parameters) {
     }
@@ -139,6 +157,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
             return this;
         }
 
+
         public Agent getAgent() {
             return agent;
         }
@@ -184,8 +203,15 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
          * @param key   the value of the field that uniquely identifies the assed
          */
         public void registerAsset(Object asset, String field, Object key) {
+            if (key instanceof Long longKey && asset instanceof RuntimeAsset runtimeAsset) {
+                assetCache.put(longKey, runtimeAsset);
+            }
             assetLocators.put(asset, Pair.of(field, key));
         }
+    }
+
+    protected RuntimeAsset getAssetForKey(long key) {
+        throw new KlabUnimplementedException("RETRIEVAL OF ARBITRARY ASSET FROM DB INTO CACHE");
     }
 
     protected abstract long runOperation(OperationImpl operation, ContextScope scope);
@@ -264,6 +290,16 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
             }
         }
         return ret;
+    }
+
+    @Override
+    public <T extends RuntimeAsset> T get(long id, Class<T> resultClass) {
+        try {
+            return (T)assetCache.get(id);
+        } catch (ExecutionException e) {
+            scope.error(e);
+            return null;
+        }
     }
 
     /**

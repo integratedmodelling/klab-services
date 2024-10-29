@@ -241,7 +241,7 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
         if (dimension.isRegular()) {
 
             Grid grid = null;
-
+            boolean adjust = true;
             var gridResolution = dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_GRIDRESOLUTION);
             var gridUrn = dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_GRIDURN, String.class);
             Grid imposedGrid = null;
@@ -274,15 +274,18 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
                                         "true")));
             } else if (shape != null && dimension.getShape().size() > 1 && dimension.getShape().stream().reduce(
                     1L, (a, b) -> a * b) > 1) {
-                //                grid = new GridImpl(shape, dimension.getShape().get(0), dimension
-                //                .getShape().get(1));
+                // predefined, assume it's been created correctly from a previous envelope. This is the way
+                // grids are communicated through the runtime.
+                grid = new GridImpl(envelope, shape, dimension.getShape().get(0), dimension
+                        .getShape().get(1));
+                adjust = false;
             }
             if (grid != null && imposedGrid != null) {
                 grid = grid.align(imposedGrid);
             }
 
             if (shape != null && grid != null) {
-                return new TileImpl(shape, grid);
+                return new TileImpl(shape, grid, adjust);
             } else if (shape != null) {
                 return shape;
             }
