@@ -224,8 +224,6 @@ public class ExecutionSequence {
                         }
 
                     }
-
-
                     System.out.println("VECTOR");
                 }
             }
@@ -235,7 +233,6 @@ public class ExecutionSequence {
             }
 
         }
-
 
         public boolean run() {
             for (var executor : executors) {
