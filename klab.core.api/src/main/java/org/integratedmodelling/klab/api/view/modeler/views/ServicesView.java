@@ -18,8 +18,7 @@ public interface ServicesView extends View {
      * as if the user had selected the service, so that the current service in the engine is guaranteed in
      * sync with what is shown in the view.
      */
-    void servicesConfigurationChanged(KlabService.ServiceCapabilities service,
-                                      RunningInstance.Status running);
+    void servicesConfigurationChanged(KlabService.ServiceCapabilities service);
 
     /**
      * Called when any of the services in the engine scope reports its status. The view should react by
@@ -30,12 +29,10 @@ public interface ServicesView extends View {
     void notifyServiceStatus(KlabService.ServiceStatus status);
 
     /**
-     * Called when the reasoner successfully loads the worldview coming from the resources service. If the
-     * reasoner had knowledge to begin with, this is not called.
+     * Called when the state of any services has changed to the point of making the engine configuration
+     * different. Other service notification methods should be called independently of this one.
      *
-     * @param reasonerCapabilities
+     * @param status
      */
-    void reasoningAvailable(Reasoner.Capabilities reasonerCapabilities);
-
     void engineStatusChanged(Engine.Status status);
 }

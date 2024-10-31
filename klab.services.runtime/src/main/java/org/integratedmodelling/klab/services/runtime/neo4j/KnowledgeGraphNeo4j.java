@@ -93,6 +93,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return null;
     }
 
+
+    protected RuntimeAsset getAssetForKey(long key) {
+        throw new KlabUnimplementedException("RETRIEVAL OF ARBITRARY ASSET FROM DB INTO CACHE");
+    }
+
     /**
      * Ensure things are OK re: main agents and the like. Must be called only once
      */

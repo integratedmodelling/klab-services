@@ -26,6 +26,7 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Sets;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.lang.Axiom;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -624,7 +625,11 @@ public class OWL {
                 /*
                  * everything else is probably an error
                  */
-                monitor.error(new KlabIOException("reading " + f + ": " + e.getMessage()));
+                if (monitor != null) {
+                    monitor.error(new KlabIOException("reading " + f + ": " + e.getMessage()));
+                } else {
+                    Logging.INSTANCE.error(e);
+                }
             }
 
             Ontology o = ontologies.get(pth);

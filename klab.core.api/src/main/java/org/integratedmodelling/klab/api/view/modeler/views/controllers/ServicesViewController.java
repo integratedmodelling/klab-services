@@ -51,6 +51,9 @@ public interface ServicesViewController extends ViewController<ServicesView> {
     @UIEventHandler(UIEvent.EngineStatusChanged)
     void engineStatusChanged(Engine.Status status);
 
+    @UIEventHandler(UIEvent.ServiceStatus)
+    void serviceStatusNotified(KlabService.ServiceStatus status);
+
     /**
      * User action choosing a service to focus on. The view handles all the UI implications and then calls
      * this so that the engine connected to the main controller is set to use THAT service as default, then a

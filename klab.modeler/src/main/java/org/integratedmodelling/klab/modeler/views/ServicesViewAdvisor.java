@@ -12,18 +12,12 @@ import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
 public class ServicesViewAdvisor extends BaseViewAdvisor implements ServicesView {
 
     @Override
-    public void servicesConfigurationChanged(KlabService.ServiceCapabilities service,
-                                             RunningInstance.Status running) {
+    public void servicesConfigurationChanged(KlabService.ServiceCapabilities service) {
 
     }
 
     @Override
     public void notifyServiceStatus(KlabService.ServiceStatus status) {
-
-    }
-
-    @Override
-    public void reasoningAvailable(Reasoner.Capabilities reasonerCapabilities) {
 
     }
 

@@ -90,7 +90,6 @@ public interface Engine extends KlabService {
          * Return the current status of each specific service. If the service is not even connected, a
          * non-null inactive status is returned.
          *
-         * @param serviceType
          * @return
          */
         Map<Type, ServiceStatus> getServicesStatus();

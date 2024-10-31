@@ -354,7 +354,7 @@ public class EngineImpl implements Engine, PropertyHolder {
                         engineStatus.getServicesStatus().put(sertype, oldStatus);
                     }
                     if (status.get().getServicesCapabilities().get(sertype) == null) {
-                        status.get().getServicesCapabilities().put(sertype, service.capabilities(getUser()));
+                        engineStatus.getServicesCapabilities().put(sertype, service.capabilities(getUser()));
                     }
                 }
             } else if (status.get().getServicesStatus() != null) {
