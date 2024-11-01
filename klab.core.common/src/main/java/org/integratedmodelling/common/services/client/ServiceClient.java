@@ -406,7 +406,7 @@ public abstract class ServiceClient implements KlabService {
 
     @Override
     public String serviceId() {
-        return capabilities.getServiceId();
+        return capabilities == null ? null : capabilities.getServiceId();
     }
 
 

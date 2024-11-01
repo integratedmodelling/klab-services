@@ -488,9 +488,9 @@ public class EngineImpl implements Engine, PropertyHolder {
 
         boolean found = false;
         var currentService = currentServices.get(service.getType());
-        if (currentService == null || !currentService.serviceId().equals(service.getServiceId())) {
+        if (currentService == null || currentService.serviceId() == null || !currentService.serviceId().equals(service.getServiceId())) {
             for (var s : getServices(service.getType())) {
-                if (s.serviceId().equals(service.getServiceId())) {
+                if (s.serviceId() != null && s.serviceId().equals(service.getServiceId())) {
                     currentServices.put(service.getType(), s);
                     found = true;
                     break;
