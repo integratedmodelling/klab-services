@@ -46,15 +46,10 @@ public class ScopeManager {
     KlabService service;
     /**
      * Every scope managed by this service. The relationship between scopes is managed through the scope
-     * graph, using only the IDs.
+     * graph, using only the IDs. Scopes may persist in services that allow that, and that is managed
+     * externally by recreating the scopes and their content upon request.
      */
     private Map<String, ServiceUserScope> scopes = Collections.synchronizedMap(new HashMap<>());
-//    /**
-//     * ScopeID->ScopeID means that the scope with the source ID is a child scope of the target, and all are in
-//     * the scopes map. Closing one scope should recursively close all the children and free every bit of data
-//     * associated with each of them.
-//     */
-//    private Graph<String, DefaultEdge> scopeGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
     private Map<String, Long> idleScopeTime = Collections.synchronizedMap(new HashMap<>());
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
@@ -184,9 +179,6 @@ public class ScopeManager {
         if (ret instanceof ServiceUserScope userScope) {
             return userScope;
         }
-        if (ret != null) {
-            throw new KlabInternalErrorException("Pre-existing user scope with wrong identifier");
-        }
 
         ret = login(createUserIdentity(authorization));
 
@@ -264,47 +256,7 @@ public class ScopeManager {
             var ret = scopes.get(scopeId);
             if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
                 return (T) ret;
-            }/* else if (service instanceof BaseService baseService && baseService.isProvideScopesAutomatically()) {
-                if (scope != null && authorization.isAuthenticated()) {
-                    // TODO create the scope hierarchy; names are auto-generated in this case.
-                    var scopeData = ContextScope.parseScopeId(scopeId);
-                    if (!scopeData.empty()) {
-                        ServiceSessionScope sessionScope = null;
-                        if (scopeData.type() == Scope.Type.SESSION) {
-
-                            sessionScope = new ServiceSessionScope(scope);
-                            sessionScope.setId(scopeData.scopeId());
-                            scopes.put(scopeData.scopeId(), sessionScope);
-                            ret = sessionScope;
-
-                        } else if (scopeData.type() == Scope.Type.CONTEXT) {
-
-                            var sessionId = Utils.Paths.getLeading(scopeData.scopeId(), '.');
-
-                            // could just call self recursively but I think this is clearer
-                            if (scopes.containsKey(sessionId)) {
-                                sessionScope = (ServiceSessionScope) scopes.get(sessionId);
-                            } else {
-                                sessionScope = new ServiceSessionScope(scope);
-                                sessionScope.setId(sessionId);
-                                scopes.put(sessionId, sessionScope);
-                            }
-                            
-                            var contextScope = new ServiceContextScope(sessionScope);
-                            contextScope.setId(scopeData.scopeId());
-                            scopes.put(scopeData.scopeId(), contextScope);
-                            ret = contextScope;
-
-                        } else {
-                            throw new KlabInternalErrorException("invalid scope request in header");
-                        }
-
-                        if (scopeClass.isAssignableFrom(ret.getClass())) {
-                            return (T) ret;
-                        }
-                    }
-                }
-            }*/
+            }
         }
         return null;
     }

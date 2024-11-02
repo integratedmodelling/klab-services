@@ -69,6 +69,7 @@ public enum KlabCLI {
 
     INSTANCE;
 
+    private String prompt = "k.LAB> ";
     private ModelerImpl modeler;
 
     private CLIStartupOptions options;
@@ -86,6 +87,22 @@ public enum KlabCLI {
         return this.modeler;
     }
 
+    private String getContextPrompt() {
+        String ret = null;
+        if (modeler.getCurrentContext() != null) {
+            ret = modeler.getCurrentSession().getName() + "/" + modeler.getCurrentContext().getName();
+            if (modeler.getCurrentContext().getContextObservation() != null) {
+                ret += "/" + modeler.getCurrentContext().getContextObservation().getName();
+            }
+            if (modeler.getCurrentContext().getObserver() != null) {
+                ret = modeler.getCurrentContext().getObserver().getName() + "@" + ret;
+            }
+        } else if (modeler.getCurrentSession() != null) {
+            ret = modeler.getCurrentSession().getName();
+        }
+        return ret;
+    }
+
     public <T extends KlabService> T service(String service, Class<T> serviceClass) {
         if (service == null || "local".equals(service)) {
             return user().getService(serviceClass);
@@ -100,11 +117,12 @@ public enum KlabCLI {
                                                "Hit @|magenta <TAB>|@ to see available commands.", "Hit " +
                                                "@|magenta ALT-S|@ to toggle tailtips.", ""}, footer = {"",
                                                                                                        "Press Ctrl-D to exit."},
-             subcommands = {Auth.class, Expressions.class, CLIReasonerView.class, /*Report.class, Resolver.class,*/
+             subcommands = {Auth.class, Expressions.class, CLIReasonerView.class, /*Report.class, Resolver
+             .class,*/
                             Shutdown.class, Credentials.class, CLIServicesView.class, Run.class,
                             PicocliCommands.ClearScreen.class,
                             CommandLine.HelpCommand.class, Set.class,/*Session.class,
-                            */CLIObservationView.class,
+              */CLIObservationView.class,
                             CLIResourcesView.class, Components.class, Test.class, Run.Alias.class,
                             Run.Unalias.class})
     static class CliCommands implements Runnable {
@@ -422,9 +440,6 @@ public enum KlabCLI {
                     System.exit(0);
                 }
 
-                String prompt = "k.LAB> ";
-                String rightPrompt = null;
-
                 if (historyFile.exists()) {
                     history.read(historyFile.toPath(), true);
                 }
@@ -440,11 +455,20 @@ public enum KlabCLI {
                     try {
 
                         systemRegistry.cleanUp();
-                        line = reader.readLine(prompt, rightPrompt, (MaskingCallback) null, null);
+                        line = reader.readLine(INSTANCE.prompt, INSTANCE.getContextPrompt(),
+                                (MaskingCallback) null, null);
                         completer.resetSemanticSearch();
                         boolean aliased = false;
 
-                        if (line.trim().startsWith("-")) {
+                        /**
+                         * Use < > to move through context observations, @ to set/reset the observer and ?
+                         * to inquire about the current context in
+                         * detail. The right prompt summarizes the current context focus.
+                         */
+                        if (line.trim().startsWith("<") || line.trim().startsWith("@") || line.trim().startsWith(">") || line.trim().startsWith("<") || line.trim().startsWith("?")) {
+                            INSTANCE.setFocalScope(line.trim());
+                            continue;
+                        } else if (line.trim().startsWith("-")) {
                             if (line.trim().equals("-") && history.size() > 0) {
                                 line = history.get(history.last() - 1);
                                 aliased = true;
@@ -484,6 +508,26 @@ public enum KlabCLI {
         } finally {
             //            AnsiConsole.systemUninstall();
         }
+    }
+
+
+    /**
+     * Parse the string for context navigation operators and set the current context to whatever has been
+     * asked for.
+     *
+     * @param trim
+     */
+    private void setFocalScope(String trim) {
+
+        /*
+         * TODO
+         * < goes back one level of context observation (if any)
+         * > obsId sets the ID'd context observation as the current context
+         * @ obsId sets the observer or resets if no obsId is given
+         * ? n prints out the currently known observations (at level n, 1 if not given, full tree if n ==
+         *   'all')
+         */
+
     }
 
     //    private void onEvent(Scope scope, Message message) {

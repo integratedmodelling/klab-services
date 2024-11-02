@@ -491,6 +491,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     public Parallelism getParallelism() {
         // TODO
-        return Parallelism.ONE;
+        return Parallelism.CORES;
     }
 }

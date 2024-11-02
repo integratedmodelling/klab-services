@@ -29,6 +29,9 @@ import org.ojalgo.concurrent.Parallelism;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -43,7 +46,8 @@ public class ExecutionSequence {
     private final ComponentRegistry componentRegistry;
     private List<List<ExecutorOperation>> sequence = new ArrayList<>();
     private boolean empty;
-    // the context for the next operation. Starts at the observation and doesn't normally change but implementations
+    // the context for the next operation. Starts at the observation and doesn't normally change but
+    // implementations
     // may change it when they return a non-null, non-POD object.
     // TODO check if this should be a RuntimeAsset or even an Observation.
     private Object currentExecutionContext;
@@ -82,7 +86,8 @@ public class ExecutionSequence {
     public boolean run() {
         for (var operationGroup : sequence) {
             // groups are sequential; grouped items are parallel. Empty groups are currently possible although
-            // they should be filtered out, but we leave them for completeness for now as they don't really bother
+            // they should be filtered out, but we leave them for completeness for now as they don't really
+            // bother
             // anyone.
             if (operationGroup.size() == 1) {
                 if (!operationGroup.getFirst().run()) {
@@ -95,12 +100,20 @@ public class ExecutionSequence {
                             return false;
                         }
                     }
+                    return true;
                 } else {
-                    // TODO virtual threads, launch all, wait for finish or failure
+                    try (ExecutorService taskExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
+                        for (var operation : operationGroup) {
+                            taskExecutor.execute(operation::run);
+                        }
+                        taskExecutor.shutdown();
+                        return taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+                    } catch (InterruptedException e) {
+                    }
                 }
             }
         }
-        return true;
+        return false;
     }
 
 
@@ -148,7 +161,8 @@ public class ExecutionSequence {
                     // we can be pretty sure that this will be a scale by now
                     // FIXME actually it's not. And we should cache scales.
                     var scale = Scale.create(observation.getGeometry());
-                    Storage storage = digitalTwin.stateStorage().getExistingStorage(observation, Storage.class);
+                    Storage storage = digitalTwin.stateStorage().getExistingStorage(observation,
+                            Storage.class);
                     /**
                      * Create a runnable with matched parameters and have it set the context observation
                      */
@@ -213,7 +227,8 @@ public class ExecutionSequence {
                         } else if (descriptor.mainClassInstance != null) {
                             executors.add(() -> {
                                 try {
-                                    var context = descriptor.method.invoke(descriptor.mainClassInstance, runArguments.toArray());
+                                    var context = descriptor.method.invoke(descriptor.mainClassInstance,
+                                            runArguments.toArray());
                                     setExecutionContext(context == null ? observation : context);
                                     return true;
                                 } catch (Exception e) {

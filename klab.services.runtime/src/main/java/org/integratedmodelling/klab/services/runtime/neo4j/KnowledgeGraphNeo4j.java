@@ -506,7 +506,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 Map.of("id", operation.getActivity().getId(), "properties", props), scope);
 
         for (var asset : results) {
-            // TODO
+
         }
 
         System.out.println((success ? "YEAH " : "FUCK ") + ": FINALIZE THIS SHIT");

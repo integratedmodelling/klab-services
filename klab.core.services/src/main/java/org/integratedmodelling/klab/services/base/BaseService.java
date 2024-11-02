@@ -66,6 +66,7 @@ public abstract class BaseService implements KlabService {
     private boolean initialized;
     private boolean operational;
     private ComponentRegistry componentRegister = new ComponentRegistry();
+    private String instanceKey = Utils.Names.newName();
 
     protected Parameters<Engine.Setting> settingsForSlaveServices = Parameters.createSynchronized();
 
@@ -98,9 +99,18 @@ public abstract class BaseService implements KlabService {
     }
 
     /**
-     * Create a unique ID that will be
+     * Each service creates a secret key and stores in a text file in its work directory. The service key is
+     * created only if absent and remains the same across boot cycles. It is used to grant "local" admin
+     * privileges to any client that can find it and read it from the filesystem. The secret key can be added
+     * to requests in the {@link org.integratedmodelling.klab.api.ServicesAPI#SERVER_KEY_HEADER} and if it
+     * matches the one known to the service admin access is granted independent of authentication.
+     * <p>
+     * The service also exposes an instance key that is different at each boot cycle and is used to
+     * distinguish artifacts or state persisted by a previous instance that may be left over after irregular
+     * termination, so they can be cleaned up.
      */
     private void createServiceSecret() {
+
         File secretFile =
                 ServiceConfiguration.INSTANCE.getFileWithTemplate("services/" + type.name().toLowerCase() +
                         "/secret.key", Utils.Names.newName());
@@ -163,6 +173,16 @@ public abstract class BaseService implements KlabService {
      */
     public String getServiceSecret() {
         return this.serviceSecret;
+    }
+
+    /**
+     * The instance key can be added to any artifact that must be cleaned up after irregular termination to
+     * distinguish anything that may have been left over.
+     *
+     * @return
+     */
+    public String getInstanceKey() {
+        return this.instanceKey;
     }
 
     /**
@@ -384,7 +404,8 @@ public abstract class BaseService implements KlabService {
     }
 
     @Override
-    public InputStream retrieveResource(String urn, Version version, String accessKey, String format, Scope scope) {
+    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
+                                        Scope scope) {
         throw new KlabUnimplementedException("Cannot retrieve asset " + urn);
     }
 

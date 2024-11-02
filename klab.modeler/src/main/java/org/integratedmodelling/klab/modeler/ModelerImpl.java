@@ -69,6 +69,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     File workbenchDefinition;
     private Map<String, URL> serviceUrls = new HashMap<>();
     private Geometry focalGeometry = Geometry.EMPTY;
+    private int contextCount = 0;
+    private int sessionCount = 0;
 
     public ModelerImpl() {
         super();
@@ -222,11 +224,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
          */
 
         if (currentSession == null) {
-            currentSession = openNewSession("Default session");
+            currentSession = openNewSession("S" + (++sessionCount));
         }
 
         if (currentContext == null && currentSession != null) {
-            currentContext = openNewContext("Default context");
+            currentContext = openNewContext("C" + (++contextCount));
         }
 
         if (currentContext == null) {
