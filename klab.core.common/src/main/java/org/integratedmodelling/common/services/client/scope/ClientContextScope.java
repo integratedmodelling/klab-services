@@ -1,11 +1,8 @@
 package org.integratedmodelling.common.services.client.scope;
 
-import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -83,6 +80,13 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     @Override
     public Task<Observation, Long> observe(Observation observation) {
         var runtime = getService(RuntimeService.class);
+
+        // DO THIS:
+        // var taskId = submit(observation, this)  -- NO startResolution, remove it and call separately
+        // var ret = this.trackMessage(ResolutionSuccessful, taskId, () -> ResolutionFailed, class, ()-> ...).withTimeout()...
+        // runtime.startResolution(observation, this.duringTask(ret); // sets task ID header so that the runtime knows it and reports it
+        // return ret;
+
         long taskId = runtime.submit(observation, this, true);
         return newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
                 Message.MessageType.ResolutionSuccessful), Observation.class, taskId); // event

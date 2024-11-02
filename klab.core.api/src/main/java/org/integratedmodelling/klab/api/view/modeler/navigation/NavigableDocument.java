@@ -1,10 +1,7 @@
 package org.integratedmodelling.klab.api.view.modeler.navigation;
 
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.lang.Statement;
-import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.List;

@@ -22,17 +22,13 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.provenance.Plan;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Queue;
 
 /**
  * Actuators are the computable dataflow elements; each of them creates and computes an observation. Within an
@@ -41,7 +37,7 @@ import java.util.Queue;
  * an actuator, the runtime must ensure that all the components serving the needed service calls are
  * available, authorized and loaded, interacting appropriately with the {@link ResourcesService}s in the
  * scope. An actuator with no computation is just responsible for creating its observation, and only
- * non-dependent observables ("substantials", generating {@link DirectObservation}s) have the ability to just
+ * non-dependent observables; "substantials" have the ability to just
  * "acknowledge" the observation without providing a computation strategy.
  * <p>
  * Actuators may be references, corresponding to "input ports" in other workflow systems and used only to

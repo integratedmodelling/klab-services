@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Expression.CompilerOption;
 import org.integratedmodelling.klab.api.knowledge.Expression.Descriptor;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
@@ -155,7 +155,7 @@ public class LanguageService implements Language {
                 ret[i] = scope instanceof SessionScope ? ((SessionScope) scope).getScale() : null;
             }*/ else if (Parameters.class.isAssignableFrom(cls)) {
                 ret[i] = call.getParameters();
-            } else if (DirectObservation.class.isAssignableFrom(cls)) {
+            } else if (Observation.class.isAssignableFrom(cls)) {
                 ret[i] = scope instanceof ContextScope ? ((ContextScope) scope).getContextObservation() :
                          null;
             } /* TODO more type inference: definitely Model */ else {

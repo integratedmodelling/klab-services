@@ -17,7 +17,6 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Expression.Forcing;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
@@ -1644,7 +1643,7 @@ public class KActorsVM implements VM {
         Expression compareExpression = null;
         Expression.Descriptor selectDescriptor;
         Expression selectExpression = null;
-        Map<String, State> states = new HashMap<>();
+        Map<String, Observation> states = new HashMap<>();
         Language languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
 
         if (comparison != null) {
@@ -1689,16 +1688,16 @@ public class KActorsVM implements VM {
         Parameters<String> args = Parameters.create();
         long nErr = 0;
 
-        if (target instanceof State && runtimeScope instanceof ContextScope) {
+        if (target instanceof Observation observation && runtimeScope instanceof ContextScope) {
 
-            states.put("self", (State) target);
+            states.put("self", observation);
 
             for (Locator locator :
                     Scale.create(((ContextScope) runtimeScope).getContextObservation().getGeometry())) {
 
                 args.clear();
                 for (String key : states.keySet()) {
-                    args.put(key, states.get(key).get(locator));
+//                    args.put(key, states.get(key).get(locator));
                 }
                 if (selectExpression != null) {
                     Object selectValue = selectExpression.eval(runtimeScope, args);

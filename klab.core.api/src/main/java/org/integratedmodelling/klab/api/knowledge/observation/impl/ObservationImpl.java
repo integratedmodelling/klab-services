@@ -1,23 +1,21 @@
 package org.integratedmodelling.klab.api.knowledge.observation.impl;
 
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
+import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.provenance.Provenance;
+
 import java.io.Serial;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
-import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.geometry.Locator;
-import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
-import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.provenance.Provenance;
 
 /**
  * A "naked" observation only has an observable + metadata and provenance info. This is not abstract because
@@ -68,7 +66,7 @@ public class ObservationImpl implements Observation {
     }
 
     @Override
-    public Artifact trace(Concept role, DirectObservation roleContext) {
+    public Artifact trace(Concept role, Observation roleContext) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -80,7 +78,7 @@ public class ObservationImpl implements Observation {
     }
 
     @Override
-    public Collection<Artifact> collect(Concept role, DirectObservation roleContext) {
+    public Collection<Artifact> collect(Concept role, Observation roleContext) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -2,23 +2,14 @@ package org.integratedmodelling.klab.services.runtime.library.core;
 
 import io.micrometer.common.annotation.ValueResolver;
 import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
-import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.runtime.extension.Instantiator;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction.Argument;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
-import org.integratedmodelling.klab.api.services.runtime.extension.Resolver;
-
-import java.util.List;
 
 /**
  * Implementations for the core library functions. The language service will handle these and give access to
@@ -33,39 +24,39 @@ import java.util.List;
 @Library(name = Klab.StandardLibrary.KlabCore.NAMESPACE, description = "")
 public class CoreLibraryFunctors {
 
-    @Library(name = "resources", description = "")
-    public static class Resources {
-
-        // TODO
-        @KlabFunction(name = Klab.StandardLibrary.KlabCore.URN_RESOLVER,
-                      dataflowLabel =
-                              "Resource", description = "Contextualize a quality resource to obtain data",
-                      parameters = {
-                              @Argument(name = "urn", description = "The URN of the resource to " +
-                                      "contextualize", type =
-                                                Artifact.Type.TEXT)}, type = Artifact.Type.VALUE)
-        public static class ResourceResolver implements Resolver<State> {
-
-            /*
-             * TODO allow inserting a list of ValueResolver (or other functions) to perform mediations
-             * and/or classifications that are declared in sequence after the resource.
-             */
-
-            @Override
-            public void resolve(State observation, ServiceCall call, ContextScope scope) {
-                // TODO Auto-generated method stub
-
-                /**
-                 * TODO
-                 *
-                 * For multi-valued even grids in non-local resources, if we can split the scale into
-                 * comparable contiguous sections and we find the resource in >1 services, we can
-                 * retrieve tiles concurrently instead of downloading the entire monster. The storage
-                 * can be tiled or not. This can be triggered after considering the size of the context.
-                 */
-            }
-
-        }
+//    @Library(name = "resources", description = "")
+//    public static class Resources {
+//
+//        // TODO
+//        @KlabFunction(name = Klab.StandardLibrary.KlabCore.URN_RESOLVER,
+//                      dataflowLabel =
+//                              "Resource", description = "Contextualize a quality resource to obtain data",
+//                      parameters = {
+//                              @Argument(name = "urn", description = "The URN of the resource to " +
+//                                      "contextualize", type =
+//                                                Artifact.Type.TEXT)}, type = Artifact.Type.VALUE)
+//        public static class ResourceResolver implements Resolver<State> {
+//
+//            /*
+//             * TODO allow inserting a list of ValueResolver (or other functions) to perform mediations
+//             * and/or classifications that are declared in sequence after the resource.
+//             */
+//
+//            @Override
+//            public void resolve(State observation, ServiceCall call, ContextScope scope) {
+//                // TODO Auto-generated method stub
+//
+//                /**
+//                 * TODO
+//                 *
+//                 * For multi-valued even grids in non-local resources, if we can split the scale into
+//                 * comparable contiguous sections and we find the resource in >1 services, we can
+//                 * retrieve tiles concurrently instead of downloading the entire monster. The storage
+//                 * can be tiled or not. This can be triggered after considering the size of the context.
+//                 */
+//            }
+//
+//        }
 
         @KlabFunction(name = Klab.StandardLibrary.KlabCore.LUT_RESOLVER,
                       dataflowLabel =
@@ -83,37 +74,37 @@ public class CoreLibraryFunctors {
             }
         }
 
-        @KlabFunction(name = Klab.StandardLibrary.KlabCore.URN_INSTANTIATOR,
-                      dataflowLabel = "Resource", description = "Contextualize a Type.OBJECT resource to " +
-                "obtain " +
-                "objects", parameters = {
-                @Argument(name = "urn", description = "The URN of the resource to contextualize", type =
-                        Artifact.Type.TEXT),
-                @Argument(name = "whole", description = "Cut the spatial extent of the resulting object " +
-                        "instead of " +
-                        "intersecting with the context shape", type = Artifact.Type.BOOLEAN)}, type =
-                              Artifact.Type.OBJECT)
-        public static class SubjectResourceInstantiator implements Instantiator<DirectObservation> {
-
-            @Override
-            public List<DirectObservation> resolve(Observable semantics, ServiceCall call,
-                                                   ContextScope scope) {
-
-                /**
-                 * TODO
-                 *
-                 * Investigate if we can split the scale into comparable contiguous sections and we find
-                 * the resource in >1 services to access the data concurrently in sections. There are
-                 * issues with overlapping objects and decisions about the number of objects that would
-                 * require previous knowledge (e.g. the "density" of objects in each tile). This would
-                 * benefit from creating and using machine-learned metadata.
-                 */
-
-                return null;
-            }
-
-        }
-    }
+//        @KlabFunction(name = Klab.StandardLibrary.KlabCore.URN_INSTANTIATOR,
+//                      dataflowLabel = "Resource", description = "Contextualize a Type.OBJECT resource to " +
+//                "obtain " +
+//                "objects", parameters = {
+//                @Argument(name = "urn", description = "The URN of the resource to contextualize", type =
+//                        Artifact.Type.TEXT),
+//                @Argument(name = "whole", description = "Cut the spatial extent of the resulting object " +
+//                        "instead of " +
+//                        "intersecting with the context shape", type = Artifact.Type.BOOLEAN)}, type =
+//                              Artifact.Type.OBJECT)
+//        public static class SubjectResourceInstantiator implements Instantiator<Observation> {
+//
+//            @Override
+//            public List<DirectObservation> resolve(Observable semantics, ServiceCall call,
+//                                                   ContextScope scope) {
+//
+//                /**
+//                 * TODO
+//                 *
+//                 * Investigate if we can split the scale into comparable contiguous sections and we find
+//                 * the resource in >1 services to access the data concurrently in sections. There are
+//                 * issues with overlapping objects and decisions about the number of objects that would
+//                 * require previous knowledge (e.g. the "density" of objects in each tile). This would
+//                 * benefit from creating and using machine-learned metadata.
+//                 */
+//
+//                return null;
+//            }
+//
+//        }
+//    }
 
     @Library(name = "values", description = "")
     public static class ValueOperators {

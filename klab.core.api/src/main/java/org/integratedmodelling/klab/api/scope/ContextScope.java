@@ -4,9 +4,7 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -14,7 +12,9 @@ import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Future;
 
 /**
@@ -290,7 +290,7 @@ public interface ContextScope extends SessionScope {
      * Return all children of the passed observation, using the logical structure (i.e. skipping observation
      * groups). The runtime context maintains the structure graph.
      *
-     * @param observation an observation. {@link State States} have no children but no error should be
+     * @param observation an observation. Quality observations have no children but no error should be
      *                    raised.
      * @return the parent, or an empty collection if no children
      */
@@ -300,7 +300,7 @@ public interface ContextScope extends SessionScope {
      * Inspect the network graph of the current context, returning all relationships that have the passed
      * subject as target.
      *
-     * @param observation a {@link DirectObservation} object.
+     * @param observation a {@link Observation} object.
      * @return a {@link java.util.Collection} object.
      */
     Collection<Observation> getOutgoingRelationshipsOf(Observation observation);
@@ -309,7 +309,7 @@ public interface ContextScope extends SessionScope {
      * Inspect the network graph of the current context, returning all relationships that have the passed
      * subject as target.
      *
-     * @param observation a {@link DirectObservation} object.
+     * @param observation a {@link Observation} object.
      * @return a {@link java.util.Collection} object.
      */
     Collection<Observation> getIncomingRelationshipsOf(Observation observation);
