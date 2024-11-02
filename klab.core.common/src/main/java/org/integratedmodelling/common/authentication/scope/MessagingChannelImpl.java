@@ -55,14 +55,18 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
 
     protected MessagingChannelImpl(MessagingChannelImpl other) {
         super(other);
-        this.channel_ = other.channel_;
-        this.sender = other.sender;
-        this.receiver = other.receiver;
-        this.connectionFactory = other.connectionFactory;
-        this.connection = other.connection;
-        this.queueNames.putAll(other.queueNames);
-        this.eventResultSupplierSet.addAll(other.eventResultSupplierSet);
-        this.queueConsumers.putAll(other.queueConsumers);
+        copyMessagingSetup(other);
+    }
+
+    protected void copyMessagingSetup(MessagingChannelImpl parent) {
+        this.channel_ = parent.channel_;
+        this.sender = parent.sender;
+        this.receiver = parent.receiver;
+        this.connectionFactory = parent.connectionFactory;
+        this.connection = parent.connection;
+        this.queueNames.putAll(parent.queueNames);
+        this.eventResultSupplierSet.addAll(parent.eventResultSupplierSet);
+        this.queueConsumers.putAll(parent.queueConsumers);
     }
 
     /**
@@ -349,6 +353,8 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                                     consumer.accept(message);
                                 }
                             }
+
+                            System.out.println("CIÁPEL IN DEL CÜL DIOCAN " + message);
 
                             switch (queue) {
                                 case Events -> {
