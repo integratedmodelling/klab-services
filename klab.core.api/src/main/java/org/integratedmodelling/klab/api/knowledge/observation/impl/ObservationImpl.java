@@ -165,11 +165,11 @@ public class ObservationImpl implements Observation {
         return this.observable;
     }
 
-    @Override
-    public Identity getObserver() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+//    @Override
+//    public Identity getObserver() {
+//        // TODO Auto-generated method stub
+//        return null;
+//    }
 
     @Override
     public Observation at(Locator locator) {

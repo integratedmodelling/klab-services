@@ -38,8 +38,6 @@ public interface SessionScope extends UserScope {
      *
      * @param contextName  a name for the context. Can be anything and does not uniquely identify the
      *                     context.
-     * @param observerData anything that may specify the observer, including geometry or extents and semantics
-     *                     (particularly roles)
      * @return a new context, or null if the request failed
      */
     ContextScope createContext(String contextName);

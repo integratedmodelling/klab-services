@@ -779,7 +779,7 @@ public interface Reasoner extends KlabService {
     Collection<Concept> impliedRoles(Concept role, boolean includeRelationshipEndpoints);
 
     /**
-     * @param observable
+     * @param observation
      * @param scope
      * @return all the observation strategies for this observable in this context, best first.
      *

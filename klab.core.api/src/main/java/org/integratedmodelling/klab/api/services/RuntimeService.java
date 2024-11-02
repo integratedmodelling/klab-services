@@ -48,8 +48,6 @@ public interface RuntimeService extends KlabService {
      * @param scope
      * @param startResolution if true, invoke the resolver and run the resolving dataflow, otherwise just add
      *                        the asset to the graph
-     * @param agentName       the name of the agent requesting the observation, for provenance recording. Null
-     *                        can be passed but shouldn't.
      * @return
      */
     long submit(Observation observation, ContextScope scope, boolean startResolution);

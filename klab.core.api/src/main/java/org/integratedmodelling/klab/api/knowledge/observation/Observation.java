@@ -70,13 +70,13 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
      */
     Observable getObservable();
 
-    /**
-     * The observer that/who made the observation. May be a simple identity (like the user in the main scope)
-     * or a DirectObservation from (this or another) scope, which also implements Identity. Never null.
-     *
-     * @return
-     */
-    Identity getObserver();
+//    /**
+//     * The observer that/who made the observation. May be a simple identity (like the user in the main scope)
+//     * or a DirectObservation from (this or another) scope, which also implements Identity. Never null.
+//     *
+//     * @return
+//     */
+//    Identity getObserver();
 
     /**
      * True if the observation has been resolved. This will be false until the resolution task with the same
