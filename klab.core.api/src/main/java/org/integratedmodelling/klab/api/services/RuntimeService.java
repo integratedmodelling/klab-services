@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -12,6 +13,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
@@ -43,6 +45,9 @@ public interface RuntimeService extends KlabService {
      * be resolved explicitly. In all cases the return value is the observation ID, which can be used to
      * follow the resolution task progress through AMPQ messaging (if resolving and configured) or for polling
      * and retrieval.
+     * <p>
+     * FIXME remove the startResolution parameter and call startResolution(long, scope) to keep the workflow
+     *       logical once the submission has worked.
      *
      * @param observation
      * @param scope
@@ -50,17 +55,30 @@ public interface RuntimeService extends KlabService {
      *                        the asset to the graph
      * @return
      */
-    long submit(Observation observation, ContextScope scope, boolean startResolution);
+    long submit(Observation observation, ContextScope scope, @Deprecated boolean startResolution);
 
     /**
-     * The main function of the runtime.
+     * The main function of the runtime. It will be invoked externally only when the dataflow is externally
+     * supplied and fully resolved, like from a {@link org.integratedmodelling.klab.api.knowledge.Resource}.
      *
      * @param dataflow
-     * @param operation    the activity that ran this. The dataflow will create child activity of it.
      * @param contextScope
      * @return
      */
     Coverage runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope);
+
+    /**
+     * Submit the ID of a valid observation to invoke the resolver, build a dataflow and run it to obtain the
+     * resolved observation. Pass the ID of an accepted observation obtained through
+     * {@link #submit(Observation, ContextScope, boolean)}. The two operations are used in
+     * {@link ContextScope#observe(Observation)} to provide the full functionality with notification to the
+     * scope.
+     *
+     * @param id
+     * @param scope
+     * @return
+     */
+    Future<Observation> resolve(long id, ContextScope scope);
 
     /**
      * Retrieve any assets from the knowledge graph in the digital twin matching a given class and some query

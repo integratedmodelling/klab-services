@@ -522,10 +522,14 @@ public enum KlabCLI {
         /*
          * TODO
          * < goes back one level of context observation (if any)
-         * > obsId sets the ID'd context observation as the current context
+         * << goes back to the userscope level
+         * >> goes to the innermost non-ambiguous scope and shows what's under it
+         * > obsId sets the ID'd context observation as the current context or resets it if no obsId is given
+         *   (equivalent to <)
          * @ obsId sets the observer or resets if no obsId is given
          * ? n prints out the currently known observations (at level n, 1 if not given, full tree if n ==
          *   'all')
+         * ?? prints the same info as ? but much more in detail
          */
 
     }

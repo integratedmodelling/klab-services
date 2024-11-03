@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -43,6 +44,7 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RuntimeService extends BaseService implements org.integratedmodelling.klab.api.services.RuntimeService, org.integratedmodelling.klab.api.services.RuntimeService.Admin {
@@ -302,10 +304,62 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     public long submit(Observation observation, ContextScope scope, boolean startResolution) {
         if (scope instanceof ServiceContextScope serviceContextScope) {
             return startResolution
-                   ? serviceContextScope.observe(observation).trackingKey()
+                   ? serviceContextScope.observe(observation).trackingKey() // TODO remove the start resolution
                    : serviceContextScope.insertIntoKnowledgeGraph(observation);
         }
         return Observation.UNASSIGNED_ID;
+    }
+
+    @Override
+    public Future<Observation> resolve(long id, ContextScope scope) {
+
+        if (scope instanceof ServiceContextScope serviceContextScope) {
+
+            // TODO all the logic that's now in ServiceContextScope must be here. Messages should be
+            //  clearly orchestrated and documented across the DT. There should be a task ID token
+            //  coming from the request/client in the scope, so that task structure can be reconstructed
+            //  and monitored. The task ID must be in every message.
+            var digitalTwin = getDigitalTwin(scope);
+            var observation = serviceContextScope.getObservation(id);
+
+//            // root-level activity when user is the agent. Inside resolution the activity may have children
+//            var activity = digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().user(), this,
+//                    observation, Activity.Type.INSTANTIATION, parentActivity);
+//
+//            var id = activity.run(this);
+//
+//            // create task before resolution starts so we guarantee a response
+//            var ret = newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
+//                    Message.MessageType.ResolutionSuccessful), Observation.class, id);
+//
+//            final var runtime = getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
+//            final var resolver = getService(Resolver.class);
+//
+//            // start virtual resolution thread. This should be everything we need.
+//            Thread.ofVirtual().start(() -> {
+//                try {
+//                    var dataflow = resolver.resolve(observation, this);
+//                    if (dataflow != null) {
+//                        if (!dataflow.isEmpty()) {
+//                            /* TODO return value */
+//                            runtime.runDataflow(dataflow, this);
+//                        }
+//                        activity.success(this, observation, dataflow);
+//                    } else {
+//                        activity.fail(this, observation);
+//                    }
+//                    send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionSuccessful, id);
+//                } catch (Throwable t) {
+//                    activity.fail(this, observation, t);
+//                    send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted, id);
+//                }
+//            });
+//
+//            return ret;
+        }
+
+        throw new KlabInternalErrorException("Digital twin is inaccessible because of unexpected scope " +
+                "implementation");
     }
 
     @Override

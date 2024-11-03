@@ -56,18 +56,19 @@ public interface Message extends Serializable {
         None
     }
 
-//    @Deprecated
-//    enum ForwardingPolicy {
-//        /**
-//         * Message was created locally and will be forwarded to paired scopes
-//         */
-//        Forward,
-//        /**
-//         * Message was forwarded from a paired scope and will not be further forwarded. This should be the
-//         * default policy for newly created messages.
-//         */
-//        DoNotForward
-//    }
+    //    @Deprecated
+    //    enum ForwardingPolicy {
+    //        /**
+    //         * Message was created locally and will be forwarded to paired scopes
+    //         */
+    //        Forward,
+    //        /**
+    //         * Message was forwarded from a paired scope and will not be further forwarded. This should
+    //         be the
+    //         * default policy for newly created messages.
+    //         */
+    //        DoNotForward
+    //    }
 
     /**
      * Message class. Ugly type name makes life easier.
@@ -185,7 +186,7 @@ public interface Message extends Serializable {
          * Service messages, coming with service capabilities
          */
         ServiceInitializing(Queue.Events, KlabService.ServiceCapabilities.class),
-//        ReasoningAvailable(Queue.Events, Reasoner.Capabilities.class),
+        //        ReasoningAvailable(Queue.Events, Reasoner.Capabilities.class),
         ServiceAvailable(Queue.Events, KlabService.ServiceCapabilities.class),
         ServiceUnavailable(Queue.Events, KlabService.ServiceCapabilities.class),
         ServiceStatus(Queue.Events, KlabService.ServiceStatus.class),
@@ -224,7 +225,7 @@ public interface Message extends Serializable {
         /*
          * --- reasoning-related messages
          */
-        LogicalValidation(Queue.Events,ResourceSet.class),
+        LogicalValidation(Queue.Events, ResourceSet.class),
 
         /**
          * Runtime event messages
@@ -278,7 +279,7 @@ public interface Message extends Serializable {
 
     }
 
-//    ForwardingPolicy getForwardingPolicy();
+    //    ForwardingPolicy getForwardingPolicy();
 
     /**
      * Unique ID for each message.
@@ -286,6 +287,14 @@ public interface Message extends Serializable {
      * @return
      */
     long getId();
+
+    /**
+     * If the message is coming from a task started by the client or the server, an ID can be supplied and it
+     * can be a path so that task structure can be followed and monitored.
+     *
+     * @return
+     */
+    String getTaskId();
 
     /**
      * Return this or a new message with the response ID set to that of the passed message, so that the call
@@ -374,7 +383,7 @@ public interface Message extends Serializable {
         boolean queueOverridden = false;
         MessageImpl ret = new MessageImpl();
         ret.setIdentity(identity);
-//        Notification.Type notype = null;
+        //        Notification.Type notype = null;
         for (Object ob : o) {
             if (ob instanceof MessageType) {
                 ret.setMessageType((MessageType) ob);
@@ -382,12 +391,12 @@ public interface Message extends Serializable {
                 ret.setMessageClass((MessageClass) ob);
             } /*else if (ob instanceof Notification.Type) {
                 notype = (Notification.Type) ob;
-            } */else if (ob instanceof Queue q) {
+            } */ else if (ob instanceof Queue q) {
                 queueOverridden = true;
                 ret.setQueue(q);
             } /*else if (ob instanceof ForwardingPolicy) {
                 ret.setForwardingPolicy((ForwardingPolicy) ob);
-            } */else if (ob instanceof Notification notification) {
+            } */ else if (ob instanceof Notification notification) {
                 ret.setMessageClass(MessageClass.Notification);
                 ret.setMessageType(switch (notification.getLevel()) {
                     case Debug -> MessageType.Debug;

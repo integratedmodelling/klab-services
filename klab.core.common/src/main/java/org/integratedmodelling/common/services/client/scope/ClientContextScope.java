@@ -81,7 +81,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     public Task<Observation, Long> observe(Observation observation) {
         var runtime = getService(RuntimeService.class);
 
-        // DO THIS:
+        // DO THIS INSTEAD:
         // var taskId = submit(observation, this)  -- NO startResolution, remove it and call separately
         // var ret = this.trackMessage(ResolutionSuccessful, taskId, () -> ResolutionFailed, class, ()-> ...).withTimeout()...
         // runtime.startResolution(observation, this.duringTask(ret); // sets task ID header so that the runtime knows it and reports it

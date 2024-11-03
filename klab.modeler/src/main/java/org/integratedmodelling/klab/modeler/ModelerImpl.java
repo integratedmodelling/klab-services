@@ -195,6 +195,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         }
 
         /**
+         *
          * Use cases:
          *
          * Admitted with a current context or focal scale

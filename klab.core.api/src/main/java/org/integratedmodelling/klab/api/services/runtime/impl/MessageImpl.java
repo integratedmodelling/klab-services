@@ -49,10 +49,9 @@ public class MessageImpl implements Message, Serializable {
     private Object payload;
     private long id = nextId.incrementAndGet();
     private long inResponseTo;
-//    private Notification.Type notificationType;
     private long timestamp = System.currentTimeMillis();
-//    private ForwardingPolicy forwardingPolicy = ForwardingPolicy.DoNotForward;
     private Message.Queue queue;
+    private String taskId;
 
     private static BiFunction<Map<?, ?>, Class<?>, Object> translator;
 
@@ -168,23 +167,24 @@ public class MessageImpl implements Message, Serializable {
         this.timestamp = timestamp;
     }
 
-    /**
-     * Make an exact copy of this message using a different identity. Used for relaying.
-     *
-     * @param relayId
-     * @return a new message identified by relayId
-     */
-    public MessageImpl copyWithIdentity(String relayId) {
-        MessageImpl ret = new MessageImpl();
-        ret.identity = relayId;
-        ret.messageClass = this.messageClass;
-        ret.payload = this.payload;
-        ret.payloadClass = this.payloadClass;
-        ret.messageType = this.messageType;
-        ret.inResponseTo = this.inResponseTo;
-        ret.timestamp = this.timestamp;
-        return ret;
-    }
+//    /**
+//     * Make an exact copy of this message using a different identity. Used for relaying.
+//     *
+//     * @param relayId
+//     * @return a new message identified by relayId
+//     */
+//    public MessageImpl copyWithIdentity(String relayId) {
+//        MessageImpl ret = new MessageImpl();
+//        ret.identity = relayId;
+//        ret.messageClass = this.messageClass;
+//        ret.payload = this.payload;
+//        ret.payloadClass = this.payloadClass;
+//        ret.messageType = this.messageType;
+//        ret.inResponseTo = this.inResponseTo;
+//        ret.timestamp = this.timestamp;
+//        ret.taskId = this.taskId;
+//        return ret;
+//    }
 
     @Override
     public <T> T getPayload(Class<? extends T> cls) {
@@ -211,20 +211,12 @@ public class MessageImpl implements Message, Serializable {
         return queue;
     }
 
-//    public Notification.Type getNotificationType() {
-//        return notificationType;
-//    }
-//
-//    public void setNotificationType(Notification.Type notificationType) {
-//        this.notificationType = notificationType;
-//    }
-//
-//    @Override
-//    public ForwardingPolicy getForwardingPolicy() {
-//        return forwardingPolicy;
-//    }
-//
-//    public void setForwardingPolicy(ForwardingPolicy forwardingPolicy) {
-//        this.forwardingPolicy = forwardingPolicy;
-//    }
+    @Override
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
+    }
 }

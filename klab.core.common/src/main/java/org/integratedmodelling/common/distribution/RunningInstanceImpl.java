@@ -151,6 +151,17 @@ public class RunningInstanceImpl implements RunningInstance {
         };
     }
 
+    /**
+     * TODO use executor.setStreamHandler to something that 1) sends the logs somewhere and 2) enables
+     * showing some on stdout/err (e.g. errors)
+     *  while filtering the rest and maybe enabling streaming to a URL with the service tag, so that we can
+     *  configure a less-like functionality in a window (whose config can be saved so that).
+     * <p>
+     * look at https://github.com/otros-systems/otroslogviewer (socket or log appender), https://github
+     * .com/tmoreno/open-log-viewer
+     *
+     * @return
+     */
     @Override
     public boolean start() {
 

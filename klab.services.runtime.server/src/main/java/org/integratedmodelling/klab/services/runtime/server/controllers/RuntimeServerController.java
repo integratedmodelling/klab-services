@@ -5,13 +5,11 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.objects.AssetRequest;
-import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
@@ -39,7 +37,7 @@ public class RuntimeServerController {
      *
      * @return
      */
-    @PostMapping(ServicesAPI.RUNTIME.OBSERVE)
+    @PostMapping(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION)
     public @ResponseBody long observe(@RequestBody ResolutionRequest resolutionRequest, Principal principal) {
         if (principal instanceof EngineAuthorization authorization) {
             var contextScope =

@@ -20,9 +20,12 @@ public interface ReactiveScope extends MessagingChannel, Scope {
      *
      * @param <P> the type of the final product once the task has finished
      * @param <T> the type of the ID used to track the final product
+     * @deprecated use a simple Future<Observation> and abandon the tracking key which is now returned
+     *             explicitly.
      */
     interface Task<P, T> extends Future<P> {
 
+        @Deprecated // just use a future and obtain the tracking ID independently
         T trackingKey();
 
     }

@@ -2196,6 +2196,15 @@ public class WorkspaceManager {
         org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
     }
 
+    /**
+     * TODO this one MUST ALSO update the BUILD number in the version, so that whoever uses this can see the
+     *  changes. and reload. The build number only applies to the document and is not saved with the project.
+     * @param projectName
+     * @param documentType
+     * @param contents
+     * @param lockingScope
+     * @return
+     */
     public List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType,
                                             String contents, Scope lockingScope) {
 

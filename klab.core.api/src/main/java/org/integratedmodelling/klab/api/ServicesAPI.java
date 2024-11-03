@@ -16,6 +16,14 @@ public interface ServicesAPI {
      * {@link org.integratedmodelling.klab.api.scope.ContextScope.ScopeData} class.
      */
     String SCOPE_HEADER = "klab-scope";
+
+    /**
+     * Request header to communicate and reconstruct the calling scope at server side when requests need a
+     * session or context scope. The value is formatted according to the syntax parsed by the
+     * {@link org.integratedmodelling.klab.api.scope.ContextScope.ScopeData} class.
+     */
+    String TASK_ID_HEADER = "klab-task";
+
     /**
      * Server secret key to match with the service secret to validate local or privileged connections
      * independent of authentication.
@@ -363,7 +371,16 @@ public interface ServicesAPI {
          * used to follow the resolution task. Payload is a
          * {@link org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest} instance.
          */
-        String OBSERVE = "/observe";
+        String SUBMIT_OBSERVATION = "/submit";
+
+        /**
+         * GET endpoint to start the resolution of a previously submitted observation whose ID must be passed
+         * through the URL. Returns true/false; any notification happens through scope messaging and the scope
+         * must be the same that generated the observation through {@link #SUBMIT_OBSERVATION}. Both the
+         * request and the response may/must contain a {@link #TASK_ID_HEADER} with the ID of the task
+         * started.
+         */
+        String START_RESOLUTION = "/resolve/{id}";
 
         /**
          * POST endpoint to retrieve one or more assets from the digital twin based on a query

@@ -6,14 +6,12 @@ import org.integratedmodelling.common.services.client.GraphQLClient;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -34,6 +32,7 @@ import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
@@ -172,7 +171,12 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         resolutionRequest.setStartResolution(startResolution);
         resolutionRequest.setAgentName(Provenance.getAgent(scope).getName());
         resolutionRequest.setResolutionConstraints(scope.getResolutionConstraints());
-        return client.withScope(scope).post(ServicesAPI.RUNTIME.OBSERVE, resolutionRequest, Long.class);
+        return client.withScope(scope).post(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Long.class);
+    }
+
+    @Override
+    public Future<Observation> resolve(long id, ContextScope scope) {
+        return null;
     }
 
     @Override

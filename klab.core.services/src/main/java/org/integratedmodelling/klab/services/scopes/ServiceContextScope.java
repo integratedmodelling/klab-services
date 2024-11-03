@@ -216,6 +216,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     private Task<Observation, Long> observe(Observation observation, Activity parentActivity) {
 
+        // TODO FIXME this must just call the 2 new methods in the runtime and return the result.
+
         // root-level activity when user is the agent. Inside resolution the activity may have children
         var activity = digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().user(), this,
                 observation, Activity.Type.INSTANTIATION, parentActivity);
