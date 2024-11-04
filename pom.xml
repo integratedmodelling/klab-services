@@ -160,7 +160,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.6.2</version>
+                    <version>3.11.1</version>
                     <configuration>
                         <!-- Recover doclint checks: https://integratedmodelling.atlassian.net/browse/IM-229 !-->
                         <doclint>none</doclint>
