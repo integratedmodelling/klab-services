@@ -165,18 +165,19 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public long submit(Observation observation, ContextScope scope, boolean startResolution) {
+    public long submit(Observation observation, ContextScope scope) {
         ResolutionRequest resolutionRequest = new ResolutionRequest();
         resolutionRequest.setObservation(observation);
-        resolutionRequest.setStartResolution(startResolution);
+        //        resolutionRequest.setStartResolution(startResolution);
         resolutionRequest.setAgentName(Provenance.getAgent(scope).getName());
         resolutionRequest.setResolutionConstraints(scope.getResolutionConstraints());
-        return client.withScope(scope).post(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Long.class);
+        return client.withScope(scope).post(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest,
+                Long.class);
     }
 
     @Override
-    public Future<Observation> resolve(long id, ContextScope scope) {
-        return null;
+    public String resolve(long id, ContextScope scope) {
+        return client.withScope(scope).get(ServicesAPI.RUNTIME.START_RESOLUTION, String.class, "id", id);
     }
 
     @Override

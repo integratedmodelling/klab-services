@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
+import org.integratedmodelling.klab.api.services.runtime.Task;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -42,7 +43,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     private ConnectionFactory connectionFactory = null;
     private Connection connection = null;
     private Map<Message.Queue, String> queueNames = new HashMap<>();
-    private Set<EventResultSupplier<?, ?>> eventResultSupplierSet =
+    private Set<EventResultSupplier<?>> eventResultSupplierSet =
             Collections.synchronizedSet(new LinkedHashSet<>());
     private Map<String, List<Consumer<Message>>> queueConsumers = new HashMap<>();
     private boolean connected;
@@ -73,23 +74,17 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
      * Convenience Task implementation that delegates to a {@link CompletableFuture} tracking a tracking key
      * that is updated by messages.
      *
-     * @param <P>
      * @param <T>
      */
-    class TrackingTask<P, T> implements ReactiveScope.Task<P, T> {
+    class TrackingTask<T> implements Task<T> {
 
-        private final T value;
-        private final CompletableFuture<P> delegate;
+        private final CompletableFuture<T> delegate;
+        private final String urn;
 
-        public TrackingTask(Set<Message.MessageType> matchTypes, T value, Function<T, P> payloadConverter) {
-            this.value = value;
-            delegate = CompletableFuture.supplyAsync(new EventResultSupplier<>(matchTypes, value,
+        public TrackingTask(Set<Message.MessageType> matchTypes, String urn, Function<Message, T> payloadConverter) {
+            this.urn = urn;
+            delegate = CompletableFuture.supplyAsync(new EventResultSupplier<>(matchTypes, urn,
                     payloadConverter));
-        }
-
-        @Override
-        public T trackingKey() {
-            return value;
         }
 
         @Override
@@ -108,14 +103,24 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         }
 
         @Override
-        public P get() throws InterruptedException, ExecutionException {
-            return (P) delegate.get();
+        public T get() throws InterruptedException, ExecutionException {
+            return (T) delegate.get();
         }
 
         @Override
-        public P get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
+        public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
                 TimeoutException {
-            return (P) delegate.get(timeout, unit);
+            return (T) delegate.get(timeout, unit);
+        }
+
+        @Override
+        public ContextScope getScope() {
+            return MessagingChannelImpl.this instanceof ContextScope scope ? scope : null;
+        }
+
+        @Override
+        public String getUrn() {
+            return urn;
         }
     }
 
@@ -125,22 +130,22 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
      *
      * @param <T>
      */
-    private class EventResultSupplier<P, T> implements Supplier<P> {
+    private class EventResultSupplier<T> implements Supplier<T> {
 
         private final AtomicReference<Message> match = new AtomicReference<>();
-        private final Function<T, P> converter;
+        private final Function<Message, T> converter;
         Set<Message.MessageType> matchTypes;
-        T value;
+        private final String urn;
 
-        EventResultSupplier(Set<Message.MessageType> matchTypes, T value, Function<T, P> payloadConverter) {
+        EventResultSupplier(Set<Message.MessageType> matchTypes, String urn, Function<Message, T> payloadConverter) {
             this.matchTypes = matchTypes;
-            this.value = value;
+            this.urn = urn;
             this.converter = payloadConverter;
         }
 
         public boolean match(Message message) {
             if (matchTypes != null && matchTypes.contains(message.getMessageType())) {
-                if (value != null && value.equals(message.getPayload(Object.class))) {
+                if (urn != null && urn.equals(message.getPayload(String.class))) {
                     synchronized (match) {
                         match.set(message);
                         match.notify();
@@ -152,7 +157,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         }
 
         @Override
-        public P get() {
+        public T get() {
 
             synchronized (match) {
                 while (match.get() == null) {
@@ -164,32 +169,29 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                 }
             }
             eventResultSupplierSet.remove(this);
-            return converter.apply((T) match.get().getPayload(Object.class));
+            return converter.apply(match.get());
         }
     }
 
-    protected <P, T> ContextScope.Task<P, T> newMessageTrackingTask(Set<Message.MessageType> matchTypes,
-                                                                    Class<P> contextClass,
-                                                                    T value) {
-        return newMessageTrackingTask(matchTypes, value, null);
+    protected <T> Task<T> newMessageTrackingTask(Set<Message.MessageType> matchTypes,
+                                                 String urn) {
+        return newMessageTrackingTask(matchTypes, urn, null);
     }
 
     /**
      * Return a future that exposes the tracking ID and produces the payload when the event message matches.
      *
      * @param matchTypes
-     * @param value
      * @param payloadConverter this could be skipped and just use .thenApply on the enclosing future
-     * @param <P>
      * @param <T>
      * @return
      */
-    protected <P, T> ContextScope.Task<P, T> newMessageTrackingTask(Set<Message.MessageType> matchTypes,
-                                                                    T value,
-                                                                    Function<T, P> payloadConverter) {
-        var ret = new EventResultSupplier<>(matchTypes, value, payloadConverter);
+    protected <T> Task<T> newMessageTrackingTask(Set<Message.MessageType> matchTypes,
+                                                                    String urn,
+                                                                    Function<Message, T> payloadConverter) {
+        var ret = new EventResultSupplier<>(matchTypes, urn, payloadConverter);
         eventResultSupplierSet.add(ret);
-        return new TrackingTask<>(matchTypes, value, payloadConverter);
+        return new TrackingTask<>(matchTypes, urn, payloadConverter);
     }
 
     @Override
@@ -270,7 +272,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
 
     @Override
     public void event(Message message) {
-        Set<EventResultSupplier<?, ?>> done = new HashSet<>();
+        Set<EventResultSupplier<?>> done = new HashSet<>();
         for (var supplier : eventResultSupplierSet) {
             if (supplier.match(message)) {
                 done.add(supplier);
@@ -341,6 +343,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                 for (var queue : ret) {
                     String queueId = scopeId + "." + queue.name().toLowerCase();
                     try {
+
                         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
                             var message = Utils.Json.parseObject(new String(delivery.getBody(),
                                     StandardCharsets.UTF_8), Message.class);

@@ -13,9 +13,11 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
+import org.integratedmodelling.klab.api.services.runtime.Task;
 
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.Future;
 
 public abstract class ClientContextScope extends ClientSessionScope implements ContextScope {
 
@@ -78,7 +80,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public Task<Observation, Long> observe(Observation observation) {
+    public Task<Observation> observe(Observation observation) {
         var runtime = getService(RuntimeService.class);
 
         // DO THIS INSTEAD:
@@ -87,7 +89,11 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         // runtime.startResolution(observation, this.duringTask(ret); // sets task ID header so that the runtime knows it and reports it
         // return ret;
 
-        long taskId = runtime.submit(observation, this, true);
+        long taskId = runtime.submit(observation, this);
+        if (taskId != Observation.UNASSIGNED_ID) {
+            // start resolution
+        }
+
         return newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
                 Message.MessageType.ResolutionSuccessful), Observation.class, taskId); // event
     }

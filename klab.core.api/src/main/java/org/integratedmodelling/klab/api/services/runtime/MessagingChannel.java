@@ -6,7 +6,9 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import java.io.Closeable;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * A channel that has been instrumented for messaging to paired channels. Only a tag interface for now.
@@ -35,6 +37,15 @@ public interface MessagingChannel extends Channel {
      */
     void connectToService(KlabService.ServiceCapabilities capabilities, UserIdentity identity,
                           Consumer<Message> consumer);
+
+    /**
+     * naah
+     * @param matchers
+     * @return
+     * @param <T>
+     */
+    <T> Future<T> trackMessages(Function<Message, T>... matchers);
+
 
     /**
      * True if {@link #connectToService(KlabService.ServiceCapabilities, UserIdentity, Consumer)} has been

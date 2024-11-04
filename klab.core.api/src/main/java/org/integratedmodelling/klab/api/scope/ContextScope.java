@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
+import org.integratedmodelling.klab.api.services.runtime.Task;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.net.URL;
@@ -190,12 +191,9 @@ public interface ContextScope extends SessionScope {
      *                    {@link
      *                    org.integratedmodelling.klab.api.digitaltwin.DigitalTwin#createObservation(Scope,
      *                    Object...)} method can be used to construct it from existing knowledge.
-     * @return a {@link org.integratedmodelling.klab.api.scope.ReactiveScope.Task}, which is a {@link Future}
-     * producing the resolved observation. The associated tracking ID, available immediately, can be used for
-     * inquiries beyond the future's own API, such as retrieval of notifications or addressing of
-     * observations, reports, provenance or dataflows in the knowledge graph contained in the digital twin.
+     * @return a {@link Future} producing the resolved observation when resolution is finished.
      */
-    Task<Observation, Long> observe(Observation observation);
+    Task<Observation> observe(Observation observation);
 
     /**
      * Return all observations affected by the passed one in this scope, either through model dependencies or
