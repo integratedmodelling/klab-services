@@ -3,10 +3,13 @@ package org.integratedmodelling.klab.services.runtime.neo4j;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
+import org.hsqldb.rights.User;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -22,10 +25,13 @@ import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.provenance.impl.PlanImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
+import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.EagerResult;
@@ -46,6 +52,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     protected Agent user;
     protected Agent klab;
     protected String rootContextId;
+
     // all predefined Cypher queries
     interface Queries {
 
@@ -159,7 +166,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 continue;
             }
 
-            if (Agent.class.isAssignableFrom(cls)) {
+            if (Map.class.isAssignableFrom(cls)) {
+
+                ret.add((T) node.asMap(Map.of()));
+
+            } else if (Agent.class.isAssignableFrom(cls)) {
 
                 var instance = new AgentImpl();
                 instance.setName(node.get("name").asString());
@@ -579,5 +590,55 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             // TODO create agent
         }
         return user;
+    }
+
+    @Override
+    public List<SessionInfo> getSessionInfo(Scope scope) {
+
+        var sessionIds = new LinkedHashMap<String, SessionInfo>();
+        EagerResult contexts = switch (scope) {
+            case ContextScope contextScope ->
+                    query("match(c:Context {id: $contextId}) return c", Map.of("contextId",
+                                    contextScope.getId())
+                            , scope);
+            case SessionScope sessionScope ->
+                    query("match (c:Context) WHERE c.id STARTS WITH $sessionId return c", Map.of(
+                            "sessionId",
+                            sessionScope.getId() + "."), scope);
+            case UserScope userScope -> query("match(c:Context {user: $user}) return (c)", Map.of("user",
+                    userScope.getUser().getUsername()), scope);
+            default -> throw new KlabIllegalStateException("Unexpected value: " + scope);
+        };
+
+        List<ContextInfo> contextInfos = new ArrayList<>();
+        for (var context : adapt(contexts, Map.class, scope)) {
+            ContextInfo contextInfo = new ContextInfo();
+            contextInfo.setId(context.get("id").toString());
+            contextInfo.setCreationTime((Long)context.get("created"));
+            contextInfo.setName(context.get("name").toString());
+            contextInfo.setUser(context.get("user").toString());
+            contextInfos.add(contextInfo);
+        }
+
+        contextInfos.sort(new Comparator<ContextInfo>() {
+            @Override
+            public int compare(ContextInfo o1, ContextInfo o2) {
+                return Long.compare(o1.getCreationTime(), o2.getCreationTime());
+            }
+        });
+
+        // collect sessions
+        for (var context : contextInfos) {
+            var sessionId = Utils.Paths.getFirst(context.getId(), ".");
+            var sessionInfo = sessionIds.computeIfAbsent(sessionId, (s) -> {
+                var ss = new SessionInfo();
+                ss.setId(s);
+                ss.setUsername(context.getUser());
+                return ss;
+            });
+            sessionInfo.getContexts().add(context);
+        }
+
+        return new ArrayList<>(sessionIds.values());
     }
 }

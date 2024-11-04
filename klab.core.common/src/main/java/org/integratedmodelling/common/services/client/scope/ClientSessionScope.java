@@ -75,4 +75,8 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
 
     }
 
+    @Override
+    public List<ContextScope> getActiveContexts() {
+        return List.of();
+    }
 }

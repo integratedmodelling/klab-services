@@ -320,14 +320,6 @@
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework:spring-messaging:jar:6.1.10</id>
-                                            <override>true</override>
-                                            <source>true</source>
-                                            <instructions>
-                                                <_noee>true</_noee>
-                                            </instructions>
-                                        </artifact>
-                                        <artifact>
                                             <id>org.springframework:spring-beans:jar:6.1.10</id>
                                             <override>true</override>
                                             <source>true</source>

@@ -138,6 +138,7 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
             if ("__NULL__".equals(sessionNumberOrId)) {
 
                 var runtime = KlabCLI.INSTANCE.user().getService(RuntimeService.class);
+
                 for (var session : runtime.getSessionInfo(KlabCLI.INSTANCE.user())) {
                     // TODO this is the proper way
                 }

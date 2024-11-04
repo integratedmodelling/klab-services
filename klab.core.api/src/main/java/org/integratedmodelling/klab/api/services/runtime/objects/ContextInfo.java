@@ -13,6 +13,7 @@ public class ContextInfo {
     private long creditsSoFar;
     private long observations;
     private long size;
+    private String user;
 
     public String getBehavior() {
         return behavior;
@@ -84,5 +85,13 @@ public class ContextInfo {
 
     public void setSize(long size) {
         this.size = size;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
     }
 }

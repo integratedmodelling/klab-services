@@ -133,7 +133,8 @@ public interface RuntimeService extends KlabService {
     }
 
     /**
-     * Retrieve information for all the active sessions accessible to the passed scope.
+     * Retrieve information for all the active sessions accessible to the passed scope. The info is enough to
+     * recreate the same scopes at client side.
      *
      * @param scope any scope, which will define visibility. User scopes with admin role will obtain
      *              everything.

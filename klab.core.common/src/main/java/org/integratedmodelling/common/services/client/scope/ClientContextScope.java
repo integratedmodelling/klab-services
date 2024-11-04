@@ -266,4 +266,6 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         }
         return constraint.payload(resultClass);
     }
+
+
 }

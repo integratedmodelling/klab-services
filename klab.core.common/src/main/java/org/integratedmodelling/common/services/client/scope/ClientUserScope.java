@@ -93,7 +93,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
 
 
     @Override
-    public SessionScope runSession(String sessionName) {
+    public SessionScope createSession(String sessionName) {
 
         /**
          * Must have runtime
@@ -218,4 +218,8 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
         this.parentScope = parentScope;
     }
 
+    @Override
+    public List<SessionScope> getActiveSessions() {
+        return List.of();
+    }
 }

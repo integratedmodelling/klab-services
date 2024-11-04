@@ -5,8 +5,10 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
+import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 
 import java.net.URL;
 import java.util.List;
@@ -26,7 +28,6 @@ import java.util.List;
  */
 public interface KnowledgeGraph {
 
-
     /**
      * Operations are defined and run to modify the knowledge graph. The operation API guarantees the proper
      * updating of provenance in the graph so that any modification is recorded, attributed and saves in
@@ -35,8 +36,7 @@ public interface KnowledgeGraph {
     interface Operation {
 
         /**
-         * Any operation on the KG is done by someone or something, dutifully recorded in the
-         * provenance.
+         * Any operation on the KG is done by someone or something, dutifully recorded in the provenance.
          *
          * @return
          */
@@ -260,4 +260,15 @@ public interface KnowledgeGraph {
      * graph; can also clean up temporary info for a single context scope.
      */
     void shutdown();
+
+    /**
+     * Retrieve information relative to all sessions that are currently active in this scope. According to the
+     * scope type, different info will be retrieved; if the scope is a {@link ContextScope}, the session to
+     * which it belongs will be retrieved but only that scope will be listed in it.
+     *
+     * @param scope
+     * @return
+     */
+    List<SessionInfo> getSessionInfo(Scope scope);
+
 }

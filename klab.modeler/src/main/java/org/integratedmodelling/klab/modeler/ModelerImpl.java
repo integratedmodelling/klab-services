@@ -302,7 +302,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     @Override
     public SessionScope openNewSession(String sessionName) {
-        var ret = user().runSession(sessionName);
+        var ret = user().createSession(sessionName);
         this.sessions.add(ret);
         return ret;
     }
@@ -329,8 +329,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     @Override
     public void setCurrentContext(ContextScope context) {
-        if (this.currentSession == null || !this.currentSession.equals(context.getParentScope())) {
-            throw new KlabIllegalArgumentException("Cannot set context: argument is not part of the current session");
+        if (context != null && (this.currentSession == null || !this.currentSession.equals(context.getParentScope()))) {
+            throw new KlabIllegalArgumentException("Cannot set context: argument is not part of the current" +
+                    " session");
         }
         this.currentContext = context;
     }

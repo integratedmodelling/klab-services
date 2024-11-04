@@ -237,9 +237,7 @@ public class ExecutionSequence {
                                 return true;
                             });
                         }
-
                     }
-                    System.out.println("VECTOR");
                 }
             }
 

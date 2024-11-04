@@ -13,7 +13,9 @@ import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.modeler.ModelerImpl;
 import org.jline.builtins.ConfigurationPath;
 import org.jline.console.SystemRegistry;
@@ -515,9 +517,21 @@ public enum KlabCLI {
      * Parse the string for context navigation operators and set the current context to whatever has been
      * asked for.
      *
-     * @param trim
+     * @param line
      */
-    private void setFocalScope(String trim) {
+    private void setFocalScope(String line) {
+
+        // context setting
+        if (line.startsWith("<<")) {
+            this.modeler.setCurrentContext(null);
+            this.modeler.setCurrentSession(null);
+        } else if (line.startsWith("<")) {
+
+        } else if (line.startsWith(">")) {
+
+        } else if (line.startsWith("@")) {
+
+        }
 
         /*
          * TODO
@@ -531,6 +545,48 @@ public enum KlabCLI {
          *   'all')
          * ?? prints the same info as ? but much more in detail
          */
+        var currentContext = user();
+        if (modeler.getCurrentContext() != null) {
+            currentContext = modeler.getCurrentContext();
+        } else if (modeler.getCurrentSession() != null) {
+            currentContext = modeler.getCurrentSession();
+        }
+
+        if (currentContext == null) {
+            INSTANCE.commandLine.getOut().println("No context");
+            return;
+        }
+
+        var runtime = currentContext.getService(RuntimeService.class);
+        if (runtime == null) {
+            INSTANCE.commandLine.getOut().println("No runtime service connected");
+            return;
+        }
+
+        boolean verbose = line.startsWith("??");
+        var sessionInfo = runtime.getSessionInfo(currentContext);
+
+        if (line.startsWith("?")) {
+
+            int n = 0;
+            for (var session : sessionInfo) {
+                listSession(session, verbose, ++n);
+            }
+
+        }
+
+    }
+
+    private void listSession(SessionInfo session, boolean verbose, int index) {
+
+        INSTANCE.commandLine.getOut().println(Ansi.AUTO.string("@|green Session " + index + "|@. " + session.getName() + " [" + session.getId() + "]"));
+        int n = 0;
+        for (var context : session.getContexts()) {
+            INSTANCE.commandLine.getOut().println(Ansi.AUTO.string("   @|yellow Context " + index + "." + (++n) + "|@. " + context.getName() + " [" + context.getId() + "]"));
+            if (verbose) {
+
+            }
+        }
 
     }
 

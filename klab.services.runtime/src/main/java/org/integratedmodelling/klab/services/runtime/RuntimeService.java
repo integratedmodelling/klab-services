@@ -504,7 +504,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
     @Override
     public List<SessionInfo> getSessionInfo(Scope scope) {
-        return List.of();
+        return knowledgeGraph.getSessionInfo(scope);
     }
 
 

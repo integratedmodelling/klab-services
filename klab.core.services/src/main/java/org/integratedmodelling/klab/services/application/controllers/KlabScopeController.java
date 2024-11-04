@@ -22,7 +22,6 @@ import org.integratedmodelling.klab.services.application.security.EngineAuthoriz
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -64,7 +63,7 @@ public class KlabScopeController {
             var userScope = authorization.getScope(UserScope.class);
             if (userScope != null) {
 
-                var ret = userScope.runSession(request.getName());
+                var ret = userScope.createSession(request.getName());
                 var identity = userScope.getIdentity();
 
                 List<Reasoner> reasoners =

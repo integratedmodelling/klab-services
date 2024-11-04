@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The service-side {@link SessionScope}. One of these will be created by {@link ServiceUserScope} at each new
@@ -100,5 +101,10 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
             return false;
         }
         return true;
+    }
+
+    @Override
+    public List<ContextScope> getActiveContexts() {
+        return List.of();
     }
 }

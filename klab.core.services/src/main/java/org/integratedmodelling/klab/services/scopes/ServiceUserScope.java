@@ -158,7 +158,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
 
 
     @Override
-    public SessionScope runSession(String sessionName) {
+    public SessionScope createSession(String sessionName) {
         final ServiceSessionScope ret = new ServiceSessionScope(this);
         ret.setStatus(Status.WAITING);
         ret.setName(sessionName);
@@ -170,7 +170,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     @Override
     public SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType) {
 
-        var ret = runSession(behaviorName);
+        var ret = createSession(behaviorName);
         // TODO add the behavior info
         return ret;
     }
@@ -405,5 +405,10 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     public <T> void collectMessagePayload(Class<T> payloadClass, List<T> payloadCollection) {
         this.collectedPayloadClass = payloadClass;
         this.payloadCollector = (List<Object>) payloadCollection;
+    }
+
+    @Override
+    public List<SessionScope> getActiveSessions() {
+        return List.of();
     }
 }

@@ -133,6 +133,9 @@ public interface Engine extends KlabService {
      */
     List<UserScope> getUsers();
 
+
+    // TODO UserScope login(...)
+
     /**
      * To facilitate implementations, we expose the boot and shutdown as explicitly called phases. Booting the
      * engine should start with authentication. Messages should be sent to listeners after authentication and
