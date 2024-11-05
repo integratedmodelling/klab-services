@@ -36,6 +36,7 @@ public class ObservationImpl implements Observation {
     private boolean resolved;
     private Object value;
     private String name;
+    private double resolvedCoverage;
 
     public ObservationImpl() {
     }
@@ -226,6 +227,15 @@ public class ObservationImpl implements Observation {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public double getResolvedCoverage() {
+        return resolvedCoverage;
+    }
+
+    public void setResolvedCoverage(double resolvedCoverage) {
+        this.resolvedCoverage = resolvedCoverage;
     }
 
     @Override

@@ -108,9 +108,6 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     @Override
     protected AbstractServiceDelegatingScope createServiceScope() {
         var ret = super.createServiceScope();
-//        if (ret instanceof AbstractDelegatingScope dscope && dscope.getDelegateChannel() instanceof ServiceChannelImpl serviceChannel) {
-//            serviceChannel.setWebsocketProvider(() -> webSocket);
-//        }
         // TODO if we're certified, adjust the scope's locality and service discovery capabilities
         ret.setLocality(ServiceScope.Locality.LOCALHOST);
         if (ret.getIdentity() instanceof UserIdentity user && !user.isAnonymous()) {
@@ -125,19 +122,6 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
         super.start(environment.getRequiredProperty("klab.service.options", ServiceStartupOptions.class));
     }
 
-//    @Bean
-//    public Docket api() {
-//        return new Docket(DocumentationType.SWAGGER_2).select().apis(RequestHandlerSelectors.basePackage(basePackage))
-//                                                      .paths(PathSelectors.any()).build().directModelSubstitute(LocalDate.class, java.sql.Date.class)
-//                                                      .directModelSubstitute(LocalDateTime.class,
-//                                                              java.util.Date.class).apiInfo(apiInfo());
-//    }
-//
-//    private ApiInfo apiInfo() {
-//        return new ApiInfoBuilder().title(title).description(description).version(version)
-//                                   .contact(new Contact(contactName, null, contactEmail)).build();
-//    }
-
     /**
      * Call this in main() using the concrete subclass of ServiceNetworkedInstance and the desired startup
      * options.
@@ -149,12 +133,18 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     public static boolean start(Class<? extends ServiceNetworkedInstance> cls,
                                 ServiceStartupOptions options) {
 
+        File logDirectory = BaseService.getConfigurationSubdirectory(options, "logs");
+        File logFile =
+                new File(logDirectory + File.separator + options.getServiceType().name().toLowerCase() +
+                        ".log");
+
         try {
             SpringApplication app = new SpringApplication(cls);
             Map<String, Object> props = new HashMap<>();
             props.put("klab.service.options", options);
             props.put("server.port", "" + options.getPort());
             props.put("spring.main.banner-mode", "off");
+            props.put("logging.file", logFile.toPath().toString());
             props.put("server.servlet.contextPath", options.getContextPath());
             props.put("spring.servlet.multipart.max-file-size", options.getMaxMultipartFileSize());
             props.put("spring.servlet.multipart.max-request-size", options.getMaxMultipartRequestSize());
@@ -252,7 +242,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
 
     /**
      * Called by the scope controller after injection so we can send the handler to the channel.
-     * 
+     *
      * @param webSocket
      */
     public void setMessagingTemplate(SimpMessagingTemplate webSocket) {

@@ -16,7 +16,10 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 
 import java.net.URL;
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 
 public abstract class ClientContextScope extends ClientSessionScope implements ContextScope {
@@ -81,25 +84,30 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     @Override
     public Future<Observation> observe(Observation observation) {
+
         var runtime = getService(RuntimeService.class);
-
-        // DO THIS INSTEAD:
-        // var taskId = submit(observation, this)  -- NO startResolution, remove it and call separately
-        // var ret = this.trackMessage(ResolutionSuccessful, taskId, () -> ResolutionFailed, class, ()-> ...).withTimeout()...
-        // runtime.startResolution(observation, this.duringTask(ret); // sets task ID header so that the runtime knows it and reports it
-        // return ret;
-
-
         long taskId = runtime.submit(observation, this);
+
         if (taskId != Observation.UNASSIGNED_ID) {
-            // start resolution
+            var ret = trackMessages(Message.match(Message.MessageClass.ObservationLifecycle,
+                    Message.MessageType.ResolutionAborted, Message.MessageType.ResolutionSuccessful,
+                    observation.getUrn()), (message) -> {
+                if (message.getMessageType() == Message.MessageType.ResolutionSuccessful) {
+                    info("Resolution of " + observation + " successful with coverage " + observation.getResolvedCoverage());
+                    return message.getPayload(Observation.class);
+                }
+                info("Resolution of " + observation + " failed");
+                return observation;
+            });
+            runtime.resolve(taskId, this);
+            return ret;
         }
 
-        // Failure, this returns the unresolved observation
+        // failure: this just returns the unresolved observation
+        info("Submission of " + observation + " failed");
+
         return ConcurrentUtils.constantFuture(observation);
 
-//        return newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
-//                Message.MessageType.ResolutionSuccessful), Observation.class, taskId); // event
     }
 
     @Override
