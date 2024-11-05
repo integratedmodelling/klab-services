@@ -327,7 +327,7 @@ public class ResolutionCompiler {
         if (ret.isEmpty()) {
 
             var newObs = DigitalTwin.createObservation(scope, observable, geometry);
-            var id = scope.getService(RuntimeService.class).submit(newObs, scope, false);
+            var id = scope.getService(RuntimeService.class).submit(newObs, scope);
             if (id >= 0) {
                 ret = scope.query(Observation.class, observable);
             }

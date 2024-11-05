@@ -39,13 +39,24 @@ public interface MessagingChannel extends Channel {
                           Consumer<Message> consumer);
 
     /**
-     * naah
+     * Install one or more message matchers to react to messages received and sent through the managed
+     * queues.
+     *
      * @param matchers
      * @return
-     * @param <T>
      */
-    <T> Future<T> trackMessages(Function<Message, T>... matchers);
+    void trackMessages(Message.Match... matchers);
 
+    /**
+     * Install a message matcher and a supplier that turns the matching message into an object, and return a
+     * future for the supplied object.
+     *
+     * @param match
+     * @param supplier
+     * @param <T>
+     * @return
+     */
+    <T> Future<T> trackMessages(Message.Match match, Function<Message, T> supplier);
 
     /**
      * True if {@link #connectToService(KlabService.ServiceCapabilities, UserIdentity, Consumer)} has been

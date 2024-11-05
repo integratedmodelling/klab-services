@@ -59,7 +59,7 @@ public interface RuntimeService extends KlabService {
      * @param contextScope
      * @return
      */
-    Coverage runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope);
+    Observation runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope);
 
     /**
      * Submit the ID of a valid observation to invoke the resolver, build a dataflow and run it to obtain the

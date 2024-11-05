@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client.scope;
 
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -13,7 +14,6 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
-import org.integratedmodelling.klab.api.services.runtime.Task;
 
 import java.net.URL;
 import java.util.*;
@@ -80,7 +80,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public Task<Observation> observe(Observation observation) {
+    public Future<Observation> observe(Observation observation) {
         var runtime = getService(RuntimeService.class);
 
         // DO THIS INSTEAD:
@@ -89,13 +89,17 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         // runtime.startResolution(observation, this.duringTask(ret); // sets task ID header so that the runtime knows it and reports it
         // return ret;
 
+
         long taskId = runtime.submit(observation, this);
         if (taskId != Observation.UNASSIGNED_ID) {
             // start resolution
         }
 
-        return newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
-                Message.MessageType.ResolutionSuccessful), Observation.class, taskId); // event
+        // Failure, this returns the unresolved observation
+        return ConcurrentUtils.constantFuture(observation);
+
+//        return newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
+//                Message.MessageType.ResolutionSuccessful), Observation.class, taskId); // event
     }
 
     @Override

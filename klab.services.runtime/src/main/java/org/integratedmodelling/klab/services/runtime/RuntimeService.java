@@ -301,17 +301,15 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     @Override
-    public long submit(Observation observation, ContextScope scope, boolean startResolution) {
+    public long submit(Observation observation, ContextScope scope) {
         if (scope instanceof ServiceContextScope serviceContextScope) {
-            return startResolution
-                   ? serviceContextScope.observe(observation).trackingKey() // TODO remove the start resolution
-                   : serviceContextScope.insertIntoKnowledgeGraph(observation);
+            return serviceContextScope.insertIntoKnowledgeGraph(observation);
         }
         return Observation.UNASSIGNED_ID;
     }
 
     @Override
-    public Future<Observation> resolve(long id, ContextScope scope) {
+    public String resolve(long id, ContextScope scope) {
 
         if (scope instanceof ServiceContextScope serviceContextScope) {
 
@@ -363,7 +361,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     @Override
-    public Coverage runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
+    public Observation runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
 
         var digitalTwin = getDigitalTwin(contextScope);
 
@@ -385,7 +383,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                     contextScope), (ServiceContextScope) contextScope, digitalTwin, getComponentRegistry());
             if (!executionSequence.isEmpty()) {
                 if (!executionSequence.run()) {
-                    return Coverage.empty();
+                    return Observation.empty();
                 }
             }
         }

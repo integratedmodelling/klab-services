@@ -31,7 +31,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * The service-side {@link ContextScope}. Does most of the heavy lifting in the runtime service through the
@@ -204,7 +206,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
 
     @Override
-    public Task<Observation, Long> observe(Observation observation) {
+    public Future<Observation> observe(Observation observation) {
 
         if (!isOperative()) {
             return null;
@@ -214,7 +216,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     }
 
-    private Task<Observation, Long> observe(Observation observation, Activity parentActivity) {
+    private Future<Observation> observe(Observation observation, Activity parentActivity) {
 
         // TODO FIXME this must just call the 2 new methods in the runtime and return the result.
 
@@ -225,8 +227,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         var id = activity.run(this);
 
         // create task before resolution starts so we guarantee a response
-        var ret = newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
-                Message.MessageType.ResolutionSuccessful), Observation.class, id);
+        var ret = new CompletableFuture<Observation>();
 
         final var runtime = getService(RuntimeService.class);
         final var resolver = getService(Resolver.class);
@@ -238,7 +239,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                 if (dataflow != null) {
                     if (!dataflow.isEmpty()) {
                         /* TODO return value */
-                        runtime.runDataflow(dataflow, this);
+                        ret.complete(runtime.runDataflow(dataflow, this));
                     }
                     activity.success(this, observation, dataflow);
                 } else {
@@ -247,6 +248,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionSuccessful, id);
             } catch (Throwable t) {
                 activity.fail(this, observation, t);
+                ret.completeExceptionally(t);
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted, id);
             }
         });

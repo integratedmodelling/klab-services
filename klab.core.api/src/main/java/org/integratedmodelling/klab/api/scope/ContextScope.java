@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
-import org.integratedmodelling.klab.api.services.runtime.Task;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.net.URL;
@@ -165,35 +164,21 @@ public interface ContextScope extends SessionScope {
     ContextScope connect(URL remoteContext);
 
     /**
-     * Submit an observation to the digital twin for resolution. If no context observation or observer is
-     * present in the scope, the arguments must fully specify a non-collective <em>substantial</em> with its
-     * own geometry. Otherwise, the geometry of reference is the observation geometry of the observer if the
-     * observation is of a collective substantial, and that of the context observation, which must be present,
-     * if the observation is of a dependent.  If the observation is a non-collective relationship, the scope
-     * must be the result of a {@link #between(Observation, Observation)} call to specify the source and
-     * target.
-     * <p>
-     * If the passed observation contains an observation geometry and the semantics is of an agent, the
-     * runtime will build an observation suitable to be an observer. At the API level, no automatic linking is
-     * done in the DT except for what the scope defines, so setting it as the observer for other observations
-     * must be done through the scope using the with- methods.
-     * <p>
-     * After this is called, resolution will started in the runtime service chosen at context creation, using
-     * any {@link ResolutionConstraint}s set into the scope. The ID tracked by the returned {@link Task} is
-     * the ID of the observation. If resolution fails, the task will fail and the observation will be returned
-     * in an unresolved state, recorded but invisible to the DT unless unresolved observations are queried.
-     * Unresolved observations are those that the resolver wasn't able to explain with a model: this only
-     * applies to dependents (qualities and processes) as substantials can be simply acknowledged as long as
-     * their scale is given. If any dependents are unresolved, the context will be in an inconsistent state.
+     * Submit an observation to the digital twin and start its resolution in this scope. Returns a future for
+     * the resolved (or unresolved in case of failure) observation. The {@link Observation#isResolved()}
+     * method should be checked after the future is complete. The scope will be notified of all events related
+     * to the resolution, with messages that will carry a task ID equal to the URN of the observation or
+     * derived from it so that what is happening can be reconstructed at the client side.
      *
      * @param observation an unresolved observation to be resolved by the runtime and added to the digital
      *                    twin. The
      *                    {@link
      *                    org.integratedmodelling.klab.api.digitaltwin.DigitalTwin#createObservation(Scope,
      *                    Object...)} method can be used to construct it from existing knowledge.
-     * @return a {@link Future} producing the resolved observation when resolution is finished.
+     * @return a {@link Future} producing the resolved observation when resolution is finished. If resolution
+     * has failed, the observation in the future will be unresolved.
      */
-    Task<Observation> observe(Observation observation);
+    Future<Observation> observe(Observation observation);
 
     /**
      * Return all observations affected by the passed one in this scope, either through model dependencies or

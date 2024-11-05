@@ -4,25 +4,24 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
+import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
-import org.integratedmodelling.klab.api.services.runtime.Task;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -42,11 +41,12 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     private boolean receiver;
     private ConnectionFactory connectionFactory = null;
     private Connection connection = null;
-    private Map<Message.Queue, String> queueNames = new HashMap<>();
-    private Set<EventResultSupplier<?>> eventResultSupplierSet =
-            Collections.synchronizedSet(new LinkedHashSet<>());
-    private Map<String, List<Consumer<Message>>> queueConsumers = new HashMap<>();
+    private final Map<Message.Queue, String> queueNames = new HashMap<>();
+    private final Map<String, List<Consumer<Message>>> queueConsumers = new HashMap<>();
     private boolean connected;
+    private Map<Message.Match, MessageFuture<?>> messageFutures =
+            Collections.synchronizedMap(new HashMap<>());
+    private Set<Message.Match> messageMatchers = Collections.synchronizedSet(new HashSet<>());
 
     public MessagingChannelImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity);
@@ -66,133 +66,138 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         this.connectionFactory = parent.connectionFactory;
         this.connection = parent.connection;
         this.queueNames.putAll(parent.queueNames);
-        this.eventResultSupplierSet.addAll(parent.eventResultSupplierSet);
+        //        this.eventResultSupplierSet.addAll(parent.eventResultSupplierSet);
         this.queueConsumers.putAll(parent.queueConsumers);
     }
 
-    /**
-     * Convenience Task implementation that delegates to a {@link CompletableFuture} tracking a tracking key
-     * that is updated by messages.
-     *
-     * @param <T>
-     */
-    class TrackingTask<T> implements Task<T> {
+    //    /**
+    //     * Convenience Task implementation that delegates to a {@link CompletableFuture} tracking a
+    //     tracking key
+    //     * that is updated by messages.
+    //     *
+    //     * @param <T>
+    //     */
+    //    class TrackingTask<T> implements Task<T> {
+    //
+    //        private final CompletableFuture<T> delegate;
+    //        private final String urn;
+    //
+    //        public TrackingTask(Set<Message.MessageType> matchTypes, String urn, Function<Message, T>
+    //        payloadConverter) {
+    //            this.urn = urn;
+    //            delegate = CompletableFuture.supplyAsync(new EventResultSupplier<>(matchTypes, urn,
+    //                    payloadConverter));
+    //        }
+    //
+    //        @Override
+    //        public boolean cancel(boolean mayInterruptIfRunning) {
+    //            return delegate.cancel(mayInterruptIfRunning);
+    //        }
+    //
+    //        @Override
+    //        public boolean isCancelled() {
+    //            return delegate.isCancelled();
+    //        }
+    //
+    //        @Override
+    //        public boolean isDone() {
+    //            return delegate.isDone();
+    //        }
+    //
+    //        @Override
+    //        public T get() throws InterruptedException, ExecutionException {
+    //            return (T) delegate.get();
+    //        }
+    //
+    //        @Override
+    //        public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
+    //                TimeoutException {
+    //            return (T) delegate.get(timeout, unit);
+    //        }
+    //
+    //        @Override
+    //        public ContextScope getScope() {
+    //            return MessagingChannelImpl.this instanceof ContextScope scope ? scope : null;
+    //        }
+    //
+    //        @Override
+    //        public String getUrn() {
+    //            return urn;
+    //        }
+    //    }
 
-        private final CompletableFuture<T> delegate;
-        private final String urn;
+    //    /**
+    //     * Blocking supplier that waits for an event match, then returns the event payload. Can be used in a
+    //     * {@link java.util.concurrent.CompletableFuture#supplyAsync(Supplier)} to wait for an event.
+    //     *
+    //     * @param <T>
+    //     */
+    //    private class EventResultSupplier<T> implements Supplier<T> {
+    //
+    //        private final AtomicReference<Message> match = new AtomicReference<>();
+    //        private final Function<Message, T> converter;
+    //        Set<Message.MessageType> matchTypes;
+    //        private final String urn;
+    //
+    //        EventResultSupplier(Set<Message.MessageType> matchTypes, String urn, Function<Message, T>
+    //        payloadConverter) {
+    //            this.matchTypes = matchTypes;
+    //            this.urn = urn;
+    //            this.converter = payloadConverter;
+    //        }
+    //
+    //        public boolean match(Message message) {
+    //            if (matchTypes != null && matchTypes.contains(message.getMessageType())) {
+    //                if (urn != null && urn.equals(message.getPayload(String.class))) {
+    //                    synchronized (match) {
+    //                        match.set(message);
+    //                        match.notify();
+    //                    }
+    //                    return true;
+    //                }
+    //            }
+    //            return false;
+    //        }
+    //
+    //        @Override
+    //        public T get() {
+    //
+    //            synchronized (match) {
+    //                while (match.get() == null) {
+    //                    try {
+    //                        match.wait();
+    //                    } catch (InterruptedException e) {
+    //                        return null;
+    //                    }
+    //                }
+    //            }
+    //            eventResultSupplierSet.remove(this);
+    //            return converter.apply(match.get());
+    //        }
+    //    }
 
-        public TrackingTask(Set<Message.MessageType> matchTypes, String urn, Function<Message, T> payloadConverter) {
-            this.urn = urn;
-            delegate = CompletableFuture.supplyAsync(new EventResultSupplier<>(matchTypes, urn,
-                    payloadConverter));
-        }
-
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            return delegate.cancel(mayInterruptIfRunning);
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return delegate.isCancelled();
-        }
-
-        @Override
-        public boolean isDone() {
-            return delegate.isDone();
-        }
-
-        @Override
-        public T get() throws InterruptedException, ExecutionException {
-            return (T) delegate.get();
-        }
-
-        @Override
-        public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
-                TimeoutException {
-            return (T) delegate.get(timeout, unit);
-        }
-
-        @Override
-        public ContextScope getScope() {
-            return MessagingChannelImpl.this instanceof ContextScope scope ? scope : null;
-        }
-
-        @Override
-        public String getUrn() {
-            return urn;
-        }
-    }
-
-    /**
-     * Blocking supplier that waits for an event match, then returns the event payload. Can be used in a
-     * {@link java.util.concurrent.CompletableFuture#supplyAsync(Supplier)} to wait for an event.
-     *
-     * @param <T>
-     */
-    private class EventResultSupplier<T> implements Supplier<T> {
-
-        private final AtomicReference<Message> match = new AtomicReference<>();
-        private final Function<Message, T> converter;
-        Set<Message.MessageType> matchTypes;
-        private final String urn;
-
-        EventResultSupplier(Set<Message.MessageType> matchTypes, String urn, Function<Message, T> payloadConverter) {
-            this.matchTypes = matchTypes;
-            this.urn = urn;
-            this.converter = payloadConverter;
-        }
-
-        public boolean match(Message message) {
-            if (matchTypes != null && matchTypes.contains(message.getMessageType())) {
-                if (urn != null && urn.equals(message.getPayload(String.class))) {
-                    synchronized (match) {
-                        match.set(message);
-                        match.notify();
-                    }
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public T get() {
-
-            synchronized (match) {
-                while (match.get() == null) {
-                    try {
-                        match.wait();
-                    } catch (InterruptedException e) {
-                        return null;
-                    }
-                }
-            }
-            eventResultSupplierSet.remove(this);
-            return converter.apply(match.get());
-        }
-    }
-
-    protected <T> Task<T> newMessageTrackingTask(Set<Message.MessageType> matchTypes,
-                                                 String urn) {
-        return newMessageTrackingTask(matchTypes, urn, null);
-    }
-
-    /**
-     * Return a future that exposes the tracking ID and produces the payload when the event message matches.
-     *
-     * @param matchTypes
-     * @param payloadConverter this could be skipped and just use .thenApply on the enclosing future
-     * @param <T>
-     * @return
-     */
-    protected <T> Task<T> newMessageTrackingTask(Set<Message.MessageType> matchTypes,
-                                                                    String urn,
-                                                                    Function<Message, T> payloadConverter) {
-        var ret = new EventResultSupplier<>(matchTypes, urn, payloadConverter);
-        eventResultSupplierSet.add(ret);
-        return new TrackingTask<>(matchTypes, urn, payloadConverter);
-    }
+    //    protected <T> Task<T> newMessageTrackingTask(Set<Message.MessageType> matchTypes,
+    //                                                 String urn) {
+    //        return newMessageTrackingTask(matchTypes, urn, null);
+    //    }
+    //
+    //    /**
+    //     * Return a future that exposes the tracking ID and produces the payload when the event message
+    //     matches.
+    //     *
+    //     * @param matchTypes
+    //     * @param payloadConverter this could be skipped and just use .thenApply on the enclosing future
+    //     * @param <T>
+    //     * @return
+    //     */
+    //    protected <T> Task<T> newMessageTrackingTask(Set<Message.MessageType> matchTypes,
+    //                                                                    String urn,
+    //                                                                    Function<Message, T>
+    //                                                                    payloadConverter) {
+    //        var ret = new EventResultSupplier<>(matchTypes, urn, payloadConverter);
+    //        eventResultSupplierSet.add(ret);
+    //        return new TrackingTask<>(matchTypes, urn, payloadConverter);
+    //    }
 
     @Override
     public Message send(Object... args) {
@@ -270,18 +275,6 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         return null;
     }
 
-    @Override
-    public void event(Message message) {
-        Set<EventResultSupplier<?>> done = new HashSet<>();
-        for (var supplier : eventResultSupplierSet) {
-            if (supplier.match(message)) {
-                done.add(supplier);
-            }
-        }
-        eventResultSupplierSet.removeAll(done);
-        super.event(message);
-    }
-
     /**
      * Called on the intended target, should use the local connection fields. This is normally only called on
      * the session scope.
@@ -357,7 +350,34 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                                 }
                             }
 
-                            System.out.println("CIÁPEL IN DEL CÜL DIOCAN " + message);
+                            List<Message.Match> remove = new ArrayList<>();
+                            for (var match : messageMatchers) {
+                                if (matchApplies(match, message)) {
+                                    if (match.getMessageConsumer() != null) {
+                                        // TODO put this in a virtual thread?
+                                        match.getMessageConsumer().accept(message);
+                                    }
+                                    if (!match.isPersistent()) {
+                                        remove.add(match);
+                                    }
+                                }
+                            }
+                            messageMatchers.removeAll(remove);
+                            remove.clear();
+
+                            for (var match : messageFutures.keySet()) {
+                                if (matchApplies(match, message)) {
+                                    if (match.getMessageConsumer() != null) {
+                                        // TODO put this in a virtual thread?
+                                        match.getMessageConsumer().accept(message);
+                                    }
+                                    messageFutures.get(match).resolve(message);
+                                    remove.add(match);
+                                }
+                            }
+                            for (var match : remove) {
+                                messageFutures.remove(match);
+                            }
 
                             switch (queue) {
                                 case Events -> {
@@ -412,6 +432,28 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         return EnumSet.noneOf(Message.Queue.class);
     }
 
+    private boolean matchApplies(Message.Match match, Message message) {
+
+        if (!match.getApplicableClasses().isEmpty()) {
+            if (!match.getApplicableClasses().contains(message.getMessageClass())) {
+                return false;
+            }
+        }
+        if (!match.getApplicableTypes().isEmpty()) {
+            if (!match.getApplicableTypes().contains(message.getMessageType())) {
+                return false;
+            }
+        }
+
+        if (match.getPayloadMatch() != null) {
+            if (!match.getPayloadMatch().equals(message.getPayload(Object.class))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     @Override
     public boolean hasMessaging() {
         return connection != null && connection.isOpen();
@@ -433,6 +475,17 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         for (var queue : capabilities.getAvailableMessagingQueues()) {
             installQueueConsumer(capabilities.getType().name().toLowerCase() + "." + identity.getUsername() + "." + queue.name().toLowerCase(), consumer);
         }
+    }
+
+    public void trackMessages(Message.Match... matchers) {
+
+    }
+
+    @Override
+    public <T> Future<T> trackMessages(Message.Match match, Function<Message, T> supplier) {
+        var ret = new MessageFuture<T>(match, supplier);
+        this.messageFutures.put(match, ret);
+        return ret;
     }
 
     @Override
@@ -470,5 +523,61 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
 
     public boolean isReceiver() {
         return receiver;
+    }
+
+    private class MessageFuture<T> implements Future<T> {
+
+        private AtomicReference<T> payload = null;
+        private AtomicBoolean resolved = new AtomicBoolean(false);
+        private boolean cancelled;
+        private final Message.Match match;
+        private final Function<Message, T> supplier;
+
+        public MessageFuture(Message.Match match, Function<Message, T> supplier) {
+            this.match = match;
+            this.supplier = supplier;
+        }
+
+        public void resolve(Message message) {
+            this.resolved.set(true);
+            this.payload.set(supplier.apply(message));
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            this.cancelled = true;
+            return messageFutures.remove(match) != null;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return this.cancelled;
+        }
+
+        @Override
+        public boolean isDone() {
+            return this.resolved.get();
+        }
+
+        @Override
+        public T get() throws InterruptedException, ExecutionException {
+            while (!this.resolved.get()) {
+                Thread.sleep(200);
+            }
+            return payload.get();
+        }
+
+        @Override
+        public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
+                TimeoutException {
+            long mss = System.currentTimeMillis() + unit.toMillis(timeout);
+            while (!this.resolved.get()) {
+                Thread.sleep(200);
+                if (System.currentTimeMillis() > mss) {
+                    break;
+                }
+            }
+            return payload.get();
+        }
     }
 }

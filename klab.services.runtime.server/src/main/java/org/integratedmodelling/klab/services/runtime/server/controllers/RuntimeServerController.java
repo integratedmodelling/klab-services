@@ -42,10 +42,7 @@ public class RuntimeServerController {
         if (principal instanceof EngineAuthorization authorization) {
             var contextScope =
                     authorization.getScope(ContextScope.class).withResolutionConstraints(resolutionRequest.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
-            if (resolutionRequest.isStartResolution()) {
-                var task = contextScope.observe(resolutionRequest.getObservation());
-                return task.trackingKey();
-            } else if (contextScope instanceof ServiceContextScope serviceContextScope) {
+            if (contextScope instanceof ServiceContextScope serviceContextScope) {
                 var agent =
                         serviceContextScope.getDigitalTwin().knowledgeGraph().requireAgent(resolutionRequest.getAgentName());
                 return serviceContextScope
