@@ -54,7 +54,7 @@ public class RuntimeServerController {
     }
 
     @PostMapping(ServicesAPI.RUNTIME.START_RESOLUTION)
-    public @ResponseBody String startResolution(ResolutionRequest request, Principal principal) {
+    public @ResponseBody String startResolution(@RequestBody ResolutionRequest request, Principal principal) {
         if (principal instanceof EngineAuthorization authorization) {
             var contextScope =
                     authorization.getScope(ContextScope.class).withResolutionConstraints(request.getResolutionConstraints().toArray(new ResolutionConstraint[0]));

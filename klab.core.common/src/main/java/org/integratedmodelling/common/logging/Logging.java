@@ -77,7 +77,6 @@ public enum Logging {
                 logger.info(systemIdentifier + payload.getMessage());
             }
         }
-
     }
 
     public void warn(Object... o) {

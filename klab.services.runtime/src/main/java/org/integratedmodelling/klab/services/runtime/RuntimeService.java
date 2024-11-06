@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -12,6 +13,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -339,12 +341,12 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                         activity.fail(scope, observation);
                     }
                     scope.send(Message.MessageClass.ObservationLifecycle,
-                            Message.MessageType.ResolutionSuccessful, id);
+                            Message.MessageType.ResolutionSuccessful, result);
                 } catch (Throwable t) {
                     ret.completeExceptionally(t);
                     activity.fail(scope, observation, t);
                     scope.send(Message.MessageClass.ObservationLifecycle,
-                            Message.MessageType.ResolutionAborted, id);
+                            Message.MessageType.ResolutionAborted, observation);
                 }
             });
 
@@ -387,7 +389,12 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         intersect coverage from dataflow with contextualization scale
          */
 
-        return null;
+        if (dataflow instanceof DataflowImpl df && dataflow.getTarget() instanceof ObservationImpl obs) {
+            obs.setResolved(true);
+            obs.setResolvedCoverage(df.getResolvedCoverage());
+        }
+
+        return dataflow.getTarget();
     }
 
     private DigitalTwin getDigitalTwin(ContextScope contextScope) {

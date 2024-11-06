@@ -168,7 +168,6 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     public long submit(Observation observation, ContextScope scope) {
         ResolutionRequest resolutionRequest = new ResolutionRequest();
         resolutionRequest.setObservation(observation);
-        //        resolutionRequest.setStartResolution(startResolution);
         resolutionRequest.setAgentName(Provenance.getAgent(scope).getName());
         resolutionRequest.setResolutionConstraints(scope.getResolutionConstraints());
         return client.withScope(scope).post(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest,
@@ -185,6 +184,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         var ret = scope.trackMessages(Message.match(Message.MessageClass.ObservationLifecycle,
                         Message.MessageType.ResolutionAborted, Message.MessageType.ResolutionSuccessful).when((message) -> message.getPayload(Observation.class).getId() == id)
                 , (message) -> {
+                    System.out.println("HASTA LA MINCHIA " + message);
                     var observation = message.getPayload(Observation.class);
                     if (message.getMessageType() == Message.MessageType.ResolutionSuccessful) {
                         scope.info("Resolution of " + observation + " successful with coverage " + observation.getResolvedCoverage());
@@ -199,7 +199,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         request.setObservationId(id);
 
         // this returns the URN of the observation/task or null - we can ignore it at this stage.
-        client.withScope(scope).post(ServicesAPI.RUNTIME.START_RESOLUTION, request, String.class, "id", id);
+        client.withScope(scope).post(ServicesAPI.RUNTIME.START_RESOLUTION, request, String.class);
 
         return ret;
     }
