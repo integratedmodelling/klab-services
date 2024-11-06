@@ -73,7 +73,7 @@ public interface RuntimeService extends KlabService {
      * @return the ID of the task running in the runtime, which must be identical to the observation URN and
      * will be sent to the scope with the resolution result message.
      */
-    String resolve(long id, ContextScope scope);
+    Future<Observation> resolve(long id, ContextScope scope);
 
     /**
      * Retrieve any assets from the knowledge graph in the digital twin matching a given class and some query

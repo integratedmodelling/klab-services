@@ -84,6 +84,7 @@ public class ExecutionSequence {
     }
 
     public boolean run() {
+
         for (var operationGroup : sequence) {
             // groups are sequential; grouped items are parallel. Empty groups are currently possible although
             // they should be filtered out, but we leave them for completeness for now as they don't really

@@ -4,7 +4,6 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
-import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -26,7 +25,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * A channel instrumented for messaging, containing the AMQP connections and channels for all the subscribed
@@ -441,6 +439,12 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         }
         if (!match.getApplicableTypes().isEmpty()) {
             if (!match.getApplicableTypes().contains(message.getMessageType())) {
+                return false;
+            }
+        }
+
+        if (match.getMessagePredicate() != null) {
+            if (!match.getMessagePredicate().test(message)) {
                 return false;
             }
         }

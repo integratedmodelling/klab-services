@@ -89,18 +89,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         long taskId = runtime.submit(observation, this);
 
         if (taskId != Observation.UNASSIGNED_ID) {
-            var ret = trackMessages(Message.match(Message.MessageClass.ObservationLifecycle,
-                    Message.MessageType.ResolutionAborted, Message.MessageType.ResolutionSuccessful,
-                    observation.getUrn()), (message) -> {
-                if (message.getMessageType() == Message.MessageType.ResolutionSuccessful) {
-                    info("Resolution of " + observation + " successful with coverage " + observation.getResolvedCoverage());
-                    return message.getPayload(Observation.class);
-                }
-                info("Resolution of " + observation + " failed");
-                return observation;
-            });
-            runtime.resolve(taskId, this);
-            return ret;
+            return runtime.resolve(taskId, this);
         }
 
         // failure: this just returns the unresolved observation

@@ -176,8 +176,32 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public String resolve(long id, ContextScope scope) {
-        return client.withScope(scope).get(ServicesAPI.RUNTIME.START_RESOLUTION, String.class, "id", id);
+    public Future<Observation> resolve(long id, ContextScope scope) {
+
+        /*
+        Set up the task to track the messages. We do this before invoking the method so it's guaranteed to
+        not return before we can notice.
+         */
+        var ret = scope.trackMessages(Message.match(Message.MessageClass.ObservationLifecycle,
+                        Message.MessageType.ResolutionAborted, Message.MessageType.ResolutionSuccessful).when((message) -> message.getPayload(Observation.class).getId() == id)
+                , (message) -> {
+                    var observation = message.getPayload(Observation.class);
+                    if (message.getMessageType() == Message.MessageType.ResolutionSuccessful) {
+                        scope.info("Resolution of " + observation + " successful with coverage " + observation.getResolvedCoverage());
+                        return message.getPayload(Observation.class);
+                    }
+                    scope.info("Resolution of " + observation + " failed");
+                    return observation;
+                });
+
+        var request = new ResolutionRequest();
+        request.setResolutionConstraints(scope.getResolutionConstraints());
+        request.setObservationId(id);
+
+        // this returns the URN of the observation/task or null - we can ignore it at this stage.
+        client.withScope(scope).post(ServicesAPI.RUNTIME.START_RESOLUTION, request, String.class, "id", id);
+
+        return ret;
     }
 
     @Override

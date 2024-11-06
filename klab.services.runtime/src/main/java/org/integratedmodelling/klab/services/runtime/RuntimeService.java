@@ -44,6 +44,7 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -260,7 +261,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             serviceContextScope.setId(
                     serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
             getScopeManager().registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
-            serviceContextScope.setDigitalTwin(new DigitalTwinImpl(this, contextScope, getMainKnowledgeGraph()));
+            serviceContextScope.setDigitalTwin(new DigitalTwinImpl(this, contextScope,
+                    getMainKnowledgeGraph()));
 
             if (serviceContextScope.getServices(RuntimeService.class).isEmpty()) {
                 // add self as the runtime service, which is needed by the slave scopes
@@ -309,51 +311,44 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     @Override
-    public String resolve(long id, ContextScope scope) {
+    public Future<Observation> resolve(long id, ContextScope scope) {
 
         if (scope instanceof ServiceContextScope serviceContextScope) {
 
-            // TODO all the logic that's now in ServiceContextScope must be here. Messages should be
-            //  clearly orchestrated and documented across the DT. There should be a task ID token
-            //  coming from the request/client in the scope, so that task structure can be reconstructed
-            //  and monitored. The task ID must be in every message.
-            var digitalTwin = getDigitalTwin(scope);
+            var resolver = serviceContextScope.getService(Resolver.class);
             var observation = serviceContextScope.getObservation(id);
+            var digitalTwin = getDigitalTwin(scope);
+            var activity = digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().user(), scope,
+                    observation, Activity.Type.RESOLUTION, null);
 
-//            // root-level activity when user is the agent. Inside resolution the activity may have children
-//            var activity = digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().user(), this,
-//                    observation, Activity.Type.INSTANTIATION, parentActivity);
-//
-//            var id = activity.run(this);
-//
-//            // create task before resolution starts so we guarantee a response
-//            var ret = newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
-//                    Message.MessageType.ResolutionSuccessful), Observation.class, id);
-//
-//            final var runtime = getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
-//            final var resolver = getService(Resolver.class);
-//
-//            // start virtual resolution thread. This should be everything we need.
-//            Thread.ofVirtual().start(() -> {
-//                try {
-//                    var dataflow = resolver.resolve(observation, this);
-//                    if (dataflow != null) {
-//                        if (!dataflow.isEmpty()) {
-//                            /* TODO return value */
-//                            runtime.runDataflow(dataflow, this);
-//                        }
-//                        activity.success(this, observation, dataflow);
-//                    } else {
-//                        activity.fail(this, observation);
-//                    }
-//                    send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionSuccessful, id);
-//                } catch (Throwable t) {
-//                    activity.fail(this, observation, t);
-//                    send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted, id);
-//                }
-//            });
-//
-//            return ret;
+            final var ret = new CompletableFuture<Observation>();
+
+            Thread.ofVirtual().start(() -> {
+                try {
+                    var result = observation;
+                    scope.send(Message.MessageClass.ObservationLifecycle,
+                            Message.MessageType.ResolutionStarted, result);
+                    var dataflow = resolver.resolve(observation, scope);
+                    if (dataflow != null) {
+                        if (!dataflow.isEmpty()) {
+                            result = runDataflow(dataflow, scope);
+                            ret.complete(result);
+                        }
+                        activity.success(scope, result, dataflow);
+                    } else {
+                        activity.fail(scope, observation);
+                    }
+                    scope.send(Message.MessageClass.ObservationLifecycle,
+                            Message.MessageType.ResolutionSuccessful, id);
+                } catch (Throwable t) {
+                    ret.completeExceptionally(t);
+                    activity.fail(scope, observation, t);
+                    scope.send(Message.MessageClass.ObservationLifecycle,
+                            Message.MessageType.ResolutionAborted, id);
+                }
+            });
+
+            return ret;
         }
 
         throw new KlabInternalErrorException("Digital twin is inaccessible because of unexpected scope " +

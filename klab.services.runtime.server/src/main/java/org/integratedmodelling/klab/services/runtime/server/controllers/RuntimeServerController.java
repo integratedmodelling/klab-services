@@ -53,6 +53,20 @@ public class RuntimeServerController {
         throw new KlabInternalErrorException("Unexpected implementation of request authorization");
     }
 
+    @PostMapping(ServicesAPI.RUNTIME.START_RESOLUTION)
+    public @ResponseBody String startResolution(ResolutionRequest request, Principal principal) {
+        if (principal instanceof EngineAuthorization authorization) {
+            var contextScope =
+                    authorization.getScope(ContextScope.class).withResolutionConstraints(request.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
+            if (contextScope instanceof ServiceContextScope serviceContextScope) {
+                var observation = serviceContextScope.getObservation(request.getObservationId());
+                runtimeService.klabService().resolve(observation.getId(), serviceContextScope);
+                return observation.getUrn();
+            }
+        }
+        throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+    }
+
     @GetMapping(ServicesAPI.RUNTIME.GET_SESSION_INFO)
     public @ResponseBody List<SessionInfo> getSessionInfo(Principal principal) {
         if (principal instanceof EngineAuthorization authorization) {

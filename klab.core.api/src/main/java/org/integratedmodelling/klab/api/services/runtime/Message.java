@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
@@ -18,6 +19,7 @@ import java.io.Serializable;
 import java.net.URI;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Messages exchanged between scopes using {@link Channel#send(Object...)}. They will be sent through the
@@ -228,8 +230,9 @@ public interface Message extends Serializable {
         /**
          * Resolver event messages
          */
-        ResolutionSuccessful(Queue.Events, Long.class),
-        ResolutionAborted(Queue.Events, Long.class),
+        ResolutionSuccessful(Queue.Events, Observation.class),
+        ResolutionAborted(Queue.Events, Observation.class),
+        ResolutionStarted(Queue.Events, Observation.class),
 
 
         /**
@@ -269,6 +272,8 @@ public interface Message extends Serializable {
      */
     interface Match {
 
+        Match when(Predicate<Message> predicate);
+
         /**
          * This is called to ensure that the matcher remains active after the first match. The default is
          * false.
@@ -297,6 +302,8 @@ public interface Message extends Serializable {
         boolean isPersistent();
 
         Object getPayloadMatch();
+
+        Predicate<Message> getMessagePredicate();
     }
 
     /**
