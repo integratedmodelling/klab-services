@@ -42,15 +42,26 @@ public class RuntimeServerController {
         if (principal instanceof EngineAuthorization authorization) {
             var contextScope =
                     authorization.getScope(ContextScope.class).withResolutionConstraints(resolutionRequest.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
-            if (resolutionRequest.isStartResolution()) {
-                var task = contextScope.observe(resolutionRequest.getObservation());
-                return task.trackingKey();
-            } else if (contextScope instanceof ServiceContextScope serviceContextScope) {
+            if (contextScope instanceof ServiceContextScope serviceContextScope) {
                 var agent =
                         serviceContextScope.getDigitalTwin().knowledgeGraph().requireAgent(resolutionRequest.getAgentName());
                 return serviceContextScope
                         .withResolutionConstraints(ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, agent))
                         .insertIntoKnowledgeGraph(resolutionRequest.getObservation());
+            }
+        }
+        throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+    }
+
+    @PostMapping(ServicesAPI.RUNTIME.START_RESOLUTION)
+    public @ResponseBody String startResolution(ResolutionRequest request, Principal principal) {
+        if (principal instanceof EngineAuthorization authorization) {
+            var contextScope =
+                    authorization.getScope(ContextScope.class).withResolutionConstraints(request.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
+            if (contextScope instanceof ServiceContextScope serviceContextScope) {
+                var observation = serviceContextScope.getObservation(request.getObservationId());
+                runtimeService.klabService().resolve(observation.getId(), serviceContextScope);
+                return observation.getUrn();
             }
         }
         throw new KlabInternalErrorException("Unexpected implementation of request authorization");

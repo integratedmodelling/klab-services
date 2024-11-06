@@ -31,7 +31,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * The service-side {@link ContextScope}. Does most of the heavy lifting in the runtime service through the
@@ -48,18 +50,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     private Observation observer;
     private Observation contextObservation;
-    //    private Set<String> resolutionScenarios = new LinkedHashSet<>();
-    //    private Scale geometry = Scale.empty();
-    //    @Deprecated
-    //    private String resolutionNamespace;
-    //    @Deprecated
-    //    private String resolutionProject;
-    //    @Deprecated
-    //    private Map<Observable, Observation> catalog;
-    //    @Deprecated
-    //    private Map<String, Observable> namedCatalog = new HashMap<>();
-    //    @Deprecated
-    //    private Map<Concept, Concept> contextualizedPredicates = new HashMap<>();
     private URL url;
     private DigitalTwin digitalTwin;
     // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
@@ -204,55 +194,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
 
     @Override
-    public Task<Observation, Long> observe(Observation observation) {
+    public Future<Observation> observe(Observation observation) {
 
         if (!isOperative()) {
             return null;
         }
 
-        return observe(observation, null);
-
-    }
-
-    private Task<Observation, Long> observe(Observation observation, Activity parentActivity) {
-
-        // TODO FIXME this must just call the 2 new methods in the runtime and return the result.
-
-        // root-level activity when user is the agent. Inside resolution the activity may have children
-        var activity = digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().user(), this,
-                observation, Activity.Type.INSTANTIATION, parentActivity);
-
-        var id = activity.run(this);
-
-        // create task before resolution starts so we guarantee a response
-        var ret = newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
-                Message.MessageType.ResolutionSuccessful), Observation.class, id);
-
-        final var runtime = getService(RuntimeService.class);
-        final var resolver = getService(Resolver.class);
-
-        // start virtual resolution thread. This should be everything we need.
-        Thread.ofVirtual().start(() -> {
-            try {
-                var dataflow = resolver.resolve(observation, this);
-                if (dataflow != null) {
-                    if (!dataflow.isEmpty()) {
-                        /* TODO return value */
-                        runtime.runDataflow(dataflow, this);
-                    }
-                    activity.success(this, observation, dataflow);
-                } else {
-                    activity.fail(this, observation);
-                }
-                send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionSuccessful, id);
-            } catch (Throwable t) {
-                activity.fail(this, observation, t);
-                send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted, id);
-            }
-        });
-
-        return ret;
-
+        var runtime = getService(RuntimeService.class);
+        long taskId = runtime.submit(observation, this);
+        return runtime.resolve(taskId, this);
     }
 
     private void finalizeObservation(Observation observation, Dataflow<Observation> dataflow,

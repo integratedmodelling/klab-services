@@ -4,18 +4,22 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.impl.MatchImpl;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 import org.integratedmodelling.klab.api.services.runtime.impl.ScopeOptions;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Messages exchanged between scopes using {@link Channel#send(Object...)}. They will be sent through the
@@ -32,8 +36,6 @@ import java.util.function.Consumer;
  * @author ferdinando.villa
  */
 public interface Message extends Serializable {
-
-    public static Message NO_RESPONSE = null;
 
     /**
      * Different session/digital twin queues that a channel can subscribe to. The client should ask for the
@@ -55,20 +57,6 @@ public interface Message extends Serializable {
         UI,
         None
     }
-
-    //    @Deprecated
-    //    enum ForwardingPolicy {
-    //        /**
-    //         * Message was created locally and will be forwarded to paired scopes
-    //         */
-    //        Forward,
-    //        /**
-    //         * Message was forwarded from a paired scope and will not be further forwarded. This should
-    //         be the
-    //         * default policy for newly created messages.
-    //         */
-    //        DoNotForward
-    //    }
 
     /**
      * Message class. Ugly type name makes life easier.
@@ -173,7 +161,6 @@ public interface Message extends Serializable {
         private MessageClass(MessageType... messageTypes) {
             this.messageTypes = messageTypes == null ? new MessageType[]{} : messageTypes;
         }
-
     }
 
     /**
@@ -243,8 +230,9 @@ public interface Message extends Serializable {
         /**
          * Resolver event messages
          */
-        ResolutionSuccessful(Queue.Events, Long.class),
-        ResolutionAborted(Queue.Events, Long.class),
+        ResolutionSuccessful(Queue.Events, Observation.class),
+        ResolutionAborted(Queue.Events, Observation.class),
+        ResolutionStarted(Queue.Events, Observation.class),
 
 
         /**
@@ -276,10 +264,62 @@ public interface Message extends Serializable {
             this.queue = queue;
             this.payloadClass = payloadClass;
         }
-
     }
 
-    //    ForwardingPolicy getForwardingPolicy();
+    /**
+     * Matcher that can be used to match messages and specify actions to be taken upon match. The details can
+     * be opaque: filtering conditions are specified in the match() function that produces it.
+     */
+    interface Match {
+
+        Match when(Predicate<Message> predicate);
+
+        /**
+         * This is called to ensure that the matcher remains active after the first match. The default is
+         * false.
+         *
+         * @param persistent
+         */
+        Match persistent(boolean persistent);
+
+        /**
+         * Specify a message consumer to invoke when a matching message arrives. If persistency is false
+         * (default), the matcher is then removed from the
+         *
+         * @param consumer
+         * @return
+         */
+        Match thenDo(Consumer<Message> consumer);
+
+        Set<MessageClass> getApplicableClasses();
+
+        Set<MessageType> getApplicableTypes();
+
+        Set<Queue> getApplicableQueues();
+
+        Consumer<Message> getMessageConsumer();
+
+        boolean isPersistent();
+
+        Object getPayloadMatch();
+
+        Predicate<Message> getMessagePredicate();
+    }
+
+    /**
+     * Return a match for a message to which an action can be attached. The arguments are used to select the
+     * incoming message. This can be used in scopes to monitor queues.
+     *
+     * @param matchingArguments one or more {@link MessageType}, {@link MessageClass} (all are in OR) and/or
+     *                          payload to compare. A {@link Queue} can be passed to select a specific message
+     *                          queue if the MessageClass does not already resolve it. A
+     *                          <code>Predicate<Message></code> can also be passed although it will slow the
+     *                          matching down and shouldn't be the only criterion.
+     * @return a new Match object to use in any function that supports it.
+     */
+    static Match match(Object... matchingArguments) {
+        return MatchImpl.create(matchingArguments);
+    }
 
     /**
      * Unique ID for each message.

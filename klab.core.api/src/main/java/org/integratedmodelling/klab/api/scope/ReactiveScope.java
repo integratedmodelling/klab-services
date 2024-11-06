@@ -15,22 +15,6 @@ import java.util.concurrent.Future;
 public interface ReactiveScope extends MessagingChannel, Scope {
 
     /**
-     * A Task is a Future producing P and always able to produce a tracking ID T. Used throughout the system
-     * to access observations and tasks while they are being resolved.
-     *
-     * @param <P> the type of the final product once the task has finished
-     * @param <T> the type of the ID used to track the final product
-     * @deprecated use a simple Future<Observation> and abandon the tracking key which is now returned
-     *             explicitly.
-     */
-    interface Task<P, T> extends Future<P> {
-
-        @Deprecated // just use a future and obtain the tracking ID independently
-        T trackingKey();
-
-    }
-
-    /**
      * If this scope is owned by an agent, return the agent handle for communication.
      *
      * @return the agent or null.

@@ -39,23 +39,17 @@ public interface RuntimeService extends KlabService {
     }
 
     /**
-     * Submit an observation to the runtime in the passed scope. If startResolution is true, resolution will
-     * start after insertion in the knowledge graph. API calls will normally want to start the resolution;
-     * passing false is normally done only by the resolver itself, to create the observations that will later
-     * be resolved explicitly. In all cases the return value is the observation ID, which can be used to
-     * follow the resolution task progress through AMPQ messaging (if resolving and configured) or for polling
-     * and retrieval.
-     * <p>
-     * FIXME remove the startResolution parameter and call startResolution(long, scope) to keep the workflow
-     *       logical once the submission has worked.
+     * Submit an observation to the runtime in the passed scope. The return value is the observation ID, which
+     * should be passed to {@link #resolve(long, ContextScope)} to start the resolution unless the value is
+     * {@link Observation#UNASSIGNED_ID} which signals that the digital twin has rejected the observation (for
+     * example because one was already present). The observation exists in the DT in an unresolved state until
+     * resolution has finished.
      *
      * @param observation
      * @param scope
-     * @param startResolution if true, invoke the resolver and run the resolving dataflow, otherwise just add
-     *                        the asset to the graph
      * @return
      */
-    long submit(Observation observation, ContextScope scope, @Deprecated boolean startResolution);
+    long submit(Observation observation, ContextScope scope);
 
     /**
      * The main function of the runtime. It will be invoked externally only when the dataflow is externally
@@ -65,18 +59,19 @@ public interface RuntimeService extends KlabService {
      * @param contextScope
      * @return
      */
-    Coverage runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope);
+    Observation runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope);
 
     /**
      * Submit the ID of a valid observation to invoke the resolver, build a dataflow and run it to obtain the
      * resolved observation. Pass the ID of an accepted observation obtained through
-     * {@link #submit(Observation, ContextScope, boolean)}. The two operations are used in
+     * {@link #submit(Observation, ContextScope)}. The two operations are used in
      * {@link ContextScope#observe(Observation)} to provide the full functionality with notification to the
      * scope.
      *
      * @param id
      * @param scope
-     * @return
+     * @return the ID of the task running in the runtime, which must be identical to the observation URN and
+     * will be sent to the scope with the resolution result message.
      */
     Future<Observation> resolve(long id, ContextScope scope);
 

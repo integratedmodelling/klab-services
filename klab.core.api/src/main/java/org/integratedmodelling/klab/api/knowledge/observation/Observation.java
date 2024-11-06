@@ -70,14 +70,6 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
      */
     Observable getObservable();
 
-//    /**
-//     * The observer that/who made the observation. May be a simple identity (like the user in the main scope)
-//     * or a DirectObservation from (this or another) scope, which also implements Identity. Never null.
-//     *
-//     * @return
-//     */
-//    Identity getObserver();
-
     /**
      * True if the observation has been resolved. This will be false until the resolution task with the same
      * ID has finished. Dependent observation that are unresolved make the context inconsistent. Substantials
@@ -99,7 +91,7 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
      */
     Observation at(Locator locator);
 
-    static Observation EMPTY_OBSERVATION = new ObservationImpl() {
+    Observation EMPTY_OBSERVATION = new ObservationImpl() {
 
         @Override
         public boolean isEmpty() {
@@ -107,9 +99,16 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
         }
     };
 
-    public static Observation empty() {
+    static Observation empty() {
         return EMPTY_OBSERVATION;
     }
 
     Object getValue();
+
+    /**
+     * After resolution, this will report the 0-1 coverage resolved. Before resolution this will be 0.
+     *
+     * @return
+     */
+    double getResolvedCoverage();
 }
