@@ -133,6 +133,8 @@ public class ExecutionSequence {
 
         private void compile(Actuator actuator) {
 
+            // TODO compile info for provenance from actuator
+
             ScalarMapper scalarMapper = null;
 
             // TODO separate scalar calls into groups and compile them into one assembled functor
@@ -249,6 +251,9 @@ public class ExecutionSequence {
         }
 
         public boolean run() {
+
+            // TODO compile info for provenance, to be added to the KG at finalization
+
             for (var executor : executors) {
                 if (!executor.get()) {
                     return false;
@@ -261,21 +266,6 @@ public class ExecutionSequence {
     private void setExecutionContext(Object returnedValue) {
         this.currentExecutionContext = returnedValue;
     }
-
-    //    public ExecutionSequence(Actuator rootActuator, ServiceContextScope scope, DigitalTwin
-    //    digitalTwin) {
-    //        this.actuator = rootActuator;
-    //        this.scope = scope;
-    //        this.digitalTwin = digitalTwin;
-    //        // set or create the observation
-    //        if (actuator.getId() != Observation.UNASSIGNED_ID) {
-    //            this.observation = scope.getObservation(actuator.getId());
-    //        } else {
-    //            throw new KlabUnimplementedException("Creating observations when running external
-    //            dataflows");
-    //            // TODO this is needed for external dataflows
-    //        }
-    //    }
 
     public String statusLine() {
         return "Execution terminated";
