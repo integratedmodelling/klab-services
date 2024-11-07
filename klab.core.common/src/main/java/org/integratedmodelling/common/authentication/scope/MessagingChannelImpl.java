@@ -434,9 +434,9 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         return receiver;
     }
 
-    private class MessageFuture<T> implements Future<T> {
+    private static class MessageFuture<T> implements Future<T> {
 
-        private AtomicReference<T> payload = null;
+        private AtomicReference<T> payload = new AtomicReference<>();
         private AtomicBoolean resolved = new AtomicBoolean(false);
         private boolean cancelled;
         private final Message.Match match;
