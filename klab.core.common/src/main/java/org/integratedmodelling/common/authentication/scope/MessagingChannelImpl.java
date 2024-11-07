@@ -5,9 +5,11 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
@@ -42,9 +44,10 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     private final Map<Message.Queue, String> queueNames = new HashMap<>();
     private final Map<String, List<Consumer<Message>>> queueConsumers = new HashMap<>();
     private boolean connected;
-    private Map<Message.Match, MessageFuture<?>> messageFutures =
+    private static Map<String, Map<Message.Match, MessageFuture<?>>> messageFutures =
             Collections.synchronizedMap(new HashMap<>());
-    private Set<Message.Match> messageMatchers = Collections.synchronizedSet(new HashSet<>());
+    private static Map<String, Set<Message.Match>> messageMatchers =
+            Collections.synchronizedMap(new HashMap<>());
 
     public MessagingChannelImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity);
@@ -224,33 +227,42 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
 
                             System.out.println("ZIO PETARDO TARTUFATO " + message);
 
-                            List<Message.Match> remove = new ArrayList<>();
-                            for (var match : messageMatchers) {
-                                if (matchApplies(match, message)) {
-                                    if (match.getMessageConsumer() != null) {
-                                        // TODO put this in a virtual thread?
-                                        match.getMessageConsumer().accept(message);
-                                    }
-                                    if (!match.isPersistent()) {
-                                        remove.add(match);
-                                    }
-                                }
-                            }
-                            messageMatchers.removeAll(remove);
-                            remove.clear();
+                            // TODO skip this and put the ID in MessagingScope
+                            if (this instanceof SessionScope scope) {
+                                var id = scope.getId();
+                                var mMatchers = messageMatchers.get(id);
+                                var mFutures = messageFutures.get(id);
 
-                            for (var match : messageFutures.keySet()) {
-                                if (matchApplies(match, message)) {
-                                    if (match.getMessageConsumer() != null) {
-                                        // TODO put this in a virtual thread?
-                                        match.getMessageConsumer().accept(message);
+                                if (mMatchers != null) {
+                                    List<Message.Match> remove = new ArrayList<>();
+                                    for (var match : mMatchers) {
+                                        if (matchApplies(match, message)) {
+                                            if (match.getMessageConsumer() != null) {
+                                                // TODO put this in a virtual thread?
+                                                match.getMessageConsumer().accept(message);
+                                            }
+                                            if (!match.isPersistent()) {
+                                                remove.add(match);
+                                            }
+                                        }
                                     }
-                                    messageFutures.get(match).resolve(message);
-                                    remove.add(match);
+                                    remove.forEach(mMatchers::remove);
                                 }
-                            }
-                            for (var match : remove) {
-                                messageFutures.remove(match);
+
+                                if (mFutures != null) {
+                                    List<Message.Match> remove = new ArrayList<>();
+                                    for (var match : mFutures.keySet()) {
+                                        if (matchApplies(match, message)) {
+                                            if (match.getMessageConsumer() != null) {
+                                                // TODO put this in a virtual thread?
+                                                match.getMessageConsumer().accept(message);
+                                            }
+                                            mFutures.get(match).resolve(message);
+                                            remove.add(match);
+                                        }
+                                    }
+                                    remove.forEach(mFutures::remove);
+                                }
                             }
 
                             switch (queue) {
@@ -358,14 +370,26 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     }
 
     public void trackMessages(Message.Match... matchers) {
-
+        if (this instanceof SessionScope scope && matchers != null) {
+            for (var matcher : matchers) {
+                messageMatchers.computeIfAbsent(scope.getId(),
+                        s -> Collections.synchronizedSet(new HashSet<>())).add(matcher);
+            }
+        }
+        // TODO skip this and put the ID in MessagingScope
+        throw new KlabInternalErrorException("trackMessages called on unexpected object");
     }
 
     @Override
     public <T> Future<T> trackMessages(Message.Match match, Function<Message, T> supplier) {
-        var ret = new MessageFuture<T>(match, supplier);
-        this.messageFutures.put(match, ret);
-        return ret;
+        if (this instanceof SessionScope scope) {
+            var ret = new MessageFuture<T>(match, supplier);
+            messageFutures.computeIfAbsent(scope.getId(),
+                    s -> Collections.synchronizedMap(new HashMap<>())).put(match, ret);
+            return ret;
+        }
+        // TODO skip this and put the ID in MessagingScope
+        throw new KlabInternalErrorException("trackMessages called on unexpected object");
     }
 
     @Override
@@ -376,6 +400,11 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
             } catch (Throwable t) {
                 this.connection = null;
             }
+        }
+        // TODO skip this and put the ID in MessagingScope
+        if (this instanceof SessionScope scope) {
+            messageFutures.remove(scope.getId());
+            messageMatchers.remove(scope.getId());
         }
     }
 
