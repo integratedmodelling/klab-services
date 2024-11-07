@@ -29,6 +29,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -517,11 +518,25 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 Map.of("id", operation.getActivity().getId(), "properties", props), scope);
 
         for (var asset : results) {
-
+            if (asset instanceof Observation observation) {
+                updateObservation(observation, scope, operation.getActivity());
+            } else if (asset instanceof Dataflow<?> dataflow) {
+                storeDataflow(dataflow, scope, operation.getActivity());
+            }
         }
 
-        System.out.println((success ? "YEAH " : "FUCK ") + ": FINALIZE THIS SHIT");
     }
+
+    private void updateObservation(Observation observation, ContextScope scope, ActivityImpl activity) {
+        // set resolved flag to true; add final coverage
+    }
+
+    private void storeDataflow(Dataflow<?> dataflow, ContextScope scope, ActivityImpl activity) {
+        for (var actuator : dataflow.getComputation()) {
+
+        }
+    }
+
 
     @Override
     public <T extends RuntimeAsset> List<T> get(ContextScope scope, Class<T> resultClass,

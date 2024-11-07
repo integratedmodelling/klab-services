@@ -383,7 +383,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     @Override
     public <T> Future<T> trackMessages(Message.Match match, Function<Message, T> supplier) {
         if (this instanceof SessionScope scope) {
-            var ret = new MessageFuture<T>(match, supplier);
+            var ret = new MessageFuture<T>(match, supplier, scope.getId());
             messageFutures.computeIfAbsent(scope.getId(),
                     s -> Collections.synchronizedMap(new HashMap<>())).put(match, ret);
             return ret;
@@ -441,10 +441,12 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         private boolean cancelled;
         private final Message.Match match;
         private final Function<Message, T> supplier;
+        private String scopeId;
 
-        public MessageFuture(Message.Match match, Function<Message, T> supplier) {
+        public MessageFuture(Message.Match match, Function<Message, T> supplier, String scopeId) {
             this.match = match;
             this.supplier = supplier;
+            this.scopeId = scopeId;
         }
 
         public void resolve(Message message) {
@@ -455,7 +457,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
             this.cancelled = true;
-            return messageFutures.remove(match) != null;
+            return messageFutures.get(scopeId).remove(match) != null;
         }
 
         @Override
