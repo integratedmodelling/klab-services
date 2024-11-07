@@ -62,7 +62,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         String FIND_BY_PROPERTY = "MATCH (n:{type}) WHERE n.{property} = $value RETURN n";
         // retrieve ID as records().getFirst().get(keys().getFirst()) ?
         String CREATE_WITH_PROPERTIES = "CREATE (n:{type}) SET n = $properties RETURN id(n) as id";
-        String UPDATE_PROPERTIES = "MATCH (n) WHERE id(n) = $id SET n += $properties";
+        String UPDATE_PROPERTIES = "MATCH (n:{type}) WHERE id(n) = $id SET n += $properties";
         String INITIALIZATION_QUERY = "CREATE\n"
                 + "\t// main context node\n"
                 + "\t(ctx:Context {id: $contextId, name: $name, user: $username, created: $timestamp, " +
@@ -614,7 +614,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         for (var context : adapt(contexts, Map.class, scope)) {
             ContextInfo contextInfo = new ContextInfo();
             contextInfo.setId(context.get("id").toString());
-            contextInfo.setCreationTime((Long)context.get("created"));
+            contextInfo.setCreationTime((Long) context.get("created"));
             contextInfo.setName(context.get("name").toString());
             contextInfo.setUser(context.get("user").toString());
             contextInfos.add(contextInfo);
