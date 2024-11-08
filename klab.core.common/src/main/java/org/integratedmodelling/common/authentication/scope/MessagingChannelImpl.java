@@ -44,9 +44,10 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     private final Map<Message.Queue, String> queueNames = new HashMap<>();
     private final Map<String, List<Consumer<Message>>> queueConsumers = new HashMap<>();
     private boolean connected;
-    private static Map<String, Map<Message.Match, MessageFuture<?>>> messageFutures =
+
+    private static final Map<String, Map<Message.Match, MessageFuture<?>>> messageFutures =
             Collections.synchronizedMap(new HashMap<>());
-    private static Map<String, Set<Message.Match>> messageMatchers =
+    private static final Map<String, Set<Message.Match>> messageMatchers =
             Collections.synchronizedMap(new HashMap<>());
 
     public MessagingChannelImpl(Identity identity, boolean isSender, boolean isReceiver) {
@@ -68,10 +69,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         this.connection = parent.connection;
         this.connected = parent.connected;
         this.queueNames.putAll(parent.queueNames);
-        //        this.eventResultSupplierSet.addAll(parent.eventResultSupplierSet);
         this.queueConsumers.putAll(parent.queueConsumers);
-        this.messageFutures = parent.messageFutures;
-        this.messageMatchers = parent.messageMatchers;
     }
 
     @Override
