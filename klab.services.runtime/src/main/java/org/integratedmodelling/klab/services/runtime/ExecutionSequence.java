@@ -271,7 +271,7 @@ public class ExecutionSequence {
 
             long time = System.currentTimeMillis() - start;
             scope.getDigitalTwin().knowledgeGraph().updateObservation(observation, scope, "msInitialization"
-                    , time, "resolved", true);
+                    , time, "resolved", "coverage", observation.getResolvedCoverage());
 
             return true;
         }
