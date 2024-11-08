@@ -105,21 +105,22 @@ public class ExecutionSequence {
                         return false;
                     }
                 }
-                return true;
             } else {
                 try (ExecutorService taskExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
                     for (var operation : operationGroup) {
                         taskExecutor.execute(operation::run);
                     }
                     taskExecutor.shutdown();
-                    return taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+                    if (!taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)) {
+                        return false;
+                    }
                 } catch (InterruptedException e) {
                     scope.error(e);
                 }
             }
         }
 
-        return false;
+        return true;
     }
 
 

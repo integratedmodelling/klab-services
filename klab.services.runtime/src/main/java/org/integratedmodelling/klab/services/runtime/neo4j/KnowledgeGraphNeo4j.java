@@ -525,8 +525,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     public void updateObservation(Observation observation, ContextScope scope, Object... parameters) {
         // set resolved flag to true; add final coverage
         var props = asParameters(observation, parameters);
-        props.put("resolved", observation.isResolved());
-        props.put("coverage", observation.getResolvedCoverage());
         query(Queries.UPDATE_PROPERTIES.replace("{type}", "Observation"),
                 Map.of("id", observation.getId(), "properties", props), scope);
 

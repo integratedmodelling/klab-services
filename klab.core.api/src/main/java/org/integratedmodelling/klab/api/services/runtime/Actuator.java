@@ -210,27 +210,4 @@ public interface Actuator extends Serializable, RuntimeAsset {
      * @return the merged coverage of all models in or below this actuator.
      */
     Geometry getCoverage();
-
-
-//    /**
-//     * The observer on behalf of whom the observations are made. If null, the "objective" point of view of the
-//     * current session user is meant.
-//     *
-//     * @return
-//     */
-//    String getObserver();
-//
-//    /**
-//     * An actuator in a dataflow that is still being resolved may have deferrals, which are specific
-//     * observables that must be resolved in the context of the actuator's output observation, and are passed
-//     * to the resolver after making the observation and setting it as the context of resolution. The resulting
-//     * dataflow is appended to the actuator after resolution.
-//     * <p>
-//     * A dataflow that has deferrals anywhere in the chain cannot be serialized as it is not a valid
-//     * algorithm.
-//     * </p>
-//     *
-//     * @return
-//     */
-//    Queue<ObservationStrategy> getDeferrals();
 }
