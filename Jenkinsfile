@@ -22,7 +22,7 @@ pipeline {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'jenkins-im-communication', keyFileVariable: 'identity')]) {
                     sh './mvnw --projects klab.core.api javadoc:javadoc'
-                    sh 'rsync --archive --progress --delete --rsh="ssh -i ${identity} -o StrictHostKeyChecking=no" klab.core.api/target/site/apidocs/ ubuntu@192.168.250.200:repos/documents.production.compose/javadocs/'
+                    sh 'rsync --archive --progress --delete --rsh="ssh -i ${identity} -o StrictHostKeyChecking=no" klab.core.api/target/reports/apidocs/ ubuntu@192.168.250.200:repos/documents.production.compose/javadocs/'
                 }
                 withCredentials([usernamePassword(credentialsId: "${env.MINIO_CREDENTIALS}", passwordVariable: 'SECRETKEY', usernameVariable: 'ACCESSKEY')]) {
                     sh 'mc alias set minio $MINIO_HOST $ACCESSKEY $SECRETKEY'

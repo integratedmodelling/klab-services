@@ -374,13 +374,13 @@ public interface ServicesAPI {
         String SUBMIT_OBSERVATION = "/submit";
 
         /**
-         * GET endpoint to start the resolution of a previously submitted observation whose ID must be passed
+         * POST endpoint to start the resolution of a previously submitted observation whose ID must be passed
          * through the URL. Returns true/false; any notification happens through scope messaging and the scope
          * must be the same that generated the observation through {@link #SUBMIT_OBSERVATION}. Both the
          * request and the response may/must contain a {@link #TASK_ID_HEADER} with the ID of the task
          * started.
          */
-        String START_RESOLUTION = "/resolve/{id}";
+        String START_RESOLUTION = "/startResolution";
 
         /**
          * POST endpoint to retrieve one or more assets from the digital twin based on a query

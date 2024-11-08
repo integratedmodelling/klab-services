@@ -128,7 +128,7 @@ public class ResolverService extends BaseService implements Resolver {
     public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
         var ret = resolutionCompiler.resolve(observation, contextScope);
         if (!ret.isEmpty()) {
-            return new DataflowCompiler(ret, contextScope).compile();
+            return new DataflowCompiler(observation, ret, contextScope).compile();
         }
         return Dataflow.empty(Observation.class);
     }

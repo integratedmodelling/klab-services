@@ -21,7 +21,9 @@ public class DataflowImpl implements Dataflow<Observation> {
     private ResourceSet requirements;
     private Coverage coverage;
     private List<Actuator> computation = new ArrayList<>();
-    private long id;
+    private Observation target;
+    private double resolvedCoverage;
+    @Deprecated private long id;
 
     @Override
     public boolean isEmpty() {
@@ -103,7 +105,15 @@ public class DataflowImpl implements Dataflow<Observation> {
 
     public void computeCoverage() {
         // TODO Auto-generated method stub
+    }
 
+    @Override
+    public Observation getTarget() {
+        return target;
+    }
+
+    public void setTarget(Observation target) {
+        this.target = target;
     }
 
     @Override
@@ -113,5 +123,13 @@ public class DataflowImpl implements Dataflow<Observation> {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public double getResolvedCoverage() {
+        return resolvedCoverage;
+    }
+
+    public void setResolvedCoverage(double resolvedCoverage) {
+        this.resolvedCoverage = resolvedCoverage;
     }
 }

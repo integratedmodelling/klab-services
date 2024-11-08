@@ -31,6 +31,7 @@ public class DataflowCompiler {
 
     private final ResolutionGraph resolutionGraph;
     private final ContextScope scope;
+    private final Observation observation;
     private Set<Observation> catalog = new HashSet<>();
 
     /**
@@ -39,9 +40,10 @@ public class DataflowCompiler {
      * @param resolutionGraph
      * @param scope
      */
-    public DataflowCompiler(ResolutionGraph resolutionGraph, ContextScope scope) {
+    public DataflowCompiler(Observation observation, ResolutionGraph resolutionGraph, ContextScope scope) {
         this.resolutionGraph = resolutionGraph;
         this.scope = scope;
+        this.observation = observation;
     }
 
     /**
@@ -60,6 +62,8 @@ public class DataflowCompiler {
 
         Map<Observable, String> catalog = new HashMap<>();
         var ret = new DataflowImpl();
+        ret.setTarget(observation);
+        ret.setResolvedCoverage(resolutionGraph.getResolvedCoverage());
         for (var node : resolutionGraph.rootNodes()) {
             /*
             These MUST be observations. We check for now but it shouldn't happen.

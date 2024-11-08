@@ -233,6 +233,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
         OperationImpl ret = new OperationImpl();
 
+        ret.activity.setStart(System.currentTimeMillis());
+
         // first thing is to add the activity we represent
         ret.add(ret.activity);
 

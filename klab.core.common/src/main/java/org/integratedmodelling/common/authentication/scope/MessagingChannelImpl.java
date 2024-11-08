@@ -5,9 +5,11 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
@@ -42,9 +44,10 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     private final Map<Message.Queue, String> queueNames = new HashMap<>();
     private final Map<String, List<Consumer<Message>>> queueConsumers = new HashMap<>();
     private boolean connected;
-    private Map<Message.Match, MessageFuture<?>> messageFutures =
+    private static Map<String, Map<Message.Match, MessageFuture<?>>> messageFutures =
             Collections.synchronizedMap(new HashMap<>());
-    private Set<Message.Match> messageMatchers = Collections.synchronizedSet(new HashSet<>());
+    private static Map<String, Set<Message.Match>> messageMatchers =
+            Collections.synchronizedMap(new HashMap<>());
 
     public MessagingChannelImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity);
@@ -63,139 +66,13 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         this.receiver = parent.receiver;
         this.connectionFactory = parent.connectionFactory;
         this.connection = parent.connection;
+        this.connected = parent.connected;
         this.queueNames.putAll(parent.queueNames);
         //        this.eventResultSupplierSet.addAll(parent.eventResultSupplierSet);
         this.queueConsumers.putAll(parent.queueConsumers);
+        this.messageFutures = parent.messageFutures;
+        this.messageMatchers = parent.messageMatchers;
     }
-
-    //    /**
-    //     * Convenience Task implementation that delegates to a {@link CompletableFuture} tracking a
-    //     tracking key
-    //     * that is updated by messages.
-    //     *
-    //     * @param <T>
-    //     */
-    //    class TrackingTask<T> implements Task<T> {
-    //
-    //        private final CompletableFuture<T> delegate;
-    //        private final String urn;
-    //
-    //        public TrackingTask(Set<Message.MessageType> matchTypes, String urn, Function<Message, T>
-    //        payloadConverter) {
-    //            this.urn = urn;
-    //            delegate = CompletableFuture.supplyAsync(new EventResultSupplier<>(matchTypes, urn,
-    //                    payloadConverter));
-    //        }
-    //
-    //        @Override
-    //        public boolean cancel(boolean mayInterruptIfRunning) {
-    //            return delegate.cancel(mayInterruptIfRunning);
-    //        }
-    //
-    //        @Override
-    //        public boolean isCancelled() {
-    //            return delegate.isCancelled();
-    //        }
-    //
-    //        @Override
-    //        public boolean isDone() {
-    //            return delegate.isDone();
-    //        }
-    //
-    //        @Override
-    //        public T get() throws InterruptedException, ExecutionException {
-    //            return (T) delegate.get();
-    //        }
-    //
-    //        @Override
-    //        public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
-    //                TimeoutException {
-    //            return (T) delegate.get(timeout, unit);
-    //        }
-    //
-    //        @Override
-    //        public ContextScope getScope() {
-    //            return MessagingChannelImpl.this instanceof ContextScope scope ? scope : null;
-    //        }
-    //
-    //        @Override
-    //        public String getUrn() {
-    //            return urn;
-    //        }
-    //    }
-
-    //    /**
-    //     * Blocking supplier that waits for an event match, then returns the event payload. Can be used in a
-    //     * {@link java.util.concurrent.CompletableFuture#supplyAsync(Supplier)} to wait for an event.
-    //     *
-    //     * @param <T>
-    //     */
-    //    private class EventResultSupplier<T> implements Supplier<T> {
-    //
-    //        private final AtomicReference<Message> match = new AtomicReference<>();
-    //        private final Function<Message, T> converter;
-    //        Set<Message.MessageType> matchTypes;
-    //        private final String urn;
-    //
-    //        EventResultSupplier(Set<Message.MessageType> matchTypes, String urn, Function<Message, T>
-    //        payloadConverter) {
-    //            this.matchTypes = matchTypes;
-    //            this.urn = urn;
-    //            this.converter = payloadConverter;
-    //        }
-    //
-    //        public boolean match(Message message) {
-    //            if (matchTypes != null && matchTypes.contains(message.getMessageType())) {
-    //                if (urn != null && urn.equals(message.getPayload(String.class))) {
-    //                    synchronized (match) {
-    //                        match.set(message);
-    //                        match.notify();
-    //                    }
-    //                    return true;
-    //                }
-    //            }
-    //            return false;
-    //        }
-    //
-    //        @Override
-    //        public T get() {
-    //
-    //            synchronized (match) {
-    //                while (match.get() == null) {
-    //                    try {
-    //                        match.wait();
-    //                    } catch (InterruptedException e) {
-    //                        return null;
-    //                    }
-    //                }
-    //            }
-    //            eventResultSupplierSet.remove(this);
-    //            return converter.apply(match.get());
-    //        }
-    //    }
-
-    //    protected <T> Task<T> newMessageTrackingTask(Set<Message.MessageType> matchTypes,
-    //                                                 String urn) {
-    //        return newMessageTrackingTask(matchTypes, urn, null);
-    //    }
-    //
-    //    /**
-    //     * Return a future that exposes the tracking ID and produces the payload when the event message
-    //     matches.
-    //     *
-    //     * @param matchTypes
-    //     * @param payloadConverter this could be skipped and just use .thenApply on the enclosing future
-    //     * @param <T>
-    //     * @return
-    //     */
-    //    protected <T> Task<T> newMessageTrackingTask(Set<Message.MessageType> matchTypes,
-    //                                                                    String urn,
-    //                                                                    Function<Message, T>
-    //                                                                    payloadConverter) {
-    //        var ret = new EventResultSupplier<>(matchTypes, urn, payloadConverter);
-    //        eventResultSupplierSet.add(ret);
-    //        return new TrackingTask<>(matchTypes, urn, payloadConverter);
-    //    }
 
     @Override
     public Message send(Object... args) {
@@ -348,33 +225,44 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                                 }
                             }
 
-                            List<Message.Match> remove = new ArrayList<>();
-                            for (var match : messageMatchers) {
-                                if (matchApplies(match, message)) {
-                                    if (match.getMessageConsumer() != null) {
-                                        // TODO put this in a virtual thread?
-                                        match.getMessageConsumer().accept(message);
-                                    }
-                                    if (!match.isPersistent()) {
-                                        remove.add(match);
-                                    }
-                                }
-                            }
-                            messageMatchers.removeAll(remove);
-                            remove.clear();
+                            System.out.println("ZIO PETARDO TARTUFATO " + message);
 
-                            for (var match : messageFutures.keySet()) {
-                                if (matchApplies(match, message)) {
-                                    if (match.getMessageConsumer() != null) {
-                                        // TODO put this in a virtual thread?
-                                        match.getMessageConsumer().accept(message);
+                            // TODO skip this and put the ID in MessagingScope
+                            if (this instanceof SessionScope scope) {
+                                var id = scope.getId();
+                                var mMatchers = messageMatchers.get(id);
+                                var mFutures = messageFutures.get(id);
+
+                                if (mMatchers != null) {
+                                    List<Message.Match> remove = new ArrayList<>();
+                                    for (var match : mMatchers) {
+                                        if (matchApplies(match, message)) {
+                                            if (match.getMessageConsumer() != null) {
+                                                // TODO put this in a virtual thread?
+                                                match.getMessageConsumer().accept(message);
+                                            }
+                                            if (!match.isPersistent()) {
+                                                remove.add(match);
+                                            }
+                                        }
                                     }
-                                    messageFutures.get(match).resolve(message);
-                                    remove.add(match);
+                                    remove.forEach(mMatchers::remove);
                                 }
-                            }
-                            for (var match : remove) {
-                                messageFutures.remove(match);
+
+                                if (mFutures != null) {
+                                    List<Message.Match> remove = new ArrayList<>();
+                                    for (var match : mFutures.keySet()) {
+                                        if (matchApplies(match, message)) {
+                                            if (match.getMessageConsumer() != null) {
+                                                // TODO put this in a virtual thread?
+                                                match.getMessageConsumer().accept(message);
+                                            }
+                                            mFutures.get(match).resolve(message);
+                                            remove.add(match);
+                                        }
+                                    }
+                                    remove.forEach(mFutures::remove);
+                                }
                             }
 
                             switch (queue) {
@@ -482,14 +370,26 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     }
 
     public void trackMessages(Message.Match... matchers) {
-
+        if (this instanceof SessionScope scope && matchers != null) {
+            for (var matcher : matchers) {
+                messageMatchers.computeIfAbsent(scope.getId(),
+                        s -> Collections.synchronizedSet(new HashSet<>())).add(matcher);
+            }
+        }
+        // TODO skip this and put the ID in MessagingScope
+        throw new KlabInternalErrorException("trackMessages called on unexpected object");
     }
 
     @Override
     public <T> Future<T> trackMessages(Message.Match match, Function<Message, T> supplier) {
-        var ret = new MessageFuture<T>(match, supplier);
-        this.messageFutures.put(match, ret);
-        return ret;
+        if (this instanceof SessionScope scope) {
+            var ret = new MessageFuture<T>(match, supplier, scope.getId());
+            messageFutures.computeIfAbsent(scope.getId(),
+                    s -> Collections.synchronizedMap(new HashMap<>())).put(match, ret);
+            return ret;
+        }
+        // TODO skip this and put the ID in MessagingScope
+        throw new KlabInternalErrorException("trackMessages called on unexpected object");
     }
 
     @Override
@@ -500,6 +400,11 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
             } catch (Throwable t) {
                 this.connection = null;
             }
+        }
+        // TODO skip this and put the ID in MessagingScope
+        if (this instanceof SessionScope scope) {
+            messageFutures.remove(scope.getId());
+            messageMatchers.remove(scope.getId());
         }
     }
 
@@ -529,17 +434,19 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         return receiver;
     }
 
-    private class MessageFuture<T> implements Future<T> {
+    private static class MessageFuture<T> implements Future<T> {
 
-        private AtomicReference<T> payload = null;
+        private AtomicReference<T> payload = new AtomicReference<>();
         private AtomicBoolean resolved = new AtomicBoolean(false);
         private boolean cancelled;
         private final Message.Match match;
         private final Function<Message, T> supplier;
+        private String scopeId;
 
-        public MessageFuture(Message.Match match, Function<Message, T> supplier) {
+        public MessageFuture(Message.Match match, Function<Message, T> supplier, String scopeId) {
             this.match = match;
             this.supplier = supplier;
+            this.scopeId = scopeId;
         }
 
         public void resolve(Message message) {
@@ -550,7 +457,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
             this.cancelled = true;
-            return messageFutures.remove(match) != null;
+            return messageFutures.get(scopeId).remove(match) != null;
         }
 
         @Override

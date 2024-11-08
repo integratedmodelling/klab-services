@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -12,6 +13,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -105,31 +107,11 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities(serviceScope()).toString());
 
-        /*
-         * Components
-         */
-        Set<String> extensionPackages = new LinkedHashSet<>();
-        //        extensionPackages.add("org.integratedmodelling.klab.runtime");
-        //        extensionPackages.add("org.integratedmodelling.klab.runtime.temporary");
-
         if (createMainKnowledgeGraph()) {
-
-            /*
-             * Check for updates, load and scan all new plug-ins, returning the main packages to scan
-             * FIXME update, put in BaseService
-             */
-            //        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
 
             // TODO internal libraries
             getComponentRegistry().loadExtensions("org.integratedmodelling.klab.runtime");
             getComponentRegistry().initializeComponents(BaseService.getConfigurationSubdirectory(startupOptions, "components"));
-
-            //            for (String pack : extensionPackages) {
-            //                ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(
-            //                        Library.class,
-            //                        ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
-            //            }
-
             serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable
                     , capabilities(serviceScope()));
         } else {
@@ -172,10 +154,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         ret.setServiceId(configuration.getServiceId());
         ret.setServiceName("Runtime");
         ret.setBrokerURI(embeddedBroker != null ? embeddedBroker.getURI() : configuration.getBrokerURI());
-        //        ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(getUrl()) ?
-        //                                        EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
-        //                                                Message.Queue.Warnings) :
-        //                                        EnumSet.noneOf(Message.Queue.class));
         ret.setBrokerURI(embeddedBroker != null ? embeddedBroker.getURI() : configuration.getBrokerURI());
 
         return ret;
@@ -190,25 +168,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         Map<String, String> ret = new HashMap<>();
         return ret;
     }
-    //
-    //    /**
-    //     * Ensure that we have the runtime support for the passed service call. If we need a component to
-    //     serve
-    //     * it, check that the scope has access to it and load it if necessary as a background process.
-    //     Return all
-    //     * the relevant notifications which will be passed to clients. If one or more error notifications
-    //     are
-    //     * return, the service call is invalid and any dataflow it is part of is in error.
-    //     *
-    //     * @param call
-    //     * @param scope
-    //     * @return any notifications. Empty mean "all OK for execution".
-    //     */
-    //    public Collection<Notification> validateServiceCall(ServiceCall call, Scope scope) {
-    //        List<Notification> ret = new ArrayList<>();
-    //        // TODO
-    //        return ret;
-    //    }
 
     @Override
     public String registerSession(SessionScope sessionScope) {
@@ -339,12 +298,12 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                         activity.fail(scope, observation);
                     }
                     scope.send(Message.MessageClass.ObservationLifecycle,
-                            Message.MessageType.ResolutionSuccessful, id);
+                            Message.MessageType.ResolutionSuccessful, result);
                 } catch (Throwable t) {
                     ret.completeExceptionally(t);
                     activity.fail(scope, observation, t);
                     scope.send(Message.MessageClass.ObservationLifecycle,
-                            Message.MessageType.ResolutionAborted, id);
+                            Message.MessageType.ResolutionAborted, observation);
                 }
             });
 
@@ -387,7 +346,12 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         intersect coverage from dataflow with contextualization scale
          */
 
-        return null;
+        if (dataflow instanceof DataflowImpl df && dataflow.getTarget() instanceof ObservationImpl obs) {
+            obs.setResolved(true);
+            obs.setResolvedCoverage(df.getResolvedCoverage());
+        }
+
+        return dataflow.getTarget();
     }
 
     private DigitalTwin getDigitalTwin(ContextScope contextScope) {
@@ -397,33 +361,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         throw new KlabInternalErrorException("Digital twin is inaccessible because of unexpected scope " +
                 "implementation");
     }
-
-    //    private void run(Actuator rootActuator, ContextScope scope, DigitalTwin digitalTwin) {
-    //
-    //
-    //        /*
-    //        Turn the actuator hierarchy into a flat list in dependency order. Both actuator containment and
-    //        reference count as
-    //        dependencies between observations.
-    //         */
-    //        ExecutionSequence currentContext = executionSequence;
-    //        for (Actuator actuator : computeActuatorOrder(rootActuator, scope)) {
-    //
-    //            currentContext = currentContext.runActuator(actuator);
-    //
-    //            if (currentContext.isEmpty()) {
-    //                scope.error(currentContext.statusLine(), currentContext.errorCode(),
-    //                        currentContext.errorContext(), currentContext.statusInfo());
-    //                break;
-    //            }
-    //
-    //            /*
-    //            Observation was computed: submit the actuator and its provenance info to the digital twin
-    //             */
-    //
-    //        }
-    //
-    //    }
 
     private Graph<Actuator, DefaultEdge> computeActuatorOrder(Actuator rootActuator, ContextScope scope) {
         Graph<Actuator, DefaultEdge> dependencyGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
@@ -499,7 +436,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     public List<SessionInfo> getSessionInfo(Scope scope) {
         return knowledgeGraph.getSessionInfo(scope);
     }
-
 
     /**
      * Establish the order of execution and the possible parallelism. Each root actuator should be sorted by

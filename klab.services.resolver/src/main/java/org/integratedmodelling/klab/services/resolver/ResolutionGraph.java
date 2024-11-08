@@ -71,6 +71,9 @@ public class ResolutionGraph {
         return this.graph;
     }
 
+    public double getResolvedCoverage() {
+        return targetCoverage == null ? 0 : targetCoverage.getCoverage();
+    }
 
     private ResolutionGraph(Resolvable target, Scale scaleToCover, ResolutionGraph parent) {
 

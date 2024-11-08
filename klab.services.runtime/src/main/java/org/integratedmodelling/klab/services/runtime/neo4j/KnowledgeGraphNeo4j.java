@@ -29,6 +29,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -62,7 +63,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         String FIND_BY_PROPERTY = "MATCH (n:{type}) WHERE n.{property} = $value RETURN n";
         // retrieve ID as records().getFirst().get(keys().getFirst()) ?
         String CREATE_WITH_PROPERTIES = "CREATE (n:{type}) SET n = $properties RETURN id(n) as id";
-        String UPDATE_PROPERTIES = "MATCH (n) WHERE id(n) = $id SET n += $properties";
+        String UPDATE_PROPERTIES = "MATCH (n:{type}) WHERE id(n) = $id SET n += $properties";
         String INITIALIZATION_QUERY = "CREATE\n"
                 + "\t// main context node\n"
                 + "\t(ctx:Context {id: $contextId, name: $name, user: $username, created: $timestamp, " +
@@ -517,11 +518,25 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 Map.of("id", operation.getActivity().getId(), "properties", props), scope);
 
         for (var asset : results) {
-
+            if (asset instanceof Observation observation) {
+                updateObservation(observation, scope, operation.getActivity());
+            } else if (asset instanceof Dataflow<?> dataflow) {
+                storeDataflow(dataflow, scope, operation.getActivity());
+            }
         }
 
-        System.out.println((success ? "YEAH " : "FUCK ") + ": FINALIZE THIS SHIT");
     }
+
+    private void updateObservation(Observation observation, ContextScope scope, ActivityImpl activity) {
+        // set resolved flag to true; add final coverage
+    }
+
+    private void storeDataflow(Dataflow<?> dataflow, ContextScope scope, ActivityImpl activity) {
+        for (var actuator : dataflow.getComputation()) {
+
+        }
+    }
+
 
     @Override
     public <T extends RuntimeAsset> List<T> get(ContextScope scope, Class<T> resultClass,
@@ -614,7 +629,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         for (var context : adapt(contexts, Map.class, scope)) {
             ContextInfo contextInfo = new ContextInfo();
             contextInfo.setId(context.get("id").toString());
-            contextInfo.setCreationTime((Long)context.get("created"));
+            contextInfo.setCreationTime((Long) context.get("created"));
             contextInfo.setName(context.get("name").toString());
             contextInfo.setUser(context.get("user").toString());
             contextInfos.add(contextInfo);
