@@ -370,8 +370,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
             /**
-             * Download something into a file. If there is a "format" parameter, it must be a valid media
-             * type which will also determine the extension of the file.
+             * Download something into a file. If there is a "format" parameter, it must be a valid media type
+             * which will also determine the extension of the file.
              *
              * @param apiRequest
              * @param parameters
@@ -1357,8 +1357,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * Pack the arguments into a collection; if any argument is a collection, unpack its elements
-         * recursively so that no collections remain.
+         * Flatten the arguments into a single collection; if any argument is a collection or an array, unpack
+         * its elements recursively so that no collections remain.
          *
          * @param objects
          * @return

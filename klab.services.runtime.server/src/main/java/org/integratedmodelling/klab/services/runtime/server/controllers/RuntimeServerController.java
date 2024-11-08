@@ -47,7 +47,8 @@ public class RuntimeServerController {
                         serviceContextScope.getDigitalTwin().knowledgeGraph().requireAgent(resolutionRequest.getAgentName());
                 return serviceContextScope
                         .withResolutionConstraints(ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, agent))
-                        .insertIntoKnowledgeGraph(resolutionRequest.getObservation());
+                        .insertIntoKnowledgeGraph(resolutionRequest.getObservation(),
+                                "Observation of " + resolutionRequest.getObservation().getObservable().getUrn() + " made through REST endpoint in runtime " + runtimeService.klabService().serviceId());
             }
         }
         throw new KlabInternalErrorException("Unexpected implementation of request authorization");
@@ -59,6 +60,7 @@ public class RuntimeServerController {
             var contextScope =
                     authorization.getScope(ContextScope.class).withResolutionConstraints(request.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
             if (contextScope instanceof ServiceContextScope serviceContextScope) {
+
                 var observation = serviceContextScope.getObservation(request.getObservationId());
                 runtimeService.klabService().resolve(observation.getId(), serviceContextScope);
                 return observation.getUrn();

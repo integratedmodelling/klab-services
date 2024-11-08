@@ -1,11 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import org.hsqldb.rights.User;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -516,22 +511,32 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         props.put("end", System.currentTimeMillis());
         query(Queries.UPDATE_PROPERTIES.replace("{type}", "Activity"),
                 Map.of("id", operation.getActivity().getId(), "properties", props), scope);
-
         for (var asset : results) {
             if (asset instanceof Observation observation) {
-                updateObservation(observation, scope, operation.getActivity());
+                // NO these must be done within the tasks
+//                updateObservation(observation, scope, operation.getActivity());
             } else if (asset instanceof Dataflow<?> dataflow) {
                 storeDataflow(dataflow, scope, operation.getActivity());
             }
         }
-
     }
 
-    private void updateObservation(Observation observation, ContextScope scope, ActivityImpl activity) {
+    @Override
+    public void updateObservation(Observation observation, ContextScope scope, Object... parameters) {
         // set resolved flag to true; add final coverage
+        var props = asParameters(observation, parameters);
+        props.put("resolved", observation.isResolved());
+        props.put("coverage", observation.getResolvedCoverage());
+        query(Queries.UPDATE_PROPERTIES.replace("{type}", "Observation"),
+                Map.of("id", observation.getId(), "properties", props), scope);
+
     }
 
     private void storeDataflow(Dataflow<?> dataflow, ContextScope scope, ActivityImpl activity) {
+
+        // rebuild the actuator structure; each actuator with the source code of its contextualizers
+        // link the root actuators to this activity as plan with an order parameter in the link
+        // link each actuator to the observation it contextualized
         for (var actuator : dataflow.getComputation()) {
 
         }

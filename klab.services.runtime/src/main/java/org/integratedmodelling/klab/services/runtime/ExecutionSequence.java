@@ -94,30 +94,38 @@ public class ExecutionSequence {
                 if (!operationGroup.getFirst().run()) {
                     return false;
                 }
-            } else if (!operationGroup.isEmpty()) {
-                if (scope.getParallelism() == Parallelism.ONE) {
+            }
+
+            /**
+             * Run also the empty operations because execution will update the observations
+             */
+            if (scope.getParallelism() == Parallelism.ONE) {
+                for (var operation : operationGroup) {
+                    if (!operation.run()) {
+                        return false;
+                    }
+                }
+                return true;
+            } else {
+                try (ExecutorService taskExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
                     for (var operation : operationGroup) {
-                        if (!operation.run()) {
-                            return false;
-                        }
+                        taskExecutor.execute(operation::run);
                     }
-                    return true;
-                } else {
-                    try (ExecutorService taskExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
-                        for (var operation : operationGroup) {
-                            taskExecutor.execute(operation::run);
-                        }
-                        taskExecutor.shutdown();
-                        return taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-                    } catch (InterruptedException e) {
-                    }
+                    taskExecutor.shutdown();
+                    return taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+                } catch (InterruptedException e) {
+                    scope.error(e);
                 }
             }
         }
+
         return false;
     }
 
 
+    /**
+     * One operation per observation. Successful execution will update the observation in the DT.
+     */
     class ExecutorOperation {
 
         private final long id;
@@ -253,12 +261,17 @@ public class ExecutionSequence {
         public boolean run() {
 
             // TODO compile info for provenance, to be added to the KG at finalization
-
+            long start = System.currentTimeMillis();
             for (var executor : executors) {
                 if (!executor.get()) {
                     return false;
                 }
             }
+
+            long time = System.currentTimeMillis() - start;
+            scope.getDigitalTwin().knowledgeGraph().updateObservation(observation, scope, "msInitialization"
+                    , time, "resolved", true);
+
             return true;
         }
     }

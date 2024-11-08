@@ -144,7 +144,8 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
             props.put("klab.service.options", options);
             props.put("server.port", "" + options.getPort());
             props.put("spring.main.banner-mode", "off");
-            props.put("logging.file", logFile.toPath().toString());
+            props.put("logging.config", "classpath:logback-spring.xml");
+            props.put("logging.file.name", logFile.toPath().toString());
             props.put("server.servlet.contextPath", options.getContextPath());
             props.put("spring.servlet.multipart.max-file-size", options.getMaxMultipartFileSize());
             props.put("spring.servlet.multipart.max-request-size", options.getMaxMultipartRequestSize());

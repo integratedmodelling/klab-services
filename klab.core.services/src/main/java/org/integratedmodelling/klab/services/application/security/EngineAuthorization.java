@@ -98,7 +98,8 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
      */
     private Scope scope;
 
-    public EngineAuthorization(String partnerId, String username, Collection<String> groups, Collection<Role> roles) {
+    public EngineAuthorization(String partnerId, String username, Collection<String> groups,
+                               Collection<Role> roles) {
         super(roles);
         this.partnerId = new Credentials(partnerId);
         this.username = new Credentials(username);
@@ -119,53 +120,6 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
         }
     }
 
-    //    public static EngineAuthorization anonymous(/*ServiceScope scope*/) {
-    //        var ret = EngineAuthorization.create(/*scope, null*/);
-    //        ret.setExpiration(Instant.now().plus(Duration.ofDays(1)));
-    //        ret.setAuthenticated(true);
-    //        // no roles, no groups
-    //        ret.roles = EnumSet.noneOf(Role.class);
-    //        ret.groups = Collections.emptyList();
-    //        return ret;
-    //    }
-
-    /**
-     * Create an authorization principal in service scope with full privileges.
-     *
-     * @param scope
-     * @return
-     */
-    //    public static EngineAuthorization create(/*Scope scope, String serviceSecret*/) {
-    //
-    //        String partnerIdentity = null;
-    //        String scopeIdentity = null;
-    //
-    //        Identity identity = scope.getIdentity();
-    //
-    //        Set<Role> roles = EnumSet.noneOf(Role.class);
-    //        if (identity instanceof UserIdentity user) {
-    //            scopeIdentity = user.getUsername();
-    //            // TODO find out the partner for the user, set partner identity
-    //        } // TODO partner identity, context, session etc
-    ////        if (scope instanceof ServiceScope serviceScope) {
-    ////            // TODO fix the actual roles we want
-    ////            roles = EnumSet.of(Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER,
-    ////                    Role.ROLE_DATA_MANAGER);
-    ////            if (scopeIdentity == null) {
-    ////
-    ////            }
-    ////        }
-    //        if (partnerIdentity == null) {
-    //            partnerIdentity = scopeIdentity;
-    //        }
-    //        var ret = new EngineAuthorization(partnerIdentity, scopeIdentity, roles);
-    //        ret.setAuthenticated(true);
-    ////        ret.setScope(scope);
-    ////        if (serviceSecret != null) {
-    ////            ret.setTokenString(serviceSecret);
-    ////        }
-    //        return ret;
-    //    }
     @Override
     public Credentials getCredentials() {
         return tokenString;
@@ -199,10 +153,6 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
     public Collection<Role> getRoles() {
         return roles;
     }
-
-    //    public String getTokenString() {
-    //        return tokenString.value;
-    //    }
 
     public String getUsername() {
         return username.value;

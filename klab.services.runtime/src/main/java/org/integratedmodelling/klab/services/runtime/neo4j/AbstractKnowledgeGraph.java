@@ -308,9 +308,10 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
      * Define all properties for the passed asset.
      *
      * @param asset
+     * @param additionalParameters any pair of additional parameters to add
      * @return
      */
-    protected Map<String, Object> asParameters(Object asset) {
+    protected Map<String, Object> asParameters(Object asset, Object... additionalParameters) {
         Map<String, Object> ret = new HashMap<>();
         switch (asset) {
             case Observation observation -> {
@@ -344,6 +345,13 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
             default -> throw new KlabInternalErrorException(
                     "unexpected value for asParameters: " + asset.getClass().getCanonicalName());
         }
+
+        if (additionalParameters != null) {
+            for (int i = 0; i < additionalParameters.length; i++) {
+                ret.put(additionalParameters[i].toString(), additionalParameters[++i]);
+            }
+        }
+
         return ret;
     }
 

@@ -84,7 +84,7 @@ public @interface ResourceAdapter {
 	 */
 	@Documented
 	@Retention(RetentionPolicy.RUNTIME)
-	@Target(ElementType.METHOD)
+	@Target({ElementType.METHOD, ElementType.TYPE})
 	public @interface Validator {
 
 		enum LifecyclePhase {
@@ -158,7 +158,7 @@ public @interface ResourceAdapter {
 	 */
 	@Documented
 	@Retention(RetentionPolicy.RUNTIME)
-	@Target(ElementType.METHOD)
+	@Target({ElementType.METHOD, ElementType.TYPE})
 	public @interface Encoder {
 
 	}
@@ -192,21 +192,21 @@ public @interface ResourceAdapter {
 	 */
 	@Documented
 	@Retention(RetentionPolicy.RUNTIME)
-	@Target(ElementType.METHOD)
+	@Target({ElementType.METHOD, ElementType.TYPE})
 	public @interface Inspector {
 
 	}
 
 	@Documented
 	@Retention(RetentionPolicy.RUNTIME)
-	@Target(ElementType.TYPE)
+	@Target({ElementType.METHOD, ElementType.TYPE})
 	public @interface Importer {
 
 	}
 
 	@Documented
 	@Retention(RetentionPolicy.RUNTIME)
-	@Target(ElementType.TYPE)
+	@Target({ElementType.METHOD, ElementType.TYPE})
 	public @interface Exporter {
 
 	}
@@ -221,7 +221,7 @@ public @interface ResourceAdapter {
 	 */
 	@Documented
 	@Retention(RetentionPolicy.RUNTIME)
-	@Target(ElementType.TYPE)
+	@Target({ElementType.METHOD, ElementType.TYPE})
 	public @interface Type {
 		// no parameters
 	}

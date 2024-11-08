@@ -3,7 +3,9 @@ package org.integratedmodelling.klab.api.data;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
+import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -217,6 +219,15 @@ public interface KnowledgeGraph {
      */
     <T extends RuntimeAsset> List<T> get(RuntimeAsset source, DigitalTwin.Relationship linkType,
                                          Class<T> resultClass);
+
+    /**
+     * Called when an observation has been contextualized
+     *
+     * @param observation
+     * @param scope
+     * @param arguments additional parameters to add to the observation or to override existing ones
+     */
+    void updateObservation(Observation observation, ContextScope scope, Object... arguments);
 
     /**
      * Query starting at the point implied by the scope and return matching objects using the query parameters

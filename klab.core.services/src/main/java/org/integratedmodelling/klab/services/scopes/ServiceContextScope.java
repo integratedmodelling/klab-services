@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
+import org.jgrapht.util.CollectionUtil;
 import org.ojalgo.concurrent.Parallelism;
 
 import java.io.Closeable;
@@ -107,11 +108,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.observationCache =
                 CacheBuilder.newBuilder().maximumSize(MAX_CACHED_OBSERVATIONS).build(new CacheLoader<Long,
                         Observation>() {
-            @Override
-            public Observation load(Long key) throws Exception {
-                return digitalTwin.knowledgeGraph().get(key, Observation.class);
-            }
-        });
+                    @Override
+                    public Observation load(Long key) throws Exception {
+                        return digitalTwin.knowledgeGraph().get(key, Observation.class);
+                    }
+                });
         /*
          * TODO choose the services if this context or user requires specific ones
          */
@@ -142,7 +143,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
      * Retrieve the observation with the passed ID straight from the digital twin. This is non-API and is the
      * fastest way. The knowledge graph should in turn cache scales, so that no geometries are created
      * unnecessarily.
-     *
+     * <p>
      * TODO check if the caching logic should be entirely within the knowledge graph (probably).
      *
      * @param id
@@ -423,10 +424,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         }
     }
 
-    public long insertIntoKnowledgeGraph(Observation observation) {
+    public long insertIntoKnowledgeGraph(Observation observation, Object... arguments) {
 
         var activity = digitalTwin.knowledgeGraph().activity(Provenance.getAgent(this),
-                this, Activity.Type.INSTANTIATION).add(observation);
+                this, Utils.Collections.flatCollection(Activity.Type.INSTANTIATION, arguments).toArray()).add(observation);
         if (getContextObservation() != null) {
             activity = activity.link(getContextObservation(), observation,
                     DigitalTwin.Relationship.HAS_CHILD);
