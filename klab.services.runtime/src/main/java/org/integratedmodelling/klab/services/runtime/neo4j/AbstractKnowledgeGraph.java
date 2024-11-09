@@ -18,6 +18,8 @@ import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 
 import java.util.ArrayList;
@@ -37,10 +39,9 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                     RuntimeAsset>() {
                 @Override
                 public RuntimeAsset load(Long key) throws Exception {
-                    return getAssetForKey(key);
+                    return retrieve(key, RuntimeAsset.class, scope);
                 }
             });
-
 
     public record Step(OperationImpl.Type type, List<RuntimeAsset> targets, Object[] parameters) {
     }
@@ -210,9 +211,59 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
     }
 
-    protected RuntimeAsset getAssetForKey(long key) {
-        throw new KlabUnimplementedException("RETRIEVAL OF ARBITRARY ASSET FROM DB INTO CACHE");
-    }
+    protected abstract RuntimeAsset getContextNode();
+
+    /**
+     * Return a RuntimeAsset representing the overall dataflow related to the scope, so that it can be used
+     * for linking using the other CRUD methods.
+     *
+     * @return the dataflow root node, unique for the context.
+     * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException if the graph is not
+     *                                                                               contextualized.
+     */
+    protected abstract RuntimeAsset getDataflowNode();
+
+    /**
+     * Return a RuntimeAsset representing the overall provenance related to the scope, so that it can be used
+     * for linking using the other CRUD methods.
+     *
+     * @return the dataflow root node, unique for the context.
+     * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException if the graph is not
+     *                                                                               contextualized.
+     */
+    protected abstract RuntimeAsset getProvenanceNode();
+
+    /**
+     * Retrieve the asset with the passed key.
+     *
+     * @param key
+     * @param assetClass
+     * @param <T>
+     * @return
+     */
+    protected abstract <T extends RuntimeAsset> T retrieve(long key, Class<T> assetClass, Scope scope);
+
+    /**
+     * Store the passed asset, return its unique long ID.
+     *
+     * @param asset
+     * @param additionalProperties any pair of properties we want overridden. Pass pairs and do it right or
+     *                             you'll get an exception.
+     * @return
+     */
+    protected abstract long store(RuntimeAsset asset, Scope scope, Object... additionalProperties);
+
+    /**
+     * Link the two passed assets.
+     *
+     * @param source
+     * @param destination
+     * @param additionalProperties any pair of properties we want overridden. Pass pairs and do it right or
+     *                             you'll get an exception.
+     */
+    protected abstract void link(RuntimeAsset source, RuntimeAsset destination,
+                                 DigitalTwin.Relationship relationship, Scope scope,
+                                 Object... additionalProperties);
 
     protected abstract long runOperation(OperationImpl operation, ContextScope scope);
 
@@ -297,7 +348,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     @Override
     public <T extends RuntimeAsset> T get(long id, Class<T> resultClass) {
         try {
-            return (T)assetCache.get(id);
+            return (T) assetCache.get(id);
         } catch (ExecutionException e) {
             scope.error(e);
             return null;
@@ -329,7 +380,17 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                 // TODO
             }
             case Actuator actuator -> {
-                // TODO
+
+                ret.put("observationId", actuator.getId());
+
+                StringBuilder code = new StringBuilder();
+                for (var call : actuator.getComputation()) {
+                    // TODO skip any recursive resolution calls and prepare for linking later
+                    code.append(call.encode(Language.DEFAULT_EXPRESSION_LANGUAGE)).append("\n");
+                }
+                ret.put("semantics", actuator.getObservable().getUrn());
+                ret.put("computation", code.toString());
+                ret.put("strategy", actuator.getStrategyUrn());
             }
             case Activity activity -> {
                 ret.putAll(activity.getMetadata());

@@ -5,7 +5,6 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -26,7 +25,6 @@ import org.integratedmodelling.klab.runtime.storage.KeyedStorage;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.ojalgo.concurrent.Parallelism;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -274,7 +272,7 @@ public class ExecutionSequence {
             }
 
             long time = System.currentTimeMillis() - start;
-            scope.getDigitalTwin().knowledgeGraph().updateObservation(observation, scope, "msInitialization"
+            scope.getDigitalTwin().knowledgeGraph().update(observation, scope, "msInitialization"
                     , time, "resolved", true, "coverage", resolvedCoverage);
 
             return true;

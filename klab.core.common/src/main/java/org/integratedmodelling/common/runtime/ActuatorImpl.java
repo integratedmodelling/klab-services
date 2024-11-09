@@ -25,6 +25,7 @@ public class ActuatorImpl implements Actuator {
     private Geometry coverage = Geometry.EMPTY;
     private Parameters<String> data = Parameters.create();
     private Actuator.Type actuatorType;
+    private long internalId; // ID within the graph, can't be the same as the observation
 
     @Override
     public long getId() {
@@ -82,6 +83,7 @@ public class ActuatorImpl implements Actuator {
     public void setName(String name) {
         this.name = name;
     }
+
     public void setType(Artifact.Type type) {
         this.type = type;
     }
@@ -97,6 +99,7 @@ public class ActuatorImpl implements Actuator {
     public void setComputation(List<ServiceCall> computation) {
         this.computation = computation;
     }
+
     public void setCoverage(Geometry coverage) {
         this.coverage = coverage;
     }
@@ -112,6 +115,14 @@ public class ActuatorImpl implements Actuator {
 
     public void setActuatorType(Type actuatorType) {
         this.actuatorType = actuatorType;
+    }
+
+    public long getInternalId() {
+        return internalId;
+    }
+
+    public void setInternalId(long internalId) {
+        this.internalId = internalId;
     }
 
     @Override

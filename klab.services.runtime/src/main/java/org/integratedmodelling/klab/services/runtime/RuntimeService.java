@@ -277,7 +277,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             var resolver = serviceContextScope.getService(Resolver.class);
             var observation = serviceContextScope.getObservation(id);
             var digitalTwin = getDigitalTwin(scope);
-            var activity = digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().user(), scope,
+            var activity = digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().klab(), scope,
                     observation, Activity.Type.RESOLUTION, null);
 
             final var ret = new CompletableFuture<Observation>();
