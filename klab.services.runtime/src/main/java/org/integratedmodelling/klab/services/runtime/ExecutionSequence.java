@@ -44,6 +44,7 @@ public class ExecutionSequence {
     private final DigitalTwin digitalTwin;
     private final Language languageService;
     private final ComponentRegistry componentRegistry;
+    private final double resolvedCoverage;
     private List<List<ExecutorOperation>> sequence = new ArrayList<>();
     private boolean empty;
     // the context for the next operation. Starts at the observation and doesn't normally change but
@@ -52,12 +53,14 @@ public class ExecutionSequence {
     // TODO check if this should be a RuntimeAsset or even an Observation.
     private Object currentExecutionContext;
 
-    private ExecutionSequence(List<Pair<Actuator, Integer>> pairs, ServiceContextScope contextScope,
+    private ExecutionSequence(List<Pair<Actuator, Integer>> pairs, double resolvedCoverage,
+                              ServiceContextScope contextScope,
                               DigitalTwin digitalTwin, ComponentRegistry componentRegistry) {
         this.scope = contextScope;
         this.digitalTwin = digitalTwin;
         this.languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
         this.componentRegistry = componentRegistry;
+        this.resolvedCoverage = resolvedCoverage;
         List<ExecutorOperation> current = null;
         int currentGroup = -1;
         for (var pair : pairs) {
@@ -78,9 +81,10 @@ public class ExecutionSequence {
     }
 
     public static ExecutionSequence compile(List<Pair<Actuator, Integer>> pairs,
-                                            ServiceContextScope contextScope, DigitalTwin digitalTwin,
+                                            double resolvedCoverage, ServiceContextScope contextScope,
+                                            DigitalTwin digitalTwin,
                                             ComponentRegistry componentRegistry) {
-        return new ExecutionSequence(pairs, contextScope, digitalTwin, componentRegistry);
+        return new ExecutionSequence(pairs, resolvedCoverage, contextScope, digitalTwin, componentRegistry);
     }
 
     public boolean run() {
@@ -271,7 +275,7 @@ public class ExecutionSequence {
 
             long time = System.currentTimeMillis() - start;
             scope.getDigitalTwin().knowledgeGraph().updateObservation(observation, scope, "msInitialization"
-                    , time, "resolved", "coverage", observation.getResolvedCoverage());
+                    , time, "resolved", true, "coverage", resolvedCoverage);
 
             return true;
         }

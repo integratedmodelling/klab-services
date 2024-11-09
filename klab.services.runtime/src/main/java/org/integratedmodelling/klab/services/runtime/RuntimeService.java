@@ -334,7 +334,9 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         for (var rootActuator : dataflow.getComputation()) {
             ExecutionSequence executionSequence = ExecutionSequence.compile(sortComputation(rootActuator,
                     dataflow,
-                    contextScope), (ServiceContextScope) contextScope, digitalTwin, getComponentRegistry());
+                    contextScope), (dataflow instanceof DataflowImpl dataflow1 ?
+                                    dataflow1.getResolvedCoverage() : 1.0),
+                    (ServiceContextScope) contextScope, digitalTwin, getComponentRegistry());
             if (!executionSequence.isEmpty()) {
                 if (!executionSequence.run()) {
                     return Observation.empty();
