@@ -208,11 +208,6 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public boolean scopesAreReactive() {
-        return false;
-    }
-
-    @Override
     public List<ResourceSet> projects(Collection<String> projects, Scope scope) {
         // TODO Auto-generated method stub
         return null;

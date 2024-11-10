@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.actors.KAgent;
 import org.integratedmodelling.klab.services.actors.UserAgent;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
@@ -48,7 +49,7 @@ public class ScopeManager {
 
         this.service = service;
 
-        if (service.scopesAreReactive()) {
+        if (service instanceof  BaseService baseService && baseService.scopesAreReactive()) {
             /*
              * boot the actor system right away, so that we can call login() before boot().
              */
@@ -112,9 +113,9 @@ public class ScopeManager {
                 }
             }
 
-            if (service.scopesAreReactive()) {
+            if (service instanceof BaseService baseService && baseService.scopesAreReactive()) {
                 /**
-                 * TODO agents should only be created for services that request them
+                 * agents are only created for services that request them
                  */
                 String agentName = KAgent.sanitizeName(user.getUsername());
                 // TODO move to lazy logics

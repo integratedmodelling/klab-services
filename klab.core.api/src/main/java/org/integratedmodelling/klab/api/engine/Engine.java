@@ -154,9 +154,4 @@ public interface Engine extends KlabService {
      */
     Map<Setting, Object> getSettings();
 
-    @Override
-    default boolean scopesAreReactive() {
-        return false;
-    }
-
 }

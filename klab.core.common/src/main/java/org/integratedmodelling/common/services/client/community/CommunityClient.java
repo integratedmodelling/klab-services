@@ -51,4 +51,5 @@ public class CommunityClient extends ServiceClient implements Community {
     public String getServiceName() {
         return null;
     }
+
 }

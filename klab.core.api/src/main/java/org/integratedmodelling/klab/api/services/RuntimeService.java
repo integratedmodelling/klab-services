@@ -157,11 +157,6 @@ public interface RuntimeService extends KlabService {
      */
     Capabilities capabilities(Scope scope);
 
-    @Override
-    default boolean scopesAreReactive() {
-        return true;
-    }
-
     /**
      * Retrieve information for all the active sessions accessible to the passed scope. The info is enough to
      * recreate the same scopes at client side.

@@ -747,6 +747,11 @@ public class ResolverService extends BaseService implements Resolver {
     //    }
 
     @Override
+    public boolean scopesAreReactive() {
+        return false;
+    }
+
+    @Override
     public void initializeService() {
 
         Logging.INSTANCE.setSystemIdentifier("Resolver service: ");

@@ -99,6 +99,16 @@ public abstract class BaseService implements KlabService {
     }
 
     /**
+     * If true, the user/session/context scopes managed by the service should return a valid
+     * {@link org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref} to run behaviors and
+     * applications. At the moment only the runtime has this requirement to support agentive observations.
+     * Returning true will initialize an actor system on boot and provide an agent to each new scope.
+     *
+     * @return
+     */
+    public abstract boolean scopesAreReactive();
+
+    /**
      * Each service creates a secret key and stores in a text file in its work directory. The service key is
      * created only if absent and remains the same across boot cycles. It is used to grant "local" admin
      * privileges to any client that can find it and read it from the filesystem. The secret key can be added

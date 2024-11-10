@@ -100,6 +100,11 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     @Override
+    public boolean scopesAreReactive() {
+        return true;
+    }
+
+    @Override
     public void initializeService() {
 
         Logging.INSTANCE.setSystemIdentifier("Runtime service: ");

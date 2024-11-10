@@ -91,11 +91,6 @@ public interface Resolver extends KlabService {
      */
     String encodeDataflow(Dataflow<Observation> dataflow);
 
-    @Override
-    default boolean scopesAreReactive() {
-        return false;
-    }
-
 //    /**
 //     * Query all the resource servers available to find models that can observe the passed observable in the
 //     * scope. The result should be merged to keep the latest available versions and ranked in decreasing order

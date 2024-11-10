@@ -18,6 +18,11 @@ public class CommunityService extends BaseService implements Community {
     }
 
     @Override
+    public boolean scopesAreReactive() {
+        return false;
+    }
+
+    @Override
     public void initializeService() {
 
     }
