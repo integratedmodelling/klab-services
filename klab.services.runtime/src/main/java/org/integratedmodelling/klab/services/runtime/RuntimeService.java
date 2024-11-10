@@ -293,7 +293,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                             result = runDataflow(dataflow, scope);
                             ret.complete(result);
                         }
-                        activity.success(scope, result, dataflow);
+                        activity.success(scope, result, dataflow,
+                                "Resolution of observation _" + observation.getUrn() + "_ of **" + observation.getObservable().getUrn() + "**");
                     } else {
                         activity.fail(scope, observation);
                     }
@@ -333,9 +334,9 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
          */
         for (var rootActuator : dataflow.getComputation()) {
             ExecutionSequence executionSequence = ExecutionSequence.compile(sortComputation(rootActuator,
-                    dataflow,
-                    contextScope), (dataflow instanceof DataflowImpl dataflow1 ?
-                                    dataflow1.getResolvedCoverage() : 1.0),
+                            dataflow,
+                            contextScope), (dataflow instanceof DataflowImpl dataflow1 ?
+                                            dataflow1.getResolvedCoverage() : 1.0),
                     (ServiceContextScope) contextScope, digitalTwin, getComponentRegistry());
             if (!executionSequence.isEmpty()) {
                 if (!executionSequence.run()) {

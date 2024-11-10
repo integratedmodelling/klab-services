@@ -102,7 +102,7 @@ public interface KnowledgeGraph {
          * @param scope
          * @return
          */
-        Operation success(ContextScope scope, RuntimeAsset... assets);
+        Operation success(ContextScope scope, Object... assets);
 
         /**
          * Call after run() when the activity has finished with errors to ensure that all info in the

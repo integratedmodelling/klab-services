@@ -63,26 +63,29 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         // retrieve ID as records().getFirst().get(keys().getFirst()) ?
         String CREATE_WITH_PROPERTIES = "CREATE (n:{type}) SET n = $properties RETURN id(n) as id";
         String UPDATE_PROPERTIES = "MATCH (n:{type}) WHERE id(n) = $id SET n += $properties";
-        String INITIALIZATION_QUERY = "CREATE\n"
-                + "\t// main context node\n"
-                + "\t(ctx:Context {id: $contextId, name: $name, user: $username, created: $timestamp, " +
-                "expiration: $expirationType}),\n"
-                + "\t// main provenance and dataflow nodes\n"
-                + "\t(prov:Provenance {name: 'Provenance', id: $contextId + '.PROVENANCE'}), (df:Dataflow " +
-                "{name: 'Dataflow', id: $contextId + '.DATAFLOW'}),\n"
-                + "\t(ctx)-[:HAS_PROVENANCE]->(prov),\n"
-                + "\t(ctx)-[:HAS_DATAFLOW]->(df),\n"
-                + "\t// default agents within provenance\n"
-                + "\t(user:Agent {name: $username, type: 'USER'}),\n"
-                + "\t(klab:Agent {name: 'k.LAB', type: 'AI'}),\n"
-                + "\t(prov)-[:HAS_AGENT]->(user),\n"
-                + "\t(prov)-[:HAS_AGENT]->(klab),\n"
-                + "\t// ACTIVITY that created the whole thing\n"
-                + "\t(creation:Activity {start: $timestamp, end: $timestamp, name: 'INITIALIZATION'}),\n"
-                + "\t// created by user\n"
-                + "\t(creation)-[:BY_AGENT]->(user),\n"
-                + "\t(ctx)<-[:CREATED]-(creation),\n"
-                + "(prov)-[:HAS_CHILD]->(creation)";
+        String[] INITIALIZATION_QUERIES = new String[]{
+                "MERGE (user:Agent {name: $username, type: 'USER'})",
+                "MERGE (klab:Agent {name: 'k.LAB', type: 'AI'})",
+                "MATCH (klab:Agent {name: 'k.LAB'}), (user:Agent {name: $username}) CREATE // main context " +
+                        "node\n"
+                        + "\t(ctx:Context {id: $contextId, name: $name, user: $username, created: " +
+                        "$timestamp, " +
+                        "expiration: $expirationType}),\n"
+                        + "\t// main provenance and dataflow nodes\n"
+                        + "\t(prov:Provenance {name: 'Provenance', id: $contextId + '.PROVENANCE'}), " +
+                        "(df:Dataflow " +
+                        "{name: 'Dataflow', id: $contextId + '.DATAFLOW'}),\n"
+                        + "\t(ctx)-[:HAS_PROVENANCE]->(prov),\n"
+                        + "\t(ctx)-[:HAS_DATAFLOW]->(df),\n"
+                        + "\t(prov)-[:HAS_AGENT]->(user),\n"
+                        + "\t(prov)-[:HAS_AGENT]->(klab),\n"
+                        + "\t// ACTIVITY that created the whole thing\n"
+                        + "\t(creation:Activity {start: $timestamp, end: $timestamp, name: " +
+                        "'INITIALIZATION'}),\n"
+                        + "\t// created by user\n"
+                        + "\t(creation)-[:BY_AGENT]->(user),\n"
+                        + "\t(ctx)<-[:CREATED]-(creation),\n"
+                        + "(prov)-[:HAS_CHILD]->(creation)"};
         String GET_AGENT_BY_NAME = "match (ctx:Context {id: $contextId})-->(prov:Provenance)-[:HAS_AGENT]->" +
                 "(a:Agent {name: $agentName}) RETURN a";
         String LINK_ASSETS = "match (n:{fromLabel}), (c:{toLabel}) WHERE n.{fromKeyProperty} = $fromKey AND" +
@@ -115,15 +118,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         if (result.records().isEmpty()) {
             long timestamp = System.currentTimeMillis();
-            query(
-                    Queries.INITIALIZATION_QUERY,
-                    Map.of(
-                            "contextId", scope.getId(),
-                            "name", scope.getName(),
-                            "timestamp", timestamp,
-                            "username", scope.getUser().getUsername(),
-                            "expirationType", scope.getExpiration().name()),
-                    scope);
+            for (var query : Queries.INITIALIZATION_QUERIES) {
+                query(query, Map.of(
+                                "contextId", scope.getId(),
+                                "name", scope.getName(),
+                                "timestamp", timestamp,
+                                "username", scope.getUser().getUsername(),
+                                "expirationType", scope.getExpiration().name()),
+                        scope);
+            }
 
         }
 
@@ -349,7 +352,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         var props = asParameters(asset, additionalProperties);
         var result = query(
                 Queries.CREATE_WITH_PROPERTIES.replace("{type}", type),
-                Map.of("properties", asParameters(asset)), scope);
+                Map.of("properties", props), scope);
         if (result != null && result.records().size() == 1) {
             ret = result.records().getFirst().get(result.keys().getFirst()).asLong();
             setId(asset, ret);
@@ -362,13 +365,31 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                         DigitalTwin.Relationship relationship, Scope scope,
                         Object... additionalProperties) {
 
-        var query = ("match (n:{fromLabel}), (c:{toLabel}) WHERE n.id = $sourceId AND c.id = " +
-                "$destinationId CREATE (n)-[r:{relationshipLabel}]->(c) return r")
+        // find out if the internal ID or what stored ID should be used
+        var sourceQuery = matchAsset(source, "n", "sourceId");
+        var targetQuery = matchAsset(destination, "c", "targetId");
+        var props = asParameters(null, additionalProperties);
+        var query = ("match (n:{fromLabel}), (c:{toLabel}) WHERE {sourceQuery} AND {targetQuery} CREATE (n)" +
+                "-[r:{relationshipLabel}]->(c) SET r = $properties RETURN r")
+                .replace("{sourceQuery}", sourceQuery)
+                .replace("{targetQuery}", targetQuery)
                 .replace("{relationshipLabel}", relationship.name())
                 .replace("{fromLabel}", getLabel(source))
                 .replace("{toLabel}", getLabel(destination));
 
-        query(query, Map.of("sourceId", getId(source), "destinationId", getId(destination)), scope);
+        query(query, Map.of("sourceId", getId(source), "targetId", getId(destination), "properties", props)
+                , scope);
+    }
+
+    private String matchAsset(RuntimeAsset asset, String name, String queryVariable) {
+        var ret = switch (asset) {
+            case Activity activity -> "id(" + name + ") = $" + queryVariable;
+            case Observation observation -> name + ".id = $" + queryVariable;
+            case Actuator actuator -> "id(" + name + ") = $" + queryVariable;
+            case Agent agent -> name + ".name = $" + queryVariable;
+            default -> null;
+        };
+        return ret == null ? (ret = name + ".id = $" + queryVariable) : ret;
     }
 
     private Object getId(RuntimeAsset asset) {
@@ -377,7 +398,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             case ActuatorImpl actuator -> actuator.getInternalId();
             case ActivityImpl activity -> activity.getId();
             case ObservationImpl observation -> observation.getId();
-            case Agent agent -> agent.getId();
+            case Agent agent -> agent.getName();
             default -> null;
         };
 
@@ -398,6 +419,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             case ObservationImpl observation -> observation.setId(id);
             case ActuatorImpl actuator -> actuator.setInternalId(id);
             case ActivityImpl activity -> activity.setId(id);
+            case AgentImpl agent -> agent.setId(id);
             default -> {
             }
         }
@@ -699,16 +721,23 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     @Override
     protected void finalizeOperation(OperationImpl operation, ContextScope scope, boolean success,
-                                     RuntimeAsset... results) {
+                                     Object... results) {
 
-        var props = asParameters(operation.getActivity());
-        props.put("end", System.currentTimeMillis());
-        query(Queries.UPDATE_PROPERTIES.replace("{type}", "Activity"),
-                Map.of("id", operation.getActivity().getId(), "properties", props), scope);
+        Dataflow<?> dataflow = null;
+        var agent = klab();
+        String description = "No description";
         for (var asset : results) {
-            if (asset instanceof Dataflow<?> dataflow) {
-                storeDataflow(dataflow, scope, operation.getActivity());
+            if (asset instanceof Dataflow<?> df) {
+                dataflow = df;
+            } else if (asset instanceof Agent ag) {
+                agent = ag;
+            } else if (asset instanceof String string) {
+                description = string;
             }
+        }
+
+        if (dataflow != null) {
+            storeDataflow(dataflow, scope, operation.getActivity(), agent, description);
         }
     }
 
@@ -720,14 +749,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 Map.of("id", observation.getId(), "properties", props), scope);
     }
 
-    private void storeDataflow(Dataflow<?> dataflow, ContextScope scope, ActivityImpl activity) {
+    private void storeDataflow(Dataflow<?> dataflow, ContextScope scope, Activity activity, Agent agent,
+                               String activityDescription) {
 
         /**
          * Add the resolution activity with its end time
          */
-        activity.setEnd(System.currentTimeMillis());
-        store(activity, scope);
+        store(activity, scope, "description", activityDescription, "end", System.currentTimeMillis());
         link(getProvenanceNode(), activity, DigitalTwin.Relationship.HAS_CHILD, scope);
+        link(agent, activity, DigitalTwin.Relationship.BY_AGENT, scope);
 
         // rebuild the actuator structure; each actuator with the source code of its contextualizers
         // link the root actuators to this activity as plan with an order parameter in the link
@@ -743,6 +773,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         store(actuator, scope);
 
         var observation = retrieve(actuator.getId(), Observation.class, scope);
+        link(observation, activity, DigitalTwin.Relationship.RESOLVED_BY, scope);
 
         /*
         TODO if parent == null, find the actual parent in case the actuator for the parent observation is

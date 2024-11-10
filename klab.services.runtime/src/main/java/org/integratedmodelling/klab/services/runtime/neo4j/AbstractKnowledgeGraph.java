@@ -147,7 +147,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
 
         @Override
-        public Operation success(ContextScope scope, RuntimeAsset... assets) {
+        public Operation success(ContextScope scope, Object... assets) {
             finalizeOperation(this, scope, true, assets);
             return this;
         }
@@ -277,7 +277,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
      * @param resultsToUpdate
      */
     protected abstract void finalizeOperation(OperationImpl operation, ContextScope scope, boolean success,
-                                              RuntimeAsset... resultsToUpdate);
+                                              Object... resultsToUpdate);
 
     @Override
     public Operation activity(Agent agent, ContextScope scope, Object... targets) {
@@ -364,47 +364,48 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
      */
     protected Map<String, Object> asParameters(Object asset, Object... additionalParameters) {
         Map<String, Object> ret = new HashMap<>();
-        switch (asset) {
-            case Observation observation -> {
-                ret.putAll(observation.getMetadata());
-                ret.put("name", observation.getName());
-                ret.put("updated", observation.getLastUpdate());
-                ret.put("resolved", observation.isResolved());
-                ret.put("type", observation.getType().name());
-                ret.put("urn", observation.getUrn());
-                ret.put("semantictype", SemanticType.fundamentalType(
-                        observation.getObservable().getSemantics().getType()).name());
-                ret.put("semantics", observation.getObservable().getUrn());
-            }
-            case Agent agent -> {
-                // TODO
-            }
-            case Actuator actuator -> {
-
-                ret.put("observationId", actuator.getId());
-
-                StringBuilder code = new StringBuilder();
-                for (var call : actuator.getComputation()) {
-                    // TODO skip any recursive resolution calls and prepare for linking later
-                    code.append(call.encode(Language.DEFAULT_EXPRESSION_LANGUAGE)).append("\n");
+        if (asset != null) {
+            switch (asset) {
+                case Observation observation -> {
+                    ret.putAll(observation.getMetadata());
+                    ret.put("name", observation.getName() == null ? observation.getObservable().codeName() : observation.getName());
+                    ret.put("updated", observation.getLastUpdate());
+                    ret.put("resolved", observation.isResolved());
+                    ret.put("type", observation.getType().name());
+                    ret.put("urn", observation.getUrn());
+                    ret.put("semantictype", SemanticType.fundamentalType(
+                            observation.getObservable().getSemantics().getType()).name());
+                    ret.put("semantics", observation.getObservable().getUrn());
                 }
-                ret.put("semantics", actuator.getObservable().getUrn());
-                ret.put("computation", code.toString());
-                ret.put("strategy", actuator.getStrategyUrn());
+                case Agent agent -> {
+                    // TODO
+                }
+                case Actuator actuator -> {
+
+                    ret.put("observationId", actuator.getId());
+                    StringBuilder code = new StringBuilder();
+                    for (var call : actuator.getComputation()) {
+                        // TODO skip any recursive resolution calls and prepare for linking later
+                        code.append(call.encode(Language.DEFAULT_EXPRESSION_LANGUAGE)).append("\n");
+                    }
+                    ret.put("semantics", actuator.getObservable().getUrn());
+                    ret.put("computation", code.toString());
+                    ret.put("strategy", actuator.getStrategyUrn());
+                }
+                case Activity activity -> {
+                    ret.putAll(activity.getMetadata());
+                    ret.put("credits", activity.getCredits());
+                    ret.put("description", activity.getDescription());
+                    ret.put("end", activity.getEnd());
+                    ret.put("start", activity.getStart());
+                    ret.put("schedulerTime", activity.getSchedulerTime());
+                    ret.put("size", activity.getSize());
+                    ret.put("type", activity.getType().name());
+                    ret.put("name", activity.getName());
+                }
+                default -> throw new KlabInternalErrorException(
+                        "unexpected value for asParameters: " + asset.getClass().getCanonicalName());
             }
-            case Activity activity -> {
-                ret.putAll(activity.getMetadata());
-                ret.put("credits", activity.getCredits());
-                ret.put("description", activity.getDescription());
-                ret.put("end", activity.getEnd());
-                ret.put("start", activity.getStart());
-                ret.put("schedulerTime", activity.getSchedulerTime());
-                ret.put("size", activity.getSize());
-                ret.put("type", activity.getType().name());
-                ret.put("name", activity.getName());
-            }
-            default -> throw new KlabInternalErrorException(
-                    "unexpected value for asParameters: " + asset.getClass().getCanonicalName());
         }
 
         if (additionalParameters != null) {

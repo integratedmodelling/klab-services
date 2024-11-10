@@ -37,6 +37,7 @@ public interface DigitalTwin {
         EMERGED_FROM,
         HAS_OBSERVER,
         HAS_PLAN,
+        RESOLVED_BY,
         BY_AGENT,
         CREATED,
         HAS_DATAFLOW,
