@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Holds global configurations and functions that allow generic interfaces to expose constructor methods that
@@ -80,25 +81,6 @@ public enum Klab {
             public static final String SPACE = "space";
 
             public static final String TIME = "time";
-
-        }
-
-        /**
-         * Calls to these functions are created directly by the resolver when {@link Contextualizable}s of
-         * different k.IM types and/or {@link ObservationStrategyObsolete}es from the reasoner are translated into
-         * dataflow actuators.
-         *
-         * @author Ferd
-         */
-        public interface KlabCore {
-
-            public static final String NAMESPACE = "klab.core";
-
-            public static final String URN_RESOLVER = "urn.resolver";
-
-            public static final String LUT_RESOLVER = "lut.resolver";
-
-            public static final String URN_INSTANTIATOR = "urn.instantiator";
 
         }
 

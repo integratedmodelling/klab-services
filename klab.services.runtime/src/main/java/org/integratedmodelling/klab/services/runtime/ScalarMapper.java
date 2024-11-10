@@ -26,6 +26,7 @@ public class ScalarMapper {
     private final Class<? extends Storage> storageClass;
 
     public ScalarMapper(Observation target, DigitalTwin digitalTwin, ServiceContextScope scope) {
+
         this.targetObservation = target;
         this.digitalTwin = digitalTwin;
         this.scope = scope;

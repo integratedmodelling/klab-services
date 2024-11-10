@@ -1,13 +1,17 @@
 package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.List;
 import java.util.Map;
@@ -25,6 +29,45 @@ import java.util.concurrent.Future;
  * @author Ferd
  */
 public interface RuntimeService extends KlabService {
+
+    /**
+     * The core functors for k.LAB dataflow. The runtime must support all of these.
+     * <p>
+     * Calls to these functions are created directly by the resolver when {@link Contextualizable}s of
+     * different k.IM types and/or {@link ObservationStrategyObsolete}es from the reasoner are translated into
+     * dataflow actuators.
+     *
+     * @author Ferd
+     */
+    enum CoreFunctor {
+
+        // TODO add descriptions and arguments + flags for constant, scalar vs. vector
+        URN_RESOLVER("klab.core.urn.resolver"),
+        URN_INSTANTIATOR("klab.core.urn.instantiator"),
+        EXPRESSION_RESOLVER("klab.core.urn.resolver"),
+        LUT_RESOLVER("klab.core.urn.resolver"),
+        CONSTANT_RESOLVER("klab.core.urn.resolver");
+
+        private String serviceCall;
+        private Map<String, Artifact.Type> arguments;
+
+        private CoreFunctor(String serviceCall) {
+            this.serviceCall = serviceCall;
+        }
+
+        public static CoreFunctor classify(ServiceCall serviceCall) {
+            if (serviceCall.getUrn().startsWith("klab.core.")) {
+                try {
+                    return CoreFunctor.valueOf(serviceCall.getUrn());
+                } catch (IllegalArgumentException t) {
+                    // do nothing
+                }
+            }
+            return null;
+        }
+
+    }
+
 
     default String getServiceName() {
         return "klab.runtime.service";

@@ -26,6 +26,7 @@ public class ActuatorImpl implements Actuator {
     private Parameters<String> data = Parameters.create();
     private Actuator.Type actuatorType;
     private long internalId; // ID within the graph, can't be the same as the observation
+    private double resolvedCoverage;
 
     @Override
     public long getId() {
@@ -119,6 +120,14 @@ public class ActuatorImpl implements Actuator {
 
     public long getInternalId() {
         return internalId;
+    }
+
+    public double getResolvedCoverage() {
+        return resolvedCoverage;
+    }
+
+    public void setResolvedCoverage(double resolvedCoverage) {
+        this.resolvedCoverage = resolvedCoverage;
     }
 
     public void setInternalId(long internalId) {
