@@ -14,7 +14,9 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.CoreLibrary;
 import org.integratedmodelling.klab.api.services.Language;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -150,6 +152,24 @@ public class ExecutionSequence {
 
             // TODO separate scalar calls into groups and compile them into one assembled functor
             for (var call : actuator.getComputation()) {
+
+                var preset = RuntimeService.CoreFunctor.classify(call);
+                if (preset != null) {
+                    switch(preset) {
+                        case URN_RESOLVER -> {
+                        }
+                        case URN_INSTANTIATOR -> {
+                        }
+                        case EXPRESSION_RESOLVER -> {
+                        }
+                        case LUT_RESOLVER -> {
+                        }
+                        case CONSTANT_RESOLVER -> {
+                        }
+                    }
+                }
+
+
                 var descriptor = componentRegistry.getFunctionDescriptor(call);
                 if (descriptor.serviceInfo.getGeometry().isScalar()) {
 
