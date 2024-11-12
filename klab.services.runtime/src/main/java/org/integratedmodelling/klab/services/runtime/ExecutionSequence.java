@@ -127,7 +127,6 @@ public class ExecutionSequence {
         return true;
     }
 
-
     /**
      * One operation per observation. Successful execution will update the observation in the DT.
      */

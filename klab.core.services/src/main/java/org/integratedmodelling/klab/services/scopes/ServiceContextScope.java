@@ -55,7 +55,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     private Observation contextObservation;
     private URL url;
     private DigitalTwin digitalTwin;
-    private ActivityImpl activity;
     // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
     protected ServiceContextScope parent;
     protected Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
@@ -72,7 +71,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.digitalTwin = parent.digitalTwin;
         this.observationCache = parent.observationCache;
         this.resolutionConstraints.putAll(parent.resolutionConstraints);
-        this.activity = parent.activity;
     }
 
     @Override
@@ -344,23 +342,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             return List.of();
         }
         return constraint.payload(resultClass);
-    }
-
-    /**
-     * Non-API: scopes carry the provenance activity they're representing during contextualization. When the
-     * activity is added, any previously set activity becomes the parent activity.
-     *
-     * @param activity
-     * @return
-     */
-    public ServiceContextScope withActivity(Activity activity) {
-        ServiceContextScope ret = new ServiceContextScope(this);
-        if (activity instanceof ActivityImpl activityImpl) {
-            ret.activity = activityImpl;
-            ret.activity.setParent(activity);
-            return ret;
-        }
-        throw new KlabIllegalStateException("Using unexpected Activity implementation");
     }
 
     @Override

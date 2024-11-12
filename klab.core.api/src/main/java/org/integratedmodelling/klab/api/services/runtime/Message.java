@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
+import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -429,9 +430,7 @@ public interface Message extends Serializable {
                 ret.setMessageType((MessageType) ob);
             } else if (ob instanceof MessageClass) {
                 ret.setMessageClass((MessageClass) ob);
-            } /*else if (ob instanceof Notification.Type) {
-                notype = (Notification.Type) ob;
-            } */ else if (ob instanceof Queue q) {
+            } else if (ob instanceof Queue q) {
                 queueOverridden = true;
                 ret.setQueue(q);
             } /*else if (ob instanceof ForwardingPolicy) {
@@ -445,6 +444,8 @@ public interface Message extends Serializable {
                     case Error, SystemError -> MessageType.Error;
                 });
                 ret.setPayload(ob);
+            } else if (ob instanceof ActivityImpl activity) {
+                ret.setTaskId(activity.getTaskId());
             } else if (ob != null) {
                 if (ret.getPayload() == null) {
                     ret.setPayload(ob);

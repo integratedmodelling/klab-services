@@ -15,6 +15,7 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     private Activity.Type type;
     private String description;
     private long id;
+    private String taskId;
     private Activity parent;
 
     @Override
@@ -93,5 +94,19 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
     public void setParent(Activity parent) {
         this.parent = parent;
+    }
+
+    /**
+     * Non-API: the ID path through which the activity hierarchy can be reconstructed. When an activity is
+     * included in a message, the taskId gets in there.
+     *
+     * @return
+     */
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
     }
 }
