@@ -62,10 +62,12 @@ public interface KnowledgeGraph {
          *                             or you'll get an exception.
          * @return
          */
-        long store(RuntimeAsset asset, Scope scope, Object... additionalProperties);
+        long store(RuntimeAsset asset, Object... additionalProperties);
 
         /**
          * Link the two passed assets.
+         *
+         * FIXME remove scope when the other is gone
          *
          * @param source
          * @param destination
@@ -82,6 +84,7 @@ public interface KnowledgeGraph {
          * {@link Observation#UNASSIGNED_ID} if the operation failed or was wrongly defined.
          *
          * @return a valid ID or {@link Observation#UNASSIGNED_ID}
+         * @deprecated just run each operation and rollback if unsuccessful
          */
         long run(ContextScope scope);
 
@@ -92,7 +95,7 @@ public interface KnowledgeGraph {
          *
          * @param observation
          * @return
-         * @deprecated
+         * @deprecated use store
          */
         Operation add(RuntimeAsset observation);
 
@@ -103,7 +106,7 @@ public interface KnowledgeGraph {
          *
          * @param source
          * @return
-         * @deprecated
+         * @deprecated shouldn't be necessary, use update on the main KG
          */
         Operation set(RuntimeAsset source, Object... properties);
 
@@ -120,7 +123,7 @@ public interface KnowledgeGraph {
          * @param assetTo
          * @param linkData
          * @return
-         * @deprecated
+         * @deprecated use link above, remove this
          */
         Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo, DigitalTwin.Relationship relationship,
                        Object... linkData);
@@ -131,6 +134,7 @@ public interface KnowledgeGraph {
          * @param asset
          * @param linkData
          * @return
+         * @deprecated
          */
         Operation rootLink(RuntimeAsset asset, Object... linkData);
 

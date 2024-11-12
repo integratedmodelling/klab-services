@@ -94,7 +94,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
 
         @Override
-        public long store(RuntimeAsset asset, Scope scope, Object... additionalProperties) {
+        public long store(RuntimeAsset asset, Object... additionalProperties) {
             return 0;
         }
 
@@ -275,7 +275,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
 
         @Override
-        public long store(RuntimeAsset asset, Scope scope, Object... additionalProperties) {
+        public long store(RuntimeAsset asset, Object... additionalProperties) {
             return 0;
         }
 
