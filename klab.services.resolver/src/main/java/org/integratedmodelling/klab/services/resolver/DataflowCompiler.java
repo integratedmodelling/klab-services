@@ -18,10 +18,7 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A Compiler is instantiated in context. TODO should also take a parent Dataflow and fill the
@@ -68,15 +65,15 @@ public class DataflowCompiler {
             /*
             These MUST be observations. We check for now but it shouldn't happen.
              */
-            if (!(node instanceof Observation observation)) {
+            if (!(node instanceof Observation)) {
                 throw new KlabIllegalStateException("Resolution root is not an observation");
             }
-            ret.getComputation().add(compileObservation(observation, Scale.create(observation.getGeometry()), null));
+            ret.getComputation().addAll(compileObservation(observation, Scale.create(observation.getGeometry()), null));
         }
 
         var out = new StringWriter();
-        var diocan = new PrintWriter(out);
-        new DataflowEncoder(ret, scope).encode(diocan);
+        var dioCan = new PrintWriter(out);
+        new DataflowEncoder(ret, scope).encode(dioCan);
 
         System.out.println(out.toString());
 
@@ -92,32 +89,35 @@ public class DataflowCompiler {
      * @return
      */
 
-    Actuator compileObservation(Observation observation, Geometry coverage, ObservationStrategy strategy) {
-
-        var ret = new ActuatorImpl();
-        ret.setObservable(observation.getObservable());
-        ret.setId(observation.getId());
-        ret.setActuatorType(strategy == null ? Actuator.Type.RESOLVE : Actuator.Type.OBSERVE);
-        ret.setCoverage(coverage.as(Geometry.class));
-
-        if (strategy != null) {
-            ret.setStrategyUrn(strategy.getUrn());
-        }
+    List<Actuator> compileObservation(Observation observation, Geometry coverage, ObservationStrategy strategy) {
 
         if (catalog.contains(observation)) {
+            var ret = new ActuatorImpl();
+            ret.setObservable(observation.getObservable());
+            ret.setId(observation.getId());
+            ret.setActuatorType(strategy == null ? Actuator.Type.RESOLVE : Actuator.Type.OBSERVE);
+            ret.setCoverage(coverage.as(Geometry.class));
             ret.setActuatorType(Actuator.Type.REFERENCE);
-            return ret;
+            return List.of(ret);
         }
 
         catalog.add(observation);
 
+        var ret = new ArrayList<Actuator>();
         for (var edge : resolutionGraph.graph().outgoingEdgesOf(observation)) {
 
             var child = resolutionGraph.graph().getEdgeTarget(edge);
             var childCoverage = edge.coverage;
 
             if (child instanceof ObservationStrategy observationStrategy) {
-                compileStrategy(ret, observation, childCoverage, observationStrategy);
+                var actuator = new ActuatorImpl();
+                actuator.setObservable(observation.getObservable());
+                actuator.setId(observation.getId());
+                actuator.setActuatorType(Actuator.Type.OBSERVE);
+                actuator.setCoverage(childCoverage == null ? null : childCoverage.as(Geometry.class));
+                actuator.setStrategyUrn(observationStrategy.getUrn());
+                compileStrategy(actuator, observation, childCoverage, observationStrategy);
+                ret.add(actuator);
             }
         }
 
@@ -173,7 +173,7 @@ public class DataflowCompiler {
             var coverage = edge.coverage;
 
             if (child instanceof Observation dependentObservation) {
-                observationActuator.getChildren().add(compileObservation(dependentObservation, coverage, observationStrategy));
+                observationActuator.getChildren().addAll(compileObservation(dependentObservation, coverage, observationStrategy));
             }
         }
 

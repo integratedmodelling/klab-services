@@ -15,6 +15,7 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     private Activity.Type type;
     private String description;
     private long id;
+    private Activity parent;
 
     @Override
     public long getStart() {
@@ -83,5 +84,14 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    @Override
+    public Activity getParent() {
+        return parent;
+    }
+
+    public void setParent(Activity parent) {
+        this.parent = parent;
     }
 }

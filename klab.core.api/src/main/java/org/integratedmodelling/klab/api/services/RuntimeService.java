@@ -46,7 +46,8 @@ public interface RuntimeService extends KlabService {
         URN_INSTANTIATOR("klab.core.urn.instantiator"),
         EXPRESSION_RESOLVER("klab.core.urn.resolver"),
         LUT_RESOLVER("klab.core.urn.resolver"),
-        CONSTANT_RESOLVER("klab.core.urn.resolver");
+        CONSTANT_RESOLVER("klab.core.urn.resolver"),
+        DEFER_RESOLUTION("klab.core.resolution.defer");
 
         private String serviceCall;
         private Map<String, Artifact.Type> arguments;

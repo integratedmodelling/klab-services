@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -17,6 +18,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Resolver;
@@ -53,6 +55,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     private Observation contextObservation;
     private URL url;
     private DigitalTwin digitalTwin;
+    private ActivityImpl activity;
     // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
     protected ServiceContextScope parent;
     protected Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
@@ -69,6 +72,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.digitalTwin = parent.digitalTwin;
         this.observationCache = parent.observationCache;
         this.resolutionConstraints.putAll(parent.resolutionConstraints);
+        this.activity = parent.activity;
     }
 
     @Override
@@ -167,24 +171,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return List.of();
     }
 
-    //    @Override
-    //    public Scale getScale() {
-    //        return geometry;
-    //    }
-
-    //    @Override
-    //    public ServiceContextScope withScenarios(String... scenarios) {
-    //        ServiceContextScope ret = new ServiceContextScope(this);
-    //        if (scenarios == null) {
-    //            ret.resolutionScenarios = null;
-    //        }
-    //        this.resolutionScenarios = new HashSet<>();
-    //        for (String scenario : scenarios) {
-    //            ret.resolutionScenarios.add(scenario);
-    //        }
-    //        return ret;
-    //    }
-
     @Override
     public ServiceContextScope withObserver(Observation observer) {
         ServiceContextScope ret = new ServiceContextScope(this);
@@ -242,11 +228,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         // TODO Auto-generated method stub
         return null;
     }
-
-    //    @Override
-    //    public Map<Concept, Concept> getContextualizedPredicates() {
-    //        return contextualizedPredicates;
-    //    }
 
     @Override
     public Collection<Observation> getOutgoingRelationshipsOf(Observation observation) {
@@ -307,24 +288,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return ret;
     }
 
-    //    @Override
-    //    public ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait) {
-    //        ServiceContextScope ret = new ServiceContextScope(this);
-    //        ret.contextualizedPredicates.put(abstractTrait, concreteTrait);
-    //        return ret;
-    //    }
-
     @Override
     public ContextScope between(Observation source, Observation target) {
         return null;
     }
-
-    //    @Override
-    //    public ContextScope withResolutionNamespace(String namespace) {
-    //        ServiceContextScope ret = new ServiceContextScope(this);
-    //        ret.resolutionNamespace = namespace;
-    //        return ret;
-    //    }
 
     @Override
     public ServiceContextScope withResolutionConstraints(ResolutionConstraint... resolutionConstraints) {
@@ -377,6 +344,23 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             return List.of();
         }
         return constraint.payload(resultClass);
+    }
+
+    /**
+     * Non-API: scopes carry the provenance activity they're representing during contextualization. When the
+     * activity is added, any previously set activity becomes the parent activity.
+     *
+     * @param activity
+     * @return
+     */
+    public ServiceContextScope withActivity(Activity activity) {
+        ServiceContextScope ret = new ServiceContextScope(this);
+        if (activity instanceof ActivityImpl activityImpl) {
+            ret.activity = activityImpl;
+            ret.activity.setParent(activity);
+            return ret;
+        }
+        throw new KlabIllegalStateException("Using unexpected Activity implementation");
     }
 
     @Override

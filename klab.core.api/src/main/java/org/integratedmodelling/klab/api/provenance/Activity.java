@@ -77,6 +77,13 @@ public interface Activity extends Provenance.Node {
     long getCredits();
 
     /**
+     * The activity, if any, that represent a super-activity of this one
+     *
+     * @return
+     */
+    Activity getParent();
+
+    /**
      * Logs each time that the action was executed (in lieu of having an action per each execution). Empty for
      * any action that wasn't called by the scheduler. If not empty the first time could be initialization or
      * after, based on the occurrent character of the linked observation.
