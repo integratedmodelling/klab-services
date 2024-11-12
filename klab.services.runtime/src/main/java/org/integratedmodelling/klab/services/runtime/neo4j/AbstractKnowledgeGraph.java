@@ -64,10 +64,14 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
          * What should be passed: an agent that will own the activity; the current context scope for graph
          * operations; the activity type
          * <p>
-         * What can be passed: an activity as the parent of the one we create here; content for the activity
-         * such as description
-         *
+         * What can be passed: another operation so that its activity becomes the parent of the one we create
+         * here AND the transaction isn't finished upon execution; content for the activity such as description
+         * <p>
          * The store/link methods use the same on the database, under the transaction we opened.
+         *
+         * Each ExecutorOperation must include a previously built Operation; only the wrapping one should
+         * commit/rollback.
+         *
          * @param arguments
          */
         public OperationImpl(Object... arguments) {
@@ -81,7 +85,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
             // open the transaction for the remaining operations
         }
-
 
         @Override
         public Agent getAgent() {
