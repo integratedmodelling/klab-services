@@ -56,6 +56,7 @@ public class ExecutionSequence {
     private ExecutionSequence(List<Pair<Actuator, Integer>> pairs, double resolvedCoverage,
                               ServiceContextScope contextScope,
                               DigitalTwin digitalTwin, ComponentRegistry componentRegistry) {
+
         this.scope = contextScope;
         this.digitalTwin = digitalTwin;
         this.languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
@@ -92,8 +93,7 @@ public class ExecutionSequence {
         for (var operationGroup : sequence) {
             // groups are sequential; grouped items are parallel. Empty groups are currently possible although
             // they should be filtered out, but we leave them for completeness for now as they don't really
-            // bother
-            // anyone.
+            // bother anyone.
             if (operationGroup.size() == 1) {
                 if (!operationGroup.getFirst().run()) {
                     return false;

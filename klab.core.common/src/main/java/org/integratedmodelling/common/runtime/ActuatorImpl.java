@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 
 import java.io.Serial;
@@ -27,6 +28,7 @@ public class ActuatorImpl implements Actuator {
     private Actuator.Type actuatorType;
     private long internalId; // ID within the graph, can't be the same as the observation
     private double resolvedCoverage;
+    private Activity activity;
 
     @Override
     public long getId() {
@@ -132,6 +134,20 @@ public class ActuatorImpl implements Actuator {
 
     public void setInternalId(long internalId) {
         this.internalId = internalId;
+    }
+
+    /**
+     * Non-API: the actuator carries the activity it represents, which it transfers to the scope of execution
+     * so that provenance can be reconstructed.
+     *
+     * @return
+     */
+    public Activity getActivity() {
+        return activity;
+    }
+
+    public void setActivity(Activity activity) {
+        this.activity = activity;
     }
 
     @Override

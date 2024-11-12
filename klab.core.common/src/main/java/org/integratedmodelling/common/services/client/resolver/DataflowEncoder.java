@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.resolver;
+package org.integratedmodelling.common.services.client.resolver;
 
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
