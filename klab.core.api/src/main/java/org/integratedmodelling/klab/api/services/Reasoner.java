@@ -621,6 +621,8 @@ public interface Reasoner extends KlabService {
     Concept describedType(Semantics concept);
 
     /**
+     * Observational compatibility, considering all elements of the expression.
+     *
      * @param concept
      * @param other
      * @return
@@ -1009,10 +1011,10 @@ public interface Reasoner extends KlabService {
 
         /**
          * The "port" to ingest an individual concept definition, called by
-         * {@link #loadKnowledge(Worldview, Scope)} (Worldview)}. Provided separately to make it possible
-         * for a resolver service to declare individual local concepts, as long as it owns the semantic
-         * service. Definition must be made only in terms of known concepts (no forward declaration is
-         * allowed), so order of ingestion is critical.
+         * {@link #loadKnowledge(Worldview, Scope)} (Worldview)}. Provided separately to make it possible for
+         * a resolver service to declare individual local concepts, as long as it owns the semantic service.
+         * Definition must be made only in terms of known concepts (no forward declaration is allowed), so
+         * order of ingestion is critical.
          *
          * @param statement
          * @param scope     admin user scope to report and validate

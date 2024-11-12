@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Activity;
+import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -269,6 +270,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     @Override
     public long submit(Observation observation, ContextScope scope) {
         if (scope instanceof ServiceContextScope serviceContextScope) {
+            // TODO this gets its operation (instantiation of observation)
             return serviceContextScope.insertIntoKnowledgeGraph(observation);
         }
         return Observation.UNASSIGNED_ID;
@@ -282,8 +284,12 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             var resolver = serviceContextScope.getService(Resolver.class);
             var observation = serviceContextScope.getObservation(id);
             var digitalTwin = getDigitalTwin(scope);
-            var activity = digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().klab(), scope,
-                    observation, Activity.Type.RESOLUTION, null);
+            var activity =
+
+                    // TODO retrieve the activity that instantiated the observation instead, pass it down
+                    //  as the root for the resolution somehow
+                    digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().klab(), scope,
+                            observation, Activity.Type.RESOLUTION, null);
 
             final var ret = new CompletableFuture<Observation>();
 
@@ -292,9 +298,11 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                     var result = observation;
                     scope.send(Message.MessageClass.ObservationLifecycle,
                             Message.MessageType.ResolutionStarted, result);
+                    // TODO resolution gets its own operation (find the instantiation activity as precursor)
                     var dataflow = resolver.resolve(observation, scope);
                     if (dataflow != null) {
                         if (!dataflow.isEmpty()) {
+                            // TODO contextualization gets its own operation (dependent on resolution)
                             result = runDataflow(dataflow, scope);
                             ret.complete(result);
                         }
@@ -322,6 +330,13 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
     @Override
     public Observation runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
+        var activity = new ActivityImpl();
+        // TODO fill in the activity for an external dataflow run
+        return runDataflow(dataflow, contextScope, activity);
+    }
+
+    public Observation runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope,
+                                   Activity activity) {
 
         var digitalTwin = getDigitalTwin(contextScope);
 

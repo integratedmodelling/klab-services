@@ -223,7 +223,7 @@ public class ObservationReasoner {
         if (filter.getMatch() != null) {
             var semantics = filter.getMatch().isPattern() ? reasoner.declareConcept(filter.getMatch(),
                     patternVariableValues) : reasoner.declareConcept(filter.getMatch());
-            ret = semantics != null && reasoner.compatible(observation.getObservable(), semantics);
+            ret = semantics != null && reasoner.match(observation.getObservable(), semantics);
         }
         if (ret && !filter.getFunctions().isEmpty()) {
             for (var function : filter.getFunctions()) {

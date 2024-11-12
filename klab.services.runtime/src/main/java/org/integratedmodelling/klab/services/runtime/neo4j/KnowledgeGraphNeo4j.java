@@ -426,7 +426,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     @Override
-    protected long runOperation(OperationImpl operation, ContextScope scope) {
+    protected long runOperation(OperationImplObsolete operation, ContextScope scope) {
 
         operation.registerAsset(scope, "id", scope.getId());
 
@@ -720,7 +720,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     @Override
-    protected void finalizeOperation(OperationImpl operation, ContextScope scope, boolean success,
+    protected void finalizeOperation(OperationImplObsolete operation, ContextScope scope, boolean success,
                                      Object... results) {
 
         Dataflow<?> dataflow = null;

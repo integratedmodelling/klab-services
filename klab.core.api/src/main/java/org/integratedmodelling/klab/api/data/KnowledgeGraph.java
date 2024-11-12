@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.data;
 
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -9,6 +10,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 
+import java.io.Closeable;
 import java.net.URL;
 import java.util.List;
 
@@ -31,8 +33,12 @@ public interface KnowledgeGraph {
      * Operations are defined and run to modify the knowledge graph. The operation API guarantees the proper
      * updating of provenance in the graph so that any modification is recorded, attributed and saves in
      * replayable history.
+     * <p>
+     * At close, the operation commits or rolls back changes (except the activity it creates in provenance)
+     * according to which finalization mechanism has been called. If none has been called, the activity will
+     * be stored as an internal failure and everything else rolled back.
      */
-    interface Operation {
+    interface Operation extends Closeable {
 
         /**
          * Any operation on the KG is done by someone or something, dutifully recorded in the provenance.
@@ -40,6 +46,36 @@ public interface KnowledgeGraph {
          * @return
          */
         Agent getAgent();
+
+        /**
+         * This is only used to pass the activity to a child operation.
+         *
+         * @return
+         */
+        Activity getActivity();
+
+        /**
+         * Store the passed asset, return its unique long ID.
+         *
+         * @param asset
+         * @param additionalProperties any pair of properties we want overridden. Pass pairs and do it right
+         *                             or you'll get an exception.
+         * @return
+         */
+        long store(RuntimeAsset asset, Scope scope, Object... additionalProperties);
+
+        /**
+         * Link the two passed assets.
+         *
+         * @param source
+         * @param destination
+         * @param additionalProperties any pair of properties we want overridden. Pass pairs and do it right
+         *                             or you'll get an exception.
+         */
+        void link(RuntimeAsset source, RuntimeAsset destination,
+                  DigitalTwin.Relationship relationship, Scope scope,
+                  Object... additionalProperties);
+
 
         /**
          * Run the operation as configured and return the ID of the last object created or modified, or
@@ -56,6 +92,7 @@ public interface KnowledgeGraph {
          *
          * @param observation
          * @return
+         * @deprecated
          */
         Operation add(RuntimeAsset observation);
 
@@ -66,6 +103,7 @@ public interface KnowledgeGraph {
          *
          * @param source
          * @return
+         * @deprecated
          */
         Operation set(RuntimeAsset source, Object... properties);
 
@@ -82,6 +120,7 @@ public interface KnowledgeGraph {
          * @param assetTo
          * @param linkData
          * @return
+         * @deprecated
          */
         Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo, DigitalTwin.Relationship relationship,
                        Object... linkData);
@@ -113,7 +152,6 @@ public interface KnowledgeGraph {
          * @return
          */
         Operation fail(ContextScope scope, Object... assets);
-
     }
 
     /**
@@ -222,7 +260,7 @@ public interface KnowledgeGraph {
      *
      * @param observation
      * @param scope
-     * @param arguments additional parameters to add to the observation or to override existing ones
+     * @param arguments   additional parameters to add to the observation or to override existing ones
      */
     void update(RuntimeAsset observation, ContextScope scope, Object... arguments);
 

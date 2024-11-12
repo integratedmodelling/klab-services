@@ -100,7 +100,7 @@ public class ExecutionSequence {
                 }
             }
 
-            /**
+            /*
              * Run also the empty operations because execution will update the observations
              */
             if (scope.getParallelism() == Parallelism.ONE) {

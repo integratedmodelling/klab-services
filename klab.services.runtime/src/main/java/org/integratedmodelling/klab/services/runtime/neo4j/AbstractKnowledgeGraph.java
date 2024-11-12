@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
-import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -9,8 +8,8 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
@@ -21,7 +20,9 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.neo4j.driver.Transaction;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,10 +44,115 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                 }
             });
 
-    public record Step(OperationImpl.Type type, List<RuntimeAsset> targets, Object[] parameters) {
+    public record Step(OperationImplObsolete.Type type, List<RuntimeAsset> targets, Object[] parameters) {
     }
 
+    /**
+     * A provenance-linked "transaction" that can be committed or rolled back by reporting failure or success.
+     * The related activity becomes part of the graph in any case and success/failure is recorded with it.
+     * Everything else stored or linked is rolled back in case of failure.
+     */
     public class OperationImpl implements Operation {
+
+        ActivityImpl activity;
+        AgentImpl agent;
+        Transaction transaction;
+        Scope.Status outcome;
+        Throwable exception;
+
+        /**
+         * What should be passed: an agent that will own the activity; the current context scope for graph
+         * operations; the activity type
+         * <p>
+         * What can be passed: an activity as the parent of the one we create here; content for the activity
+         * such as description
+         *
+         * The store/link methods use the same on the database, under the transaction we opened.
+         * @param arguments
+         */
+        public OperationImpl(Object... arguments) {
+
+            // select arguments and put them where they belong
+
+            // validate arguments and complain loudly if anything is missing
+
+            // create and commit the activity record as a node, possibly linked to a parent
+            // activity.
+
+            // open the transaction for the remaining operations
+        }
+
+
+        @Override
+        public Agent getAgent() {
+            return null;
+        }
+
+        @Override
+        public Activity getActivity() {
+            return null;
+        }
+
+        @Override
+        public long store(RuntimeAsset asset, Scope scope, Object... additionalProperties) {
+            return 0;
+        }
+
+        @Override
+        public void link(RuntimeAsset source, RuntimeAsset destination,
+                         DigitalTwin.Relationship relationship, Scope scope, Object... additionalProperties) {
+
+        }
+
+        @Override
+        public long run(ContextScope scope) {
+            return 0;
+        }
+
+        @Override
+        public Operation add(RuntimeAsset observation) {
+            return null;
+        }
+
+        @Override
+        public Operation set(RuntimeAsset source, Object... properties) {
+            // TODO remove
+            return null;
+        }
+
+        @Override
+        public Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo,
+                              DigitalTwin.Relationship relationship, Object... linkData) {
+            // TODO remove
+            return null;
+        }
+
+        @Override
+        public Operation rootLink(RuntimeAsset asset, Object... linkData) {
+            // TODO remove
+            return null;
+        }
+
+        @Override
+        public Operation success(ContextScope scope, Object... assets) {
+            // commit
+            return null;
+        }
+
+        @Override
+        public Operation fail(ContextScope scope, Object... assets) {
+            // rollback
+            return null;
+        }
+
+        @Override
+        public void close() throws IOException {
+            // TODO commit or rollback based on status after success() or fail(). If none has been
+            // called, status is null and this is an internal error, logged with the activity
+        }
+    }
+
+    public class OperationImplObsolete implements Operation {
 
         private AgentImpl agent;
         private String description;
@@ -78,6 +184,11 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                 return asset.getId();
             }
             throw new KlabInternalErrorException("Unregistered asset in graph operation: " + asset);
+        }
+
+        @Override
+        public void close() throws IOException {
+
         }
 
         enum Type {
@@ -161,6 +272,17 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
         public Agent getAgent() {
             return agent;
+        }
+
+        @Override
+        public long store(RuntimeAsset asset, Scope scope, Object... additionalProperties) {
+            return 0;
+        }
+
+        @Override
+        public void link(RuntimeAsset source, RuntimeAsset destination,
+                         DigitalTwin.Relationship relationship, Scope scope, Object... additionalProperties) {
+
         }
 
         public void setAgent(Agent agent) {
@@ -265,7 +387,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                                  DigitalTwin.Relationship relationship, Scope scope,
                                  Object... additionalProperties);
 
-    protected abstract long runOperation(OperationImpl operation, ContextScope scope);
+    protected abstract long runOperation(OperationImplObsolete operation, ContextScope scope);
 
     /**
      * Call at the end of each activity on the result of {@link #activity(Agent, ContextScope, Object...)},
@@ -276,13 +398,14 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
      * @param success
      * @param resultsToUpdate
      */
-    protected abstract void finalizeOperation(OperationImpl operation, ContextScope scope, boolean success,
+    protected abstract void finalizeOperation(OperationImplObsolete operation, ContextScope scope,
+                                              boolean success,
                                               Object... resultsToUpdate);
 
     @Override
     public Operation activity(Agent agent, ContextScope scope, Object... targets) {
 
-        OperationImpl ret = new OperationImpl();
+        OperationImplObsolete ret = new OperationImplObsolete();
 
         ret.activity.setStart(System.currentTimeMillis());
 
@@ -368,7 +491,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
             switch (asset) {
                 case Observation observation -> {
                     ret.putAll(observation.getMetadata());
-                    ret.put("name", observation.getName() == null ? observation.getObservable().codeName() : observation.getName());
+                    ret.put("name", observation.getName() == null ? observation.getObservable().codeName()
+                                                                  : observation.getName());
                     ret.put("updated", observation.getLastUpdate());
                     ret.put("resolved", observation.isResolved());
                     ret.put("type", observation.getType().name());
