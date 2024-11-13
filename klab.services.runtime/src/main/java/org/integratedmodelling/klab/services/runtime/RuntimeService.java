@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -271,20 +272,37 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
     @Override
     public long submit(Observation observation, ContextScope scope) {
+
+        if (observation.isResolved()) {
+            // TODO there may be a context for this at some point.
+            throw new KlabIllegalStateException("A resolved observation cannot be submitted to the " +
+                    "knowledge graph for now");
+        }
+
         if (scope instanceof ServiceContextScope serviceContextScope) {
             var digitalTwin = getDigitalTwin(scope);
             var parentActivity = getInstantiationActivity(observation, scope);
             var agent = getAgent(scope);
             var instantiation = digitalTwin.knowledgeGraph().operation(agent, parentActivity,
                     Activity.Type.INSTANTIATION, observation);
+
             try (instantiation) {
                 var ret = instantiation.store(observation);
+                if (scope.getContextObservation() != null) {
+                    instantiation.link(scope.getContextObservation(), observation,
+                            DigitalTwin.Relationship.HAS_CHILD);
+                }
+                if (scope.getObserver() != null) {
+                    instantiation.link(observation, scope.getObserver(),
+                            DigitalTwin.Relationship.HAS_OBSERVER);
+                }
                 instantiation.success(scope, observation);
                 return ret;
             } catch (Throwable t) {
                 instantiation.fail(scope, observation);
             }
         }
+
         return Observation.UNASSIGNED_ID;
     }
 
@@ -326,8 +344,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                 This will commit or rollback at close()
                  */
                 var resolution = digitalTwin.knowledgeGraph().operation(digitalTwin.knowledgeGraph().klab()
-                        , parentActivity,
-                        Activity.Type.RESOLUTION);
+                        , parentActivity, Activity.Type.RESOLUTION);
 
                 try (resolution) {
                     result = observation;
@@ -363,13 +380,12 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                      */
                     var contextualization =
                             digitalTwin.knowledgeGraph().operation(digitalTwin.knowledgeGraph().klab(),
-                                    resolutionActivity,
-                            Activity.Type.CONTEXTUALIZATION);
+                                    resolutionActivity, Activity.Type.CONTEXTUALIZATION);
 
                     try (contextualization) {
                         // TODO contextualization gets its own activities to use in operations
                         //  (dependent on resolution) linked to actuators by runDataflow
-                        result = runDataflow(dataflow, scope);
+                        result = runDataflow(dataflow, scope, contextualization);
                         ret.complete(result);
                         contextualization.success(scope, dataflow, result);
                     } catch (Throwable t) {
@@ -388,13 +404,12 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
     @Override
     public Observation runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
-        var activity = new ActivityImpl();
-        // TODO fill in the activity for an external dataflow run
-        return runDataflow(dataflow, contextScope, activity);
+        // TODO fill in the operation representing an external dataflow run
+        return runDataflow(dataflow, contextScope, null);
     }
 
     public Observation runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope,
-                                   Activity activity) {
+                                   KnowledgeGraph.Operation contextualization) {
 
         var digitalTwin = getDigitalTwin(contextScope);
 

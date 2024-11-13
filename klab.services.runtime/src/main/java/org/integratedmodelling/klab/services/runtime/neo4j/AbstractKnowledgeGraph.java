@@ -46,11 +46,12 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
      */
     public class OperationImpl implements Operation {
 
-        ActivityImpl activity;
-        AgentImpl agent;
-        Transaction transaction;
-        Scope.Status outcome;
-        Throwable exception;
+        private ActivityImpl activity;
+        private AgentImpl agent;
+        // FIXME ACH no this must be in the Neo4j implementation
+        private Transaction transaction;
+        private Scope.Status outcome;
+        private Throwable exception;
 
         /**
          * What should be passed: an agent that will own the activity; the current context scope for graph
@@ -71,7 +72,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
             // select arguments and put them where they belong
 
-            // validate arguments and complain loudly if anything is missing
+            // validate arguments and complain loudly if anything is missing. Must have agent and activity
 
             // create and commit the activity record as a node, possibly linked to a parent
             // activity.
@@ -81,34 +82,40 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
         @Override
         public Agent getAgent() {
-            return null;
+            return this.agent;
         }
 
         @Override
         public Activity getActivity() {
-            return null;
+            return this.activity;
         }
 
         @Override
         public long store(RuntimeAsset asset, Object... additionalProperties) {
-            return 0;
+            // FIXME NO use transactional version!
+            return AbstractKnowledgeGraph.this.store(asset, scope, additionalProperties);
         }
 
         @Override
         public void link(RuntimeAsset source, RuntimeAsset destination,
-                         DigitalTwin.Relationship relationship, Scope scope, Object... additionalProperties) {
-
+                         DigitalTwin.Relationship relationship, Object... additionalProperties) {
+            // FIXME NO use transactional version!
+            AbstractKnowledgeGraph.this.link(source, destination, relationship, scope,
+                    additionalProperties);
         }
 
         @Override
         public Operation success(ContextScope scope, Object... assets) {
-            // commit
-            return null;
+            this.outcome = Scope.Status.FINISHED;
+            // updates as needed (activity end, observation resolved if type == resolution, context timestamp
+            return this;
         }
 
         @Override
         public Operation fail(ContextScope scope, Object... assets) {
-            // rollback
+            // rollback; update activity end and context timestamp only, if we have an error or throwable
+            // update activity
+            this.outcome = Scope.Status.ABORTED;
             return null;
         }
 
@@ -116,6 +123,14 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         public void close() throws IOException {
             // TODO commit or rollback based on status after success() or fail(). If none has been
             // called, status is null and this is an internal error, logged with the activity
+            if (outcome == null) {
+                // Log an internal failure (no success or failure, should not happen)
+                transaction.rollback();
+            } else if (outcome == Scope.Status.FINISHED) {
+                transaction.commit();
+            } else if (outcome == Scope.Status.ABORTED) {
+                transaction.rollback();
+            }
         }
     }
 

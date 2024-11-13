@@ -32,6 +32,9 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.provenance.Activity;
+import org.integratedmodelling.klab.api.provenance.Agent;
+import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -252,7 +255,8 @@ public class JacksonConfiguration {
                                       Currency.class, Message.class, Worldview.class, Workspace.class,
                                       Concept.class, Observable.class, Resource.class, KimOntology.class,
                                       KimNamespace.class, KimObservationStrategyDocument.class,
-                                      KdlDataflow.class, KActorsBehavior.class, KimModel.class,
+                                      KActorsBehavior.class, KimModel.class, Activity.class,
+                                      Agent.class, Provenance.Node.class, Provenance.class,
                                       KimSymbolDefinition.class, Contextualizable.class, Identifier.class,
                                       KimConcept.class, KimObservable.class, Quantity.class,
                                       Model.class, ServiceCall.class, Observation.class,

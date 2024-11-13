@@ -66,16 +66,14 @@ public interface KnowledgeGraph {
 
         /**
          * Link the two passed assets.
-         * <p>
-         * FIXME remove scope when the other is gone
-         *
+         * <p>*
          * @param source
          * @param destination
          * @param additionalProperties any pair of properties we want overridden. Pass pairs and do it right
          *                             or you'll get an exception.
          */
         void link(RuntimeAsset source, RuntimeAsset destination,
-                  DigitalTwin.Relationship relationship, Scope scope,
+                  DigitalTwin.Relationship relationship,
                   Object... additionalProperties);
 
         //
