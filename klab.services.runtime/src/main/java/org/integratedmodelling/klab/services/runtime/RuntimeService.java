@@ -16,6 +16,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Activity;
+import org.integratedmodelling.klab.api.provenance.Agent;
+import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -270,10 +272,33 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     @Override
     public long submit(Observation observation, ContextScope scope) {
         if (scope instanceof ServiceContextScope serviceContextScope) {
-            // TODO this gets its operation (instantiation of observation)
-            return serviceContextScope.insertIntoKnowledgeGraph(observation);
+            var digitalTwin = getDigitalTwin(scope);
+            var parentActivity = getInstantiationActivity(observation, scope);
+            var agent = getAgent(scope);
+            var instantiation = digitalTwin.knowledgeGraph().operation(agent, parentActivity,
+                    Activity.Type.INSTANTIATION, observation);
+            try (instantiation) {
+                var ret = instantiation.store(observation);
+                instantiation.success(scope, observation);
+                return ret;
+            } catch (Throwable t) {
+                instantiation.fail(scope, observation);
+            }
         }
         return Observation.UNASSIGNED_ID;
+    }
+
+    private Agent getAgent(ContextScope scope) {
+        // TODO
+        return null;
+    }
+
+    private Activity getInstantiationActivity(Observation observation, ContextScope scope) {
+        /**
+         * TODO THE SCOPE NEEDS TO KNOW WHO AND WHY THIS IS BEING CREATED - CHECK PREVIOUS CODE
+         * Scope should contain the task ID that identifies the activity being run.
+         */
+        return null;
     }
 
     @Override
@@ -284,40 +309,73 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             var resolver = serviceContextScope.getService(Resolver.class);
             var observation = serviceContextScope.getObservation(id);
             var digitalTwin = getDigitalTwin(scope);
-            var activity =
+            var parentActivities = digitalTwin.knowledgeGraph().get(scope, Activity.class,
+                    Activity.Type.INSTANTIATION, observation);
 
-                    // TODO retrieve the activity that instantiated the observation instead, pass it down
-                    //  as the root for the resolution somehow
-                    digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().klab(), scope,
-                            observation, Activity.Type.RESOLUTION, null);
-
+            // TODO check
+            var parentActivity = parentActivities.getFirst();
             final var ret = new CompletableFuture<Observation>();
 
             Thread.ofVirtual().start(() -> {
-                try {
-                    var result = observation;
+
+                Dataflow<Observation> dataflow = null;
+                Activity resolutionActivity = null;
+                Observation result = null;
+
+                /*
+                This will commit or rollback at close()
+                 */
+                var resolution = digitalTwin.knowledgeGraph().operation(digitalTwin.knowledgeGraph().klab()
+                        , parentActivity,
+                        Activity.Type.RESOLUTION);
+
+                try (resolution) {
+                    result = observation;
                     scope.send(Message.MessageClass.ObservationLifecycle,
                             Message.MessageType.ResolutionStarted, result);
-                    // TODO resolution gets its own operation (find the instantiation activity as precursor)
-                    var dataflow = resolver.resolve(observation, scope);
-                    if (dataflow != null) {
-                        if (!dataflow.isEmpty()) {
-                            // TODO contextualization gets its own operation (dependent on resolution)
-                            result = runDataflow(dataflow, scope);
-                            ret.complete(result);
+                    try {
+                        dataflow = resolver.resolve(observation, scope);
+                        if (dataflow != null) {
+                            resolution.success(scope, result, dataflow,
+                                    "Resolution of observation _" + observation.getUrn() + "_ of **" + observation.getObservable().getUrn() + "**");
+                            scope.send(Message.MessageClass.ObservationLifecycle,
+                                    Message.MessageType.ResolutionSuccessful, result);
+                        } else {
+                            resolution.fail(scope, observation);
+                            ret.completeExceptionally(null /* TODO */);
                         }
-                        activity.success(scope, result, dataflow,
-                                "Resolution of observation _" + observation.getUrn() + "_ of **" + observation.getObservable().getUrn() + "**");
-                    } else {
-                        activity.fail(scope, observation);
+                    } catch (Throwable t) {
+                        ret.completeExceptionally(t);
+                        resolution.fail(scope, observation, t);
+                        scope.send(Message.MessageClass.ObservationLifecycle,
+                                Message.MessageType.ResolutionAborted, observation);
                     }
-                    scope.send(Message.MessageClass.ObservationLifecycle,
-                            Message.MessageType.ResolutionSuccessful, result);
                 } catch (Throwable t) {
-                    ret.completeExceptionally(t);
-                    activity.fail(scope, observation, t);
                     scope.send(Message.MessageClass.ObservationLifecycle,
                             Message.MessageType.ResolutionAborted, observation);
+                    ret.completeExceptionally(t);
+                }
+
+                if (!dataflow.isEmpty()) {
+
+                    /*
+                    this will commit all resources at close()
+                     */
+                    var contextualization =
+                            digitalTwin.knowledgeGraph().operation(digitalTwin.knowledgeGraph().klab(),
+                                    resolutionActivity,
+                            Activity.Type.CONTEXTUALIZATION);
+
+                    try (contextualization) {
+                        // TODO contextualization gets its own activities to use in operations
+                        //  (dependent on resolution) linked to actuators by runDataflow
+                        result = runDataflow(dataflow, scope);
+                        ret.complete(result);
+                        contextualization.success(scope, dataflow, result);
+                    } catch (Throwable t) {
+                        contextualization.fail(scope, dataflow, result);
+                        ret.completeExceptionally(t);
+                    }
                 }
             });
 

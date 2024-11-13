@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -19,6 +20,11 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
 
     // TODO connect to a DB and run a driver
 
+
+    @Override
+    public Operation operation(Agent agent, Activity parentActivity, Activity.Type activityType, Object... data) {
+        return null;
+    }
 
     @Override
     public KnowledgeGraph contextualize(ContextScope scope) {
