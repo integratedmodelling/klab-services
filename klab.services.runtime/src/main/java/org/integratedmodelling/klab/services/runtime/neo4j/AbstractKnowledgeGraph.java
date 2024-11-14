@@ -23,9 +23,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
-
 
     protected static int MAX_CACHED_OBSERVATIONS = 400;
 
@@ -39,102 +39,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                 }
             });
 
-    /**
-     * A provenance-linked "transaction" that can be committed or rolled back by reporting failure or success.
-     * The related activity becomes part of the graph in any case and success/failure is recorded with it.
-     * Everything else stored or linked is rolled back in case of failure.
-     */
-    public class OperationImpl implements Operation {
-
-        private ActivityImpl activity;
-        private AgentImpl agent;
-        // FIXME ACH no this must be in the Neo4j implementation
-        private Transaction transaction;
-        private Scope.Status outcome;
-        private Throwable exception;
-
-        /**
-         * What should be passed: an agent that will own the activity; the current context scope for graph
-         * operations; the activity type
-         * <p>
-         * What can be passed: another operation so that its activity becomes the parent of the one we create
-         * here AND the transaction isn't finished upon execution; content for the activity such as
-         * description
-         * <p>
-         * The store/link methods use the same on the database, under the transaction we opened.
-         * <p>
-         * Each ExecutorOperation must include a previously built Operation; only the wrapping one should
-         * commit/rollback.
-         *
-         * @param arguments
-         */
-        public OperationImpl(Object... arguments) {
-
-            // select arguments and put them where they belong
-
-            // validate arguments and complain loudly if anything is missing. Must have agent and activity
-
-            // create and commit the activity record as a node, possibly linked to a parent
-            // activity.
-
-            // open the transaction for the remaining operations
-        }
-
-        @Override
-        public Agent getAgent() {
-            return this.agent;
-        }
-
-        @Override
-        public Activity getActivity() {
-            return this.activity;
-        }
-
-        @Override
-        public long store(RuntimeAsset asset, Object... additionalProperties) {
-            // FIXME NO use transactional version!
-            return AbstractKnowledgeGraph.this.store(asset, scope, additionalProperties);
-        }
-
-        @Override
-        public void link(RuntimeAsset source, RuntimeAsset destination,
-                         DigitalTwin.Relationship relationship, Object... additionalProperties) {
-            // FIXME NO use transactional version!
-            AbstractKnowledgeGraph.this.link(source, destination, relationship, scope,
-                    additionalProperties);
-        }
-
-        @Override
-        public Operation success(ContextScope scope, Object... assets) {
-            this.outcome = Scope.Status.FINISHED;
-            // updates as needed (activity end, observation resolved if type == resolution, context timestamp
-            return this;
-        }
-
-        @Override
-        public Operation fail(ContextScope scope, Object... assets) {
-            // rollback; update activity end and context timestamp only, if we have an error or throwable
-            // update activity
-            this.outcome = Scope.Status.ABORTED;
-            return null;
-        }
-
-        @Override
-        public void close() throws IOException {
-            // TODO commit or rollback based on status after success() or fail(). If none has been
-            // called, status is null and this is an internal error, logged with the activity
-            if (outcome == null) {
-                // Log an internal failure (no success or failure, should not happen)
-                transaction.rollback();
-            } else if (outcome == Scope.Status.FINISHED) {
-                transaction.commit();
-            } else if (outcome == Scope.Status.ABORTED) {
-                transaction.rollback();
-            }
-        }
-    }
-
-    protected abstract RuntimeAsset getContextNode();
+//    protected abstract RuntimeAsset getContextNode();
 
     /**
      * Return a RuntimeAsset representing the overall dataflow related to the scope, so that it can be used
@@ -145,6 +50,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
      *                                                                               contextualized.
      */
     protected abstract RuntimeAsset getDataflowNode();
+
+    protected abstract long nextKey();
 
     /**
      * Return a RuntimeAsset representing the overall provenance related to the scope, so that it can be used
@@ -164,7 +71,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
      * @param <T>
      * @return
      */
-    protected abstract <T extends RuntimeAsset> T retrieve(long key, Class<T> assetClass, Scope scope);
+    protected abstract <T extends RuntimeAsset> T retrieve(Object key, Class<T> assetClass, Scope scope);
 
     /**
      * Store the passed asset, return its unique long ID.
@@ -261,9 +168,4 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         return ret;
     }
 
-    @Override
-    public Operation operation(Agent agent, Activity parentActivity, Activity.Type activityType,
-                               Object... data) {
-        return null;
-    }
 }

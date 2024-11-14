@@ -181,8 +181,7 @@ public interface Provenance extends RuntimeAsset, Iterable<Activity> {
 
     /**
      * An agent must be defined in resolution constraints during resolution. This extracts it and returns it,
-     * also throwing a {@link org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException} if the
-     * agent is not defined.
+     * If the agent is not defined, null is returned and the user agent should be assumed.
      *
      * @param scope
      * @return
@@ -197,14 +196,12 @@ public interface Provenance extends RuntimeAsset, Iterable<Activity> {
                 }
             }
         }
-        throw new KlabInternalErrorException("Resolution constraint in scope " + scope.getId() + " do not " +
-                "contain an agent");
+        return null;
     }
 
     /**
      * An activity must be defined in resolution constraints during resolution. This extracts it and returns
-     * it, also throwing a {@link org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException} if
-     * the activity is not defined.
+     * it. If no activity is defined, a default activity can be created according to context.
      *
      * @param scope
      * @return
@@ -219,8 +216,7 @@ public interface Provenance extends RuntimeAsset, Iterable<Activity> {
                 }
             }
         }
-        throw new KlabInternalErrorException("Resolution constraint in scope " + scope.getId() + " do not " +
-                "contain an agent");
+        return null;
     }
 
 

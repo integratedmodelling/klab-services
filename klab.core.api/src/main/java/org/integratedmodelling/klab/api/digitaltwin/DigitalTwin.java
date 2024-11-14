@@ -43,7 +43,8 @@ public interface DigitalTwin {
         HAS_DATAFLOW,
         HAS_PROVENANCE,
         HAS_ACTIVITY,
-        HAS_CHILD
+        HAS_CHILD,
+        TRIGGERED;
     }
 
     /**

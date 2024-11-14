@@ -281,8 +281,13 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
         if (scope instanceof ServiceContextScope serviceContextScope) {
             var digitalTwin = getDigitalTwin(scope);
-            var parentActivity = getInstantiationActivity(observation, scope);
+            var parentActivity = getInitializationActivity(observation, scope);
             var agent = getAgent(scope);
+
+            /**
+             * The initial activity should be in the scope; if not, we're observing at the
+             * root DT level and we get the context initialization activity as parent.
+             */
             var instantiation = digitalTwin.knowledgeGraph().operation(agent, parentActivity,
                     Activity.Type.INSTANTIATION, observation);
 
@@ -307,16 +312,29 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     private Agent getAgent(ContextScope scope) {
-        // TODO
-        return null;
+
+        var ret = Provenance.getAgent(scope);
+        if (ret != null) {
+            return ret;
+        }
+        if (scope instanceof ServiceContextScope serviceContextScope) {
+            // assume the user is the agent
+            return serviceContextScope.getDigitalTwin().knowledgeGraph().user();
+        }
+        throw new KlabIllegalStateException("Cannot determine the requesting agent from scope");
     }
 
-    private Activity getInstantiationActivity(Observation observation, ContextScope scope) {
-        /**
-         * TODO THE SCOPE NEEDS TO KNOW WHO AND WHY THIS IS BEING CREATED - CHECK PREVIOUS CODE
-         * Scope should contain the task ID that identifies the activity being run.
-         */
-        return null;
+    private Activity getInitializationActivity(Observation observation, ContextScope scope) {
+        var ret = Provenance.getActivity(scope);
+        if (ret != null) {
+            return ret;
+        }
+        var activities = getDigitalTwin(scope).knowledgeGraph().get(scope, Activity.class,
+                Activity.Type.INITIALIZATION);
+        if (activities.size() == 1) {
+            return activities.getFirst();
+        }
+        throw new KlabInternalErrorException("cannot locate the context initialization activity");
     }
 
     @Override
