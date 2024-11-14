@@ -22,11 +22,6 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
 
 
     @Override
-    public Operation operation(Agent agent, Activity parentActivity, Activity.Type activityType, Object... data) {
-        return null;
-    }
-
-    @Override
     public KnowledgeGraph contextualize(ContextScope scope) {
         return null;
     }
@@ -40,11 +35,6 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
     public <T extends RuntimeAsset> List<T> get(RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
         return List.of();
     }
-
-    //    @Override
-    //    public boolean canDistribute() {
-    //        return false;
-    //    }
 
     @Override
     public KnowledgeGraph merge(URL remoteDigitalTwinURL) {
