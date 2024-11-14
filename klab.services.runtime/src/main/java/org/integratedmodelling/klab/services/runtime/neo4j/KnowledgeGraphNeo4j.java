@@ -101,7 +101,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         private ActivityImpl activity;
         private Agent agent;
-        // FIXME ACH no this must be in the Neo4j implementation
         private Transaction transaction;
         private Scope.Status outcome;
         private Throwable exception;
@@ -148,7 +147,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         @Override
         public void close() throws IOException {
-            // TODO commit or rollback based on status after success() or fail(). If none has been
+
+            // commit or rollback based on status after success() or fail(). If none has been
             // called, status is null and this is an internal error, logged with the activity
 
             if (parent == null) {
