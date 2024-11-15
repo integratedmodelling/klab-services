@@ -282,14 +282,14 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         if (scope instanceof ServiceContextScope serviceContextScope) {
 
             var digitalTwin = getDigitalTwin(scope);
-//            var parentActivity = getInitializationActivity(observation, scope);
+            var parentActivity = Provenance.getActivity(scope);
             var agent = getAgent(scope);
 
             /*
              * The initial activity should be in the scope; if not, we're observing at the
              * root DT level and we get the context initialization activity as parent.
              */
-            var instantiation = digitalTwin.knowledgeGraph().operation(agent, null,
+            var instantiation = digitalTwin.knowledgeGraph().operation(agent, parentActivity,
                     Activity.Type.INSTANTIATION, observation);
 
             try (instantiation) {
