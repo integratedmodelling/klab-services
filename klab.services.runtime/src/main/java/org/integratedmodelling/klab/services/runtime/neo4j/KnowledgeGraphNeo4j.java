@@ -48,7 +48,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     protected Agent user;
     protected Agent klab;
     protected String rootContextId;
-    //    private RuntimeAsset contextNode;
+    private RuntimeAsset contextNode;
     private RuntimeAsset dataflowNode;
     private RuntimeAsset provenanceNode;
 
@@ -57,9 +57,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         String REMOVE_CONTEXT = "match (n:Context {id: $contextId})-[*]-(c) detach delete n,c";
         String FIND_CONTEXT = "MATCH (ctx:Context {id: $contextId}) RETURN ctx";
-        //        String FIND_BY_ID = "MATCH (n) WHERE id(n) = $id RETURN n";
-        //        String FIND_BY_PROPERTY = "MATCH (n:{type}) WHERE n.{property} = $value RETURN n";
-        // retrieve ID as records().getFirst().get(keys().getFirst()) ?
         String CREATE_WITH_PROPERTIES = "CREATE (n:{type}) SET n = $properties RETURN n";
         String UPDATE_PROPERTIES = "MATCH (n:{type}) WHERE n.id = $id SET n += $properties";
         String[] INITIALIZATION_QUERIES = new String[]{
@@ -80,16 +77,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                         + "\t(prov)-[:HAS_AGENT]->(klab),\n"
                         + "\t// ACTIVITY that created the whole thing\n"
                         + "\t(creation:Activity {start: $timestamp, end: $timestamp, name: " +
-                        "'INITIALIZATION'}),\n"
+                        "'INITIALIZATION', id: $activityId}),\n"
                         + "\t// created by user\n"
                         + "\t(creation)-[:BY_AGENT]->(user),\n"
                         + "\t(ctx)<-[:CREATED]-(creation),\n"
                         + "(prov)-[:HAS_CHILD]->(creation)"};
         String GET_AGENT_BY_NAME = "match (ctx:Context {id: $contextId})-->(prov:Provenance)-[:HAS_AGENT]->" +
                 "(a:Agent {name: $agentName}) RETURN a";
-        //        String LINK_ASSETS = "match (n:{fromLabel}), (c:{toLabel}) WHERE n.{fromKeyProperty} =
-        //        $fromKey AND" +
-        //                " c.{toKeyProperty} = $toKey CREATE (n)-[r:{relationshipLabel}]->(c) return r";
     }
 
     /**
@@ -130,6 +124,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
 
         @Override
+        public void linkToRootNode(RuntimeAsset destination,
+                                   DigitalTwin.Relationship relationship, Object... additionalProperties) {
+            var rootNode = switch (destination) {
+                case Actuator ignored -> dataflowNode;
+                case Activity ignored -> provenanceNode;
+                case Observation ignored -> contextNode;
+                default -> throw new KlabIllegalStateException("Unexpected value: " + destination);
+            };
+            KnowledgeGraphNeo4j.this.link(transaction, rootNode, destination, relationship, scope,
+                    additionalProperties);
+        }
+
+        @Override
         public Operation success(ContextScope scope, Object... assets) {
             this.outcome = Scope.Status.FINISHED;
             // updates as needed (activity end, observation resolved if type == resolution, context timestamp
@@ -148,6 +155,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         @Override
         public void close() throws IOException {
 
+            this.activity.setEnd(System.currentTimeMillis());
+            this.activity.setOutcome(outcome == null ? Activity.Outcome.INTERNAL_FAILURE :
+                                     (outcome == Scope.Status.FINISHED ? Activity.Outcome.SUCCESS :
+                                      Activity.Outcome.FAILURE));
+
             // commit or rollback based on status after success() or fail(). If none has been
             // called, status is null and this is an internal error, logged with the activity
 
@@ -161,10 +173,17 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
                     if (assets != null) {
                         for (var asset : assets) {
-                            if (asset instanceof Observation observation) {
-                                update(observation, scope, "resolved", true, "coverage",
-                                        observation.getResolvedCoverage());
+                            if (asset instanceof ObservationImpl observation) {
+                                if (activity.getType() == Activity.Type.RESOLUTION) {
+                                    observation.setResolved(true);
+                                }
+                                update(observation, scope);
                             } else if (asset instanceof Dataflow<?> dataflow) {
+                                // TODO we should keep the actuator and add it with the subordinate
+                                //  operation at
+                                //  creation, here we shouldn't do anything (maybe update with execution
+                                //  time per
+                                //  contextualize and/or other stat data)
                                 storeDataflow(dataflow, scope, activity);
                             }
                         }
@@ -175,7 +194,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 }
             }
 
-            update(this.activity, scope, "end", System.currentTimeMillis());
+            update(this.activity, scope);
         }
     }
 
@@ -184,8 +203,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                                Object... data) {
 
         // validate arguments and complain loudly if anything is missing. Must have agent and activity
-        if (agent == null || parentActivity == null) {
-            throw new KlabInternalErrorException("Knowledge graph operation: agent or activity is null");
+        if (agent == null) {
+            throw new KlabInternalErrorException("Knowledge graph operation: agent is null");
         }
 
         // create and commit the activity record as a node, possibly linked to a parent
@@ -211,16 +230,25 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                     ret.activity.setDescription(description);
                 } else if (dat instanceof OperationImpl operation) {
                     ret.parent = operation;
-                }
+                } // TODO this should also get an Actuator and link it as plan to the activity & parent +
+                // set up for later
             }
         }
 
         KnowledgeGraphNeo4j.this.store(activity, scope);
-        KnowledgeGraphNeo4j.this.link(parentActivity, activity, DigitalTwin.Relationship.TRIGGERED, scope);
+        KnowledgeGraphNeo4j.this.link(activity, agent, DigitalTwin.Relationship.BY_AGENT, scope);
+        if (parentActivity != null) {
+            KnowledgeGraphNeo4j.this.link(parentActivity, activity, DigitalTwin.Relationship.TRIGGERED,
+                    scope);
+        } else {
+            KnowledgeGraphNeo4j.this.link(provenanceNode, activity, DigitalTwin.Relationship.HAS_CHILD,
+                    scope);
+        }
 
         // open transaction if we are the root operation. We only commit within it.
         ret.transaction = ret.parent == null
-                          ? driver.session().beginTransaction(TransactionConfig.builder().withTimeout(Duration.ZERO).build())
+                          ?
+                          driver.session().beginTransaction(TransactionConfig.builder().withTimeout(Duration.ZERO).build())
                           : ret.parent.transaction;
 
         return ret;
@@ -268,13 +296,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         if (result.records().isEmpty()) {
             long timestamp = System.currentTimeMillis();
+            var activityId = nextKey();
             for (var query : Queries.INITIALIZATION_QUERIES) {
                 query(query, Map.of(
                                 "contextId", scope.getId(),
                                 "name", scope.getName(),
                                 "timestamp", timestamp,
                                 "username", scope.getUser().getUsername(),
-                                "expirationType", scope.getExpiration().name()),
+                                "expirationType", scope.getExpiration().name(),
+                                "activityId", activityId),
                         scope);
             }
 
@@ -302,6 +332,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         final var dataflowNodeId = nextKey();
         final var provenanceNodeId = nextKey();
+        final var contextNodeId = nextKey();
 
         //        this.contextNode = new RuntimeAsset() {
         //            @Override
@@ -339,6 +370,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             public Type classify() {
                 // check - scope isn't a runtime asset
                 return Type.PROVENANCE;
+            }
+        };
+
+        this.contextNode = new RuntimeAsset() {
+            @Override
+            public long getId() {
+                return contextNodeId;
+            }
+
+            @Override
+            public Type classify() {
+                // as a marker - scope isn't a runtime asset
+                return Type.ARTIFACT;
             }
         };
 
@@ -513,6 +557,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     @Override
     protected long store(RuntimeAsset asset, Scope scope, Object... additionalProperties) {
 
+        // TODO store the geometry when the asset is an observation or actuator w/coverage (use cached)!
+
         var type = getLabel(asset);
         var props = asParameters(asset, additionalProperties);
         var ret = nextKey();
@@ -592,6 +638,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             case Agent agent -> name + ".name = $" + queryVariable;
             default -> null;
         };
+
+        if (ret == null) {
+            ret = switch (asset.classify()) {
+                case ARTIFACT, DATAFLOW, PROVENANCE -> name + ".id = $" + queryVariable;
+                default -> throw new KlabIllegalStateException("Unexpected value: " + asset.classify());
+            };
+        }
+
         return ret == null ? (ret = name + ".id = $" + queryVariable) : ret;
     }
 
@@ -608,7 +662,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         if (ret == null) {
             // it's one of the preset ones
             ret = switch (asset.classify()) {
-                case ACTUATOR -> scope.getId();
+                case ARTIFACT -> scope.getId();
                 case DATAFLOW -> scope.getId() + ".DATAFLOW";
                 case PROVENANCE -> scope.getId() + ".PROVENANCE";
                 default -> throw new KlabIllegalStateException("Unexpected value: " + asset.classify());
@@ -899,9 +953,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 return "Agent";
             } else if (Plan.class.isAssignableFrom(cls)) {
                 return "Plan";
-            } else {
-                throw new KlabIllegalArgumentException(
-                        "Cannot store " + cls + " in knowledge graph");
             }
         }
 
@@ -933,11 +984,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     @Override
-    public void update(RuntimeAsset observation, ContextScope scope, Object... parameters) {
+    public void update(RuntimeAsset runtimeAsset, ContextScope scope, Object... parameters) {
         // set resolved flag to true; add final coverage
-        var props = asParameters(observation, parameters);
-        query(Queries.UPDATE_PROPERTIES.replace("{type}", "Observation"),
-                Map.of("id", observation.getId(), "properties", props), scope);
+        var props = asParameters(runtimeAsset, parameters);
+        query(Queries.UPDATE_PROPERTIES.replace("{type}", getLabel(runtimeAsset)),
+                Map.of("id", (runtimeAsset instanceof ActuatorImpl actuator ? actuator.getInternalId() :
+                              runtimeAsset.getId()), "properties", props), scope);
     }
 
     @Override

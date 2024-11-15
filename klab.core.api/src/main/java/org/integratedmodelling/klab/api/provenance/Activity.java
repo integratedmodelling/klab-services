@@ -45,6 +45,10 @@ public interface Activity extends Provenance.Node {
         INITIALIZATION, RESOLUTION, CONTEXTUALIZATION, INSTANTIATION
     }
 
+    enum Outcome {
+        FAILURE, SUCCESS, INTERNAL_FAILURE
+    }
+
     Type getType();
 
     /**
@@ -98,5 +102,9 @@ public interface Activity extends Provenance.Node {
      * @return
      */
     String getDescription();
+
+    Outcome getOutcome();
+
+    String getStackTrace();
 
 }

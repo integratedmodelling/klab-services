@@ -67,6 +67,7 @@ public interface KnowledgeGraph {
         /**
          * Link the two passed assets.
          * <p>*
+         *
          * @param source
          * @param destination
          * @param additionalProperties any pair of properties we want overridden. Pass pairs and do it right
@@ -75,6 +76,19 @@ public interface KnowledgeGraph {
         void link(RuntimeAsset source, RuntimeAsset destination,
                   DigitalTwin.Relationship relationship,
                   Object... additionalProperties);
+
+        /**
+         * Link the passed asset to the root node it "naturally" belongs to in the scope.
+         * <p>*
+         *
+         * @param destination
+         * @param additionalProperties any pair of properties we want overridden. Pass pairs and do it right
+         *                             or you'll get an exception.
+         */
+        void linkToRootNode(RuntimeAsset destination,
+                            DigitalTwin.Relationship relationship,
+                            Object... additionalProperties);
+
 
         //
         //        /**

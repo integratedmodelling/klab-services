@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.runtime.neo4j;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -38,8 +39,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                     return retrieve(key, RuntimeAsset.class, scope);
                 }
             });
-
-//    protected abstract RuntimeAsset getContextNode();
 
     /**
      * Return a RuntimeAsset representing the overall dataflow related to the scope, so that it can be used
@@ -117,6 +116,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         if (asset != null) {
             switch (asset) {
                 case Observation observation -> {
+
                     ret.putAll(observation.getMetadata());
                     ret.put("name", observation.getName() == null ? observation.getObservable().codeName()
                                                                   : observation.getName());
@@ -127,13 +127,15 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                     ret.put("semantictype", SemanticType.fundamentalType(
                             observation.getObservable().getSemantics().getType()).name());
                     ret.put("semantics", observation.getObservable().getUrn());
+                    ret.put("id", observation.getId());
                 }
                 case Agent agent -> {
                     // TODO
                 }
-                case Actuator actuator -> {
+                case ActuatorImpl actuator -> {
 
                     ret.put("observationId", actuator.getId());
+                    ret.put("id", actuator.getInternalId());
                     StringBuilder code = new StringBuilder();
                     for (var call : actuator.getComputation()) {
                         // TODO skip any recursive resolution calls and prepare for linking later
@@ -153,6 +155,9 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                     ret.put("size", activity.getSize());
                     ret.put("type", activity.getType().name());
                     ret.put("name", activity.getName());
+                    ret.put("id", activity.getId());
+                    ret.put("outcome", activity.getOutcome() == null ? null : activity.getOutcome().name());
+                    ret.put("stackTrace", activity.getStackTrace());
                 }
                 default -> throw new KlabInternalErrorException(
                         "unexpected value for asParameters: " + asset.getClass().getCanonicalName());

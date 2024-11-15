@@ -280,29 +280,37 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         }
 
         if (scope instanceof ServiceContextScope serviceContextScope) {
+
             var digitalTwin = getDigitalTwin(scope);
-            var parentActivity = getInitializationActivity(observation, scope);
+//            var parentActivity = getInitializationActivity(observation, scope);
             var agent = getAgent(scope);
 
-            /**
+            /*
              * The initial activity should be in the scope; if not, we're observing at the
              * root DT level and we get the context initialization activity as parent.
              */
-            var instantiation = digitalTwin.knowledgeGraph().operation(agent, parentActivity,
+            var instantiation = digitalTwin.knowledgeGraph().operation(agent, null,
                     Activity.Type.INSTANTIATION, observation);
 
             try (instantiation) {
+
                 var ret = instantiation.store(observation);
+                instantiation.link(instantiation.getActivity(), observation, DigitalTwin.Relationship.CREATED);
                 if (scope.getContextObservation() != null) {
                     instantiation.link(scope.getContextObservation(), observation,
                             DigitalTwin.Relationship.HAS_CHILD);
+                } else {
+                    instantiation.linkToRootNode(observation, DigitalTwin.Relationship.HAS_CHILD);
                 }
+
                 if (scope.getObserver() != null) {
                     instantiation.link(observation, scope.getObserver(),
                             DigitalTwin.Relationship.HAS_OBSERVER);
                 }
+
                 instantiation.success(scope, observation);
                 return ret;
+
             } catch (Throwable t) {
                 instantiation.fail(scope, observation);
             }

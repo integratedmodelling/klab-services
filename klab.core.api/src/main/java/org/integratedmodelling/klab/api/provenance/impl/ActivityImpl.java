@@ -17,6 +17,8 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     private long id;
     private String taskId;
     private Activity parent;
+    private Outcome outcome;
+    private String stackTrace;
 
     @Override
     public long getStart() {
@@ -108,5 +110,23 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
     public void setTaskId(String taskId) {
         this.taskId = taskId;
+    }
+
+    @Override
+    public Outcome getOutcome() {
+        return outcome;
+    }
+
+    public void setOutcome(Outcome outcome) {
+        this.outcome = outcome;
+    }
+
+    @Override
+    public String getStackTrace() {
+        return stackTrace;
+    }
+
+    public void setStackTrace(String stackTrace) {
+        this.stackTrace = stackTrace;
     }
 }
