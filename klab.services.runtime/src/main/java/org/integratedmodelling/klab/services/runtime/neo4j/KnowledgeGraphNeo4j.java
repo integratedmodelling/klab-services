@@ -140,6 +140,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 }
             }
 
+            store(activity);
+            link(this.activity, ret.activity, DigitalTwin.Relationship.TRIGGERED);
+
             ret.activity = activity;
 
             return ret;
@@ -197,6 +200,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             // commit or rollback based on status after success() or fail(). If none has been
             // called, status is null and this is an internal error, logged with the activity
 
+            ObservationImpl observation = null;
+            double coverage = 1.0;
+
             if (parent == null) {
 
                 if (outcome == null) {
@@ -207,27 +213,32 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
                     if (assets != null) {
                         for (var asset : assets) {
-                            if (asset instanceof ObservationImpl observation) {
-                                if (activity.getType() == Activity.Type.RESOLUTION) {
-                                    observation.setResolved(true);
-                                }
-                                update(observation, scope);
-                                if (observation.getGeometry() != null) {
-                                    storeGeometry(observation.getGeometry(), observation);
-                                }
-                            } else if (asset instanceof Dataflow<?> dataflow) {
-                                // TODO we should keep the actuator and add it with the subordinate
-                                //  operation at
-                                //  creation, here we shouldn't do anything (maybe update with execution
-                                //  time per
-                                //  contextualize and/or other stat data)
-                                storeDataflow(dataflow, scope, activity);
+                            if (asset instanceof ObservationImpl obs) {
+                                observation = obs;
+                            } else if (asset instanceof Double d) {
+                                coverage = d;
                             }
                         }
                     }
 
                 } else if (outcome == Scope.Status.ABORTED) {
                     transaction.rollback();
+                }
+            }
+
+            if (this.actuator != null) {
+                store(actuator);
+                link(this.activity, this.actuator, DigitalTwin.Relationship.HAS_PLAN);
+            }
+
+            if (observation != null) {
+                if (activity.getType() == Activity.Type.RESOLUTION) {
+                    observation.setResolved(true);
+                    observation.setResolvedCoverage(coverage);
+                }
+                update(observation, scope);
+                if (observation.getGeometry() != null) {
+                    storeGeometry(observation.getGeometry(), observation);
                 }
             }
 
@@ -666,13 +677,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         if (result == null || result.records().isEmpty()) {
             id = nextKey();
             // TODO more geometry data (bounding box, time boundaries etc.)
-            System.out.println("GEOMETRY NONEXISTENT");
             query("CREATE (g:Geometry {size: $size, definition: $definition, id: $id}) RETURN g", Map.of(
                     "size",
                     geometry.size(), "definition", geometry.encode(), "id", id), scope);
         } else {
             id = result.records().getFirst().values().getFirst().get("id").asLong();
-            System.out.println("GEOMETRY EXISTED");
         }
 
         // TODO more properties pertaining to the link (e.g. separate space/time coverages etc)
@@ -684,9 +693,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                         "-[r:HAS_GEOMETRY]->(g) SET r = $properties RETURN r").replace("{assetLabel}",
                         getLabel(asset)),
                 Map.of("assetId", getId(asset), "geometryId", id, "properties", properties), scope);
-
-        System.out.printf("POOH");
-
     }
 
     @Override
@@ -887,23 +893,23 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return ret;
     }
 
-    private void storeDataflow(Dataflow<?> dataflow, ContextScope scope, Activity activity) {
-
-        //        /**
-        //         * Add the resolution activity with its end time
-        //         */
-        //        store(activity, scope, "description", activityDescription, "end", System
-        //        .currentTimeMillis());
-        //        link(getProvenanceNode(), activity, DigitalTwin.Relationship.HAS_CHILD, scope);
-        //        link(agent, activity, DigitalTwin.Relationship.BY_AGENT, scope);
-
-        // rebuild the actuator structure; each actuator with the source code of its contextualizers
-        // link the root actuators to this activity as plan with an order parameter in the link
-        // link each actuator to the observation it contextualized
-        for (var actuator : dataflow.getComputation()) {
-            storeActuator(actuator, dataflow, scope, activity, null);
-        }
-    }
+    //    private void storeDataflow(Dataflow<?> dataflow, ContextScope scope, Activity activity) {
+    //
+    //        //        /**
+    //        //         * Add the resolution activity with its end time
+    //        //         */
+    //        //        store(activity, scope, "description", activityDescription, "end", System
+    //        //        .currentTimeMillis());
+    //        //        link(getProvenanceNode(), activity, DigitalTwin.Relationship.HAS_CHILD, scope);
+    //        //        link(agent, activity, DigitalTwin.Relationship.BY_AGENT, scope);
+    //
+    //        // rebuild the actuator structure; each actuator with the source code of its contextualizers
+    //        // link the root actuators to this activity as plan with an order parameter in the link
+    //        // link each actuator to the observation it contextualized
+    //        for (var actuator : dataflow.getComputation()) {
+    //            storeActuator(actuator, dataflow, scope, activity, null);
+    //        }
+    //    }
 
     private void storeActuator(Actuator actuator, Dataflow<?> dataflow, ContextScope scope,
                                Activity activity, Actuator parent) {
