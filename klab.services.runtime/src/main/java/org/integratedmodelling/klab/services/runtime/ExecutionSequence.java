@@ -107,6 +107,7 @@ public class ExecutionSequence {
             if (scope.getParallelism() == Parallelism.ONE) {
                 for (var operation : operationGroup) {
                     if (!operation.run()) {
+
                         return false;
                     }
                 }

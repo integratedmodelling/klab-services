@@ -460,6 +460,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                     (ServiceContextScope) contextScope, digitalTwin, getComponentRegistry());
             if (!executionSequence.isEmpty()) {
                 if (!executionSequence.run()) {
+                    contextualization.fail(contextScope, dataflow.getTarget());
                     return Observation.empty();
                 }
             }
@@ -473,6 +474,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             obs.setResolved(true);
             obs.setResolvedCoverage(df.getResolvedCoverage());
         }
+
+        contextualization.success(contextScope, dataflow.getTarget(), dataflow);
 
         return dataflow.getTarget();
     }
