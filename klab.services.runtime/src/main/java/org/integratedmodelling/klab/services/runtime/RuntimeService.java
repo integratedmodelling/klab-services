@@ -295,7 +295,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             try (instantiation) {
 
                 var ret = instantiation.store(observation);
-                instantiation.link(instantiation.getActivity(), observation, DigitalTwin.Relationship.CREATED);
+                instantiation.link(instantiation.getActivity(), observation,
+                        DigitalTwin.Relationship.CREATED);
                 if (scope.getContextObservation() != null) {
                     instantiation.link(scope.getContextObservation(), observation,
                             DigitalTwin.Relationship.HAS_CHILD);
@@ -454,8 +455,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         for (var rootActuator : dataflow.getComputation()) {
             ExecutionSequence executionSequence = ExecutionSequence.compile(sortComputation(rootActuator,
                             dataflow,
-                            contextScope), (dataflow instanceof DataflowImpl dataflow1 ?
-                                            dataflow1.getResolvedCoverage() : 1.0),
+                            contextScope, contextualization), (dataflow instanceof DataflowImpl dataflow1 ?
+                                                               dataflow1.getResolvedCoverage() : 1.0),
                     (ServiceContextScope) contextScope, digitalTwin, getComponentRegistry());
             if (!executionSequence.isEmpty()) {
                 if (!executionSequence.run()) {
@@ -484,23 +485,27 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                 "implementation");
     }
 
-    private Graph<Actuator, DefaultEdge> computeActuatorOrder(Actuator rootActuator, ContextScope scope) {
+    private Graph<Actuator, DefaultEdge> computeActuatorOrder(Actuator rootActuator, ContextScope scope,
+                                                              KnowledgeGraph.Operation contextualization) {
         Graph<Actuator, DefaultEdge> dependencyGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
         Map<Long, Actuator> cache = new HashMap<>();
-        loadGraph(rootActuator, dependencyGraph, cache);
+        loadGraph(rootActuator, dependencyGraph, cache, contextualization);
         // keep the actuators that do nothing so we can tag their observation as resolved
         return dependencyGraph;
     }
 
     private void loadGraph(Actuator rootActuator, Graph<Actuator, DefaultEdge> dependencyGraph, Map<Long,
-            Actuator> cache) {
+            Actuator> cache, KnowledgeGraph.Operation contextualization) {
+
+        var childContextualization = contextualization.createChild(rootActuator, "Contextualization of " + rootActuator);
+
         cache.put(rootActuator.getId(), rootActuator);
         dependencyGraph.addVertex(rootActuator);
         for (Actuator child : rootActuator.getChildren()) {
             if (child.getActuatorType() == Actuator.Type.REFERENCE) {
                 dependencyGraph.addEdge(cache.get(child.getId()), rootActuator);
             } else {
-                loadGraph(child, dependencyGraph, cache);
+                loadGraph(child, dependencyGraph, cache, childContextualization);
                 dependencyGraph.addEdge(child, rootActuator);
             }
         }
@@ -572,12 +577,13 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
      */
     private List<Pair<Actuator, Integer>> sortComputation(Actuator rootActuator,
                                                           Dataflow<Observation> dataflow,
-                                                          ContextScope scope) {
+                                                          ContextScope scope,
+                                                          KnowledgeGraph.Operation contextualization) {
         List<Pair<Actuator, Integer>> ret = new ArrayList<>();
         int executionOrder = 0;
         Map<Long, Actuator> branch = new HashMap<>();
         Set<Actuator> group = new HashSet<>();
-        var dependencyGraph = computeActuatorOrder(rootActuator, scope);
+        var dependencyGraph = computeActuatorOrder(rootActuator, scope, contextualization);
         for (var nextActuator : ImmutableList.copyOf(new TopologicalOrderIterator<>(dependencyGraph))) {
             if (nextActuator.getActuatorType() != Actuator.Type.REFERENCE) {
                 ret.add(Pair.of(nextActuator, (executionOrder = checkExecutionOrder

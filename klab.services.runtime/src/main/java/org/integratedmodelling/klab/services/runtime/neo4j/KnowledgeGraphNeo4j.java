@@ -101,6 +101,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         private Throwable exception;
         private Object[] assets;
         private OperationImpl parent;
+        private Actuator actuator;
 
         @Override
         public Agent getAgent() {
@@ -110,6 +111,38 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         @Override
         public Activity getActivity() {
             return this.activity;
+        }
+
+        @Override
+        public Operation createChild(Object... activityData) {
+
+            var activity = new ActivityImpl();
+            var ret = new OperationImpl();
+
+            ret.agent = agent;
+            ret.transaction = transaction;
+            ret.parent = this;
+
+            if (activityData != null) {
+                for (Object o : activityData) {
+                    if (o instanceof ActivityImpl a) {
+                        activity = a;
+                    } else if (o instanceof Activity.Type type) {
+                        activity.setType(type);
+                    } else if (o instanceof String description) {
+                        activity.setDescription(description);
+                    } else if (o instanceof Agent agent) {
+                        ret.agent = agent;
+                    } else if (o instanceof ActuatorImpl actuator) {
+                        ret.actuator = actuator;
+                        actuator.setOperation(ret);
+                    }
+                }
+            }
+
+            ret.activity = activity;
+
+            return ret;
         }
 
         @Override
@@ -217,7 +250,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         // open the transaction for the remaining operations
 
         var activity = new ActivityImpl();
-        activity.setParent(parentActivity);
         activity.setType(activityType);
         activity.setStart(System.currentTimeMillis());
         activity.setName(activityType.name());
@@ -261,7 +293,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     protected EagerResult query(String query, Map<String, Object> parameters, Scope scope) {
         if (isOnline()) {
             try {
-                System.out.printf("\nQUERY " + query + "\n     WITH " + parameters);
+                //                System.out.printf("\nQUERY " + query + "\n     WITH " + parameters);
                 return driver.executableQuery(query).withParameters(parameters).execute();
             } catch (Throwable t) {
                 if (scope != null) {
@@ -753,235 +785,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             }
         }
     }
-
-    //    @Override
-    //    protected long runOperation(OperationImplObsolete operation, ContextScope scope) {
-    //
-    //        operation.registerAsset(scope, "id", scope.getId());
-    //
-    //        /*
-    //        TODO use a transaction for the whole sequence! Also use the store/retrieve/link methods and
-    //         have them take a transaction object, defaulting to null -> atomic operations
-    //        First pass defines the activity. If we have one in the targets, that is the parent activity to
-    //        link it to.
-    //         */
-    //
-    //        List<Long> created = new ArrayList<>();
-    //        List<Long> plans = new ArrayList<>();
-    //
-    //        long ret = Observation.UNASSIGNED_ID;
-    //        for (var step : operation.getSteps()) {
-    //            switch (step.type()) {
-    //                case CREATE -> {
-    //
-    //                    for (var target : step.targets()) {
-    //
-    //                        var type = getLabel(target);
-    //                        var props = asParameters(target);
-    //                        var result = query(
-    //                                Queries.CREATE_WITH_PROPERTIES.replace("{type}", type),
-    //                                Map.of("properties", asParameters(target)), scope);
-    //                        if (result != null && result.records().size() == 1) {
-    //                            ret = result.records().getFirst().get(result.keys().getFirst()).asLong();
-    //                            if (target instanceof ObservationImpl observation) {
-    //
-    //                                observation.setId(ret);
-    //                                created.add(ret);
-    //                                observation.setUrn(scope.getId() + "." + ret);
-    //                                props.put("id", ret);
-    //                                props.put("urn", observation.getUrn());
-    //                                // TODO generate the IDs internally and skip this
-    //                                query(
-    //                                        Queries.UPDATE_PROPERTIES.replace("{type}", type),
-    //                                        Map.of("id", ret, "properties", props), scope);
-    //
-    //                                // TODO store spatial and temporal boundaries or ideally the geometry
-    //                                //  as is
-    //                                //  using neo4j-spatial, hoping it appears on maven central
-    //                                var geometry = encodeGeometry(scope.getObservationGeometry
-    //                                (observation));
-    //                                var geoRecord = query("MATCH (g:Geometry {definition: $definition}) " +
-    //                                                "RETURN g",
-    //                                        Map.of("definition", geometry), scope);
-    //
-    //                                if (geoRecord.records().isEmpty()) {
-    //                                    query("MATCH (o:Observation {id: $observationId}) CREATE " +
-    //                                                    "(g:Geometry " +
-    //                                                    "{definition: $definition}), (o)
-    //                                                    -[:HAS_GEOMETRY]->" +
-    //                                                    "(g)",
-    //                                            Map.of("observationId", ret, "definition", geometry),
-    //                                            scope);
-    //                                } else {
-    //                                    query("MATCH (o:Observation {id: $observationId}), (g:Geometry " +
-    //                                                    "{definition: $definition}) CREATE (o)" +
-    //                                                    "-[:HAS_GEOMETRY]->(g)",
-    //                                            Map.of("observationId", ret, "definition", geometry),
-    //                                            scope);
-    //                                }
-    //
-    //                            } else if (target instanceof ActuatorImpl actuator) {
-    //
-    //                                // TODO generate the ID and skip the update query
-    //                                actuator.setId(ret);
-    //                                created.add(ret);
-    //                                props.put("id", ret);
-    //
-    //                                query(
-    //                                        Queries.UPDATE_PROPERTIES.replace("{type}", type),
-    //                                        Map.of("id", ret, "properties", props), scope);
-    //                            } else if (target instanceof ActivityImpl activity) {
-    //
-    //                                // TODO generate the ID and skip the update query
-    //                                activity.setId(ret);
-    //                                props.put("id", ret);
-    //                                query(
-    //                                        Queries.UPDATE_PROPERTIES.replace("{type}", type),
-    //                                        Map.of("id", ret, "properties", props), scope);
-    //                            } else if (target instanceof PlanImpl plan) {
-    //
-    //                                // TODO generate the ID and skip the update query
-    //                                plan.setId(ret);
-    //                                plans.add(ret);
-    //                                props.put("id", ret);
-    //                                query(
-    //                                        Queries.UPDATE_PROPERTIES.replace("{type}", type),
-    //                                        Map.of("id", ret, "properties", props), scope);
-    //                            }
-    //
-    //                            operation.registerAsset(target, "id", ret);
-    //                        }
-    //                    }
-    //                }
-    //                case MODIFY -> {
-    //                    // TODO - do we need this here? maybe with scheduling - for now it's only at
-    //                    //  finalization
-    //                    throw new KlabUnimplementedException("target setting or graph modification");
-    //                }
-    //                case LINK -> {
-    //
-    //                    DigitalTwin.Relationship relationship = null;
-    //                    var props = new HashMap<String, Object>();
-    //                    for (int i = 0; i < step.parameters().length; i++) {
-    //                        var arg = step.parameters()[i];
-    //                        if (arg instanceof DigitalTwin.Relationship dr) {
-    //                            relationship = dr;
-    //                        } else {
-    //                            props.put(arg.toString(), step.parameters()[++i]);
-    //                        }
-    //                    }
-    //
-    //                    if (relationship != null && step.targets().size() == 2) {
-    //
-    //                        var query = Queries.LINK_ASSETS
-    //                                .replace("{relationshipLabel}", relationship.name())
-    //                                .replace("{fromLabel}", getLabel(step.targets().getFirst()))
-    //                                .replace("{toLabel}", getLabel(step.targets().getLast()))
-    //                                .replace(
-    //                                        "{fromKeyProperty}",
-    //                                        operation.getAssetKeyProperty(step.targets().getFirst()))
-    //                                .replace(
-    //                                        "{toKeyProperty}",
-    //                                        operation.getAssetKeyProperty(step.targets().getLast()));
-    //
-    //                        query(query, Map.of("fromKey", operation.getAssetKey(step.targets().getFirst()),
-    //                                "toKey", operation.getAssetKey(step.targets().getLast())), scope);
-    //                    }
-    //                }
-    //                case ROOT_LINK -> {
-    //
-    //                    if (step.targets().getFirst() instanceof Observation observation) {
-    //
-    //                        var query = Queries.LINK_ASSETS
-    //                                .replace("{relationshipLabel}", DigitalTwin.Relationship.HAS_CHILD
-    //                                .name())
-    //                                .replace("{fromLabel}", "Context")
-    //                                .replace("{toLabel}", "Observation")
-    //                                .replace("{fromKeyProperty}", "id")
-    //                                .replace("{toKeyProperty}", "id");
-    //
-    //                        query(query, Map.of("fromKey", rootContextId, "toKey", observation.getId()),
-    //                                scope);
-    //
-    //                    } else if (step.targets().getFirst() instanceof Actuator actuator) {
-    //
-    //                        var query = Queries.LINK_ASSETS
-    //                                .replace("{relationshipLabel}", DigitalTwin.Relationship.HAS_CHILD
-    //                                .name())
-    //                                .replace("{fromLabel}", "Dataflow")
-    //                                .replace("{toLabel}", "Actuator")
-    //                                .replace("{fromKeyProperty}", "id")
-    //                                .replace("{toKeyProperty}", "id");
-    //
-    //                        query(
-    //                                query,
-    //                                Map.of("fromKey", rootContextId + ".DATAFLOW", "toKey", actuator
-    //                                .getId()),
-    //                                scope);
-    //
-    //                    } else if (step.targets().getFirst() instanceof Activity activity) {
-    //
-    //                        var query = Queries.LINK_ASSETS
-    //                                .replace("{relationshipLabel}", DigitalTwin.Relationship.HAS_CHILD
-    //                                .name())
-    //                                .replace("{fromLabel}", "Provenance")
-    //                                .replace("{toLabel}", "Activity")
-    //                                .replace("{fromKeyProperty}", "id")
-    //                                .replace("{toKeyProperty}", "id");
-    //
-    //                        query(
-    //                                query,
-    //                                Map.of("fromKey", rootContextId + ".PROVENANCE", "toKey",
-    //                                        activity.getId())
-    //                                , scope);
-    //
-    //                    } else {
-    //                        throw new KlabInternalErrorException("unexpected root link request");
-    //                    }
-    //                }
-    //            }
-    //        }
-    //
-    //        /*
-    //        Link created assets to the activity
-    //         */
-    //        for (long asset : created) {
-    //            query(
-    //                    "match (n:Activity), (c) WHERE id(n) = $fromId AND id(c) = $toId CREATE (n)" +
-    //                            "-[r:CREATED]->(c) return r",
-    //                    Map.of("fromId", operation.getActivity().getId(), "toId", asset), scope);
-    //        }
-    //
-    //        /*
-    //        Link any plans to the activity (should be one at most)
-    //         */
-    //        for (long plan : plans) {
-    //            query(
-    //                    "match (n:Activity), (c:Plan) WHERE id(n) = $fromId AND id(c) = $toId CREATE (n)" +
-    //                            "-[r:HAS_PLAN]->(c) return r",
-    //                    Map.of("fromId", operation.getActivity().getId(), "toId", plan), scope);
-    //        }
-    //
-    //        // link the activity to the agent
-    //        query(
-    //                "match (n:Activity), (c:Agent) WHERE id(n) = $fromId AND c.name = $agentName CREATE
-    //                (n)" +
-    //                        "-[r:BY_AGENT]->(c) return r",
-    //                Map.of(
-    //                        "fromId", operation.getActivity().getId(), "agentName",
-    //                        operation.getAgent().getName()), scope);
-    //
-    //        return ret;
-    //    }
-
-    //    @Override
-    //    protected RuntimeAsset getContextNode() {
-    //        if (scope == null) {
-    //            throw new KlabIllegalStateException("Access to context node in a non-contexual knowledge
-    //            graph");
-    //        }
-    //        return contextNode;
-    //    }
 
 
     @Override

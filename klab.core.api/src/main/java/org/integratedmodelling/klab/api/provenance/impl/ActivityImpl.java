@@ -16,7 +16,6 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     private String description;
     private long id;
     private String taskId;
-    private Activity parent;
     private Outcome outcome;
     private String stackTrace;
 
@@ -87,15 +86,6 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    @Override
-    public Activity getParent() {
-        return parent;
-    }
-
-    public void setParent(Activity parent) {
-        this.parent = parent;
     }
 
     /**

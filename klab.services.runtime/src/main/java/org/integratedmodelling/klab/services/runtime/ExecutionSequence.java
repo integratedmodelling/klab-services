@@ -1,8 +1,10 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -14,7 +16,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.CoreLibrary;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -136,9 +137,15 @@ public class ExecutionSequence {
         private final Observation observation;
         protected List<Supplier<Boolean>> executors = new ArrayList<>();
         private boolean scalar;
+        private KnowledgeGraph.Operation operation;
 
         public ExecutorOperation(Actuator actuator) {
             this.id = actuator.getId();
+            if (actuator instanceof ActuatorImpl actuator1) {
+                this.operation = actuator1.getOperation();
+                // remove to avoid leaks after using the actuator as a shuttle
+                actuator1.setOperation(null);
+            }
             this.observation = scope.getObservation(this.id);
             compile(actuator);
         }
@@ -154,7 +161,7 @@ public class ExecutionSequence {
 
                 var preset = RuntimeService.CoreFunctor.classify(call);
                 if (preset != null) {
-                    switch(preset) {
+                    switch (preset) {
                         case URN_RESOLVER -> {
                         }
                         case URN_INSTANTIATOR -> {
@@ -286,13 +293,18 @@ public class ExecutionSequence {
             long start = System.currentTimeMillis();
             for (var executor : executors) {
                 if (!executor.get()) {
+                    if (operation != null) {
+                        operation.fail(scope, observation);
+                    }
                     return false;
                 }
             }
 
             long time = System.currentTimeMillis() - start;
-            scope.getDigitalTwin().knowledgeGraph().update(observation, scope, "msInitialization"
-                    , time, "resolved", true, "coverage", resolvedCoverage);
+
+            if (operation != null) {
+                operation.success(scope, observation, resolvedCoverage);
+            }
 
             return true;
         }
