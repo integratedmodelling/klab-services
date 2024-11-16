@@ -203,7 +203,6 @@ public interface DigitalTwin {
             ret.setGeometry(geometry);
             ret.setMetadata(metadata);
             ret.setObservable(observable);
-            ret.setUrn(resourceUrn == null ? modelUrn : resourceUrn);
             ret.setValue(defaultValue);
             ret.setName(name);
             return ret;

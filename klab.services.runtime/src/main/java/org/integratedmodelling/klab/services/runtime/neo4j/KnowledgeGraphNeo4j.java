@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
@@ -178,6 +179,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                                     observation.setResolved(true);
                                 }
                                 update(observation, scope);
+                                if (observation.getGeometry() != null) {
+                                    storeGeometry(observation.getGeometry(), observation);
+                                }
                             } else if (asset instanceof Dataflow<?> dataflow) {
                                 // TODO we should keep the actuator and add it with the subordinate
                                 //  operation at
@@ -257,6 +261,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     protected EagerResult query(String query, Map<String, Object> parameters, Scope scope) {
         if (isOnline()) {
             try {
+                System.out.printf("\nQUERY " + query + "\n     WITH " + parameters);
                 return driver.executableQuery(query).withParameters(parameters).execute();
             } catch (Throwable t) {
                 if (scope != null) {
@@ -465,8 +470,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 instance.setId(node.get("id").asLong());
 
                 // SHIT, THE GEOMETRY - geometry, metadata etc
-                var gResult = query("MATCH (o:Observation)-[:HAS_GEOMETRY]->(g:Geometry) WHERE id" +
-                        "(o) = $id RETURN g", Map.of("id", node.get("id").asLong()), scope);
+                var gResult = query("MATCH (o:Observation)-[:HAS_GEOMETRY]->(g:Geometry) WHERE o.id" +
+                        " = $id RETURN g", Map.of("id", node.get("id").asLong()), scope);
 
                 if (gResult == null || !gResult.records().isEmpty()) {
                     instance.setGeometry(adapt(gResult, Geometry.class, scope).getFirst());
@@ -547,8 +552,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     @Override
     protected <T extends RuntimeAsset> T retrieve(Object key, Class<T> assetClass, Scope scope) {
-        var result = query("MATCH (n:{assetLabel} {id: $id}) return n".replace("{assetLabel}",
-                getLabel(assetClass)), Map.of("id", key), null);
+        var result =
+                assetClass == RuntimeAsset.class ?
+                query("MATCH (n {id: $id}) return n", Map.of("id", key), null) :
+                query("MATCH (n:{assetLabel} {id: $id}) return n".replace("{assetLabel}",
+                        getLabel(assetClass)), Map.of("id", key), null);
         var adapted = adapt(result, assetClass, scope);
         return adapted.isEmpty() ? null : adapted.getFirst();
     }
@@ -556,8 +564,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     @Override
     protected long store(RuntimeAsset asset, Scope scope, Object... additionalProperties) {
-
-        // TODO store the geometry when the asset is an observation or actuator w/coverage (use cached)!
 
         var type = getLabel(asset);
         var props = asParameters(asset, additionalProperties);
@@ -569,6 +575,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         if (result != null && result.records().size() == 1) {
             setId(asset, ret);
         }
+
         return ret;
     }
 
@@ -583,9 +590,71 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 Queries.CREATE_WITH_PROPERTIES.replace("{type}", type),
                 Map.of("properties", props), scope);
         if (result != null && result.hasNext()) {
+
             setId(asset, ret);
+            var geometry = switch (asset) {
+                case Observation observation -> observation.getGeometry();
+                case Actuator actuator -> actuator.getCoverage();
+                default -> null;
+            };
+
+            if (geometry != null) {
+                storeGeometry(geometry, asset);
+            }
         }
+
         return ret;
+    }
+
+    private void storeGeometry(Geometry geometry, RuntimeAsset asset) {
+
+        // TODO have a multi-cache ordered by size
+
+        // Must be called after update() and this may happen more than once, so we must check to avoid
+        // multiple relationships.
+        var exists =
+                query("MATCH (n:{assetLabel} {id: $assetId})-[:HAS_GEOMETRY]->(g:Geometry) RETURN g".replace("{assetLabel}",
+                        getLabel(asset)), Map.of("assetId", getId(asset)), scope);
+
+        if (exists != null && !exists.records().isEmpty()) {
+            return;
+        }
+
+        if (!(geometry instanceof Scale)) {
+            // only record fully specified scales, not syntactic specifications
+            geometry = Scale.create(geometry);
+        }
+
+        double coverage = geometry instanceof Coverage cov ? cov.getCoverage() : 1.0;
+
+        // the idea is that looking up the size before the monster string can be faster.
+        var query = "MATCH (g:Geometry) WHERE g.size = $size AND g.definition = $definition RETURN g";
+        long id;
+        var result = query(query, Map.of("size", geometry.size(), "definition", geometry.encode()), scope);
+        if (result == null || result.records().isEmpty()) {
+            id = nextKey();
+            // TODO more geometry data (bounding box, time boundaries etc.)
+            System.out.println("GEOMETRY NONEXISTENT");
+            query("CREATE (g:Geometry {size: $size, definition: $definition, id: $id}) RETURN g", Map.of(
+                    "size",
+                    geometry.size(), "definition", geometry.encode(), "id", id), scope);
+        } else {
+            id = result.records().getFirst().values().getFirst().get("id").asLong();
+            System.out.println("GEOMETRY EXISTED");
+        }
+
+        // TODO more properties pertaining to the link (e.g. separate space/time coverages etc)
+        var properties = Map.of("coverage", coverage);
+
+        // link it with the associated coverage
+        var rel = query(("MATCH (n:{assetLabel}), (g:Geometry) WHERE n.id = $assetId AND g.id = $geometryId" +
+                        " CREATE (n)" +
+                        "-[r:HAS_GEOMETRY]->(g) SET r = $properties RETURN r").replace("{assetLabel}",
+                        getLabel(asset)),
+                Map.of("assetId", getId(asset), "geometryId", id, "properties", properties), scope);
+
+        System.out.printf("POOH");
+
     }
 
     @Override
@@ -617,7 +686,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         var sourceQuery = matchAsset(source, "n", "sourceId");
         var targetQuery = matchAsset(destination, "c", "targetId");
         var props = asParameters(null, additionalProperties);
-        var query = ("match (n:{fromLabel}), (c:{toLabel}) WHERE {sourceQuery} AND {targetQuery} CREATE (n)" +
+        var query = ("MATCH (n:{fromLabel}), (c:{toLabel}) WHERE {sourceQuery} AND {targetQuery} CREATE (n)" +
                 "-[r:{relationshipLabel}]->(c) SET r = $properties RETURN r")
                 .replace("{sourceQuery}", sourceQuery)
                 .replace("{targetQuery}", targetQuery)
@@ -673,7 +742,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     private void setId(RuntimeAsset asset, long id) {
         switch (asset) {
-            case ObservationImpl observation -> observation.setId(id);
+            case ObservationImpl observation -> {
+                observation.setId(id);
+                observation.setUrn(scope.getId() + "." + id);
+            }
             case ActuatorImpl actuator -> actuator.setInternalId(id);
             case ActivityImpl activity -> activity.setId(id);
             case AgentImpl agent -> agent.setId(id);
@@ -996,16 +1068,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     protected synchronized long nextKey() {
         var ret = -1L;
         var lastActivity = System.currentTimeMillis();
-        var result = query("MATCH (n:Statistics) return n.id", Map.of(), scope);
+        var result = query("MATCH (n:Statistics) return n.nextId", Map.of(), scope);
         if (result != null) {
-
             if (result.records().isEmpty()) {
                 ret = 1;
-                query("CREATE (n:Statistics {id: 1})", Map.of(), scope);
+                query("CREATE (n:Statistics {nextId: 1})", Map.of(), scope);
             } else {
                 var id = result.records().getFirst().get(result.keys().getFirst()).asLong();
                 ret = id + 1;
-                query("MATCH (n:Statistics) WHERE n.id = $id SET n.id = $nextId, n.lastActivity = " +
+                query("MATCH (n:Statistics) WHERE n.nextId = $id SET n.nextId = $nextId, n.lastActivity = " +
                         "$lastActivity", Map.of("id", id, "nextId"
                         , ret, "lastActivity", lastActivity), scope);
             }

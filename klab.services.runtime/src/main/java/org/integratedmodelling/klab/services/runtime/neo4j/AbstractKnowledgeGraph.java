@@ -31,14 +31,14 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     protected static int MAX_CACHED_OBSERVATIONS = 400;
 
     protected ContextScope scope;
-    protected LoadingCache<Long, RuntimeAsset> assetCache =
-            CacheBuilder.newBuilder().maximumSize(MAX_CACHED_OBSERVATIONS).build(new CacheLoader<Long,
-                    RuntimeAsset>() {
-                @Override
-                public RuntimeAsset load(Long key) throws Exception {
-                    return retrieve(key, RuntimeAsset.class, scope);
-                }
-            });
+    //    protected LoadingCache<Long, RuntimeAsset> assetCache =
+    //            CacheBuilder.newBuilder().maximumSize(MAX_CACHED_OBSERVATIONS).build(new CacheLoader<Long,
+    //                    RuntimeAsset>() {
+    //                @Override
+    //                public RuntimeAsset load(Long key) throws Exception {
+    //                    return retrieve(key, RuntimeAsset.class, scope);
+    //                }
+    //            });
 
     /**
      * Return a RuntimeAsset representing the overall dataflow related to the scope, so that it can be used
@@ -96,12 +96,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
     @Override
     public <T extends RuntimeAsset> T get(long id, Class<T> resultClass) {
-        try {
-            return (T) assetCache.get(id);
-        } catch (ExecutionException e) {
-            scope.error(e);
-            return null;
-        }
+        return retrieve(id, resultClass, scope);
     }
 
     /**
