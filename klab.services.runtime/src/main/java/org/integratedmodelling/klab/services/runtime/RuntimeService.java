@@ -378,6 +378,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                     scope.send(Message.MessageClass.ObservationLifecycle,
                             Message.MessageType.ResolutionStarted, result);
                     try {
+                        // TODO send out the activity with the scope
                         dataflow = resolver.resolve(observation, scope);
                         if (dataflow != null) {
                             resolution.success(scope, result, dataflow,
@@ -500,7 +501,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     private void loadGraph(Actuator rootActuator, Graph<Actuator, DefaultEdge> dependencyGraph, Map<Long,
             Actuator> cache, KnowledgeGraph.Operation contextualization) {
 
-        var childContextualization = contextualization.createChild(rootActuator, "Contextualization of " + rootActuator);
+        var childContextualization = contextualization.createChild(rootActuator,
+                "Contextualization of " + rootActuator);
 
         cache.put(rootActuator.getId(), rootActuator);
         dependencyGraph.addVertex(rootActuator);
