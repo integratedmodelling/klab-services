@@ -119,4 +119,14 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     public void setStackTrace(String stackTrace) {
         this.stackTrace = stackTrace;
     }
+
+    @Override
+    public String toString() {
+        return "ActivityImpl{" +
+                "type=" + type +
+                ", description='" + description + '\'' +
+                ", taskId='" + taskId + '\'' +
+                ", outcome=" + outcome +
+                '}';
+    }
 }

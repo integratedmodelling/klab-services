@@ -195,6 +195,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         @Override
         public void close() throws IOException {
 
+            System.out.println("CLOSING " + activity);
+
             for (var child : children) {
                 child.close();
             }
@@ -230,7 +232,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                     // Log an internal failure (no success or failure, should not happen)
                     transaction.rollback();
                 } else if (outcome == Scope.Status.FINISHED) {
-                    if (observation != null) {
+                    if (observation != null && this.actuator != null) {
                         // TODO add state and histogram
                         link(this.activity, observation, DigitalTwin.Relationship.CONTEXTUALIZED);
                     }
