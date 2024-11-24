@@ -37,14 +37,14 @@ public interface DigitalTwin {
         EMERGED_FROM,
         HAS_OBSERVER,
         HAS_PLAN,
-        RESOLVED_BY,
         BY_AGENT,
         CREATED,
         HAS_DATAFLOW,
         HAS_PROVENANCE,
         HAS_ACTIVITY,
         HAS_CHILD,
-        TRIGGERED;
+        TRIGGERED,
+        CONTEXTUALIZED;
     }
 
     /**

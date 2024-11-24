@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -385,9 +386,10 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                                     "Resolution of observation _" + observation.getUrn() + "_ of **" + observation.getObservable().getUrn() + "**");
                             scope.send(Message.MessageClass.ObservationLifecycle,
                                     Message.MessageType.ResolutionSuccessful, result);
+                            resolutionActivity = resolution.getActivity();
                         } else {
                             resolution.fail(scope, observation);
-                            ret.completeExceptionally(null /* TODO */);
+                            ret.completeExceptionally(new KlabResourceAccessException("Resolution of " + observation.getUrn() + " failed"));
                         }
                     } catch (Throwable t) {
                         ret.completeExceptionally(t);
@@ -401,7 +403,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                     ret.completeExceptionally(t);
                 }
 
-                if (!dataflow.isEmpty()) {
+                if (!ret.isCompletedExceptionally() && dataflow != null && !dataflow.isEmpty()) {
 
                     /*
                     this will commit all resources at close()
@@ -439,8 +441,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     public Observation runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope,
                                    KnowledgeGraph.Operation contextualization) {
 
-        var digitalTwin = getDigitalTwin(contextScope);
-
         /*
         Load or confirm availability of all needed resources and create any non-existing observations
          */
@@ -450,33 +450,35 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         find contextualization scale and hook point into the DT from the scope
          */
 
-        /**
-         * Run each actuator set in order
-         */
-        for (var rootActuator : dataflow.getComputation()) {
-            ExecutionSequence executionSequence = ExecutionSequence.compile(sortComputation(rootActuator,
-                            dataflow,
-                            contextScope, contextualization), (dataflow instanceof DataflowImpl dataflow1 ?
-                                                               dataflow1.getResolvedCoverage() : 1.0),
-                    (ServiceContextScope) contextScope, digitalTwin, getComponentRegistry());
-            if (!executionSequence.isEmpty()) {
-                if (!executionSequence.run()) {
-                    contextualization.fail(contextScope, dataflow.getTarget());
-                    return Observation.empty();
+
+        if (contextScope instanceof ServiceContextScope serviceContextScope) {
+            /**
+             * Run each actuator set in order
+             */
+            for (var rootActuator : dataflow.getComputation()) {
+                var executionSequence = new ExecutionSequence(contextualization, dataflow,
+                        getComponentRegistry(), serviceContextScope);
+                executionSequence.compile(rootActuator);
+                if (!executionSequence.isEmpty()) {
+                    if (!executionSequence.run()) {
+                        contextualization.fail(contextScope, dataflow.getTarget());
+                        return Observation.empty();
+                    }
                 }
             }
-        }
 
         /*
         intersect coverage from dataflow with contextualization scale
          */
 
-        if (dataflow instanceof DataflowImpl df && dataflow.getTarget() instanceof ObservationImpl obs) {
-            obs.setResolved(true);
-            obs.setResolvedCoverage(df.getResolvedCoverage());
-        }
+            if (dataflow instanceof DataflowImpl df && dataflow.getTarget() instanceof ObservationImpl obs) {
+                obs.setResolved(true);
+                obs.setResolvedCoverage(df.getResolvedCoverage());
+            }
 
-        contextualization.success(contextScope, dataflow.getTarget(), dataflow);
+            contextualization.success(contextScope, dataflow.getTarget(), dataflow);
+
+        }
 
         return dataflow.getTarget();
     }
@@ -487,33 +489,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         }
         throw new KlabInternalErrorException("Digital twin is inaccessible because of unexpected scope " +
                 "implementation");
-    }
-
-    private Graph<Actuator, DefaultEdge> computeActuatorOrder(Actuator rootActuator, ContextScope scope,
-                                                              KnowledgeGraph.Operation contextualization) {
-        Graph<Actuator, DefaultEdge> dependencyGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
-        Map<Long, Actuator> cache = new HashMap<>();
-        loadGraph(rootActuator, dependencyGraph, cache, contextualization);
-        // keep the actuators that do nothing so we can tag their observation as resolved
-        return dependencyGraph;
-    }
-
-    private void loadGraph(Actuator rootActuator, Graph<Actuator, DefaultEdge> dependencyGraph, Map<Long,
-            Actuator> cache, KnowledgeGraph.Operation contextualization) {
-
-        var childContextualization = contextualization.createChild(rootActuator,
-                "Contextualization of " + rootActuator);
-
-        cache.put(rootActuator.getId(), rootActuator);
-        dependencyGraph.addVertex(rootActuator);
-        for (Actuator child : rootActuator.getChildren()) {
-            if (child.getActuatorType() == Actuator.Type.REFERENCE) {
-                dependencyGraph.addEdge(cache.get(child.getId()), rootActuator);
-            } else {
-                loadGraph(child, dependencyGraph, cache, childContextualization);
-                dependencyGraph.addEdge(child, rootActuator);
-            }
-        }
     }
 
     @Override
@@ -567,69 +542,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     @Override
     public List<SessionInfo> getSessionInfo(Scope scope) {
         return knowledgeGraph.getSessionInfo(scope);
-    }
-
-    /**
-     * Establish the order of execution and the possible parallelism. Each root actuator should be sorted by
-     * dependency and appended in order to the result list along with its order of execution. Successive roots
-     * can refer to the previous roots but they must be executed sequentially.
-     * <p>
-     * The DigitalTwin is asked to register the actuator in the scope and prepare the environment and state
-     * for its execution, including defining its contextualization scale in context.
-     *
-     * @param dataflow
-     * @return
-     */
-    private List<Pair<Actuator, Integer>> sortComputation(Actuator rootActuator,
-                                                          Dataflow<Observation> dataflow,
-                                                          ContextScope scope,
-                                                          KnowledgeGraph.Operation contextualization) {
-        List<Pair<Actuator, Integer>> ret = new ArrayList<>();
-        int executionOrder = 0;
-        Map<Long, Actuator> branch = new HashMap<>();
-        Set<Actuator> group = new HashSet<>();
-        var dependencyGraph = computeActuatorOrder(rootActuator, scope, contextualization);
-        for (var nextActuator : ImmutableList.copyOf(new TopologicalOrderIterator<>(dependencyGraph))) {
-            if (nextActuator.getActuatorType() != Actuator.Type.REFERENCE) {
-                ret.add(Pair.of(nextActuator, (executionOrder = checkExecutionOrder
-                        (executionOrder, nextActuator,
-                                dependencyGraph, group))));
-            }
-        }
-        return ret;
-    }
-
-    /**
-     * If the actuator depends on any in the currentGroup, empty the group and increment the order; otherwise,
-     * add it to the group and return the same order.
-     *
-     * @param executionOrder
-     * @param current
-     * @param dependencyGraph
-     * @param currentGroup
-     * @return
-     */
-    private int checkExecutionOrder(int executionOrder, Actuator current,
-                                    Graph<Actuator, DefaultEdge> dependencyGraph,
-                                    Set<Actuator> currentGroup) {
-        boolean dependency = false;
-        for (Actuator previous : currentGroup) {
-            for (var edge : dependencyGraph.incomingEdgesOf(current)) {
-                if (currentGroup.contains(dependencyGraph.getEdgeSource(edge))) {
-                    dependency = true;
-                    break;
-                }
-            }
-        }
-
-        if (dependency) {
-            currentGroup.clear();
-            return executionOrder + 1;
-        }
-
-        currentGroup.add(current);
-
-        return executionOrder;
     }
 
 }

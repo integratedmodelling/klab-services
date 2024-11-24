@@ -29,8 +29,8 @@ public class ActuatorImpl implements Actuator {
     private Actuator.Type actuatorType;
     private long internalId; // ID within the graph, can't be the same as the observation
     private double resolvedCoverage;
-
-    private transient KnowledgeGraph.Operation operation;
+//
+//    private transient KnowledgeGraph.Operation operation;
 
     @Override
     public long getId() {
@@ -137,20 +137,20 @@ public class ActuatorImpl implements Actuator {
     public void setInternalId(long internalId) {
         this.internalId = internalId;
     }
-
-    /**
-     * Non-API: the actuator carries the activity it represents, which it transfers to the scope of execution
-     * so that provenance can be reconstructed.
-     *
-     * @return
-     */
-    public KnowledgeGraph.Operation getOperation() {
-        return operation;
-    }
-
-    public void setOperation(KnowledgeGraph.Operation operation) {
-        this.operation = operation;
-    }
+//
+//    /**
+//     * Non-API: the actuator carries the activity it represents, which it transfers to the scope of execution
+//     * so that provenance can be reconstructed.
+//     *
+//     * @return
+//     */
+//    public KnowledgeGraph.Operation getOperation() {
+//        return operation;
+//    }
+//
+//    public void setOperation(KnowledgeGraph.Operation operation) {
+//        this.operation = operation;
+//    }
 
     @Override
     public String toString() {

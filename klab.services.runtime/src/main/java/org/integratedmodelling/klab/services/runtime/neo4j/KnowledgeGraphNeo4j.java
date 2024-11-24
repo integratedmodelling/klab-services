@@ -101,6 +101,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         private Throwable exception;
         private Object[] assets;
         private OperationImpl parent;
+        private List<OperationImpl> children = new ArrayList<>();
         private Actuator actuator;
 
         @Override
@@ -135,15 +136,17 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                         ret.agent = agent;
                     } else if (o instanceof ActuatorImpl actuator) {
                         ret.actuator = actuator;
-                        actuator.setOperation(ret);
                     }
                 }
             }
 
             store(activity);
-            link(this.activity, ret.activity, DigitalTwin.Relationship.TRIGGERED);
+            link(this.activity, activity, DigitalTwin.Relationship.TRIGGERED);
+            link(activity, agent, DigitalTwin.Relationship.BY_AGENT);
 
             ret.activity = activity;
+
+            this.children.add(ret);
 
             return ret;
         }
@@ -192,6 +195,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         @Override
         public void close() throws IOException {
 
+            for (var child : children) {
+                child.close();
+            }
+
             this.activity.setEnd(System.currentTimeMillis());
             this.activity.setOutcome(outcome == null ? Activity.Outcome.INTERNAL_FAILURE :
                                      (outcome == Scope.Status.FINISHED ? Activity.Outcome.SUCCESS :
@@ -202,27 +209,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
             ObservationImpl observation = null;
             double coverage = 1.0;
-
-            if (parent == null) {
-
-                if (outcome == null) {
-                    // Log an internal failure (no success or failure, should not happen)
-                    transaction.rollback();
-                } else if (outcome == Scope.Status.FINISHED) {
-                    transaction.commit();
-
-                    if (assets != null) {
-                        for (var asset : assets) {
-                            if (asset instanceof ObservationImpl obs) {
-                                observation = obs;
-                            } else if (asset instanceof Double d) {
-                                coverage = d;
-                            }
-                        }
+            if (assets != null) {
+                for (var asset : assets) {
+                    if (asset instanceof ObservationImpl obs) {
+                        observation = obs;
+                    } else if (asset instanceof Double d) {
+                        coverage = d;
                     }
-
-                } else if (outcome == Scope.Status.ABORTED) {
-                    transaction.rollback();
                 }
             }
 
@@ -231,8 +224,24 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 link(this.activity, this.actuator, DigitalTwin.Relationship.HAS_PLAN);
             }
 
-            if (observation != null) {
-                if (activity.getType() == Activity.Type.RESOLUTION) {
+            if (parent == null) {
+
+                if (outcome == null) {
+                    // Log an internal failure (no success or failure, should not happen)
+                    transaction.rollback();
+                } else if (outcome == Scope.Status.FINISHED) {
+                    if (observation != null) {
+                        // TODO add state and histogram
+                        link(this.activity, observation, DigitalTwin.Relationship.CONTEXTUALIZED);
+                    }
+                    transaction.commit();
+                } else if (outcome == Scope.Status.ABORTED) {
+                    transaction.rollback();
+                }
+            }
+
+            if (observation != null && outcome == Scope.Status.FINISHED) {
+                if (this.activity.getType() == Activity.Type.CONTEXTUALIZATION) {
                     observation.setResolved(true);
                     observation.setResolvedCoverage(coverage);
                 }
@@ -358,42 +367,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         }
 
-        //        /*
-        //        establish IDs for the main nodes and create the respective RuntimeAssets
-        //         */
-        //        final var contextNodeId = getInternalId("MATCH (n:Context {id: $contextId}) return n.id",
-        //        Map.of(
-        //                "contextId", scope.getId()), scope);
-        //        final var dataflowNodeId = getInternalId("MATCH (n:Dataflow {id: $contextId}) return n
-        //        .id", Map.of(
-        //                "contextId", scope.getId() + ".DATAFLOW"), scope);
-        //        final var provenanceNodeId = getInternalId("MATCH (n:Provenance {id: $contextId}) return
-        //        id(n)",
-        //                Map.of(
-        //                        "contextId", scope.getId() + ".PROVENANCE"), scope);
-        //
-        //        if (contextNodeId == Observation.UNASSIGNED_ID || provenanceNodeId == Observation
-        //        .UNASSIGNED_ID || dataflowNodeId == Observation.UNASSIGNED_ID) {
-        //            throw new KlabInternalErrorException("knowledge graph: contextual nodes are not
-        //            present");
-        //        }
-
         final var dataflowNodeId = nextKey();
         final var provenanceNodeId = nextKey();
         final var contextNodeId = nextKey();
-
-        //        this.contextNode = new RuntimeAsset() {
-        //            @Override
-        //            public long getId() {
-        //                return contextNodeId;
-        //            }
-        //
-        //            @Override
-        //            public Type classify() {
-        //                // check - scope isn't a runtime asset
-        //                return Type.ARTIFACT;
-        //            }
-        //        };
 
         this.dataflowNode = new RuntimeAsset() {
             @Override
@@ -449,22 +425,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     public void deleteContext() {
         query(Queries.REMOVE_CONTEXT, Map.of("contextId", scope.getId()), scope);
     }
-
-    //    /**
-    //     * Return the internal long ID corresponding to the single result of a query
-    //     *
-    //     * @param query
-    //     * @param parameters
-    //     * @param scope
-    //     * @return
-    //     */
-    //    protected Object getId(String query, Map<String, Object> parameters, Scope scope) {
-    //        var result = query(query, parameters, scope);
-    //        if (result != null && result.records().size() == 1) {
-    //            return result.records().getFirst().get(result.keys().getFirst()).asLong();
-    //        }
-    //        return Observation.UNASSIGNED_ID;
-    //    }
 
     /**
      * @param query
@@ -741,7 +701,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         var ret = switch (asset) {
             case Activity activity -> name + ".id = $" + queryVariable;
             case Observation observation -> name + ".id = $" + queryVariable;
-            case Actuator actuator -> name + ".internalId = $" + queryVariable;
+            case Actuator actuator -> name + ".id = $" + queryVariable;
             case Agent agent -> name + ".name = $" + queryVariable;
             default -> null;
         };
@@ -891,51 +851,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             }
         }
         return ret;
-    }
-
-    //    private void storeDataflow(Dataflow<?> dataflow, ContextScope scope, Activity activity) {
-    //
-    //        //        /**
-    //        //         * Add the resolution activity with its end time
-    //        //         */
-    //        //        store(activity, scope, "description", activityDescription, "end", System
-    //        //        .currentTimeMillis());
-    //        //        link(getProvenanceNode(), activity, DigitalTwin.Relationship.HAS_CHILD, scope);
-    //        //        link(agent, activity, DigitalTwin.Relationship.BY_AGENT, scope);
-    //
-    //        // rebuild the actuator structure; each actuator with the source code of its contextualizers
-    //        // link the root actuators to this activity as plan with an order parameter in the link
-    //        // link each actuator to the observation it contextualized
-    //        for (var actuator : dataflow.getComputation()) {
-    //            storeActuator(actuator, dataflow, scope, activity, null);
-    //        }
-    //    }
-
-    private void storeActuator(Actuator actuator, Dataflow<?> dataflow, ContextScope scope,
-                               Activity activity, Actuator parent) {
-
-        store(actuator, scope);
-
-        var observation = retrieve(actuator.getId(), Observation.class, scope);
-        link(observation, activity, DigitalTwin.Relationship.RESOLVED_BY, scope);
-
-        /*
-        TODO if parent == null, find the actual parent in case the actuator for the parent observation is
-         there.
-         */
-        if (parent == null) {
-            link(getDataflowNode(), actuator, DigitalTwin.Relationship.HAS_CHILD, scope);
-            link(activity, actuator, DigitalTwin.Relationship.HAS_PLAN, scope, "resolvedObservable",
-                    observation.getObservable().getUrn(), "resolvedObservation", observation.getUrn());
-        } else {
-            link(parent, actuator, DigitalTwin.Relationship.HAS_CHILD, scope, "resolvedObservable",
-                    observation.getObservable().getUrn(), "resolvedObservation", observation.getUrn());
-        }
-
-        for (var child : actuator.getChildren()) {
-            storeActuator(child, dataflow, scope, activity, actuator);
-        }
-
     }
 
     @Override

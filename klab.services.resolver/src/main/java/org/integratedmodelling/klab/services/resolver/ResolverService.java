@@ -47,34 +47,17 @@ public class ResolverService extends BaseService implements Resolver {
      */
     private static double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
 
-    /*
-     * The knowledge repository. Models and instances are built and kept in the resolver upon input
-     * from the resource services. For now we keep everything in memory.
-     *
-     * FIXME the URNs should include the version number after @ to ensure version matching instead
-     * of only storing the latest version
-     *
-     * Version of the latest loaded object is kept for everything, including namespaces
-     */
-    //    Map<String, Version> urnToVersion = Collections.synchronizedMap(new HashMap<>());
-    //    Map<String, Model> models = Collections.synchronizedMap(new HashMap<>());
-    //    Map<String, Observation> instances = Collections.synchronizedMap(new HashMap<>());
-    //    Parameters<String> defines = Parameters.createSynchronized();
-    private String hardwareSignature = Utils.Names.getHardwareId();
+    private final String hardwareSignature = Utils.Names.getHardwareId();
     private ResolverConfiguration configuration;
-
-    // OBVIOUSLY temporary - when all done, merge its methods with this and remove the porker and the old
-    // dirt.
-    private ResolutionCompiler resolutionCompiler = new ResolutionCompiler();
+    private final ResolutionCompiler resolutionCompiler = new ResolutionCompiler();
 
     public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
         super(scope, Type.RESOLVER, options);
         //        setProvideScopesAutomatically(true);
         ServiceConfiguration.INSTANCE.setMainService(this);
         readConfiguration(options);
-        KnowledgeRepository.INSTANCE.setProcessor(KlabAsset.KnowledgeClass.NAMESPACE, (ns) -> {
-            return loadNamespace((KimNamespace) ns, scope);
-        });
+        KnowledgeRepository.INSTANCE.setProcessor(KlabAsset.KnowledgeClass.NAMESPACE,
+                (ns) -> loadNamespace((KimNamespace) ns, scope));
     }
 
     private void readConfiguration(ServiceStartupOptions options) {
@@ -172,7 +155,8 @@ public class ResolverService extends BaseService implements Resolver {
         // TODO any literal value must be added first
 
         for (var resourceUrn : statement.getResourceUrns()) {
-            // FIXME this should be one multi-resource contextualizable
+            // FIXME when >1 this should be one multi-resource contextualizable
+            // TODO use static builders instead of polymorphic constructors
             model.getComputation().add(new ContextualizableImpl(resourceUrn));
         }
         model.getComputation().addAll(statement.getContextualization());
