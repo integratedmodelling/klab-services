@@ -199,6 +199,12 @@
             <version>9.11.1</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.dynatrace.dynahist</groupId>
+            <artifactId>dynahist</artifactId>
+            <version>1.4</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit -->
         <dependency>
             <groupId>org.eclipse.jgit</groupId>

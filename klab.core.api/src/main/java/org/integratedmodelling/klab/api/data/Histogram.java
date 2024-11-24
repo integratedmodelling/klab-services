@@ -6,6 +6,7 @@ import java.io.Serializable;
  * Histogram object for transport. TODO manage categories, legends, basic statistics etc.
  */
 public interface Histogram extends Serializable {
+
     int[] getBins();
 
     double[] getBoundaries();
