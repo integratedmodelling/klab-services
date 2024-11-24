@@ -112,7 +112,7 @@ public interface ResolutionConstraint extends Serializable {
      */
     ResolutionConstraint merge(ResolutionConstraint constraint);
 
-    static ResolutionConstraint of(Type type, Object data) {
+    static ResolutionConstraint of(Type type, Object... data) {
         return new ResolutionConstraintImpl(type, data);
     }
 

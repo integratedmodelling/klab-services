@@ -24,7 +24,9 @@ public class ResolutionConstraintImpl implements ResolutionConstraint {
                 throw new KlabIllegalArgumentException("Cannot create resolution constraint: illegal data " +
                         "content");
             }
-            this.data.add(o);
+            if (o != null) {
+                this.data.add(o);
+            }
         }
     }
 

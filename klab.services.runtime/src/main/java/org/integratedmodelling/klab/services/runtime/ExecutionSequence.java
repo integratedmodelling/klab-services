@@ -1,8 +1,12 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import com.google.common.collect.ImmutableList;
+import org.integratedmodelling.common.runtime.ActuatorImpl;
+import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -12,12 +16,13 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.CoreLibrary;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.storage.BooleanStorage;
@@ -25,10 +30,13 @@ import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
 import org.integratedmodelling.klab.runtime.storage.FloatStorage;
 import org.integratedmodelling.klab.runtime.storage.KeyedStorage;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.ojalgo.concurrent.Parallelism;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -42,9 +50,10 @@ public class ExecutionSequence {
 
     private final ServiceContextScope scope;
     private final DigitalTwin digitalTwin;
-    private final Language languageService;
     private final ComponentRegistry componentRegistry;
     private final double resolvedCoverage;
+    private final KnowledgeGraph.Operation contextualization;
+    private final Dataflow<Observation> dataflow;
     private List<List<ExecutorOperation>> sequence = new ArrayList<>();
     private boolean empty;
     // the context for the next operation. Starts at the observation and doesn't normally change but
@@ -52,16 +61,22 @@ public class ExecutionSequence {
     // may change it when they return a non-null, non-POD object.
     // TODO check if this should be a RuntimeAsset or even an Observation.
     private Object currentExecutionContext;
+    private Map<Actuator, KnowledgeGraph.Operation> operations = new HashMap<>();
 
-    private ExecutionSequence(List<Pair<Actuator, Integer>> pairs, double resolvedCoverage,
-                              ServiceContextScope contextScope,
-                              DigitalTwin digitalTwin, ComponentRegistry componentRegistry) {
-
+    public ExecutionSequence(KnowledgeGraph.Operation contextualization, Dataflow<Observation> dataflow,
+                             ComponentRegistry componentRegistry, ServiceContextScope contextScope) {
         this.scope = contextScope;
-        this.digitalTwin = digitalTwin;
-        this.languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
+        this.contextualization = contextualization;
+        this.resolvedCoverage = dataflow instanceof DataflowImpl dataflow1 ?
+                                dataflow1.getResolvedCoverage() : 1.0;
         this.componentRegistry = componentRegistry;
-        this.resolvedCoverage = resolvedCoverage;
+        this.dataflow = dataflow;
+        this.digitalTwin = contextScope.getDigitalTwin();
+    }
+
+    public boolean compile(Actuator rootActuator) {
+
+        var pairs = sortComputation(rootActuator);
         List<ExecutorOperation> current = null;
         int currentGroup = -1;
         for (var pair : pairs) {
@@ -77,15 +92,10 @@ public class ExecutionSequence {
 
         if (current != null) {
             sequence.add(current);
+            return true;
         }
 
-    }
-
-    public static ExecutionSequence compile(List<Pair<Actuator, Integer>> pairs,
-                                            double resolvedCoverage, ServiceContextScope contextScope,
-                                            DigitalTwin digitalTwin,
-                                            ComponentRegistry componentRegistry) {
-        return new ExecutionSequence(pairs, resolvedCoverage, contextScope, digitalTwin, componentRegistry);
+        return false;
     }
 
     public boolean run() {
@@ -106,6 +116,7 @@ public class ExecutionSequence {
             if (scope.getParallelism() == Parallelism.ONE) {
                 for (var operation : operationGroup) {
                     if (!operation.run()) {
+
                         return false;
                     }
                 }
@@ -136,9 +147,11 @@ public class ExecutionSequence {
         private final Observation observation;
         protected List<Supplier<Boolean>> executors = new ArrayList<>();
         private boolean scalar;
+        private KnowledgeGraph.Operation operation;
 
         public ExecutorOperation(Actuator actuator) {
             this.id = actuator.getId();
+            this.operation = operations.get(actuator);
             this.observation = scope.getObservation(this.id);
             compile(actuator);
         }
@@ -154,7 +167,7 @@ public class ExecutionSequence {
 
                 var preset = RuntimeService.CoreFunctor.classify(call);
                 if (preset != null) {
-                    switch(preset) {
+                    switch (preset) {
                         case URN_RESOLVER -> {
                         }
                         case URN_INSTANTIATOR -> {
@@ -286,13 +299,18 @@ public class ExecutionSequence {
             long start = System.currentTimeMillis();
             for (var executor : executors) {
                 if (!executor.get()) {
+                    if (operation != null) {
+                        operation.fail(scope, observation);
+                    }
                     return false;
                 }
             }
 
             long time = System.currentTimeMillis() - start;
-            scope.getDigitalTwin().knowledgeGraph().update(observation, scope, "msInitialization"
-                    , time, "resolved", true, "coverage", resolvedCoverage);
+
+            if (operation != null) {
+                operation.success(scope, observation, resolvedCoverage);
+            }
 
             return true;
         }
@@ -332,4 +350,91 @@ public class ExecutionSequence {
         return this;
     }
 
+
+    /**
+     * Establish the order of execution and the possible parallelism. Each root actuator should be sorted by
+     * dependency and appended in order to the result list along with its order of execution. Successive roots
+     * can refer to the previous roots but they must be executed sequentially.
+     * <p>
+     * The DigitalTwin is asked to register the actuator in the scope and prepare the environment and state
+     * for its execution, including defining its contextualization scale in context.
+     *
+     * @return
+     */
+    private List<Pair<Actuator, Integer>> sortComputation(Actuator rootActuator) {
+        List<Pair<Actuator, Integer>> ret = new ArrayList<>();
+        int executionOrder = 0;
+        Map<Long, Actuator> branch = new HashMap<>();
+        Set<Actuator> group = new HashSet<>();
+        var dependencyGraph = computeActuatorOrder(rootActuator);
+        for (var nextActuator : ImmutableList.copyOf(new TopologicalOrderIterator<>(dependencyGraph))) {
+            if (nextActuator.getActuatorType() != Actuator.Type.REFERENCE) {
+                ret.add(Pair.of(nextActuator, (executionOrder = checkExecutionOrder
+                        (executionOrder, nextActuator, dependencyGraph, group))));
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * If the actuator depends on any in the currentGroup, empty the group and increment the order; otherwise,
+     * add it to the group and return the same order.
+     *
+     * @param executionOrder
+     * @param current
+     * @param dependencyGraph
+     * @param currentGroup
+     * @return
+     */
+    private int checkExecutionOrder(int executionOrder, Actuator current,
+                                    Graph<Actuator, DefaultEdge> dependencyGraph,
+                                    Set<Actuator> currentGroup) {
+        boolean dependency = false;
+        for (Actuator previous : currentGroup) {
+            for (var edge : dependencyGraph.incomingEdgesOf(current)) {
+                if (currentGroup.contains(dependencyGraph.getEdgeSource(edge))) {
+                    dependency = true;
+                    break;
+                }
+            }
+        }
+
+        if (dependency) {
+            currentGroup.clear();
+            return executionOrder + 1;
+        }
+
+        currentGroup.add(current);
+
+        return executionOrder;
+    }
+
+
+    private Graph<Actuator, DefaultEdge> computeActuatorOrder(Actuator rootActuator) {
+        Graph<Actuator, DefaultEdge> dependencyGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
+        Map<Long, Actuator> cache = new HashMap<>();
+        loadGraph(rootActuator, dependencyGraph, cache, this.contextualization);
+        // keep the actuators that do nothing so we can tag their observation as resolved
+        return dependencyGraph;
+    }
+
+
+    private void loadGraph(Actuator rootActuator, Graph<Actuator, DefaultEdge> dependencyGraph, Map<Long,
+            Actuator> cache, KnowledgeGraph.Operation contextualization) {
+
+        var childContextualization = contextualization.createChild(rootActuator,
+                "Contextualization of " + rootActuator, Activity.Type.CONTEXTUALIZATION);
+        operations.put(rootActuator, childContextualization);
+
+        cache.put(rootActuator.getId(), rootActuator);
+        dependencyGraph.addVertex(rootActuator);
+        for (Actuator child : rootActuator.getChildren()) {
+            if (child.getActuatorType() == Actuator.Type.REFERENCE) {
+                dependencyGraph.addEdge(cache.get(child.getId()), rootActuator);
+            } else {
+                loadGraph(child, dependencyGraph, cache, childContextualization);
+                dependencyGraph.addEdge(child, rootActuator);
+            }
+        }
+    }
 }

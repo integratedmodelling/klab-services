@@ -16,7 +16,8 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     private String description;
     private long id;
     private String taskId;
-    private Activity parent;
+    private Outcome outcome;
+    private String stackTrace;
 
     @Override
     public long getStart() {
@@ -87,15 +88,6 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
         this.id = id;
     }
 
-    @Override
-    public Activity getParent() {
-        return parent;
-    }
-
-    public void setParent(Activity parent) {
-        this.parent = parent;
-    }
-
     /**
      * Non-API: the ID path through which the activity hierarchy can be reconstructed. When an activity is
      * included in a message, the taskId gets in there.
@@ -108,5 +100,23 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
     public void setTaskId(String taskId) {
         this.taskId = taskId;
+    }
+
+    @Override
+    public Outcome getOutcome() {
+        return outcome;
+    }
+
+    public void setOutcome(Outcome outcome) {
+        this.outcome = outcome;
+    }
+
+    @Override
+    public String getStackTrace() {
+        return stackTrace;
+    }
+
+    public void setStackTrace(String stackTrace) {
+        this.stackTrace = stackTrace;
     }
 }

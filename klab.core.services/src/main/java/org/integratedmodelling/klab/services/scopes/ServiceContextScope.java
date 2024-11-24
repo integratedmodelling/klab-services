@@ -389,23 +389,23 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         }
     }
 
-    public long insertIntoKnowledgeGraph(Observation observation, Object... arguments) {
-
-        var activity = digitalTwin.knowledgeGraph().activity(Provenance.getAgent(this),
-                this, Utils.Collections.flatCollection(Activity.Type.INSTANTIATION, arguments).toArray()).add(observation);
-        if (getContextObservation() != null) {
-            activity = activity.link(getContextObservation(), observation,
-                    DigitalTwin.Relationship.HAS_CHILD);
-        } else {
-            activity = activity.rootLink(observation);
-        }
-
-        if (getObserver() != null) {
-            activity = activity.link(observation, getObserver(), DigitalTwin.Relationship.HAS_OBSERVER);
-        }
-
-        return activity.run(this);
-    }
+//    public long insertIntoKnowledgeGraph(Observation observation, Object... arguments) {
+//
+//        var activity = digitalTwin.knowledgeGraph().activity(Provenance.getAgent(this),
+//                this, Utils.Collections.flatCollection(Activity.Type.INSTANTIATION, arguments).toArray()).add(observation);
+//        if (getContextObservation() != null) {
+//            activity = activity.link(getContextObservation(), observation,
+//                    DigitalTwin.Relationship.HAS_CHILD);
+//        } else {
+//            activity = activity.rootLink(observation);
+//        }
+//
+//        if (getObserver() != null) {
+//            activity = activity.link(observation, getObserver(), DigitalTwin.Relationship.HAS_OBSERVER);
+//        }
+//
+//        return activity.run(this);
+//    }
 
     public Parallelism getParallelism() {
         // TODO

@@ -24,28 +24,18 @@ import java.util.List;
  * A local, embedded, persistent k.LAB-instrumented, configurable Neo4j database. To work with the f'ing
  * community edition the database must be a singleton within the service, containing data for all contexts.
  */
-public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements KnowledgeGraph {
+public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements KnowledgeGraph {
 
     private static final String DEFAULT_DATABASE_NAME = "klab";
     private DatabaseManagementService managementService;
     private GraphDatabaseService graphDb;
-//    private SessionFactory sessionFactory;
     private boolean online = true;
-    // we use a session per context in normal usage, established through contextualize() which also sets up
-    // the root nodes for the context
-//    private Session contextSession_ = null;
-//    private GraphMapping.ContextMapping rootNode;
-//    private Driver driver;
 
     private KnowledgeGraphNeo4JEmbedded(KnowledgeGraphNeo4JEmbedded parent, ContextScope scope) {
         this.managementService = parent.managementService;
         this.graphDb = parent.graphDb;
-//        this.sessionFactory = parent.sessionFactory;
         this.online = parent.online;
-//        if (this.online) {
-//            this.contextSession_ = sessionFactory.openSession();
-            this.scope = scope;
-//        }
+        this.scope = scope;
         this.driver = parent.driver;
     }
 
@@ -68,12 +58,6 @@ public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements
                     .build();
 
             this.graphDb = managementService.database(DEFAULT_DATABASE_NAME);
-
-//            this.sessionFactory = new SessionFactory(
-//                    new Configuration.Builder()
-//                                .encryptionLevel("DISABLED")
-//                                .uri("bolt://localhost:7687").build(),
-//                    this.getClass().getPackageName());
 
             // TODO this could just reimplement query() to use the DB directly and not expose the
             //  connectors, losing debugging access outside the application
@@ -102,16 +86,16 @@ public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements
 
         // TODO all the needed indices
 
-//        IndexDefinition usernamesIndex;
-//        try ( Transaction tx = graphDb.beginTx() )
-//        {
-//            Schema schema = tx.schema();
-//            usernamesIndex = schema.indexFor(Label.label( "User" ) )
-//                                   .on( "username" )
-//                                   .withName( "usernames" )
-//                                   .create();
-//            tx.commit();
-//        }
+        //        IndexDefinition usernamesIndex;
+        //        try ( Transaction tx = graphDb.beginTx() )
+        //        {
+        //            Schema schema = tx.schema();
+        //            usernamesIndex = schema.indexFor(Label.label( "User" ) )
+        //                                   .on( "username" )
+        //                                   .withName( "usernames" )
+        //                                   .create();
+        //            tx.commit();
+        //        }
     }
 
     @Override
@@ -129,7 +113,6 @@ public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements
         }
 
         var ret = new KnowledgeGraphNeo4JEmbedded(this, scope);
-//        ret.rootNode = node;
 
         ret.initializeContext();
 
@@ -137,7 +120,8 @@ public class KnowledgeGraphNeo4JEmbedded  extends KnowledgeGraphNeo4j implements
     }
 
     @Override
-    public <T extends RuntimeAsset> List<T> get(RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
+    public <T extends RuntimeAsset> List<T> get(RuntimeAsset source, DigitalTwin.Relationship linkType,
+                                                Class<T> resultClass) {
         return List.of();
     }
 

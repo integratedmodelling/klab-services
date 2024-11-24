@@ -11,11 +11,15 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Activity;
+import org.integratedmodelling.klab.api.provenance.Agent;
+import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -269,11 +273,78 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
     @Override
     public long submit(Observation observation, ContextScope scope) {
-        if (scope instanceof ServiceContextScope serviceContextScope) {
-            // TODO this gets its operation (instantiation of observation)
-            return serviceContextScope.insertIntoKnowledgeGraph(observation);
+
+        if (observation.isResolved()) {
+            // TODO there may be a context for this at some point.
+            throw new KlabIllegalStateException("A resolved observation cannot be submitted to the " +
+                    "knowledge graph for now");
         }
+
+        if (scope instanceof ServiceContextScope serviceContextScope) {
+
+            var digitalTwin = getDigitalTwin(scope);
+            var parentActivity = Provenance.getActivity(scope);
+            var agent = getAgent(scope);
+
+            /*
+             * The initial activity should be in the scope; if not, we're observing at the
+             * root DT level and we get the context initialization activity as parent.
+             */
+            var instantiation = digitalTwin.knowledgeGraph().operation(agent, parentActivity,
+                    Activity.Type.INSTANTIATION, observation);
+
+            try (instantiation) {
+
+                var ret = instantiation.store(observation);
+                instantiation.link(instantiation.getActivity(), observation,
+                        DigitalTwin.Relationship.CREATED);
+                if (scope.getContextObservation() != null) {
+                    instantiation.link(scope.getContextObservation(), observation,
+                            DigitalTwin.Relationship.HAS_CHILD);
+                } else {
+                    instantiation.linkToRootNode(observation, DigitalTwin.Relationship.HAS_CHILD);
+                }
+
+                if (scope.getObserver() != null) {
+                    instantiation.link(observation, scope.getObserver(),
+                            DigitalTwin.Relationship.HAS_OBSERVER);
+                }
+
+                instantiation.success(scope, observation);
+                return ret;
+
+            } catch (Throwable t) {
+                instantiation.fail(scope, observation);
+            }
+        }
+
         return Observation.UNASSIGNED_ID;
+    }
+
+    private Agent getAgent(ContextScope scope) {
+
+        var ret = Provenance.getAgent(scope);
+        if (ret != null) {
+            return ret;
+        }
+        if (scope instanceof ServiceContextScope serviceContextScope) {
+            // assume the user is the agent
+            return serviceContextScope.getDigitalTwin().knowledgeGraph().user();
+        }
+        throw new KlabIllegalStateException("Cannot determine the requesting agent from scope");
+    }
+
+    private Activity getInitializationActivity(Observation observation, ContextScope scope) {
+        var ret = Provenance.getActivity(scope);
+        if (ret != null) {
+            return ret;
+        }
+        var activities = getDigitalTwin(scope).knowledgeGraph().get(scope, Activity.class,
+                Activity.Type.INITIALIZATION);
+        if (activities.size() == 1) {
+            return activities.getFirst();
+        }
+        throw new KlabInternalErrorException("cannot locate the context initialization activity");
     }
 
     @Override
@@ -284,40 +355,73 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             var resolver = serviceContextScope.getService(Resolver.class);
             var observation = serviceContextScope.getObservation(id);
             var digitalTwin = getDigitalTwin(scope);
-            var activity =
+            var parentActivities = digitalTwin.knowledgeGraph().get(scope, Activity.class,
+                    Activity.Type.INSTANTIATION, observation);
 
-                    // TODO retrieve the activity that instantiated the observation instead, pass it down
-                    //  as the root for the resolution somehow
-                    digitalTwin.knowledgeGraph().activity(digitalTwin.knowledgeGraph().klab(), scope,
-                            observation, Activity.Type.RESOLUTION, null);
-
+            // TODO check
+            var parentActivity = parentActivities.getFirst();
             final var ret = new CompletableFuture<Observation>();
 
             Thread.ofVirtual().start(() -> {
-                try {
-                    var result = observation;
+
+                Dataflow<Observation> dataflow = null;
+                Activity resolutionActivity = null;
+                Observation result = null;
+
+                /*
+                This will commit or rollback at close()
+                 */
+                var resolution = digitalTwin.knowledgeGraph().operation(digitalTwin.knowledgeGraph().klab()
+                        , parentActivity, Activity.Type.RESOLUTION);
+
+                try (resolution) {
+                    result = observation;
                     scope.send(Message.MessageClass.ObservationLifecycle,
                             Message.MessageType.ResolutionStarted, result);
-                    // TODO resolution gets its own operation (find the instantiation activity as precursor)
-                    var dataflow = resolver.resolve(observation, scope);
-                    if (dataflow != null) {
-                        if (!dataflow.isEmpty()) {
-                            // TODO contextualization gets its own operation (dependent on resolution)
-                            result = runDataflow(dataflow, scope);
-                            ret.complete(result);
+                    try {
+                        // TODO send out the activity with the scope
+                        dataflow = resolver.resolve(observation, scope);
+                        if (dataflow != null) {
+                            resolution.success(scope, result, dataflow,
+                                    "Resolution of observation _" + observation.getUrn() + "_ of **" + observation.getObservable().getUrn() + "**");
+                            scope.send(Message.MessageClass.ObservationLifecycle,
+                                    Message.MessageType.ResolutionSuccessful, result);
+                            resolutionActivity = resolution.getActivity();
+                        } else {
+                            resolution.fail(scope, observation);
+                            ret.completeExceptionally(new KlabResourceAccessException("Resolution of " + observation.getUrn() + " failed"));
                         }
-                        activity.success(scope, result, dataflow,
-                                "Resolution of observation _" + observation.getUrn() + "_ of **" + observation.getObservable().getUrn() + "**");
-                    } else {
-                        activity.fail(scope, observation);
+                    } catch (Throwable t) {
+                        ret.completeExceptionally(t);
+                        resolution.fail(scope, observation, t);
+                        scope.send(Message.MessageClass.ObservationLifecycle,
+                                Message.MessageType.ResolutionAborted, observation);
                     }
-                    scope.send(Message.MessageClass.ObservationLifecycle,
-                            Message.MessageType.ResolutionSuccessful, result);
                 } catch (Throwable t) {
-                    ret.completeExceptionally(t);
-                    activity.fail(scope, observation, t);
                     scope.send(Message.MessageClass.ObservationLifecycle,
                             Message.MessageType.ResolutionAborted, observation);
+                    ret.completeExceptionally(t);
+                }
+
+                if (!ret.isCompletedExceptionally() && dataflow != null && !dataflow.isEmpty()) {
+
+                    /*
+                    this will commit all resources at close()
+                     */
+                    var contextualization =
+                            digitalTwin.knowledgeGraph().operation(digitalTwin.knowledgeGraph().klab(),
+                                    resolutionActivity, Activity.Type.CONTEXTUALIZATION);
+
+                    try (contextualization) {
+                        // TODO contextualization gets its own activities to use in operations
+                        //  (dependent on resolution) linked to actuators by runDataflow
+                        result = runDataflow(dataflow, scope, contextualization);
+                        ret.complete(result);
+                        contextualization.success(scope, dataflow, result);
+                    } catch (Throwable t) {
+                        contextualization.fail(scope, dataflow, result);
+                        ret.completeExceptionally(t);
+                    }
                 }
             });
 
@@ -330,15 +434,12 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
     @Override
     public Observation runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
-        var activity = new ActivityImpl();
-        // TODO fill in the activity for an external dataflow run
-        return runDataflow(dataflow, contextScope, activity);
+        // TODO fill in the operation representing an external dataflow run
+        return runDataflow(dataflow, contextScope, null);
     }
 
     public Observation runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope,
-                                   Activity activity) {
-
-        var digitalTwin = getDigitalTwin(contextScope);
+                                   KnowledgeGraph.Operation contextualization) {
 
         /*
         Load or confirm availability of all needed resources and create any non-existing observations
@@ -349,29 +450,34 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         find contextualization scale and hook point into the DT from the scope
          */
 
-        /**
-         * Run each actuator set in order
-         */
-        for (var rootActuator : dataflow.getComputation()) {
-            ExecutionSequence executionSequence = ExecutionSequence.compile(sortComputation(rootActuator,
-                            dataflow,
-                            contextScope), (dataflow instanceof DataflowImpl dataflow1 ?
-                                            dataflow1.getResolvedCoverage() : 1.0),
-                    (ServiceContextScope) contextScope, digitalTwin, getComponentRegistry());
-            if (!executionSequence.isEmpty()) {
-                if (!executionSequence.run()) {
-                    return Observation.empty();
+
+        if (contextScope instanceof ServiceContextScope serviceContextScope) {
+            /**
+             * Run each actuator set in order
+             */
+            for (var rootActuator : dataflow.getComputation()) {
+                var executionSequence = new ExecutionSequence(contextualization, dataflow,
+                        getComponentRegistry(), serviceContextScope);
+                executionSequence.compile(rootActuator);
+                if (!executionSequence.isEmpty()) {
+                    if (!executionSequence.run()) {
+                        contextualization.fail(contextScope, dataflow.getTarget());
+                        return Observation.empty();
+                    }
                 }
             }
-        }
 
         /*
         intersect coverage from dataflow with contextualization scale
          */
 
-        if (dataflow instanceof DataflowImpl df && dataflow.getTarget() instanceof ObservationImpl obs) {
-            obs.setResolved(true);
-            obs.setResolvedCoverage(df.getResolvedCoverage());
+            if (dataflow instanceof DataflowImpl df && dataflow.getTarget() instanceof ObservationImpl obs) {
+                obs.setResolved(true);
+                obs.setResolvedCoverage(df.getResolvedCoverage());
+            }
+
+            contextualization.success(contextScope, dataflow.getTarget(), dataflow);
+
         }
 
         return dataflow.getTarget();
@@ -383,28 +489,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         }
         throw new KlabInternalErrorException("Digital twin is inaccessible because of unexpected scope " +
                 "implementation");
-    }
-
-    private Graph<Actuator, DefaultEdge> computeActuatorOrder(Actuator rootActuator, ContextScope scope) {
-        Graph<Actuator, DefaultEdge> dependencyGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
-        Map<Long, Actuator> cache = new HashMap<>();
-        loadGraph(rootActuator, dependencyGraph, cache);
-        // keep the actuators that do nothing so we can tag their observation as resolved
-        return dependencyGraph;
-    }
-
-    private void loadGraph(Actuator rootActuator, Graph<Actuator, DefaultEdge> dependencyGraph, Map<Long,
-            Actuator> cache) {
-        cache.put(rootActuator.getId(), rootActuator);
-        dependencyGraph.addVertex(rootActuator);
-        for (Actuator child : rootActuator.getChildren()) {
-            if (child.getActuatorType() == Actuator.Type.REFERENCE) {
-                dependencyGraph.addEdge(cache.get(child.getId()), rootActuator);
-            } else {
-                loadGraph(child, dependencyGraph, cache);
-                dependencyGraph.addEdge(child, rootActuator);
-            }
-        }
     }
 
     @Override
@@ -458,68 +542,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     @Override
     public List<SessionInfo> getSessionInfo(Scope scope) {
         return knowledgeGraph.getSessionInfo(scope);
-    }
-
-    /**
-     * Establish the order of execution and the possible parallelism. Each root actuator should be sorted by
-     * dependency and appended in order to the result list along with its order of execution. Successive roots
-     * can refer to the previous roots but they must be executed sequentially.
-     * <p>
-     * The DigitalTwin is asked to register the actuator in the scope and prepare the environment and state
-     * for its execution, including defining its contextualization scale in context.
-     *
-     * @param dataflow
-     * @return
-     */
-    private List<Pair<Actuator, Integer>> sortComputation(Actuator rootActuator,
-                                                          Dataflow<Observation> dataflow,
-                                                          ContextScope scope) {
-        List<Pair<Actuator, Integer>> ret = new ArrayList<>();
-        int executionOrder = 0;
-        Map<Long, Actuator> branch = new HashMap<>();
-        Set<Actuator> group = new HashSet<>();
-        var dependencyGraph = computeActuatorOrder(rootActuator, scope);
-        for (var nextActuator : ImmutableList.copyOf(new TopologicalOrderIterator<>(dependencyGraph))) {
-            if (nextActuator.getActuatorType() != Actuator.Type.REFERENCE) {
-                ret.add(Pair.of(nextActuator, (executionOrder = checkExecutionOrder
-                        (executionOrder, nextActuator,
-                                dependencyGraph, group))));
-            }
-        }
-        return ret;
-    }
-
-    /**
-     * If the actuator depends on any in the currentGroup, empty the group and increment the order; otherwise,
-     * add it to the group and return the same order.
-     *
-     * @param executionOrder
-     * @param current
-     * @param dependencyGraph
-     * @param currentGroup
-     * @return
-     */
-    private int checkExecutionOrder(int executionOrder, Actuator current,
-                                    Graph<Actuator, DefaultEdge> dependencyGraph,
-                                    Set<Actuator> currentGroup) {
-        boolean dependency = false;
-        for (Actuator previous : currentGroup) {
-            for (var edge : dependencyGraph.incomingEdgesOf(current)) {
-                if (currentGroup.contains(dependencyGraph.getEdgeSource(edge))) {
-                    dependency = true;
-                    break;
-                }
-            }
-        }
-
-        if (dependency) {
-            currentGroup.clear();
-            return executionOrder + 1;
-        }
-
-        currentGroup.add(current);
-
-        return executionOrder;
     }
 
 }

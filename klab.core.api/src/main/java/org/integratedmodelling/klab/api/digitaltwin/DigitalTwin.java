@@ -37,13 +37,14 @@ public interface DigitalTwin {
         EMERGED_FROM,
         HAS_OBSERVER,
         HAS_PLAN,
-        RESOLVED_BY,
         BY_AGENT,
         CREATED,
         HAS_DATAFLOW,
         HAS_PROVENANCE,
         HAS_ACTIVITY,
-        HAS_CHILD
+        HAS_CHILD,
+        TRIGGERED,
+        CONTEXTUALIZED;
     }
 
     /**
@@ -202,7 +203,6 @@ public interface DigitalTwin {
             ret.setGeometry(geometry);
             ret.setMetadata(metadata);
             ret.setObservable(observable);
-            ret.setUrn(resourceUrn == null ? modelUrn : resourceUrn);
             ret.setValue(defaultValue);
             ret.setName(name);
             return ret;

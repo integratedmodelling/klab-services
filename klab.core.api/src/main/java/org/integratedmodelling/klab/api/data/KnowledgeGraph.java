@@ -55,6 +55,16 @@ public interface KnowledgeGraph {
         Activity getActivity();
 
         /**
+         * Create a child operation using the same transaction and representing a new activity, which will be
+         * linked as a subordinate to the current one. Pass anything that can affect the child activity, at
+         * minimum an Activity.Type and a description.
+         *
+         * @param activityData
+         * @return
+         */
+        Operation createChild(Object... activityData);
+
+        /**
          * Store the passed asset, return its unique long ID.
          *
          * @param asset
@@ -66,8 +76,7 @@ public interface KnowledgeGraph {
 
         /**
          * Link the two passed assets.
-         *
-         * FIXME remove scope when the other is gone
+         * <p>*
          *
          * @param source
          * @param destination
@@ -75,68 +84,20 @@ public interface KnowledgeGraph {
          *                             or you'll get an exception.
          */
         void link(RuntimeAsset source, RuntimeAsset destination,
-                  DigitalTwin.Relationship relationship, Scope scope,
+                  DigitalTwin.Relationship relationship,
                   Object... additionalProperties);
 
-
         /**
-         * Run the operation as configured and return the ID of the last object created or modified, or
-         * {@link Observation#UNASSIGNED_ID} if the operation failed or was wrongly defined.
+         * Link the passed asset to the root node it "naturally" belongs to in the scope.
+         * <p>*
          *
-         * @return a valid ID or {@link Observation#UNASSIGNED_ID}
-         * @deprecated just run each operation and rollback if unsuccessful
+         * @param destination
+         * @param additionalProperties any pair of properties we want overridden. Pass pairs and do it right
+         *                             or you'll get an exception.
          */
-        long run(ContextScope scope);
-
-        /**
-         * Add the passed runtime asset, which must not be part of the graph already.
-         * <p>
-         * Sets the current link target to the created object.
-         *
-         * @param observation
-         * @return
-         * @deprecated use store
-         */
-        Operation add(RuntimeAsset observation);
-
-        /**
-         * Sets an existing asset as the target for future links or updates called on the operation. If
-         * properties are passed that differ from the existing ones, an update is performed at
-         * {@link #run(ContextScope)} and the appropriate provenance records are inserted in the graph.
-         *
-         * @param source
-         * @return
-         * @deprecated shouldn't be necessary, use update on the main KG
-         */
-        Operation set(RuntimeAsset source, Object... properties);
-
-        /**
-         * Link the last asset referenced in the call chain to the passed asset, which must exist. Use the
-         * additional parameters to specify the link, which should include a link type unless that can be
-         * inferred unambiguously, and can include PODs for properties as needed. Creates an outgoing
-         * connection from the current asset to the passed one.
-         * <p>
-         * When returning, the target is still set as before the link call, so that various link calls can be
-         * chained.
-         *
-         * @param assetFrom
-         * @param assetTo
-         * @param linkData
-         * @return
-         * @deprecated use link above, remove this
-         */
-        Operation link(RuntimeAsset assetFrom, RuntimeAsset assetTo, DigitalTwin.Relationship relationship,
-                       Object... linkData);
-
-        /**
-         * Link the passed asset directly to the root object of reference - provenance, context or dataflow.
-         *
-         * @param asset
-         * @param linkData
-         * @return
-         * @deprecated
-         */
-        Operation rootLink(RuntimeAsset asset, Object... linkData);
+        void linkToRootNode(RuntimeAsset destination,
+                            DigitalTwin.Relationship relationship,
+                            Object... additionalProperties);
 
         /**
          * Call after run() when the activity has finished without errors to ensure that all info in the
@@ -159,29 +120,12 @@ public interface KnowledgeGraph {
     }
 
     /**
-     * Create a new operation to be run on the graph, resulting in assets being created or modified, with
-     * recording of provenance information. As a result, even an atomic operation may add several assets and
-     * relationships. Unless the operation is empty, exactly one Activity node is always created at run().
-     * <p>
-     * If no parameters are passed, the first target must be set manually on the returned operation. Otherwise
-     * the target will be set according to which parameters are passed and their existence in the graph. No
-     * change is made to the graph until {@link Operation#run(ContextScope)} is called.
-     * <p>
-     * Obtaining and running an operation (i.e. creating a new Activity in the knowledge graph) will also
-     * reset the idle time counter to 0 for those scopes whose expiration is IDLE_TIME. Operations may be
-     * invoked on the scope by the API user, but also triggered by applications, behaviors etc.
-     * <p>
-     * When the operation has run, call success() or fail() to update the knowledge graph with any IDs and
-     * states.
+     * Create a new operation with a new activity and a transaction, which can be committed or rolled back
+     * after using it to define the graph.
      *
-     * @param agent   the agent that will own the activity created
-     * @param scope   the specific scope, whose observer and context will determine the links made
-     * @param targets any additional parameters. A string will be interpreted as the description of the
-     *                activity generated. An activity will be interpreted as the parent for the activity
-     *                generated.
-     * @return a graph modification operation description ready for run()
+     * @return
      */
-    Operation activity(Agent agent, ContextScope scope, Object... targets);
+    Operation operation(Agent agent, Activity parentActivity, Activity.Type activityType, Object... data);
 
     /**
      * Remove all data relative to the currently contextualized scope. Graph becomes unusable after this is
