@@ -222,12 +222,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 for (var asset : assets) {
                     if (asset instanceof ObservationImpl obs) {
                         observation = obs;
-                    } else if (asset instanceof Double d) {
-                        coverage = d;
-                    } else if (asset instanceof Long l) {
-                        this.activity.setCredits(l);
-                    } else if (asset instanceof Throwable throwable) {
-                        this.activity.setStackTrace(ExceptionUtils.getStackTrace(throwable));
                     }
                 }
             }
@@ -250,6 +244,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             }
 
             if (parent == null) {
+
                 if (outcome == null) {
                     // Log an internal failure (no success or failure, should not happen)
                     transaction.rollback();
@@ -257,6 +252,34 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                     transaction.commit();
                 } else if (outcome == Scope.Status.ABORTED) {
                     transaction.rollback();
+                }
+
+                // npw that transactions are done, update all observations and activities w.r.t. the ones
+                // contained here
+                updateAssets();
+            }
+
+        }
+
+        private void updateAssets() {
+
+            for (var child : children) {
+                child.updateAssets();
+            }
+
+            ObservationImpl observation = null;
+            double coverage = 1.0;
+            if (assets != null) {
+                for (var asset : assets) {
+                    if (asset instanceof ObservationImpl obs) {
+                        observation = obs;
+                    } else if (asset instanceof Double d) {
+                        coverage = d;
+                    } else if (asset instanceof Long l) {
+                        this.activity.setCredits(l);
+                    } else if (asset instanceof Throwable throwable) {
+                        this.activity.setStackTrace(ExceptionUtils.getStackTrace(throwable));
+                    }
                 }
             }
 
@@ -272,8 +295,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             }
 
             update(this.activity, scope);
+
         }
     }
+
 
     @Override
     public Operation operation(Agent agent, Activity parentActivity, Activity.Type activityType,
@@ -323,7 +348,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         // open transaction if we are the root operation. We only commit within it.
         ret.transaction = ret.parent == null ?
-                          // this open a new session per transaction. Probably expensive but safe as transactions can't co-occur within a session.
+                          // this open a new session per transaction. Probably expensive but safe as
+                          // transactions can't co-occur within a session.
                           driver.session().beginTransaction(TransactionConfig.builder().withTimeout(Duration.ZERO).build()) :
                           ret.parent.transaction;
 
@@ -846,23 +872,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     @Override
     public void update(RuntimeAsset runtimeAsset, ContextScope scope, Object... parameters) {
-        // set resolved flag to true; add final coverage
-
-        boolean log = false;
-        if (runtimeAsset instanceof ActivityImpl activity) {
-            log = true;
-            System.out.println("STORING ACTIVITY " + activity.getId() + " WITH END " + activity.getEnd());
-        }
-
         var props = asParameters(runtimeAsset, parameters);
         props.remove("id");
         var result = query(Queries.UPDATE_PROPERTIES.replace("{type}", getLabel(runtimeAsset)),
                 Map.of("id", (runtimeAsset instanceof ActuatorImpl actuator ? actuator.getInternalId() :
                               runtimeAsset.getId()), "properties", props), scope);
-        if (log && result.records().isEmpty()) {
-            System.out.println("DIO PORCO NON HO CAMBIATO UN CAZZO " + runtimeAsset);
-            System.out.println(result.summary());
-        }
     }
 
     @Override

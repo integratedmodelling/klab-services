@@ -223,8 +223,6 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                                 }
                             }
 
-                            System.out.println("ZIO PETARDO TARTUFATO " + message);
-
                             // TODO skip this and put the ID in MessagingScope
                             if (this instanceof SessionScope scope) {
                                 var id = scope.getId();

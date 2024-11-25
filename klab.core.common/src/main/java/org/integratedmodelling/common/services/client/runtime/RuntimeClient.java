@@ -184,7 +184,6 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         var ret = scope.trackMessages(Message.match(Message.MessageClass.ObservationLifecycle,
                         Message.MessageType.ResolutionAborted, Message.MessageType.ResolutionSuccessful).when((message) -> message.getPayload(Observation.class).getId() == id)
                 , (message) -> {
-                    System.out.println("HASTA LA MINCHIA " + message);
                     var observation = message.getPayload(Observation.class);
                     if (message.getMessageType() == Message.MessageType.ResolutionSuccessful) {
                         scope.info("Resolution of " + observation + " successful with coverage " + observation.getResolvedCoverage());
