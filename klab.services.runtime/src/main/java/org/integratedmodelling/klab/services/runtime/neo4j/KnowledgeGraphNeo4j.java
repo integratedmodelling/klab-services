@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -59,7 +60,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         String REMOVE_CONTEXT = "match (n:Context {id: $contextId})-[*]-(c) detach delete n,c";
         String FIND_CONTEXT = "MATCH (ctx:Context {id: $contextId}) RETURN ctx";
         String CREATE_WITH_PROPERTIES = "CREATE (n:{type}) SET n = $properties RETURN n";
-        String UPDATE_PROPERTIES = "MATCH (n:{type}) WHERE n.id = $id SET n += $properties RETURN n";
+        String UPDATE_PROPERTIES = "MATCH (n:{type} {id: $id}) SET n += $properties RETURN n";
         String[] INITIALIZATION_QUERIES = new String[]{
                 "MERGE (user:Agent {name: $username, type: 'USER'})",
                 "MERGE (klab:Agent {name: 'k.LAB', type: 'AI'})",
@@ -225,6 +226,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                         coverage = d;
                     } else if (asset instanceof Long l) {
                         this.activity.setCredits(l);
+                    } else if (asset instanceof Throwable throwable) {
+                        this.activity.setStackTrace(ExceptionUtils.getStackTrace(throwable));
                     }
                 }
             }
@@ -319,10 +322,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
 
         // open transaction if we are the root operation. We only commit within it.
-        ret.transaction = ret.parent == null
-                          ?
-                          driver.session().beginTransaction(TransactionConfig.builder().withTimeout(Duration.ZERO).build())
-                          : ret.parent.transaction;
+        ret.transaction = ret.parent == null ?
+                          // this open a new session per transaction. Probably expensive but safe as transactions can't co-occur within a session.
+                          driver.session().beginTransaction(TransactionConfig.builder().withTimeout(Duration.ZERO).build()) :
+                          ret.parent.transaction;
 
         return ret;
     }
@@ -852,6 +855,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
 
         var props = asParameters(runtimeAsset, parameters);
+        props.remove("id");
         var result = query(Queries.UPDATE_PROPERTIES.replace("{type}", getLabel(runtimeAsset)),
                 Map.of("id", (runtimeAsset instanceof ActuatorImpl actuator ? actuator.getInternalId() :
                               runtimeAsset.getId()), "properties", props), scope);
