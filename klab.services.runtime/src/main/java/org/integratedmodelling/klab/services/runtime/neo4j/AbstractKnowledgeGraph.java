@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.neo4j.driver.Transaction;
 
 import java.io.IOException;
@@ -165,7 +166,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
             }
         }
 
-        return ret;
+        return Utils.Maps.removeNullValues(ret);
     }
 
 }

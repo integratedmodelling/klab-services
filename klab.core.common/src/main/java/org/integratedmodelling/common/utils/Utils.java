@@ -1546,6 +1546,19 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
             return ret;
         }
+
+        public static <K,V> Map<K,V> removeNullValues(Map<K,V> map) {
+            Set<K> toRemove = new HashSet<>();
+            for (K key : map.keySet()) {
+                if (map.get(key) == null) {
+                    toRemove.add(key);
+                }
+            }
+            for (var k : toRemove) {
+                map.remove(k);
+            }
+            return map;
+        }
     }
 
     public static class Templates extends org.integratedmodelling.klab.api.utils.Utils.Templates {

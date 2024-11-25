@@ -59,7 +59,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         String REMOVE_CONTEXT = "match (n:Context {id: $contextId})-[*]-(c) detach delete n,c";
         String FIND_CONTEXT = "MATCH (ctx:Context {id: $contextId}) RETURN ctx";
         String CREATE_WITH_PROPERTIES = "CREATE (n:{type}) SET n = $properties RETURN n";
-        String UPDATE_PROPERTIES = "MATCH (n:{type}) WHERE n.id = $id SET n += $properties";
+        String UPDATE_PROPERTIES = "MATCH (n:{type}) WHERE n.id = $id SET n += $properties RETURN n";
         String[] INITIALIZATION_QUERIES = new String[]{
                 "MERGE (user:Agent {name: $username, type: 'USER'})",
                 "MERGE (klab:Agent {name: 'k.LAB', type: 'AI'})",
@@ -118,6 +118,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         public Operation createChild(Object... activityData) {
 
             var activity = new ActivityImpl();
+            activity.setStart(System.currentTimeMillis());
+
             var ret = new OperationImpl();
 
             ret.agent = agent;
@@ -189,16 +191,20 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             // rollback; update activity end and context timestamp only, if we have an error or throwable
             // update activity
             this.outcome = Scope.Status.ABORTED;
+            this.assets = assets;
             return this;
         }
 
         @Override
         public void close() throws IOException {
 
-            System.out.println("CLOSING " + activity);
+            List<Actuator> childActuators = new ArrayList<>();
 
             for (var child : children) {
                 child.close();
+                if (child.actuator != null) {
+                    childActuators.add(child.actuator);
+                }
             }
 
             this.activity.setEnd(System.currentTimeMillis());
@@ -217,6 +223,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                         observation = obs;
                     } else if (asset instanceof Double d) {
                         coverage = d;
+                    } else if (asset instanceof Long l) {
+                        this.activity.setCredits(l);
                     }
                 }
             }
@@ -224,18 +232,25 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             if (this.actuator != null) {
                 store(actuator);
                 link(this.activity, this.actuator, DigitalTwin.Relationship.HAS_PLAN);
+                for (Actuator childActuator : childActuators) {
+                    link(this.actuator, childActuator, DigitalTwin.Relationship.HAS_CHILD);
+                }
+            } else {
+                for (Actuator childActuator : childActuators) {
+                    link(dataflowNode, childActuator, DigitalTwin.Relationship.HAS_CHILD);
+                }
+            }
+
+            if (observation != null && this.actuator != null && outcome == Scope.Status.FINISHED) {
+                // TODO add state and histogram
+                link(this.activity, observation, DigitalTwin.Relationship.CONTEXTUALIZED);
             }
 
             if (parent == null) {
-
                 if (outcome == null) {
                     // Log an internal failure (no success or failure, should not happen)
                     transaction.rollback();
                 } else if (outcome == Scope.Status.FINISHED) {
-                    if (observation != null && this.actuator != null) {
-                        // TODO add state and histogram
-                        link(this.activity, observation, DigitalTwin.Relationship.CONTEXTUALIZED);
-                    }
                     transaction.commit();
                 } else if (outcome == Scope.Status.ABORTED) {
                     transaction.rollback();
@@ -829,10 +844,21 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     @Override
     public void update(RuntimeAsset runtimeAsset, ContextScope scope, Object... parameters) {
         // set resolved flag to true; add final coverage
+
+        boolean log = false;
+        if (runtimeAsset instanceof ActivityImpl activity) {
+            log = true;
+            System.out.println("STORING ACTIVITY " + activity.getId() + " WITH END " + activity.getEnd());
+        }
+
         var props = asParameters(runtimeAsset, parameters);
-        query(Queries.UPDATE_PROPERTIES.replace("{type}", getLabel(runtimeAsset)),
+        var result = query(Queries.UPDATE_PROPERTIES.replace("{type}", getLabel(runtimeAsset)),
                 Map.of("id", (runtimeAsset instanceof ActuatorImpl actuator ? actuator.getInternalId() :
                               runtimeAsset.getId()), "properties", props), scope);
+        if (log && result.records().isEmpty()) {
+            System.out.println("DIO PORCO NON HO CAMBIATO UN CAZZO " + runtimeAsset);
+            System.out.println(result.summary());
+        }
     }
 
     @Override
