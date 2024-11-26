@@ -71,8 +71,8 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
     }
 
     @Override
-    public void logout() {
-
+    public void close() {
+        // TODO send the signal
     }
 
     @Override

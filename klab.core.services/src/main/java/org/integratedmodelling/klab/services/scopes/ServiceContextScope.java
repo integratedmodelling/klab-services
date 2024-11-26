@@ -4,37 +4,31 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
-import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
-import org.jgrapht.util.CollectionUtil;
 import org.ojalgo.concurrent.Parallelism;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -173,7 +167,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     public ServiceContextScope withObserver(Observation observer) {
         ServiceContextScope ret = new ServiceContextScope(this);
         ret.observer = observer;
-        //        ret.catalog = new HashMap<>(this.catalog);
         return ret;
     }
 
@@ -388,24 +381,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             }
         }
     }
-
-//    public long insertIntoKnowledgeGraph(Observation observation, Object... arguments) {
-//
-//        var activity = digitalTwin.knowledgeGraph().activity(Provenance.getAgent(this),
-//                this, Utils.Collections.flatCollection(Activity.Type.INSTANTIATION, arguments).toArray()).add(observation);
-//        if (getContextObservation() != null) {
-//            activity = activity.link(getContextObservation(), observation,
-//                    DigitalTwin.Relationship.HAS_CHILD);
-//        } else {
-//            activity = activity.rootLink(observation);
-//        }
-//
-//        if (getObserver() != null) {
-//            activity = activity.link(observation, getObserver(), DigitalTwin.Relationship.HAS_OBSERVER);
-//        }
-//
-//        return activity.run(this);
-//    }
 
     public Parallelism getParallelism() {
         // TODO

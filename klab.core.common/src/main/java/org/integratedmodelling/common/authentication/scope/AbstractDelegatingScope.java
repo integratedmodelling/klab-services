@@ -162,4 +162,9 @@ public abstract class AbstractDelegatingScope implements Scope {
     public void setExpiration(Expiration expiration) {
         this.expiration = expiration;
     }
+
+    @Override
+    public void close() {
+        delegateChannel.close();
+    }
 }

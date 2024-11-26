@@ -355,7 +355,7 @@ public enum KlabCLI {
                     java.util.Set<SessionScope> removed = new HashSet<>();
                     for (SessionScope s : parent.running) {
                         if (s.getStatus() != Status.STARTED && s.getStatus() != Status.WAITING) {
-                            s.logout();
+                            s.close();
                             removed.add(s);
                         }
                     }
@@ -364,7 +364,7 @@ public enum KlabCLI {
                     java.util.List<SessionScope> scopes = new ArrayList<>(parent.running);
                     for (int appId : appIds) {
                         SessionScope s = scopes.get(appId + 1);
-                        s.logout();
+                        s.close();
                         parent.running.remove(s);
                     }
                 }

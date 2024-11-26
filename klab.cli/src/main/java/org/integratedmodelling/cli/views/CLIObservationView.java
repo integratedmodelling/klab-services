@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.view.modeler.views.ContextView;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.ContextViewController;
@@ -63,13 +64,14 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
         PrintWriter err = commandSpec.commandLine().getErr();
 
         if (observables == null || observables.isEmpty()) {
-//            int n = 1;
-//            if (observationsMade.isEmpty()) {
-//                out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow No previous observations|@ "));
-//            }
-//            for (var urn : observationsMade) {
-//                out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow " + n + ".|@ " + urn));
-//            }
+            //            int n = 1;
+            //            if (observationsMade.isEmpty()) {
+            //                out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow No previous
+            //                observations|@ "));
+            //            }
+            //            for (var urn : observationsMade) {
+            //                out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow " + n + ".|@ " + urn));
+            //            }
             return;
         }
 
@@ -77,15 +79,16 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
 
         if (Utils.Numbers.encodesInteger(urn)) {
             int n = Integer.parseInt(urn) - 1;
-//            if (n < 0 || observationsMade.size() >= n) {
-//                err.println("No previous observation at index " + n);
-//                return;
-//            }
-//            // FIXME use SessionInfo for everything, remove any state from the controller and engine except
-//            //  the current session/ctx
-//            urn = observationsMade.get(n);
+            //            if (n < 0 || observationsMade.size() >= n) {
+            //                err.println("No previous observation at index " + n);
+            //                return;
+            //            }
+            //            // FIXME use SessionInfo for everything, remove any state from the controller and
+            //             engine except
+            //            //  the current session/ctx
+            //            urn = observationsMade.get(n);
         } else {
-//            observationsMade.add(urn);
+            //            observationsMade.add(urn);
         }
 
         var resources = KlabCLI.INSTANCE.user().getService(ResourcesService.class);
@@ -102,6 +105,41 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
         } else {
             err.println(CommandLine.Help.Ansi.AUTO.string("Can't resolve URN @|yellow " + urn + "|@ to " +
                     "observable knowledge"));
+        }
+    }
+
+    @CommandLine.Command(name = "clear", mixinStandardHelpOptions = true, version = Version.CURRENT,
+                         description = {"Close the active digital twin(s) and delete all observations"})
+    public static class Clear implements Runnable {
+
+        @CommandLine.ParentCommand
+        CLIObservationView parent;
+
+        @CommandLine.Spec
+        CommandLine.Model.CommandSpec commandSpec;
+
+        @Override
+        public void run() {
+
+            PrintWriter out = commandSpec.commandLine().getOut();
+            PrintWriter err = commandSpec.commandLine().getErr();
+
+            Channel context = KlabCLI.INSTANCE.modeler().getCurrentContext();
+            if (context == null) {
+                context = KlabCLI.INSTANCE.modeler().getCurrentSession();
+            }
+
+            if (context == null) {
+                err.println("No current context or session.");
+                return;
+            }
+
+            // TODO ask for abundant confirmation
+
+            KlabCLI.INSTANCE.modeler().setCurrentContext(null);
+            // TODO null the session if this was one
+            context.close();
+
         }
     }
 

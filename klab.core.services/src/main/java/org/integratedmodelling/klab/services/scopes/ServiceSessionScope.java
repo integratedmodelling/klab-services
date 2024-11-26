@@ -68,10 +68,9 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
         return parentScope.getService(serviceClass);
     }
 
-
     @Override
-    public void logout() {
-        // TODO
+    public void close() {
+        // TODO close all contexts
     }
 
     public boolean isOperative() {

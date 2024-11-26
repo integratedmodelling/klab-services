@@ -167,7 +167,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     @Override
     public void close() {
-
+        // TODO send the signal
     }
 
     @Override

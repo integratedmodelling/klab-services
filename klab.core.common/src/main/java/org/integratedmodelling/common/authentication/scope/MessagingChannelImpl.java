@@ -34,7 +34,7 @@ import java.util.function.Predicate;
  * queues and dispatches the messages to their respective handlers. Can be configured as a sender, receiver or
  * both.
  */
-public class MessagingChannelImpl extends ChannelImpl implements MessagingChannel, Closeable {
+public class MessagingChannelImpl extends ChannelImpl implements MessagingChannel {
 
     private Channel channel_;
     private boolean sender;

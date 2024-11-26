@@ -134,6 +134,11 @@ public class ChannelImpl implements Channel {
         return message;
     }
 
+    @Override
+    public void close() {
+        // TODO signal
+    }
+
     //    @Override
     //    public Message post(Consumer<Message> handler, Object... message) {
     //        var me = Message.create(this, message);
