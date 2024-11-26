@@ -62,6 +62,7 @@ public class ExecutionSequence {
     // TODO check if this should be a RuntimeAsset or even an Observation.
     private Object currentExecutionContext;
     private Map<Actuator, KnowledgeGraph.Operation> operations = new HashMap<>();
+    private Throwable cause;
 
     public ExecutionSequence(KnowledgeGraph.Operation contextualization, Dataflow<Observation> dataflow,
                              ComponentRegistry componentRegistry, ServiceContextScope contextScope) {
@@ -130,6 +131,7 @@ public class ExecutionSequence {
                         return false;
                     }
                 } catch (InterruptedException e) {
+                    this.cause = e;
                     scope.error(e);
                 }
             }
@@ -266,6 +268,7 @@ public class ExecutionSequence {
                                     setExecutionContext(context == null ? observation : context);
                                     return true;
                                 } catch (Exception e) {
+                                    cause = e;
                                     scope.error(e /* TODO tracing parameters */);
                                 }
                                 return true;
@@ -278,6 +281,7 @@ public class ExecutionSequence {
                                     setExecutionContext(context == null ? observation : context);
                                     return true;
                                 } catch (Exception e) {
+                                    cause = e;
                                     scope.error(e /* TODO tracing parameters */);
                                 }
                                 return true;
@@ -300,7 +304,7 @@ public class ExecutionSequence {
             for (var executor : executors) {
                 if (!executor.get()) {
                     if (operation != null) {
-                        operation.fail(scope, observation);
+                        operation.fail(scope, observation, cause);
                     }
                     return false;
                 }
@@ -436,5 +440,9 @@ public class ExecutionSequence {
                 dependencyGraph.addEdge(child, rootActuator);
             }
         }
+    }
+
+    public Throwable getCause() {
+        return cause;
     }
 }

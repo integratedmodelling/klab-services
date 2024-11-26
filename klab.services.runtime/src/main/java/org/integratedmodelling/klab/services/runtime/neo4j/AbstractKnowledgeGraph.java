@@ -122,7 +122,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                     ret.put("urn", observation.getUrn());
                     ret.put("semantictype", SemanticType.fundamentalType(
                             observation.getObservable().getSemantics().getType()).name());
-                    ret.put("semantics", observation.getObservable().getUrn());
+                    ret.put("semantics", observation.getObservable().getSemantics().getUrn());
+                    ret.put("observable", observation.getObservable().getUrn());
                     ret.put("id", observation.getId());
                 }
                 case Agent agent -> {

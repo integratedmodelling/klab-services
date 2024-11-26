@@ -26,7 +26,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -514,11 +513,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
                 instance.setUrn(node.get("urn").asString());
                 instance.setName(node.get("name").asString());
-                instance.setObservable(reasoner.resolveObservable(node.get("semantics").asString()));
+                instance.setObservable(reasoner.resolveObservable(node.get("observable").asString()));
                 instance.setResolved(node.get("resolved").asBoolean());
                 instance.setId(node.get("id").asLong());
 
-                // SHIT, THE GEOMETRY - geometry, metadata etc
                 var gResult = query("MATCH (o:Observation)-[:HAS_GEOMETRY]->(g:Geometry) WHERE o.id" +
                         " = $id RETURN g", Map.of("id", node.get("id").asLong()), scope);
 
@@ -548,6 +546,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 // TODO
                 ret.add((T) instance);
             } else if (Geometry.class.isAssignableFrom(cls)) {
+                // TODO use a cache storing scales
                 ret.add((T) Geometry.create(node.get("definition").asString()));
             }
         }
@@ -1037,7 +1036,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         if (queriables != null) {
             for (var parameter : queriables) {
                 if (parameter instanceof Observable observable) {
-                    queryParameters.put("semantics", observable.getUrn());
+                    queryParameters.put("semantics", observable.getSemantics().getUrn());
                     query.append("MATCH (o:Observation {semantics: $semantics}");
                 } else if (parameter instanceof Activity rootActivity) {
                 } else if (parameter instanceof Long id) {

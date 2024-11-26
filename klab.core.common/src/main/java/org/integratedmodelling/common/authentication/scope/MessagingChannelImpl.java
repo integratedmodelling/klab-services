@@ -214,6 +214,8 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                             var message = Utils.Json.parseObject(new String(delivery.getBody(),
                                     StandardCharsets.UTF_8), Message.class);
 
+                            System.out.println("DIO PESCHIERE " + message);
+
                             // if there is a consumer installed fo this queue, run it. Then if it returns
                             //  continue, continue, else stop
                             var consumers = queueConsumers.get(queueId);

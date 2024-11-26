@@ -314,7 +314,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                 return ret;
 
             } catch (Throwable t) {
-                instantiation.fail(scope, observation);
+                instantiation.fail(scope, observation, t);
             }
         }
 
@@ -419,7 +419,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                         ret.complete(result);
                         contextualization.success(scope, dataflow, result);
                     } catch (Throwable t) {
-                        contextualization.fail(scope, dataflow, result);
+                        contextualization.fail(scope, dataflow, result, t);
                         ret.completeExceptionally(t);
                     }
                 }
@@ -461,7 +461,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                 executionSequence.compile(rootActuator);
                 if (!executionSequence.isEmpty()) {
                     if (!executionSequence.run()) {
-                        contextualization.fail(contextScope, dataflow.getTarget());
+                        contextualization.fail(contextScope, dataflow.getTarget(), executionSequence.getCause());
                         return Observation.empty();
                     }
                 }
