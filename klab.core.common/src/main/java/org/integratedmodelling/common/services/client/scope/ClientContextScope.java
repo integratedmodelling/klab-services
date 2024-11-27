@@ -3,6 +3,7 @@ package org.integratedmodelling.common.services.client.scope;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -167,7 +168,12 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     @Override
     public void close() {
-        // TODO send the signal
+        var runtime = getService(RuntimeService.class);
+        if (runtime != null) {
+            runtime.releaseContext(this);
+        } else {
+            throw new KlabInternalErrorException("Context scope: no runtime service available");
+        }
     }
 
     @Override

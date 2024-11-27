@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.ojalgo.concurrent.Parallelism;
 
 import java.io.Closeable;
@@ -372,13 +373,18 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         // Call close() on all closeables in our dataset, including AutoCloseable if any.
         for (String key : getData().keySet()) {
             Object object = getData().get(key);
-            if (object instanceof Closeable closeable) {
+            if (object instanceof AutoCloseable closeable) {
                 try {
                     closeable.close();
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
+        }
+
+        var runtime = getService(RuntimeService.class);
+        if (runtime instanceof BaseService baseService) {
+            baseService.getScopeManager().releaseScope(this.getId());
         }
     }
 

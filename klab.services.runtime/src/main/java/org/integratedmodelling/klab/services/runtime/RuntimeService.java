@@ -461,7 +461,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                 executionSequence.compile(rootActuator);
                 if (!executionSequence.isEmpty()) {
                     if (!executionSequence.run()) {
-                        contextualization.fail(contextScope, dataflow.getTarget(), executionSequence.getCause());
+                        contextualization.fail(contextScope, dataflow.getTarget(),
+                                executionSequence.getCause());
                         return Observation.empty();
                     }
                 }
@@ -542,6 +543,28 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     @Override
     public List<SessionInfo> getSessionInfo(Scope scope) {
         return knowledgeGraph.getSessionInfo(scope);
+    }
+
+    @Override
+    public boolean releaseSession(SessionScope scope) {
+        try {
+            scope.close();
+            return true;
+        } catch (Throwable t) {
+            //
+        }
+        return false;
+    }
+
+    @Override
+    public boolean releaseContext(ContextScope scope) {
+        try {
+            scope.close();
+            return true;
+        } catch (Throwable t) {
+            //
+        }
+        return false;
     }
 
 }

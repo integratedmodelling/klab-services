@@ -5,6 +5,7 @@ import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -22,7 +23,8 @@ import java.util.List;
                      description = {
                              "Commands to create, access and manipulate contexts.",
                              ""}, subcommands = {CLIObservationView.Session.class,
-                                                 CLIObservationView.Context.class})
+                                                 CLIObservationView.Context.class,
+                                                 CLIObservationView.Clear.class})
 public class CLIObservationView extends CLIView implements ContextView, Runnable {
 
     private static ContextViewController controller;
@@ -108,8 +110,9 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
         }
     }
 
-    @CommandLine.Command(name = "clear", mixinStandardHelpOptions = true, version = Version.CURRENT,
-                         description = {"Close the active digital twin(s) and delete all observations"})
+    @CommandLine.Command(name = "close", mixinStandardHelpOptions = true, version = Version.CURRENT,
+                         description = {"Close the active digital twin or session and delete all " +
+                                                "observations"})
     public static class Clear implements Runnable {
 
         @CommandLine.ParentCommand
@@ -118,15 +121,23 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
         @CommandLine.Spec
         CommandLine.Model.CommandSpec commandSpec;
 
+        @CommandLine.Option(names = {"-f", "--force"}, defaultValue = "false",
+                            description = {"Close the current scope without asking for confirmation"},
+                            required =
+                                    false)
+        boolean force = false;
+
         @Override
         public void run() {
 
             PrintWriter out = commandSpec.commandLine().getOut();
             PrintWriter err = commandSpec.commandLine().getErr();
 
+            boolean isSession = false;
             Channel context = KlabCLI.INSTANCE.modeler().getCurrentContext();
             if (context == null) {
                 context = KlabCLI.INSTANCE.modeler().getCurrentSession();
+                isSession = true;
             }
 
             if (context == null) {
@@ -134,12 +145,20 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
                 return;
             }
 
-            // TODO ask for abundant confirmation
+            if (force || KlabCLI.INSTANCE.confirm("Delete the current "
+                    + (isSession ? "session" : "context") + " and ALL "
+                    + (isSession ? "contexts and observations in them" : "observations in it"))) {
 
-            KlabCLI.INSTANCE.modeler().setCurrentContext(null);
-            // TODO null the session if this was one
-            context.close();
+                context.close();
 
+                out.println((isSession ? "Session" : "Context") + " has been permanently closed and all " +
+                        "data have been deleted");
+
+                KlabCLI.INSTANCE.modeler().setCurrentContext(null);
+                if (isSession) {
+                    KlabCLI.INSTANCE.modeler().setCurrentSession(null);
+                }
+            }
         }
     }
 

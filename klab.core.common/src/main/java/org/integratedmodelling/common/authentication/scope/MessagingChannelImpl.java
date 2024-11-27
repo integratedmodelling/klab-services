@@ -169,6 +169,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
             this.connection = this.connectionFactory.newConnection();
             return setupMessagingQueues(scopeId, queuesHeader);
         } catch (Throwable t) {
+            error(t);
             return EnumSet.noneOf(Message.Queue.class);
         }
     }
@@ -214,7 +215,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                             var message = Utils.Json.parseObject(new String(delivery.getBody(),
                                     StandardCharsets.UTF_8), Message.class);
 
-                            System.out.println("DIO PESCHIERE " + message);
+                            System.out.println("DIO PESCHIERE " + MessagingChannelImpl.this.getClass().getCanonicalName() + " <- " + message);
 
                             // if there is a consumer installed fo this queue, run it. Then if it returns
                             //  continue, continue, else stop
@@ -308,7 +309,14 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                 }
             }
 
-            info("Scope connected to queues " + ret);
+            if (connectionFactory != null) {
+                info(this.getClass().getCanonicalName() + " scope connected to queues "
+                        + ret +
+                        " through broker " + connectionFactory.getHost() + (receiver ? " (R)" : "") + (sender ?
+                                                                                                      " (T)" : ""));
+            } else {
+                info("CHE CAZZO, connection factory is null for " + this.getClass().getCanonicalName());
+            }
 
             return ret;
         }

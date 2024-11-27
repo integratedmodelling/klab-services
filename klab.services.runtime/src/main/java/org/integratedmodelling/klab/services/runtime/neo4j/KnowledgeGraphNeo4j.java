@@ -56,7 +56,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     // all predefined Cypher queries
     interface Queries {
 
-        String REMOVE_CONTEXT = "match (n:Context {id: $contextId})-[*]-(c) detach delete n,c";
+        String REMOVE_CONTEXT = "match (n:Context {id: $contextId})-[*]->(c) detach delete n, c";
         String FIND_CONTEXT = "MATCH (ctx:Context {id: $contextId}) RETURN ctx";
         String CREATE_WITH_PROPERTIES = "CREATE (n:{type}) SET n = $properties RETURN n";
         String UPDATE_PROPERTIES = "MATCH (n:{type} {id: $id}) SET n += $properties RETURN n";

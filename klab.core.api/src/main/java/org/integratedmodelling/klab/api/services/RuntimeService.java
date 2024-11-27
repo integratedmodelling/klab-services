@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
@@ -66,9 +67,7 @@ public interface RuntimeService extends KlabService {
             }
             return null;
         }
-
     }
-
 
     default String getServiceName() {
         return "klab.runtime.service";
@@ -167,6 +166,21 @@ public interface RuntimeService extends KlabService {
      * @return the list of sessions with their contexts
      */
     List<SessionInfo> getSessionInfo(Scope scope);
+
+    /**
+     * Release the passed session, releasing any context scopes created in it.
+     *
+     * @param scope
+     * @return
+     */
+    boolean releaseSession(SessionScope scope);
+
+    /**
+     * Release the passed scope, deleting all data. Should
+     * @param scope
+     * @return
+     */
+    boolean releaseContext(ContextScope scope);
 
     interface Admin {
 

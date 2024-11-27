@@ -220,4 +220,11 @@ public class StateStorageImpl implements StateStorage {
 
         return null;
     }
+
+    @Override
+    public void clear() {
+        // CHECK the implementation of close() is actually a clear(); close() may save state for later re-opening,
+        // depending on context persistence
+        close();
+    }
 }

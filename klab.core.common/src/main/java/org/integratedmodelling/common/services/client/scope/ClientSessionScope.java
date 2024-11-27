@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client.scope;
 
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -72,7 +73,12 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
 
     @Override
     public void close() {
-        // TODO send the signal
+        var runtime = getService(RuntimeService.class);
+        if (runtime != null) {
+            runtime.releaseSession(this);
+        } else {
+            throw new KlabInternalErrorException("Session scope: no runtime service available");
+        }
     }
 
     @Override

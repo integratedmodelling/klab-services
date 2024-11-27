@@ -220,6 +220,27 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
+    public boolean releaseSession(SessionScope scope) {
+        try {
+            return client.withScope(scope).get(ServicesAPI.RELEASE_SESSION, Boolean.class);
+        } catch (Throwable t) {
+            // just return false
+        }
+        return false;
+    }
+
+    @Override
+    public boolean releaseContext(ContextScope scope) {
+        try {
+            return client.withScope(scope).get(ServicesAPI.RELEASE_CONTEXT, Boolean.class);
+        } catch (Throwable t) {
+            // just return false
+        }
+        return false;
+
+    }
+
+    @Override
     public <T extends RuntimeAsset> List<T> retrieveAssets(ContextScope contextScope, Class<T> assetClass,
                                                            Object... queryParameters) {
         AssetRequest request = new AssetRequest();

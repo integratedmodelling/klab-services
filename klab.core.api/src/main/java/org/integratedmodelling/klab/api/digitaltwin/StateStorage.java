@@ -52,5 +52,9 @@ public interface StateStorage {
     <T extends Storage> T promoteStorage(Observation observation, Storage existingStorage,
                                          Class<T> storageClass);
 
+    /**
+     * Safely delete everything in the scope we're running.
+     */
+    void clear();
 
 }

@@ -73,7 +73,7 @@ public enum KlabCLI {
 
     private String prompt = "k.LAB> ";
     private ModelerImpl modeler;
-
+    private LineReader reader;
     private CLIStartupOptions options;
     private CommandLine commandLine;
 
@@ -110,6 +110,12 @@ public enum KlabCLI {
             return user().getService(serviceClass);
         } // TODO
         return null;
+    }
+
+    public boolean confirm(String prompt) {
+        commandLine.getOut().println(Ansi.AUTO.string("@|yellow " + prompt + "|@ (Y/n)?"));
+        var line = reader.readLine(Ansi.AUTO.string("@|cyan Y/n:|@ "), "", (MaskingCallback) null, null);
+        return line == null || line.isEmpty() || line.trim().equalsIgnoreCase("y");
     }
 
     /**
@@ -412,19 +418,20 @@ public enum KlabCLI {
                 systemRegistry.register("help", picocliCommands);
                 KlabCompleter completer = new KlabCompleter(systemRegistry.completer());
                 History history = new DefaultHistory();
-                LineReader reader =
+                INSTANCE.reader =
                         LineReaderBuilder.builder().terminal(terminal).completer(completer).parser(parser).variable(LineReader.LIST_MAX, 50) // candidates
                                          .history(history).build();
 
-                builtins.setLineReader(reader);
-                commands.setReader(reader);
+                builtins.setLineReader(INSTANCE.reader);
+                commands.setReader(INSTANCE.reader);
                 factory.setTerminal(terminal);
-                history.attach(reader);
+                history.attach(INSTANCE.reader);
 
-                TailTipWidgets widgets = new TailTipWidgets(reader, systemRegistry::commandDescription, 5,
+                TailTipWidgets widgets = new TailTipWidgets(INSTANCE.reader,
+                        systemRegistry::commandDescription, 5,
                         TailTipWidgets.TipType.COMPLETER);
                 widgets.enable();
-                KeyMap<Binding> keyMap = reader.getKeyMaps().get("main");
+                KeyMap<Binding> keyMap = INSTANCE.reader.getKeyMaps().get("main");
                 keyMap.bind(new Reference("tailtip-toggle"), KeyMap.alt("s"));
 
                 /**
@@ -457,7 +464,7 @@ public enum KlabCLI {
                     try {
 
                         systemRegistry.cleanUp();
-                        line = reader.readLine(INSTANCE.prompt, INSTANCE.getContextPrompt(),
+                        line = INSTANCE.reader.readLine(INSTANCE.prompt, INSTANCE.getContextPrompt(),
                                 (MaskingCallback) null, null);
                         completer.resetSemanticSearch();
                         boolean aliased = false;
@@ -467,7 +474,7 @@ public enum KlabCLI {
                          * to inquire about the current context in
                          * detail. The right prompt summarizes the current context focus.
                          */
-                        if (line.trim().startsWith("<") || line.trim().startsWith("@") || line.trim().startsWith(">") || line.trim().startsWith("<") || line.trim().startsWith("?")) {
+                        if (line.trim().startsWith("<") || line.trim().startsWith("@") || line.trim().startsWith(">") || line.trim().startsWith("?")) {
                             INSTANCE.setFocalScope(line.trim());
                             continue;
                         } else if (line.trim().startsWith("-")) {

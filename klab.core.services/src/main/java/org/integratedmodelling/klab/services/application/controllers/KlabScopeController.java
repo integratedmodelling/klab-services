@@ -9,6 +9,7 @@ import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -233,6 +234,31 @@ public class KlabScopeController {
         return null;
     }
 
+    @GetMapping(ServicesAPI.RELEASE_SESSION)
+    public boolean closeSession(Principal principal) {
+
+        if (principal instanceof EngineAuthorization authorization) {
+            var sessionScope = authorization.getScope(SessionScope.class);
+            if (sessionScope != null) {
+                sessionScope.close();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @GetMapping(ServicesAPI.RELEASE_CONTEXT)
+    public boolean closeContext(Principal principal) {
+
+        if (principal instanceof EngineAuthorization authorization) {
+            var contextScope = authorization.getScope(ContextScope.class);
+            if (contextScope != null) {
+                contextScope.close();
+                return true;
+            }
+        }
+        return false;
+    }
 
 
 }

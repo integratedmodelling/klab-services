@@ -227,6 +227,25 @@ public class ScopeManager {
         return ret;
     }
 
+    public <T extends Scope> T getScope(String scopeId, Class<T> scopeClass) {
+        var ret = scopes.get(scopeId);
+        if (ret != null && ret.getClass().isAssignableFrom(scopeClass)) {
+            return (T) ret;
+        }
+        return null;
+    }
+
+    /**
+     * Remove a scope from the catalog. Does not do anything else: meant to be used after scope closing
+     * and child scope removal.
+     *
+     * @param scopeId
+     * @return
+     */
+    public boolean releaseScope(String scopeId) {
+        return scopes.remove(scopeId) != null;
+    }
+
     /**
      * Get the scope for the passed parameters. If the scope isn't there or has expired,
      *

@@ -1,11 +1,13 @@
 package org.integratedmodelling.klab.services.scopes;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.services.base.BaseService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +72,9 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
     @Override
     public void close() {
-        // TODO close all contexts
+        for (var context : getActiveContexts()) {
+            context.close();
+        }
     }
 
     public boolean isOperative() {
@@ -104,6 +108,32 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
     @Override
     public List<ContextScope> getActiveContexts() {
-        return List.of();
+
+        List<ContextScope> ret = new ArrayList<>();
+
+        var runtime = getService(RuntimeService.class);
+
+        if (runtime instanceof BaseService baseService) {
+
+            for (var ss : runtime.getSessionInfo(this)) {
+                if (ss.getId().equals(this.getId())) {
+                    for (var ctx : ss.getContexts()) {
+                        var ctxScope = baseService.getScopeManager().getScope(ctx.getId(),
+                                ContextScope.class);
+                        if (ctxScope != null) {
+                            ret.add(ctxScope);
+                        }
+                    }
+                }
+            }
+
+            baseService.getScopeManager().releaseScope(this.getId());
+
+        } else {
+            throw new KlabInternalErrorException("Unexpected runtime service implementation for " +
+                    "service-side session scope");
+        }
+        
+        return ret;
     }
 }

@@ -46,7 +46,8 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public void dispose() {
-        // TODO. Persistence depends on the database passed at initialization.
+        this.knowledgeGraph.deleteContext();
+        this.stateStorage.clear();
     }
 
 }
