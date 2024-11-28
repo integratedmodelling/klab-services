@@ -383,7 +383,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                         dataflow = resolver.resolve(observation, scope);
                         if (dataflow != null) {
                             resolution.success(scope, result, dataflow,
-                                    "Resolution of observation _" + observation.getUrn() + "_ of **" + observation.getObservable().getUrn() + "**");
+                                    "Resolution of observation _" + observation.getUrn() + "_ of **" + observation.getObservable().getUrn() + "**", resolver);
                             scope.send(Message.MessageClass.ObservationLifecycle,
                                     Message.MessageType.ResolutionSuccessful, result);
                             resolutionActivity = resolution.getActivity();
@@ -410,7 +410,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                      */
                     var contextualization =
                             digitalTwin.knowledgeGraph().operation(digitalTwin.knowledgeGraph().klab(),
-                                    resolutionActivity, Activity.Type.CONTEXTUALIZATION);
+                                    resolutionActivity, Activity.Type.EXECUTION, dataflow);
 
                     try (contextualization) {
                         // TODO contextualization gets its own activities to use in operations

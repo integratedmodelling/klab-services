@@ -73,6 +73,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
 
     @Override
     public void close() {
+        closeMessaging();
         var runtime = getService(RuntimeService.class);
         if (runtime != null) {
             runtime.releaseSession(this);

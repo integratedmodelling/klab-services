@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.services.KlabService;
 
 /**
  * Activity (process). Primary processes produce artifacts. Secondary processes (after creation) may modify
@@ -41,8 +42,16 @@ public interface Activity extends Provenance.Node {
         return RuntimeAsset.Type.ACTIVITY;
     }
 
+    String getServiceId();
+
+    String getServiceName();
+
+    KlabService.Type getServiceType();
+
+    String getDataflow();
+
     enum Type {
-        INITIALIZATION, RESOLUTION, CONTEXTUALIZATION, INSTANTIATION
+        INITIALIZATION, RESOLUTION, CONTEXTUALIZATION, INSTANTIATION, EXECUTION
     }
 
     enum Outcome {

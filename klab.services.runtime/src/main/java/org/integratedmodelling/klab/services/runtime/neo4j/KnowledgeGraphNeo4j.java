@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.runtime.neo4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
+import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -23,9 +24,11 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -330,8 +333,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                     ret.activity.setDescription(description);
                 } else if (dat instanceof OperationImpl operation) {
                     ret.parent = operation;
-                } // TODO this should also get an Actuator and link it as plan to the activity & parent +
-                // set up for later
+                } else if (dat instanceof KlabService service) {
+                    activity.setServiceId(service.serviceId());
+                    activity.setServiceName(service.getServiceName());
+                    activity.setServiceType(KlabService.Type.classify(service));
+                } else if (dat instanceof Dataflow<?> dataflow) {
+                    activity.setDataflow(new DataflowEncoder(dataflow, scope).toString());
+                }
             }
         }
 
@@ -532,8 +540,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 instance.setStart(node.get("start").asLong());
                 instance.setEnd(node.get("end").asLong());
                 instance.setName(node.get("name").asString());
+                instance.setServiceName(node.get("serviceName").isNull()?  null : node.get("serviceName").asString());
+                instance.setServiceId(node.get("serviceId").isNull() ? null : node.get("serviceId").asString());
+                instance.setServiceType(node.get("serviceType").isNull() ? null :
+                                        KlabService.Type.valueOf(node.get("serviceType").asString()));
+                instance.setDataflow(node.get("dataflow").isNull() ? null :  node.get("dataflow").asString());
                 instance.setType(Activity.Type.valueOf(instance.getName()));
-                instance.setDescription(node.get("description") == null ? "No description" : node.get(
+                instance.setDescription(node.get("description").isNull() ? "No description" : node.get(
                         "description").asString());
                 instance.setId(node.get("id").asLong());
                 ret.add((T) instance);
@@ -974,7 +987,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     private List<Activity> getActivity(ContextScope scope, Object... queriables) {
-
 
         Map<String, Object> queryParameters = new LinkedHashMap<>();
         var query = new StringBuilder(getScopeQuery(scope, queryParameters) + "-[:HAS_PROVENANCE]->" +

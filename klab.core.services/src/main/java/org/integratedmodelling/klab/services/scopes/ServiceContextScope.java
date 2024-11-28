@@ -382,6 +382,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             }
         }
 
+        closeMessaging();
+
         var runtime = getService(RuntimeService.class);
         if (runtime instanceof BaseService baseService) {
             baseService.getScopeManager().releaseScope(this.getId());

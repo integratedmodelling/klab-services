@@ -98,6 +98,15 @@
             <version>5.20.0</version>
         </dependency>
 -->
+
+        <!-- this will enable logging across the board -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.5.11</version>
+            <scope>compile</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>

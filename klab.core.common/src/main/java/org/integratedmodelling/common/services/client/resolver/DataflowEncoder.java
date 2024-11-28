@@ -8,16 +8,17 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
  * Encode a dataflow into a k.LAB-compatible serialized form.
  */
 public class DataflowEncoder {
 
-    private final Dataflow<Observation> dataflow;
+    private final Dataflow<?> dataflow;
     private final ContextScope scope;
 
-    public DataflowEncoder(Dataflow<Observation> dataflow, ContextScope scope) {
+    public DataflowEncoder(Dataflow<?> dataflow, ContextScope scope) {
         this.dataflow = dataflow;
         this.scope = scope;
     }
@@ -93,4 +94,14 @@ public class DataflowEncoder {
 //        return ret;
     }
 
+    @Override
+    public String toString() {
+        try (var writer = new StringWriter()) {
+            var printWriter = new PrintWriter(writer);
+            encode(printWriter);
+            return writer.toString();
+        } catch (Exception e) {
+        }
+        return "Error encoding dataflow";
+    }
 }

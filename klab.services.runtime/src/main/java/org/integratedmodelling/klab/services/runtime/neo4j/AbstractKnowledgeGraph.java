@@ -153,6 +153,10 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                     ret.put("type", activity.getType().name());
                     ret.put("name", activity.getName());
                     ret.put("id", activity.getId());
+                    ret.put("serviceId", activity.getServiceId());
+                    ret.put("serviceName", activity.getServiceName());
+                    ret.put("serviceType", activity.getServiceType() == null ? null : activity.getServiceType().name());
+                    ret.put("dataflow", activity.getDataflow());
                     ret.put("outcome", activity.getOutcome() == null ? null : activity.getOutcome().name());
                     ret.put("stackTrace", activity.getStackTrace());
                 }

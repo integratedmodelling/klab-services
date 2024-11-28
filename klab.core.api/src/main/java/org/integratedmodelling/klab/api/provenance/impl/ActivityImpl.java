@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.provenance.impl;
 
 import org.integratedmodelling.klab.api.provenance.Activity;
+import org.integratedmodelling.klab.api.services.KlabService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,10 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     private String taskId;
     private Outcome outcome;
     private String stackTrace;
+    private String serviceId;
+    private String serviceName;
+    private KlabService.Type serviceType;
+    private String dataflow;
 
     @Override
     public long getStart() {
@@ -118,6 +123,42 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
     public void setStackTrace(String stackTrace) {
         this.stackTrace = stackTrace;
+    }
+
+    @Override
+    public String getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(String serviceId) {
+        this.serviceId = serviceId;
+    }
+
+    @Override
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
+    }
+
+    @Override
+    public KlabService.Type getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(KlabService.Type serviceType) {
+        this.serviceType = serviceType;
+    }
+
+    @Override
+    public String getDataflow() {
+        return dataflow;
+    }
+
+    public void setDataflow(String dataflow) {
+        this.dataflow = dataflow;
     }
 
     @Override

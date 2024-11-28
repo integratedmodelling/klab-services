@@ -95,6 +95,17 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         queueConsumers.computeIfAbsent(queueId, k -> new ArrayList<>()).add(consumer);
     }
 
+    protected void closeMessaging() {
+        if (this.channel_ != null) {
+            try {
+                this.channel_.close();
+                this.connection.close();
+            } catch (Exception e) {
+                error("Error closing messaging channel", e);
+            }
+        }
+    }
+
     protected Channel getOrCreateChannel(Message.Queue queue) {
 
         //        if (!queueNames.containsKey(queue)) {
@@ -169,7 +180,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
             this.connection = this.connectionFactory.newConnection();
             return setupMessagingQueues(scopeId, queuesHeader);
         } catch (Throwable t) {
-            error(t);
+            error("Error connecting to broker: no messaging available", t);
             return EnumSet.noneOf(Message.Queue.class);
         }
     }
@@ -196,7 +207,8 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
             for (var queue : queuesHeader) {
                 try {
                     String queueId = scopeId + "." + queue.name().toLowerCase();
-                    getOrCreateChannel(queue).queueDeclare(queueId, true, false, false, Map.of());
+                    getOrCreateChannel(queue).queueDeclare(queueId, true, false, true /* TODO LINK TO SCOPE
+                     PERSISTENCE */, Map.of());
                     this.queueNames.put(queue, queueId);
                     ret.add(queue);
                 } catch (Throwable e) {
@@ -313,9 +325,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                 info(this.getClass().getCanonicalName() + " scope connected to queues "
                         + ret +
                         " through broker " + connectionFactory.getHost() + (receiver ? " (R)" : "") + (sender ?
-                                                                                                      " (T)" : ""));
-            } else {
-                info("CHE CAZZO, connection factory is null for " + this.getClass().getCanonicalName());
+                                                                                                       " (T)" : ""));
             }
 
             return ret;
