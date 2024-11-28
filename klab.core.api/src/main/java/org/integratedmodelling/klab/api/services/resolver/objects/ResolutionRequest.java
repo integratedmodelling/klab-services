@@ -8,17 +8,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Request for the runtime to add an observation to the knowledge graph and optionally resolve it. The
- * resolution constraints come from the scope, creating a new content scope at server side from the root
- * context scope pointed to by the scope token.
+ * Request for the runtime to add an observation to the knowledge graph. The resolution constraints come from
+ * the scope, creating a new content scope at server side from the root context scope pointed to by the scope
+ * token. The observation becomes an observer if the role == OBSERVER, and the knowledge graph has the faculty
+ * of providing a default observer if a regular observation is made in a scope that doesn't have one.
  */
 public class ResolutionRequest {
+
+    public enum Role {
+        OBSERVATION,
+        OBSERVER
+    }
 
     private Observation observation;
     private Observable observable;
     private String agentName; // for provenance when needed. Agents are identified by name
     private List<ResolutionConstraint> resolutionConstraints = new ArrayList<>();
     private long observationId;
+    private Role role = Role.OBSERVATION;
 
     public long getObservationId() {
         return observationId;
@@ -51,14 +58,6 @@ public class ResolutionRequest {
     public void setObservable(Observable observable) {
         this.observable = observable;
     }
-//
-//    public boolean isStartResolution() {
-//        return startResolution;
-//    }
-//
-//    public void setStartResolution(boolean startResolution) {
-//        this.startResolution = startResolution;
-//    }
 
     public String getAgentName() {
         return agentName;
@@ -66,6 +65,14 @@ public class ResolutionRequest {
 
     public void setAgentName(String agentName) {
         this.agentName = agentName;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }
 

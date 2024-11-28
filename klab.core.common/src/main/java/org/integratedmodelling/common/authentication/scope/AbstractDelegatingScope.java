@@ -1,19 +1,14 @@
 package org.integratedmodelling.common.authentication.scope;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
-import java.io.IOException;
-import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * An abstract scope delegating all communication to an externally supplied Channel. Provides the basic API to
@@ -25,7 +20,7 @@ public abstract class AbstractDelegatingScope implements Scope {
     Parameters<String> data = Parameters.create();
     Status status = Status.EMPTY;
     Scope parentScope;
-    private Expiration expiration = Expiration.AT_CLOSE;
+    private Expiration expiration = Expiration.SERVICE_SHUTDOWN;
 
     public AbstractDelegatingScope(Channel delegateChannel) {
         this.delegateChannel = delegateChannel;

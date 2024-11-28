@@ -18,6 +18,7 @@ public class KimSymbolDefinitionImpl extends KimStatementImpl implements KimSymb
     private String urn;
     private String defineClass;
     private Object value;
+    private boolean defaulted;
 
     @Override
     public String getUrn() {
@@ -58,5 +59,13 @@ public class KimSymbolDefinitionImpl extends KimStatementImpl implements KimSymb
     @Override
     public void visit(Visitor visitor) {
 
+    }
+
+    public boolean isDefaulted() {
+        return defaulted;
+    }
+
+    public void setDefaulted(boolean defaulted) {
+        this.defaulted = defaulted;
     }
 }

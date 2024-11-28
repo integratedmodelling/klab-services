@@ -19,6 +19,9 @@ import java.util.function.Function;
  * A singleton that ingests {@link ResourceSet}s intelligently and keeps tabs on loaded knowledge, caching
  * documents to minimize network transfer. It can be configured with callbacks to extract derived knowledge
  * assets from documents upon loading, also handling versions.
+ * <p>
+ * TODO when used with locked services, should subscribe to resource events and reload any changed namespace
+ *  when changes are notified.
  */
 public enum KnowledgeRepository {
 

@@ -235,6 +235,7 @@ public interface Message extends Serializable {
         ResolutionAborted(Queue.Events, Observation.class),
         ResolutionStarted(Queue.Events, Observation.class),
 
+        ContextClosed(Queue.Events, String.class),
 
         /**
          * Engine status has changed

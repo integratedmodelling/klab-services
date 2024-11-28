@@ -21,7 +21,7 @@ import java.util.List;
 public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl implements ReactiveScope {
 
     protected KActorsBehavior.Ref agent;
-    protected Expiration expiration = Expiration.AT_CLOSE;
+    protected Expiration expiration = Expiration.SERVICE_SHUTDOWN;
 
     public AbstractReactiveScopeImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity, isSender, isReceiver);

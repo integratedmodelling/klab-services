@@ -165,6 +165,16 @@ public class ScopeManager {
         return ret;
     }
 
+    public synchronized <T extends Scope> List<T> getScopes(Scope.Type type, Class<T> scopeClass) {
+        List<T> ret = new ArrayList<>();
+        for (var scope : scopes.values()) {
+            if (scope.getType() == type) {
+                ret.add((T)scope);
+            }
+        }
+        return ret;
+    }
+
     public ServiceUserScope getOrCreateUserScope(EngineAuthorization authorization) {
 
         var ret = scopes.get(authorization.getUsername());

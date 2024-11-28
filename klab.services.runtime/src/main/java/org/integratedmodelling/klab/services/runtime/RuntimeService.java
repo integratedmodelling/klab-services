@@ -1,12 +1,10 @@
 package org.integratedmodelling.klab.services.runtime;
 
-import com.google.common.collect.ImmutableList;
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -20,16 +18,13 @@ import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
-import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -44,10 +39,6 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.traverse.TopologicalOrderIterator;
 
 import java.io.File;
 import java.util.*;
@@ -141,6 +132,18 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
     @Override
     public boolean shutdown() {
+
+        /**
+         * Close every scope that's scheduled for closing at service shutdown
+         */
+        for (var scope : getScopeManager().getScopes(Scope.Type.CONTEXT, ContextScope.class)) {
+            if (scope instanceof ServiceContextScope serviceContextScope && serviceContextScope.getExpiration() == Scope.Expiration.SERVICE_SHUTDOWN) {
+                scope.send(Message.MessageClass.SessionLifecycle, Message.MessageType.ContextClosed,
+                        scope.getId());
+                scope.close();
+                Logging.INSTANCE.info("Context " + scope.getId() + " closed upon service shutdown");
+            }
+        }
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
                 capabilities(serviceScope()));
@@ -291,7 +294,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
              * root DT level and we get the context initialization activity as parent.
              */
             var instantiation = digitalTwin.knowledgeGraph().operation(agent, parentActivity,
-                    Activity.Type.INSTANTIATION, observation);
+                    Activity.Type.INSTANTIATION, observation, this);
 
             try (instantiation) {
 
@@ -372,7 +375,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                 This will commit or rollback at close()
                  */
                 var resolution = digitalTwin.knowledgeGraph().operation(digitalTwin.knowledgeGraph().klab()
-                        , parentActivity, Activity.Type.RESOLUTION);
+                        , parentActivity, Activity.Type.RESOLUTION, resolver);
 
                 try (resolution) {
                     result = observation;
@@ -410,7 +413,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                      */
                     var contextualization =
                             digitalTwin.knowledgeGraph().operation(digitalTwin.knowledgeGraph().klab(),
-                                    resolutionActivity, Activity.Type.EXECUTION, dataflow);
+                                    resolutionActivity, Activity.Type.EXECUTION, dataflow, this);
 
                     try (contextualization) {
                         // TODO contextualization gets its own activities to use in operations

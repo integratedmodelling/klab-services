@@ -215,6 +215,7 @@ public enum LanguageAdapter {
         ret.setLength(define.getCodeLength());
         ret.setNamespace(namespace.getUrn());
         ret.setProjectName(namespace.getProjectName());
+        ret.setDefaulted(define.isDefaulted());
         ret.setDocumentClass(KlabAsset.KnowledgeClass.NAMESPACE);
         ret.setValue(adaptValue(define.getValue(), namespace.getUrn(), namespace.getProjectName(),
                 KlabAsset.KnowledgeClass.NAMESPACE));

@@ -98,8 +98,10 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     protected void closeMessaging() {
         if (this.channel_ != null) {
             try {
-                this.channel_.close();
-                this.connection.close();
+                for (var queue : queueNames.values()) {
+                    this.channel_.queueDelete(queue);
+                }
+                queueNames.clear();
             } catch (Exception e) {
                 error("Error closing messaging channel", e);
             }

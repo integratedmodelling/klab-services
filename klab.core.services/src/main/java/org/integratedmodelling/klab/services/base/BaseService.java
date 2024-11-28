@@ -172,6 +172,7 @@ public abstract class BaseService implements KlabService {
         return _scopeManager;
     }
 
+
     /**
      * The service secret is a legitimate API key for the service, only known to clients that can read it
      * because they are sharing the filesystem. These clients can access the service by just stating their

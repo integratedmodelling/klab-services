@@ -4,10 +4,7 @@ import java.util.Collection;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
-import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
 /**
@@ -52,9 +49,9 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 public interface Scope extends Channel {
 
     enum Expiration {
-        IDLE_TIME,
-        AT_CLOSE,
-        EXPLICIT
+        IDLE_TIMEOUT,
+        SERVICE_SHUTDOWN,
+        EXPLICIT_ACTION
     }
 
     enum Status {
