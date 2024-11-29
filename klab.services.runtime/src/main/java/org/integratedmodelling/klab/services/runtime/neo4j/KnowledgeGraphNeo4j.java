@@ -413,7 +413,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                                 "name", scope.getName(),
                                 "timestamp", timestamp,
                                 "username", scope.getUser().getUsername(),
-                                "expirationType", scope.getExpiration().name(),
+                                "expirationType", scope.getPersistence().name(),
                                 "activityId", activityId),
                         scope);
             }

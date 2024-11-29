@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionConstraintImpl;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -58,7 +59,8 @@ public interface ResolutionConstraint extends Serializable {
         Whitelist(String.class, false),
         Blacklist(String.class, false),
         Parameters(Parameters.class, true),
-        Provenance(org.integratedmodelling.klab.api.provenance.Provenance.Node.class, false);
+        Provenance(org.integratedmodelling.klab.api.provenance.Provenance.Node.class, false),
+        UseAsObserver( Void.class, false);
 
         /**
          * Class of intended data types, used for runtime validation
@@ -114,6 +116,24 @@ public interface ResolutionConstraint extends Serializable {
 
     static ResolutionConstraint of(Type type, Object... data) {
         return new ResolutionConstraintImpl(type, data);
+    }
+
+    static boolean has(ContextScope scope, ResolutionConstraint.Type constraintType) {
+        for (var constraint : scope.getResolutionConstraints()) {
+            if (constraint.getType() == constraintType) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static <T> List<T> getPayload(ContextScope scope, ResolutionConstraint.Type constraintType, Class<T> payloadClass) {
+        for (var constraint : scope.getResolutionConstraints()) {
+            if (constraint.getType() == constraintType) {
+                return constraint.payload(payloadClass);
+            }
+        }
+        return List.of();
     }
 
 }

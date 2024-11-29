@@ -3,12 +3,14 @@ package org.integratedmodelling.common.authentication.scope;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * An abstract scope delegating all communication to an externally supplied Channel. Provides the basic API to
@@ -20,7 +22,7 @@ public abstract class AbstractDelegatingScope implements Scope {
     Parameters<String> data = Parameters.create();
     Status status = Status.EMPTY;
     Scope parentScope;
-    private Expiration expiration = Expiration.SERVICE_SHUTDOWN;
+    private Persistence persistence = Persistence.SERVICE_SHUTDOWN;
 
     public AbstractDelegatingScope(Channel delegateChannel) {
         this.delegateChannel = delegateChannel;
@@ -106,13 +108,9 @@ public abstract class AbstractDelegatingScope implements Scope {
     }
 
     @Override
-    public void subscribe(Message.Queue... queues) {
-        delegateChannel.subscribe(queues);
-    }
-
-    @Override
-    public void unsubscribe(Message.Queue... queues) {
-        delegateChannel.unsubscribe(queues);
+    public Channel onEvent(Message.MessageClass messageClass, Message.MessageType messageType,
+                           Consumer<Message> runnable, Object... matchArguments) {
+        return delegateChannel.onEvent(messageClass, messageType, runnable, matchArguments);
     }
 
     @Override
@@ -150,12 +148,12 @@ public abstract class AbstractDelegatingScope implements Scope {
     }
 
     @Override
-    public Expiration getExpiration() {
-        return expiration;
+    public Persistence getPersistence() {
+        return persistence;
     }
 
-    public void setExpiration(Expiration expiration) {
-        this.expiration = expiration;
+    public void setExpiration(Persistence expiration) {
+        this.persistence = expiration;
     }
 
     @Override

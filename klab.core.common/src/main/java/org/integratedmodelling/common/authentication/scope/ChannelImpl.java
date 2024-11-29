@@ -1,9 +1,12 @@
 package org.integratedmodelling.common.authentication.scope;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -11,8 +14,8 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Basic listenable, logging channel not instrumented for messaging. Meant to be use as an on-off scope when
@@ -25,16 +28,25 @@ import java.util.function.Consumer;
  */
 public class ChannelImpl implements Channel {
 
-    Identity identity;
-    AtomicBoolean interrupted = new AtomicBoolean(false);
-    AtomicBoolean errors = new AtomicBoolean(false);
-    List<BiConsumer<Channel, Message>> listeners = Collections.synchronizedList(new ArrayList<>());
-    List<BiFunction<Message, Identity, Message>> functors = Collections.synchronizedList(new ArrayList<>());
-    Set<Message.Queue> subscriptions = EnumSet.noneOf(Message.Queue.class);
+    static class EventMatcher {
+        public Message.MessageClass messageClass;
+        public Message.MessageType messageType;
+        public Object payloadPrototype;
+        public Predicate<Message> payloadChecker;
+        public Consumer<Message> reaction;
+        public Persistence persistence;
+    }
+
+    private final Identity identity;
+    private AtomicBoolean interrupted = new AtomicBoolean(false);
+    private final AtomicBoolean errors = new AtomicBoolean(false);
+    private final List<BiConsumer<Channel, Message>> listeners =
+            Collections.synchronizedList(new ArrayList<>());
+    private final Multimap<Pair<Message.MessageClass, Message.MessageType>, EventMatcher> eventMatchers =
+            ArrayListMultimap.create();
 
     public ChannelImpl(Identity identity) {
         this.identity = identity;
-        this.subscriptions.addAll(defaultQueues());
     }
 
     protected ChannelImpl(ChannelImpl other) {
@@ -42,8 +54,6 @@ public class ChannelImpl implements Channel {
         this.interrupted = other.interrupted;
         this.errors.set(other.errors.get());
         this.listeners.addAll(other.listeners);
-        this.functors.addAll(other.functors);
-        this.subscriptions.addAll(other.subscriptions);
     }
 
     @Override
@@ -79,7 +89,42 @@ public class ChannelImpl implements Channel {
 
     @Override
     public void event(Message message) {
+        var key = Pair.of(message.getMessageClass(), message.getMessageType());
+        for (var matcher : eventMatchers.get(key)) {
+            handleMatch(key, matcher, message);
+        }
+    }
 
+    private void handleMatch(Pair<Message.MessageClass, Message.MessageType> key, EventMatcher matcher,
+                             Message message) {
+
+        System.out.println("PORCO DIO UN POSSIBILE MATCH: " + message);
+
+        // Quickly check if match is real
+        boolean match = false;
+
+        if (matcher.payloadChecker != null) {
+            match = matcher.payloadChecker.test(message);
+        } else if (matcher.payloadPrototype != null) {
+            match = matcher.payloadPrototype.equals(message.getPayload(Object.class));
+        }
+
+        if (match) {
+            matcher.reaction.accept(message);
+            if (matcher.persistence == Persistence.ONE_OFF && matcher.payloadPrototype != null) {
+                List<EventMatcher> toRemove = new ArrayList<>();
+                for (var m : eventMatchers.values()) {
+                    if (matcher.payloadPrototype != null && matcher.payloadPrototype.equals(message.getPayload(Object.class))) {
+                        toRemove.add(matcher);
+                    }
+                }
+                for (var m : toRemove) {
+                    eventMatchers.remove(Pair.of(m.messageClass, m.messageType), m);
+                }
+            } else {
+                eventMatchers.remove(key, matcher);
+            }
+        }
     }
 
     @Override
@@ -88,15 +133,31 @@ public class ChannelImpl implements Channel {
     }
 
     @Override
-    public void subscribe(Message.Queue... queues) {
+    public Channel onEvent(Message.MessageClass messageClass, Message.MessageType messageType,
+                           Consumer<Message> runnable, Object... matchArguments) {
 
+        var matcher = new EventMatcher();
+        matcher.messageClass = messageClass;
+        matcher.messageType = messageType;
+        matcher.reaction = runnable;
+
+        for (var arg : matchArguments) {
+            if (arg instanceof Predicate<?>) {
+                matcher.payloadChecker = (Predicate<Message>) arg;
+            } else if (arg instanceof Persistence persistence) {
+                matcher.persistence = persistence;
+            } else {
+                if (matcher.payloadPrototype != null) {
+                    error("Internal: installing multiple payload prototypes for matching, overriding each other (" + arg + ")");
+                }
+                matcher.payloadPrototype = arg;
+            }
+        }
+
+        eventMatchers.put(Pair.of(messageClass, messageType), matcher);
+
+        return this;
     }
-
-    @Override
-    public void unsubscribe(Message.Queue... queues) {
-
-    }
-
 
     @Override
     public Message send(Object... args) {
@@ -138,15 +199,6 @@ public class ChannelImpl implements Channel {
     public void close() {
         // TODO signal
     }
-
-    //    @Override
-    //    public Message post(Consumer<Message> handler, Object... message) {
-    //        var me = Message.create(this, message);
-    //        for (var listener : listeners) {
-    //            listener.accept(this, me);
-    //        }
-    //        return me;
-    //    }
 
     @Override
     public void interrupt() {

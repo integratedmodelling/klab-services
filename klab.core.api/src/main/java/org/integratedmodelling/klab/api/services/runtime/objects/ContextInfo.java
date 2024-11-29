@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.services.runtime.objects;
 
-import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.Persistence;
 
 public class ContextInfo {
 
@@ -9,7 +9,7 @@ public class ContextInfo {
     private String behavior;
     private long creationTime;
     private long idleTimeMs;
-    private Scope.Expiration expiration;
+    private Persistence persistence;
     private long creditsSoFar;
     private long observations;
     private long size;
@@ -39,12 +39,12 @@ public class ContextInfo {
         this.creditsSoFar = creditsSoFar;
     }
 
-    public Scope.Expiration getExpiration() {
-        return expiration;
+    public Persistence getPersistence() {
+        return persistence;
     }
 
-    public void setExpiration(Scope.Expiration expiration) {
-        this.expiration = expiration;
+    public void setPersistence(Persistence expiration) {
+        this.persistence = expiration;
     }
 
     public String getId() {

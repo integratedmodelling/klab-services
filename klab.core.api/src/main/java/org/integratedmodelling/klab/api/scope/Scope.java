@@ -40,19 +40,13 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
  * reference implementation uses AMPQ messaging and separate queues for different event streams). The RPC
  * mechanism is crucial to connect observation scopes into distributed digital twins.
  * <p>
- * Scopes expire according to their expiration type returned by {@link #getExpiration()}. Services are
+ * Scopes expire according to their expiration type returned by {@link #getPersistence()}. Services are
  * configured to define the details and may refuse scope creation requests that require unsupported expiration
  * types.
  *
  * @author Ferd
  */
 public interface Scope extends Channel {
-
-    enum Expiration {
-        IDLE_TIMEOUT,
-        SERVICE_SHUTDOWN,
-        EXPLICIT_ACTION
-    }
 
     enum Status {
         WAITING, STARTED, CHANGED, FINISHED, ABORTED, INTERRUPTED, EMPTY
@@ -84,7 +78,7 @@ public interface Scope extends Channel {
      *
      * @return
      */
-    Expiration getExpiration();
+    Persistence getPersistence();
 
     /**
      * All scope except a {@link UserScope} have a non-null parent scope. A {@link ContextScope} is the only

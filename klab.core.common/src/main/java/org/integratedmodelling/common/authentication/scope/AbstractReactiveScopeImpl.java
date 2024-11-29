@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -21,7 +22,7 @@ import java.util.List;
 public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl implements ReactiveScope {
 
     protected KActorsBehavior.Ref agent;
-    protected Expiration expiration = Expiration.SERVICE_SHUTDOWN;
+    protected Persistence persistence = Persistence.SERVICE_SHUTDOWN;
 
     public AbstractReactiveScopeImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity, isSender, isReceiver);
@@ -86,11 +87,11 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl imp
     }
 
     @Override
-    public Expiration getExpiration() {
-        return expiration;
+    public Persistence getPersistence() {
+        return persistence;
     }
 
-    public void setExpiration(Expiration expiration) {
-        this.expiration = expiration;
+    public void setPersistence(Persistence expiration) {
+        this.persistence = expiration;
     }
 }

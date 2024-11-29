@@ -14,7 +14,9 @@ import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -237,12 +239,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             return;
         }
 
-        /* TODO handle observer, if not there make it and set it into the context. The logic should be
-         *   configurable and specific of the modeler, no defaults should be used in the runtime. */
         List<Object> resolvables = new ArrayList<>();
-
-
         List<ResolutionConstraint> constraints = new ArrayList<>();
+        boolean isObserver = false;
 
         /**
          * Assets are observed by URN unless they're models or observation definitions
@@ -262,11 +261,19 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                 resolvables.add(model.getObservables().getFirst());
                 constraints.add(ResolutionConstraint.of(ResolutionConstraint.Type.UsingModel,
                         model.getUrn()));
-            } else if (statement instanceof KimSymbolDefinition definition && "observation".equals(definition.getDefineClass())) {
-                resolvables.add(statement);
+            } else if (statement instanceof KimSymbolDefinition definition) {
+                if ("observation".equals(definition.getDefineClass())) {
+                    resolvables.add(statement);
+                } else if ("observer".equals(definition.getDefineClass())) {
+                    resolvables.add(statement);
+                    isObserver = true;
+                    constraints.add(ResolutionConstraint.of(ResolutionConstraint.Type.UseAsObserver));
+                }
             } else if (statement instanceof KimConceptStatement conceptStatement) {
+                // TODO check observable vs. context (qualities w/ their context etc.)
                 resolvables.add(conceptStatement.getNamespace() + ":" + conceptStatement.getUrn());
             } else if (statement instanceof KimObservable conceptStatement) {
+                // TODO check observable vs. context (qualities w/ their context etc.)
                 resolvables.add(conceptStatement.getUrn());
             }
         } else if (asset instanceof String || asset instanceof Urn) {
@@ -282,10 +289,44 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             return;
         }
 
+        var observation = DigitalTwin.createObservation(currentContext, resolvables.toArray());
+
+        if (observation == null) {
+            currentContext.error("Cannot create an observation out of " + asset + ": aborting");
+        }
+
+        final boolean observering = isObserver;
+
+        /* one-time event handlers */
+        scope()
+                .onEvent(Message.MessageClass.ObservationLifecycle,
+                        Message.MessageType.ResolutionSuccessful, (message) -> {
+                            var obs = message.getPayload(Observation.class);
+                            if (observering) {
+                                setCurrentContext(currentContext.withObserver(obs));
+                                // TODO send a UI event
+                                currentContext.ui(Message.create(currentContext,
+                                        Message.MessageClass.UserInterface,
+                                        Message.MessageType.CurrentContextModified));
+                                currentContext.info(obs + " is now the current observer");
+                            } else if (currentContext.getContextObservation() == null && obs.getObservable().is(SemanticType.SUBJECT)) {
+                                setCurrentContext(currentContext.within(obs));
+                                currentContext.ui(Message.create(currentContext,
+                                        Message.MessageClass.UserInterface,
+                                        Message.MessageType.CurrentContextModified));
+                                currentContext.info(obs + " is now the current context observation");
+                            } else {
+                                currentContext.info("Observation of " + obs + " completed successfully");
+                            }
+                        }, observation)
+                .onEvent(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted,
+                        (message) -> {
+                            currentContext.error("Observation " + observation + " has failed to resolve");
+                        }, observation);
+
         currentContext
                 .withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new))
-                .observe(DigitalTwin.createObservation(currentContext, resolvables.toArray()));
-
+                .observe(observation);
     }
 
     @Override

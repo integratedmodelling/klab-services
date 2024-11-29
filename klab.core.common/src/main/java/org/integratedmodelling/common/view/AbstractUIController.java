@@ -55,7 +55,6 @@ public abstract class AbstractUIController implements UIController {
 
     private class EventReactor {
 
-        //        List<Class<?>> parameterClasses = new ArrayList<>();
         Method method;
         Object reactor;
         Queue<Pair<UIReactor, Object[]>> messageQueue = new LinkedBlockingDeque<>(128);

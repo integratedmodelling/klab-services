@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -9,15 +8,14 @@ import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.impl.MatchImpl;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 import org.integratedmodelling.klab.api.services.runtime.impl.ScopeOptions;
 
 import java.io.Serializable;
-import java.net.URI;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -236,6 +234,8 @@ public interface Message extends Serializable {
         ResolutionStarted(Queue.Events, Observation.class),
 
         ContextClosed(Queue.Events, String.class),
+
+        CurrentContextModified(Queue.UI, Void.class),
 
         /**
          * Engine status has changed

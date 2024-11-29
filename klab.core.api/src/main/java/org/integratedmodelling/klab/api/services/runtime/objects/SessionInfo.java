@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.services.runtime.objects;
 
-import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.Persistence;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +16,7 @@ public class SessionInfo {
     private String behavior;
     private long creationTime;
     private long idleTimeMs;
-    private Scope.Expiration expiration;
+    private Persistence persistence;
     private List<ContextInfo> contexts = new ArrayList<>();
 
     public String getBehavior() {
@@ -43,12 +43,12 @@ public class SessionInfo {
         this.creationTime = creationTime;
     }
 
-    public Scope.Expiration getExpiration() {
-        return expiration;
+    public Persistence getPersistence() {
+        return persistence;
     }
 
-    public void setExpiration(Scope.Expiration expiration) {
-        this.expiration = expiration;
+    public void setPersistence(Persistence expiration) {
+        this.persistence = expiration;
     }
 
     public String getId() {

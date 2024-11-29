@@ -117,9 +117,24 @@ public interface Channel {
 
     void ui(Message message);
 
-    void subscribe(Message.Queue... queues);
-
-    void unsubscribe(Message.Queue... queues);
+    /**
+     * Install a reactor to a message getting through the event queue.
+     *
+     * @param messageClass   mandatory message class
+     * @param messageType    mandatory message type
+     * @param runnable       code to invoke on match
+     * @param matchArguments optional match arguments, including a
+     *                       {@link org.integratedmodelling.klab.api.scope.Persistence} value to define what
+     *                       to do after match (default is
+     *                       {@link org.integratedmodelling.klab.api.scope.Persistence#ONE_OFF}, i.e. the
+     *                       handler disappears after matching), or any
+     *                       {@link java.util.function.Predicate<Message>} to apply to the message, or any
+     *                       other Object that will be matched to the payload using equals(). If objects are
+     *                       passed, all the messages that use that object as a match and have ONE_OFF as
+     *                       persistence will be removed after one of them has matched.
+     */
+    Channel onEvent(MessageClass messageClass, Message.MessageType messageType,
+                 Consumer<Message> runnable, Object... matchArguments);
 
     /**
      * This is to send out serializable objects or other messages through any messaging channel registered

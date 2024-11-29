@@ -126,19 +126,9 @@ public interface DigitalTwin {
                 } else if (o instanceof KimSymbolDefinition symbol) {
 
                     // must be an "observation" class
-                    if ("observation".equals(symbol.getDefineClass()) && symbol.getValue() instanceof Map<?
+                    if (("observation".equals(symbol.getDefineClass()) || "observer".equals(symbol.getDefineClass())) && symbol.getValue() instanceof Map<?
                             , ?> definition) {
-                        //                        semantics: earth:Region
-                        //                        space: {
-                        //                            shape: "EPSG:4326 POLYGON((33.796 -7.086, 35.946 -7
-                        //                            .086, 35.946 -9.41, 33.796 -9.41, 33.796 -7.086))"
-                        //                            grid: 1.km
-                        //                        }
-                        //                        //	year: 2010 ...or...
-                        //                        time: {
-                        //                            year: 2010
-                        //                            step: 1.day
-                        //                        }
+
                         name = symbol.getName();
                         if (definition.containsKey("semantics")) {
                             observable = scope.getService(Reasoner.class).resolveObservable(definition.get(

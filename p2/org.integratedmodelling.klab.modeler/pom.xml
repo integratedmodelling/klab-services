@@ -647,14 +647,14 @@
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
-                                        <artifact>
+<!--                                        <artifact>
                                             <id>commons-logging:commons-logging:jar:1.2</id>
                                             <override>true</override>
                                             <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
-                                        </artifact>
+                                        </artifact>-->
                                         <artifact>
                                             <id>commons-codec:commons-codec:jar:1.11</id>
                                             <override>true</override>

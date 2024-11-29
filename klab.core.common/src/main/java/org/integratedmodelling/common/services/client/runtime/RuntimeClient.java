@@ -21,7 +21,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.*;
@@ -41,7 +41,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     public RuntimeClient(URL url, Identity identity, List<ServiceReference> services,
                          Parameters<Engine.Setting> settings, BiConsumer<Channel,
-            Message>... listeners) {
+                    Message>... listeners) {
         super(Type.RUNTIME, url, identity, settings, services, listeners);
     }
 

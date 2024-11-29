@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -41,7 +42,10 @@ import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -137,7 +141,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
          * Close every scope that's scheduled for closing at service shutdown
          */
         for (var scope : getScopeManager().getScopes(Scope.Type.CONTEXT, ContextScope.class)) {
-            if (scope instanceof ServiceContextScope serviceContextScope && serviceContextScope.getExpiration() == Scope.Expiration.SERVICE_SHUTDOWN) {
+            if (scope instanceof ServiceContextScope serviceContextScope && serviceContextScope.getPersistence() == Persistence.SERVICE_SHUTDOWN) {
                 scope.send(Message.MessageClass.SessionLifecycle, Message.MessageType.ContextClosed,
                         scope.getId());
                 scope.close();

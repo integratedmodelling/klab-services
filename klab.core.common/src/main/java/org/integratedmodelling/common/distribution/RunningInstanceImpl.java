@@ -1,9 +1,6 @@
 package org.integratedmodelling.common.distribution;
 
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.exec.ExecuteResultHandler;
+import org.apache.commons.exec.*;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.configuration.Configuration;
@@ -184,6 +181,9 @@ public class RunningInstanceImpl implements RunningInstance {
 
         this.executor = new DefaultExecutor();
         this.executor.setWorkingDirectory(build.getLocalWorkspace());
+
+//        PumpStreamHandler noEchoHandler = new PumpStreamHandler(null, System.err);
+//        this.executor.setStreamHandler(noEchoHandler);
 
         Map<String, String> env = new HashMap<>();
         env.putAll(System.getenv());
