@@ -487,6 +487,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         String ret = "";
         boolean complex = false;
 
+        if (type.contains(SemanticType.NOTHING)) {
+            return "owl:Nothing";
+        }
+
         if (semanticModifier != null) {
             ret += (ret.isEmpty() ? "" : " ") + semanticModifier.declaration[0];
             complex = true;

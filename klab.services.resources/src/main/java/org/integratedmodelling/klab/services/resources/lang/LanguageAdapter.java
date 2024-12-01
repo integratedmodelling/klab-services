@@ -81,6 +81,76 @@ public enum LanguageAdapter {
     public KimConcept adaptSemantics(SemanticSyntax semantics, String namespace, String projectName,
                                      KlabAsset.KnowledgeClass documentClass) {
 
+        List<KimConceptImpl> tokens = new ArrayList<>();
+
+        for (var token : semantics) {
+            tokens.add(adaptSemanticToken(token, namespace, projectName, documentClass));
+        }
+
+        if (tokens.isEmpty()) {
+            return null;
+        } else if (tokens.size() == 1) {
+            return tokens.getFirst();
+        }
+
+        Set<SemanticType> type = null;
+
+        KimConceptImpl ret = null;
+        List<KimConcept> roles = new ArrayList<>();
+        List<KimConcept> traits = new ArrayList<>();
+
+        for (var token : tokens) {
+
+            if (token.getType().contains(SemanticType.OBSERVABLE)) {
+                ret = token;
+            } else if (token.getType().contains(SemanticType.ROLE)) {
+                roles.add(token);
+            } else if (token.getType().contains(SemanticType.PREDICATE)) {
+                traits.add(token);
+            }
+        }
+
+        if (ret == null) {
+            // no observable
+            ret = tokens.getFirst();
+            traits.remove(ret);
+            roles.remove(ret);
+        }
+
+        roles.sort(new Comparator<KimConcept>() {
+            @Override
+            public int compare(KimConcept o1, KimConcept o2) {
+                return o1.getUrn().compareTo(o2.getUrn());
+            }
+        });
+        traits.sort(new Comparator<KimConcept>() {
+            @Override
+            public int compare(KimConcept o1, KimConcept o2) {
+                return o1.getUrn().compareTo(o2.getUrn());
+            }
+        });
+
+        // rebuild urn
+        StringBuilder urn = new StringBuilder();
+        for (var role : roles) {
+            urn.append(urn.isEmpty() ? "" : " ").append(role.getUrn());
+        }
+        for (var trait : traits) {
+            urn.append(urn.isEmpty() ? "" : " ").append(trait.getUrn());
+        }
+        urn.append(urn.isEmpty() ? "" : " ").append(ret.getUrn());
+
+//        ret.setType(tokens.getFirst().getType());
+        ret.setUrn(urn.toString());
+        ret.getTraits().addAll(traits);
+        ret.getRoles().addAll(roles);
+
+        return ret;
+    }
+
+    public KimConceptImpl adaptSemanticToken(SemanticSyntax semantics, String namespace, String projectName,
+                                         KlabAsset.KnowledgeClass documentClass) {
+
         KimConceptImpl ret = new KimConceptImpl();
 
         ret.setLength(semantics.getCodeLength());
@@ -341,7 +411,8 @@ public enum LanguageAdapter {
         return ret;
     }
 
-    private Contextualizable adaptContextualizable(ModelSyntax.Contextualization contextualizable, KimNamespace namespace) {
+    private Contextualizable adaptContextualizable(ModelSyntax.Contextualization contextualizable,
+                                                   KimNamespace namespace) {
 
         var ret = new ContextualizableImpl();
 

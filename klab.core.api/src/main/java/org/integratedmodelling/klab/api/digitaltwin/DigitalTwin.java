@@ -133,6 +133,10 @@ public interface DigitalTwin {
                         if (definition.containsKey("semantics")) {
                             observable = scope.getService(Reasoner.class).resolveObservable(definition.get(
                                     "semantics").toString());
+                            if (observable == null) {
+                                scope.error("Invalid semantics in observation definition: " + definition.get("semantics"));
+                                return null;
+                            }
                         }
                         if (definition.containsKey("space") || definition.containsKey("time")) {
                             var geometryBuilder = Geometry.builder();

@@ -126,10 +126,9 @@ public interface ServicesAPI {
     ////         */
     ////        String REGISTER = "/scope/register/{scopeType}/{scopeId}";
     //
-    ////        /**
-    ////         * Dispose of a previously created or registered scope.
-    ////         */
-    ////        String DISPOSE = "/scope/dispose/{scopeId}";
+
+    /// /        /** /         * Dispose of a previously created or registered scope. /         */ /
+    /// String DISPOSE = "/scope/dispose/{scopeId}";
     //
     //    }
 
@@ -187,20 +186,20 @@ public interface ServicesAPI {
         String REASONER_BASE = API_BASE;
 
         /**
-         * Resolve a concept definition, returning a unique ID for the reasoner, the normalized URN form and
-         * any metadata.
+         * Resolve a concept definition passed as a request body, returning a unique ID for the reasoner, the
+         * normalized URN form and any metadata.
          *
-         * @protocol GET
+         * @protocol POST
          * @service
          * @produces {@link Concept}
          */
-        String RESOLVE_CONCEPT = REASONER_BASE + "/resolve/concept/{definition}";
+        String RESOLVE_CONCEPT = REASONER_BASE + "/resolve/concept";
 
         /**
-         * @protocol GET for a string definition encoded in the URL
+         * @protocol POST for a string definition passed as request body
          * @produces {@link Observable}
          */
-        String RESOLVE_OBSERVABLE = REASONER_BASE + "/resolve/observable/{definition}";
+        String RESOLVE_OBSERVABLE = REASONER_BASE + "/resolve/observable";
 
         /**
          * @protocol POST for a map containing the KimObservable definition as "OBSERVABLE" and possibly

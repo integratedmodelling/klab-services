@@ -553,7 +553,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public KimObservable resolveObservable(String definition) {
-        var parsed = this.workspaceManager.resolveObservable(definition);
+        var parsed = this.workspaceManager.resolveObservable(removeExcessParentheses(definition));
         if (parsed != null) {
             boolean errors = false;
             for (var notification : parsed.getNotifications()) {
@@ -576,7 +576,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public KimConcept resolveConcept(String definition) {
-        var parsed = this.workspaceManager.resolveConcept(definition);
+        var parsed = this.workspaceManager.resolveConcept(removeExcessParentheses(definition));
         if (parsed != null) {
             boolean errors = false;
             for (var notification : parsed.getNotifications()) {
@@ -590,6 +590,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             return errors ? null : LanguageAdapter.INSTANCE.adaptSemantics(parsed, null, null, null);
         }
         return null;
+    }
+
+    private String removeExcessParentheses(String definition) {
+        definition = definition.trim();
+        while (definition.startsWith("(") && definition.endsWith(")")) {
+            definition = definition.substring(1, definition.length() - 1);
+        }
+        return definition;
     }
 
     @Override

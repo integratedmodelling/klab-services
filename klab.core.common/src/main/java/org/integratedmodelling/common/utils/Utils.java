@@ -619,7 +619,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 for (String key : parameters.keySet()) {
                     var subst = "{" + key + "}";
                     if (request.contains(subst)) {
-                        ret = ret.replace(subst, Escape.forURL(parameters.get(key).toString()));
+                        ret = ret.replace(subst, UriUtils.encodeQueryParam(parameters.get(key).toString(),
+                                StandardCharsets.UTF_8));
                         toRemove.add(key);
                     }
                 }
@@ -1547,7 +1548,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return ret;
         }
 
-        public static <K,V> Map<K,V> removeNullValues(Map<K,V> map) {
+        public static <K, V> Map<K, V> removeNullValues(Map<K, V> map) {
             Set<K> toRemove = new HashSet<>();
             for (K key : map.keySet()) {
                 if (map.get(key) == null) {

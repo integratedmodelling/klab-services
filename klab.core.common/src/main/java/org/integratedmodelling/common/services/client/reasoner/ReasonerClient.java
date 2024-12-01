@@ -62,13 +62,12 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public Concept resolveConcept(String definition) {
-        return client.get(ServicesAPI.REASONER.RESOLVE_CONCEPT, Concept.class, "definition", definition);
+        return client.post(ServicesAPI.REASONER.RESOLVE_CONCEPT, definition, Concept.class);
     }
 
     @Override
     public Observable resolveObservable(String definition) {
-        return client.get(ServicesAPI.REASONER.RESOLVE_OBSERVABLE, Observable.class, "definition",
-                definition);
+        return client.post(ServicesAPI.REASONER.RESOLVE_OBSERVABLE, definition, Observable.class);
     }
 
     @Override

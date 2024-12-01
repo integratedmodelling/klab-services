@@ -93,7 +93,10 @@ public class OWL {
     private Ontology mergedReasonerOntology;
     private OWLReasoner reasoner;
 
-    private static String INTERNAL_REASONER_ONTOLOGY_ID = "k";
+    // this is the ontology that imports all concepts including the worldview, on which the OWL reasoner operates
+    public static String INTERNAL_REASONER_ONTOLOGY_ID = "k.reasoner";
+    // concepts that start without a namespace end up here, which eventually will import the entire worldview
+    public static String INTERNAL_ONTOLOGY_ID = "k.derived";
 
     static EnumSet<SemanticType> emptyType = EnumSet.noneOf(SemanticType.class);
 
@@ -191,7 +194,7 @@ public class OWL {
     }
 
     public Ontology requireOntology(String id) {
-        return requireOntology(id, DEFAULT_ONTOLOGY_PREFIX);
+        return requireOntology(id == null ? INTERNAL_ONTOLOGY_ID : id, DEFAULT_ONTOLOGY_PREFIX);
     }
 
     public Ontology requireOntology(String id, String prefix) {

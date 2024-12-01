@@ -293,6 +293,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
         if (observation == null) {
             currentContext.error("Cannot create an observation out of " + asset + ": aborting");
+            return;
         }
 
         final boolean observering = isObserver;
