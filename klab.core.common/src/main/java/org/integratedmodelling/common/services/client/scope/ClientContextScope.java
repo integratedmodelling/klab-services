@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -91,6 +92,10 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         long taskId = runtime.submit(observation, this);
 
         if (taskId != Observation.UNASSIGNED_ID) {
+            if (observation instanceof ObservationImpl observation1) {
+                observation1.setId(taskId);
+                observation1.setUrn(this.getId() + "." + taskId);
+            }
             return runtime.resolve(taskId, this);
         }
 

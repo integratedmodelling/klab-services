@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.scope;
 
+import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -171,14 +172,15 @@ public interface ContextScope extends SessionScope {
      * derived from it so that what is happening can be reconstructed at the client side.
      *
      * @param observation an unresolved observation to be resolved by the runtime and added to the digital
-     *                    twin. The
+     *                    twin. After the call exits, the resolution will be ongoing but the observation will
+     *                    have gained a valid ID and URN. The
      *                    {@link
      *                    org.integratedmodelling.klab.api.digitaltwin.DigitalTwin#createObservation(Scope,
      *                    Object...)} method can be used to construct it from existing knowledge.
      * @return a {@link Future} producing the resolved observation when resolution is finished. If resolution
      * has failed, the observation in the future will be unresolved.
      */
-    Future<Observation> observe(Observation observation);
+    Future<Observation> observe(@Mutable Observation observation);
 
     /**
      * Return all observations affected by the passed one in this scope, either through model dependencies or

@@ -228,8 +228,8 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
                             var message = Utils.Json.parseObject(new String(delivery.getBody(),
                                     StandardCharsets.UTF_8), Message.class);
-
-                            System.out.println("DIO PESCHIERE " + MessagingChannelImpl.this.getClass().getCanonicalName() + " <- " + message);
+//
+//                            System.out.println("DIO PESCHIERE " + MessagingChannelImpl.this.getClass().getCanonicalName() + " <- " + message);
 
                             // if there is a consumer installed fo this queue, run it. Then if it returns
                             //  continue, continue, else stop

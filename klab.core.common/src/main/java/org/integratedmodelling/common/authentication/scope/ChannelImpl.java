@@ -42,11 +42,11 @@ public class ChannelImpl implements Channel {
     private final AtomicBoolean errors = new AtomicBoolean(false);
     private final List<BiConsumer<Channel, Message>> listeners =
             Collections.synchronizedList(new ArrayList<>());
-    private final Multimap<Pair<Message.MessageClass, Message.MessageType>, EventMatcher> eventMatchers =
-            ArrayListMultimap.create();
+    private final Multimap<Pair<Message.MessageClass, Message.MessageType>, EventMatcher> eventMatchers;
 
     public ChannelImpl(Identity identity) {
         this.identity = identity;
+        this.eventMatchers =  ArrayListMultimap.create();
     }
 
     protected ChannelImpl(ChannelImpl other) {
@@ -54,6 +54,7 @@ public class ChannelImpl implements Channel {
         this.interrupted = other.interrupted;
         this.errors.set(other.errors.get());
         this.listeners.addAll(other.listeners);
+        this.eventMatchers = other.eventMatchers;
     }
 
     @Override
@@ -97,8 +98,6 @@ public class ChannelImpl implements Channel {
 
     private void handleMatch(Pair<Message.MessageClass, Message.MessageType> key, EventMatcher matcher,
                              Message message) {
-
-        System.out.println("PORCO DIO UN POSSIBILE MATCH: " + message);
 
         // Quickly check if match is real
         boolean match = false;

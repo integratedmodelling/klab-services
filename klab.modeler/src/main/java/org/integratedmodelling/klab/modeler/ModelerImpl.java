@@ -299,7 +299,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         final boolean observering = isObserver;
 
         /* one-time event handlers */
-        scope()
+        currentContext
                 .onEvent(Message.MessageClass.ObservationLifecycle,
                         Message.MessageType.ResolutionSuccessful, (message) -> {
                             var obs = message.getPayload(Observation.class);
