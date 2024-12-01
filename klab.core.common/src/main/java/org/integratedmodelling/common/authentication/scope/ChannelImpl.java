@@ -34,7 +34,7 @@ public class ChannelImpl implements Channel {
         public Object payloadPrototype;
         public Predicate<Message> payloadChecker;
         public Consumer<Message> reaction;
-        public Persistence persistence;
+        public Persistence persistence = Persistence.ONE_OFF;
     }
 
     private final Identity identity;
@@ -91,7 +91,8 @@ public class ChannelImpl implements Channel {
     @Override
     public void event(Message message) {
         var key = Pair.of(message.getMessageClass(), message.getMessageType());
-        for (var matcher : eventMatchers.get(key)) {
+        var matches = new ArrayList<>(eventMatchers.get(key));
+        for (var matcher : matches) {
             handleMatch(key, matcher, message);
         }
     }
@@ -113,8 +114,8 @@ public class ChannelImpl implements Channel {
             if (matcher.persistence == Persistence.ONE_OFF && matcher.payloadPrototype != null) {
                 List<EventMatcher> toRemove = new ArrayList<>();
                 for (var m : eventMatchers.values()) {
-                    if (matcher.payloadPrototype != null && matcher.payloadPrototype.equals(message.getPayload(Object.class))) {
-                        toRemove.add(matcher);
+                    if (m.payloadPrototype != null && m.payloadPrototype.equals(message.getPayload(Object.class))) {
+                        toRemove.add(m);
                     }
                 }
                 for (var m : toRemove) {

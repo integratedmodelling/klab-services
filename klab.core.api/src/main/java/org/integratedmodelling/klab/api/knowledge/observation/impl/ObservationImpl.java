@@ -12,10 +12,7 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 
 import java.io.Serial;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * A "naked" observation only has an observable + metadata and provenance info. This is not abstract because
@@ -241,5 +238,17 @@ public class ObservationImpl implements Observation {
     @Override
     public String toString() {
         return "(OBS) " + observable  + " [#" + geometry.size() + "]";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        ObservationImpl artifacts = (ObservationImpl) o;
+        return Objects.equals(urn, artifacts.urn);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(urn);
     }
 }
