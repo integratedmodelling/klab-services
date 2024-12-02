@@ -157,6 +157,14 @@ public abstract class AbstractDelegatingScope implements Scope {
     }
 
     @Override
+    public <T extends Scope> T getParentScope(Type type, Class<T> scopeClass) {
+        if (delegateChannel instanceof Scope scope) {
+            return scope.getParentScope(type, scopeClass);
+        }
+        return null;
+    }
+
+    @Override
     public void close() {
         delegateChannel.close();
     }

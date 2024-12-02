@@ -140,7 +140,6 @@ public enum LanguageAdapter {
         }
         urn.append(urn.isEmpty() ? "" : " ").append(ret.getUrn());
 
-//        ret.setType(tokens.getFirst().getType());
         ret.setUrn(urn.toString());
         ret.getTraits().addAll(traits);
         ret.getRoles().addAll(roles);

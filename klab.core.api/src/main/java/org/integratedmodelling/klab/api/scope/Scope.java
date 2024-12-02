@@ -82,11 +82,24 @@ public interface Scope extends Channel {
 
     /**
      * All scope except a {@link UserScope} have a non-null parent scope. A {@link ContextScope} is the only
-     * one that can have another scope of its same class as parent.
+     * one that can have another scope of its same class as parent. If a specific scope class is needed from a
+     * ContextScope, use {@link #getParentScope(Type, Class)} instead as the parent(s) may be other
+     * {@link ContextScope}s.
      *
      * @return the parent scope, null for {@link UserScope}s.
      */
     Scope getParentScope();
+
+    /**
+     * Retrieve the first parent scope that matches the passed type. The class isn't enough as each inner
+     * scope class inherits from the others.
+     *
+     * @param type
+     * @param scopeClass
+     * @param <T>
+     * @return
+     */
+    <T extends Scope> T getParentScope(Scope.Type type, Class<T> scopeClass);
 
     /**
      * Each scope can carry arbitrary data linked to it.

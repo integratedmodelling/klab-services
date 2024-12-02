@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.ReactiveScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
@@ -51,6 +52,18 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl imp
         } else {
             return super.send(args);
         }
+    }
+
+    @Override
+    public <T extends Scope> T getParentScope(Type type, Class<T> scopeClass) {
+        Scope scope = this;
+        while (scope != null) {
+            if (scope.getType() == type) {
+                return (T)scope;
+            }
+            scope = scope.getParentScope();
+        }
+        return null;
     }
 
     public KlabService getService(String serviceId) {

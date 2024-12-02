@@ -29,8 +29,6 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     private Observation observer;
     private Observation contextObservation;
-    private String[] scenarios;
-    private String resolutionNamespace;
     private Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
             new LinkedHashMap<>();
 
@@ -50,9 +48,11 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     private ClientContextScope(ClientContextScope parent) {
         super(parent, parent.name, parent.runtimeService);
-        resolutionConstraints.putAll(parent.resolutionConstraints);
         // this will have been reset by super to the user's id
         setId(parent.getId());
+        resolutionConstraints.putAll(parent.resolutionConstraints);
+        observer = parent.observer;
+        contextObservation = parent.contextObservation;
     }
 
     @Override
@@ -72,12 +72,31 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     @Override
     public ContextScope withObserver(Observation observer) {
-        return this;
+        var ret = childContext(this);
+        ret.observer = observer;
+        return ret;
+    }
+
+    protected ClientContextScope childContext(final ClientContextScope parent) {
+        return new ClientContextScope(parent) {
+
+            @Override
+            public <T extends KlabService> T getService(Class<T> serviceClass) {
+                return parent.getService(serviceClass);
+            }
+
+            @Override
+            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+                return parent.getServices(serviceClass);
+            }
+        };
     }
 
     @Override
     public ContextScope within(Observation contextObservation) {
-        return null;
+        var ret = childContext(this);
+        ret.contextObservation = contextObservation;
+        return ret;
     }
 
     @Override

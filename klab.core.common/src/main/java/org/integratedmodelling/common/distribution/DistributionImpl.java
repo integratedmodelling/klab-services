@@ -290,13 +290,13 @@ public class DistributionImpl extends AbstractDistributionImpl {
         exec.add(PosixFilePermission.OWNER_WRITE);
 
         getRemoteFilelist(remote);
-        getLocalFilelist(workspace,local);
+        getLocalFilelist(workspace, local);
 
         // process the filelist.txt entry last, so that the distrib only returns
         // isComplete when it
         // got to the end.
         for (String s : remote.keySet()) {
-            if (!local.containsKey(s) || !local.get(s).equals(remote.get(s)) || !getDestinationFile(workspace,s).exists()) {
+            if (!local.containsKey(s) || !local.get(s).equals(remote.get(s)) || !getDestinationFile(workspace, s).exists()) {
                 if (!s.equals("filelist.txt"))
                     toDownload.put(s, remote.get(s));
             }
@@ -321,7 +321,8 @@ public class DistributionImpl extends AbstractDistributionImpl {
                 monitor.beforeDownload(f);
             }
             try {
-                new Downloader(new URL(distributionUrl + "/" + f), getDestinationFile(workspace,f), (sofar, total) -> {
+                new Downloader(new URL(distributionUrl + "/" + f), getDestinationFile(workspace, f), (sofar
+                        , total) -> {
                     if (monitor != null) {
                         monitor.notifyFileProgress(f, sofar, total);
                     }
@@ -365,7 +366,7 @@ public class DistributionImpl extends AbstractDistributionImpl {
 
         if (file.isDirectory()) {
             for (File f : file.listFiles()) {
-                scanForDeletion(workspace,f, remote, toRemove);
+                scanForDeletion(workspace, f, remote, toRemove);
             }
         } else {
 

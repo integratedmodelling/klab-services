@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.modeler;
 
+import com.jcraft.jsch.Session;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
@@ -371,7 +372,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     @Override
     public void setCurrentContext(ContextScope context) {
-        if (context != null && (this.currentSession == null || !this.currentSession.equals(context.getParentScope()))) {
+        if (context != null && (this.currentSession == null || !this.currentSession.equals(context.getParentScope(Scope.Type.SESSION, SessionScope.class)))) {
             throw new KlabIllegalArgumentException("Cannot set context: argument is not part of the current" +
                     " session");
         }
