@@ -372,6 +372,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         // TODO when we're not in a runtime, we should not touch the digital twin (which is null) and
         //  we MUST call closeContext on all the other services we have paired with
 
+        // TODO we also must persist the current observed geometries for all observers.
+
         digitalTwin.dispose();
 
         // Call close() on all closeables in our dataset, including AutoCloseable if any.
