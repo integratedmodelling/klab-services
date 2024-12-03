@@ -316,7 +316,7 @@ public class ResolverService extends BaseService implements Resolver {
                                      Map<String, String> resources) {
         // TODO extract resource parameters and substitute with variables
         return org.integratedmodelling.common.utils.Utils.Strings.spaces(offset) + contextualizable.encode(
-                Language.KDL);
+                Language.KOBSERVATION);
     }
 
     /**

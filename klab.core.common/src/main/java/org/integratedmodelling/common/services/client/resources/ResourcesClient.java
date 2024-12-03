@@ -21,7 +21,6 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
@@ -295,7 +294,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public KdlDataflow resolveDataflow(String urn, Scope scope) {
+    public KimObservationStrategyDocument resolveDataflow(String urn, Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }

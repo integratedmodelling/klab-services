@@ -42,7 +42,7 @@ public class ChannelImpl implements Channel {
     private final AtomicBoolean errors = new AtomicBoolean(false);
     private final List<BiConsumer<Channel, Message>> listeners =
             Collections.synchronizedList(new ArrayList<>());
-    private final Multimap<Pair<Message.MessageClass, Message.MessageType>, EventMatcher> eventMatchers;
+    private Multimap<Pair<Message.MessageClass, Message.MessageType>, EventMatcher> eventMatchers;
 
     public ChannelImpl(Identity identity) {
         this.identity = identity;

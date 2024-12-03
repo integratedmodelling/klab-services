@@ -11,7 +11,6 @@ import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
@@ -180,7 +179,7 @@ public class ResourcesProviderController {
     }
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_DATAFLOW_URN)
-    public @ResponseBody KdlDataflow resolveDataflow(@PathVariable("urn") String urn, Principal principal) {
+    public @ResponseBody KimObservationStrategyDocument resolveDataflow(@PathVariable("urn") String urn, Principal principal) {
         return resourcesServer.klabService().resolveDataflow(urn,
                 principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
     }

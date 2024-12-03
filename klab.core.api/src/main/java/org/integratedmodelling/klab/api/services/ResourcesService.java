@@ -14,7 +14,6 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -25,7 +24,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 import java.io.File;
-import java.io.OutputStream;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
@@ -257,7 +255,7 @@ public interface ResourcesService extends KlabService {
      * @param scope
      * @return
      */
-    KdlDataflow resolveDataflow(String urn, Scope scope);
+    KimObservationStrategyDocument resolveDataflow(String urn, Scope scope);
 
     /**
      * THe worldview is required to be whole and consistent, including and starting with a root domain. If

@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
@@ -169,6 +170,17 @@ public class CLIReasonerView {
             }
         }
     }
+
+
+    @Command(name = "compatible", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+            "Check if two concepts are compatible, optionally in context."}, subcommands = {})
+    public static class Compatible implements Runnable {
+
+        @Spec
+        CommandSpec commandSpec;
+
+        @Parameters
+        java.util.List<String> arguments;
         @Override
         public void run() {
 
