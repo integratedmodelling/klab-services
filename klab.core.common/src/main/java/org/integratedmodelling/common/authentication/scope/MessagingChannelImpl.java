@@ -70,6 +70,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         this.connected = parent.connected;
         this.queueNames.putAll(parent.queueNames);
         this.queueConsumers.putAll(parent.queueConsumers);
+        copyListeners(parent);
     }
 
     @Override
