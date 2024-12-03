@@ -181,7 +181,15 @@ public interface ContextScope extends SessionScope {
      * has failed, the observation in the future will be unresolved.
      */
     Future<Observation> observe(@Mutable Observation observation);
-
+    
+    /**
+     * Get the current storage for a quality observation. Client scopes may get a very inefficient remote
+     * storage handle or an exception.
+     *
+     * @param observation
+     * @return
+     */
+    Storage getStorage(Observation observation);
     /**
      * Return all observations affected by the passed one in this scope, either through model dependencies or
      * behaviors. "Affected" is any kind of reaction, not necessarily implied by semantics.
