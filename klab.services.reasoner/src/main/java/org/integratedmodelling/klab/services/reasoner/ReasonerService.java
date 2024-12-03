@@ -130,6 +130,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     private Map<String, Observable> observables = Collections.synchronizedMap(new HashMap<>());
     private ObservationReasoner observationReasoner;
     private Worldview worldview;
+    private SyntacticMatcher syntacticMatcher;
 
     // /**
     // * Caches for concepts and observables, linked to the URI in the corresponding
@@ -300,8 +301,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
 
         this.observationReasoner = new ObservationReasoner(this);
+        this.syntacticMatcher = new SyntacticMatcher(this, serviceScope().getService(ResourcesService.class));
 
-        /**
+        /*
          * Setup an embedded broker, possibly to be shared with other services, if we're local and there
          * is no configured broker.
          */
@@ -1441,7 +1443,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     resourceService =
                             services.computeIfAbsent(changes.getServices().get(resource.getServiceId()),
                                     url -> new ResourcesClient(url, scope.getIdentity(), this,
- settingsForSlaveServices));
+                                            settingsForSlaveServices));
                 }
 
                 var notifications = new ArrayList<Notification>();
