@@ -36,10 +36,10 @@ public interface Language extends Service {
      * k.Actors is the k.LAB actors language
      */
     public final static String KACTORS = "k.Actors";
-    /**
-     * k.DL is the k.LAB dataflow encoding language
+   /**
+     * The k.LAB observation strategy and dataflow encoding language
      */
-    public final static String KDL = "k.DL";
+    public final static String KOBSERVATION = "k.Observation";
 
     default String getServiceName() {
         return "klab.language.service";
