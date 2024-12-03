@@ -169,17 +169,6 @@ public class CLIReasonerView {
             }
         }
     }
-
-    @Command(name = "compatible", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-            "Check if two concepts are compatible, optionally in context."}, subcommands = {})
-    public static class Compatible implements Runnable {
-
-        @Spec
-        CommandSpec commandSpec;
-
-        @Parameters
-        java.util.List<String> arguments;
-
         @Override
         public void run() {
 
@@ -200,15 +189,19 @@ public class CLIReasonerView {
             tokens.add(current);
 
             var urns = tokens.stream().map(l -> Utils.Strings.join(l, " ")).toList();
-            var reasoner = KlabCLI.INSTANCE.modeler().currentUser()
-                                           .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+            var patterns = urns.stream().anyMatch(urn -> urn.contains("$"));
+
+            var reasoner = KlabCLI.INSTANCE.modeler().currentUser().getService(Reasoner.class);
             var concepts = urns.stream().map(reasoner::resolveConcept).toList();
             if (concepts.size() < 2) {
                 err.println("Not enough arguments for compatibility check. Use commas to separate 2 or 3 " +
                         "definitions.");
             } else {
+
                 var distance = concepts.size() == 2 ?
-                               reasoner.compatible(concepts.get(0), concepts.get(1)) :
+                               (patterns ?
+                                    reasoner.match(concepts.get(0), concepts.get(1)) :
+                                    reasoner.compatible(concepts.get(0), concepts.get(1))) :
                                reasoner.contextuallyCompatible(concepts.get(0), concepts.get(1),
                                        concepts.get(2));
 
