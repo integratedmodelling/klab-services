@@ -78,7 +78,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     protected ClientContextScope childContext(final ClientContextScope parent) {
-        return new ClientContextScope(parent) {
+        var ret = new ClientContextScope(parent) {
 
             @Override
             public <T extends KlabService> T getService(Class<T> serviceClass) {
@@ -90,6 +90,8 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
                 return parent.getServices(serviceClass);
             }
         };
+        ret.copyMessagingSetup(parent);
+        return ret;
     }
 
     @Override
@@ -241,18 +243,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     public ContextScope withResolutionConstraints(ResolutionConstraint... resolutionConstraints) {
 
         final var thisScope = this;
-
-        ClientContextScope ret = new ClientContextScope(this) {
-            @Override
-            public <T extends KlabService> T getService(Class<T> serviceClass) {
-                return thisScope.getService(serviceClass);
-            }
-
-            @Override
-            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-                return thisScope.getServices(serviceClass);
-            }
-        };
+        ClientContextScope ret = childContext(this);
 
         if (resolutionConstraints == null) {
             ret.resolutionConstraints.clear();
@@ -305,5 +296,9 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         return constraint.payload(resultClass);
     }
 
+    @Override
+    public Storage getStorage(Observation observation) {
+        return null;
+    }
 
 }
