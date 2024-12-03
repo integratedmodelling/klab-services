@@ -469,13 +469,13 @@ public enum KlabCLI {
                         completer.resetSemanticSearch();
                         boolean aliased = false;
 
-                        /**
-                         * Use < > to move through context observations, @ to set/reset the observer and ?
-                         * to inquire about the current context in
-                         * detail. The right prompt summarizes the current context focus.
+                                             /*
+                         * Use <, >, .. to move through context observations, @ to set/reset the observer and
+                         * ./? to inquire about the current context in  detail. The right prompt summarizes
+                         * the current context focus.
                          */
-                        if (line.trim().startsWith("<") || line.trim().startsWith("@") || line.trim().startsWith(">") || line.trim().startsWith("?")) {
-                            INSTANCE.setFocalScope(line.trim());
+                        if (line.trim().startsWith(".") || line.trim().startsWith("<") || line.trim().startsWith("@") || line.trim().startsWith(">") || line.trim().startsWith("?")) {
+                        INSTANCE.setFocalScope(line.trim());
                             continue;
                         } else if (line.trim().startsWith("-")) {
                             if (line.trim().equals("-") && history.size() > 0) {
@@ -528,16 +528,44 @@ public enum KlabCLI {
      */
     private void setFocalScope(String line) {
 
-        // context setting
-        if (line.startsWith("<<")) {
+        if (line.trim().equals(".")) {
+
+            printContextInfo();
+
+        } else if (line.trim().equals("..") || line.trim().equals("<")) {
+
+            Scope scope = modeler == null ? null : (modeler.getCurrentSession() == null ? modeler.user() :
+                                                    (modeler.getCurrentContext() == null ?
+                                                     modeler.getCurrentSession() :
+                                                     modeler.getCurrentContext()));
+            // context setting
+            if (scope == null) {
+                INSTANCE.commandLine.getOut().println("No current scope");
+            } else if (scope.getType() == Scope.Type.CONTEXT) {
+
+                var parent = scope.getParentScope();
+                if (parent != null && parent.getType() == Scope.Type.CONTEXT) {
+                    modeler.setCurrentContext((ContextScope) parent);
+                } else if (parent != null && parent.getType() == Scope.Type.SESSION) {
+                    modeler.setCurrentContext(null);
+                }
+                printContextInfo();
+
+            } else if (scope.getType() == Scope.Type.SESSION) {
+                modeler.setCurrentContext(null);
+                modeler.setCurrentSession(null);
+                printContextInfo();
+            }
+
+        } else if (line.startsWith("<<")) {
             this.modeler.setCurrentContext(null);
             this.modeler.setCurrentSession(null);
         } else if (line.startsWith("<")) {
-
+            // must have something after the <
         } else if (line.startsWith(">")) {
-
+            // show list of potential downstream observations or choose the one after the >
         } else if (line.startsWith("@")) {
-
+            // show list of observers or choose the one after the @
         }
 
         /*
@@ -582,6 +610,21 @@ public enum KlabCLI {
 
         }
 
+    }
+
+    private void printContextInfo() {
+        if (modeler != null && modeler.getCurrentSession() != null) {
+            INSTANCE.commandLine.getOut().println(Ansi.AUTO.string("Session: @|green " + modeler.getCurrentSession().getName() + "|@"));
+            if (modeler.getCurrentContext() != null) {
+                INSTANCE.commandLine.getOut().println(Ansi.AUTO.string("   Context: @|green " + modeler.getCurrentContext().getName() + "|@"));
+                if (modeler.getCurrentContext().getObserver() != null) {
+                    INSTANCE.commandLine.getOut().println(Ansi.AUTO.string("      Observer: @|green " + modeler.getCurrentContext().getObserver() + "|@"));
+                }
+                if (modeler.getCurrentContext().getContextObservation() != null) {
+                    INSTANCE.commandLine.getOut().println(Ansi.AUTO.string("      Within: @|green " + modeler.getCurrentContext().getContextObservation() + "|@"));
+                }
+            }
+        }
     }
 
     private void listSession(SessionInfo session, boolean verbose, int index) {
