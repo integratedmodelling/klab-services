@@ -108,7 +108,6 @@ public class ResourcesProviderController {
                 principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
     }
 
-
     /**
      * TODO this should be just RESOURCE and take all methods for the various CRUD ops:
      *      GET for data relative to the resource including status and main content;

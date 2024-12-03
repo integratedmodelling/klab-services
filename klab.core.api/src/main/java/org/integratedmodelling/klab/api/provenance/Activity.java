@@ -50,6 +50,14 @@ public interface Activity extends Provenance.Node {
 
     String getDataflow();
 
+    /**
+     * The URN is a dot-separated hierarchically organized identifier, starting with the context scope ID, and
+     * enables the reconstruction of the activity hierarchy at the client side.
+     *
+     * @return
+     */
+    String getUrn();
+
     enum Type {
         INITIALIZATION, RESOLUTION, CONTEXTUALIZATION, INSTANTIATION, EXECUTION
     }

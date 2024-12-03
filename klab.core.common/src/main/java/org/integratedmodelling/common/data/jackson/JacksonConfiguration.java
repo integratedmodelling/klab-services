@@ -90,6 +90,12 @@ public class JacksonConfiguration {
 
     static class PolymorphicDeserializer<T> extends JsonDeserializer<T> {
 
+        private final Class<?> interfaceClass;
+
+        public PolymorphicDeserializer(Class<?> interfaceClass) {
+            this.interfaceClass = interfaceClass;
+        }
+
         Field findField(Class cls, String name) {
             try {
                 return cls.getDeclaredField(name);
@@ -110,12 +116,39 @@ public class JacksonConfiguration {
             }
         }
 
+        private Class<?> getObjectClass(JsonNode node) {
+
+            if (!node.has(CLASS_FIELD)) {
+                return LinkedHashMap.class;
+            }
+
+            var className = node.get(CLASS_FIELD).asText();
+            Class<?> ret = null;
+
+            try {
+                ret = Class.forName(className);
+            } catch (ClassNotFoundException e) {
+                try {
+                    // this MAY fix some OSGI-related issues where the implementation sits along
+                    // the interface
+                    ret = interfaceClass.getClassLoader().loadClass(className);
+                } catch (ClassNotFoundException ex) {
+
+                    // TODO if this persists, we could build the object here after registering the
+                    //  implementation and populate it using the object mapper
+
+                    Logging.INSTANCE.error("Class loading problem with " + className + " as implementation " +
+                            "of " + interfaceClass.getCanonicalName());
+                }
+            }
+
+            return ret;
+        }
+
         private Object deserialize(JsonNode node, JsonParser parser, Class<?> type) throws Exception {
 
             if (node.isObject()) {
-                return deserializeObject(node, parser, Class.forName(node.has(CLASS_FIELD) ?
-                                                                     node.get(CLASS_FIELD).asText() :
-                                                                     LinkedHashMap.class.getName()));
+                return deserializeObject(node, parser, getObjectClass(node));
             } else if (node.isArray()) {
                 return deserializeArray(node, parser, null);
             }
@@ -125,9 +158,7 @@ public class JacksonConfiguration {
         private Object deserialize(JsonNode node, JsonParser parser, Field field) throws Exception {
 
             if (node.isObject()) {
-                return deserializeObject(node, parser, Class.forName(node.has(CLASS_FIELD) ?
-                                                                     node.get(CLASS_FIELD).asText() :
-                                                                     LinkedHashMap.class.getName()));
+                return deserializeObject(node, parser, getObjectClass(node));
             } else if (node.isArray()) {
                 return deserializeArray(node, parser, field);
             }
@@ -266,7 +297,7 @@ public class JacksonConfiguration {
                                       KimObservationStrategy.Filter.class, ObservationStrategy.class,
                                       ObservationStrategy.Operation.class}) {
             module.addSerializer(cls, new PolymorphicSerializer<>());
-            module.addDeserializer(cls, new PolymorphicDeserializer<>());
+            module.addDeserializer(cls, new PolymorphicDeserializer<>(cls));
         }
 
         mapper.registerModule(module);
