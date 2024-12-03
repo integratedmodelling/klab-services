@@ -56,6 +56,11 @@ public class ChannelImpl implements Channel {
         this.listeners.addAll(other.listeners);
         this.eventMatchers = other.eventMatchers;
     }
+ 
+    protected void copyListeners(ChannelImpl channel) {
+        this.listeners.addAll(channel.listeners);
+        this.eventMatchers = channel.eventMatchers;
+    }
 
     @Override
     public Identity getIdentity() {
