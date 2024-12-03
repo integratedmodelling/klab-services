@@ -24,9 +24,12 @@ import java.util.function.Function;
 
 @Command(name = "reason", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
         "Commands to find, access and manipulate semantic knowledge.",
-        ""}, subcommands = {CLIReasonerView.Children.class, CLIReasonerView.Parents.class, CLIReasonerView.Traits.class,
-                            CLIReasonerView.Type.class, CLIReasonerView.BaseConcept.class, CLIReasonerView.Compatible.class,
-                            CLIReasonerView.Strategy.class, CLIReasonerView.Export.class})
+        ""}, subcommands = {CLIReasonerView.Children.class, CLIReasonerView.Parents.class,
+                            CLIReasonerView.Traits.class,
+                            CLIReasonerView.Type.class, CLIReasonerView.BaseConcept.class,
+                            CLIReasonerView.Compatible.class,
+                            CLIReasonerView.Strategy.class, CLIReasonerView.Export.class,
+                            CLIReasonerView.Matching.class})
 public class CLIReasonerView {
 
 
@@ -60,7 +63,7 @@ public class CLIReasonerView {
     }
 
     public static void printRelated(PrintWriter out, Concept concept, Function<Concept,
-            Collection<Concept>> producer
+                                            Collection<Concept>> producer
             , int offset) {
         String spaces = Utils.Strings.spaces(offset);
         for (var child : producer.apply(concept)) {
@@ -171,16 +174,16 @@ public class CLIReasonerView {
         }
     }
 
-
-    @Command(name = "compatible", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-            "Check if two concepts are compatible, optionally in context."}, subcommands = {})
-    public static class Compatible implements Runnable {
+    @Command(name = "match", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+            "Check if the first concept matches the concept pattern of the second."}, subcommands = {})
+    public static class Matching implements Runnable {
 
         @Spec
         CommandSpec commandSpec;
 
         @Parameters
         java.util.List<String> arguments;
+
         @Override
         public void run() {
 
@@ -201,8 +204,50 @@ public class CLIReasonerView {
             tokens.add(current);
 
             var urns = tokens.stream().map(l -> Utils.Strings.join(l, " ")).toList();
-            var patterns = urns.stream().anyMatch(urn -> urn.contains("$"));
+            var reasoner = KlabCLI.INSTANCE.modeler().currentUser().getService(Reasoner.class);
+            var concepts = urns.stream().map(reasoner::resolveConcept).toList();
+            if (concepts.size() != 2) {
+                err.println("Not enough arguments for compatibility check. Use commas to separate 2 or 3 " +
+                        "definitions.");
+            } else {
+                var distance = reasoner.match(concepts.get(0), concepts.get(1));
+                out.println("Match check  " + (distance ? "SUCCESSFUL" : "UNSUCCESSFUL") + ": " +
+                        concepts.get(0) + " matching pattern " + concepts.get(1));
+            }
+        }
+    }
 
+
+    @Command(name = "compatible", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+            "Check if two concepts are compatible, optionally in context."}, subcommands = {})
+    public static class Compatible implements Runnable {
+
+        @Spec
+        CommandSpec commandSpec;
+
+        @Parameters
+        java.util.List<String> arguments;
+
+        @Override
+        public void run() {
+
+            PrintWriter out = commandSpec.commandLine().getOut();
+            PrintWriter err = commandSpec.commandLine().getErr();
+
+            java.util.List<java.util.List<String>> tokens = new ArrayList<>();
+
+            var current = new ArrayList<String>();
+            for (var token : arguments) {
+                if (token.equals(",")) {
+                    tokens.add(current);
+                    current = new ArrayList<>();
+                } else {
+                    current.add(token);
+                }
+            }
+            tokens.add(current);
+
+            var urns = tokens.stream().map(l -> Utils.Strings.join(l, " ")).toList();
             var reasoner = KlabCLI.INSTANCE.modeler().currentUser().getService(Reasoner.class);
             var concepts = urns.stream().map(reasoner::resolveConcept).toList();
             if (concepts.size() < 2) {
@@ -211,9 +256,7 @@ public class CLIReasonerView {
             } else {
 
                 var distance = concepts.size() == 2 ?
-                               (patterns ?
-                                    reasoner.match(concepts.get(0), concepts.get(1)) :
-                                    reasoner.compatible(concepts.get(0), concepts.get(1))) :
+                               reasoner.compatible(concepts.get(0), concepts.get(1)) :
                                reasoner.contextuallyCompatible(concepts.get(0), concepts.get(1),
                                        concepts.get(2));
 
