@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.runtime.storage;
 
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
+import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -13,6 +14,8 @@ import org.ojalgo.array.BufferArray;
 import org.ojalgo.concurrent.Parallelism;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * There is one separate <code>StorageScope</code> in each {@link ContextScope}. It's built on demand based on
@@ -28,6 +31,7 @@ public class StateStorageImpl implements StateStorage {
     private File intBackupFile;
     private File booleanBackupFile;
     private int histogramBinSize = 20;
+    private Map<String, Storage> storage = new HashMap<>();
 
     public boolean isRecordHistogram() {
         return recordHistogram;
@@ -131,6 +135,9 @@ public class StateStorageImpl implements StateStorage {
     }
 
     public void close() {
+
+        storage.clear();
+
         // TODO this is crucial for everything, ensure it's complete
         if (doubleMappedArrayFactory != null) {
             doubleMappedArrayFactory = null;
@@ -173,7 +180,12 @@ public class StateStorageImpl implements StateStorage {
     @Override
     public <T extends Storage> T getExistingStorage(Observation observation, Class<T> storageClass) {
         // TODO
-        return null;
+        var ret = storage.get(observation.getUrn());
+        if (ret != null && storageClass.isAssignableFrom(ret.getClass())) {
+            return (T) ret;
+        }
+        throw new KlabResourceAccessException("Observation " + observation + " does not have associated " +
+                "storage");
     }
 
     @Override
@@ -200,6 +212,7 @@ public class StateStorageImpl implements StateStorage {
 
             // TODO load any existing state
 
+            storage.put(observation.getUrn(), ret);
             return ret;
         }
 
@@ -208,12 +221,13 @@ public class StateStorageImpl implements StateStorage {
     }
 
     @Override
-    public <T extends Storage> T promoteStorage(Observation observation, Storage existingStorage, Class<T> storageClass) {
+    public <T extends Storage> T promoteStorage(Observation observation, Storage existingStorage,
+                                                Class<T> storageClass) {
 
         if (existingStorage == null) {
             return getOrCreateStorage(observation, storageClass);
         } else if (storageClass.isAssignableFrom(existingStorage.getClass())) {
-            return (T)existingStorage;
+            return (T) existingStorage;
         }
 
         // TODO create a casting delegate or throw an exception
@@ -223,7 +237,8 @@ public class StateStorageImpl implements StateStorage {
 
     @Override
     public void clear() {
-        // CHECK the implementation of close() is actually a clear(); close() may save state for later re-opening,
+        // CHECK the implementation of close() is actually a clear(); close() may save state for later
+        // re-opening,
         // depending on context persistence
         close();
     }
