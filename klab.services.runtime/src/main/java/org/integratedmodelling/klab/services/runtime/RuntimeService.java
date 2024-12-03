@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -285,6 +286,22 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             // TODO there may be a context for this at some point.
             throw new KlabIllegalStateException("A resolved observation cannot be submitted to the " +
                     "knowledge graph for now");
+        }
+
+        if (observation.getObservable().is(SemanticType.QUALITY) && scope.getContextObservation() == null) {
+            throw new KlabIllegalStateException("Cannot observe a quality without a context observation");
+        }
+
+        /**
+         * Only situation when we accept an observation w/o geometry
+         */
+        if (observation.getGeometry() == null &&
+                observation instanceof ObservationImpl observation1) {
+            if (observation.getObservable().is(SemanticType.QUALITY) && scope.getContextObservation() != null) {
+                observation1.setGeometry(scope.getContextObservation().getGeometry());
+            } else if (observation.getObservable().is(SemanticType.COUNTABLE) && observation.getObservable().isCollective() && scope.getObserver() != null) {
+                observation1.setGeometry(scope.getObservedGeometry());
+            }
         }
 
         if (scope instanceof ServiceContextScope serviceContextScope) {

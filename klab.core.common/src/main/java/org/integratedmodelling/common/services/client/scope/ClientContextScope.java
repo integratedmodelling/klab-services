@@ -5,6 +5,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -301,5 +302,4 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     public Storage getStorage(Observation observation) {
         return null;
     }
-
 }

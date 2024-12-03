@@ -3,18 +3,22 @@ package org.integratedmodelling.klab.api.digitaltwin;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 import java.util.Map;
@@ -93,22 +97,31 @@ public interface DigitalTwin {
      * Accepts all the needed elements for the observation, including geometry, observable and the like. If
      * two geometries are passed, the second is the observer's (FIXME that should be deprecated). In dependent
      * observations, the geometry may be omitted and the geometry of the owning substantial will be used.
+     * <p>
+     * If the observation is an observer definition, the geometry ends up as a constraint in the scope. If an
+     * observer's own geometry is unspecified, a default scalar one is attributed.
      *
+     * @param scope a scope. If a context scope and we use an observer definition, the scope's resolution constraints
+     *              will include an observer geometry after the call.
      * @param resolvables
      * @return
      */
-    static ObservationImpl createObservation(Scope scope, Object... resolvables) {
+    static ObservationImpl createObservation(@Mutable Scope scope, Object... resolvables) {
 
         final Set<String> knownKeys = Set.of("observation", "semantics", "space", "time");
 
         String name = null;
         Geometry geometry = null;
+        Geometry observerGeometry = null;
         Observable observable = null;
         String resourceUrn = null;
         String modelUrn = null;
         String defaultValue = null;
         Metadata metadata = Metadata.create();
+        boolean isObserver = false;
 
+
+        Geometry ogeom = null;
         if (resolvables != null) {
             for (Object o : resolvables) {
                 if (o instanceof Observable obs) {
@@ -129,6 +142,8 @@ public interface DigitalTwin {
                     if (("observation".equals(symbol.getDefineClass()) || "observer".equals(symbol.getDefineClass())) && symbol.getValue() instanceof Map<?
                             , ?> definition) {
 
+                        isObserver = "observer".equals(symbol.getDefineClass());
+
                         name = symbol.getName();
                         if (definition.containsKey("semantics")) {
                             observable = scope.getService(Reasoner.class).resolveObservable(definition.get(
@@ -139,36 +154,18 @@ public interface DigitalTwin {
                             }
                         }
                         if (definition.containsKey("space") || definition.containsKey("time")) {
-                            var geometryBuilder = Geometry.builder();
-                            if (definition.containsKey("space")) {
-                                var spaceBuilder = geometryBuilder.space();
-                                if (definition.get("space") instanceof Map<?, ?> spaceDefinition) {
-                                    if (spaceDefinition.containsKey("shape")) {
-                                        spaceBuilder.shape(spaceDefinition.get("shape").toString());
-                                    }
-                                    if (spaceDefinition.containsKey("grid")) {
-                                        spaceBuilder.resolution(spaceDefinition.get("grid").toString());
-                                    }
-                                    // TODO add bounding box etc
-                                }
-                                geometryBuilder = spaceBuilder.build();
-                            }
-                            if (definition.containsKey("time")) {
-                                var timeBuilder = geometryBuilder.time();
-                                if (definition.get("time") instanceof Map<?, ?> timeDefinition) {
-                                    if (timeDefinition.containsKey("year")) {
-                                        var year = timeDefinition.get("year");
-                                        if (year instanceof Number number) {
-                                            timeBuilder.year(number.intValue());
-                                        } else if (year instanceof Identifier identifier && "default".equals(
-                                                identifier.getValue())) {
-                                            timeBuilder.year(TimeInstant.create().getYear());
-                                        }
-                                    }
-                                }
-                                geometryBuilder = timeBuilder.build();
-                            }
-                            geometry = geometryBuilder.build();
+                            geometry = defineGeometry(definition);
+                        }
+
+                        if (definition.containsKey("geometry") && definition.get("geometry") instanceof Map<?, ?>) {
+                            ogeom = defineGeometry((Map<?, ?>) definition.get("geometry"));
+                        }
+
+                        if (isObserver) {
+                            observerGeometry = geometry;
+                            geometry = ogeom == null ? Geometry.builder().build() : ogeom;
+                        } else if (geometry == null && ogeom != null) {
+                            geometry = ogeom;
                         }
 
                         for (var key : definition.keySet()) {
@@ -178,19 +175,25 @@ public interface DigitalTwin {
                         }
                     }
                 } else if (o instanceof KimModel model) {
-                    // send the model URN and extract the observable
+                    // send the model URN and extract the observable. The modelUrn should become a
+                    // constraint within the requesting scope upstream.
                     observable =
-                            scope.getService(Reasoner.class).declareObservable(model.getObservables().get(0));
+                            scope.getService(Reasoner.class).declareObservable(model.getObservables().getFirst());
                     modelUrn = model.getUrn();
                 } else if (o instanceof Map<?, ?> map) {
                     // metadata
                     metadata.putAll((Map<? extends String, ?>) map);
+                } else if (o instanceof KimConcept concept) {
+                    observable = scope.getService(Reasoner.class).resolveObservable(concept.getUrn());
+                } else if (o instanceof KimObservable obs) {
+                    observable = scope.getService(Reasoner.class).resolveObservable(obs.getUrn());
                 }
             }
         }
 
         /*
-        least requisite is having an observable
+        least requisite is having an observable. A quality observation doesn't need to specify
+        a geometry.
          */
         if (observable != null) {
             ObservationImpl ret = new ObservationImpl();
@@ -199,10 +202,49 @@ public interface DigitalTwin {
             ret.setObservable(observable);
             ret.setValue(defaultValue);
             ret.setName(name);
+
+            if (observerGeometry != null && scope instanceof ContextScope contextScope) {
+                contextScope.getResolutionConstraints().add(ResolutionConstraint.of(ResolutionConstraint.Type.ObserverGeometry, observerGeometry));
+            }
+
+
             return ret;
         }
 
         return null;
+    }
+
+    static Geometry defineGeometry(Map<?, ?> definition) {
+        var geometryBuilder = Geometry.builder();
+        if (definition.containsKey("space")) {
+            var spaceBuilder = geometryBuilder.space();
+            if (definition.get("space") instanceof Map<?, ?> spaceDefinition) {
+                if (spaceDefinition.containsKey("shape")) {
+                    spaceBuilder.shape(spaceDefinition.get("shape").toString());
+                }
+                if (spaceDefinition.containsKey("grid")) {
+                    spaceBuilder.resolution(spaceDefinition.get("grid").toString());
+                }
+                // TODO add bounding box etc
+            }
+            geometryBuilder = spaceBuilder.build();
+        }
+        if (definition.containsKey("time")) {
+            var timeBuilder = geometryBuilder.time();
+            if (definition.get("time") instanceof Map<?, ?> timeDefinition) {
+                if (timeDefinition.containsKey("year")) {
+                    var year = timeDefinition.get("year");
+                    if (year instanceof Number number) {
+                        timeBuilder.year(number.intValue());
+                    } else if (year instanceof Identifier identifier && "default".equals(
+                            identifier.getValue())) {
+                        timeBuilder.year(TimeInstant.create().getYear());
+                    }
+                }
+            }
+            geometryBuilder = timeBuilder.build();
+        }
+        return geometryBuilder.build();
     }
 
 

@@ -14,7 +14,6 @@ import org.integratedmodelling.klab.api.lang.kim.KimQuantity;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.*;
-import java.util.function.BiFunction;
 
 public class GeometryImpl implements Geometry {
 
@@ -873,7 +872,10 @@ public class GeometryImpl implements Geometry {
         if (space == null) {
             throw new KlabIllegalStateException("cannot set spatial parameters on a geometry without space");
         }
-        space.getParameters().put(PARAMETER_SPACE_BOUNDINGBOX, GeometryImpl.encodeVal(new double[]{minX, maxX, minY, maxY}));
+        space.getParameters().put(PARAMETER_SPACE_BOUNDINGBOX, GeometryImpl.encodeVal(new double[]{minX,
+                                                                                                   maxX,
+                                                                                                   minY,
+                                                                                                   maxY}));
         return this;
     }
 

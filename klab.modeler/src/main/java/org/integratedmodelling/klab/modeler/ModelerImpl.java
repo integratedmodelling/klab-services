@@ -272,10 +272,10 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                 }
             } else if (statement instanceof KimConceptStatement conceptStatement) {
                 // TODO check observable vs. context (qualities w/ their context etc.)
-                resolvables.add(conceptStatement.getNamespace() + ":" + conceptStatement.getUrn());
+                resolvables.add(conceptStatement);
             } else if (statement instanceof KimObservable conceptStatement) {
                 // TODO check observable vs. context (qualities w/ their context etc.)
-                resolvables.add(conceptStatement.getUrn());
+                resolvables.add(conceptStatement);
             }
         } else if (asset instanceof String || asset instanceof Urn) {
             resolvables.add(asset.toString());

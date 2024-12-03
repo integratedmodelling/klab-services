@@ -413,7 +413,6 @@ public interface ContextScope extends SessionScope {
         return ret.toString();
     }
 
-
     static Geometry getResolutionGeometry(ContextScope scope) {
 
         var resolutionGeometry = scope.getConstraint(ResolutionConstraint.Type.Geometry, Geometry.class);
@@ -437,7 +436,7 @@ public interface ContextScope extends SessionScope {
             }
             // override if collective and substantial
             if (observation.getObservable().isCollective() && getObserver() != null && getObserver().getGeometry() != null) {
-                geometry = getObserver().getGeometry();
+                geometry = getObservedGeometry();
             }
         }
 
@@ -446,6 +445,21 @@ public interface ContextScope extends SessionScope {
         }
 
         return geometry;
+    }
+
+    /**
+     * The geometry currently observed by the current observer, which may be null if the observer is
+     * null, and may NOT otherwise. This is set when an observer is defined, but is independent
+     * of the observer's own geometry, and may change through calls independent of the observer as long
+     * as an observer is there.
+     *
+     * Observer geometry is set by adding a {@link ResolutionConstraint} to the scope.
+     *
+     * @return
+     */
+    default Geometry getObservedGeometry() {
+        var ret = getConstraint(ResolutionConstraint.Type.ObserverGeometry, Geometry.class);
+        return ret == null ? Geometry.EMPTY : ret;
     }
 
     /**

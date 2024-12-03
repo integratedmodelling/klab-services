@@ -12,7 +12,6 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
-import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.List;
 import java.util.Map;

@@ -320,6 +320,11 @@ public class GeometryBuilder {
 
         GeometryImpl ret = new GeometryImpl();
 
+        if (space == null && time == null) {
+            ret.setScalar(true);
+            ret.setEmpty(false);
+        }
+
         if (space != null || time != null) {
             ret.setScalar(false);
             ret.setEmpty(false);
