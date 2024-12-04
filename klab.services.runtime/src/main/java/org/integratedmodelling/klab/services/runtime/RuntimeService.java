@@ -315,7 +315,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
              * root DT level and we get the context initialization activity as parent.
              */
             var instantiation = digitalTwin.knowledgeGraph().operation(agent, parentActivity,
-                    Activity.Type.INSTANTIATION, observation, this);
+                    Activity.Type.INSTANTIATION,
+                    "Instantiation of " + observation, observation, this);
 
             try (instantiation) {
 
@@ -397,7 +398,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                 This will commit or rollback at close()
                  */
                 var resolution = digitalTwin.knowledgeGraph().operation(digitalTwin.knowledgeGraph().klab()
-                        , parentActivity, Activity.Type.RESOLUTION, resolver);
+                        , parentActivity, Activity.Type.RESOLUTION,
+                        "Resolution of " + observation, resolver);
 
                 try (resolution) {
                     result = observation;
@@ -417,14 +419,17 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                             ret.completeExceptionally(new KlabResourceAccessException("Resolution of " + observation.getUrn() + " failed"));
                         }
                     } catch (Throwable t) {
+                        Logging.INSTANCE.error(t);
                         ret.completeExceptionally(t);
                         resolution.fail(scope, observation, t);
                         scope.send(Message.MessageClass.ObservationLifecycle,
                                 Message.MessageType.ResolutionAborted, observation);
                     }
                 } catch (Throwable t) {
+                    Logging.INSTANCE.error(t);
                     scope.send(Message.MessageClass.ObservationLifecycle,
                             Message.MessageType.ResolutionAborted, observation);
+                    resolution.fail(scope, observation, t);
                     ret.completeExceptionally(t);
                 }
 
@@ -435,7 +440,10 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                      */
                     var contextualization =
                             digitalTwin.knowledgeGraph().operation(digitalTwin.knowledgeGraph().klab(),
-                                    resolutionActivity, Activity.Type.EXECUTION, dataflow, this);
+                                    resolutionActivity, Activity.Type.EXECUTION,
+                                    "Execution of resolved dataflow to contextualize " + observation,
+                                    dataflow,
+                                    this);
 
                     try (contextualization) {
                         // TODO contextualization gets its own activities to use in operations
@@ -444,6 +452,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                         ret.complete(result);
                         contextualization.success(scope, dataflow, result);
                     } catch (Throwable t) {
+                        Logging.INSTANCE.error(t);
                         contextualization.fail(scope, dataflow, result, t);
                         ret.completeExceptionally(t);
                     }

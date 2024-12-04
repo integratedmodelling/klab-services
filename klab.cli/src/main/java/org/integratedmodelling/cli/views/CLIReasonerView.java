@@ -29,7 +29,7 @@ import java.util.function.Function;
                             CLIReasonerView.Type.class, CLIReasonerView.BaseConcept.class,
                             CLIReasonerView.Compatible.class,
                             CLIReasonerView.Strategy.class, CLIReasonerView.Export.class,
-                            CLIReasonerView.Matching.class})
+                            CLIReasonerView.Matching.class, CLIReasonerView.Roles.class})
 public class CLIReasonerView {
 
 
@@ -363,6 +363,42 @@ public class CLIReasonerView {
         }
 
     }
+
+    @Command(name = "roles", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+            "List all the roles in a concept."}, subcommands = {})
+    public static class Roles implements Runnable {
+
+        @Spec
+        CommandSpec commandSpec;
+
+        @Option(names = {"-i", "--inherited"}, defaultValue = "false", description = {
+                "Include inherited traits"}, required = false)
+        boolean inherited = false;
+
+        @Parameters
+        java.util.List<String> observables;
+
+        @Override
+        public void run() {
+
+            PrintWriter out = commandSpec.commandLine().getOut();
+            PrintWriter err = commandSpec.commandLine().getErr();
+
+            var urn = Utils.Strings.join(observables, " ");
+            var reasoner = KlabCLI.INSTANCE.modeler().currentUser()
+                                           .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+            Concept concept = reasoner.resolveConcept(urn);
+            if (concept == null) {
+                err.println("Concept " + urn + " not found");
+            } else {
+                for (Concept c : inherited ? reasoner.roles(concept) : reasoner.directRoles(concept)) {
+                    out.println(CommandLine.Help.Ansi.AUTO.string("   @|yellow " + c + "|@ " + c.getType()));
+                }
+            }
+        }
+
+    }
+
 
     @Command(name = "export", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
             "export a namespace to an OWL ontology."}, subcommands = {})

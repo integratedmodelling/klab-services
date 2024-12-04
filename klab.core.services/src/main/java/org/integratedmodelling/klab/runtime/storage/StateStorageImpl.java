@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.runtime.storage;
 
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -184,39 +185,46 @@ public class StateStorageImpl implements StateStorage {
         if (ret != null && storageClass.isAssignableFrom(ret.getClass())) {
             return (T) ret;
         }
-        throw new KlabResourceAccessException("Observation " + observation + " does not have associated " +
-                "storage");
+        return null;
     }
 
     @Override
     public <T extends Storage> T getOrCreateStorage(Observation observation, Class<T> storageClass) {
 
-        // TODO this just creates, never retrieves. Not sure if/how that works with mmapped files, may
-        //  need to save on exit.
+        Class<?> sClass = storageClass;
+        if (storageClass == Storage.class) {
+            sClass = switch (observation.getObservable().getArtifactType()) {
+                case BOOLEAN -> BooleanStorage.class;
+                case NUMBER -> /* TODO use config to choose between double and float */ DoubleStorage.class;
+                case TEXT, CONCEPT -> KeyedStorage.class;
+                default ->
+                        throw new KlabIllegalStateException("scalar mapping to type " + observation.getObservable().getArtifactType() + " not supported");
+            };
+        }
 
-        T ret = null;
+        T ret = getExistingStorage(observation, (Class<T>) sClass);
 
-        if (DoubleStorage.class.isAssignableFrom(storageClass)) {
-            ret = (T) new DoubleStorage(Scale.create(observation.getGeometry()), this);
-        } else if (FloatStorage.class.isAssignableFrom(storageClass)) {
-            ret = (T) new FloatStorage(Scale.create(observation.getGeometry()), this);
-        } else if (IntStorage.class.isAssignableFrom(storageClass)) {
-            ret = (T) new IntStorage(Scale.create(observation.getGeometry()), this);
-        } else if (BooleanStorage.class.isAssignableFrom(storageClass)) {
-            ret = (T) new BooleanStorage(Scale.create(observation.getGeometry()), this);
-        } else if (KeyedStorage.class.isAssignableFrom(storageClass)) {
-            ret = (T) new KeyedStorage(Scale.create(observation.getGeometry()), this);
+        if (ret == null) {
+            if (DoubleStorage.class.isAssignableFrom(sClass)) {
+                ret = (T) new DoubleStorage(Scale.create(observation.getGeometry()), this);
+            } else if (FloatStorage.class.isAssignableFrom(sClass)) {
+                ret = (T) new FloatStorage(Scale.create(observation.getGeometry()), this);
+            } else if (IntStorage.class.isAssignableFrom(sClass)) {
+                ret = (T) new IntStorage(Scale.create(observation.getGeometry()), this);
+            } else if (BooleanStorage.class.isAssignableFrom(sClass)) {
+                ret = (T) new BooleanStorage(Scale.create(observation.getGeometry()), this);
+            } else if (KeyedStorage.class.isAssignableFrom(sClass)) {
+                ret = (T) new KeyedStorage(Scale.create(observation.getGeometry()), this);
+            }
         }
 
         if (ret != null) {
-
-            // TODO load any existing state
-
+            // TODO load any pre-existing state
             storage.put(observation.getUrn(), ret);
             return ret;
         }
 
-        throw new KlabUnimplementedException("cannot create storage of class " + storageClass.getCanonicalName());
+        throw new KlabUnimplementedException("cannot create storage of class " + sClass.getCanonicalName());
 
     }
 

@@ -183,7 +183,6 @@ public class ExecutionSequence {
                     }
                 }
 
-
                 var descriptor = componentRegistry.getFunctionDescriptor(call);
                 if (descriptor.serviceInfo.getGeometry().isScalar()) {
 
@@ -206,13 +205,13 @@ public class ExecutionSequence {
                         scalarMapper = null;
                     }
 
-                    // we can be pretty sure that this will be a scale by now
-                    // FIXME actually it's not. And we should cache scales.
                     var scale = Scale.create(observation.getGeometry());
-                    Storage storage = digitalTwin.stateStorage().getExistingStorage(observation,
+                    Storage storage = digitalTwin.stateStorage().getOrCreateStorage(observation,
                             Storage.class);
-                    /**
+                    /*
                      * Create a runnable with matched parameters and have it set the context observation
+                     * TODO allow multiple methods taking different storage implementations, enabling the
+                     *  storage manager to be configured for the wanted precision
                      */
                     List<Object> runArguments = new ArrayList<>();
                     if (descriptor.method != null) {

@@ -224,6 +224,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 for (var asset : assets) {
                     if (asset instanceof ObservationImpl obs) {
                         observation = obs;
+                    } else if (asset instanceof Throwable t) {
+                        activity.setStackTrace(ExceptionUtils.getStackTrace(t));
                     }
                 }
             }
@@ -249,6 +251,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
                 if (outcome == null) {
                     // Log an internal failure (no success or failure, should not happen)
+                    Logging.INSTANCE.error("Internal error: activity did not properly finish: " + activity);
                     transaction.rollback();
                 } else if (outcome == Scope.Status.FINISHED) {
                     transaction.commit();
@@ -540,11 +543,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 instance.setStart(node.get("start").asLong());
                 instance.setEnd(node.get("end").asLong());
                 instance.setName(node.get("name").asString());
-                instance.setServiceName(node.get("serviceName").isNull()?  null : node.get("serviceName").asString());
-                instance.setServiceId(node.get("serviceId").isNull() ? null : node.get("serviceId").asString());
+                instance.setServiceName(node.get("serviceName").isNull() ? null :
+                                        node.get("serviceName").asString());
+                instance.setServiceId(node.get("serviceId").isNull() ? null :
+                                      node.get("serviceId").asString());
                 instance.setServiceType(node.get("serviceType").isNull() ? null :
                                         KlabService.Type.valueOf(node.get("serviceType").asString()));
-                instance.setDataflow(node.get("dataflow").isNull() ? null :  node.get("dataflow").asString());
+                instance.setDataflow(node.get("dataflow").isNull() ? null : node.get("dataflow").asString());
                 instance.setType(Activity.Type.valueOf(instance.getName()));
                 instance.setDescription(node.get("description").isNull() ? "No description" : node.get(
                         "description").asString());
