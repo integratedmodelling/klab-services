@@ -311,6 +311,8 @@ public interface ServicesAPI {
 
         String NEGATED = REASONER_BASE + "/negated";
 
+        String MATCHES = REASONER_BASE + "/matches";
+
         String RELATIONSHIP_TARGETS = REASONER_BASE + "/relationshipTargets";
 
         String SATISFIABLE = REASONER_BASE + "/satisfiable";

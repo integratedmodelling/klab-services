@@ -40,6 +40,10 @@ public class SyntacticMatcher {
 
     public boolean match(Semantics candidate, Semantics pattern) {
 
+        if (isAtomic(pattern.getUrn())) {
+            return reasonerService.subsumes(candidate, pattern);
+        }
+
         KimConcept oCandidate = null;
         KimConcept pCandidate = null;
 
@@ -54,10 +58,11 @@ public class SyntacticMatcher {
             return false;
         }
 
-        return matchConcepts (oCandidate, pCandidate);
+        return matchConcepts(oCandidate, pCandidate);
     }
 
     private boolean matchConcepts(KimConcept candidate, KimConcept pattern) {
+
 
         if (pattern.is(SemanticType.UNION) || pattern.is(SemanticType.INTERSECTION)) {
             // must have same type and same number of arguments
@@ -73,6 +78,12 @@ public class SyntacticMatcher {
 
         return false;
 
+    }
+
+    private boolean isAtomic(String urn) {
+        // TODO we should use a more intelligent check, although this one should work in all circumstances
+        //  given that the URN is normalized.
+        return !urn.contains(" ");
     }
 
 }

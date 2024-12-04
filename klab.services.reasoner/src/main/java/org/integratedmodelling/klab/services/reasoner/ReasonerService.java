@@ -1783,8 +1783,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public boolean match(Semantics candidate, Semantics pattern) {
-        // FIXME definitely not the same thing!
-        return compatible(candidate, pattern);
+        return syntacticMatcher.match(candidate, pattern);
     }
 
     @Override

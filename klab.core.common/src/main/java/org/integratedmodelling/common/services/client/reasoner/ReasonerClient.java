@@ -504,7 +504,8 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public boolean match(Semantics candidate, Semantics pattern) {
-        return false;
+        return client.post(ServicesAPI.REASONER.MATCHES, List.of(candidate.asConcept(),
+                pattern.asConcept()), Boolean.class);
     }
 
     @Override

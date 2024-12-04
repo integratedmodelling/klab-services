@@ -98,6 +98,18 @@ public class ReasonerController {
     }
 
     /**
+     * POST /matches
+     *
+     * @param concepts
+     * @return
+     */
+    @PostMapping(ServicesAPI.REASONER.MATCHES)
+    public boolean matches(@RequestBody Concept[] concepts) {
+        return reasoner.klabService().match(concepts[0], concepts[1]);
+    }
+
+
+    /**
      * POST /operands
      *
      * @param target
