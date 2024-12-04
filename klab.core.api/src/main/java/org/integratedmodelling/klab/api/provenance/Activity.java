@@ -113,6 +113,13 @@ public interface Activity extends Provenance.Node {
      */
     String getDescription();
 
+    /**
+     * Non-null for all activities that manipulate an observation, including those that failed.
+     *
+     * @return
+     */
+    String getObservationUrn();
+
     Outcome getOutcome();
 
     String getStackTrace();

@@ -24,6 +24,7 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     private KlabService.Type serviceType;
     private String dataflow;
     private String urn;
+    private String observationUrn;
 
     @Override
     public long getStart() {
@@ -92,6 +93,15 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    @Override
+    public String getObservationUrn() {
+        return this.observationUrn;
+    }
+
+    public void setObservationUrn(String observationUrn) {
+        this.observationUrn = observationUrn;
     }
 
     /**

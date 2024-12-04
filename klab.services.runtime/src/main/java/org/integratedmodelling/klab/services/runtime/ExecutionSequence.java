@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
@@ -183,6 +184,8 @@ public class ExecutionSequence {
                     }
                 }
 
+                // TODO this should return a list of candidates, to match based on the parameters. For numeric there
+                //  should be a float and double version.
                 var descriptor = componentRegistry.getFunctionDescriptor(call);
                 if (descriptor.serviceInfo.getGeometry().isScalar()) {
 
@@ -206,12 +209,19 @@ public class ExecutionSequence {
                     }
 
                     var scale = Scale.create(observation.getGeometry());
-                    Storage storage = digitalTwin.stateStorage().getOrCreateStorage(observation,
-                            Storage.class);
+
+                    // if we're a quality, we need storage at the discretion of the StorageManager.
+                    Storage storage = observation.getObservable().is(SemanticType.QUALITY) ?
+                                      digitalTwin.stateStorage().getOrCreateStorage(observation,
+                                              Storage.class) :
+                                      null;
                     /*
                      * Create a runnable with matched parameters and have it set the context observation
-                     * TODO allow multiple methods taking different storage implementations, enabling the
-                     *  storage manager to be configured for the wanted precision
+                     * TODO allow multiple methods with same annotation, taking different storage
+                     *  implementations, enabling the storage manager to be configured for the wanted precision
+                     *
+                     * Should match arguments, check if they all match, and if not move to the next until
+                     * no available implementations remain.
                      */
                     List<Object> runArguments = new ArrayList<>();
                     if (descriptor.method != null) {

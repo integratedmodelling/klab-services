@@ -224,6 +224,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 for (var asset : assets) {
                     if (asset instanceof ObservationImpl obs) {
                         observation = obs;
+                        activity.setObservationUrn(obs.getUrn());
                     } else if (asset instanceof Throwable t) {
                         activity.setStackTrace(ExceptionUtils.getStackTrace(t));
                     }
@@ -542,6 +543,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 // TODO
                 instance.setStart(node.get("start").asLong());
                 instance.setEnd(node.get("end").asLong());
+                instance.setObservationUrn(node.get("observationUrn").asString());
                 instance.setName(node.get("name").asString());
                 instance.setServiceName(node.get("serviceName").isNull() ? null :
                                         node.get("serviceName").asString());
@@ -761,6 +763,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     private String matchAsset(RuntimeAsset asset, String name, String queryVariable) {
+
         var ret = switch (asset) {
             case Activity activity -> name + ".id = $" + queryVariable;
             case Observation observation -> name + ".id = $" + queryVariable;
@@ -994,28 +997,52 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     private List<Activity> getActivity(ContextScope scope, Object... queriables) {
 
         Map<String, Object> queryParameters = new LinkedHashMap<>();
-        var query = new StringBuilder(getScopeQuery(scope, queryParameters) + "-[:HAS_PROVENANCE]->" +
-                "(:Provenance)-[:HAS_CHILD]->");
 
+        Activity rootActivity = null;
         if (queriables != null) {
             for (var parameter : queriables) {
-                if (parameter instanceof Observable observable) {
-                    //
-                } else if (parameter instanceof Activity rootActivity) {
+                if (parameter instanceof Activity root) {
+                    rootActivity = root;
                 } else if (parameter instanceof Long id) {
                     queryParameters.put("id", id);
-                    query = new StringBuilder("MATCH (a:Activity {id: $id}");
                 } else if (parameter instanceof Observation observation) {
-                    // define start node as the one with the observation URN
+                    queryParameters.put("observationUrn", observation.getUrn());
                 } else if (parameter instanceof Activity.Type activityType) {
-                    queryParameters.put("name", activityType.name());
-                    query.append("(a:Activity {name: $name}");
+                    queryParameters.put("type", activityType.name());
                 }
             }
         }
 
-        var result = query(query.append(") return a").toString(), queryParameters, scope);
+        var query = assetQuery("a", "Activity", queryParameters.keySet());
+        if (rootActivity != null) {
+            query.append("<-[*]-(r:Activity {id: $rootActivityId})");
+            queryParameters.put("rootActivityId", rootActivity.getId());
+        } else {
+            query.append("<-[*]-(p:Provenance {id: $provenanceId})");
+            queryParameters.put("provenanceId", scope.getId()+".PROVENANCE");
+        }
+
+        var result = query(query.append(" return a").toString(), queryParameters, scope);
         return adapt(result, Activity.class, scope);
+    }
+
+    private StringBuilder assetQuery(String variableName, String assetLabel, Collection<String> keys) {
+
+        var ret = new StringBuilder("MATCH (").append(variableName).append(":").append(assetLabel);
+
+        if (keys.isEmpty()) {
+            ret.append(")");
+        } else {
+            int n = 0;
+            for (String key : keys) {
+                ret.append(n == 0 ? " {" : ", ");
+                ret.append(key).append(": $").append(key);
+                n++;
+            }
+            ret.append("})");
+        }
+
+        return ret;
     }
 
     private List<Agent> getAgent(ContextScope scope, Object... queriables) {
