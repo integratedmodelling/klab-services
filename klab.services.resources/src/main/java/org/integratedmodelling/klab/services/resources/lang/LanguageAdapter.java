@@ -10,13 +10,11 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.lang.ExpressionCode;
-import org.integratedmodelling.klab.api.lang.LogicalConnector;
-import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.*;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
@@ -89,13 +87,12 @@ public enum LanguageAdapter {
 
         if (tokens.isEmpty()) {
             return null;
-        } else if (tokens.size() == 1) {
-            return tokens.getFirst();
         }
 
-        Set<SemanticType> type = null;
+        // TODO first thing check if there are AND or OR restrictions and behave accordingly
 
         KimConceptImpl ret = null;
+        Set<SemanticType> type = null;
         List<KimConcept> roles = new ArrayList<>();
         List<KimConcept> traits = new ArrayList<>();
 
@@ -129,6 +126,49 @@ public enum LanguageAdapter {
                 return o1.getUrn().compareTo(o2.getUrn());
             }
         });
+//
+//        if (semantics.getUnaryOperator() != null && semantics.getUnaryOperator().getFirst() != null) {
+//            ret.setSemanticModifier(UnarySemanticOperator.valueOf(semantics.getUnaryOperator().getFirst().name()));
+//            if (semantics.getUnaryOperator().getSecond() != null) {
+//                // TODO not sure we have any situation when there is more than one secondary concept
+//                ret.setComparisonConcept(adaptSemantics(semantics.getUnaryOperator().getSecond().getFirst(), namespace
+//                        , projectName, documentClass));
+//            }
+//        }
+//
+//        for (var restriction : semantics.getRestrictions()) {
+//            // TODO handle "each" - collective character of the argument, not sure that happens
+//            var restricting = restriction.getSecond();
+//            switch (restriction.getFirst()) {
+//                case OF -> {
+//                    ret.setInherent(adaptSemantics(restricting.getFirst(), namespace,projectName, documentClass));
+//                }
+//                case FOR -> {
+//                    ret.setGoal(adaptSemantics(restricting.getFirst(), namespace,projectName, documentClass));
+//                }
+//                case WITH -> {
+//                    ret.setCompresent(adaptSemantics(restricting.getFirst(), namespace,projectName, documentClass));
+//                }
+//                case ADJACENT -> {
+//                    ret.setAdjacent(adaptSemantics(restricting.getFirst(), namespace,projectName, documentClass));
+//                }
+//                case CAUSING -> {
+//                    ret.setCaused(adaptSemantics(restricting.getFirst(), namespace,projectName, documentClass));
+//                }
+//                case CAUSED_BY -> {
+//                    ret.setCausant(adaptSemantics(restricting.getFirst(), namespace,projectName, documentClass));
+//                }
+//                case LINKING -> {
+//                    ret.setRelationshipSource(adaptSemantics(restricting.getFirst(), namespace,projectName, documentClass));
+//                    ret.setRelationshipTarget(adaptSemantics(restricting.get(1), namespace,projectName, documentClass));
+//                }
+//                case DURING -> {
+//                    ret.setCooccurrent(adaptSemantics(restricting.getFirst(), namespace,projectName, documentClass));
+//                }
+//                default -> throw new KlabInternalErrorException("Unexpected concept restriction with semantic clause " + restriction.getFirst());
+//            }
+//        }
+
 
         // rebuild urn
         StringBuilder urn = new StringBuilder();
@@ -148,7 +188,7 @@ public enum LanguageAdapter {
     }
 
     public KimConceptImpl adaptSemanticToken(SemanticSyntax semantics, String namespace, String projectName,
-                                         KlabAsset.KnowledgeClass documentClass) {
+                                             KlabAsset.KnowledgeClass documentClass) {
 
         KimConceptImpl ret = new KimConceptImpl();
 
@@ -185,16 +225,21 @@ public enum LanguageAdapter {
             }
         }
 
+        if (semantics.getUnaryOperator() != null && semantics.getUnaryOperator().getFirst() != null) {
+            ret.setSemanticModifier(UnarySemanticOperator.valueOf(semantics.getUnaryOperator().getFirst().name()));
+            if (semantics.getUnaryOperator().getSecond() != null) {
+                // TODO not sure we have any situation when there is more than one secondary concept
+                ret.setComparisonConcept(adaptSemantics(semantics.getUnaryOperator().getSecond().getFirst(), namespace
+                        , projectName, documentClass));
+            }
+        }
+
+
         for (var restriction : semantics.getRestrictions()) {
             switch (restriction.getFirst()) {
                 case OF -> {
-                    // TODO
                     ret.setInherent(adaptSemantics(restriction.getSecond().getFirst(), namespace,
                             projectName, documentClass));
-                    //                    if (restriction.getFirst() == SemanticSyntax.BinaryOperator
-                    //                    .OF_EACH) {
-                    //                        ret.setDistributedInherent(SemanticRole.INHERENT);
-                    //                    }
                 }
                 case FOR -> {
                     ret.setGoal(adaptSemantics(restriction.getSecond().getFirst(), namespace, projectName,

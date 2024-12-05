@@ -1,7 +1,9 @@
 package org.integratedmodelling.common.lang.kim;
 
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.lang.SemanticClause;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 
@@ -772,5 +774,28 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
             comparisonConcept.visit(visitor);
         }
 
+    }
+
+    @Override
+    public Triple<UnarySemanticOperator, KimConcept, KimConcept> semanticOperation() {
+        if (semanticModifier != null) {
+            return Triple.of(semanticModifier, observable, comparisonConcept);
+        }
+        return null;
+    }
+
+    @Override
+    public KimConcept semanticClause(SemanticClause semanticClause) {
+        return switch (semanticClause) {
+            case OF -> inherent;
+            case FOR -> goal;
+            case WITH -> compresent;
+            case CAUSED_BY -> causant;
+            case ADJACENT_TO -> adjacent;
+            case CAUSING -> caused;
+            case DURING -> temporalInherent;
+            case LINKING -> relationshipSource;
+            case TO -> relationshipTarget;
+        };
     }
 }

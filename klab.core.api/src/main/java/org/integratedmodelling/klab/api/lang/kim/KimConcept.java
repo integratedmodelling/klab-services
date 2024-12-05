@@ -1,7 +1,9 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.lang.SemanticClause;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 
 import java.util.Collection;
@@ -165,6 +167,22 @@ public interface KimConcept extends KlabStatement {
     boolean isPattern();
 
     Collection<String> getPatternVariables();
+
+    /**
+     * If the concept is the result of a unary operation applied to one or two arguments, return the operator along with its
+     * argument. Otherwise return null;
+     *
+     * @return
+     */
+    Triple<UnarySemanticOperator, KimConcept, KimConcept> semanticOperation();
+
+    /**
+     * If the concept contains the passed modifier, return its argument, otherwise return null.
+     *
+     * @param semanticClause
+     * @return
+     */
+    KimConcept semanticClause(SemanticClause semanticClause);
 
     /**
      * Return any temporal inherency for this occurrent ('during each').

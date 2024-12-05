@@ -241,7 +241,10 @@ public class CLIReasonerView {
 
             var current = new ArrayList<String>();
             for (var token : arguments) {
-                if (token.equals(",")) {
+                if (token.endsWith(",")) {
+                    if (token.trim().length() > 1) {
+                        current.add(token.trim().substring(0, token.length()-1));
+                    }
                     tokens.add(current);
                     current = new ArrayList<>();
                 } else {
