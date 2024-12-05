@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -27,10 +28,7 @@ import org.ojalgo.concurrent.Parallelism;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -55,6 +53,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     protected ServiceContextScope parent;
     protected Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
             new LinkedHashMap<>();
+    protected Map<Observation, Geometry> currentlyObservedGeometries = new HashMap<>();
 
     LoadingCache<Long, Observation> observationCache;
 
@@ -302,6 +301,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                 } else {
                     ret.resolutionConstraints.put(constraint.getType(), constraint);
                 }
+            }
+
+            var observedGeometry = getConstraint(ResolutionConstraint.Type.ObserverGeometry, Geometry.class);
+            if (observedGeometry != null && observer != null) {
+                this.currentlyObservedGeometries.put(observer, observedGeometry);
             }
         }
         return ret;

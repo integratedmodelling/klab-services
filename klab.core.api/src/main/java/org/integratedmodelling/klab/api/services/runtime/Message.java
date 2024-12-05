@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -232,6 +233,10 @@ public interface Message extends Serializable {
         ResolutionSuccessful(Queue.Events, Observation.class),
         ResolutionAborted(Queue.Events, Observation.class),
         ResolutionStarted(Queue.Events, Observation.class),
+
+        ActivityStarted(Queue.Events, Activity.class),
+        ActivityFinished(Queue.Events, Activity.class),
+        ActivityAborted(Queue.Events, Activity.class),
 
         ContextClosed(Queue.Events, String.class),
 

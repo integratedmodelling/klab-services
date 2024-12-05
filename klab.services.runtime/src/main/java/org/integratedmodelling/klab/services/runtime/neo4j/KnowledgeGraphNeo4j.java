@@ -29,6 +29,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -253,10 +254,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 if (outcome == null) {
                     // Log an internal failure (no success or failure, should not happen)
                     Logging.INSTANCE.error("Internal error: activity did not properly finish: " + activity);
+                    scope.send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ActivityAborted, activity);
                     transaction.rollback();
                 } else if (outcome == Scope.Status.FINISHED) {
+                    scope.send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ActivityFinished, activity);
                     transaction.commit();
                 } else if (outcome == Scope.Status.ABORTED) {
+                    scope.send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ActivityAborted, activity);
                     transaction.rollback();
                 }
 
@@ -356,6 +360,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             KnowledgeGraphNeo4j.this.link(provenanceNode, activity, DigitalTwin.Relationship.HAS_CHILD,
                     scope);
         }
+
+        scope.send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ActivityStarted, ret.activity);
 
         // open transaction if we are the root operation. We only commit within it.
         ret.transaction = ret.parent == null ?
