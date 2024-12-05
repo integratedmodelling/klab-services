@@ -151,8 +151,9 @@ public class CoreOntology {
         public static final String HAS_SUBJECTIVE_TRAIT_PROPERTY = "odo:hasSubjectiveTrait";
         public static final String IS_SUBJECTIVE = "odo:isSubjectiveTrait";
         public static final String IS_INHERENT_TO_PROPERTY = "odo:isInherentTo";
-        public static final String DESCRIBES_OBSERVABLE_PROPERTY = "odo:describesObservable";
-        public static final String IS_COMPARED_TO_PROPERTY = "odo:isComparedTo";
+        // TODO decide which ones go in klab and which in ODO
+        public static final String DESCRIBES_OBSERVABLE_PROPERTY = "klab:describesObservable";
+        public static final String IS_COMPARED_TO_PROPERTY = "klab:isComparedTo";
         public static final String HAS_ROLE_PROPERTY = "odo:hasRole";
         public static final String DENIABILITY_PROPERTY = "odo:isDeniable";
         public static final String APPLIES_TO_PROPERTY = "odo:appliesTo";
