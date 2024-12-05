@@ -83,6 +83,7 @@ public class ObservableBuilder implements Observable.Builder {
     // withDeclaration() and the
     // builder is merely building it.
     private boolean declarationIsComplete = false;
+    private String urn;
 
     // marks the observable to build as dereifying for a resolution of inherents TODO check if this is
     //  still relevant
@@ -178,7 +179,7 @@ public class ObservableBuilder implements Observable.Builder {
         this.caused = other.caused;
         this.comparison = other.comparison;
         this.compresent = other.compresent;
-        //        this.context = other.context;
+        this.urn = other.urn;
         this.inherent = other.inherent;
         this.cooccurrent = other.cooccurrent;
         this.goal = other.goal;
@@ -208,6 +209,7 @@ public class ObservableBuilder implements Observable.Builder {
     public ObservableBuilder withDeclaration(KimConcept declaration) {
         this.declaration = (KimConceptImpl) declaration;
         this.declarationIsComplete = true;
+        this.urn = declaration.getUrn();
         return this;
     }
 
@@ -797,6 +799,7 @@ public class ObservableBuilder implements Observable.Builder {
         // finalize the concept by recomputing its URN
         if (declaration instanceof KimConceptImpl impl) {
             impl.finalizeDefinition();
+            this.urn = impl.getUrn();
         }
 
         //        if (scope.hasErrors()) {
@@ -1446,6 +1449,11 @@ public class ObservableBuilder implements Observable.Builder {
         if (this.descriptionType != null) {
             // TODO validate
             ret.setDescriptionType(this.descriptionType);
+        }
+
+        if (this.urn != null) {
+            // override the precomputed URN
+            ret.setUrn(this.urn);
         }
 
         return ret;
