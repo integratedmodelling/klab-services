@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
 import org.integratedmodelling.common.knowledge.ObservableImpl;
+import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.common.lang.kim.KimConceptImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -22,7 +23,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
-import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.QualifiedName;
 
@@ -64,7 +64,7 @@ public class ObservableBuilder implements Observable.Builder {
     private Unit unit;
     private Currency currency;
     private List<Annotation> annotations = new ArrayList<>();
-    private boolean isTrivial = true;
+//    private boolean isTrivial = true;
     private KimConcept declaration;
     private boolean axiomsAdded = false;
     private String referenceName = null;
@@ -154,12 +154,6 @@ public class ObservableBuilder implements Observable.Builder {
             this.traits.add(trait);
         }
 
-        this.isTrivial =
-                /*this.context == null &&
-                 * */this.adjacent == null && this.inherent == null && this.causant == null
-                && this.caused == null && this.cooccurrent == null && this.goal == null && this.compresent == null
-                && this.roles.isEmpty() && this.traits.isEmpty();
-
         // these are only used if buildObservable() is called
         this.unit = observable.getUnit();
         this.currency = observable.getCurrency();
@@ -201,8 +195,6 @@ public class ObservableBuilder implements Observable.Builder {
         this.reasoner = other.reasoner;
         this.defaultValue = other.defaultValue;
         this.resolutionDirectives.addAll(other.resolutionDirectives);
-
-        checkTrivial();
     }
 
     //    @Override
@@ -219,7 +211,6 @@ public class ObservableBuilder implements Observable.Builder {
         if (!declarationIsComplete) {
             ((KimConceptImpl) this.declaration).setInherent(getDeclaration(concept));
         }
-        isTrivial = false;
         return this;
     }
 
@@ -242,7 +233,6 @@ public class ObservableBuilder implements Observable.Builder {
     @Override
     public Observable.Builder withTemporalInherent(Concept concept) {
         this.temporalInherent = concept;
-        isTrivial = false;
         return this;
     }
 
@@ -252,7 +242,6 @@ public class ObservableBuilder implements Observable.Builder {
         if (!declarationIsComplete) {
             ((KimConceptImpl) this.declaration).setCaused(getDeclaration(concept));
         }
-        isTrivial = false;
         return this;
     }
 
@@ -262,7 +251,6 @@ public class ObservableBuilder implements Observable.Builder {
         if (!declarationIsComplete) {
             ((KimConceptImpl) this.declaration).setCausant(getDeclaration(concept));
         }
-        isTrivial = false;
         return this;
     }
 
@@ -272,7 +260,6 @@ public class ObservableBuilder implements Observable.Builder {
         if (!declarationIsComplete) {
             ((KimConceptImpl) this.declaration).setCompresent(getDeclaration(concept));
         }
-        isTrivial = false;
         return this;
     }
 
@@ -286,7 +273,6 @@ public class ObservableBuilder implements Observable.Builder {
             this.declaration.getRoles().add(getDeclaration(concept));
         }
         this.roles.add(concept);
-        isTrivial = false;
         return this;
     }
 
@@ -296,7 +282,6 @@ public class ObservableBuilder implements Observable.Builder {
         if (!declarationIsComplete) {
             ((KimConceptImpl) this.declaration).setGoal(getDeclaration(goal));
         }
-        isTrivial = false;
         return this;
     }
 
@@ -306,7 +291,6 @@ public class ObservableBuilder implements Observable.Builder {
         if (!declarationIsComplete) {
             ((KimConceptImpl) this.declaration).setCooccurrent(getDeclaration(cooccurrent));
         }
-        isTrivial = false;
         return this;
     }
 
@@ -316,7 +300,6 @@ public class ObservableBuilder implements Observable.Builder {
         if (!declarationIsComplete) {
             ((KimConceptImpl) this.declaration).setAdjacent(getDeclaration(adjacent));
         }
-        isTrivial = false;
         return this;
     }
 
@@ -324,7 +307,6 @@ public class ObservableBuilder implements Observable.Builder {
     public Observable.Builder linking(Concept source, Concept target) {
         this.relationshipSource = source;
         this.relationshipTarget = target;
-        isTrivial = false;
         return this;
     }
 
@@ -451,7 +433,6 @@ public class ObservableBuilder implements Observable.Builder {
         hasUnaryOp = true;
         comparison = /*context =*/ inherent = /* classifier = downTo = */ caused = compresent = inherent =
                 null;
-        isTrivial = true;
     }
 
     @Override
@@ -575,9 +556,6 @@ public class ObservableBuilder implements Observable.Builder {
             }
             ret.declaration = ((KimConceptImpl) ret.declaration).removeComponents(declarations, removedRoles);
         }
-
-        ret.checkTrivial();
-
         return ret;
     }
 
@@ -652,8 +630,6 @@ public class ObservableBuilder implements Observable.Builder {
             }
             ret.declaration = ((KimConceptImpl) ret.declaration).removeComponents(declarations, removedRoles);
         }
-
-        ret.checkTrivial();
 
         return ret;
 
@@ -731,17 +707,14 @@ public class ObservableBuilder implements Observable.Builder {
             ret.declaration = ((KimConceptImpl) ret.declaration).removeComponents(declarations, removedRoles);
         }
 
-        ret.checkTrivial();
-
         return ret;
 
     }
 
-    void checkTrivial() {
-        this.isTrivial = causant == null && adjacent == null && caused == null && comparison == null
-                && compresent == null /*&& context ==
-                null*/ && inherent == null && cooccurrent == null & goal == null
-                && traits.isEmpty() && roles.isEmpty() && deferredTarget == null;
+    boolean isTrivial() {
+        return causant == null && adjacent == null && caused == null && comparison == null
+                && compresent == null && inherent == null && cooccurrent == null & goal == null
+                && traits.isEmpty() && roles.isEmpty() && deferredTarget == null && !hasUnaryOp;
     }
 
     @Override
@@ -757,7 +730,6 @@ public class ObservableBuilder implements Observable.Builder {
                 }
             }
         }
-        isTrivial = false;
         return this;
     }
 
@@ -1294,10 +1266,6 @@ public class ObservableBuilder implements Observable.Builder {
             id = main.getName();
         }
         return id;
-    }
-
-    private boolean isTrivial() {
-        return isTrivial;
     }
 
     public Concept getMainConcept() {
