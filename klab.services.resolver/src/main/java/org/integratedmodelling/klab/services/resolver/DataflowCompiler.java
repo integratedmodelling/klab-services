@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resolver;
 
+import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
@@ -14,6 +15,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
@@ -194,11 +196,32 @@ public class DataflowCompiler {
      * @return
      */
     private ServiceCall adaptContextualizer(Contextualizable contextualizer) {
+
+        ServiceCall ret = null;
+
         if (contextualizer.getServiceCall() != null) {
-            return contextualizer.getServiceCall();
+            ret = contextualizer.getServiceCall();
+        } else if (contextualizer.getResourceUrn() != null) {
+            ret = new ServiceCallImpl(RuntimeService.CoreFunctor.URN_RESOLVER.getServiceCall());
+        } else if (contextualizer.getAccordingTo() != null) {
+            ret = new ServiceCallImpl(RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCall());
+        } else if (contextualizer.getClassification() != null) {
+            ret = new ServiceCallImpl(RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCall());
+        } else if (contextualizer.getLookupTable() != null) {
+            ret = new ServiceCallImpl(RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCall());
+        } else if (contextualizer.getExpression() != null) {
+            ret = new ServiceCallImpl(RuntimeService.CoreFunctor.EXPRESSION_RESOLVER.getServiceCall());
+        } else if (contextualizer.getObservationStrategy() != null) {
+            ret = new ServiceCallImpl(RuntimeService.CoreFunctor.DEFER_RESOLUTION.getServiceCall());
+        } else if (contextualizer.getLiteral() != null) {
+            ret = new ServiceCallImpl(RuntimeService.CoreFunctor.CONSTANT_RESOLVER.getServiceCall());
         }
-        // TODO the rest
-        return null;
+
+        // TODO add remaining info from the contextualizable in the call's metadata
+
+
+        // TODO more?
+        return ret;
     }
 
 }

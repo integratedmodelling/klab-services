@@ -37,7 +37,7 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
     }
 
     @SuppressWarnings("unchecked")
-    public ServiceCallImpl(String name, Object[] parameters) {
+    public ServiceCallImpl(String name, Object... parameters) {
         this.urn = name;
         if (parameters != null && parameters.length == 1 && parameters[0] instanceof Parameters) {
             this.parameters.putAll((Parameters<String>) (parameters[0]));

@@ -52,8 +52,12 @@ public interface RuntimeService extends KlabService {
         private String serviceCall;
         private Map<String, Artifact.Type> arguments;
 
-        private CoreFunctor(String serviceCall) {
+        CoreFunctor(String serviceCall) {
             this.serviceCall = serviceCall;
+        }
+
+        public String getServiceCall() {
+            return serviceCall;
         }
 
         public static CoreFunctor classify(ServiceCall serviceCall) {

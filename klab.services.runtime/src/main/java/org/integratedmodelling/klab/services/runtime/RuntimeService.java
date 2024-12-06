@@ -563,7 +563,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                             "resolved component for service " + contextualizable.getServiceCall().getUrn()));
                 }
             } else if (contextualizable.getResourceUrn() != null) {
-                // TODO ensure resource is accessible
+                // TODO ensure resource or adapter is accessible
                 //                var resolution = resourcesService.resolveRe(contextualizable
                 //                .getServiceCall().getUrn(), scope);
                 //                if (resolution.isEmpty()) {
