@@ -866,7 +866,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         } else if (from != null && to == null) {
             ret = -50;
         } else if (from != null && to != null) {
-            ret = subsumes(to, from) ? assertedDistance(to, from) : -100;
+            ret = is(to, from) ? assertedDistance(to, from) : -100;
             if (ret >= 0) {
                 for (Concept t : traits(from)) {
                     boolean ok = hasTrait(to, t);
@@ -969,7 +969,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public boolean hasTrait(Semantics concept, Concept trait) {
         for (Concept c : traits(concept)) {
-            if (subsumes(c, trait)) {
+            if (is(c, trait)) {
                 return true;
             }
         }
@@ -984,7 +984,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public boolean hasRole(Semantics concept, Concept role) {
         for (Concept c : roles(concept)) {
-            if (subsumes(c, role)) {
+            if (is(c, role)) {
                 return true;
             }
         }
@@ -1246,7 +1246,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public boolean hasDirectTrait(Semantics type, Concept trait) {
 
         for (Concept c : directTraits(type)) {
-            if (subsumes(trait, c)) {
+            if (is(trait, c)) {
                 return true;
             }
         }
@@ -1257,7 +1257,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public boolean hasDirectRole(Semantics type, Concept trait) {
         for (Concept c : directRoles(type)) {
-            if (subsumes(trait, c)) {
+            if (is(trait, c)) {
                 return true;
             }
         }
@@ -1480,7 +1480,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public boolean subsumes(Semantics concept, Semantics other) {
+    public boolean is(Semantics concept, Semantics other) {
 
         if (concept == other || concept.equals(other)) {
             return true;
@@ -1492,7 +1492,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
          * definition.
          */
         if (inWorldview(concept, other)) {
-            if (Sets.intersection(concept.asConcept().getType(), other.asConcept().getType()).size() < concept.asConcept().getType().size()) {
+            var fundamentalType = SemanticType.fundamentalType(other.asConcept().getType());
+            if (fundamentalType != null && !Sets.intersection(concept.asConcept().getType(),
+                    other.asConcept().getType()).contains(fundamentalType)) {
                 return false;
             }
         }
@@ -1509,7 +1511,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         if (concept.is(SemanticType.UNION)) {
 
             for (Concept c : operands(concept)) {
-                if (subsumes(c, other)) {
+                if (is(c, other)) {
                     return true;
                 }
             }
@@ -1517,7 +1519,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         } else if (concept.is(SemanticType.INTERSECTION)) {
 
             for (Concept c : operands(concept)) {
-                if (!subsumes(c, other)) {
+                if (!is(c, other)) {
                     return false;
                 }
             }
@@ -1639,7 +1641,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
          */
         if (o2.isAbstract()) {
 
-            if (subsumes(o2, o1)) {
+            if (is(o2, o1)) {
                 return false;
             }
 
@@ -1648,7 +1650,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             Concept core1 = coreObservable(o1);
             Concept core2 = coreObservable(o2);
 
-            if (core1 == null || core2 == null || !(mustBeSameCoreType ? core1.equals(core2) : subsumes(core1,
+            if (core1 == null || core2 == null || !(mustBeSameCoreType ? core1.equals(core2) : is(core1,
                     core2))) {
                 return false;
             }
@@ -1805,7 +1807,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public boolean affectedBy(Semantics affected, Semantics affecting) {
         Concept described = describedType(affected);
         for (Concept c : affected(affecting)) {
-            if (subsumes(affected, c) || (described != null && subsumes(described, c))) {
+            if (is(affected, c) || (described != null && is(described, c))) {
                 return true;
             }
         }
@@ -1815,11 +1817,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public boolean createdBy(Semantics affected, Semantics affecting) {
         Concept described = describedType(affected);
-        if (described != null && subsumes(described, affecting)) {
+        if (described != null && is(described, affecting)) {
             return true;
         }
         for (Concept c : created(affecting)) {
-            if (subsumes(affected, c) || (described != null && subsumes(described, c))) {
+            if (is(affected, c) || (described != null && is(described, c))) {
                 return true;
             }
         }
@@ -1900,10 +1902,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         try {
 
-            if (concept.isAlias()) {
+            if (concept.isAlias() || concept.getUpperConceptDefined() != null) {
 
                 /*
-                 * can only have 'is' X or 'equals' X
+                 * can only have 'is' or 'equals' X; for core concepts 'is' means 'equals', and we use the
+                 * statement to establish the semantic type.
                  */
                 Concept parent = null;
                 if (concept.getUpperConceptDefined() != null) {
@@ -2168,11 +2171,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             List<Concept> ccs = new ArrayList<>(ret);
             boolean set = false;
             for (Concept kn : ccs) {
-                if (subsumes(c, kn)) {
+                if (is(c, kn)) {
                     ret.remove(kn);
                     ret.add(c);
                     set = true;
-                } else if (subsumes(kn, c)) {
+                } else if (is(kn, c)) {
                     set = true;
                 }
             }

@@ -103,7 +103,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     }
 
     @Override
-    public boolean subsumes(Semantics conceptImpl, Semantics other) {
+    public boolean is(Semantics conceptImpl, Semantics other) {
         return client.post(ServicesAPI.REASONER.SUBSUMES, List.of(conceptImpl.asConcept(),
                 other.asConcept()), Boolean.class);
     }

@@ -243,8 +243,11 @@ public abstract class ServiceClient implements KlabService {
          * within a service.
          */
         Channel channel = local ? new MessagingChannelImpl(this.authentication.getFirst(), false,
-                ownerService != null) :
-                          new ChannelImpl(this.authentication.getFirst());
+                ownerService != null) {
+            public String getId() {
+                return serviceId();
+            }
+        } : new ChannelImpl(this.authentication.getFirst());
 
         this.scope = new AbstractServiceDelegatingScope(channel) {
 
@@ -263,6 +266,7 @@ public abstract class ServiceClient implements KlabService {
                 return KlabService.Type.classify(serviceClass) == serviceType ?
                        (Collection<T>) List.of(ServiceClient.this) : Collections.emptyList();
             }
+
         };
 
         if (this.scopeListeners != null) {

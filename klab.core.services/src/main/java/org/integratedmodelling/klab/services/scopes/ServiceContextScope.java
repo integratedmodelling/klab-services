@@ -405,8 +405,4 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return Parallelism.CORES;
     }
 
-    @Override
-    public Storage getStorage(Observation observation) {
-        return digitalTwin.stateStorage().getExistingStorage(observation, Storage.class);
-    }
 }

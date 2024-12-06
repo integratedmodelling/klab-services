@@ -1390,8 +1390,8 @@ public class OWL {
         ArrayList<Concept> keep = new ArrayList<>();
 
         for (Concept zt : reas.traits(observable)) {
-            if (reas.subsumes(zt, getConcept(CoreOntology.NS.CORE_IDENTITY))
-                    || reas.subsumes(zt, getConcept(CoreOntology.NS.CORE_REALM))) {
+            if (reas.is(zt, getConcept(CoreOntology.NS.CORE_IDENTITY))
+                    || reas.is(zt, getConcept(CoreOntology.NS.CORE_REALM))) {
                 keep.add(zt);
             } else {
                 tret.add(zt);
@@ -2406,7 +2406,7 @@ public class OWL {
         if (c1 instanceof Concept && c2 instanceof Concept) {
 
             if (reasoner == null) {
-                return reas.subsumes(c1, c2);
+                return reas.is(c1, c2);
             }
             return getSubClasses(getOWLClass(c2.asConcept()), false).containsEntity(getOWLClass(c1.asConcept()));
 
@@ -2735,9 +2735,9 @@ public class OWL {
         if (otherConcept == null) {
             ret = reference;
         }
-        if (reas.subsumes(reference, otherConcept)) {
+        if (reas.is(reference, otherConcept)) {
             ret = otherConcept;
-        } else if (reas.subsumes(otherConcept, reference)) {
+        } else if (reas.is(otherConcept, reference)) {
             ret = reference;
         } else {
             for (Concept pp : getParents(reference)) {

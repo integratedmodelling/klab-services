@@ -412,6 +412,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                             resolution.success(scope, result, dataflow,
                                     "Resolution of observation _" + observation.getUrn() + "_ of **" + observation.getObservable().getUrn() + "**", resolver);
                             scope.send(Message.MessageClass.ObservationLifecycle,
+                                    dataflow.isEmpty() ? Message.MessageType.ResolutionUnsuccessful :
                                     Message.MessageType.ResolutionSuccessful, result);
                             resolutionActivity = resolution.getActivity();
                         } else {

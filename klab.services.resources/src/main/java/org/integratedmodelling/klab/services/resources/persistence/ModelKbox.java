@@ -666,7 +666,7 @@ public class ModelKbox extends ObservableKbox {
                 Concept type = observable.getSemantics();
                 if (isInstantiator) {
                     Concept context = scope.getService(Reasoner.class).inherent(type);
-                    if (context == null || !scope.getService(Reasoner.class).subsumes(
+                    if (context == null || !scope.getService(Reasoner.class).is(
                             context,
                             mainObservable.getSemantics())) {
                         type = observable.builder(monitor).of(mainObservable.getSemantics()).buildConcept();
@@ -878,7 +878,7 @@ public class ModelKbox extends ObservableKbox {
             Concept specialized = scope.getService(Reasoner.class).directInherent(main.getSemantics());
             Concept oobsContext = scope.getService(Reasoner.class).inherent(oobs);
             if (specialized != null
-                    && (oobsContext == null || !scope.getService(Reasoner.class).subsumes(
+                    && (oobsContext == null || !scope.getService(Reasoner.class).is(
                     oobsContext,
                     specialized))) {
                 oobs = oobs.builder(monitor).of(specialized).build();

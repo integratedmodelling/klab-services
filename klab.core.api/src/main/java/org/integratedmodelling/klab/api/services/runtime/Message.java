@@ -230,6 +230,7 @@ public interface Message extends Serializable {
         /**
          * Resolver event messages
          */
+        ResolutionUnsuccessful(Queue.Events, Observation.class),
         ResolutionSuccessful(Queue.Events, Observation.class),
         ResolutionAborted(Queue.Events, Observation.class),
         ResolutionStarted(Queue.Events, Observation.class),
@@ -428,6 +429,7 @@ public interface Message extends Serializable {
         }
 
         boolean queueOverridden = false;
+        Object payloadIfAbsent = null;
         MessageImpl ret = new MessageImpl();
         ret.setIdentity(identity);
         //        Notification.Type notype = null;
@@ -452,6 +454,7 @@ public interface Message extends Serializable {
                 ret.setPayload(ob);
             } else if (ob instanceof ActivityImpl activity) {
                 ret.setTaskId(activity.getTaskId());
+                payloadIfAbsent = activity;
             } else if (ob != null) {
                 if (ret.getPayload() == null) {
                     ret.setPayload(ob);
@@ -472,6 +475,10 @@ public interface Message extends Serializable {
 
         if (ret.getMessageType() != null && !queueOverridden) {
             ret.setQueue(ret.getMessageType().queue);
+        }
+
+        if (ret.getPayload(Object.class) == null && payloadIfAbsent != null) {
+            ret.setPayload(payloadIfAbsent);
         }
 
         return ret;

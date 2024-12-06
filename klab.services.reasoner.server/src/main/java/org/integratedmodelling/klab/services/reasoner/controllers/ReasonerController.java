@@ -3,14 +3,11 @@ package org.integratedmodelling.klab.services.reasoner.controllers;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.reasoner.objects.DeclarationRequest;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
@@ -18,8 +15,6 @@ import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequ
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.reasoner.ReasonerServer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -94,7 +89,7 @@ public class ReasonerController {
      */
     @PostMapping(ServicesAPI.REASONER.SUBSUMES)
     public boolean subsumes(@RequestBody Concept[] concepts) {
-        return reasoner.klabService().subsumes(concepts[0], concepts[1]);
+        return reasoner.klabService().is(concepts[0], concepts[1]);
     }
 
     /**

@@ -119,13 +119,13 @@ public interface Reasoner extends KlabService {
     Observable declareObservable(KimObservable observableDeclaration, Map<String, Object> patternVariables);
 
     /**
-     * Basic operation for subsumption between concepts.
+     * Basic reasoning operation for subsumption between concepts.
      *
-     * @param conceptImpl
-     * @param other
+     * @param conceptImpl the concept being checked for subsumption by <code>other</code>
+     * @param other the concept we are checking as a possible subsumer of <code>conceptImpl</code>
      * @return
      */
-    boolean subsumes(Semantics conceptImpl, Semantics other);
+    boolean is(Semantics conceptImpl, Semantics other);
 
     /**
      * If the target is a union or intersection, return the operands. Otherwise return a singleton with the

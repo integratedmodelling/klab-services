@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.scope;
 import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -157,6 +158,14 @@ public interface ContextScope extends SessionScope {
     ContextScope between(Observation source, Observation target);
 
     /**
+     * Each scope manages a digital twin. At client side or on slave servers this may be null or limited in
+     * functionality.
+     *
+     * @return
+     */
+    DigitalTwin getDigitalTwin();
+
+    /**
      * Add another context to this one to build a higher-level one. Authentication details will define what is
      * seen and done.
      *
@@ -182,15 +191,7 @@ public interface ContextScope extends SessionScope {
      * has failed, the observation in the future will be unresolved.
      */
     Future<Observation> observe(@Mutable Observation observation);
-    
-    /**
-     * Get the current storage for a quality observation. Client scopes may get a very inefficient remote
-     * storage handle or an exception.
-     *
-     * @param observation
-     * @return
-     */
-    Storage getStorage(Observation observation);
+
     /**
      * Return all observations affected by the passed one in this scope, either through model dependencies or
      * behaviors. "Affected" is any kind of reaction, not necessarily implied by semantics.
@@ -448,11 +449,10 @@ public interface ContextScope extends SessionScope {
     }
 
     /**
-     * The geometry currently observed by the current observer, which may be null if the observer is
-     * null, and may NOT otherwise. This is set when an observer is defined, but is independent
-     * of the observer's own geometry, and may change through calls independent of the observer as long
-     * as an observer is there.
-     *
+     * The geometry currently observed by the current observer, which may be null if the observer is null, and
+     * may NOT otherwise. This is set when an observer is defined, but is independent of the observer's own
+     * geometry, and may change through calls independent of the observer as long as an observer is there.
+     * <p>
      * Observer geometry is set by adding a {@link ResolutionConstraint} to the scope.
      *
      * @return

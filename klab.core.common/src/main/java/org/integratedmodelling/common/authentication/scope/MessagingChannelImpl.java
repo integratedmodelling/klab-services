@@ -34,7 +34,7 @@ import java.util.function.Predicate;
  * queues and dispatches the messages to their respective handlers. Can be configured as a sender, receiver or
  * both.
  */
-public class MessagingChannelImpl extends ChannelImpl implements MessagingChannel {
+public abstract class MessagingChannelImpl extends ChannelImpl implements MessagingChannel {
 
     private Channel channel_;
     private boolean sender;
@@ -42,13 +42,15 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     private ConnectionFactory connectionFactory = null;
     private Connection connection = null;
     private final Map<Message.Queue, String> queueNames = new HashMap<>();
-    private final Map<String, List<Consumer<Message>>> queueConsumers = new HashMap<>();
     private boolean connected;
 
+    private static final Map<String, Map<String, List<Consumer<Message>>>> queueConsumers = new HashMap<>();
     private static final Map<String, Map<Message.Match, MessageFuture<?>>> messageFutures =
             Collections.synchronizedMap(new HashMap<>());
     private static final Map<String, Set<Message.Match>> messageMatchers =
             Collections.synchronizedMap(new HashMap<>());
+
+    public abstract String getId();
 
     public MessagingChannelImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity);
@@ -69,7 +71,6 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         this.connection = parent.connection;
         this.connected = parent.connected;
         this.queueNames.putAll(parent.queueNames);
-        this.queueConsumers.putAll(parent.queueConsumers);
         copyListeners(parent);
     }
 
@@ -92,8 +93,15 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         return super.send(args);
     }
 
+    public void installQueueConsumer(String scopeId,Message.Queue queue, Consumer<Message> consumer) {
+        queueConsumers.computeIfAbsent(scopeId, k -> new HashMap<>())
+                      .computeIfAbsent(scopeId + "." + queue.name().toLowerCase(),
+                              q -> new ArrayList<Consumer<Message>>()).add(consumer);
+    }
+
     public void installQueueConsumer(String queueId, Consumer<Message> consumer) {
-        queueConsumers.computeIfAbsent(queueId, k -> new ArrayList<>()).add(consumer);
+        queueConsumers.computeIfAbsent(getId(), k -> new HashMap<>())
+                      .computeIfAbsent(queueId, q -> new ArrayList<Consumer<Message>>()).add(consumer);
     }
 
     protected void closeMessaging() {
@@ -133,9 +141,6 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         }
 
         return this.channel_;
-        //        }
-
-        //        return null;
     }
 
     protected Channel getChannel(Message.Queue queue) {
@@ -164,7 +169,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
 
     /**
      * Called on the intended target, should use the local connection fields. This is normally only called on
-     * the session scope.
+     * scopes below the user scope.
      *
      * @param brokerUrl
      * @param queuesHeader
@@ -229,15 +234,20 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
                             var message = Utils.Json.parseObject(new String(delivery.getBody(),
                                     StandardCharsets.UTF_8), Message.class);
-//
-//                            System.out.println("DIO PESCHIERE " + MessagingChannelImpl.this.getClass().getCanonicalName() + " <- " + message);
 
-                            // if there is a consumer installed fo this queue, run it. Then if it returns
-                            //  continue, continue, else stop
-                            var consumers = queueConsumers.get(queueId);
-                            if (consumers != null) {
-                                for (var consumer : consumers) {
+                            System.out.println("ZIO PERA " + message);
+
+                            // if there is a consumer installed for this queue, run it
+                            var consumers = queueConsumers.get(scopeId);
+                            if (consumers != null && consumers.containsKey(queueId)) {
+                                for (var consumer : consumers.get(queueId)) {
                                     consumer.accept(message);
+                                    // TODO the consumer may call reply() on the message and if that was done,
+                                    //  we could reply with the message ID as long as the channel is also a
+                                    //  sender.
+                                    //  reply() would take all the parameters of Message.create() and would
+                                    //  automatically
+                                    //  install the requesting message ID.
                                 }
                             }
 
@@ -329,7 +339,13 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                         + ret +
                         " through broker " + connectionFactory.getHost() + (receiver ? " (R)" : "") + (sender ?
                                                                                                        " (T)" : ""));
+
+                if (!ret.isEmpty()) {
+                    configureQueueConsumers(ret);
+                }
+
             }
+
 
             return ret;
         }
@@ -368,6 +384,15 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     @Override
     public boolean hasMessaging() {
         return connection != null && connection.isOpen();
+    }
+
+    /**
+     * Do nothing implementation, override to install consumers when needed.
+     *
+     * @param availableQueues
+     */
+    protected void configureQueueConsumers(Set<Message.Queue> availableQueues) {
+
     }
 
     @Override
@@ -424,6 +449,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         if (this instanceof SessionScope scope) {
             messageFutures.remove(scope.getId());
             messageMatchers.remove(scope.getId());
+            queueConsumers.remove(scope.getId());
         }
     }
 

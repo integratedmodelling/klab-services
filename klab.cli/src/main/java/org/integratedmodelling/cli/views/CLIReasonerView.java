@@ -27,7 +27,7 @@ import java.util.function.Function;
         ""}, subcommands = {CLIReasonerView.Children.class, CLIReasonerView.Parents.class,
                             CLIReasonerView.Traits.class,
                             CLIReasonerView.Type.class, CLIReasonerView.BaseConcept.class,
-                            CLIReasonerView.Compatible.class,
+                            CLIReasonerView.Compatible.class, CLIReasonerView.Subsumes.class,
                             CLIReasonerView.Strategy.class, CLIReasonerView.Export.class,
                             CLIReasonerView.Matching.class, CLIReasonerView.Roles.class})
 public class CLIReasonerView {
@@ -216,6 +216,52 @@ public class CLIReasonerView {
                 var distance = reasoner.match(concepts.get(0), concepts.get(1));
                 out.println("Match check  " + (distance ? "SUCCESSFUL" : "UNSUCCESSFUL") + ": " +
                         concepts.get(0) + " matching pattern " + concepts.get(1));
+            }
+        }
+    }
+
+
+    @Command(name = "is", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+            "Check if the second concept subsumes the first, i.e. the first 'is' the second."}, subcommands = {})
+    public static class Subsumes implements Runnable {
+
+        @Spec
+        CommandSpec commandSpec;
+
+        @Parameters
+        java.util.List<String> arguments;
+
+        @Override
+        public void run() {
+
+            PrintWriter out = commandSpec.commandLine().getOut();
+            PrintWriter err = commandSpec.commandLine().getErr();
+
+            java.util.List<java.util.List<String>> tokens = new ArrayList<>();
+
+            var current = new ArrayList<String>();
+            for (var token : arguments) {
+                if (token.endsWith(",")) {
+                    if (token.trim().length() > 1) {
+                        current.add(token.trim().substring(0, token.length()-1));
+                    }
+                    tokens.add(current);
+                    current = new ArrayList<>();
+                } else {
+                    current.add(token);
+                }
+            }
+            tokens.add(current);
+
+            var urns = tokens.stream().map(l -> Utils.Strings.join(l, " ")).toList();
+            var reasoner = KlabCLI.INSTANCE.modeler().currentUser().getService(Reasoner.class);
+            var concepts = urns.stream().map(reasoner::resolveConcept).toList();
+            if (concepts.size() != 2) {
+                err.println("Not enough arguments for subsumption check. Use commas to separate 2 or 3 " +
+                        "definitions.");
+            } else {
+                var distance = reasoner.is(concepts.get(0), concepts.get(1));
+                out.println(concepts.get(0) + (distance ? " IS " : " IS NOT ") + concepts.get(1));
             }
         }
     }

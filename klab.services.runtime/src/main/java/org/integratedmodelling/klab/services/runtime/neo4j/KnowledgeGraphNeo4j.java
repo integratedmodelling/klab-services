@@ -221,6 +221,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
             ObservationImpl observation = null;
             double coverage = 1.0;
+            var resolutionEmpty = false;
+
             if (assets != null) {
                 for (var asset : assets) {
                     if (asset instanceof ObservationImpl obs) {
@@ -228,8 +230,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                         activity.setObservationUrn(obs.getUrn());
                     } else if (asset instanceof Throwable t) {
                         activity.setStackTrace(ExceptionUtils.getStackTrace(t));
+                    } else if (asset instanceof Dataflow<?> dataflow) {
+                        resolutionEmpty = dataflow.isEmpty();
                     }
                 }
+            }
+
+            if (resolutionEmpty && activity.getType() == Activity.Type.RESOLUTION) {
+                activity.setOutcome(Activity.Outcome.FAILURE);
+                activity.setDescription("Resolution of " + observation + " failed");
             }
 
             if (this.actuator != null) {
@@ -254,13 +263,16 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 if (outcome == null) {
                     // Log an internal failure (no success or failure, should not happen)
                     Logging.INSTANCE.error("Internal error: activity did not properly finish: " + activity);
-                    scope.send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ActivityAborted, activity);
+                    scope.send(Message.MessageClass.ObservationLifecycle,
+                            Message.MessageType.ActivityAborted, activity);
                     transaction.rollback();
                 } else if (outcome == Scope.Status.FINISHED) {
-                    scope.send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ActivityFinished, activity);
+                    scope.send(Message.MessageClass.ObservationLifecycle,
+                            Message.MessageType.ActivityFinished, activity);
                     transaction.commit();
                 } else if (outcome == Scope.Status.ABORTED) {
-                    scope.send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ActivityAborted, activity);
+                    scope.send(Message.MessageClass.ObservationLifecycle,
+                            Message.MessageType.ActivityAborted, activity);
                     transaction.rollback();
                 }
 
@@ -361,7 +373,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                     scope);
         }
 
-        scope.send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ActivityStarted, ret.activity);
+        scope.send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ActivityStarted,
+                ret.activity);
 
         // open transaction if we are the root operation. We only commit within it.
         ret.transaction = ret.parent == null ?
@@ -1025,7 +1038,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             queryParameters.put("rootActivityId", rootActivity.getId());
         } else {
             query.append("<-[*]-(p:Provenance {id: $provenanceId})");
-            queryParameters.put("provenanceId", scope.getId()+".PROVENANCE");
+            queryParameters.put("provenanceId", scope.getId() + ".PROVENANCE");
         }
 
         var result = query(query.append(" return a").toString(), queryParameters, scope);

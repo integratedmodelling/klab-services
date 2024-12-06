@@ -71,7 +71,7 @@ public class SyntacticMatcher {
         }
 
         if (isAtomic(pattern.getUrn())) {
-            return reasonerService.subsumes(candidate, pattern);
+            return reasonerService.is(candidate, pattern);
         }
 
         KimObservable oCandidateObservable = null;

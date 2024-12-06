@@ -86,7 +86,7 @@ public class EmbeddedBroker {
             Map<String, Object> attributes = new HashMap<>();
             URL initialConfig = this.getClass().getClassLoader().getResource(EMBEDDED_BROKER_CONFIGURATION);
             attributes.put("type", "Memory");
-            attributes.put("startupLoggedToSystemOut", true);
+            attributes.put("startupLoggedToSystemOut", false);
             attributes.put("initialConfigurationLocation", initialConfig.toExternalForm());
             this.systemLauncher = new SystemLauncher();
             if (System.getProperty("QPID_WORK") == null) {

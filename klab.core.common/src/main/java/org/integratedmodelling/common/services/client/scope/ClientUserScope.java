@@ -72,7 +72,6 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
         for (var service : getServices(serviceClass)) {
 
             if (service == null) {
-                System.out.println("DIO POCO");
                 return null;
             }
 
@@ -83,6 +82,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
         throw new KlabResourceAccessException("cannot find service with ID=" + serviceId + " in the scope");
     }
 
+    @Override
     public String getId() {
         return id;
     }

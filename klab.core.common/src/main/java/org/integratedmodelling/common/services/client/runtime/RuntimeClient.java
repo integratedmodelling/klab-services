@@ -4,6 +4,7 @@ import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.GraphQLClient;
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -158,6 +159,9 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
                     client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
             if (scope instanceof MessagingChannelImpl messagingChannel) {
                 messagingChannel.setupMessagingQueues(ret, queues);
+            }
+            if (scope instanceof ClientContextScope clientContextScope) {
+                clientContextScope.createDigitalTwin(ret);
             }
         }
 

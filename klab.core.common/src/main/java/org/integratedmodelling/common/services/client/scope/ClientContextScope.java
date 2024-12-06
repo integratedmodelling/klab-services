@@ -1,9 +1,11 @@
 package org.integratedmodelling.common.services.client.scope;
 
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -21,10 +23,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 
 import java.net.URL;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Future;
 
 public abstract class ClientContextScope extends ClientSessionScope implements ContextScope {
@@ -33,6 +32,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     private Observation contextObservation;
     private Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
             new LinkedHashMap<>();
+    private DigitalTwin digitalTwin;
 
     /**
      * The default client scope has the user as the embedded agent.
@@ -52,6 +52,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         super(parent, parent.name, parent.runtimeService);
         // this will have been reset by super to the user's id
         setId(parent.getId());
+        this.digitalTwin = parent.digitalTwin;
         resolutionConstraints.putAll(parent.resolutionConstraints);
         observer = parent.observer;
         contextObservation = parent.contextObservation;
@@ -299,7 +300,11 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public Storage getStorage(Observation observation) {
-        return null;
+    public DigitalTwin getDigitalTwin() {
+        return this.digitalTwin;
+    }
+
+    public void createDigitalTwin(String id) {
+        this.digitalTwin = new ClientDigitalTwin(this, id);
     }
 }

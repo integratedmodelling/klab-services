@@ -108,11 +108,11 @@ public class SpecializingRestrictionVisitor extends OWLClassExpressionVisitorAda
 		for (Concept toadd : collection) {
 			boolean ok = true;
 			for (Concept c : result) {
-				if (!c.equals(toadd) && owl.reasoner().subsumes(c, toadd)) {
+				if (!c.equals(toadd) && owl.reasoner().is(c, toadd)) {
 					ok = false;
 					break;
 				}
-				if (!toadd.equals(c) && owl.reasoner().subsumes(toadd, c)) {
+				if (!toadd.equals(c) && owl.reasoner().is(toadd, c)) {
 					remove.add(c);
 				}
 			}

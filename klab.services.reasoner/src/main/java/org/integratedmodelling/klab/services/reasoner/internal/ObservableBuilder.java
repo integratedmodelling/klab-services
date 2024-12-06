@@ -543,7 +543,7 @@ public class ObservableBuilder implements Observable.Builder {
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.COOCCURRENT);
             }
-            if (ret.temporalInherent != null && reasoner.subsumes(ret.temporalInherent, concept)) {
+            if (ret.temporalInherent != null && reasoner.is(ret.temporalInherent, concept)) {
                 ret.temporalInherent = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.TEMPORAL_INHERENT);
@@ -658,42 +658,42 @@ public class ObservableBuilder implements Observable.Builder {
             //                ret.removed.add(concept);
             //                removedRoles.add(SemanticRole.CONTEXT);
             //            }
-            if (ret.inherent != null && reasoner.subsumes(ret.inherent, concept)) {
+            if (ret.inherent != null && reasoner.is(ret.inherent, concept)) {
                 ret.inherent = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.INHERENT);
             }
-            if (ret.adjacent != null && reasoner.subsumes(ret.adjacent, concept)) {
+            if (ret.adjacent != null && reasoner.is(ret.adjacent, concept)) {
                 ret.adjacent = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.ADJACENT);
             }
-            if (ret.caused != null && reasoner.subsumes(ret.caused, concept)) {
+            if (ret.caused != null && reasoner.is(ret.caused, concept)) {
                 ret.caused = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.CAUSED);
             }
-            if (ret.causant != null && reasoner.subsumes(ret.causant, concept)) {
+            if (ret.causant != null && reasoner.is(ret.causant, concept)) {
                 ret.causant = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.CAUSANT);
             }
-            if (ret.compresent != null && reasoner.subsumes(ret.compresent, concept)) {
+            if (ret.compresent != null && reasoner.is(ret.compresent, concept)) {
                 ret.compresent = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.COMPRESENT);
             }
-            if (ret.goal != null && reasoner.subsumes(ret.goal, concept)) {
+            if (ret.goal != null && reasoner.is(ret.goal, concept)) {
                 ret.goal = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.GOAL);
             }
-            if (ret.cooccurrent != null && reasoner.subsumes(ret.cooccurrent, concept)) {
+            if (ret.cooccurrent != null && reasoner.is(ret.cooccurrent, concept)) {
                 ret.cooccurrent = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.COOCCURRENT);
             }
-            if (ret.temporalInherent != null && reasoner.subsumes(ret.temporalInherent, concept)) {
+            if (ret.temporalInherent != null && reasoner.is(ret.temporalInherent, concept)) {
                 ret.temporalInherent = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.TEMPORAL_INHERENT);
@@ -1601,7 +1601,7 @@ public class ObservableBuilder implements Observable.Builder {
         Set<Concept> ret = new HashSet<>();
         Set<Concept> rem = new HashSet<>();
         for (Concept c : concepts) {
-            if (!reasoner.subsumes(c, concept)) {
+            if (!reasoner.is(c, concept)) {
                 ret.add(c);
             } else {
                 rem.add(c);
