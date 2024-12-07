@@ -40,7 +40,7 @@ import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
-import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration;
+import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.lang.WorldviewValidationScope;
 import org.integratedmodelling.klab.utilities.Utils;

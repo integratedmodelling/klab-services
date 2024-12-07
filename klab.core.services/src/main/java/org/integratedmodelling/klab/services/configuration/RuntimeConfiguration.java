@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.runtime;
+package org.integratedmodelling.klab.services.configuration;
 
 import java.net.URI;
 import java.util.ArrayList;

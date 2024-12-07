@@ -35,6 +35,7 @@ import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JEmbedded;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;

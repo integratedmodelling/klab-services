@@ -11,6 +11,7 @@ import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -23,6 +24,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabAnnotation;
@@ -31,8 +33,10 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.extension.KlabComponent;
+import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.pf4j.*;
+import org.springframework.cache.interceptor.CacheOperationInvoker;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -66,10 +70,12 @@ public class ComponentRegistry {
      * Component descriptors, uniquely identified by id + version
      */
     private MultiValuedMap<String, ComponentDescriptor> components = new HashSetValuedHashMap<>();
+
     /**
-     * Here the key is each service URN, linked to all the components that provide it. Not including
-     * adapters.
+     * Here the key is each service URN, linked to all the components that provide it.
      */
+    private MultiValuedMap<String, Adapter> adapters = new HashSetValuedHashMap<>();
+    private MultiValuedMap<String, ComponentDescriptor> adapterFinder = new HashSetValuedHashMap<>();
     private MultiValuedMap<String, ComponentDescriptor> serviceFinder = new HashSetValuedHashMap<>();
     private MultiValuedMap<String, ComponentDescriptor> annotationFinder = new HashSetValuedHashMap<>();
     private MultiValuedMap<String, ComponentDescriptor> verbFinder = new HashSetValuedHashMap<>();
@@ -148,6 +154,15 @@ public class ComponentRegistry {
         public boolean staticMethod;
         public boolean staticClass;
         public boolean error;
+    }
+
+
+    public Pair<ComponentDescriptor, ResourceSet.Resource> installComponent(String mavenGroupId,
+                                                                            String mavenArtifactId,
+                                                                            Version version, Scope scope) {
+
+
+        return null;
     }
 
     public Pair<ComponentDescriptor, ResourceSet> installComponent(File resourcePath, Scope scope) {
@@ -483,6 +498,14 @@ public class ComponentRegistry {
 
     private void registerAdapter(ResourceAdapter annotation, Class<?> cls,
                                  List<AdapterDescriptor> adapters) {
+
+        try {
+            var adapter = new AdapterImpl(cls, annotation);
+        } catch (Throwable t) {
+            Logging.INSTANCE.error("Adapter " + annotation.name() + " caused errors when loading and was " +
+                    "rejected", t);
+        }
+
         System.out.println("ZIO PORCO UN ADAPTER " + annotation.name());
     }
 
@@ -731,6 +754,30 @@ public class ComponentRegistry {
     public void loadComponents(File pluginRoot) {
         initializeComponents(pluginRoot);
         componentManager.startPlugins();
+    }
+
+    /**
+     * Use this call for the "master" service that installs components based on configuration. The resources
+     * service should use this entry point; others should use {@link #initializeComponents(File)} or
+     * {@link #loadComponents(File)}.
+     *
+     * @param configuration
+     * @param pluginPath
+     */
+    public void initializeComponents(ResourcesConfiguration configuration, File pluginPath) {
+
+        /*
+        TODO check all existing resources against the configuration; retrieve whatever needs updating;
+         remove anything not configured or deprecated; check integrity and certification for all components
+          before loading them.
+         */
+        if (Utils.Maven.needsUpdate("org.integratedmodelling", "klab.component.generators",
+                "1.0-SNAPSHOT")) {
+            // shitdown
+
+        }
+
+        initializeComponents(pluginPath);
     }
 
     /**

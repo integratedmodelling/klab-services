@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.KlabData;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
@@ -72,7 +72,6 @@ import java.util.Set;
  * @author Ferd
  */
 public interface ResourcesService extends KlabService {
-
 
     /**
      * All services publish capabilities and have a call to obtain them.
@@ -248,7 +247,7 @@ public interface ResourcesService extends KlabService {
      * @param scope
      * @return
      */
-    KlabData contextualize(Resource contextualizedResource, Scope scope);
+    Data contextualize(Resource contextualizedResource, Scope scope);
 
     /**
      * @param urn

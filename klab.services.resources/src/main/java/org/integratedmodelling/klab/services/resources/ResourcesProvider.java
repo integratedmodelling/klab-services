@@ -8,7 +8,7 @@ import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.KlabData;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
@@ -133,7 +133,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         /*
         initialize the plugin system to handle components
          */
-        getComponentRegistry().initializeComponents(getConfigurationSubdirectory(options, "components"));
+        getComponentRegistry().initializeComponents(this.workspaceManager.getConfiguration(),
+                getConfigurationSubdirectory(options, "components"));
 
     }
 
@@ -328,7 +329,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public KlabData contextualize(Resource contextualizedResource, Scope scope) {
+    public Data contextualize(Resource contextualizedResource, Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -667,7 +668,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * @return
      */
     private List<ResourceSet> collectProject(String projectName, CRUDOperation operation, String
-            workspace,
+                                                     workspace,
                                              Scope scope) {
 
         List<ResourceSet> ret = new ArrayList<>();

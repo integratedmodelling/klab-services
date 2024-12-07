@@ -3,7 +3,7 @@ package org.integratedmodelling.resources.server.controllers;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.data.KlabData;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -171,8 +171,8 @@ public class ResourcesProviderController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.CONTEXTUALIZE)
-    public @ResponseBody KlabData contextualize(@RequestBody Resource contextualizedResource,
-                                                Principal principal) {
+    public @ResponseBody Data contextualize(@RequestBody Resource contextualizedResource,
+                                            Principal principal) {
         return resourcesServer.klabService().contextualize(contextualizedResource,
                 principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
     }

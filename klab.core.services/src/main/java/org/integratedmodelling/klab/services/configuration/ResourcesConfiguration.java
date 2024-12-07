@@ -1,8 +1,7 @@
-package org.integratedmodelling.klab.services.resources.configuration;
+package org.integratedmodelling.klab.services.configuration;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
-import org.integratedmodelling.klab.api.services.KlabService;
 
 import java.io.File;
 import java.io.Serial;

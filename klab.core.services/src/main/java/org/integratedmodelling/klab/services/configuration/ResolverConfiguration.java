@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.resolver;
+package org.integratedmodelling.klab.services.configuration;
 
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Version;

@@ -16,6 +16,7 @@ import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -38,6 +39,84 @@ import java.io.InputStream;
 import java.util.*;
 
 public class Utils extends org.integratedmodelling.common.utils.Utils {
+
+    /**
+     * Functions to access Maven artifacts
+     */
+    public static class Maven {
+
+
+        // see https://github.com/sahilm/maven-resolver-test/blob/master/src/main/java/com/sahilm/maven_resolver_test/Test.java for usage
+
+        public class MavenArtifactFetcher {
+
+            public static void main(String[] args) {
+                String groupId = "org.slf4j"; // Group ID of the artifact
+                String artifactId = "slf4j-api"; // Artifact ID
+                String version = "1.7.30"; // Version of the artifact
+//
+//                try {
+                    // Create the Maven artifact
+//                    var artifact = new DefaultArtifact(groupId + ":" + artifactId + ":jar:" + version);
+//
+//                    // Set up the repository system
+//                    RepositorySystem system = ...; // Obtain the system  e.g. through a service locator pattern;
+//                    RepositorySystemSession session = ...; // Prepare your repository session
+//                    List<RemoteRepository> repositories = Arrays.asList(...); // List of remote repositories
+//
+//                    // Create an artifact request
+//                    ArtifactRequest request = new ArtifactRequest();
+//                    request.setArtifact(artifact);
+//                    request.setRepositories(repositories);
+//
+//                    // Resolve the artifact
+//                    ArtifactResult result = system.resolveArtifact(session, request);
+//
+//                    // Print the artifact path
+//                    System.out.println("Fetched artifact at: " + result.getArtifact().getFile().getAbsolutePath());
+//                    var artifact = new DefaultArtifact(groupId + ":" + artifactId + ":jar:" + version);
+//
+//                    // Set up the repository system
+//                    RepositorySystem system = ...; // Obtain the system  e.g. through a service locator pattern;
+//                    RepositorySystemSession session = ...; // Prepare your repository session
+//                    List<RemoteRepository> repositories = Arrays.asList(...); // List of remote repositories
+//
+//                    // Create an artifact request
+//                    ArtifactRequest request = new ArtifactRequest();
+//                    request.setArtifact(artifact);
+//                    request.setRepositories(repositories);
+//
+//                    // Resolve the artifact
+//                    ArtifactResult result = system.resolveArtifact(session, request);
+//
+//                    // Print the artifact path
+//                    System.out.println("Fetched artifact at: " + result.getArtifact().getFile().getAbsolutePath());
+//
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+            }
+        }
+        /**
+         * True if the artifact is not in the local repository or it is there with a different hash. Should
+         * work with SNAPSHOT artifacts to determine if there is a new build available.
+         *
+         * @param mavenGroupId
+         * @param mavenArtifactId
+         * @param version
+         */
+        public static boolean needsUpdate(String mavenGroupId, String mavenArtifactId, String version) {
+
+
+            return false;
+        }
+
+        public File retrieveArtifact(String mavenGroupId, String mavenArtifactId, Version version,
+                                     boolean verifySignature) {
+            return null;
+        }
+
+    }
 
     public static class Annotations {
 
@@ -659,8 +738,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             } catch (CheckoutConflictException c) {
 
                 StringBuilder message = new StringBuilder("Conflicts exist between the local version " +
-                        "and the on in the published repository.\nPlease resolve the conflicts using Git in the " +
-                        "repository located at\n" + localRepository.getAbsolutePath() + "\n\nThe conflicting paths are:");
+                        "and the on in the published repository.\nPlease resolve the conflicts using Git in" +
+                        " the " +
+                        "repository located at\n" + localRepository.getAbsolutePath() + "\n\nThe " +
+                        "conflicting paths are:");
 
                 for (var conflict : c.getConflictingPaths()) {
                     message.append("\n   ").append(conflict);
@@ -819,8 +900,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
             try (org.eclipse.jgit.api.Git result =
                          org.eclipse.jgit.api.Git.cloneRepository().setURI(url)
-                                 .setCredentialsProvider(credentialsProvider)
-                                 .setBranch(branch).setDirectory(pdir).call()) {
+                                                 .setCredentialsProvider(credentialsProvider)
+                                                 .setBranch(branch).setDirectory(pdir).call()) {
 
                 Logging.INSTANCE.info("cloned Git repository: " + result.getRepository());
 
