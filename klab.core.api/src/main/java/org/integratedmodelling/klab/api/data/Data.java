@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -76,6 +77,20 @@ public interface Data {
 
     interface ObjectBuilder {
 
+        /**
+         * @return
+         */
+
+        ObjectBuilder name();
+
+        ObjectBuilder geometry(Geometry geometry);
+
+        /**
+         * To create object states or sub-objects, a new builder in the context of this one may be requested.
+         *
+         * @return
+         */
+        Builder builder();
     }
 
     interface FillCurve extends PrimitiveIterator.OfLong {
@@ -85,12 +100,15 @@ public interface Data {
     /**
      * A builder is passed to a resource encoder and is used to define the result of a resource's
      * contextualization.
+     * <p>
+     * TODO maybe would be better to have type-specific builders (or ALSO have them) and adapt
+     *  the resource type to the builder requested in the encoder parameters.
      */
     interface Builder {
 
         /**
-         * The default fill curve for the state geometry under consideration. Normally the fastest
-         * possible. A different one can be constructed and passed to the fillers as required.
+         * The default fill curve for the state geometry under consideration. Normally the fastest possible. A
+         * different one can be constructed and passed to the fillers as required.
          *
          * @return
          */
