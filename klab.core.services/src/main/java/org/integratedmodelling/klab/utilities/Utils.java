@@ -47,9 +47,14 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
     public static void main(String[] args) {
 
         /**
-         * Should: If no SNAPSHOT in the version, check local repo, take for good if it's there. Otherwise
-         * download anyway. Not sure there's a way to skip the fetch and just check the hash. Also this thing
-         * isn't quick. Can retrieve version ranges, explore.
+         * Should: If no SNAPSHOT in the version, check local repo, take for good if it's there, then
+         * retrieve all available versions and see if there's anything new. Otherwise
+         * download anyway and reload if the size or hash is different.
+         *
+         * ALSO: just upload the base jar and the runtime/resource can check if there are dependencies
+         * that are not in the classpath. Definitely don't use shading if the plugin requires no additional
+         * jars vs. the distribution. The deps come along with the result. OR the plugin could declare the
+         * deps it needs explicitly and we could recurse.
          */
 
         var result = new MavenFetcher()
