@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
@@ -32,6 +33,12 @@ public class DigitalTwinImpl implements DigitalTwin {
     @Override
     public StateStorage stateStorage() {
         return this.stateStorage;
+    }
+
+    @Override
+    public boolean ingest(Data data, Observation target) {
+        // TODO
+        return false;
     }
 
     @Override

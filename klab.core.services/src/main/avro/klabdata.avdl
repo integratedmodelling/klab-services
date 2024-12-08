@@ -2,16 +2,40 @@
 protocol KlabData {
 
 	enum Level {
-		INFO, WARNING, DEBUG
+		DEBUG, INFO, WARNING, ERROR
 	}
 
 	record Notification {
 		string message;
-		int    code;
+		string? activityUrn;
+		union {null, map<string>} metadata;
+		int?    code;
 		Level  level;
 	}
 
-	record Scale {
-
+	/**
+	 * State record
+ 	 */
+	record State {
+		string urn;
+		union {null, array<double>} doubleData;
+		union {null, array<long>} longData;
+		union {null, array<int>} intData;
+		union {null, array<float>} floatData;
 	}
+
+	/**
+	 * The payload of any contextualization is a top-level Instance. Any ERROR-level
+	 * notification in the top-level Instance means that contextualization has failed.
+     */
+	record Instance {
+		string name;
+		string geometry;
+		array<Notification> notifications;
+		union {null, map<string>} attributes;
+		union {null, map<string>} metadata;
+		union {null, array<State>} states;
+		union {null, array<Instance>} instances;
+	}
+
 }

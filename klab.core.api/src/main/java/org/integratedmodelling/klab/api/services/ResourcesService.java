@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -247,7 +248,7 @@ public interface ResourcesService extends KlabService {
      * @param scope
      * @return
      */
-    Data contextualize(Resource contextualizedResource, Scope scope);
+    Data contextualize(Resource contextualizedResource, Geometry geometry, Scope scope);
 
     /**
      * @param urn

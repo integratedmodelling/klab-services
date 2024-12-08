@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -288,7 +289,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public Data contextualize(Resource contextualizedResource, Scope scope) {
+    public Data contextualize(Resource contextualizedResource, Geometry geometry, Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }

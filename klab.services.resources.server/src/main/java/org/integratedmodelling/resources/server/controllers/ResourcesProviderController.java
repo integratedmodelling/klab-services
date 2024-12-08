@@ -173,7 +173,8 @@ public class ResourcesProviderController {
     @PostMapping(ServicesAPI.RESOURCES.CONTEXTUALIZE)
     public @ResponseBody Data contextualize(@RequestBody Resource contextualizedResource,
                                             Principal principal) {
-        return resourcesServer.klabService().contextualize(contextualizedResource,
+        // FIXME this needs a proper request with the request URN, a geometry and the resource URN
+        return resourcesServer.klabService().contextualize(contextualizedResource, null,
                 principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
     }
 

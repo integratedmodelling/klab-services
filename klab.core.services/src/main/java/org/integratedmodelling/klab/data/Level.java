@@ -6,8 +6,8 @@
 package org.integratedmodelling.klab.data;
 @org.apache.avro.specific.AvroGenerated
 public enum Level implements org.apache.avro.generic.GenericEnumSymbol<Level> {
-  INFO, WARNING, DEBUG  ;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"enum\",\"name\":\"Level\",\"namespace\":\"org.integratedmodelling.klab.data\",\"symbols\":[\"INFO\",\"WARNING\",\"DEBUG\"]}");
+  DEBUG, INFO, WARNING, ERROR  ;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"enum\",\"name\":\"Level\",\"namespace\":\"org.integratedmodelling.klab.data\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   @Override

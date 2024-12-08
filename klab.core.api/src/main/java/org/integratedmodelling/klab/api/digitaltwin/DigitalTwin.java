@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
 import org.integratedmodelling.klab.api.collections.Identifier;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Mutable;
@@ -83,6 +84,16 @@ public interface DigitalTwin {
      * @return
      */
     StateStorage stateStorage();
+
+    /**
+     * Ingest the contextualized data coming from a resource contextualization into the passed
+     * observation target.
+     *
+     * @param data
+     * @param target
+     * @return
+     */
+    boolean ingest(Data data, Observation target);
 
     /**
      * Dispose of all storage and data, either in memory only or also on any attached storage. Whether the

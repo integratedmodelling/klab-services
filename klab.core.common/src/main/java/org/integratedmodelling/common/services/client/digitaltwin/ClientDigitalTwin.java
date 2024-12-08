@@ -1,9 +1,11 @@
 package org.integratedmodelling.common.services.client.digitaltwin;
 
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -55,6 +57,12 @@ public class ClientDigitalTwin implements DigitalTwin {
     @Override
     public StateStorage stateStorage() {
         return null;
+    }
+
+    @Override
+    public boolean ingest(Data data, Observation target) {
+        // should never be called on the client
+        throw new KlabIllegalStateException("ingest() called on a client-side digital twin");
     }
 
     @Override
