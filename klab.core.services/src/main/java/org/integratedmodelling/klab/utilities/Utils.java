@@ -58,7 +58,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 //                try {
                     // Create the Maven artifact
 //                    var artifact = new DefaultArtifact(groupId + ":" + artifactId + ":jar:" + version);
-//
+//  https://maven.apache.org/resolver/resolving-dependencies.html
 //                    // Set up the repository system
 //                    RepositorySystem system = ...; // Obtain the system  e.g. through a service locator pattern;
 //                    RepositorySystemSession session = ...; // Prepare your repository session
