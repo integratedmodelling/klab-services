@@ -3,7 +3,7 @@
  *
  * DO NOT EDIT DIRECTLY
  */
-package org.integratedmodelling.klab.data;
+package org.integratedmodelling.klab.common.data;
 
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.util.Utf8;
@@ -15,10 +15,10 @@ import org.apache.avro.message.SchemaStore;
 notification in the top-level Instance means that contextualization has failed. */
 @org.apache.avro.specific.AvroGenerated
 public class Instance extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 7712039635804847964L;
+  private static final long serialVersionUID = 7526244744268823393L;
 
 
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Instance\",\"namespace\":\"org.integratedmodelling.klab.data\",\"doc\":\"The payload of any contextualization is a top-level Instance. Any ERROR-level\\r\\nnotification in the top-level Instance means that contextualization has failed.\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"geometry\",\"type\":\"string\"},{\"name\":\"notifications\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Notification\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"activityUrn\",\"type\":[\"null\",\"string\"]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"code\",\"type\":[\"null\",\"int\"]},{\"name\":\"level\",\"type\":{\"type\":\"enum\",\"name\":\"Level\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}}]}}},{\"name\":\"attributes\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"states\",\"type\":[\"null\",{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"State\",\"doc\":\"State record\",\"fields\":[{\"name\":\"urn\",\"type\":\"string\"},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]}]}}]},{\"name\":\"instances\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"Instance\"}]}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Instance\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"doc\":\"The payload of any contextualization is a top-level Instance. Any ERROR-level\\r\\nnotification in the top-level Instance means that contextualization has failed.\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"geometry\",\"type\":\"string\"},{\"name\":\"notifications\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Notification\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"activityUrn\",\"type\":[\"null\",\"string\"]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"code\",\"type\":[\"null\",\"int\"]},{\"name\":\"level\",\"type\":{\"type\":\"enum\",\"name\":\"Level\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}}]}}},{\"name\":\"attributes\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"states\",\"type\":[\"null\",{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"State\",\"doc\":\"State record\",\"fields\":[{\"name\":\"urn\",\"type\":\"string\"},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]}]}}]},{\"name\":\"instances\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"Instance\"}]}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static final SpecificData MODEL$ = new SpecificData();
@@ -76,11 +76,11 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
 
   private java.lang.CharSequence name;
   private java.lang.CharSequence geometry;
-  private java.util.List<org.integratedmodelling.klab.data.Notification> notifications;
+  private java.util.List<org.integratedmodelling.klab.common.data.Notification> notifications;
   private java.util.Map<java.lang.CharSequence,java.lang.CharSequence> attributes;
   private java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata;
-  private java.util.List<org.integratedmodelling.klab.data.State> states;
-  private java.util.List<org.integratedmodelling.klab.data.Instance> instances;
+  private java.util.List<org.integratedmodelling.klab.common.data.State> states;
+  private java.util.List<org.integratedmodelling.klab.common.data.Instance> instances;
 
   /**
    * Default constructor.  Note that this does not initialize fields
@@ -99,7 +99,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
    * @param states The new value for states
    * @param instances The new value for instances
    */
-  public Instance(java.lang.CharSequence name, java.lang.CharSequence geometry, java.util.List<org.integratedmodelling.klab.data.Notification> notifications, java.util.Map<java.lang.CharSequence,java.lang.CharSequence> attributes, java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata, java.util.List<org.integratedmodelling.klab.data.State> states, java.util.List<org.integratedmodelling.klab.data.Instance> instances) {
+  public Instance(java.lang.CharSequence name, java.lang.CharSequence geometry, java.util.List<org.integratedmodelling.klab.common.data.Notification> notifications, java.util.Map<java.lang.CharSequence,java.lang.CharSequence> attributes, java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata, java.util.List<org.integratedmodelling.klab.common.data.State> states, java.util.List<org.integratedmodelling.klab.common.data.Instance> instances) {
     this.name = name;
     this.geometry = geometry;
     this.notifications = notifications;
@@ -137,11 +137,11 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
     switch (field$) {
     case 0: name = (java.lang.CharSequence)value$; break;
     case 1: geometry = (java.lang.CharSequence)value$; break;
-    case 2: notifications = (java.util.List<org.integratedmodelling.klab.data.Notification>)value$; break;
+    case 2: notifications = (java.util.List<org.integratedmodelling.klab.common.data.Notification>)value$; break;
     case 3: attributes = (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>)value$; break;
     case 4: metadata = (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>)value$; break;
-    case 5: states = (java.util.List<org.integratedmodelling.klab.data.State>)value$; break;
-    case 6: instances = (java.util.List<org.integratedmodelling.klab.data.Instance>)value$; break;
+    case 5: states = (java.util.List<org.integratedmodelling.klab.common.data.State>)value$; break;
+    case 6: instances = (java.util.List<org.integratedmodelling.klab.common.data.Instance>)value$; break;
     default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
@@ -184,7 +184,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
    * Gets the value of the 'notifications' field.
    * @return The value of the 'notifications' field.
    */
-  public java.util.List<org.integratedmodelling.klab.data.Notification> getNotifications() {
+  public java.util.List<org.integratedmodelling.klab.common.data.Notification> getNotifications() {
     return notifications;
   }
 
@@ -193,7 +193,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
    * Sets the value of the 'notifications' field.
    * @param value the value to set.
    */
-  public void setNotifications(java.util.List<org.integratedmodelling.klab.data.Notification> value) {
+  public void setNotifications(java.util.List<org.integratedmodelling.klab.common.data.Notification> value) {
     this.notifications = value;
   }
 
@@ -235,7 +235,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
    * Gets the value of the 'states' field.
    * @return The value of the 'states' field.
    */
-  public java.util.List<org.integratedmodelling.klab.data.State> getStates() {
+  public java.util.List<org.integratedmodelling.klab.common.data.State> getStates() {
     return states;
   }
 
@@ -244,7 +244,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
    * Sets the value of the 'states' field.
    * @param value the value to set.
    */
-  public void setStates(java.util.List<org.integratedmodelling.klab.data.State> value) {
+  public void setStates(java.util.List<org.integratedmodelling.klab.common.data.State> value) {
     this.states = value;
   }
 
@@ -252,7 +252,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
    * Gets the value of the 'instances' field.
    * @return The value of the 'instances' field.
    */
-  public java.util.List<org.integratedmodelling.klab.data.Instance> getInstances() {
+  public java.util.List<org.integratedmodelling.klab.common.data.Instance> getInstances() {
     return instances;
   }
 
@@ -261,7 +261,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
    * Sets the value of the 'instances' field.
    * @param value the value to set.
    */
-  public void setInstances(java.util.List<org.integratedmodelling.klab.data.Instance> value) {
+  public void setInstances(java.util.List<org.integratedmodelling.klab.common.data.Instance> value) {
     this.instances = value;
   }
 
@@ -269,8 +269,8 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
    * Creates a new Instance RecordBuilder.
    * @return A new Instance RecordBuilder
    */
-  public static org.integratedmodelling.klab.data.Instance.Builder newBuilder() {
-    return new org.integratedmodelling.klab.data.Instance.Builder();
+  public static org.integratedmodelling.klab.common.data.Instance.Builder newBuilder() {
+    return new org.integratedmodelling.klab.common.data.Instance.Builder();
   }
 
   /**
@@ -278,11 +278,11 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
    * @param other The existing builder to copy.
    * @return A new Instance RecordBuilder
    */
-  public static org.integratedmodelling.klab.data.Instance.Builder newBuilder(org.integratedmodelling.klab.data.Instance.Builder other) {
+  public static org.integratedmodelling.klab.common.data.Instance.Builder newBuilder(org.integratedmodelling.klab.common.data.Instance.Builder other) {
     if (other == null) {
-      return new org.integratedmodelling.klab.data.Instance.Builder();
+      return new org.integratedmodelling.klab.common.data.Instance.Builder();
     } else {
-      return new org.integratedmodelling.klab.data.Instance.Builder(other);
+      return new org.integratedmodelling.klab.common.data.Instance.Builder(other);
     }
   }
 
@@ -291,11 +291,11 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
    * @param other The existing instance to copy.
    * @return A new Instance RecordBuilder
    */
-  public static org.integratedmodelling.klab.data.Instance.Builder newBuilder(org.integratedmodelling.klab.data.Instance other) {
+  public static org.integratedmodelling.klab.common.data.Instance.Builder newBuilder(org.integratedmodelling.klab.common.data.Instance other) {
     if (other == null) {
-      return new org.integratedmodelling.klab.data.Instance.Builder();
+      return new org.integratedmodelling.klab.common.data.Instance.Builder();
     } else {
-      return new org.integratedmodelling.klab.data.Instance.Builder(other);
+      return new org.integratedmodelling.klab.common.data.Instance.Builder(other);
     }
   }
 
@@ -308,11 +308,11 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
 
     private java.lang.CharSequence name;
     private java.lang.CharSequence geometry;
-    private java.util.List<org.integratedmodelling.klab.data.Notification> notifications;
+    private java.util.List<org.integratedmodelling.klab.common.data.Notification> notifications;
     private java.util.Map<java.lang.CharSequence,java.lang.CharSequence> attributes;
     private java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata;
-    private java.util.List<org.integratedmodelling.klab.data.State> states;
-    private java.util.List<org.integratedmodelling.klab.data.Instance> instances;
+    private java.util.List<org.integratedmodelling.klab.common.data.State> states;
+    private java.util.List<org.integratedmodelling.klab.common.data.Instance> instances;
 
     /** Creates a new Builder */
     private Builder() {
@@ -323,7 +323,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
      * Creates a Builder by copying an existing Builder.
      * @param other The existing Builder to copy.
      */
-    private Builder(org.integratedmodelling.klab.data.Instance.Builder other) {
+    private Builder(org.integratedmodelling.klab.common.data.Instance.Builder other) {
       super(other);
       if (isValidValue(fields()[0], other.name)) {
         this.name = data().deepCopy(fields()[0].schema(), other.name);
@@ -359,7 +359,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
      * Creates a Builder by copying an existing Instance instance
      * @param other The existing instance to copy.
      */
-    private Builder(org.integratedmodelling.klab.data.Instance other) {
+    private Builder(org.integratedmodelling.klab.common.data.Instance other) {
       super(SCHEMA$, MODEL$);
       if (isValidValue(fields()[0], other.name)) {
         this.name = data().deepCopy(fields()[0].schema(), other.name);
@@ -405,7 +405,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @param value The value of 'name'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder setName(java.lang.CharSequence value) {
+    public org.integratedmodelling.klab.common.data.Instance.Builder setName(java.lang.CharSequence value) {
       validate(fields()[0], value);
       this.name = value;
       fieldSetFlags()[0] = true;
@@ -425,7 +425,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * Clears the value of the 'name' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder clearName() {
+    public org.integratedmodelling.klab.common.data.Instance.Builder clearName() {
       name = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -445,7 +445,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @param value The value of 'geometry'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder setGeometry(java.lang.CharSequence value) {
+    public org.integratedmodelling.klab.common.data.Instance.Builder setGeometry(java.lang.CharSequence value) {
       validate(fields()[1], value);
       this.geometry = value;
       fieldSetFlags()[1] = true;
@@ -465,7 +465,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * Clears the value of the 'geometry' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder clearGeometry() {
+    public org.integratedmodelling.klab.common.data.Instance.Builder clearGeometry() {
       geometry = null;
       fieldSetFlags()[1] = false;
       return this;
@@ -475,7 +475,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * Gets the value of the 'notifications' field.
       * @return The value.
       */
-    public java.util.List<org.integratedmodelling.klab.data.Notification> getNotifications() {
+    public java.util.List<org.integratedmodelling.klab.common.data.Notification> getNotifications() {
       return notifications;
     }
 
@@ -485,7 +485,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @param value The value of 'notifications'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder setNotifications(java.util.List<org.integratedmodelling.klab.data.Notification> value) {
+    public org.integratedmodelling.klab.common.data.Instance.Builder setNotifications(java.util.List<org.integratedmodelling.klab.common.data.Notification> value) {
       validate(fields()[2], value);
       this.notifications = value;
       fieldSetFlags()[2] = true;
@@ -505,7 +505,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * Clears the value of the 'notifications' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder clearNotifications() {
+    public org.integratedmodelling.klab.common.data.Instance.Builder clearNotifications() {
       notifications = null;
       fieldSetFlags()[2] = false;
       return this;
@@ -525,7 +525,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @param value The value of 'attributes'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder setAttributes(java.util.Map<java.lang.CharSequence,java.lang.CharSequence> value) {
+    public org.integratedmodelling.klab.common.data.Instance.Builder setAttributes(java.util.Map<java.lang.CharSequence,java.lang.CharSequence> value) {
       validate(fields()[3], value);
       this.attributes = value;
       fieldSetFlags()[3] = true;
@@ -545,7 +545,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * Clears the value of the 'attributes' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder clearAttributes() {
+    public org.integratedmodelling.klab.common.data.Instance.Builder clearAttributes() {
       attributes = null;
       fieldSetFlags()[3] = false;
       return this;
@@ -565,7 +565,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @param value The value of 'metadata'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder setMetadata(java.util.Map<java.lang.CharSequence,java.lang.CharSequence> value) {
+    public org.integratedmodelling.klab.common.data.Instance.Builder setMetadata(java.util.Map<java.lang.CharSequence,java.lang.CharSequence> value) {
       validate(fields()[4], value);
       this.metadata = value;
       fieldSetFlags()[4] = true;
@@ -585,7 +585,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * Clears the value of the 'metadata' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder clearMetadata() {
+    public org.integratedmodelling.klab.common.data.Instance.Builder clearMetadata() {
       metadata = null;
       fieldSetFlags()[4] = false;
       return this;
@@ -595,7 +595,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * Gets the value of the 'states' field.
       * @return The value.
       */
-    public java.util.List<org.integratedmodelling.klab.data.State> getStates() {
+    public java.util.List<org.integratedmodelling.klab.common.data.State> getStates() {
       return states;
     }
 
@@ -605,7 +605,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @param value The value of 'states'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder setStates(java.util.List<org.integratedmodelling.klab.data.State> value) {
+    public org.integratedmodelling.klab.common.data.Instance.Builder setStates(java.util.List<org.integratedmodelling.klab.common.data.State> value) {
       validate(fields()[5], value);
       this.states = value;
       fieldSetFlags()[5] = true;
@@ -625,7 +625,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * Clears the value of the 'states' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder clearStates() {
+    public org.integratedmodelling.klab.common.data.Instance.Builder clearStates() {
       states = null;
       fieldSetFlags()[5] = false;
       return this;
@@ -635,7 +635,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * Gets the value of the 'instances' field.
       * @return The value.
       */
-    public java.util.List<org.integratedmodelling.klab.data.Instance> getInstances() {
+    public java.util.List<org.integratedmodelling.klab.common.data.Instance> getInstances() {
       return instances;
     }
 
@@ -645,7 +645,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @param value The value of 'instances'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder setInstances(java.util.List<org.integratedmodelling.klab.data.Instance> value) {
+    public org.integratedmodelling.klab.common.data.Instance.Builder setInstances(java.util.List<org.integratedmodelling.klab.common.data.Instance> value) {
       validate(fields()[6], value);
       this.instances = value;
       fieldSetFlags()[6] = true;
@@ -665,7 +665,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * Clears the value of the 'instances' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Instance.Builder clearInstances() {
+    public org.integratedmodelling.klab.common.data.Instance.Builder clearInstances() {
       instances = null;
       fieldSetFlags()[6] = false;
       return this;
@@ -678,11 +678,11 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
         Instance record = new Instance();
         record.name = fieldSetFlags()[0] ? this.name : (java.lang.CharSequence) defaultValue(fields()[0]);
         record.geometry = fieldSetFlags()[1] ? this.geometry : (java.lang.CharSequence) defaultValue(fields()[1]);
-        record.notifications = fieldSetFlags()[2] ? this.notifications : (java.util.List<org.integratedmodelling.klab.data.Notification>) defaultValue(fields()[2]);
+        record.notifications = fieldSetFlags()[2] ? this.notifications : (java.util.List<org.integratedmodelling.klab.common.data.Notification>) defaultValue(fields()[2]);
         record.attributes = fieldSetFlags()[3] ? this.attributes : (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>) defaultValue(fields()[3]);
         record.metadata = fieldSetFlags()[4] ? this.metadata : (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>) defaultValue(fields()[4]);
-        record.states = fieldSetFlags()[5] ? this.states : (java.util.List<org.integratedmodelling.klab.data.State>) defaultValue(fields()[5]);
-        record.instances = fieldSetFlags()[6] ? this.instances : (java.util.List<org.integratedmodelling.klab.data.Instance>) defaultValue(fields()[6]);
+        record.states = fieldSetFlags()[5] ? this.states : (java.util.List<org.integratedmodelling.klab.common.data.State>) defaultValue(fields()[5]);
+        record.instances = fieldSetFlags()[6] ? this.instances : (java.util.List<org.integratedmodelling.klab.common.data.Instance>) defaultValue(fields()[6]);
         return record;
       } catch (org.apache.avro.AvroMissingFieldException e) {
         throw e;
@@ -723,7 +723,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
     out.writeArrayStart();
     out.setItemCount(size0);
     long actualSize0 = 0;
-    for (org.integratedmodelling.klab.data.Notification e0: this.notifications) {
+    for (org.integratedmodelling.klab.common.data.Notification e0: this.notifications) {
       actualSize0++;
       out.startItem();
       e0.customEncode(out);
@@ -783,7 +783,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       out.writeArrayStart();
       out.setItemCount(size3);
       long actualSize3 = 0;
-      for (org.integratedmodelling.klab.data.State e3: this.states) {
+      for (org.integratedmodelling.klab.common.data.State e3: this.states) {
         actualSize3++;
         out.startItem();
         e3.customEncode(out);
@@ -802,7 +802,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       out.writeArrayStart();
       out.setItemCount(size4);
       long actualSize4 = 0;
-      for (org.integratedmodelling.klab.data.Instance e4: this.instances) {
+      for (org.integratedmodelling.klab.common.data.Instance e4: this.instances) {
         actualSize4++;
         out.startItem();
         e4.customEncode(out);
@@ -824,17 +824,17 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       this.geometry = in.readString(this.geometry instanceof Utf8 ? (Utf8)this.geometry : null);
 
       long size0 = in.readArrayStart();
-      java.util.List<org.integratedmodelling.klab.data.Notification> a0 = this.notifications;
+      java.util.List<org.integratedmodelling.klab.common.data.Notification> a0 = this.notifications;
       if (a0 == null) {
-        a0 = new SpecificData.Array<org.integratedmodelling.klab.data.Notification>((int)size0, SCHEMA$.getField("notifications").schema());
+        a0 = new SpecificData.Array<org.integratedmodelling.klab.common.data.Notification>((int)size0, SCHEMA$.getField("notifications").schema());
         this.notifications = a0;
       } else a0.clear();
-      SpecificData.Array<org.integratedmodelling.klab.data.Notification> ga0 = (a0 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.data.Notification>)a0 : null);
+      SpecificData.Array<org.integratedmodelling.klab.common.data.Notification> ga0 = (a0 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.common.data.Notification>)a0 : null);
       for ( ; 0 < size0; size0 = in.arrayNext()) {
         for ( ; size0 != 0; size0--) {
-          org.integratedmodelling.klab.data.Notification e0 = (ga0 != null ? ga0.peek() : null);
+          org.integratedmodelling.klab.common.data.Notification e0 = (ga0 != null ? ga0.peek() : null);
           if (e0 == null) {
-            e0 = new org.integratedmodelling.klab.data.Notification();
+            e0 = new org.integratedmodelling.klab.common.data.Notification();
           }
           e0.customDecode(in);
           a0.add(e0);
@@ -888,17 +888,17 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
         this.states = null;
       } else {
         long size3 = in.readArrayStart();
-        java.util.List<org.integratedmodelling.klab.data.State> a3 = this.states;
+        java.util.List<org.integratedmodelling.klab.common.data.State> a3 = this.states;
         if (a3 == null) {
-          a3 = new SpecificData.Array<org.integratedmodelling.klab.data.State>((int)size3, SCHEMA$.getField("states").schema().getTypes().get(1));
+          a3 = new SpecificData.Array<org.integratedmodelling.klab.common.data.State>((int)size3, SCHEMA$.getField("states").schema().getTypes().get(1));
           this.states = a3;
         } else a3.clear();
-        SpecificData.Array<org.integratedmodelling.klab.data.State> ga3 = (a3 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.data.State>)a3 : null);
+        SpecificData.Array<org.integratedmodelling.klab.common.data.State> ga3 = (a3 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.common.data.State>)a3 : null);
         for ( ; 0 < size3; size3 = in.arrayNext()) {
           for ( ; size3 != 0; size3--) {
-            org.integratedmodelling.klab.data.State e3 = (ga3 != null ? ga3.peek() : null);
+            org.integratedmodelling.klab.common.data.State e3 = (ga3 != null ? ga3.peek() : null);
             if (e3 == null) {
-              e3 = new org.integratedmodelling.klab.data.State();
+              e3 = new org.integratedmodelling.klab.common.data.State();
             }
             e3.customDecode(in);
             a3.add(e3);
@@ -911,17 +911,17 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
         this.instances = null;
       } else {
         long size4 = in.readArrayStart();
-        java.util.List<org.integratedmodelling.klab.data.Instance> a4 = this.instances;
+        java.util.List<org.integratedmodelling.klab.common.data.Instance> a4 = this.instances;
         if (a4 == null) {
-          a4 = new SpecificData.Array<org.integratedmodelling.klab.data.Instance>((int)size4, SCHEMA$.getField("instances").schema().getTypes().get(1));
+          a4 = new SpecificData.Array<org.integratedmodelling.klab.common.data.Instance>((int)size4, SCHEMA$.getField("instances").schema().getTypes().get(1));
           this.instances = a4;
         } else a4.clear();
-        SpecificData.Array<org.integratedmodelling.klab.data.Instance> ga4 = (a4 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.data.Instance>)a4 : null);
+        SpecificData.Array<org.integratedmodelling.klab.common.data.Instance> ga4 = (a4 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.common.data.Instance>)a4 : null);
         for ( ; 0 < size4; size4 = in.arrayNext()) {
           for ( ; size4 != 0; size4--) {
-            org.integratedmodelling.klab.data.Instance e4 = (ga4 != null ? ga4.peek() : null);
+            org.integratedmodelling.klab.common.data.Instance e4 = (ga4 != null ? ga4.peek() : null);
             if (e4 == null) {
-              e4 = new org.integratedmodelling.klab.data.Instance();
+              e4 = new org.integratedmodelling.klab.common.data.Instance();
             }
             e4.customDecode(in);
             a4.add(e4);
@@ -942,17 +942,17 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
 
         case 2:
           long size0 = in.readArrayStart();
-          java.util.List<org.integratedmodelling.klab.data.Notification> a0 = this.notifications;
+          java.util.List<org.integratedmodelling.klab.common.data.Notification> a0 = this.notifications;
           if (a0 == null) {
-            a0 = new SpecificData.Array<org.integratedmodelling.klab.data.Notification>((int)size0, SCHEMA$.getField("notifications").schema());
+            a0 = new SpecificData.Array<org.integratedmodelling.klab.common.data.Notification>((int)size0, SCHEMA$.getField("notifications").schema());
             this.notifications = a0;
           } else a0.clear();
-          SpecificData.Array<org.integratedmodelling.klab.data.Notification> ga0 = (a0 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.data.Notification>)a0 : null);
+          SpecificData.Array<org.integratedmodelling.klab.common.data.Notification> ga0 = (a0 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.common.data.Notification>)a0 : null);
           for ( ; 0 < size0; size0 = in.arrayNext()) {
             for ( ; size0 != 0; size0--) {
-              org.integratedmodelling.klab.data.Notification e0 = (ga0 != null ? ga0.peek() : null);
+              org.integratedmodelling.klab.common.data.Notification e0 = (ga0 != null ? ga0.peek() : null);
               if (e0 == null) {
-                e0 = new org.integratedmodelling.klab.data.Notification();
+                e0 = new org.integratedmodelling.klab.common.data.Notification();
               }
               e0.customDecode(in);
               a0.add(e0);
@@ -1012,17 +1012,17 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
             this.states = null;
           } else {
             long size3 = in.readArrayStart();
-            java.util.List<org.integratedmodelling.klab.data.State> a3 = this.states;
+            java.util.List<org.integratedmodelling.klab.common.data.State> a3 = this.states;
             if (a3 == null) {
-              a3 = new SpecificData.Array<org.integratedmodelling.klab.data.State>((int)size3, SCHEMA$.getField("states").schema().getTypes().get(1));
+              a3 = new SpecificData.Array<org.integratedmodelling.klab.common.data.State>((int)size3, SCHEMA$.getField("states").schema().getTypes().get(1));
               this.states = a3;
             } else a3.clear();
-            SpecificData.Array<org.integratedmodelling.klab.data.State> ga3 = (a3 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.data.State>)a3 : null);
+            SpecificData.Array<org.integratedmodelling.klab.common.data.State> ga3 = (a3 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.common.data.State>)a3 : null);
             for ( ; 0 < size3; size3 = in.arrayNext()) {
               for ( ; size3 != 0; size3--) {
-                org.integratedmodelling.klab.data.State e3 = (ga3 != null ? ga3.peek() : null);
+                org.integratedmodelling.klab.common.data.State e3 = (ga3 != null ? ga3.peek() : null);
                 if (e3 == null) {
-                  e3 = new org.integratedmodelling.klab.data.State();
+                  e3 = new org.integratedmodelling.klab.common.data.State();
                 }
                 e3.customDecode(in);
                 a3.add(e3);
@@ -1037,17 +1037,17 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
             this.instances = null;
           } else {
             long size4 = in.readArrayStart();
-            java.util.List<org.integratedmodelling.klab.data.Instance> a4 = this.instances;
+            java.util.List<org.integratedmodelling.klab.common.data.Instance> a4 = this.instances;
             if (a4 == null) {
-              a4 = new SpecificData.Array<org.integratedmodelling.klab.data.Instance>((int)size4, SCHEMA$.getField("instances").schema().getTypes().get(1));
+              a4 = new SpecificData.Array<org.integratedmodelling.klab.common.data.Instance>((int)size4, SCHEMA$.getField("instances").schema().getTypes().get(1));
               this.instances = a4;
             } else a4.clear();
-            SpecificData.Array<org.integratedmodelling.klab.data.Instance> ga4 = (a4 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.data.Instance>)a4 : null);
+            SpecificData.Array<org.integratedmodelling.klab.common.data.Instance> ga4 = (a4 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.common.data.Instance>)a4 : null);
             for ( ; 0 < size4; size4 = in.arrayNext()) {
               for ( ; size4 != 0; size4--) {
-                org.integratedmodelling.klab.data.Instance e4 = (ga4 != null ? ga4.peek() : null);
+                org.integratedmodelling.klab.common.data.Instance e4 = (ga4 != null ? ga4.peek() : null);
                 if (e4 == null) {
-                  e4 = new org.integratedmodelling.klab.data.Instance();
+                  e4 = new org.integratedmodelling.klab.common.data.Instance();
                 }
                 e4.customDecode(in);
                 a4.add(e4);

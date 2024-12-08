@@ -3,7 +3,7 @@
  *
  * DO NOT EDIT DIRECTLY
  */
-package org.integratedmodelling.klab.data;
+package org.integratedmodelling.klab.common.data;
 
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.util.Utf8;
@@ -13,10 +13,10 @@ import org.apache.avro.message.SchemaStore;
 
 @org.apache.avro.specific.AvroGenerated
 public class Notification extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 8185529909467416494L;
+  private static final long serialVersionUID = -7540110101151596119L;
 
 
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Notification\",\"namespace\":\"org.integratedmodelling.klab.data\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"activityUrn\",\"type\":[\"null\",\"string\"]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"code\",\"type\":[\"null\",\"int\"]},{\"name\":\"level\",\"type\":{\"type\":\"enum\",\"name\":\"Level\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Notification\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"activityUrn\",\"type\":[\"null\",\"string\"]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"code\",\"type\":[\"null\",\"int\"]},{\"name\":\"level\",\"type\":{\"type\":\"enum\",\"name\":\"Level\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static final SpecificData MODEL$ = new SpecificData();
@@ -76,7 +76,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
   private java.lang.CharSequence activityUrn;
   private java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata;
   private java.lang.Integer code;
-  private org.integratedmodelling.klab.data.Level level;
+  private org.integratedmodelling.klab.common.data.Level level;
 
   /**
    * Default constructor.  Note that this does not initialize fields
@@ -93,7 +93,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
    * @param code The new value for code
    * @param level The new value for level
    */
-  public Notification(java.lang.CharSequence message, java.lang.CharSequence activityUrn, java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata, java.lang.Integer code, org.integratedmodelling.klab.data.Level level) {
+  public Notification(java.lang.CharSequence message, java.lang.CharSequence activityUrn, java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata, java.lang.Integer code, org.integratedmodelling.klab.common.data.Level level) {
     this.message = message;
     this.activityUrn = activityUrn;
     this.metadata = metadata;
@@ -129,7 +129,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
     case 1: activityUrn = (java.lang.CharSequence)value$; break;
     case 2: metadata = (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>)value$; break;
     case 3: code = (java.lang.Integer)value$; break;
-    case 4: level = (org.integratedmodelling.klab.data.Level)value$; break;
+    case 4: level = (org.integratedmodelling.klab.common.data.Level)value$; break;
     default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
@@ -206,7 +206,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
    * Gets the value of the 'level' field.
    * @return The value of the 'level' field.
    */
-  public org.integratedmodelling.klab.data.Level getLevel() {
+  public org.integratedmodelling.klab.common.data.Level getLevel() {
     return level;
   }
 
@@ -215,7 +215,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
    * Sets the value of the 'level' field.
    * @param value the value to set.
    */
-  public void setLevel(org.integratedmodelling.klab.data.Level value) {
+  public void setLevel(org.integratedmodelling.klab.common.data.Level value) {
     this.level = value;
   }
 
@@ -223,8 +223,8 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
    * Creates a new Notification RecordBuilder.
    * @return A new Notification RecordBuilder
    */
-  public static org.integratedmodelling.klab.data.Notification.Builder newBuilder() {
-    return new org.integratedmodelling.klab.data.Notification.Builder();
+  public static org.integratedmodelling.klab.common.data.Notification.Builder newBuilder() {
+    return new org.integratedmodelling.klab.common.data.Notification.Builder();
   }
 
   /**
@@ -232,11 +232,11 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
    * @param other The existing builder to copy.
    * @return A new Notification RecordBuilder
    */
-  public static org.integratedmodelling.klab.data.Notification.Builder newBuilder(org.integratedmodelling.klab.data.Notification.Builder other) {
+  public static org.integratedmodelling.klab.common.data.Notification.Builder newBuilder(org.integratedmodelling.klab.common.data.Notification.Builder other) {
     if (other == null) {
-      return new org.integratedmodelling.klab.data.Notification.Builder();
+      return new org.integratedmodelling.klab.common.data.Notification.Builder();
     } else {
-      return new org.integratedmodelling.klab.data.Notification.Builder(other);
+      return new org.integratedmodelling.klab.common.data.Notification.Builder(other);
     }
   }
 
@@ -245,11 +245,11 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
    * @param other The existing instance to copy.
    * @return A new Notification RecordBuilder
    */
-  public static org.integratedmodelling.klab.data.Notification.Builder newBuilder(org.integratedmodelling.klab.data.Notification other) {
+  public static org.integratedmodelling.klab.common.data.Notification.Builder newBuilder(org.integratedmodelling.klab.common.data.Notification other) {
     if (other == null) {
-      return new org.integratedmodelling.klab.data.Notification.Builder();
+      return new org.integratedmodelling.klab.common.data.Notification.Builder();
     } else {
-      return new org.integratedmodelling.klab.data.Notification.Builder(other);
+      return new org.integratedmodelling.klab.common.data.Notification.Builder(other);
     }
   }
 
@@ -264,7 +264,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
     private java.lang.CharSequence activityUrn;
     private java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata;
     private java.lang.Integer code;
-    private org.integratedmodelling.klab.data.Level level;
+    private org.integratedmodelling.klab.common.data.Level level;
 
     /** Creates a new Builder */
     private Builder() {
@@ -275,7 +275,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
      * Creates a Builder by copying an existing Builder.
      * @param other The existing Builder to copy.
      */
-    private Builder(org.integratedmodelling.klab.data.Notification.Builder other) {
+    private Builder(org.integratedmodelling.klab.common.data.Notification.Builder other) {
       super(other);
       if (isValidValue(fields()[0], other.message)) {
         this.message = data().deepCopy(fields()[0].schema(), other.message);
@@ -303,7 +303,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
      * Creates a Builder by copying an existing Notification instance
      * @param other The existing instance to copy.
      */
-    private Builder(org.integratedmodelling.klab.data.Notification other) {
+    private Builder(org.integratedmodelling.klab.common.data.Notification other) {
       super(SCHEMA$, MODEL$);
       if (isValidValue(fields()[0], other.message)) {
         this.message = data().deepCopy(fields()[0].schema(), other.message);
@@ -341,7 +341,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
       * @param value The value of 'message'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Notification.Builder setMessage(java.lang.CharSequence value) {
+    public org.integratedmodelling.klab.common.data.Notification.Builder setMessage(java.lang.CharSequence value) {
       validate(fields()[0], value);
       this.message = value;
       fieldSetFlags()[0] = true;
@@ -361,7 +361,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
       * Clears the value of the 'message' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Notification.Builder clearMessage() {
+    public org.integratedmodelling.klab.common.data.Notification.Builder clearMessage() {
       message = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -381,7 +381,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
       * @param value The value of 'activityUrn'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Notification.Builder setActivityUrn(java.lang.CharSequence value) {
+    public org.integratedmodelling.klab.common.data.Notification.Builder setActivityUrn(java.lang.CharSequence value) {
       validate(fields()[1], value);
       this.activityUrn = value;
       fieldSetFlags()[1] = true;
@@ -401,7 +401,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
       * Clears the value of the 'activityUrn' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Notification.Builder clearActivityUrn() {
+    public org.integratedmodelling.klab.common.data.Notification.Builder clearActivityUrn() {
       activityUrn = null;
       fieldSetFlags()[1] = false;
       return this;
@@ -421,7 +421,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
       * @param value The value of 'metadata'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Notification.Builder setMetadata(java.util.Map<java.lang.CharSequence,java.lang.CharSequence> value) {
+    public org.integratedmodelling.klab.common.data.Notification.Builder setMetadata(java.util.Map<java.lang.CharSequence,java.lang.CharSequence> value) {
       validate(fields()[2], value);
       this.metadata = value;
       fieldSetFlags()[2] = true;
@@ -441,7 +441,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
       * Clears the value of the 'metadata' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Notification.Builder clearMetadata() {
+    public org.integratedmodelling.klab.common.data.Notification.Builder clearMetadata() {
       metadata = null;
       fieldSetFlags()[2] = false;
       return this;
@@ -461,7 +461,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
       * @param value The value of 'code'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Notification.Builder setCode(java.lang.Integer value) {
+    public org.integratedmodelling.klab.common.data.Notification.Builder setCode(java.lang.Integer value) {
       validate(fields()[3], value);
       this.code = value;
       fieldSetFlags()[3] = true;
@@ -481,7 +481,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
       * Clears the value of the 'code' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Notification.Builder clearCode() {
+    public org.integratedmodelling.klab.common.data.Notification.Builder clearCode() {
       code = null;
       fieldSetFlags()[3] = false;
       return this;
@@ -491,7 +491,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
       * Gets the value of the 'level' field.
       * @return The value.
       */
-    public org.integratedmodelling.klab.data.Level getLevel() {
+    public org.integratedmodelling.klab.common.data.Level getLevel() {
       return level;
     }
 
@@ -501,7 +501,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
       * @param value The value of 'level'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Notification.Builder setLevel(org.integratedmodelling.klab.data.Level value) {
+    public org.integratedmodelling.klab.common.data.Notification.Builder setLevel(org.integratedmodelling.klab.common.data.Level value) {
       validate(fields()[4], value);
       this.level = value;
       fieldSetFlags()[4] = true;
@@ -521,7 +521,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
       * Clears the value of the 'level' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.Notification.Builder clearLevel() {
+    public org.integratedmodelling.klab.common.data.Notification.Builder clearLevel() {
       level = null;
       fieldSetFlags()[4] = false;
       return this;
@@ -536,7 +536,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
         record.activityUrn = fieldSetFlags()[1] ? this.activityUrn : (java.lang.CharSequence) defaultValue(fields()[1]);
         record.metadata = fieldSetFlags()[2] ? this.metadata : (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>) defaultValue(fields()[2]);
         record.code = fieldSetFlags()[3] ? this.code : (java.lang.Integer) defaultValue(fields()[3]);
-        record.level = fieldSetFlags()[4] ? this.level : (org.integratedmodelling.klab.data.Level) defaultValue(fields()[4]);
+        record.level = fieldSetFlags()[4] ? this.level : (org.integratedmodelling.klab.common.data.Level) defaultValue(fields()[4]);
         return record;
       } catch (org.apache.avro.AvroMissingFieldException e) {
         throw e;
@@ -654,7 +654,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
         this.code = in.readInt();
       }
 
-      this.level = org.integratedmodelling.klab.data.Level.values()[in.readEnum()];
+      this.level = org.integratedmodelling.klab.common.data.Level.values()[in.readEnum()];
 
     } else {
       for (int i = 0; i < 5; i++) {
@@ -705,7 +705,7 @@ public class Notification extends org.apache.avro.specific.SpecificRecordBase im
           break;
 
         case 4:
-          this.level = org.integratedmodelling.klab.data.Level.values()[in.readEnum()];
+          this.level = org.integratedmodelling.klab.common.data.Level.values()[in.readEnum()];
           break;
 
         default:

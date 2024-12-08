@@ -1,4 +1,4 @@
-@namespace("org.integratedmodelling.klab.data")
+@namespace("org.integratedmodelling.klab.common.data")
 protocol KlabData {
 
 	enum Level {

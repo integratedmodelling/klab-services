@@ -1,7 +1,10 @@
 package org.integratedmodelling.klab.api.services.resources.adapters;
 
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.Resource;
 
 /**
  * The descriptor for a resource adapter, built from the annotation in a class annotated with
@@ -28,4 +31,12 @@ public interface Adapter {
      */
     Version getVersion();
 
+    /**
+     * Extract the data. Resource must have been contextualized when needed.
+     *
+     * @param resource
+     * @param geometry
+     * @return
+     */
+    Data contextualize(Resource resource, Geometry geometry);
 }

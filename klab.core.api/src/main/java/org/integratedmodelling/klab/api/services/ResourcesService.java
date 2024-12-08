@@ -237,13 +237,6 @@ public interface ResourcesService extends KlabService {
     KimConcept resolveConcept(String definition);
 
     /**
-     * @param originalResource
-     * @param scope
-     * @return
-     */
-    Resource contextualizeResource(Resource originalResource, ContextScope scope);
-
-    /**
      * @param contextualizedResource
      * @param scope
      * @return

@@ -161,6 +161,13 @@ public interface Data {
     }
 
     /**
+     * If empty, nothing besides notifications should be accessed.
+     *
+     * @return
+     */
+    boolean isEmpty();
+
+    /**
      * The artifact type of the primary artifact.
      *
      * @return
@@ -224,5 +231,60 @@ public interface Data {
      * @return
      */
     Metadata getMetadata();
+
+    static Data empty(String reason) {
+        return new Data() {
+
+            @Override
+            public boolean isEmpty() {
+                return true;
+            }
+
+            @Override
+            public Artifact.Type getArtifactType() {
+                return null;
+            }
+
+            @Override
+            public List<Notification> getNotifications() {
+                return List.of(Notification.error(reason));
+            }
+
+            @Override
+            public int getObjectCount() {
+                return 0;
+            }
+
+            @Override
+            public int getStateCount() {
+                return 0;
+            }
+
+            @Override
+            public Scale getObjectScale(int i) {
+                return null;
+            }
+
+            @Override
+            public String getObjectName(int i) {
+                return "";
+            }
+
+            @Override
+            public Metadata getObjectMetadata(int i) {
+                return null;
+            }
+
+            @Override
+            public Concept getSemantics() {
+                return null;
+            }
+
+            @Override
+            public Metadata getMetadata() {
+                return null;
+            }
+        };
+    }
 
 }

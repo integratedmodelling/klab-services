@@ -102,6 +102,18 @@ public class ComponentRegistry {
         return ret;
     }
 
+    /**
+     * The adapter identifier may include a version after @; if not, retrieve the latest version
+     * available. Even if present, it must be authorized to the passed scope.
+     *
+     * @param adapterType
+     * @param scope
+     * @return
+     */
+    public Adapter getAdapter(String adapterType, Scope scope) {
+        return null;
+    }
+
     public record AdapterDescriptor(String name /* TODO */) {
     }
 

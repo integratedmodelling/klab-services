@@ -3,7 +3,7 @@
  *
  * DO NOT EDIT DIRECTLY
  */
-package org.integratedmodelling.klab.data;
+package org.integratedmodelling.klab.common.data;
 
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.util.Utf8;
@@ -14,10 +14,10 @@ import org.apache.avro.message.SchemaStore;
 /** State record */
 @org.apache.avro.specific.AvroGenerated
 public class State extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 8297043971452417847L;
+  private static final long serialVersionUID = 1697613133923208543L;
 
 
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"State\",\"namespace\":\"org.integratedmodelling.klab.data\",\"doc\":\"State record\",\"fields\":[{\"name\":\"urn\",\"type\":\"string\"},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"State\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"doc\":\"State record\",\"fields\":[{\"name\":\"urn\",\"type\":\"string\"},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static final SpecificData MODEL$ = new SpecificData();
@@ -224,8 +224,8 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
    * Creates a new State RecordBuilder.
    * @return A new State RecordBuilder
    */
-  public static org.integratedmodelling.klab.data.State.Builder newBuilder() {
-    return new org.integratedmodelling.klab.data.State.Builder();
+  public static org.integratedmodelling.klab.common.data.State.Builder newBuilder() {
+    return new org.integratedmodelling.klab.common.data.State.Builder();
   }
 
   /**
@@ -233,11 +233,11 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
    * @param other The existing builder to copy.
    * @return A new State RecordBuilder
    */
-  public static org.integratedmodelling.klab.data.State.Builder newBuilder(org.integratedmodelling.klab.data.State.Builder other) {
+  public static org.integratedmodelling.klab.common.data.State.Builder newBuilder(org.integratedmodelling.klab.common.data.State.Builder other) {
     if (other == null) {
-      return new org.integratedmodelling.klab.data.State.Builder();
+      return new org.integratedmodelling.klab.common.data.State.Builder();
     } else {
-      return new org.integratedmodelling.klab.data.State.Builder(other);
+      return new org.integratedmodelling.klab.common.data.State.Builder(other);
     }
   }
 
@@ -246,11 +246,11 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
    * @param other The existing instance to copy.
    * @return A new State RecordBuilder
    */
-  public static org.integratedmodelling.klab.data.State.Builder newBuilder(org.integratedmodelling.klab.data.State other) {
+  public static org.integratedmodelling.klab.common.data.State.Builder newBuilder(org.integratedmodelling.klab.common.data.State other) {
     if (other == null) {
-      return new org.integratedmodelling.klab.data.State.Builder();
+      return new org.integratedmodelling.klab.common.data.State.Builder();
     } else {
-      return new org.integratedmodelling.klab.data.State.Builder(other);
+      return new org.integratedmodelling.klab.common.data.State.Builder(other);
     }
   }
 
@@ -276,7 +276,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
      * Creates a Builder by copying an existing Builder.
      * @param other The existing Builder to copy.
      */
-    private Builder(org.integratedmodelling.klab.data.State.Builder other) {
+    private Builder(org.integratedmodelling.klab.common.data.State.Builder other) {
       super(other);
       if (isValidValue(fields()[0], other.urn)) {
         this.urn = data().deepCopy(fields()[0].schema(), other.urn);
@@ -304,7 +304,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
      * Creates a Builder by copying an existing State instance
      * @param other The existing instance to copy.
      */
-    private Builder(org.integratedmodelling.klab.data.State other) {
+    private Builder(org.integratedmodelling.klab.common.data.State other) {
       super(SCHEMA$, MODEL$);
       if (isValidValue(fields()[0], other.urn)) {
         this.urn = data().deepCopy(fields()[0].schema(), other.urn);
@@ -342,7 +342,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * @param value The value of 'urn'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.State.Builder setUrn(java.lang.CharSequence value) {
+    public org.integratedmodelling.klab.common.data.State.Builder setUrn(java.lang.CharSequence value) {
       validate(fields()[0], value);
       this.urn = value;
       fieldSetFlags()[0] = true;
@@ -362,7 +362,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * Clears the value of the 'urn' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.State.Builder clearUrn() {
+    public org.integratedmodelling.klab.common.data.State.Builder clearUrn() {
       urn = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -382,7 +382,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * @param value The value of 'doubleData'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.State.Builder setDoubleData(java.util.List<java.lang.Double> value) {
+    public org.integratedmodelling.klab.common.data.State.Builder setDoubleData(java.util.List<java.lang.Double> value) {
       validate(fields()[1], value);
       this.doubleData = value;
       fieldSetFlags()[1] = true;
@@ -402,7 +402,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * Clears the value of the 'doubleData' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.State.Builder clearDoubleData() {
+    public org.integratedmodelling.klab.common.data.State.Builder clearDoubleData() {
       doubleData = null;
       fieldSetFlags()[1] = false;
       return this;
@@ -422,7 +422,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * @param value The value of 'longData'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.State.Builder setLongData(java.util.List<java.lang.Long> value) {
+    public org.integratedmodelling.klab.common.data.State.Builder setLongData(java.util.List<java.lang.Long> value) {
       validate(fields()[2], value);
       this.longData = value;
       fieldSetFlags()[2] = true;
@@ -442,7 +442,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * Clears the value of the 'longData' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.State.Builder clearLongData() {
+    public org.integratedmodelling.klab.common.data.State.Builder clearLongData() {
       longData = null;
       fieldSetFlags()[2] = false;
       return this;
@@ -462,7 +462,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * @param value The value of 'intData'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.State.Builder setIntData(java.util.List<java.lang.Integer> value) {
+    public org.integratedmodelling.klab.common.data.State.Builder setIntData(java.util.List<java.lang.Integer> value) {
       validate(fields()[3], value);
       this.intData = value;
       fieldSetFlags()[3] = true;
@@ -482,7 +482,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * Clears the value of the 'intData' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.State.Builder clearIntData() {
+    public org.integratedmodelling.klab.common.data.State.Builder clearIntData() {
       intData = null;
       fieldSetFlags()[3] = false;
       return this;
@@ -502,7 +502,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * @param value The value of 'floatData'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.State.Builder setFloatData(java.util.List<java.lang.Float> value) {
+    public org.integratedmodelling.klab.common.data.State.Builder setFloatData(java.util.List<java.lang.Float> value) {
       validate(fields()[4], value);
       this.floatData = value;
       fieldSetFlags()[4] = true;
@@ -522,7 +522,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * Clears the value of the 'floatData' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.data.State.Builder clearFloatData() {
+    public org.integratedmodelling.klab.common.data.State.Builder clearFloatData() {
       floatData = null;
       fieldSetFlags()[4] = false;
       return this;

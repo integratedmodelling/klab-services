@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -324,15 +325,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public Resource contextualizeResource(Resource originalResource, ContextScope scope) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Data contextualize(Resource contextualizedResource, Geometry geometry, Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
+    public Data contextualize(Resource resource, Geometry geometry, Scope scope) {
+        var adapter = getComponentRegistry().getAdapter(resource.getAdapterType(), scope);
+        if (adapter == null) {
+            return Data.empty("Adapter " + resource.getAdapterType() + " not available");
+        }
+        return adapter.contextualize(resource, geometry);
     }
 
     @Override

@@ -3,8 +3,8 @@ package org.integratedmodelling.resources.server.controllers;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
@@ -18,6 +18,8 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.runtime.objects.ResourceContextualizationRequest;
+import org.integratedmodelling.common.data.DataImpl;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
@@ -26,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.security.Principal;
 import java.util.Collection;
@@ -162,20 +165,21 @@ public class ResourcesProviderController {
         return resourcesServer.klabService().resolveConcept(definition);
     }
 
-    @PostMapping(ServicesAPI.RESOURCES.CONTEXTUALIZE_RESOURCE)
-    public @ResponseBody Resource contextualizeResource(@RequestBody Resource originalResource,
-                                                        Principal principal) {
-        return resourcesServer.klabService().contextualizeResource(originalResource,
-                principal instanceof EngineAuthorization authorization ?
-                authorization.getScope(ContextScope.class) : null);
-    }
-
     @PostMapping(ServicesAPI.RESOURCES.CONTEXTUALIZE)
-    public @ResponseBody Data contextualize(@RequestBody Resource contextualizedResource,
-                                            Principal principal) {
-        // FIXME this needs a proper request with the request URN, a geometry and the resource URN
-        return resourcesServer.klabService().contextualize(contextualizedResource, null,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
+    public void contextualize(@RequestBody ResourceContextualizationRequest request,
+                               InputStream dataStream, Principal principal) {
+
+        if (principal instanceof EngineAuthorization authorization) {
+            var scope = authorization.getScope();
+            var resource = resourcesServer.klabService().resolveResource(request.getResourceUrn(), scope);
+            var data = resourcesServer.klabService().contextualize(resource, request.getGeometry(), scope);
+            if (data instanceof DataImpl dataImpl) {
+                dataImpl.copyTo(dataStream);
+                return;
+            }
+        }
+
+        throw new KlabIllegalStateException("Resource contextualizer: found unexpected implementations");
     }
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_DATAFLOW_URN)

@@ -283,14 +283,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public Resource contextualizeResource(Resource originalResource, ContextScope scope) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public Data contextualize(Resource contextualizedResource, Geometry geometry, Scope scope) {
-        // TODO Auto-generated method stub
+        // TODO call the service and pump the received data into a DataImpl object
         return null;
     }
 

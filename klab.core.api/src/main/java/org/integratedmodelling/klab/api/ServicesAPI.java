@@ -419,7 +419,6 @@ public interface ServicesAPI {
         String RESOLVE_OBSERVABLE = "/resolveObservable";
         String DESCRIBE_CONCEPT = "/describeConcept/{conceptUrn}";
         String RESOLVE_CONCEPT = "/resolveConcept/{definition}";
-        String CONTEXTUALIZE_RESOURCE = "/contextualizeResource";
         String CONTEXTUALIZE = "/contextualize";
         String RESOLVE_DATAFLOW_URN = "/resolveDataflow/" + URN_PARAMETER;
         String GET_WORLDVIEW = "/getWorldview";

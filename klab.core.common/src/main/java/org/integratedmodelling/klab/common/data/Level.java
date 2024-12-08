@@ -3,11 +3,11 @@
  *
  * DO NOT EDIT DIRECTLY
  */
-package org.integratedmodelling.klab.data;
+package org.integratedmodelling.klab.common.data;
 @org.apache.avro.specific.AvroGenerated
 public enum Level implements org.apache.avro.generic.GenericEnumSymbol<Level> {
   DEBUG, INFO, WARNING, ERROR  ;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"enum\",\"name\":\"Level\",\"namespace\":\"org.integratedmodelling.klab.data\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"enum\",\"name\":\"Level\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   @Override

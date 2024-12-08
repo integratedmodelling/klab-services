@@ -111,6 +111,7 @@
         <mweVersion>2.13.0</mweVersion>
         <googleJibVersion>3.3.1</googleJibVersion>
         <jib.jvmFlags>-XshowSettings:vm</jib.jvmFlags>
+        <avro.version>1.12.0</avro.version>
 
         <!-- the five below go together. Never change one without checking the
             others. Spring security latest is currently requiring 5.0.4, implying boot
