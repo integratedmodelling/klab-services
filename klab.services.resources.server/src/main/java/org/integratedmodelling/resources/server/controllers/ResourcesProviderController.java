@@ -1,10 +1,12 @@
 package org.integratedmodelling.resources.server.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
@@ -165,17 +167,25 @@ public class ResourcesProviderController {
         return resourcesServer.klabService().resolveConcept(definition);
     }
 
+    // TODO we also need a version that takes the InputStream corresponding to an encoded Instance when
+    //  the resource has input states.
     @PostMapping(ServicesAPI.RESOURCES.CONTEXTUALIZE)
     public void contextualize(@RequestBody ResourceContextualizationRequest request,
-                               InputStream dataStream, Principal principal) {
+                              HttpServletResponse response, Principal principal) {
 
         if (principal instanceof EngineAuthorization authorization) {
             var scope = authorization.getScope();
             var resource = resourcesServer.klabService().resolveResource(request.getResourceUrn(), scope);
             var data = resourcesServer.klabService().contextualize(resource, request.getGeometry(), scope);
             if (data instanceof DataImpl dataImpl) {
-                dataImpl.copyTo(dataStream);
-                return;
+                try {
+                    var output = response.getOutputStream();
+                    dataImpl.copyTo(output);
+                    output.flush();
+                    return;
+                } catch (Throwable t) {
+                    throw new KlabResourceAccessException(t);
+                }
             }
         }
 
