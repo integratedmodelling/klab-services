@@ -50,7 +50,7 @@ public class DataImpl implements Data {
 
     @Override
     public boolean isEmpty() {
-        return instance == null; /* TODO need to check the instance */
+        return instance == null || instance.getEmpty();
     }
 
     @Override

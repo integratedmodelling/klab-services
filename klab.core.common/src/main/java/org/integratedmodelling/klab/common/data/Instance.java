@@ -15,10 +15,10 @@ import org.apache.avro.message.SchemaStore;
 notification in the top-level Instance means that contextualization has failed. */
 @org.apache.avro.specific.AvroGenerated
 public class Instance extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 2718822917108049359L;
+  private static final long serialVersionUID = -2146269386455013185L;
 
 
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Instance\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"doc\":\"The payload of any contextualization is a top-level Instance. Any ERROR-level\\r\\nnotification in the top-level Instance means that contextualization has failed.\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"geometry\",\"type\":\"string\"},{\"name\":\"notifications\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Notification\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"activityUrn\",\"type\":[\"null\",\"string\"]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"code\",\"type\":[\"null\",\"int\"]},{\"name\":\"level\",\"type\":{\"type\":\"enum\",\"name\":\"Level\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}}]}}},{\"name\":\"attributes\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"states\",\"type\":[\"null\",{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"State\",\"doc\":\"State record\",\"fields\":[{\"name\":\"urn\",\"type\":\"string\"},{\"name\":\"fillingCurve\",\"type\":[\"string\",\"null\"],\"default\":\"S2XY\"},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]}]}}]},{\"name\":\"instances\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"Instance\"}]}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Instance\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"doc\":\"The payload of any contextualization is a top-level Instance. Any ERROR-level\\r\\nnotification in the top-level Instance means that contextualization has failed.\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"geometry\",\"type\":\"string\"},{\"name\":\"empty\",\"type\":\"boolean\",\"default\":false},{\"name\":\"notifications\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Notification\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"activityUrn\",\"type\":[\"null\",\"string\"]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"code\",\"type\":[\"null\",\"int\"]},{\"name\":\"level\",\"type\":{\"type\":\"enum\",\"name\":\"Level\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}}]}}},{\"name\":\"attributes\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"states\",\"type\":[\"null\",{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"State\",\"doc\":\"State record\",\"fields\":[{\"name\":\"urn\",\"type\":\"string\"},{\"name\":\"fillingCurve\",\"type\":[\"string\",\"null\"],\"default\":\"S2XY\"},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]}]}}]},{\"name\":\"instances\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"Instance\"}]}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static final SpecificData MODEL$ = new SpecificData();
@@ -76,6 +76,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
 
   private java.lang.CharSequence name;
   private java.lang.CharSequence geometry;
+  private boolean empty;
   private java.util.List<org.integratedmodelling.klab.common.data.Notification> notifications;
   private java.util.Map<java.lang.CharSequence,java.lang.CharSequence> attributes;
   private java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata;
@@ -93,15 +94,17 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
    * All-args constructor.
    * @param name The new value for name
    * @param geometry The new value for geometry
+   * @param empty The new value for empty
    * @param notifications The new value for notifications
    * @param attributes The new value for attributes
    * @param metadata The new value for metadata
    * @param states The new value for states
    * @param instances The new value for instances
    */
-  public Instance(java.lang.CharSequence name, java.lang.CharSequence geometry, java.util.List<org.integratedmodelling.klab.common.data.Notification> notifications, java.util.Map<java.lang.CharSequence,java.lang.CharSequence> attributes, java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata, java.util.List<org.integratedmodelling.klab.common.data.State> states, java.util.List<org.integratedmodelling.klab.common.data.Instance> instances) {
+  public Instance(java.lang.CharSequence name, java.lang.CharSequence geometry, java.lang.Boolean empty, java.util.List<org.integratedmodelling.klab.common.data.Notification> notifications, java.util.Map<java.lang.CharSequence,java.lang.CharSequence> attributes, java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata, java.util.List<org.integratedmodelling.klab.common.data.State> states, java.util.List<org.integratedmodelling.klab.common.data.Instance> instances) {
     this.name = name;
     this.geometry = geometry;
+    this.empty = empty;
     this.notifications = notifications;
     this.attributes = attributes;
     this.metadata = metadata;
@@ -121,11 +124,12 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
     switch (field$) {
     case 0: return name;
     case 1: return geometry;
-    case 2: return notifications;
-    case 3: return attributes;
-    case 4: return metadata;
-    case 5: return states;
-    case 6: return instances;
+    case 2: return empty;
+    case 3: return notifications;
+    case 4: return attributes;
+    case 5: return metadata;
+    case 6: return states;
+    case 7: return instances;
     default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
@@ -137,11 +141,12 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
     switch (field$) {
     case 0: name = (java.lang.CharSequence)value$; break;
     case 1: geometry = (java.lang.CharSequence)value$; break;
-    case 2: notifications = (java.util.List<org.integratedmodelling.klab.common.data.Notification>)value$; break;
-    case 3: attributes = (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>)value$; break;
-    case 4: metadata = (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>)value$; break;
-    case 5: states = (java.util.List<org.integratedmodelling.klab.common.data.State>)value$; break;
-    case 6: instances = (java.util.List<org.integratedmodelling.klab.common.data.Instance>)value$; break;
+    case 2: empty = (java.lang.Boolean)value$; break;
+    case 3: notifications = (java.util.List<org.integratedmodelling.klab.common.data.Notification>)value$; break;
+    case 4: attributes = (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>)value$; break;
+    case 5: metadata = (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>)value$; break;
+    case 6: states = (java.util.List<org.integratedmodelling.klab.common.data.State>)value$; break;
+    case 7: instances = (java.util.List<org.integratedmodelling.klab.common.data.Instance>)value$; break;
     default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
@@ -178,6 +183,23 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
    */
   public void setGeometry(java.lang.CharSequence value) {
     this.geometry = value;
+  }
+
+  /**
+   * Gets the value of the 'empty' field.
+   * @return The value of the 'empty' field.
+   */
+  public boolean getEmpty() {
+    return empty;
+  }
+
+
+  /**
+   * Sets the value of the 'empty' field.
+   * @param value the value to set.
+   */
+  public void setEmpty(boolean value) {
+    this.empty = value;
   }
 
   /**
@@ -308,6 +330,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
 
     private java.lang.CharSequence name;
     private java.lang.CharSequence geometry;
+    private boolean empty;
     private java.util.List<org.integratedmodelling.klab.common.data.Notification> notifications;
     private java.util.Map<java.lang.CharSequence,java.lang.CharSequence> attributes;
     private java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata;
@@ -333,25 +356,29 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
         this.geometry = data().deepCopy(fields()[1].schema(), other.geometry);
         fieldSetFlags()[1] = other.fieldSetFlags()[1];
       }
-      if (isValidValue(fields()[2], other.notifications)) {
-        this.notifications = data().deepCopy(fields()[2].schema(), other.notifications);
+      if (isValidValue(fields()[2], other.empty)) {
+        this.empty = data().deepCopy(fields()[2].schema(), other.empty);
         fieldSetFlags()[2] = other.fieldSetFlags()[2];
       }
-      if (isValidValue(fields()[3], other.attributes)) {
-        this.attributes = data().deepCopy(fields()[3].schema(), other.attributes);
+      if (isValidValue(fields()[3], other.notifications)) {
+        this.notifications = data().deepCopy(fields()[3].schema(), other.notifications);
         fieldSetFlags()[3] = other.fieldSetFlags()[3];
       }
-      if (isValidValue(fields()[4], other.metadata)) {
-        this.metadata = data().deepCopy(fields()[4].schema(), other.metadata);
+      if (isValidValue(fields()[4], other.attributes)) {
+        this.attributes = data().deepCopy(fields()[4].schema(), other.attributes);
         fieldSetFlags()[4] = other.fieldSetFlags()[4];
       }
-      if (isValidValue(fields()[5], other.states)) {
-        this.states = data().deepCopy(fields()[5].schema(), other.states);
+      if (isValidValue(fields()[5], other.metadata)) {
+        this.metadata = data().deepCopy(fields()[5].schema(), other.metadata);
         fieldSetFlags()[5] = other.fieldSetFlags()[5];
       }
-      if (isValidValue(fields()[6], other.instances)) {
-        this.instances = data().deepCopy(fields()[6].schema(), other.instances);
+      if (isValidValue(fields()[6], other.states)) {
+        this.states = data().deepCopy(fields()[6].schema(), other.states);
         fieldSetFlags()[6] = other.fieldSetFlags()[6];
+      }
+      if (isValidValue(fields()[7], other.instances)) {
+        this.instances = data().deepCopy(fields()[7].schema(), other.instances);
+        fieldSetFlags()[7] = other.fieldSetFlags()[7];
       }
     }
 
@@ -369,25 +396,29 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
         this.geometry = data().deepCopy(fields()[1].schema(), other.geometry);
         fieldSetFlags()[1] = true;
       }
-      if (isValidValue(fields()[2], other.notifications)) {
-        this.notifications = data().deepCopy(fields()[2].schema(), other.notifications);
+      if (isValidValue(fields()[2], other.empty)) {
+        this.empty = data().deepCopy(fields()[2].schema(), other.empty);
         fieldSetFlags()[2] = true;
       }
-      if (isValidValue(fields()[3], other.attributes)) {
-        this.attributes = data().deepCopy(fields()[3].schema(), other.attributes);
+      if (isValidValue(fields()[3], other.notifications)) {
+        this.notifications = data().deepCopy(fields()[3].schema(), other.notifications);
         fieldSetFlags()[3] = true;
       }
-      if (isValidValue(fields()[4], other.metadata)) {
-        this.metadata = data().deepCopy(fields()[4].schema(), other.metadata);
+      if (isValidValue(fields()[4], other.attributes)) {
+        this.attributes = data().deepCopy(fields()[4].schema(), other.attributes);
         fieldSetFlags()[4] = true;
       }
-      if (isValidValue(fields()[5], other.states)) {
-        this.states = data().deepCopy(fields()[5].schema(), other.states);
+      if (isValidValue(fields()[5], other.metadata)) {
+        this.metadata = data().deepCopy(fields()[5].schema(), other.metadata);
         fieldSetFlags()[5] = true;
       }
-      if (isValidValue(fields()[6], other.instances)) {
-        this.instances = data().deepCopy(fields()[6].schema(), other.instances);
+      if (isValidValue(fields()[6], other.states)) {
+        this.states = data().deepCopy(fields()[6].schema(), other.states);
         fieldSetFlags()[6] = true;
+      }
+      if (isValidValue(fields()[7], other.instances)) {
+        this.instances = data().deepCopy(fields()[7].schema(), other.instances);
+        fieldSetFlags()[7] = true;
       }
     }
 
@@ -472,6 +503,45 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
     }
 
     /**
+      * Gets the value of the 'empty' field.
+      * @return The value.
+      */
+    public boolean getEmpty() {
+      return empty;
+    }
+
+
+    /**
+      * Sets the value of the 'empty' field.
+      * @param value The value of 'empty'.
+      * @return This builder.
+      */
+    public org.integratedmodelling.klab.common.data.Instance.Builder setEmpty(boolean value) {
+      validate(fields()[2], value);
+      this.empty = value;
+      fieldSetFlags()[2] = true;
+      return this;
+    }
+
+    /**
+      * Checks whether the 'empty' field has been set.
+      * @return True if the 'empty' field has been set, false otherwise.
+      */
+    public boolean hasEmpty() {
+      return fieldSetFlags()[2];
+    }
+
+
+    /**
+      * Clears the value of the 'empty' field.
+      * @return This builder.
+      */
+    public org.integratedmodelling.klab.common.data.Instance.Builder clearEmpty() {
+      fieldSetFlags()[2] = false;
+      return this;
+    }
+
+    /**
       * Gets the value of the 'notifications' field.
       * @return The value.
       */
@@ -486,9 +556,9 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @return This builder.
       */
     public org.integratedmodelling.klab.common.data.Instance.Builder setNotifications(java.util.List<org.integratedmodelling.klab.common.data.Notification> value) {
-      validate(fields()[2], value);
+      validate(fields()[3], value);
       this.notifications = value;
-      fieldSetFlags()[2] = true;
+      fieldSetFlags()[3] = true;
       return this;
     }
 
@@ -497,7 +567,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @return True if the 'notifications' field has been set, false otherwise.
       */
     public boolean hasNotifications() {
-      return fieldSetFlags()[2];
+      return fieldSetFlags()[3];
     }
 
 
@@ -507,7 +577,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       */
     public org.integratedmodelling.klab.common.data.Instance.Builder clearNotifications() {
       notifications = null;
-      fieldSetFlags()[2] = false;
+      fieldSetFlags()[3] = false;
       return this;
     }
 
@@ -526,9 +596,9 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @return This builder.
       */
     public org.integratedmodelling.klab.common.data.Instance.Builder setAttributes(java.util.Map<java.lang.CharSequence,java.lang.CharSequence> value) {
-      validate(fields()[3], value);
+      validate(fields()[4], value);
       this.attributes = value;
-      fieldSetFlags()[3] = true;
+      fieldSetFlags()[4] = true;
       return this;
     }
 
@@ -537,7 +607,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @return True if the 'attributes' field has been set, false otherwise.
       */
     public boolean hasAttributes() {
-      return fieldSetFlags()[3];
+      return fieldSetFlags()[4];
     }
 
 
@@ -547,7 +617,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       */
     public org.integratedmodelling.klab.common.data.Instance.Builder clearAttributes() {
       attributes = null;
-      fieldSetFlags()[3] = false;
+      fieldSetFlags()[4] = false;
       return this;
     }
 
@@ -566,9 +636,9 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @return This builder.
       */
     public org.integratedmodelling.klab.common.data.Instance.Builder setMetadata(java.util.Map<java.lang.CharSequence,java.lang.CharSequence> value) {
-      validate(fields()[4], value);
+      validate(fields()[5], value);
       this.metadata = value;
-      fieldSetFlags()[4] = true;
+      fieldSetFlags()[5] = true;
       return this;
     }
 
@@ -577,7 +647,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @return True if the 'metadata' field has been set, false otherwise.
       */
     public boolean hasMetadata() {
-      return fieldSetFlags()[4];
+      return fieldSetFlags()[5];
     }
 
 
@@ -587,7 +657,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       */
     public org.integratedmodelling.klab.common.data.Instance.Builder clearMetadata() {
       metadata = null;
-      fieldSetFlags()[4] = false;
+      fieldSetFlags()[5] = false;
       return this;
     }
 
@@ -606,9 +676,9 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @return This builder.
       */
     public org.integratedmodelling.klab.common.data.Instance.Builder setStates(java.util.List<org.integratedmodelling.klab.common.data.State> value) {
-      validate(fields()[5], value);
+      validate(fields()[6], value);
       this.states = value;
-      fieldSetFlags()[5] = true;
+      fieldSetFlags()[6] = true;
       return this;
     }
 
@@ -617,7 +687,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @return True if the 'states' field has been set, false otherwise.
       */
     public boolean hasStates() {
-      return fieldSetFlags()[5];
+      return fieldSetFlags()[6];
     }
 
 
@@ -627,7 +697,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       */
     public org.integratedmodelling.klab.common.data.Instance.Builder clearStates() {
       states = null;
-      fieldSetFlags()[5] = false;
+      fieldSetFlags()[6] = false;
       return this;
     }
 
@@ -646,9 +716,9 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @return This builder.
       */
     public org.integratedmodelling.klab.common.data.Instance.Builder setInstances(java.util.List<org.integratedmodelling.klab.common.data.Instance> value) {
-      validate(fields()[6], value);
+      validate(fields()[7], value);
       this.instances = value;
-      fieldSetFlags()[6] = true;
+      fieldSetFlags()[7] = true;
       return this;
     }
 
@@ -657,7 +727,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       * @return True if the 'instances' field has been set, false otherwise.
       */
     public boolean hasInstances() {
-      return fieldSetFlags()[6];
+      return fieldSetFlags()[7];
     }
 
 
@@ -667,7 +737,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       */
     public org.integratedmodelling.klab.common.data.Instance.Builder clearInstances() {
       instances = null;
-      fieldSetFlags()[6] = false;
+      fieldSetFlags()[7] = false;
       return this;
     }
 
@@ -678,11 +748,12 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
         Instance record = new Instance();
         record.name = fieldSetFlags()[0] ? this.name : (java.lang.CharSequence) defaultValue(fields()[0]);
         record.geometry = fieldSetFlags()[1] ? this.geometry : (java.lang.CharSequence) defaultValue(fields()[1]);
-        record.notifications = fieldSetFlags()[2] ? this.notifications : (java.util.List<org.integratedmodelling.klab.common.data.Notification>) defaultValue(fields()[2]);
-        record.attributes = fieldSetFlags()[3] ? this.attributes : (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>) defaultValue(fields()[3]);
-        record.metadata = fieldSetFlags()[4] ? this.metadata : (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>) defaultValue(fields()[4]);
-        record.states = fieldSetFlags()[5] ? this.states : (java.util.List<org.integratedmodelling.klab.common.data.State>) defaultValue(fields()[5]);
-        record.instances = fieldSetFlags()[6] ? this.instances : (java.util.List<org.integratedmodelling.klab.common.data.Instance>) defaultValue(fields()[6]);
+        record.empty = fieldSetFlags()[2] ? this.empty : (java.lang.Boolean) defaultValue(fields()[2]);
+        record.notifications = fieldSetFlags()[3] ? this.notifications : (java.util.List<org.integratedmodelling.klab.common.data.Notification>) defaultValue(fields()[3]);
+        record.attributes = fieldSetFlags()[4] ? this.attributes : (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>) defaultValue(fields()[4]);
+        record.metadata = fieldSetFlags()[5] ? this.metadata : (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>) defaultValue(fields()[5]);
+        record.states = fieldSetFlags()[6] ? this.states : (java.util.List<org.integratedmodelling.klab.common.data.State>) defaultValue(fields()[6]);
+        record.instances = fieldSetFlags()[7] ? this.instances : (java.util.List<org.integratedmodelling.klab.common.data.Instance>) defaultValue(fields()[7]);
         return record;
       } catch (org.apache.avro.AvroMissingFieldException e) {
         throw e;
@@ -718,6 +789,8 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
     out.writeString(this.name);
 
     out.writeString(this.geometry);
+
+    out.writeBoolean(this.empty);
 
     long size0 = this.notifications.size();
     out.writeArrayStart();
@@ -822,6 +895,8 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       this.name = in.readString(this.name instanceof Utf8 ? (Utf8)this.name : null);
 
       this.geometry = in.readString(this.geometry instanceof Utf8 ? (Utf8)this.geometry : null);
+
+      this.empty = in.readBoolean();
 
       long size0 = in.readArrayStart();
       java.util.List<org.integratedmodelling.klab.common.data.Notification> a0 = this.notifications;
@@ -930,7 +1005,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       }
 
     } else {
-      for (int i = 0; i < 7; i++) {
+      for (int i = 0; i < 8; i++) {
         switch (fieldOrder[i].pos()) {
         case 0:
           this.name = in.readString(this.name instanceof Utf8 ? (Utf8)this.name : null);
@@ -941,6 +1016,10 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
           break;
 
         case 2:
+          this.empty = in.readBoolean();
+          break;
+
+        case 3:
           long size0 = in.readArrayStart();
           java.util.List<org.integratedmodelling.klab.common.data.Notification> a0 = this.notifications;
           if (a0 == null) {
@@ -960,7 +1039,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
           }
           break;
 
-        case 3:
+        case 4:
           if (in.readIndex() != 1) {
             in.readNull();
             this.attributes = null;
@@ -983,7 +1062,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
           }
           break;
 
-        case 4:
+        case 5:
           if (in.readIndex() != 1) {
             in.readNull();
             this.metadata = null;
@@ -1006,7 +1085,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
           }
           break;
 
-        case 5:
+        case 6:
           if (in.readIndex() != 1) {
             in.readNull();
             this.states = null;
@@ -1031,7 +1110,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
           }
           break;
 
-        case 6:
+        case 7:
           if (in.readIndex() != 1) {
             in.readNull();
             this.instances = null;

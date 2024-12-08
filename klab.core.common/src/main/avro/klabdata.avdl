@@ -32,6 +32,7 @@ protocol KlabData {
 	record Instance {
 		string name;
 		string geometry;
+		boolean empty = false;
 		array<Notification> notifications;
 		union {null, map<string>} attributes;
 		union {null, map<string>} metadata;
