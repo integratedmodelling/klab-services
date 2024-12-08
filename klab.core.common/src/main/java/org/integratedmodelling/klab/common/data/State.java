@@ -14,10 +14,10 @@ import org.apache.avro.message.SchemaStore;
 /** State record */
 @org.apache.avro.specific.AvroGenerated
 public class State extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 1697613133923208543L;
+  private static final long serialVersionUID = -6449872848097658269L;
 
 
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"State\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"doc\":\"State record\",\"fields\":[{\"name\":\"urn\",\"type\":\"string\"},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"State\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"doc\":\"State record\",\"fields\":[{\"name\":\"urn\",\"type\":\"string\"},{\"name\":\"fillingCurve\",\"type\":[\"string\",\"null\"],\"default\":\"S2XY\"},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static final SpecificData MODEL$ = new SpecificData();
@@ -74,6 +74,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
   }
 
   private java.lang.CharSequence urn;
+  private java.lang.CharSequence fillingCurve;
   private java.util.List<java.lang.Double> doubleData;
   private java.util.List<java.lang.Long> longData;
   private java.util.List<java.lang.Integer> intData;
@@ -89,13 +90,15 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
   /**
    * All-args constructor.
    * @param urn The new value for urn
+   * @param fillingCurve The new value for fillingCurve
    * @param doubleData The new value for doubleData
    * @param longData The new value for longData
    * @param intData The new value for intData
    * @param floatData The new value for floatData
    */
-  public State(java.lang.CharSequence urn, java.util.List<java.lang.Double> doubleData, java.util.List<java.lang.Long> longData, java.util.List<java.lang.Integer> intData, java.util.List<java.lang.Float> floatData) {
+  public State(java.lang.CharSequence urn, java.lang.CharSequence fillingCurve, java.util.List<java.lang.Double> doubleData, java.util.List<java.lang.Long> longData, java.util.List<java.lang.Integer> intData, java.util.List<java.lang.Float> floatData) {
     this.urn = urn;
+    this.fillingCurve = fillingCurve;
     this.doubleData = doubleData;
     this.longData = longData;
     this.intData = intData;
@@ -113,10 +116,11 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
   public java.lang.Object get(int field$) {
     switch (field$) {
     case 0: return urn;
-    case 1: return doubleData;
-    case 2: return longData;
-    case 3: return intData;
-    case 4: return floatData;
+    case 1: return fillingCurve;
+    case 2: return doubleData;
+    case 3: return longData;
+    case 4: return intData;
+    case 5: return floatData;
     default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
@@ -127,10 +131,11 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
     case 0: urn = (java.lang.CharSequence)value$; break;
-    case 1: doubleData = (java.util.List<java.lang.Double>)value$; break;
-    case 2: longData = (java.util.List<java.lang.Long>)value$; break;
-    case 3: intData = (java.util.List<java.lang.Integer>)value$; break;
-    case 4: floatData = (java.util.List<java.lang.Float>)value$; break;
+    case 1: fillingCurve = (java.lang.CharSequence)value$; break;
+    case 2: doubleData = (java.util.List<java.lang.Double>)value$; break;
+    case 3: longData = (java.util.List<java.lang.Long>)value$; break;
+    case 4: intData = (java.util.List<java.lang.Integer>)value$; break;
+    case 5: floatData = (java.util.List<java.lang.Float>)value$; break;
     default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
@@ -150,6 +155,23 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
    */
   public void setUrn(java.lang.CharSequence value) {
     this.urn = value;
+  }
+
+  /**
+   * Gets the value of the 'fillingCurve' field.
+   * @return The value of the 'fillingCurve' field.
+   */
+  public java.lang.CharSequence getFillingCurve() {
+    return fillingCurve;
+  }
+
+
+  /**
+   * Sets the value of the 'fillingCurve' field.
+   * @param value the value to set.
+   */
+  public void setFillingCurve(java.lang.CharSequence value) {
+    this.fillingCurve = value;
   }
 
   /**
@@ -262,6 +284,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
     implements org.apache.avro.data.RecordBuilder<State> {
 
     private java.lang.CharSequence urn;
+    private java.lang.CharSequence fillingCurve;
     private java.util.List<java.lang.Double> doubleData;
     private java.util.List<java.lang.Long> longData;
     private java.util.List<java.lang.Integer> intData;
@@ -282,21 +305,25 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
         this.urn = data().deepCopy(fields()[0].schema(), other.urn);
         fieldSetFlags()[0] = other.fieldSetFlags()[0];
       }
-      if (isValidValue(fields()[1], other.doubleData)) {
-        this.doubleData = data().deepCopy(fields()[1].schema(), other.doubleData);
+      if (isValidValue(fields()[1], other.fillingCurve)) {
+        this.fillingCurve = data().deepCopy(fields()[1].schema(), other.fillingCurve);
         fieldSetFlags()[1] = other.fieldSetFlags()[1];
       }
-      if (isValidValue(fields()[2], other.longData)) {
-        this.longData = data().deepCopy(fields()[2].schema(), other.longData);
+      if (isValidValue(fields()[2], other.doubleData)) {
+        this.doubleData = data().deepCopy(fields()[2].schema(), other.doubleData);
         fieldSetFlags()[2] = other.fieldSetFlags()[2];
       }
-      if (isValidValue(fields()[3], other.intData)) {
-        this.intData = data().deepCopy(fields()[3].schema(), other.intData);
+      if (isValidValue(fields()[3], other.longData)) {
+        this.longData = data().deepCopy(fields()[3].schema(), other.longData);
         fieldSetFlags()[3] = other.fieldSetFlags()[3];
       }
-      if (isValidValue(fields()[4], other.floatData)) {
-        this.floatData = data().deepCopy(fields()[4].schema(), other.floatData);
+      if (isValidValue(fields()[4], other.intData)) {
+        this.intData = data().deepCopy(fields()[4].schema(), other.intData);
         fieldSetFlags()[4] = other.fieldSetFlags()[4];
+      }
+      if (isValidValue(fields()[5], other.floatData)) {
+        this.floatData = data().deepCopy(fields()[5].schema(), other.floatData);
+        fieldSetFlags()[5] = other.fieldSetFlags()[5];
       }
     }
 
@@ -310,21 +337,25 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
         this.urn = data().deepCopy(fields()[0].schema(), other.urn);
         fieldSetFlags()[0] = true;
       }
-      if (isValidValue(fields()[1], other.doubleData)) {
-        this.doubleData = data().deepCopy(fields()[1].schema(), other.doubleData);
+      if (isValidValue(fields()[1], other.fillingCurve)) {
+        this.fillingCurve = data().deepCopy(fields()[1].schema(), other.fillingCurve);
         fieldSetFlags()[1] = true;
       }
-      if (isValidValue(fields()[2], other.longData)) {
-        this.longData = data().deepCopy(fields()[2].schema(), other.longData);
+      if (isValidValue(fields()[2], other.doubleData)) {
+        this.doubleData = data().deepCopy(fields()[2].schema(), other.doubleData);
         fieldSetFlags()[2] = true;
       }
-      if (isValidValue(fields()[3], other.intData)) {
-        this.intData = data().deepCopy(fields()[3].schema(), other.intData);
+      if (isValidValue(fields()[3], other.longData)) {
+        this.longData = data().deepCopy(fields()[3].schema(), other.longData);
         fieldSetFlags()[3] = true;
       }
-      if (isValidValue(fields()[4], other.floatData)) {
-        this.floatData = data().deepCopy(fields()[4].schema(), other.floatData);
+      if (isValidValue(fields()[4], other.intData)) {
+        this.intData = data().deepCopy(fields()[4].schema(), other.intData);
         fieldSetFlags()[4] = true;
+      }
+      if (isValidValue(fields()[5], other.floatData)) {
+        this.floatData = data().deepCopy(fields()[5].schema(), other.floatData);
+        fieldSetFlags()[5] = true;
       }
     }
 
@@ -369,6 +400,46 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
     }
 
     /**
+      * Gets the value of the 'fillingCurve' field.
+      * @return The value.
+      */
+    public java.lang.CharSequence getFillingCurve() {
+      return fillingCurve;
+    }
+
+
+    /**
+      * Sets the value of the 'fillingCurve' field.
+      * @param value The value of 'fillingCurve'.
+      * @return This builder.
+      */
+    public org.integratedmodelling.klab.common.data.State.Builder setFillingCurve(java.lang.CharSequence value) {
+      validate(fields()[1], value);
+      this.fillingCurve = value;
+      fieldSetFlags()[1] = true;
+      return this;
+    }
+
+    /**
+      * Checks whether the 'fillingCurve' field has been set.
+      * @return True if the 'fillingCurve' field has been set, false otherwise.
+      */
+    public boolean hasFillingCurve() {
+      return fieldSetFlags()[1];
+    }
+
+
+    /**
+      * Clears the value of the 'fillingCurve' field.
+      * @return This builder.
+      */
+    public org.integratedmodelling.klab.common.data.State.Builder clearFillingCurve() {
+      fillingCurve = null;
+      fieldSetFlags()[1] = false;
+      return this;
+    }
+
+    /**
       * Gets the value of the 'doubleData' field.
       * @return The value.
       */
@@ -383,9 +454,9 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * @return This builder.
       */
     public org.integratedmodelling.klab.common.data.State.Builder setDoubleData(java.util.List<java.lang.Double> value) {
-      validate(fields()[1], value);
+      validate(fields()[2], value);
       this.doubleData = value;
-      fieldSetFlags()[1] = true;
+      fieldSetFlags()[2] = true;
       return this;
     }
 
@@ -394,7 +465,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * @return True if the 'doubleData' field has been set, false otherwise.
       */
     public boolean hasDoubleData() {
-      return fieldSetFlags()[1];
+      return fieldSetFlags()[2];
     }
 
 
@@ -404,7 +475,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       */
     public org.integratedmodelling.klab.common.data.State.Builder clearDoubleData() {
       doubleData = null;
-      fieldSetFlags()[1] = false;
+      fieldSetFlags()[2] = false;
       return this;
     }
 
@@ -423,9 +494,9 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * @return This builder.
       */
     public org.integratedmodelling.klab.common.data.State.Builder setLongData(java.util.List<java.lang.Long> value) {
-      validate(fields()[2], value);
+      validate(fields()[3], value);
       this.longData = value;
-      fieldSetFlags()[2] = true;
+      fieldSetFlags()[3] = true;
       return this;
     }
 
@@ -434,7 +505,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * @return True if the 'longData' field has been set, false otherwise.
       */
     public boolean hasLongData() {
-      return fieldSetFlags()[2];
+      return fieldSetFlags()[3];
     }
 
 
@@ -444,7 +515,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       */
     public org.integratedmodelling.klab.common.data.State.Builder clearLongData() {
       longData = null;
-      fieldSetFlags()[2] = false;
+      fieldSetFlags()[3] = false;
       return this;
     }
 
@@ -463,9 +534,9 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * @return This builder.
       */
     public org.integratedmodelling.klab.common.data.State.Builder setIntData(java.util.List<java.lang.Integer> value) {
-      validate(fields()[3], value);
+      validate(fields()[4], value);
       this.intData = value;
-      fieldSetFlags()[3] = true;
+      fieldSetFlags()[4] = true;
       return this;
     }
 
@@ -474,7 +545,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * @return True if the 'intData' field has been set, false otherwise.
       */
     public boolean hasIntData() {
-      return fieldSetFlags()[3];
+      return fieldSetFlags()[4];
     }
 
 
@@ -484,7 +555,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       */
     public org.integratedmodelling.klab.common.data.State.Builder clearIntData() {
       intData = null;
-      fieldSetFlags()[3] = false;
+      fieldSetFlags()[4] = false;
       return this;
     }
 
@@ -503,9 +574,9 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * @return This builder.
       */
     public org.integratedmodelling.klab.common.data.State.Builder setFloatData(java.util.List<java.lang.Float> value) {
-      validate(fields()[4], value);
+      validate(fields()[5], value);
       this.floatData = value;
-      fieldSetFlags()[4] = true;
+      fieldSetFlags()[5] = true;
       return this;
     }
 
@@ -514,7 +585,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       * @return True if the 'floatData' field has been set, false otherwise.
       */
     public boolean hasFloatData() {
-      return fieldSetFlags()[4];
+      return fieldSetFlags()[5];
     }
 
 
@@ -524,7 +595,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       */
     public org.integratedmodelling.klab.common.data.State.Builder clearFloatData() {
       floatData = null;
-      fieldSetFlags()[4] = false;
+      fieldSetFlags()[5] = false;
       return this;
     }
 
@@ -534,10 +605,11 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       try {
         State record = new State();
         record.urn = fieldSetFlags()[0] ? this.urn : (java.lang.CharSequence) defaultValue(fields()[0]);
-        record.doubleData = fieldSetFlags()[1] ? this.doubleData : (java.util.List<java.lang.Double>) defaultValue(fields()[1]);
-        record.longData = fieldSetFlags()[2] ? this.longData : (java.util.List<java.lang.Long>) defaultValue(fields()[2]);
-        record.intData = fieldSetFlags()[3] ? this.intData : (java.util.List<java.lang.Integer>) defaultValue(fields()[3]);
-        record.floatData = fieldSetFlags()[4] ? this.floatData : (java.util.List<java.lang.Float>) defaultValue(fields()[4]);
+        record.fillingCurve = fieldSetFlags()[1] ? this.fillingCurve : (java.lang.CharSequence) defaultValue(fields()[1]);
+        record.doubleData = fieldSetFlags()[2] ? this.doubleData : (java.util.List<java.lang.Double>) defaultValue(fields()[2]);
+        record.longData = fieldSetFlags()[3] ? this.longData : (java.util.List<java.lang.Long>) defaultValue(fields()[3]);
+        record.intData = fieldSetFlags()[4] ? this.intData : (java.util.List<java.lang.Integer>) defaultValue(fields()[4]);
+        record.floatData = fieldSetFlags()[5] ? this.floatData : (java.util.List<java.lang.Float>) defaultValue(fields()[5]);
         return record;
       } catch (org.apache.avro.AvroMissingFieldException e) {
         throw e;
@@ -571,6 +643,14 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
     throws java.io.IOException
   {
     out.writeString(this.urn);
+
+    if (this.fillingCurve == null) {
+      out.writeIndex(1);
+      out.writeNull();
+    } else {
+      out.writeIndex(0);
+      out.writeString(this.fillingCurve);
+    }
 
     if (this.doubleData == null) {
       out.writeIndex(0);
@@ -657,6 +737,13 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
     if (fieldOrder == null) {
       this.urn = in.readString(this.urn instanceof Utf8 ? (Utf8)this.urn : null);
 
+      if (in.readIndex() != 0) {
+        in.readNull();
+        this.fillingCurve = null;
+      } else {
+        this.fillingCurve = in.readString(this.fillingCurve instanceof Utf8 ? (Utf8)this.fillingCurve : null);
+      }
+
       if (in.readIndex() != 1) {
         in.readNull();
         this.doubleData = null;
@@ -738,13 +825,22 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
       }
 
     } else {
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < 6; i++) {
         switch (fieldOrder[i].pos()) {
         case 0:
           this.urn = in.readString(this.urn instanceof Utf8 ? (Utf8)this.urn : null);
           break;
 
         case 1:
+          if (in.readIndex() != 0) {
+            in.readNull();
+            this.fillingCurve = null;
+          } else {
+            this.fillingCurve = in.readString(this.fillingCurve instanceof Utf8 ? (Utf8)this.fillingCurve : null);
+          }
+          break;
+
+        case 2:
           if (in.readIndex() != 1) {
             in.readNull();
             this.doubleData = null;
@@ -766,7 +862,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
           }
           break;
 
-        case 2:
+        case 3:
           if (in.readIndex() != 1) {
             in.readNull();
             this.longData = null;
@@ -788,7 +884,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
           }
           break;
 
-        case 3:
+        case 4:
           if (in.readIndex() != 1) {
             in.readNull();
             this.intData = null;
@@ -810,7 +906,7 @@ public class State extends org.apache.avro.specific.SpecificRecordBase implement
           }
           break;
 
-        case 4:
+        case 5:
           if (in.readIndex() != 1) {
             in.readNull();
             this.floatData = null;

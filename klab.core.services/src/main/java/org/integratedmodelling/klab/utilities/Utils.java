@@ -1,6 +1,9 @@
 package org.integratedmodelling.klab.utilities;
 
+import maven.fetcher.MavenFetchRequest;
+import maven.fetcher.MavenFetcher;
 import org.apache.commons.io.FileUtils;
+import org.eclipse.aether.RepositorySystem;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.CheckoutConflictException;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -40,63 +43,31 @@ import java.util.*;
 
 public class Utils extends org.integratedmodelling.common.utils.Utils {
 
+
+    public static void main(String[] args) {
+
+        /**
+         * Should: If no SNAPSHOT in the version, check local repo, take for good if it's there. Otherwise
+         * download anyway. Not sure there's a way to skip the fetch and just check the hash. Also this thing
+         * isn't quick. Can retrieve version ranges, explore.
+         */
+
+        var result = new MavenFetcher()
+                .localRepositoryPath(System.getProperty("user.home") + "/.m2/repository")
+                .addRemoteRepository("ossrh", "https://oss.sonatype.org/content/repositories/snapshots")
+                .fetchArtifacts(new MavenFetchRequest(
+                        "org.integratedmodelling:klab.component.generators:1.0-SNAPSHOT"));
+
+        result.artifacts().peek(fetchedArtifact -> System.out.println(fetchedArtifact.coordinates() + ": " + fetchedArtifact.path())).toList();
+
+    }
+
+
     /**
      * Functions to access Maven artifacts
      */
     public static class Maven {
 
-
-        // see https://github.com/sahilm/maven-resolver-test/blob/master/src/main/java/com/sahilm/maven_resolver_test/Test.java for usage
-
-        public class MavenArtifactFetcher {
-
-            public static void main(String[] args) {
-                String groupId = "org.slf4j"; // Group ID of the artifact
-                String artifactId = "slf4j-api"; // Artifact ID
-                String version = "1.7.30"; // Version of the artifact
-//
-//                try {
-                    // Create the Maven artifact
-//                    var artifact = new DefaultArtifact(groupId + ":" + artifactId + ":jar:" + version);
-//  https://maven.apache.org/resolver/resolving-dependencies.html
-//                    // Set up the repository system
-//                    RepositorySystem system = ...; // Obtain the system  e.g. through a service locator pattern;
-//                    RepositorySystemSession session = ...; // Prepare your repository session
-//                    List<RemoteRepository> repositories = Arrays.asList(...); // List of remote repositories
-//
-//                    // Create an artifact request
-//                    ArtifactRequest request = new ArtifactRequest();
-//                    request.setArtifact(artifact);
-//                    request.setRepositories(repositories);
-//
-//                    // Resolve the artifact
-//                    ArtifactResult result = system.resolveArtifact(session, request);
-//
-//                    // Print the artifact path
-//                    System.out.println("Fetched artifact at: " + result.getArtifact().getFile().getAbsolutePath());
-//                    var artifact = new DefaultArtifact(groupId + ":" + artifactId + ":jar:" + version);
-//
-//                    // Set up the repository system
-//                    RepositorySystem system = ...; // Obtain the system  e.g. through a service locator pattern;
-//                    RepositorySystemSession session = ...; // Prepare your repository session
-//                    List<RemoteRepository> repositories = Arrays.asList(...); // List of remote repositories
-//
-//                    // Create an artifact request
-//                    ArtifactRequest request = new ArtifactRequest();
-//                    request.setArtifact(artifact);
-//                    request.setRepositories(repositories);
-//
-//                    // Resolve the artifact
-//                    ArtifactResult result = system.resolveArtifact(session, request);
-//
-//                    // Print the artifact path
-//                    System.out.println("Fetched artifact at: " + result.getArtifact().getFile().getAbsolutePath());
-//
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-            }
-        }
         /**
          * True if the artifact is not in the local repository or it is there with a different hash. Should
          * work with SNAPSHOT artifacts to determine if there is a new build available.
@@ -106,7 +77,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @param version
          */
         public static boolean needsUpdate(String mavenGroupId, String mavenArtifactId, String version) {
-
 
             return false;
         }
@@ -420,7 +390,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @param resourcePattern
          * @param destinationDirectory
          */
-        public static void extractResourcesFromClasspath(String resourcePattern, File destinationDirectory) {
+        public static void extractResourcesFromClasspath(String resourcePattern,
+                                                         File destinationDirectory) {
 
             try {
                 PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
@@ -436,7 +407,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                     if (path == null) {
                         throw new KlabIOException("internal: cannot establish path for resource " + resource);
                     }
-                    String fileName = org.integratedmodelling.klab.api.utils.Utils.Files.getFileName(path);
+                    String fileName =
+                            org.integratedmodelling.klab.api.utils.Utils.Files.getFileName(path);
                     File dest = new File(destinationDirectory + File.separator + fileName);
                     InputStream is = resource.getInputStream();
                     FileUtils.copyInputStreamToFile(is, dest);
@@ -608,7 +580,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                                 pushCommand.setCredentialsProvider(getCredentialsProvider(git, scope));
                                 pushCommand.call();
                             } catch (GitAPIException ex) {
-                                ret.getNotifications().add(Notification.error(ex, UI.Interactivity.DISPLAY));
+                                ret.getNotifications().add(Notification.error(ex,
+                                        UI.Interactivity.DISPLAY));
                             }
                         }
                     }
@@ -668,7 +641,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                     //                        }
                     //
                     //                        @Override
-                    //                        protected JSch createDefaultJSch(FS fs) throws JSchException {
+                    //                        protected JSch createDefaultJSch(FS fs) throws
+                    //                        JSchException {
                     //                            JSch defaultJSch = super.createDefaultJSch(fs);
                     //                            defaultJSch.addIdentity("c:/path/to/my/private_key");
                     //
@@ -738,7 +712,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             } catch (CheckoutConflictException c) {
 
                 StringBuilder message = new StringBuilder("Conflicts exist between the local version " +
-                        "and the on in the published repository.\nPlease resolve the conflicts using Git in" +
+                        "and the on in the published repository.\nPlease resolve the conflicts using " +
+                        "Git in" +
                         " the " +
                         "repository located at\n" + localRepository.getAbsolutePath() + "\n\nThe " +
                         "conflicting paths are:");
@@ -747,7 +722,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                     message.append("\n   ").append(conflict);
                 }
 
-                ret.getNotifications().add(Notification.error(message.toString(), UI.Interactivity.DISPLAY));
+                ret.getNotifications().add(Notification.error(message.toString(),
+                        UI.Interactivity.DISPLAY));
 
             } catch (Throwable e) {
                 ret.getNotifications().add(Notification.create(e));
@@ -907,7 +883,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
                 if (!branch.equals(MAIN_BRANCH)) {
                     result.checkout().setName(branch).setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK).setStartPoint("origin/" + branch).call();
-                    Logging.INSTANCE.info("switched repository: " + result.getRepository() + " to branch " + branch);
+                    Logging.INSTANCE.info("switched repository: " + result.getRepository() + " to " +
+                            "branch " + branch);
                 }
 
             } catch (Throwable e) {
@@ -960,7 +937,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @param gitDirectory the git directory
          * @return the string
          */
-        public static Modifications requireUpdatedRepository(String gitUrl, File gitDirectory, Scope scope) {
+        public static Modifications requireUpdatedRepository(String gitUrl, File gitDirectory,
+                                                             Scope scope) {
 
             Modifications ret = null;
             String repositoryName = URLs.getURLBaseName(gitUrl);
@@ -990,7 +968,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @return a boolean.
          */
         public static boolean isRemoteGitURL(String string) {
-            return string.startsWith("http:") || string.startsWith("git:") || string.startsWith("https:") || string.startsWith("git@");
+            return string.startsWith("http:") || string.startsWith("git:") || string.startsWith("https" +
+                    ":") || string.startsWith("git@");
         }
 
         /**
@@ -1011,5 +990,4 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             }
         }
     }
-
 }

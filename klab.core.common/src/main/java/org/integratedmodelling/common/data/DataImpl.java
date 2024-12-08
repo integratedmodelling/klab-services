@@ -10,6 +10,9 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import java.io.InputStream;
 import java.util.List;
 
+/**
+ * Implementation wrapping an Instance for marshalling across Avro endpoints
+ */
 public class DataImpl implements Data  {
 
     @Override

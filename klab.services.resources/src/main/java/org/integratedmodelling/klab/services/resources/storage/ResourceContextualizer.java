@@ -1,8 +1,9 @@
-package org.integratedmodelling.klab.tests.services.resources;
+package org.integratedmodelling.klab.services.resources.storage;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.common.data.Instance;
 
 /**
  * One of these is created per resource contextualization request. Drives the functions in the adapter to
@@ -42,11 +43,11 @@ public class ResourceContextualizer {
      *
      * @return
      */
-//    public Instance getData() {
-//
-//        var builder = Instance.newBuilder();
-//
-//        return builder.build();
-//    }
+    public Instance getData() {
+
+        var builder = Instance.newBuilder();
+
+        return builder.build();
+    }
 
 }

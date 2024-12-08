@@ -18,6 +18,7 @@ protocol KlabData {
  	 */
 	record State {
 		string urn;
+		string? fillingCurve = "S2XY";
 		union {null, array<double>} doubleData;
 		union {null, array<long>} longData;
 		union {null, array<int>} intData;
