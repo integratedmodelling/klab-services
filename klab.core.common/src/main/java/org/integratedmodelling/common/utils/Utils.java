@@ -13,6 +13,10 @@ import com.jcraft.jsch.JSch;
 import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.view.mxGraph;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpGet;
@@ -26,11 +30,13 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypes;
+import org.integratedmodelling.common.data.DataImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -42,6 +48,8 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.common.data.DataRequest;
+import org.integratedmodelling.klab.common.data.Instance;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.springframework.web.util.UriUtils;
@@ -284,8 +292,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             private URI uri;
             private String authorization;
             private Scope scope; // may be null
-            private Map<String, String> headers = new HashMap<>();
-            private Map<String, List<String>> responseHeaders = new HashMap<>();
+            private final Map<String, String> headers = new HashMap<>();
+            private final Map<String, List<String>> responseHeaders = new HashMap<>();
 
             public void setAuthorization(String token) {
                 this.authorization = token;
@@ -293,6 +301,63 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
             public void setHeader(String header, String value) {
                 this.headers.put(header, value);
+            }
+
+            public org.integratedmodelling.klab.api.data.Data postData(DataRequest dataRequest) {
+
+                var apiCall = substituteTemplateParameters(ServicesAPI.RESOURCES.CONTEXTUALIZE, Map.of());
+                responseHeaders.clear();
+
+                try {
+
+                    var requestBuilder =
+                            HttpRequest.newBuilder()
+                                       .version(HttpClient.Version.HTTP_1_1)
+                                       // TODO configure the timeout. This is the largest request so give
+                                       //  it 10
+                                       //  minutes. Obviously we should explore asynchronous requests and
+                                       //  streaming.
+                                       .timeout(Duration.ofMinutes(10))
+                                       .uri(URI.create(uri + apiCall))
+                                       .header(HttpHeaders.CONTENT_TYPE,
+                                               org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                                       .header(HttpHeaders.ACCEPT,
+                                               org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE);
+
+                    if (authorization != null) {
+                        requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+                    }
+
+                    for (String header : headers.keySet()) {
+                        requestBuilder = requestBuilder.header(header, headers.get(header));
+                    }
+
+                    ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
+                    var encoder = EncoderFactory.get().binaryEncoder(dataStream, null);
+                    var writer = new SpecificDatumWriter<>(DataRequest.class);
+                    writer.write(dataRequest, encoder);
+                    encoder.flush();
+
+                    var request =
+                            requestBuilder.POST(HttpRequest.BodyPublishers.ofByteArray(dataStream.toByteArray())).build();
+
+                    var response =
+                            client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+
+                    if (response.statusCode() == 200) {
+                        parseHeaders(response);
+                        var decoder = DecoderFactory.get().binaryDecoder(response.body(), null);
+                        var reader = new SpecificDatumReader<>(Instance.class);
+                        return new DataImpl(reader.read(null, decoder));
+                    }
+
+                } catch (Throwable e) {
+                    if (scope != null) {
+                        scope.error(e);
+                    }
+                }
+
+                return null;
             }
 
 
@@ -1579,7 +1644,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
              */
             List<String> vs = getTemplateVariables(template);
 
-            if (vs.size() == 0) {
+            if (vs.isEmpty()) {
                 return java.util.Collections.singletonList(template);
             }
 
@@ -1597,7 +1662,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 }
             }
 
-            if (variables.size() == 0) {
+            if (variables.isEmpty()) {
                 return java.util.Collections.singletonList(template);
             }
 
@@ -1654,7 +1719,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 }
             }
 
-            if (variables.size() == 0) {
+            if (variables.isEmpty()) {
                 return java.util.Collections.singletonList(Pair.of(template, new HashMap<>()));
             }
 
@@ -1756,7 +1821,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 if (InetAddress.getByName(host).isReachable(200)) {
                     return true;
                 }
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
             return false;
         }

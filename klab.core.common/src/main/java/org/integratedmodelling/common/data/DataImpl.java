@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.PrimitiveIterator;
 
 /**
  * Implementation wrapping an {@link org.integratedmodelling.klab.common.data.Instance} for marshalling across
@@ -30,22 +31,17 @@ public class DataImpl implements Data {
 
     private final Instance instance;
 
-    public DataImpl(InputStream inputStream) {
-        try {
-            var decoder = DecoderFactory.get().binaryDecoder(inputStream, null);
-            var reader = new SpecificDatumReader<>(Instance.class);
-            this.instance = reader.read(null, decoder);
-        } catch (IOException e) {
-            throw new KlabIOException(e);
-        }
-    }
-
     public DataImpl(Instance instance) {
         this.instance = instance;
     }
 
     static {
         // TODO read the AVRO schema and instantiate a Datum reader
+    }
+
+    @Override
+    public PrimitiveIterator.OfLong getFillCurve(FillCurve curve) {
+        return null;
     }
 
     @Override
@@ -96,6 +92,11 @@ public class DataImpl implements Data {
     @Override
     public Metadata getMetadata() {
         return null;
+    }
+
+    public Instance asInstance() {
+        // TODO lazy behavior
+        return this.instance;
     }
 
     public void copyTo(OutputStream dataStream) {

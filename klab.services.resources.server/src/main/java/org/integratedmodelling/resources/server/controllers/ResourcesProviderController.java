@@ -2,11 +2,17 @@ package org.integratedmodelling.resources.server.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
@@ -20,16 +26,19 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
-import org.integratedmodelling.klab.api.services.runtime.objects.ResourceContextualizationRequest;
 import org.integratedmodelling.common.data.DataImpl;
+import org.integratedmodelling.klab.common.data.DataRequest;
+import org.integratedmodelling.klab.common.data.Instance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.security.Principal;
@@ -167,33 +176,60 @@ public class ResourcesProviderController {
         return resourcesServer.klabService().resolveConcept(definition);
     }
 
-    // TODO we also need a version that takes the InputStream corresponding to an encoded Instance when
-    //  the resource has input states.
-    @PostMapping(ServicesAPI.RESOURCES.CONTEXTUALIZE)
-    public void contextualize(@RequestBody ResourceContextualizationRequest request,
-                              HttpServletResponse response, Principal principal) {
+    /**
+     * This one creates the DataRequest from the binary input stream coming from the client. The request may
+     * include input data in an {@link org.integratedmodelling.klab.common.data.Instance} field.
+     *
+     * @param requestStream
+     * @param response
+     * @param principal
+     */
+    @PostMapping(value = ServicesAPI.RESOURCES.CONTEXTUALIZE, consumes =
+            MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public void contextualize(InputStream requestStream, HttpServletResponse response, Principal principal) {
 
         if (principal instanceof EngineAuthorization authorization) {
-            var scope = authorization.getScope();
-            var resource = resourcesServer.klabService().resolveResource(request.getResourceUrn(), scope);
-            var data = resourcesServer.klabService().contextualize(resource, request.getGeometry(), scope);
-            if (data instanceof DataImpl dataImpl) {
-                try {
-                    var output = response.getOutputStream();
-                    dataImpl.copyTo(output);
-                    output.flush();
-                    return;
-                } catch (Throwable t) {
-                    throw new KlabResourceAccessException(t);
+
+            try {
+                var decoder = DecoderFactory.get().binaryDecoder(requestStream, null);
+                var reader = new SpecificDatumReader<>(DataRequest.class);
+                var request = reader.read(null, decoder);
+                var scope = authorization.getScope();
+                var resource =
+                        resourcesServer.klabService().resolveResource(request.getResourceUrn().toString(),
+                                scope);
+
+                Data input = null;
+                if (request.getInputData() != null) {
+                    input = new DataImpl(request.getInputData());
                 }
+
+                var data = resourcesServer.klabService().contextualize(resource,
+                        GeometryRepository.INSTANCE.get(request.getGeometry().toString(), Geometry.class),
+                        input, scope);
+
+                if (data instanceof DataImpl dataImpl) {
+                    try {
+                        var output = response.getOutputStream();
+                        dataImpl.copyTo(output);
+                        output.flush();
+                        return;
+                    } catch (Throwable t) {
+                        throw new KlabResourceAccessException(t);
+                    }
+                }
+            } catch (IOException e) {
+                throw new KlabIOException(e);
             }
+
         }
 
         throw new KlabIllegalStateException("Resource contextualizer: found unexpected implementations");
     }
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_DATAFLOW_URN)
-    public @ResponseBody KimObservationStrategyDocument resolveDataflow(@PathVariable("urn") String urn, Principal principal) {
+    public @ResponseBody KimObservationStrategyDocument resolveDataflow(@PathVariable("urn") String urn,
+                                                                        Principal principal) {
         return resourcesServer.klabService().resolveDataflow(urn,
                 principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
     }

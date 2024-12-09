@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
@@ -586,7 +587,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 ret.add((T) instance);
             } else if (Geometry.class.isAssignableFrom(cls)) {
                 // TODO use a cache storing scales
-                ret.add((T) Geometry.create(node.get("definition").asString()));
+                ret.add((T) GeometryRepository.INSTANCE.get(node.get("definition").asString(),
+                        Geometry.class));
             }
         }
         return ret;

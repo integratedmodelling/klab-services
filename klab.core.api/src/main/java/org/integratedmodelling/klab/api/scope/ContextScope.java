@@ -1,12 +1,13 @@
 package org.integratedmodelling.klab.api.scope;
 
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
@@ -114,6 +115,18 @@ public interface ContextScope extends SessionScope {
      * @return
      */
     Observation getObserverOf(Observation observation);
+
+    /**
+     * Produce a {@link Data} package that contains the data content of the passed observations. The object
+     * should be lazy and only fill in its contents when the actual data are requested. It can be sent to
+     * services such as
+     * {@link org.integratedmodelling.klab.api.services.ResourcesService#contextualize(Resource, Geometry,
+     * Data, Scope)} to pass around data content for distributed computation workflows.
+     *
+     * @param observations
+     * @return
+     */
+    Data getData(Observation... observations);
 
     /**
      * Return the consistent observations made in the root context using {@link #observe(Observation)}. The

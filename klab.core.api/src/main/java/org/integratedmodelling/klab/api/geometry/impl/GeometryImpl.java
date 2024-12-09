@@ -819,6 +819,7 @@ public class GeometryImpl implements Geometry {
     private Granularity granularity = Granularity.SINGLE;
     private GeometryImpl child;
     private boolean scalar;
+    private String key;
     //    private double coverage = null;
 
     private boolean empty;
@@ -993,6 +994,14 @@ public class GeometryImpl implements Geometry {
         }
         ((DimensionImpl) time).shape = List.of(n);
         return this;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
     }
 
     /**

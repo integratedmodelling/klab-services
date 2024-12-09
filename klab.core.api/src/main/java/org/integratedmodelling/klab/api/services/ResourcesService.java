@@ -238,10 +238,12 @@ public interface ResourcesService extends KlabService {
 
     /**
      * @param contextualizedResource
+     * @param geometry
+     * @param input may be null, pass if the resource requires inputs
      * @param scope
      * @return
      */
-    Data contextualize(Resource contextualizedResource, Geometry geometry, Scope scope);
+    Data contextualize(Resource contextualizedResource, Geometry geometry, Data input, Scope scope);
 
     /**
      * @param urn

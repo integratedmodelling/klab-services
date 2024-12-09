@@ -25,7 +25,9 @@ import java.util.function.IntConsumer;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
@@ -37,6 +39,11 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * {@link org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter.Encoder} that requests
  * one. by the runtime. The built a {@code KlabData} object built can send binary data to a client or directly
  * construct an artifact.
+ * <p>
+ * A <code>Data</code> object can also be passed to
+ * {@link org.integratedmodelling.klab.api.services.ResourcesService#contextualize(Resource, Geometry, Data,
+ * Scope)} if the contextualization requires inputs. TODO the ContextScope should be able to produce a lazy
+ * Data object from the list of requirements.
  * <p>
  * TODO explore stream-based options for the transfer.
  *
@@ -93,9 +100,26 @@ public interface Data {
         Builder builder();
     }
 
-    interface FillCurve extends PrimitiveIterator.OfLong {
-
+    /**
+     * Any of the space-filling curves can be used in the data encoding. Each state with multiple values must
+     * define the curve it uses. Normally these are used for 2D space but there may be 3D and others in the
+     * future, so extend as needed.
+     */
+    enum FillCurve {
+        S2_XY,
+        S2_YX,
+        S2_SIERPINSKI_3,
+        S2_HILBERT
+        // ... TODO more as needed. Sierpinsky can have different orders; the arrowhead can be extended to 3D
     }
+
+    /**
+     * This returns an index iterator for the data geometry using the fill curve specified.
+     *
+     * @param curve
+     * @return
+     */
+    PrimitiveIterator.OfLong getFillCurve(FillCurve curve);
 
     /**
      * A builder is passed to a resource encoder and is used to define the result of a resource's
@@ -234,6 +258,11 @@ public interface Data {
 
     static Data empty(String reason) {
         return new Data() {
+
+            @Override
+            public PrimitiveIterator.OfLong getFillCurve(FillCurve curve) {
+                return null;
+            }
 
             @Override
             public boolean isEmpty() {

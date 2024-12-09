@@ -3,6 +3,7 @@ package org.integratedmodelling.common.services.client.scope;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -297,6 +298,11 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             return List.of();
         }
         return constraint.payload(resultClass);
+    }
+
+    @Override
+    public Data getData(Observation... observations) {
+        return null;
     }
 
     @Override

@@ -40,4 +40,14 @@ protocol KlabData {
 		union {null, array<Instance>} instances;
 	}
 
+	/**
+	 * The data request sent to the ResourcesService endpoint. It may include an Instance to satisfy
+	 * dependencies for adapters that require input besides parameters.
+     */
+	record DataRequest {
+		string geometry;
+		string resourceUrn;
+		Instance? inputData;
+	}
+
 }

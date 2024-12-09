@@ -60,6 +60,7 @@ import org.mapdb.DBMaker;
 import org.mapdb.serializer.GroupSerializer;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import java.io.*;
 import java.net.URL;
 import java.util.*;
@@ -325,7 +326,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public Data contextualize(Resource resource, Geometry geometry, Scope scope) {
+    public Data contextualize(Resource resource, Geometry geometry, @Nullable Data input, Scope scope) {
         var adapter = getComponentRegistry().getAdapter(resource.getAdapterType(), scope);
         if (adapter == null) {
             return Data.empty("Adapter " + resource.getAdapterType() + " not available");

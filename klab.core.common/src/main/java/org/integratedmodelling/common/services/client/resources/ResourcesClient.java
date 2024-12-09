@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.services.client.resources;
 
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.data.DataImpl;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -34,8 +35,10 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
+import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.net.URL;
 import java.util.Collection;
@@ -283,9 +286,16 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public Data contextualize(Resource contextualizedResource, Geometry geometry, Scope scope) {
-        // TODO call the service and pump the received data into a DataImpl object
-        return null;
+    public Data contextualize(Resource contextualizedResource, Geometry geometry, @Nullable Data data, Scope scope) {
+
+        DataRequest request = DataRequest
+                .newBuilder()
+                .setInputData(data instanceof DataImpl data1 ? data1.asInstance() : null)
+                .setGeometry(geometry.encode())
+                .setResourceUrn(contextualizedResource.getUrn())
+                .build();
+
+        return client.postData(request);
     }
 
     @Override

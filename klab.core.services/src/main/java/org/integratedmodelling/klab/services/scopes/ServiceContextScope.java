@@ -5,6 +5,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -398,6 +399,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         if (runtime instanceof BaseService baseService) {
             baseService.getScopeManager().releaseScope(this.getId());
         }
+    }
+
+    @Override
+    public Data getData(Observation... observations) {
+        // TODO
+        return null;
     }
 
     public Parallelism getParallelism() {
