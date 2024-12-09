@@ -6,13 +6,11 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
-import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.services.runtime.extension.KlabAnnotation;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.utils.Utils;
 
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -524,11 +522,6 @@ public class ServiceInfoImpl implements ServiceInfo {
         return ret;
     }
 
-//    @Override
-//    public Class<?> executorClass() {
-//        return implementation;
-//    }
-
     @Override
     public boolean isDistributed() {
         return distributed;
@@ -599,14 +592,6 @@ public class ServiceInfoImpl implements ServiceInfo {
         return isConst;
     }
 
-//    public Class<?> getImplementation() {
-//        return implementation;
-//    }
-//
-//    public void setImplementation(Class<?> implementation) {
-//        this.implementation = implementation;
-//    }
-
     public List<ArgumentImpl> getInputAnnotations() {
         return inputAnnotations;
     }
@@ -643,14 +628,6 @@ public class ServiceInfoImpl implements ServiceInfo {
         this.filter = filter;
     }
 
-//    public String getExecutorMethod() {
-//        return executorMethod;
-//    }
-//
-//    public void setExecutorMethod(String executorMethod) {
-//        this.executorMethod = executorMethod;
-//    }
-
     public FunctionType getFunctionType() {
         return functionType;
     }
@@ -663,68 +640,6 @@ public class ServiceInfoImpl implements ServiceInfo {
     public Collection<KnowledgeClass> getTargets() {
         return this.targets;
     }
-
-    public void setTargets(Set<KnowledgeClass> targets) {
-        this.targets = targets;
-    }
-
-
-
-    public ServiceInfo createContextualizerPrototype(String namespacePrefix, KlabFunction annotation) {
-
-        var ret = new ServiceInfoImpl();
-
-        ret.setName(namespacePrefix + annotation.name());
-        ret.setDescription(annotation.description());
-        ret.setFilter(annotation.filter());
-//        ret.setImplementation(clss);
-//        ret.setExecutorMethod(method == null ? null : method.getName());
-        ret.setGeometry(annotation.geometry().isEmpty() ? null : Geometry.create(annotation.geometry()));
-        ret.setLabel(annotation.dataflowLabel());
-        ret.setReentrant(annotation.reentrant());
-        ret.setFunctionType(FunctionType.FUNCTION);
-
-        for (Artifact.Type a : annotation.type()) {
-            ret.getType().add(a);
-        }
-
-        for (KlabFunction.Argument argument : annotation.parameters()) {
-            var arg = createArgument(argument);
-            ret.getArguments().put(arg.getName(), arg);
-        }
-        for (KlabFunction.Argument argument : annotation.exports()) {
-            var arg = createArgument(argument);
-            ret.getImports().add(arg);
-        }
-        for (KlabFunction.Argument argument : annotation.imports()) {
-            var arg = createArgument(argument);
-            ret.getExports().add(arg);
-        }
-
-        return ret;
-    }
-
-    public ServiceInfo createAnnotationPrototype(String namespacePrefix, KlabAnnotation annotation) {
-
-        var ret = new ServiceInfoImpl();
-
-        ret.setName(namespacePrefix + annotation.name());
-        ret.setDescription(annotation.description());
-//        ret.setImplementation(clss);
-//        ret.setExecutorMethod(method == null ? null : method.getName());
-        ret.setFunctionType(FunctionType.ANNOTATION);
-        for (KnowledgeClass kcl : annotation.targets()) {
-            ret.getTargets().add(kcl);
-        }
-
-        for (KlabFunction.Argument argument : annotation.parameters()) {
-            var arg = createArgument(argument);
-            ret.getArguments().put(arg.getName(), arg);
-        }
-
-        return ret;
-    }
-
     private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Argument argument) {
         var arg = new ServiceInfoImpl.ArgumentImpl();
         arg.setName(argument.name());

@@ -57,9 +57,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * deps it needs explicitly and we could recurse.
          */
 
-        var result = new MavenFetcher()
-                .localRepositoryPath(System.getProperty("user.home") + "/.m2/repository")
-                .addRemoteRepository("ossrh", "https://oss.sonatype.org/content/repositories/snapshots")
+        System.out.println("Fetching....");
+
+        var result = Maven.mavenFetcher
                 .fetchArtifacts(new MavenFetchRequest(
                         "org.integratedmodelling:klab.component.generators:1.0-SNAPSHOT"));
 
@@ -72,6 +72,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
      * Functions to access Maven artifacts
      */
     public static class Maven {
+
+        private static MavenFetcher mavenFetcher = new MavenFetcher()
+                .localRepositoryPath(System.getProperty("user.home") + "/.m2/repository")
+                .addRemoteRepository("ossrh", "https://oss.sonatype.org/content/repositories/snapshots");
 
         /**
          * True if the artifact is not in the local repository or it is there with a different hash. Should

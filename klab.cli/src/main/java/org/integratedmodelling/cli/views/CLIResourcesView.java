@@ -199,8 +199,7 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
     @CommandLine.Command(name = "import", mixinStandardHelpOptions = true, version = Version.CURRENT,
                          description = {
                                  "Import a resource into the current resources service from a project, an " +
-                                         "archive file or a " +
-                                         "local directory.", ""}, subcommands = {})
+                                         "archive file or a local directory.", ""}, subcommands = {})
     public static class Import implements Runnable {
 
         @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local" /* TODO initialize at null */,
@@ -430,6 +429,28 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
             // TODO list components, also in verbose mode
         }
 
+        @CommandLine.Command(name = "add", mixinStandardHelpOptions = true, version = Version.CURRENT,
+                             description = {
+                                     "Check for updates in a resource's original repository and optionally load it.", ""}, subcommands = {})
+        public static class Add implements Runnable {
+
+            @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
+                    "Resource service " +
+                            "to connect" +
+                            " to"},
+                                required = false)
+            private String service;
+
+            @CommandLine.Parameters
+            String componentUrl;
+
+            @Override
+            public void run() {
+                // TODO Auto-generated method stub
+                System.out.println("add component");
+            }
+
+        }
 
         @CommandLine.Command(name = "update", mixinStandardHelpOptions = true, version = Version.CURRENT,
                              description = {

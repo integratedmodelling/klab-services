@@ -126,9 +126,34 @@
 -->
 
         <dependency>
+            <groupId>io.hawt</groupId>
+            <artifactId>hawtio-springboot</artifactId>
+            <version>4.2.0</version>
+        </dependency>
+
+        <!-- Mandatory for enabling Camel management via JMX / Hawtio -->
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-management-starter</artifactId>
+            <version>4.9.0</version>
+        </dependency>
+        <!-- (Optional) Required for Hawtio Camel route diagram tab -->
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-spring-boot-xml-starter</artifactId>
+            <version>4.9.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.github.luiinge</groupId>
             <artifactId>maven-fetcher</artifactId>
             <version>1.7.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- spatial H2 database for kboxes -->

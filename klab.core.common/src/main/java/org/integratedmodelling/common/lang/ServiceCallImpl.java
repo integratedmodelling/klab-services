@@ -172,13 +172,6 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
         return n;
     }
 
-    //    @Override
-    //    public ServiceInfo getPrototype() {
-    //        //        IExtensionService exts = Services.INSTANCE.getService(IExtensionService.class);
-    //        return null; // exts == null ? null : exts.getPrototype(name);
-    //    }
-
-
     public Set<String> getInteractiveParameterIds() {
         return interactiveParameterIds;
     }

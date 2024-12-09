@@ -479,7 +479,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
             /**
-             * GET helper that sets all headers and automatically handles JSON marshalling.
+             * Send over a file with optional parameters
              *
              * @param apiRequest
              * @param resultClass
