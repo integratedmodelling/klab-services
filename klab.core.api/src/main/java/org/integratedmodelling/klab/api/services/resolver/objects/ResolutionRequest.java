@@ -16,17 +16,11 @@ import java.util.List;
  */
 public class ResolutionRequest {
 
-    public enum Role {
-        OBSERVATION,
-        OBSERVER
-    }
-
     private Observation observation;
     private Observable observable;
     private String agentName; // for provenance when needed. Agents are identified by name
     private List<ResolutionConstraint> resolutionConstraints = new ArrayList<>();
     private long observationId;
-    private Role role = Role.OBSERVATION;
 
     public long getObservationId() {
         return observationId;
@@ -66,14 +60,6 @@ public class ResolutionRequest {
 
     public void setAgentName(String agentName) {
         this.agentName = agentName;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
     }
 }
 
