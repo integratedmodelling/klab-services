@@ -1,12 +1,12 @@
 package org.integratedmodelling.klab.api.services.impl;
 
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
 import java.net.URI;
 import java.net.URL;
-import java.util.EnumSet;
-import java.util.Set;
+import java.util.*;
 
 public abstract class AbstractServiceCapabilities implements KlabService.ServiceCapabilities {
 
@@ -17,7 +17,8 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
     private URL url;
     private Set<Message.Queue> availableMessagingQueues = EnumSet.noneOf(Message.Queue.class);
     private URI brokerURI;
-
+    private Map<String, List<ResourceTransport.Schema>> importSchemata = new HashMap<>();
+    private Map<String, List<ResourceTransport.Schema>> exportSchemata = new HashMap<>();
 
     @Override
     public String getLocalName() {
@@ -82,4 +83,13 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
         this.brokerURI = brokerURI;
     }
 
+    @Override
+    public Map<String, List<ResourceTransport.Schema>> getExportSchemata() {
+        return Map.of();
+    }
+
+    @Override
+    public Map<String, List<ResourceTransport.Schema>> getImportSchemata() {
+        return Map.of();
+    }
 }

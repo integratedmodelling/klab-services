@@ -92,7 +92,12 @@ public interface ServicesAPI {
      * Asset stream download for all services that have assets to download, using URN and content negotiation
      * for specifics
      */
-    String DOWNLOAD_ASSET = "/downloadAsset/{urn}";
+    String IMPORT = "/import/{schema}/{urn}";
+
+    /**
+     * Asset import using either multipart file import or properties, according to passed schema
+     */
+    String EXPORT = "/export/{schema}";
 
     /**
      * General administration endpoints common to all services

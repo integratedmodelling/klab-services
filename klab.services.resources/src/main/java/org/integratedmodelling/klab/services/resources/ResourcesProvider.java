@@ -12,9 +12,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -61,7 +59,8 @@ import org.mapdb.serializer.GroupSerializer;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
-import java.io.*;
+import java.io.File;
+import java.io.FileFilter;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentNavigableMap;
@@ -454,23 +453,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return null;
     }
 
-    @Override
-    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
-                                        Scope scope) {
-
-        var component = getComponentRegistry().getComponent(urn, version);
-        if (component != null && component.sourceArchive() != null && component.permissions().checkAuthorization(scope)) {
-            try {
-                return new FileInputStream(component.sourceArchive());
-            } catch (FileNotFoundException e) {
-                throw new KlabIOException(e);
-            }
-        }
-
-        // TODO projects, resource archives etc
-
-        return super.retrieveResource(urn, version, accessKey, format, scope);
-    }
 
     @Override
     public List<ResourceSet> deleteWorkspace(String workspaceName, UserScope scope) {

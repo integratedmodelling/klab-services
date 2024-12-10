@@ -61,7 +61,7 @@ public class KlabServiceController {
     }
 
 
-    @GetMapping(ServicesAPI.DOWNLOAD_ASSET)
+//    @GetMapping(ServicesAPI.DOWNLOAD_ASSET)
     public void downloadAsset(@PathVariable(name="urn") String urn,
                               @RequestParam(name = "format", required = false) String format,
                               @RequestParam(name="version", required = false) String version,
@@ -70,14 +70,14 @@ public class KlabServiceController {
                               Principal principal) {
         if (principal instanceof EngineAuthorization authorization) {
             response.setContentType(format == null ? MediaType.APPLICATION_OCTET_STREAM.getType() : format);
-            try (var input = instance.klabService().retrieveResource(urn, (version == null ? null :
-                                                                           Version.create(version)),
-                    accessKey, format,
-                    authorization.getScope())) {
-                IOUtils.copy(input, response.getOutputStream());
-            } catch (IOException e) {
-                throw new KlabInternalErrorException(e);
-            }
+//            try (var input = instance.klabService().retrieveResource(urn, (version == null ? null :
+//                                                                           Version.create(version)),
+//                    accessKey, format,
+//                    authorization.getScope())) {
+//                IOUtils.copy(input, response.getOutputStream());
+//            } catch (IOException e) {
+//                throw new KlabInternalErrorException(e);
+//            }
         }
     }
 

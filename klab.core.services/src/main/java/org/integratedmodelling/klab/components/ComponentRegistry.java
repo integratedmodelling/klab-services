@@ -6,15 +6,14 @@ import io.github.classgraph.ScanResult;
 import javassist.Modifier;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
-import org.apache.commons.io.IOUtils;
 import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
@@ -36,16 +35,12 @@ import org.integratedmodelling.klab.extension.KlabComponent;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.pf4j.*;
-import org.springframework.cache.interceptor.CacheOperationInvoker;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
@@ -588,15 +583,16 @@ public class ComponentRegistry {
                 }
 
                 File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
-                try (var input = service.retrieveResource(result.getResourceUrn(),
-                        result.getResourceVersion(), result.getAccessKey(),
-                        "application/java-archive", scope); var output = new FileOutputStream(plugin)) {
-                    IOUtils.copy(input, output);
-                } catch (IOException e) {
-                    scope.error(e);
-                    return false;
-                }
-                loadComponents(pluginPath);
+            throw new KlabUnimplementedException("DIOCÜ reimplement the component retrieval");
+                //                try (var input = service.retrieveResource(result.getResourceUrn(),
+//                        result.getResourceVersion(), result.getAccessKey(),
+//                        "application/java-archive", scope); var output = new FileOutputStream(plugin)) {
+//                    IOUtils.copy(input, output);
+//                } catch (IOException e) {
+//                    scope.error(e);
+//                    return false;
+//                }
+//                loadComponents(pluginPath);
             }
         }
 

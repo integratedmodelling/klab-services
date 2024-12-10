@@ -7,9 +7,11 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -21,6 +23,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -279,6 +282,10 @@ public interface KlabService extends Service {
          */
         Set<Message.Queue> getAvailableMessagingQueues();
 
+        Map<String, List<ResourceTransport.Schema>> getExportSchemata();
+
+        Map<String, List<ResourceTransport.Schema>> getImportSchemata();
+
         /**
          * URI for the message broker. If null, the service doesn't have messaging capabilities and will not
          * enable distributed digital twin functionalities. If this isn't null, messaging can be added to
@@ -435,25 +442,53 @@ public interface KlabService extends Service {
                                                                     ExternalAuthenticationCredentials credentials, Scope scope);
 
     /**
-     * Generic retrieval of any URN-specified asset as a stream. Used whenever the context requires it, for
-     * example to download a component jar, a resource archive for mirroring, project archive, output result
-     * or anything else.
-     * <p>
-     * Admits an accessKey parameter to access resources that are made available only on purpose and for a
-     * limited time. The access key, if any, is reported in the {@link ResourceSet.Resource} that advertises
-     * the content.
-     * <p>
-     * A format may be passed in lieu of context negotiation when alternative formats are available. It should
-     * be a known MediaType string and should match the Content-Type header in REST calls to this service..
-     *
-     * @param urn       the URN of the resource
-     * @param version   version; null for latest
-     * @param accessKey can be null if the resource is accessible and stable
-     * @param format    can be null if there is no option for format, or be a recognized file format for the
-     *                  output
-     * @param scope     the scope that gives access to the resource
+     * @param urn
+     * @param schema
+     * @param scope
+     * @param options
      * @return
      */
-    InputStream retrieveResource(String urn, Version version, String accessKey, String format, Scope scope);
+    InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope, Object... options);
+
+    /**
+     * @param schema
+     * @param assetCoordinates
+     * @param scope
+     * @return
+     */
+    Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates,
+                    Scope scope);
+
+
+    //    /**
+    //     * Generic retrieval of any URN-specified asset as a stream. Used whenever the context requires
+    //     it, for
+    //     * example to download a component jar, a resource archive for mirroring, project archive, output
+    //     result
+    //     * or anything else.
+    //     * <p>
+    //     * Admits an accessKey parameter to access resources that are made available only on purpose and
+    //     for a
+    //     * limited time. The access key, if any, is reported in the {@link ResourceSet.Resource} that
+    //     advertises
+    //     * the content.
+    //     * <p>
+    //     * A format may be passed in lieu of context negotiation when alternative formats are available.
+    //     It should
+    //     * be a known MediaType string and should match the Content-Type header in REST calls to this
+    //     service..
+    //     *
+    //     * @param urn       the URN of the resource
+    //     * @param version   version; null for latest
+    //     * @param accessKey can be null if the resource is accessible and stable
+    //     * @param format    can be null if there is no option for format, or be a recognized file format
+    //     for the
+    //     *                  output
+    //     * @param scope     the scope that gives access to the resource
+    //     * @deprecated
+    //     * @return
+    //     */
+    //    InputStream retrieveResource(String urn, Version version, String accessKey, String format, Scope
+    //    scope);
 
 }

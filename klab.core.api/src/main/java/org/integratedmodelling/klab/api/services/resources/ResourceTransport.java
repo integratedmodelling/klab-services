@@ -1,11 +1,14 @@
 package org.integratedmodelling.klab.api.services.resources;
 
+import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.lang.ServiceInfo;
 
+import java.io.File;
+import java.net.URL;
 import java.util.*;
 
 /**
@@ -20,10 +23,89 @@ public enum ResourceTransport {
     private Map<String, List<Schema>> importSchemata = new HashMap<>();
     private Map<String, List<Schema>> exportSchemata = new HashMap<>();
 
+
     /**
      * A resource import schema. Each resource type may admit one or more. A few schemata are predefined
      */
     public static class Schema {
+
+        /**
+         * Create a file asset. Validated against this schema.
+         *
+         * @param file
+         * @return
+         */
+        public Asset asset(File file) {
+            return null;
+        }
+
+        /**
+         * Create a URL-based asset. Validated against this schema.
+         *
+         * @param url
+         * @return
+         */
+        public Asset asset(URL url) {
+            return null;
+        }
+
+        /**
+         * Create a properties-based asset. Validated against the schema.
+         *
+         * @param properties
+         * @return
+         */
+        public Asset asset(Object... properties) {
+            return null;
+        }
+
+
+        /**
+         * Asset coordinate object used in service calls that provide assets for import. The
+         * asset can be a direct bytestream coming from a URL or a file, or be specified through
+         * properties. A URN may be optionally specified.
+         *
+         * The asset must be
+         */
+        public class Asset {
+
+            private Parameters<String> properties = Parameters.create();
+            private String urn;
+            private URL url;
+            private File file;
+
+            public Parameters<String> getProperties() {
+                return properties;
+            }
+
+            public void setProperties(Parameters<String> properties) {
+                this.properties = properties;
+            }
+
+            public String getUrn() {
+                return urn;
+            }
+
+            public void setUrn(String urn) {
+                this.urn = urn;
+            }
+
+            public URL getUrl() {
+                return url;
+            }
+
+            public void setUrl(URL url) {
+                this.url = url;
+            }
+
+            public File getFile() {
+                return file;
+            }
+
+            public void setFile(File file) {
+                this.file = file;
+            }
+        }
 
         public record Property(String name, Artifact.Type type, boolean optional, String defaultValue) {
         }

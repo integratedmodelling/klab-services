@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -23,6 +24,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.AbstractServiceCapabilities;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -454,14 +456,24 @@ public abstract class ServiceClient implements KlabService {
     }
 
     @Override
-    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
-                                        Scope scope) {
-        try {
-            return new FileInputStream(client.withScope(scope).download(ServicesAPI.DOWNLOAD_ASSET, "urn", urn
-                    , "format", format, "key", accessKey, "version", (version == null ? null :
-                                                                      version.toString())));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    public InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope, Object... options) {
+        return null;
     }
+
+    @Override
+    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates, Scope scope) {
+        return null;
+    }
+
+    //    @Override
+//    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
+//                                        Scope scope) {
+//        try {
+//            return new FileInputStream(client.withScope(scope).download(ServicesAPI.DOWNLOAD_ASSET, "urn", urn
+//                    , "format", format, "key", accessKey, "version", (version == null ? null :
+//                                                                      version.toString())));
+//        } catch (FileNotFoundException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 }

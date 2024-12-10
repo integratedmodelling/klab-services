@@ -14,9 +14,11 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -29,10 +31,7 @@ import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -414,10 +413,37 @@ public abstract class BaseService implements KlabService {
         return this.initialized;
     }
 
+//    @Override
+//    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
+//                                        Scope scope) {
+//        throw new KlabUnimplementedException("Cannot retrieve asset " + urn);
+//    }
+
+//    @Override
+//    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
+//                                        Scope scope) {
+//
+//        var component = getComponentRegistry().getComponent(urn, version);
+//        if (component != null && component.sourceArchive() != null && component.permissions().checkAuthorization(scope)) {
+//            try {
+//                return new FileInputStream(component.sourceArchive());
+//            } catch (FileNotFoundException e) {
+//                throw new KlabIOException(e);
+//            }
+//        }
+//
+//        // TODO projects, resource archives etc
+//
+//        return super.retrieveResource(urn, version, accessKey, format, scope);
+//    }
+
     @Override
-    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
-                                        Scope scope) {
-        throw new KlabUnimplementedException("Cannot retrieve asset " + urn);
+    public InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope, Object... options) {
+        return null;
     }
 
+    @Override
+    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates, Scope scope) {
+        return null;
+    }
 }

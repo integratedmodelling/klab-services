@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -20,6 +21,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -520,12 +522,19 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
 
     @Override
-    public InputStream retrieveResource(String urn, Version version, String accessKey, String format, Scope scope) {
+    public Map<Setting, Object> getSettings() {
+        return settings;
+    }
+
+    @Override
+    public InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope, Object... options) {
+        // TODO establish which service we're targeting and route the request to it
         return null;
     }
 
     @Override
-    public Map<Setting, Object> getSettings() {
-        return settings;
+    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates, Scope scope) {
+        // TODO establish which service we're targeting and route the request to it
+        return null;
     }
 }
