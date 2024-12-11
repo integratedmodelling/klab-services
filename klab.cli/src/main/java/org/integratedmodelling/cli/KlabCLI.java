@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.modeler.ModelerImpl;
 import org.jline.builtins.ConfigurationPath;
@@ -105,6 +106,14 @@ public enum KlabCLI {
             ret = modeler.getCurrentSession().getName();
         }
         return ret;
+    }
+
+    public void importInteractively(ResourceTransport.Schema schema) {
+
+    }
+
+    public void exportInteractively(ResourceTransport.Schema schema) {
+
     }
 
     public <T extends KlabService> T service(String service, Class<T> serviceClass) {

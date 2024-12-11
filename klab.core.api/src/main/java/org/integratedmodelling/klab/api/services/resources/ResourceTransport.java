@@ -135,6 +135,7 @@ public enum ResourceTransport {
             Schema ret = new Schema();
             ret.setName(name);
             ret.setType(type);
+            ret.setSchemaId(schemaId);
             ret.setDescription(description);
             return ret;
         }
