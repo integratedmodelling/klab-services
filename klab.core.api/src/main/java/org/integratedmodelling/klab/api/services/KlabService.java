@@ -451,44 +451,15 @@ public interface KlabService extends Service {
     InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope, Object... options);
 
     /**
-     * @param schema
-     * @param assetCoordinates
+     * @param schema           a valid schema that comes from those admitted in the service
+     * @param assetCoordinates the submission, either a file or URL that specifies a byte stream or a set of
+     *                         properties.
+     * @param suggestedUrn     may be null if the submission does not specify one
      * @param scope
      * @return
      */
     Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates,
+                    String suggestedUrn,
                     Scope scope);
-
-
-    //    /**
-    //     * Generic retrieval of any URN-specified asset as a stream. Used whenever the context requires
-    //     it, for
-    //     * example to download a component jar, a resource archive for mirroring, project archive, output
-    //     result
-    //     * or anything else.
-    //     * <p>
-    //     * Admits an accessKey parameter to access resources that are made available only on purpose and
-    //     for a
-    //     * limited time. The access key, if any, is reported in the {@link ResourceSet.Resource} that
-    //     advertises
-    //     * the content.
-    //     * <p>
-    //     * A format may be passed in lieu of context negotiation when alternative formats are available.
-    //     It should
-    //     * be a known MediaType string and should match the Content-Type header in REST calls to this
-    //     service..
-    //     *
-    //     * @param urn       the URN of the resource
-    //     * @param version   version; null for latest
-    //     * @param accessKey can be null if the resource is accessible and stable
-    //     * @param format    can be null if there is no option for format, or be a recognized file format
-    //     for the
-    //     *                  output
-    //     * @param scope     the scope that gives access to the resource
-    //     * @deprecated
-    //     * @return
-    //     */
-    //    InputStream retrieveResource(String urn, Version version, String accessKey, String format, Scope
-    //    scope);
 
 }

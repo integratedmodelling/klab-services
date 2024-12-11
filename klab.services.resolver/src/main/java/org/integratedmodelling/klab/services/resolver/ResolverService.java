@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -101,6 +102,9 @@ public class ResolverService extends BaseService implements Resolver {
         ret.setServiceName("Resolver");
         ret.setBrokerURI((embeddedBroker != null && embeddedBroker.isOnline()) ? embeddedBroker.getURI() :
                          configuration.getBrokerURI());
+        ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
+        ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
+
         ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(getUrl()) ?
                                         EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
                                                 Message.Queue.Warnings) :

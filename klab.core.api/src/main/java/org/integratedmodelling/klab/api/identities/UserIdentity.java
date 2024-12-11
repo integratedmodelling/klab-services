@@ -27,29 +27,7 @@ import java.util.Set;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface UserIdentity extends Identity {
-
-	/**
-	 * Never null, may be ANONYMOUS_USER_ID when isAnonymous() returns true.
-	 *
-	 * @return the username
-	 */
-	String getUsername();
-
-	/**
-	 * List groups the user belongs to. Empty in anonymous users.
-	 *
-	 * @return a set of group names
-	 */
-	Collection<Group> getGroups();
-
-	/**
-	 * Anonymous users cannot access the network and get a default worldview.
-	 * Intended for system exploration without a certificate.
-	 * 
-	 * @return true if anonymous
-	 */
-	boolean isAnonymous();
+public interface UserIdentity extends Identity, AuthenticatedIdentity {
 
 	/**
 	 * A user who has successfully authenticated and possesses a network session

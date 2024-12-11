@@ -89,15 +89,27 @@ public interface ServicesAPI {
     String RELEASE_CONTEXT = "/releaseContext";
 
     /**
-     * Asset stream download for all services that have assets to download, using URN and content negotiation
-     * for specifics
+     * Asset import using either multipart file import or properties, according to passed schema. Schema ID
+     * must be in capabilities and a schema compatible with the media type will be looked up.
      */
     String IMPORT = "/import/{schema}/{urn}";
 
     /**
-     * Asset import using either multipart file import or properties, according to passed schema
+     * Asset stream download for all services that have assets to download, using URN and content negotiation
+     * for specifics
      */
-    String EXPORT = "/export/{schema}";
+    String EXPORT = "/export/{schema}/{urn}";
+
+
+    /**
+     * TODO API endpoints to manage plug-in components. This will be extended by the
+     *  admin interfaces of selected services.
+     *
+     * @author Ferd
+     */
+    public interface PluginAPI {
+
+    }
 
     /**
      * General administration endpoints common to all services
@@ -132,8 +144,8 @@ public interface ServicesAPI {
     ////        String REGISTER = "/scope/register/{scopeType}/{scopeId}";
     //
 
-    /// /        /** /         * Dispose of a previously created or registered scope. /         */ /
-    /// String DISPOSE = "/scope/dispose/{scopeId}";
+    /// /        /** /         * Dispose of a previously created or registered scope. /         */ / String
+    /// DISPOSE = "/scope/dispose/{scopeId}";
     //
     //    }
 
@@ -328,6 +340,7 @@ public interface ServicesAPI {
 
         String RELATIONSHIP_SOURCE = REASONER_BASE + "/relationshipSource";
 
+
         /**
          * Reasoner plug-ins can extend the observation strategies.
          *
@@ -390,6 +403,8 @@ public interface ServicesAPI {
 
         /**
          * POST endpoint to retrieve one or more assets from the digital twin based on a query
+         *
+         * @deprecated use the generic export mechanism
          */
         String RETRIEVE_ASSET = "/asset";
 
@@ -452,6 +467,8 @@ public interface ServicesAPI {
 
             /**
              * Import project. POST endpoint with ProjectRequest body.
+             *
+             * @deprecated use the generic import mechanism
              */
             String IMPORT_PROJECT = "/importProject";
             /**
@@ -474,7 +491,13 @@ public interface ServicesAPI {
              */
             String UPDATE_DOCUMENT = "/updateDocument/{projectName}/{documentType}";
             String CREATE_RESOURCE = "/createResource";
+            /**
+             * @deprecated use the generic import mechanism
+             */
             String IMPORT_RESOURCE = "/importResource";
+            /**
+             * @deprecated use the generic import mechanism
+             */
             String UPLOAD_RESOURCE = "/uploadResource";
             String REMOVE_PROJECT = "/removeProject/{urn}";
             String REMOVE_WORKSPACE = "/removeWorkspace/{urn}";

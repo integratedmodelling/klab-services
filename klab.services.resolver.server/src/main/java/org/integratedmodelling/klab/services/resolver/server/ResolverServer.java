@@ -19,7 +19,8 @@ import java.util.List;
                                "org.integratedmodelling.klab.services.messaging",
                                "org.integratedmodelling.klab.services.application.controllers",
                                "org.integratedmodelling.klab.services.resolver.server.controllers"})
-public class ResolverServer extends ServiceNetworkedInstance<ResolverService> {
+public class
+ResolverServer extends ServiceNetworkedInstance<ResolverService> {
 
     @Override
     protected List<KlabService.Type> getEssentialServices() {

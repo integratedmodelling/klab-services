@@ -1,9 +1,9 @@
 package org.integratedmodelling.klab.api.services.resources;
 
-import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.identities.AuthenticatedIdentity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 
@@ -22,6 +22,11 @@ public enum ResourceTransport {
 
     private Map<String, List<Schema>> importSchemata = new HashMap<>();
     private Map<String, List<Schema>> exportSchemata = new HashMap<>();
+
+    public Schema COMPONENT_MAVEN;
+    public Schema COMPONENT_JAR;
+    public Schema PROJECT_ZIP;
+    public Schema PROJECT_GIT;
 
 
     /**
@@ -61,10 +66,10 @@ public enum ResourceTransport {
 
 
         /**
-         * Asset coordinate object used in service calls that provide assets for import. The
-         * asset can be a direct bytestream coming from a URL or a file, or be specified through
-         * properties. A URN may be optionally specified.
-         *
+         * Asset coordinate object used in service calls that provide assets for import. The asset can be a
+         * direct bytestream coming from a URL or a file, or be specified through properties. A URN may be
+         * optionally specified.
+         * <p>
          * The asset must be
          */
         public class Asset {
@@ -117,13 +122,15 @@ public enum ResourceTransport {
         private Set<String> extensions = new HashSet<>();
         private String description;
         private KlabAsset.KnowledgeClass knowledgeClass;
+        private final List<String> mediaTypes = new ArrayList<>();
+        private String schemaId;
 
         public enum Type {
-            PROPERTIES,
-            STREAM
+            PROPERTIES, STREAM
         }
 
-        public static Schema create(String name, Type type, KlabAsset.KnowledgeClass knowledgeClassDefined,
+        public static Schema create(String schemaId, String name, Type type,
+                                    KlabAsset.KnowledgeClass knowledgeClassDefined,
                                     String description) {
             Schema ret = new Schema();
             ret.setName(name);
@@ -157,6 +164,13 @@ public enum ResourceTransport {
             return this;
         }
 
+        public Schema mediaType(String... mediaType) {
+            if (mediaType != null) {
+                Collections.addAll(this.mediaTypes, mediaType);
+            }
+            return this;
+        }
+
         /**
          * For optional properties
          *
@@ -171,6 +185,14 @@ public enum ResourceTransport {
             properties.put(property, new Property(property, Artifact.Type.classify(defaultValue), true,
                     defaultValue.toString()));
             return this;
+        }
+
+        public String getSchemaId() {
+            return schemaId;
+        }
+
+        public void setSchemaId(String schemaId) {
+            this.schemaId = schemaId;
         }
 
         public Schema adapter(String string, Version version) {
@@ -233,6 +255,12 @@ public enum ResourceTransport {
         public void setKnowledgeClass(KlabAsset.KnowledgeClass knowledgeClass) {
             this.knowledgeClass = knowledgeClass;
         }
+
+        public List<String> getMediaTypes() {
+            return mediaTypes;
+        }
+
+
     }
 
     public void addImport(String schemaId, Schema... schemata) {
@@ -251,27 +279,89 @@ public enum ResourceTransport {
         }
     }
 
+    public Map<String, List<Schema>> getImportSchemata() {
+        return Collections.unmodifiableMap(importSchemata);
+    }
+
+    public Map<String, List<Schema>> getExportSchemata() {
+        return Collections.unmodifiableMap(exportSchemata);
+    }
+
+
+    /**
+     * Find the import schemata within those identified with <code>schemaId</code> that are compatible with
+     * the passed media type and identity. If mediaType isn't null, the result should be unique.
+     *
+     * @param schemaId
+     * @param mediaType
+     * @param identity
+     * @return
+     */
+    public List<Schema> findImportSchemata(String schemaId, String mediaType,
+                                           AuthenticatedIdentity identity) {
+        return findSchemata(importSchemata, schemaId, mediaType, identity);
+    }
+
+    /**
+     * Find the export schemata within those identified with <code>schemaId</code> that are compatible with
+     * the passed media type and identity. If mediaType isn't null, the result should be unique.
+     *
+     * @param schemaId
+     * @param mediaType
+     * @param identity
+     * @return
+     */
+    public List<Schema> findExportSchemata(String schemaId, String mediaType,
+                                           AuthenticatedIdentity identity) {
+        return findSchemata(exportSchemata, schemaId, mediaType, identity);
+    }
+
+    private List<Schema> findSchemata(Map<String, List<Schema>> schemata, String schemaId, String mediaType
+            , AuthenticatedIdentity identity) {
+        List<Schema> ret = new ArrayList<>();
+        if (schemata.containsKey(schemaId)) {
+            for (var schema : schemata.get(schemaId)) {
+                if (schema.mediaTypes.isEmpty() && mediaType != null) {
+                    continue;
+                } else {
+                    if (mediaType == null || !schema.mediaTypes.contains(mediaType)) {
+                        continue;
+                    }
+                }
+                // TODO check permissions w.r.t. identity
+                ret.add(schema);
+            }
+        }
+        return ret;
+    }
+
     /**
      * Adds the known formats. Others may be added by processing adapter import/export annotations or
      * components.
+     * <p>
+     * TODO list permissions needed to submit
      */
     ResourceTransport() {
-        // define known schemata
 
-        addImport("component.maven",
-                Schema.create("component.maven.schema", Schema.Type.PROPERTIES,
-                              KlabAsset.KnowledgeClass.COMPONENT, "Register a component available on Maven " +
-                                      "using " +
-                                      "the component's Maven coordinates")
-                      .with("groupId", Artifact.Type.TEXT, false)
-                      .with("adapterId", Artifact.Type.TEXT, false)
-                      .with("version", Artifact.Type.TEXT, false));
+        addImport("component.maven", COMPONENT_MAVEN = Schema.create("component.maven", "component.maven" +
+                        ".schema",
+                Schema.Type.PROPERTIES, KlabAsset.KnowledgeClass.COMPONENT, "Register a component " +
+                        "available on Maven " + "using " + "the component's Maven coordinates").with(
+                "groupId", Artifact.Type.TEXT, false).with("adapterId", Artifact.Type.TEXT,
+                false).with("version", Artifact.Type.TEXT, false));
 
-        addImport("component.jar",
-                Schema.create("component.maven.schema", Schema.Type.STREAM,
-                              KlabAsset.KnowledgeClass.COMPONENT,
-                              "Register a component by directly submitting a jar file")
-                      .fileExtensions("jar"));
+        addImport("component.jar", COMPONENT_JAR = Schema.create("component.jar", "component.maven.schema",
+                Schema.Type.STREAM, KlabAsset.KnowledgeClass.COMPONENT, "Register a component by directly " +
+                        "submitting a jar file").mediaType("application/java-archive").fileExtensions("jar"));
+
+        addImport("project.git", PROJECT_GIT = Schema.create("project.git", "project.git.schema",
+                Schema.Type.PROPERTIES,
+                KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB project by submitting the URL of a Git "
+                        + "repository and optional credentials").with("url", Artifact.Type.TEXT, false).with("username", Artifact.Type.TEXT, true).with("password", Artifact.Type.TEXT, true).with("token", Artifact.Type.TEXT, true));
+
+        addImport("project.zip", PROJECT_ZIP = Schema.create("project.zip", "project.zip.schema",
+                Schema.Type.STREAM,
+                KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB by directly submitting a zip archive").mediaType("application/zip", "application/x-zip-compressed").fileExtensions("zip"));
 
     }
 

@@ -24,11 +24,13 @@ import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.*;
 
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.rest.AuthenticatedIdentity;
 import org.integratedmodelling.klab.rest.IdentityReference;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -42,7 +44,7 @@ import org.springframework.security.core.CredentialsContainer;
  * instance, a JWT "subject" is set here as a "username" and is returned using the Spring method
  * getPrincipal().
  */
-public class EngineAuthorization extends AbstractAuthenticationToken implements AuthenticatedIdentity {
+public class EngineAuthorization extends AbstractAuthenticationToken implements org.integratedmodelling.klab.api.identities.AuthenticatedIdentity, AuthenticatedIdentity {
 
     private static final int TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7 * 4; // 4 weeks
 
@@ -118,6 +120,10 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
             temp.addAll(roles);
             this.roles = Collections.unmodifiableList(temp);
         }
+    }
+
+    public boolean isAnonymous() {
+        return ServicesAPI.ANONYMOUS_TOKEN.equals(this.getToken());
     }
 
     @Override

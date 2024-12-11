@@ -31,6 +31,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -515,7 +516,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ret.getPermissions().add(CRUDOperation.CREATE);
         ret.getPermissions().add(CRUDOperation.DELETE);
         ret.getPermissions().add(CRUDOperation.UPDATE);
-
+        ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
+        ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
         ret.setBrokerURI(embeddedBroker != null ? embeddedBroker.getURI() :
                          workspaceManager.getConfiguration().getBrokerURI());
         ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(getUrl()) ?

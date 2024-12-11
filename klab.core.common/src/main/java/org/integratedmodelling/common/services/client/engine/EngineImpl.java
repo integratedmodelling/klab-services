@@ -527,14 +527,21 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
 
     @Override
-    public InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope, Object... options) {
+    public InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope,
+                                   Object... options) {
         // TODO establish which service we're targeting and route the request to it
         return null;
     }
 
     @Override
-    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates, Scope scope) {
+    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates
+            , String suggestedUrn, Scope scope) {
         // TODO establish which service we're targeting and route the request to it
+        if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
+
+        } else if (schema.getType() == ResourceTransport.Schema.Type.STREAM) {
+
+        }
         return null;
     }
 }

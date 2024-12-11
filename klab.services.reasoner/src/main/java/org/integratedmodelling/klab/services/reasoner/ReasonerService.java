@@ -38,6 +38,7 @@ import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
@@ -1187,6 +1188,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         ret.setServiceName("Reasoner");
         ret.setBrokerURI((embeddedBroker != null && embeddedBroker.isOnline()) ? embeddedBroker.getURI() :
                          configuration.getBrokerURI());
+        ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
+        ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
+
         ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(getUrl()) ?
                                         EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
                                                 Message.Queue.Warnings, Message.Queue.Events) :

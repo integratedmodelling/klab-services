@@ -27,6 +27,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -174,6 +175,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         ret.setServiceName("Runtime");
         ret.setBrokerURI(embeddedBroker != null ? embeddedBroker.getURI() : configuration.getBrokerURI());
         ret.setBrokerURI(embeddedBroker != null ? embeddedBroker.getURI() : configuration.getBrokerURI());
+        ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
+        ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
 
         return ret;
     }

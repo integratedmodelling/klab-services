@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -456,24 +457,67 @@ public abstract class ServiceClient implements KlabService {
     }
 
     @Override
-    public InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope, Object... options) {
-        return null;
+    public InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope,
+                                   Object... options) {
+        try {
+            // TODO could use a stream() call on the client producing an outputstream and return a piped
+            //  stream
+            if (schema.getMediaTypes().isEmpty()) {
+                throw new KlabInternalErrorException("Cannot request an export with a schema that does not " +
+                        "contain a media type");
+            }
+            var file =
+                    client.withScope(scope).accepting(schema.getMediaTypes()).download(ServicesAPI.EXPORT,
+                            "schema", schema, "urn", urn);
+            return new FileInputStream(file);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates, Scope scope) {
+    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates
+            , String suggestedUrn, Scope scope) {
+
+        if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
+            return new Urn(client.withScope(scope).post(ServicesAPI.IMPORT,
+                    assetCoordinates.getProperties(), String.class,
+                    "schema"
+                    , schema.getSchemaId(), "urn", suggestedUrn));
+        } else if (schema.getType() == ResourceTransport.Schema.Type.STREAM) {
+            var file = assetCoordinates.getFile();
+            if (file == null && assetCoordinates.getUrl() != null) {
+                file = Utils.URLs.getFileForURL(assetCoordinates.getUrl());
+            }
+
+            if (file != null && file.exists()) {
+
+                if (schema.getMediaTypes().isEmpty()) {
+                    throw new KlabInternalErrorException("Cannot import a binary asset with a schema that " +
+                            "does not specify a media type");
+                }
+
+                return new Urn(client.withScope(scope).providing(schema.getMediaTypes())
+                                     .upload(ServicesAPI.IMPORT,
+                        assetCoordinates.getFile(), String.class,
+                        "schema", schema.getSchemaId(), "urn", suggestedUrn));
+            }
+        }
+
+
         return null;
     }
 
     //    @Override
-//    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
-//                                        Scope scope) {
-//        try {
-//            return new FileInputStream(client.withScope(scope).download(ServicesAPI.DOWNLOAD_ASSET, "urn", urn
-//                    , "format", format, "key", accessKey, "version", (version == null ? null :
-//                                                                      version.toString())));
-//        } catch (FileNotFoundException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
+    //    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
+    //                                        Scope scope) {
+    //        try {
+    //            return new FileInputStream(client.withScope(scope).download(ServicesAPI.DOWNLOAD_ASSET,
+    //            "urn", urn
+    //                    , "format", format, "key", accessKey, "version", (version == null ? null :
+    //                                                                      version.toString())));
+    //        } catch (FileNotFoundException e) {
+    //            throw new RuntimeException(e);
+    //        }
+    //    }
 }

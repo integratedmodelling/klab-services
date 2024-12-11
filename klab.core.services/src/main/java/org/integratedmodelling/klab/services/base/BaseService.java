@@ -443,7 +443,7 @@ public abstract class BaseService implements KlabService {
     }
 
     @Override
-    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates, Scope scope) {
+    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates, String suggestedUrn, Scope scope) {
         return null;
     }
 }

@@ -294,6 +294,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             private Scope scope; // may be null
             private final Map<String, String> headers = new HashMap<>();
             private final Map<String, List<String>> responseHeaders = new HashMap<>();
+            private String forcedAcceptHeader = null;
+            private String forcedContentHeader = null;
 
             public void setAuthorization(String token) {
                 this.authorization = token;
@@ -375,6 +377,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 this.scope = other.scope;
                 this.headers.putAll(other.headers);
                 this.authorization = other.authorization;
+                this.forcedAcceptHeader = other.forcedAcceptHeader;
+                this.forcedContentHeader = other.forcedContentHeader;
             }
 
             /**
@@ -406,6 +410,18 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 return ret;
             }
 
+            public Client accepting(List<String> mediaTypes) {
+                var ret = new Client(this);
+                ret.forcedAcceptHeader = Strings.join(mediaTypes, ", ");
+                return ret;
+            }
+
+            public Client providing(List<String> mediaTypes) {
+                var ret = new Client(this);
+                ret.forcedContentHeader = Strings.join(mediaTypes, ", ");
+                return ret;
+            }
+
             /**
              * Return the first (assumed only) header from the response to the previous call, or null
              *
@@ -433,6 +449,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 }
                 return List.of();
             }
+
 
             /**
              * Download something into a file. If there is a "format" parameter, it must be a valid media type
@@ -568,10 +585,21 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                             HttpRequest.newBuilder()
                                        .version(HttpClient.Version.HTTP_1_1)
                                        .timeout(Duration.ofSeconds(10))
-                                       .uri(URI.create(uri + apiCall + encodeParameters(params)))
-                                       .header(HttpHeaders.CONTENT_TYPE, payload instanceof String ?
-                                                                         MediaType.PLAIN_TEXT_UTF_8.toString() : MediaType.JSON_UTF_8.toString())
-                                       .header(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass));
+                                       .uri(URI.create(uri + apiCall + encodeParameters(params)));
+                    if (forcedAcceptHeader != null) {
+                        requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+                    } else {
+                        requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT,
+                                getAcceptedMediaType(resultClass));
+                    }
+
+                    if (forcedContentHeader != null) {
+                        requestBuilder = requestBuilder.header(HttpHeaders.CONTENT_TYPE, forcedContentHeader);
+                    } else {
+                        requestBuilder = requestBuilder.header(HttpHeaders.CONTENT_TYPE,
+                                payload instanceof String ?
+                                MediaType.PLAIN_TEXT_UTF_8.toString() : MediaType.JSON_UTF_8.toString());
+                    }
 
                     if (authorization != null) {
                         requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
@@ -621,14 +649,27 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     var payloadText = payload instanceof String
                                       ? (String) payload :
                                       Json.asString(payload);
+
                     var requestBuilder =
                             HttpRequest.newBuilder()
                                        .version(HttpClient.Version.HTTP_1_1)
                                        .timeout(Duration.ofSeconds(10))
-                                       .uri(URI.create(uri + apiCall + encodeParameters(params)))
-                                       .header(HttpHeaders.CONTENT_TYPE, payload instanceof String ?
-                                                                         MediaType.PLAIN_TEXT_UTF_8.toString() : MediaType.JSON_UTF_8.toString())
-                                       .header(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass));
+                                       .uri(URI.create(uri + apiCall + encodeParameters(params)));
+                    if (forcedAcceptHeader != null) {
+                        requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+                    } else {
+                        requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT,
+                                getAcceptedMediaType(resultClass));
+                    }
+
+                    if (forcedContentHeader != null) {
+                        requestBuilder = requestBuilder.header(HttpHeaders.CONTENT_TYPE, forcedContentHeader);
+                    } else {
+                        requestBuilder = requestBuilder.header(HttpHeaders.CONTENT_TYPE,
+                                payload instanceof String ?
+                                MediaType.PLAIN_TEXT_UTF_8.toString() : MediaType.JSON_UTF_8.toString());
+                    }
+
 
                     if (authorization != null) {
                         requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
@@ -776,6 +817,11 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                         requestBuilder = requestBuilder.header(header, headers.get(header));
                     }
 
+                    if (forcedAcceptHeader != null) {
+                        requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+                    }
+
+
                     if (Void.class != resultClass) {
                         var response =
                                 client.send(requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(), HttpResponse.BodyHandlers.ofString());
@@ -816,6 +862,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     }
                     for (String header : headers.keySet()) {
                         requestBuilder = requestBuilder.header(header, headers.get(header));
+                    }
+
+                    if (forcedAcceptHeader != null) {
+                        requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
                     }
 
                     var response =
@@ -863,6 +913,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     }
                     for (String header : headers.keySet()) {
                         requestBuilder = requestBuilder.header(header, headers.get(header));
+                    }
+
+                    if (forcedAcceptHeader != null) {
+                        requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
                     }
 
                     var response =
