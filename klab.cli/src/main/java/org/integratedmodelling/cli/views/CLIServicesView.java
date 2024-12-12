@@ -1,5 +1,6 @@
 package org.integratedmodelling.cli.views;
 
+import org.checkerframework.checker.units.qual.K;
 import org.integratedmodelling.cli.KlabCLI;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.utils.Utils;
@@ -19,7 +20,8 @@ import java.util.concurrent.atomic.AtomicReference;
                      mixinStandardHelpOptions = true,
                      description = {"List, select and control services.", "Services can be started locally or connected from the k"
                              + ".LAB network.", "Service discovery is supported according to credentials.", ""},
-                     subcommands = {org.integratedmodelling.cli.views.CLIServicesView.Connect.class})
+                     subcommands = {org.integratedmodelling.cli.views.CLIServicesView.Connect.class,
+                                    CLIServicesView.Resources.class, CLIServicesView.Runtime.class})
 public class CLIServicesView extends CLIView implements Runnable, ServicesView {
 
     private static ServicesViewController controller;
@@ -115,6 +117,84 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
             }
         }
     }
+    
+    public static class ServiceHandler {
+
+        protected static void importFromSchema(KlabService.Type serviceType) {
+            var service = KlabCLI.INSTANCE.user().getService(serviceType.classify());
+            if (service != null) {
+                KlabCLI.INSTANCE.importWithSchema(service);
+            }
+        }
+        protected static void exportFromSchema(KlabService.Type serviceType) {
+            var service = KlabCLI.INSTANCE.user().getService(serviceType.classify());
+            if (service != null) {
+                KlabCLI.INSTANCE.exportWithSchema(service);
+            }
+        }
+
+
+    }
+
+    @CommandLine.Command(name = "resources",
+                         subcommands = {Resources.Import.class, Resources.Export.class},
+                         mixinStandardHelpOptions = true,
+                         description = {"Connect to an " + "available " + "service", "Makes the service available" + " for " + "requests."})
+    public static class Resources extends ServiceHandler {
+
+        @CommandLine.Command(name = "import",
+                             mixinStandardHelpOptions = true,
+                             description = {"Connect to an " + "available " + "service", "Makes the service available" + " for " + "requests."})
+        public static class Import implements Runnable {
+
+            @Override
+            public void run() {
+                importFromSchema(KlabService.Type.RESOURCES);
+            }
+        }
+
+        @CommandLine.Command(name = "export",
+                             mixinStandardHelpOptions = true,
+                             description = {"Connect to an " + "available " + "service", "Makes the service available" + " for " + "requests."})
+        public static class Export implements Runnable {
+
+            @Override
+            public void run() {
+                exportFromSchema(KlabService.Type.RESOURCES);
+            }
+        }
+    }
+
+    @CommandLine.Command(name = "runtime",
+                         subcommands = {Runtime.Import.class, Runtime.Export.class},
+                         mixinStandardHelpOptions = true,
+                         description = {"Connect to an " + "available " + "service", "Makes the service available" + " for " + "requests."})
+    static class Runtime extends ServiceHandler {
+
+        @CommandLine.Command(name = "import",
+                             mixinStandardHelpOptions = true,
+                             description = {"Connect to an " + "available " + "service", "Makes the service available" + " for " + "requests."})
+        public static class Import implements Runnable {
+
+            @Override
+            public void run() {
+                importFromSchema(KlabService.Type.RUNTIME);
+            }
+        }
+
+        @CommandLine.Command(name = "export",
+                             mixinStandardHelpOptions = true,
+                             description = {"Connect to an " + "available " + "service", "Makes the service available" + " for " + "requests."})
+        public static class Export implements Runnable {
+
+            @Override
+            public void run() {
+                exportFromSchema(KlabService.Type.RUNTIME);
+            }
+        }
+
+    }
+
 
     @CommandLine.Command(name = "connect",
                          mixinStandardHelpOptions = true,

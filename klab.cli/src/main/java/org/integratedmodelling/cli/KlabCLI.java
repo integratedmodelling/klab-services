@@ -5,6 +5,7 @@ import org.integratedmodelling.cli.views.CLIReasonerView;
 import org.integratedmodelling.cli.views.CLIResourcesView;
 import org.integratedmodelling.cli.views.CLIServicesView;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -108,12 +109,63 @@ public enum KlabCLI {
         return ret;
     }
 
-    public void importInteractively(ResourceTransport.Schema schema) {
-
+    public void importWithSchema(KlabService service) {
+        var schema = chooseSchemaInteractively(service.capabilities(user()).getImportSchemata());
+        if (schema != null) {
+            importInteractively(service, schema);
+        }
     }
 
-    public void exportInteractively(ResourceTransport.Schema schema) {
+    public void exportWithSchema(KlabService service) {
+        var schema = chooseSchemaInteractively(service.capabilities(user()).getExportSchemata());
+        if (schema != null) {
+            exportInteractively(service, schema);
+        }
+    }
 
+    public ResourceTransport.Schema chooseSchemaInteractively(Map<String, List<ResourceTransport.Schema>> schemata) {
+
+        List<Pair<String, ResourceTransport.Schema>> choices = new ArrayList<>();
+        int n = 1;
+        commandLine.getOut().println(Ansi.AUTO.string("Choose a transport schema:"));
+        for (String key : schemata.keySet()) {
+            for (var schema : schemata.get(key)) {
+                commandLine.getOut().println(Ansi.AUTO.string("   " + (n++) + ": @|green " + key + "|@ " +
+                        "@|yellow " + schema.getDescription() + "|@"));
+                choices.add(Pair.of(key, schema));
+            }
+        }
+        var line = reader.readLine(Ansi.AUTO.string("@|yellow Schema #:|@ "), "", (MaskingCallback) null,
+                null);
+        if (Utils.Numbers.encodesInteger(line.trim())) {
+            var index = Integer.valueOf(line.trim());
+            if (index >= 0 && index < choices.size()) {
+                return choices.get(index).getSecond();
+            }
+        }
+        return null;
+    }
+
+    public void importInteractively(KlabService service, ResourceTransport.Schema schema) {
+        if (schema.getType() == ResourceTransport.Schema.Type.STREAM) {
+            var line = reader.readLine(Ansi.AUTO.string("@|yellow Enter file path or URL:|@ "), "",
+                    (MaskingCallback) null, null);
+        } else if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
+            for (var property : schema.getProperties().values()) {
+
+            }
+        }
+    }
+
+    public void exportInteractively(KlabService service, ResourceTransport.Schema schema) {
+        if (schema.getType() == ResourceTransport.Schema.Type.STREAM) {
+            var line = reader.readLine(Ansi.AUTO.string("@|yellow Enter file path or URL:|@ "), "",
+                    (MaskingCallback) null, null);
+        } else if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
+            for (var property : schema.getProperties().values()) {
+
+            }
+        }
     }
 
     public <T extends KlabService> T service(String service, Class<T> serviceClass) {
@@ -480,13 +532,13 @@ public enum KlabCLI {
                         completer.resetSemanticSearch();
                         boolean aliased = false;
 
-                                             /*
+                        /*
                          * Use <, >, .. to move through context observations, @ to set/reset the observer and
                          * ./? to inquire about the current context in  detail. The right prompt summarizes
                          * the current context focus.
                          */
                         if (line.trim().startsWith(".") || line.trim().startsWith("<") || line.trim().startsWith("@") || line.trim().startsWith(">") || line.trim().startsWith("?")) {
-                        INSTANCE.setFocalScope(line.trim());
+                            INSTANCE.setFocalScope(line.trim());
                             continue;
                         } else if (line.trim().startsWith("-")) {
                             if (line.trim().equals("-") && history.size() > 0) {

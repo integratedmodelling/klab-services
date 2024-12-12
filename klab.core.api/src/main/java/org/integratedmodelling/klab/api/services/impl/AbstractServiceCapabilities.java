@@ -85,11 +85,11 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
 
     @Override
     public Map<String, List<ResourceTransport.Schema>> getExportSchemata() {
-        return Map.of();
+        return exportSchemata;
     }
 
     @Override
     public Map<String, List<ResourceTransport.Schema>> getImportSchemata() {
-        return Map.of();
+        return importSchemata;
     }
 }

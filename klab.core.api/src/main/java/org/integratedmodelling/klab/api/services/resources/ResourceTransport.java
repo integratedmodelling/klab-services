@@ -118,7 +118,7 @@ public enum ResourceTransport {
         private String name;
         private Type type;
         private String adapter;
-        private Map<String, Property> properties = new HashMap<>();
+        private Map<String, Property> properties = new LinkedHashMap<>();
         private Set<String> extensions = new HashSet<>();
         private String description;
         private KlabAsset.KnowledgeClass knowledgeClass;
