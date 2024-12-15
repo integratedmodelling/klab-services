@@ -18,8 +18,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @CommandLine.Command(name = "services",
                      mixinStandardHelpOptions = true,
-                     description = {"List, select and control services.", "Services can be started locally or connected from the k"
-                             + ".LAB network.", "Service discovery is supported according to credentials.", ""},
+                     description = {"List, select and control services.", "Services can be started locally " +
+                             "or connected from the k"
+                             + ".LAB network.", "Service discovery is supported according to credentials.",
+                                    ""},
                      subcommands = {org.integratedmodelling.cli.views.CLIServicesView.Connect.class,
                                     CLIServicesView.Resources.class, CLIServicesView.Runtime.class})
 public class CLIServicesView extends CLIView implements Runnable, ServicesView {
@@ -81,7 +83,9 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
          *  installed.
          */
 
-        for (var serviceType : new KlabService.Type[]{KlabService.Type.REASONER, KlabService.Type.RESOURCES, KlabService.Type.RESOLVER, KlabService.Type.RUNTIME, KlabService.Type.COMMUNITY, KlabService.Type.ENGINE}) {
+        for (var serviceType : new KlabService.Type[]{KlabService.Type.REASONER, KlabService.Type.RESOURCES
+                , KlabService.Type.RESOLVER, KlabService.Type.RUNTIME, KlabService.Type.COMMUNITY,
+                                                      KlabService.Type.ENGINE}) {
 
             if (serviceType == KlabService.Type.ENGINE) {
                 // TODO describe the engine
@@ -117,16 +121,31 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
             }
         }
     }
-    
+
     public static class ServiceHandler {
 
-        protected static void importFromSchema(KlabService.Type serviceType) {
+        /**
+         * TODO add optional arguments to fill in the entire request on the CLI by passing the schema id and
+         *  parameters. The help should list all parameters with a description (currently missing).
+         *
+         * @param serviceType
+         */
+        protected static void importFromSchema(KlabService.Type serviceType, boolean help,
+                                               java.util.List<String> arguments) {
             var service = KlabCLI.INSTANCE.user().getService(serviceType.classify());
             if (service != null) {
                 KlabCLI.INSTANCE.importWithSchema(service);
             }
         }
-        protected static void exportFromSchema(KlabService.Type serviceType) {
+
+        /**
+         * TODO add optional arguments to fill in the entire request on the CLI by passing the schema id and
+         *  parameters. The help should list all parameters with a description (currently missing).
+         *
+         * @param serviceType
+         */
+        protected static void exportFromSchema(KlabService.Type serviceType, boolean help,
+                                               java.util.List<String> arguments) {
             var service = KlabCLI.INSTANCE.user().getService(serviceType.classify());
             if (service != null) {
                 KlabCLI.INSTANCE.exportWithSchema(service);
@@ -136,60 +155,112 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
 
     }
 
+    // TODO help should be custom and show the available schemata
+    // TODO enable inline definitions
     @CommandLine.Command(name = "resources",
                          subcommands = {Resources.Import.class, Resources.Export.class},
                          mixinStandardHelpOptions = true,
-                         description = {"Connect to an " + "available " + "service", "Makes the service available" + " for " + "requests."})
+                         description = {"Connect to an " + "available " + "service", "Makes the service " +
+                                 "available" + " for " + "requests."})
     public static class Resources extends ServiceHandler {
 
+        @CommandLine.Option(names = {"-h", "--help"},
+                            defaultValue = "false",
+                            description = {"Display available import schemata"},
+                            required = false)
+        boolean help = false;
+
         @CommandLine.Command(name = "import",
-                             mixinStandardHelpOptions = true,
-                             description = {"Connect to an " + "available " + "service", "Makes the service available" + " for " + "requests."})
+                             mixinStandardHelpOptions = false,
+                             description = {"Connect to an " + "available " + "service", "Makes the service" +
+                                     " available" + " for " + "requests."})
         public static class Import implements Runnable {
+
+            @CommandLine.Option(names = {"-h", "--help"},
+                                defaultValue = "false",
+                                description = {"Display available import schemata"},
+                                required = false)
+            boolean help = false;
+
+            @CommandLine.Parameters
+            java.util.List<String> arguments;
 
             @Override
             public void run() {
-                importFromSchema(KlabService.Type.RESOURCES);
+                importFromSchema(KlabService.Type.RESOURCES, help, arguments);
             }
         }
 
         @CommandLine.Command(name = "export",
-                             mixinStandardHelpOptions = true,
-                             description = {"Connect to an " + "available " + "service", "Makes the service available" + " for " + "requests."})
+                             mixinStandardHelpOptions = false,
+                             description = {"Connect to an " + "available " + "service", "Makes the service" +
+                                     " available" + " for " + "requests."})
         public static class Export implements Runnable {
+
+            @CommandLine.Option(names = {"-h", "--help"},
+                                defaultValue = "false",
+                                description = {"Display available import schemata"},
+                                required = false)
+            boolean help = false;
+
+            @CommandLine.Parameters
+            java.util.List<String> arguments;
 
             @Override
             public void run() {
-                exportFromSchema(KlabService.Type.RESOURCES);
+                exportFromSchema(KlabService.Type.RESOURCES, help, arguments);
             }
         }
     }
 
+    // TODO help should be custom and show the available schemata
+    // TODO enable inline definitions
     @CommandLine.Command(name = "runtime",
                          subcommands = {Runtime.Import.class, Runtime.Export.class},
                          mixinStandardHelpOptions = true,
-                         description = {"Connect to an " + "available " + "service", "Makes the service available" + " for " + "requests."})
+                         description = {"Connect to an " + "available " + "service", "Makes the service " +
+                                 "available" + " for " + "requests."})
     static class Runtime extends ServiceHandler {
 
         @CommandLine.Command(name = "import",
-                             mixinStandardHelpOptions = true,
-                             description = {"Connect to an " + "available " + "service", "Makes the service available" + " for " + "requests."})
+                             mixinStandardHelpOptions = false,
+                             description = {"Connect to an " + "available " + "service", "Makes the service" +
+                                     " available" + " for " + "requests."})
         public static class Import implements Runnable {
+
+            @CommandLine.Option(names = {"-h", "--help"},
+                                defaultValue = "false",
+                                description = {"Display available import schemata"},
+                                required = false)
+            boolean help = false;
+
+            @CommandLine.Parameters
+            java.util.List<String> arguments;
 
             @Override
             public void run() {
-                importFromSchema(KlabService.Type.RUNTIME);
+                importFromSchema(KlabService.Type.RUNTIME, help, arguments);
             }
         }
 
         @CommandLine.Command(name = "export",
-                             mixinStandardHelpOptions = true,
-                             description = {"Connect to an " + "available " + "service", "Makes the service available" + " for " + "requests."})
+                             mixinStandardHelpOptions = false,
+                             description = {"Connect to an " + "available " + "service", "Makes the service" +
+                                     " available" + " for " + "requests."})
         public static class Export implements Runnable {
+
+            @CommandLine.Option(names = {"-h", "--help"},
+                                defaultValue = "false",
+                                description = {"Display available import schemata"},
+                                required = false)
+            boolean help = false;
+
+            @CommandLine.Parameters
+            java.util.List<String> arguments;
 
             @Override
             public void run() {
-                exportFromSchema(KlabService.Type.RUNTIME);
+                exportFromSchema(KlabService.Type.RUNTIME, help, arguments);
             }
         }
 
@@ -198,7 +269,8 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
 
     @CommandLine.Command(name = "connect",
                          mixinStandardHelpOptions = true,
-                         description = {"Connect to an " + "available " + "service", "Makes the service available" + " for " + "requests."})
+                         description = {"Connect to an " + "available " + "service", "Makes the service " +
+                                 "available" + " for " + "requests."})
     static class Connect implements Runnable {
 
         @CommandLine.Option(names = {"-d", "--default"},

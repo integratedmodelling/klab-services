@@ -138,7 +138,7 @@ public enum KlabCLI {
         var line = reader.readLine(Ansi.AUTO.string("@|yellow Schema #:|@ "), "", (MaskingCallback) null,
                 null);
         if (Utils.Numbers.encodesInteger(line.trim())) {
-            var index = Integer.valueOf(line.trim());
+            var index = Integer.valueOf(line.trim()) - 1;
             if (index >= 0 && index < choices.size()) {
                 return choices.get(index).getSecond();
             }
@@ -152,6 +152,10 @@ public enum KlabCLI {
                     (MaskingCallback) null, null);
         } else if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
             for (var property : schema.getProperties().values()) {
+                var line = reader.readLine(Ansi.AUTO.string("Value for @|yellow " + property.name() + "|@ " +
+                                "[" + (property.defaultValue() == null ? (property.optional() ? "optional"
+                                                                                              : "mandatory") : property.defaultValue()) + "]: "),
+                        "", (MaskingCallback) null, null);
 
             }
         }
