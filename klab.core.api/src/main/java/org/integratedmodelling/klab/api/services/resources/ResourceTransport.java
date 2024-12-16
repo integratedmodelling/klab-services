@@ -81,7 +81,7 @@ public enum ResourceTransport {
          */
         public class Asset {
 
-            private Parameters<String> properties = Parameters.create();
+            private Parameters<String> properties;
             private String urn;
             private URL url;
             private File file;
