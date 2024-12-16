@@ -5,7 +5,6 @@ import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -16,7 +15,6 @@ import org.integratedmodelling.klab.api.view.modeler.views.controllers.ContextVi
 import picocli.CommandLine;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.List;
 
 @CommandLine.Command(name = "observe", mixinStandardHelpOptions = true, version = Version.CURRENT,

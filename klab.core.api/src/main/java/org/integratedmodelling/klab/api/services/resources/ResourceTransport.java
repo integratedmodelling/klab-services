@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.AuthenticatedIdentity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.File;
 import java.net.URL;
@@ -41,7 +42,9 @@ public enum ResourceTransport {
          * @return
          */
         public Asset asset(File file) {
-            return null;
+            var ret = new Asset();
+            asset().setFile(file);
+            return ret;
         }
 
         /**
@@ -51,7 +54,9 @@ public enum ResourceTransport {
          * @return
          */
         public Asset asset(URL url) {
-            return null;
+            var ret = new Asset();
+            asset().setUrl(url);
+            return ret;
         }
 
         /**
@@ -61,7 +66,9 @@ public enum ResourceTransport {
          * @return
          */
         public Asset asset(Object... properties) {
-            return null;
+            var ret = new Asset();
+            asset().setProperties(Parameters.create(properties));
+            return ret;
         }
 
 
@@ -115,7 +122,6 @@ public enum ResourceTransport {
         public record Property(String name, Artifact.Type type, boolean optional, String defaultValue) {
         }
 
-        private String name;
         private Type type;
         private String adapter;
         private Map<String, Property> properties = new LinkedHashMap<>();
@@ -129,11 +135,10 @@ public enum ResourceTransport {
             PROPERTIES, STREAM
         }
 
-        public static Schema create(String schemaId, String name, Type type,
+        public static Schema create(String schemaId, Type type,
                                     KlabAsset.KnowledgeClass knowledgeClassDefined,
                                     String description) {
             Schema ret = new Schema();
-            ret.setName(name);
             ret.setType(type);
             ret.setSchemaId(schemaId);
             ret.setDescription(description);
@@ -199,14 +204,6 @@ public enum ResourceTransport {
         public Schema adapter(String string, Version version) {
             this.adapter = string + (version == null ? "" : ("@" + version.toString()));
             return this;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
         }
 
         public Type getType() {
@@ -317,6 +314,7 @@ public enum ResourceTransport {
         return findSchemata(exportSchemata, schemaId, mediaType, identity);
     }
 
+    // TODO pass scope for permissions
     private List<Schema> findSchemata(Map<String, List<Schema>> schemata, String schemaId, String mediaType
             , AuthenticatedIdentity identity) {
         List<Schema> ret = new ArrayList<>();
@@ -344,26 +342,37 @@ public enum ResourceTransport {
      */
     ResourceTransport() {
 
-        addImport("component.maven", COMPONENT_MAVEN = Schema.create("component.maven", "component.maven" +
-                        ".schema",
+        addImport("component", COMPONENT_MAVEN = Schema.create("maven",
                 Schema.Type.PROPERTIES, KlabAsset.KnowledgeClass.COMPONENT, "Register a component " +
                         "available on Maven " + "using " + "the component's Maven coordinates").with(
                 "groupId", Artifact.Type.TEXT, false).with("adapterId", Artifact.Type.TEXT,
                 false).with("version", Artifact.Type.TEXT, false));
 
-        addImport("component.jar", COMPONENT_JAR = Schema.create("component.jar", "component.maven.schema",
+        addImport("component.jar", COMPONENT_JAR = Schema.create("jar",
                 Schema.Type.STREAM, KlabAsset.KnowledgeClass.COMPONENT, "Register a component by directly " +
                         "submitting a jar file").mediaType("application/java-archive").fileExtensions("jar"));
 
-        addImport("project.git", PROJECT_GIT = Schema.create("project.git", "project.git.schema",
-                Schema.Type.PROPERTIES,
+        addImport("project.git", PROJECT_GIT = Schema.create("git", Schema.Type.PROPERTIES,
                 KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB project by submitting the URL of a Git "
                         + "repository and optional credentials").with("url", Artifact.Type.TEXT, false).with("username", Artifact.Type.TEXT, true).with("password", Artifact.Type.TEXT, true).with("token", Artifact.Type.TEXT, true));
 
-        addImport("project.zip", PROJECT_ZIP = Schema.create("project.zip", "project.zip.schema",
+        addImport("project.zip", PROJECT_ZIP = Schema.create("zip",
                 Schema.Type.STREAM,
                 KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB by directly submitting a zip archive").mediaType("application/zip", "application/x-zip-compressed").fileExtensions("zip"));
 
+    }
+
+    // TODO pass scope for permissions
+    public Schema findSchema(String id, Map<String, List<Schema>> schemata) {
+        var list = schemata.get(Utils.Paths.getLeading(id, '.'));
+        if (list != null) {
+            for (var schema : list) {
+                if (schema.getSchemaId().equals(Utils.Paths.getLast(id, '.'))) {
+                    return schema;
+                }
+            }
+        }
+        return null;
     }
 
 

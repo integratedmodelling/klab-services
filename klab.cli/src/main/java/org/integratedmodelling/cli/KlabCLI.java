@@ -10,6 +10,8 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
@@ -40,6 +42,9 @@ import picocli.shell.jline3.PicocliCommands;
 import picocli.shell.jline3.PicocliCommands.PicocliCommandsFactory;
 
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -109,28 +114,98 @@ public enum KlabCLI {
         return ret;
     }
 
-    public void importWithSchema(KlabService service) {
-        var schema = chooseSchemaInteractively(service.capabilities(user()).getImportSchemata());
-        if (schema != null) {
-            importInteractively(service, schema);
-        }
+    public void exportWithSchema(KlabService service, List<String> arguments) {
+
     }
 
-    public void exportWithSchema(KlabService service) {
-        var schema = chooseSchemaInteractively(service.capabilities(user()).getExportSchemata());
-        if (schema != null) {
-            exportInteractively(service, schema);
+    public void importWithSchema(KlabService service, List<String> arguments) {
+
+        ResourceTransport.Schema schema = null;
+        Urn result = null;
+        if (arguments == null || arguments.isEmpty()) {
+            schema = chooseSchemaInteractively(service.capabilities(user()).getImportSchemata());
+            if (schema != null) {
+                arguments = defineInteractively(service, schema);
+                arguments.addFirst("");
+            }
+        } else {
+            schema = ResourceTransport.INSTANCE.findSchema(arguments.getFirst(),
+                    service.capabilities(user()).getImportSchemata());
         }
+
+        if (schema == null) {
+            commandLine.getErr().println("No schema found with ID " + arguments.getFirst());
+        } else if (schema.getType() == ResourceTransport.Schema.Type.STREAM && arguments.size() == 2) {
+
+            if (arguments.get(1).contains("://")) {
+                try {
+                    var url = new URI(arguments.get(1)).toURL();
+                    result = service.importAsset(schema, schema.asset(url), null, user());
+                } catch (Exception e) {
+                    commandLine.getErr().println("Import failed with exception:" + org.integratedmodelling.klab.api.utils.Utils.Exceptions.stackTrace(e));
+                    return;
+                }
+            } else {
+                File file = new File(arguments.get(1));
+                if (file.exists()) {
+                    try {
+                        result = service.importAsset(schema, schema.asset(file), null, user());
+                    } catch (Exception e) {
+                        commandLine.getErr().println("Import failed with exception:" + Utils.Exceptions.stackTrace(e));
+                        return;
+                    }
+                }
+            }
+        } else {
+            if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES && arguments.size() == schema.getProperties().size() + 1) {
+                var params = org.integratedmodelling.klab.api.collections.Parameters.create();
+                int i = 0;
+                for (var property : schema.getProperties().keySet()) {
+                    var descriptor = schema.getProperties().get(property);
+                    var argValue = arguments.get(i + 1);
+                    if (!"_".equals(argValue)) {
+                        params.put(property,
+                                Utils.Data.convertValue(argValue,
+                                        descriptor.type()));
+                    } else if (descriptor.defaultValue() != null) {
+                        params.put(property, descriptor.defaultValue());
+                    } else if (!descriptor.optional()) {
+                        commandLine.getErr().println("Property " + property + " is mandatory and must be " +
+                                "supplied");
+                        return;
+                    }
+                    i++;
+                }
+                try {
+                    result = service.importAsset(schema, schema.asset(params), null, user());
+                } catch (Throwable t) {
+                    commandLine.getErr().println("Import failed with exception:" + Utils.Exceptions.stackTrace(t));
+                    return;
+                }
+            } else {
+                commandLine.getErr().println("Import call with schema ID " + arguments.getFirst() + " " +
+                        "failed: argument mismatch");
+                return;
+            }
+        }
+
+        if (result == null) {
+            commandLine.getErr().println("Import was rejected by service (URN is null)");
+        } else {
+            commandLine.getOut().println("Import to service succeeded: URN is " + result);
+        }
+
     }
 
-    public ResourceTransport.Schema chooseSchemaInteractively(Map<String, List<ResourceTransport.Schema>> schemata) {
+    public ResourceTransport.Schema chooseSchemaInteractively
+            (Map<String, List<ResourceTransport.Schema>> schemata) {
 
         List<Pair<String, ResourceTransport.Schema>> choices = new ArrayList<>();
         int n = 1;
         commandLine.getOut().println(Ansi.AUTO.string("Choose a transport schema:"));
         for (String key : schemata.keySet()) {
             for (var schema : schemata.get(key)) {
-                commandLine.getOut().println(Ansi.AUTO.string("   " + (n++) + ": @|green " + key + "|@ " +
+                commandLine.getOut().println(Ansi.AUTO.string("   " + (n++) + ": @|green " + key + "." + schema.getSchemaId() + "|@ " +
                         "@|yellow " + schema.getDescription() + "|@"));
                 choices.add(Pair.of(key, schema));
             }
@@ -138,7 +213,7 @@ public enum KlabCLI {
         var line = reader.readLine(Ansi.AUTO.string("@|yellow Schema #:|@ "), "", (MaskingCallback) null,
                 null);
         if (Utils.Numbers.encodesInteger(line.trim())) {
-            var index = Integer.valueOf(line.trim()) - 1;
+            var index = Integer.parseInt(line.trim()) - 1;
             if (index >= 0 && index < choices.size()) {
                 return choices.get(index).getSecond();
             }
@@ -146,30 +221,33 @@ public enum KlabCLI {
         return null;
     }
 
-    public void importInteractively(KlabService service, ResourceTransport.Schema schema) {
+    public List<String> defineInteractively(KlabService service, ResourceTransport.Schema schema) {
+
+        List<String> ret = new ArrayList<>();
+
         if (schema.getType() == ResourceTransport.Schema.Type.STREAM) {
             var line = reader.readLine(Ansi.AUTO.string("@|yellow Enter file path or URL:|@ "), "",
                     (MaskingCallback) null, null);
+            if (line != null && !line.trim().isEmpty()) {
+                ret.add(line.trim());
+            }
         } else if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
             for (var property : schema.getProperties().values()) {
-                var line = reader.readLine(Ansi.AUTO.string("Value for @|yellow " + property.name() + "|@ " +
+                var line = reader.readLine(Ansi.AUTO.string("Value for @|yellow " + property.name() +
+                                "|@ " +
                                 "[" + (property.defaultValue() == null ? (property.optional() ? "optional"
-                                                                                              : "mandatory") : property.defaultValue()) + "]: "),
+                                                                                              :
+                                                                          "mandatory") :
+                                       property.defaultValue()) + "]: "),
                         "", (MaskingCallback) null, null);
-
+                if (line.trim().isEmpty()) {
+                    ret.add("_");
+                } else {
+                    ret.add(line.trim());
+                }
             }
         }
-    }
-
-    public void exportInteractively(KlabService service, ResourceTransport.Schema schema) {
-        if (schema.getType() == ResourceTransport.Schema.Type.STREAM) {
-            var line = reader.readLine(Ansi.AUTO.string("@|yellow Enter file path or URL:|@ "), "",
-                    (MaskingCallback) null, null);
-        } else if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
-            for (var property : schema.getProperties().values()) {
-
-            }
-        }
+        return ret;
     }
 
     public <T extends KlabService> T service(String service, Class<T> serviceClass) {
@@ -189,7 +267,8 @@ public enum KlabCLI {
      * Top-level command that just prints help.
      */
     @Command(name = "", description = {"k.LAB interactive shell with completion and autosuggestions. " +
-                                               "Hit @|magenta <TAB>|@ to see available commands.", "Hit " +
+                                               "Hit @|magenta <TAB>|@ to see available commands.", "Hit" +
+                                               " " +
                                                "@|magenta ALT-S|@ to toggle tailtips.", ""}, footer = {"",
                                                                                                        "Press Ctrl-D to exit."},
              subcommands = {Auth.class, Expressions.class, CLIReasonerView.class, /*Report.class, Resolver
@@ -214,7 +293,8 @@ public enum KlabCLI {
     }
 
     @Command(name = "run", mixinStandardHelpOptions = true, description =
-            {"Run scripts, test cases and " + "applications.", "Uses autocompletion for " + "behavior and " +
+            {"Run scripts, test cases and " + "applications.", "Uses autocompletion for " + "behavior " +
+                    "and " +
                     "test case " + "names.", ""}, subcommands = {Run.List.class, Run.Purge.class})
     static class Run /* extends Monitor */ implements Runnable {
 
@@ -226,19 +306,25 @@ public enum KlabCLI {
         CommandSpec commandSpec;
 
         @Option(names = {"-s", "--synchronous"}, defaultValue = "false", description = {"Run in synchronous" +
-                                                                                                " mode, " +
+                                                                                                " mode," +
+                                                                                                " " +
                                                                                                 "returning " +
-                                                                                                "to the " +
-                                                                                                "prompt " +
-                                                                                                "when the " +
-                                                                                                "script has" +
+                                                                                                "to the" +
+                                                                                                " " +
+                                                                                                "prompt" +
+                                                                                                " " +
+                                                                                                "when " +
+                                                                                                "the " +
+                                                                                                "script" +
+                                                                                                " has" +
                                                                                                 " finished " +
                                                                                                 "running."}
                 , required = false)
         boolean synchronous;
 
-        @Parameters(description = {"The full name of one or more script, test case or application.", "If " +
-                "not present locally, resolve through the k.LAB network."})
+        @Parameters(description = {"The full name of one or more script, test case or application.",
+                                   "If " +
+                                           "not present locally, resolve through the k.LAB network."})
         java.util.List<String> scriptNames = new ArrayList<>();
 
         public Run() {
@@ -295,7 +381,8 @@ public enum KlabCLI {
                     //                            .getCurrentUser());
                     //
                     //                    if (behavior == null) {
-                    //                        out.println(Ansi.AUTO.string("Behavior @|red " + scriptName +
+                    //                        out.println(Ansi.AUTO.string("Behavior @|red " +
+                    //                        scriptName +
                     //                        "|@ unknown or not " +
                     //                                "available"));
                     //                    } else {
@@ -318,7 +405,8 @@ public enum KlabCLI {
         }
 
         @Command(name = "list", mixinStandardHelpOptions = true, description = {"List all running " +
-                                                                                        "behaviors" + "."})
+                                                                                        "behaviors" +
+                                                                                        "."})
         static class List implements Runnable {
 
             @ParentCommand
@@ -395,7 +483,8 @@ public enum KlabCLI {
             }
         }
 
-        @Command(name = "unalias", mixinStandardHelpOptions = true, description = {"Remove a command alias."})
+        @Command(name = "unalias", mixinStandardHelpOptions = true, description = {"Remove a command " +
+                                                                                           "alias."})
         static class Unalias implements Runnable {
 
             @Parameters
@@ -410,12 +499,16 @@ public enum KlabCLI {
         }
 
         @Command(name = "purge", mixinStandardHelpOptions = true, description = {"Remove finished or " +
-                                                                                         "aborted behaviors" +
-                                                                                         " from the list."})
+                                                                                         "aborted " +
+                                                                                         "behaviors" +
+                                                                                         " from the " +
+                                                                                         "list."})
         static class Purge implements Runnable {
 
-            @Parameters(description = {"The numeric ID of the scripts we want to purge. No argument removes" +
-                                               " all that have " + "finished.", "Run \"run list\" to know " +
+            @Parameters(description = {"The numeric ID of the scripts we want to purge. No argument " +
+                                               "removes" +
+                                               " all that have " + "finished.", "Run \"run list\" to " +
+                                               "know " +
                                                "the IDs."})
             java.util.List<Integer> appIds = new ArrayList<>();
 
@@ -537,8 +630,10 @@ public enum KlabCLI {
                         boolean aliased = false;
 
                         /*
-                         * Use <, >, .. to move through context observations, @ to set/reset the observer and
-                         * ./? to inquire about the current context in  detail. The right prompt summarizes
+                         * Use <, >, .. to move through context observations, @ to set/reset the
+                         * observer and
+                         * ./? to inquire about the current context in  detail. The right prompt
+                         * summarizes
                          * the current context focus.
                          */
                         if (line.trim().startsWith(".") || line.trim().startsWith("<") || line.trim().startsWith("@") || line.trim().startsWith(">") || line.trim().startsWith("?")) {
@@ -561,7 +656,8 @@ public enum KlabCLI {
 
                         if (aliased) {
                             // print the actual line in grey + italic
-                            INSTANCE.commandLine.getOut().println(Ansi.AUTO.string("@|gray" + line + "|@"));
+                            INSTANCE.commandLine.getOut().println(Ansi.AUTO.string("@|gray" + line +
+                                    "|@"));
                         }
 
                         systemRegistry.execute(line);
@@ -640,7 +736,8 @@ public enum KlabCLI {
          * < goes back one level of context observation (if any)
          * << goes back to the userscope level
          * >> goes to the innermost non-ambiguous scope and shows what's under it
-         * > obsId sets the ID'd context observation as the current context or resets it if no obsId is given
+         * > obsId sets the ID'd context observation as the current context or resets it if no obsId is
+         *  given
          *   (equivalent to <)
          * @ obsId sets the observer or resets if no obsId is given
          * ? n prints out the currently known observations (at level n, 1 if not given, full tree if n ==
@@ -719,7 +816,8 @@ public enum KlabCLI {
     //            case ServiceLifecycle -> {
     //                switch (message.getMessageType()) {
     //                    case ServiceAvailable -> {
-    //                        var capabilities = message.getPayload(KlabService.ServiceCapabilities.class);
+    //                        var capabilities = message.getPayload(KlabService.ServiceCapabilities
+    //                        .class);
     //                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities
     //                        .getType() +
     //                                " service available: " + capabilities.getServiceName()
@@ -734,7 +832,8 @@ public enum KlabCLI {
     //
     //                    }
     //                    case ServiceUnavailable -> {
-    //                        var capabilities = message.getPayload(KlabService.ServiceCapabilities.class);
+    //                        var capabilities = message.getPayload(KlabService.ServiceCapabilities
+    //                        .class);
     //                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities
     //                        .getType() +
     //                                " service unavailable: " + capabilities.getServiceName()

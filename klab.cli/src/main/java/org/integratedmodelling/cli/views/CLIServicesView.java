@@ -132,9 +132,15 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
          */
         protected static void importFromSchema(KlabService.Type serviceType, boolean help,
                                                java.util.List<String> arguments) {
+
+            if (help) {
+
+                return;
+            }
+
             var service = KlabCLI.INSTANCE.user().getService(serviceType.classify());
             if (service != null) {
-                KlabCLI.INSTANCE.importWithSchema(service);
+                KlabCLI.INSTANCE.importWithSchema(service, arguments);
             }
         }
 
@@ -146,9 +152,14 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
          */
         protected static void exportFromSchema(KlabService.Type serviceType, boolean help,
                                                java.util.List<String> arguments) {
+
+            if (help) {
+                return;
+            }
+
             var service = KlabCLI.INSTANCE.user().getService(serviceType.classify());
             if (service != null) {
-                KlabCLI.INSTANCE.exportWithSchema(service);
+                KlabCLI.INSTANCE.exportWithSchema(service, arguments);
             }
         }
 
