@@ -31,7 +31,7 @@ public interface ServiceInfo extends Serializable {
      * @author Ferd
      */
     enum FunctionType {
-        FUNCTION, VERB, ANNOTATION
+        FUNCTION, VERB, ANNOTATION, IMPORTER, EXPORTER
     }
 
     /**

@@ -111,34 +111,22 @@ public class KlabServiceController {
                               @PathVariable(name = "urn") String urn,
                               @RequestBody Parameters<String> data,
                               Principal principal) {
-        String ret = urn;
+
         if (principal instanceof EngineAuthorization authorization) {
 
             var scope = authorization.getScope();
             // retrieve schema. TODO not handling authorization yet
-            ResourceTransport.Schema s = null;
-
-            for (var ss : ResourceTransport.INSTANCE.findImportSchemata(schema, null, authorization)) {
-                if (ss.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
-                    if (s != null) {
-                        throw new KlabInternalErrorException("Ambiguous request: more than one " +
-                                "property-based import schema with " +
-                                "id " + schema + " is available");
-                    }
-                    s = ss;
-                }
-            }
+            var s = ResourceTransport.INSTANCE.findSchema(schema,
+                    instance.klabService().capabilities(scope).getImportSchemata(), scope);
             if (s == null) {
                 throw new KlabAuthorizationException("No authorized import schema for property-based " +
                         "submissions is available");
             }
 
             var result = instance.klabService().importAsset(s, s.asset(data), urn, scope);
-
-            ret = result == null ? null : result.getUrn();
-
+            return result == null ? null : result.getUrn();
         }
-        return ret;
+        return null;
     }
 
     @PostMapping(value = ServicesAPI.IMPORT, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

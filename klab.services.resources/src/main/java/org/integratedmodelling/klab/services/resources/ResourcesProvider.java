@@ -124,6 +124,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             }
         }, Instance.class);
 
+
+
         this.kbox = ModelKbox.create(this);
         this.workspaceManager = new WorkspaceManager(scope, getStartupOptions(), this,
                 this::resolveRemoteProject);
@@ -138,6 +140,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
          */
         getComponentRegistry().initializeComponents(this.workspaceManager.getConfiguration(),
                 getConfigurationSubdirectory(options, "components"));
+
+        // load predefined runtime libraries
+        getComponentRegistry().loadExtensions("org.integratedmodelling.klab.runtime.libraries");
 
     }
 

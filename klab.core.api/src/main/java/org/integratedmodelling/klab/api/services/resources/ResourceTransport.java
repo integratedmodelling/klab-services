@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.AuthenticatedIdentity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.File;
@@ -342,32 +343,37 @@ public enum ResourceTransport {
      */
     ResourceTransport() {
 
-        addImport("component", COMPONENT_MAVEN = Schema.create("maven",
-                Schema.Type.PROPERTIES, KlabAsset.KnowledgeClass.COMPONENT, "Register a component " +
-                        "available on Maven " + "using " + "the component's Maven coordinates").with(
-                "groupId", Artifact.Type.TEXT, false).with("adapterId", Artifact.Type.TEXT,
-                false).with("version", Artifact.Type.TEXT, false));
+        addImport("component",
+                COMPONENT_MAVEN = Schema.create("component.maven",
+                        Schema.Type.PROPERTIES, KlabAsset.KnowledgeClass.COMPONENT, "Register a component " +
+                                "available on Maven " + "using " + "the component's Maven coordinates").with(
+                        "groupId", Artifact.Type.TEXT, false).with("adapterId", Artifact.Type.TEXT,
+                        false).with("version", Artifact.Type.TEXT, false),
+                COMPONENT_JAR = Schema.create("component.jar",
+                        Schema.Type.STREAM, KlabAsset.KnowledgeClass.COMPONENT, "Register a component by " +
+                                "directly " +
+                                "submitting a jar file").mediaType("application/java-archive").fileExtensions("jar"));
 
-        addImport("component.jar", COMPONENT_JAR = Schema.create("jar",
-                Schema.Type.STREAM, KlabAsset.KnowledgeClass.COMPONENT, "Register a component by directly " +
-                        "submitting a jar file").mediaType("application/java-archive").fileExtensions("jar"));
-
-        addImport("project.git", PROJECT_GIT = Schema.create("git", Schema.Type.PROPERTIES,
-                KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB project by submitting the URL of a Git "
-                        + "repository and optional credentials").with("url", Artifact.Type.TEXT, false).with("username", Artifact.Type.TEXT, true).with("password", Artifact.Type.TEXT, true).with("token", Artifact.Type.TEXT, true));
-
-        addImport("project.zip", PROJECT_ZIP = Schema.create("zip",
-                Schema.Type.STREAM,
-                KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB by directly submitting a zip archive").mediaType("application/zip", "application/x-zip-compressed").fileExtensions("zip"));
+        addImport("project.git",
+                PROJECT_GIT = Schema.create("project.git", Schema.Type.PROPERTIES,
+                        KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB project by submitting the URL " +
+                                "of a Git "
+                                + "repository and optional credentials").with("url", Artifact.Type.TEXT,
+                        false).with("username", Artifact.Type.TEXT, true).with("password",
+                        Artifact.Type.TEXT, true).with("token", Artifact.Type.TEXT, true),
+                PROJECT_ZIP = Schema.create("project.zip",
+                        Schema.Type.STREAM,
+                        KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB by directly submitting a zip " +
+                                "archive").mediaType("application/zip", "application/x-zip-compressed").fileExtensions("zip"));
 
     }
 
-    // TODO pass scope for permissions
-    public Schema findSchema(String id, Map<String, List<Schema>> schemata) {
+    // TODO use the scope for permissions (here or downstream in service controllers)
+    public Schema findSchema(String id, Map<String, List<Schema>> schemata, Scope scope) {
         var list = schemata.get(Utils.Paths.getLeading(id, '.'));
         if (list != null) {
             for (var schema : list) {
-                if (schema.getSchemaId().equals(Utils.Paths.getLast(id, '.'))) {
+                if (schema.getSchemaId().equals(id)) {
                     return schema;
                 }
             }

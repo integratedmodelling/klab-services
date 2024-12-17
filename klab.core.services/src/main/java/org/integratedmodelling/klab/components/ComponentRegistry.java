@@ -24,6 +24,8 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
+import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabAnnotation;
@@ -56,10 +58,9 @@ public class ComponentRegistry {
     // FIXME the permissions should come from the external permission system, not as the internal
     //  Plugin-License
     private final ComponentDescriptor localComponentDescriptor =
-            new ComponentDescriptor(LOCAL_SERVICE_COMPONENT,
-                    Version.CURRENT_VERSION,
-                    "Natively available services", null, ResourcePrivileges.PUBLIC, new ArrayList<>(),
-                    new ArrayList<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
+            new ComponentDescriptor(LOCAL_SERVICE_COMPONENT, Version.CURRENT_VERSION, "Natively available " +
+                    "services", null, ResourcePrivileges.PUBLIC, new ArrayList<>(), new ArrayList<>(),
+                    new HashMap<>(), new HashMap<>(), new HashMap<>());
 
     /**
      * Component descriptors, uniquely identified by id + version
@@ -75,6 +76,9 @@ public class ComponentRegistry {
     private MultiValuedMap<String, ComponentDescriptor> annotationFinder = new HashSetValuedHashMap<>();
     private MultiValuedMap<String, ComponentDescriptor> verbFinder = new HashSetValuedHashMap<>();
     private Map<Class<?>, Object> globalInstances = new HashMap<>();
+    private Map<String, FunctionDescriptor> importHandlers = new HashMap<>();
+    private Map<String, FunctionDescriptor> exportHandlers = new HashMap<>();
+
 
     public List<ComponentDescriptor> resolveServiceCall(String name, Version version) {
         List<ComponentDescriptor> ret = new ArrayList<>();
@@ -98,8 +102,8 @@ public class ComponentRegistry {
     }
 
     /**
-     * The adapter identifier may include a version after @; if not, retrieve the latest version
-     * available. Even if present, it must be authorized to the passed scope.
+     * The adapter identifier may include a version after @; if not, retrieve the latest version available.
+     * Even if present, it must be authorized to the passed scope.
      *
      * @param adapterType
      * @param scope
@@ -118,8 +122,7 @@ public class ComponentRegistry {
                                     List<Pair<ServiceInfo, FunctionDescriptor>> verbs) {
     }
 
-    public record ComponentDescriptor(String id, Version version, String description,
-                                      File sourceArchive,
+    public record ComponentDescriptor(String id, Version version, String description, File sourceArchive,
                                       ResourcePrivileges permissions, List<LibraryDescriptor> libraries,
                                       List<AdapterDescriptor> adapters,
                                       Map<String, FunctionDescriptor> services,
@@ -182,8 +185,7 @@ public class ComponentRegistry {
             var pluginId = componentManager.loadPlugin(resourcePath.toPath());
             var plugin = componentManager.getPlugin(pluginId);
             ResourceSet.Resource result = new ResourceSet.Resource("SERVICE ID TODO", pluginId, null,
-                    Version.create(plugin.getDescriptor().getVersion()),
-                    KlabAsset.KnowledgeClass.COMPONENT);
+                    Version.create(plugin.getDescriptor().getVersion()), KlabAsset.KnowledgeClass.COMPONENT);
 
             // TODO dependencies
 
@@ -204,8 +206,7 @@ public class ComponentRegistry {
                 }
 
             } else {
-                ret.getNotifications().add(Notification.error("Plugin " + Utils.Files.getFileName(resourcePath) + " is " +
-                        "not a valid k.LAB component"));
+                ret.getNotifications().add(Notification.error("Plugin " + Utils.Files.getFileName(resourcePath) + " is " + "not a valid k.LAB component"));
                 ret.setEmpty(true);
             }
         } catch (Throwable t) {
@@ -258,14 +259,13 @@ public class ComponentRegistry {
                             component.getWrapper().getPluginPath().toFile();
         var permissions = license == null ? ResourcePrivileges.PUBLIC : ResourcePrivileges.create(license);
 
-        scanPackage(component, Map.of(Library.class, (annotation, cls) -> registerLibrary(
-                        (Library) annotation, cls, libraries), ResourceAdapter.class,
-                (annotation, cls) -> registerAdapter((ResourceAdapter) annotation, cls,
-                        adapters)));
+        scanPackage(component, Map.of(Library.class,
+                (annotation, cls) -> registerLibrary((Library) annotation, cls, libraries),
+                ResourceAdapter.class, (annotation, cls) -> registerAdapter((ResourceAdapter) annotation,
+                        cls, adapters)));
 
         var componentDescriptor = new ComponentDescriptor(componentName, componentVersion, description,
-                sourceArchive,
-                permissions, libraries, adapters, new HashMap<>(), new HashMap<>(),
+                sourceArchive, permissions, libraries, adapters, new HashMap<>(), new HashMap<>(),
                 new HashMap<>());
 
         // update catalog
@@ -289,8 +289,7 @@ public class ComponentRegistry {
         return componentDescriptor;
     }
 
-    private void registerLibrary(Library annotation, Class<?> cls,
-                                 List<LibraryDescriptor> libraries) {
+    private void registerLibrary(Library annotation, Class<?> cls, List<LibraryDescriptor> libraries) {
 
         String namespacePrefix = Library.CORE_LIBRARY.equals(annotation.name()) ? "" :
                                  (annotation.name() + ".");
@@ -322,11 +321,17 @@ public class ComponentRegistry {
                 prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
             } else if (method.isAnnotationPresent(KlabAnnotation.class)) {
                 var serviceInfo = createAnnotationPrototype(namespacePrefix,
-                        cls.getAnnotation(KlabAnnotation.class));
+                        method.getAnnotation(KlabAnnotation.class));
                 annotations.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
             } else if (method.isAnnotationPresent(Verb.class)) {
-                var serviceInfo = createVerbPrototype(namespacePrefix, cls.getAnnotation(Verb.class));
+                var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
                 verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
+            } else if (method.isAnnotationPresent(Importer.class)) {
+                var serviceInfo = createAnnotationPrototype(namespacePrefix,method.getAnnotation(Importer.class));
+                importHandlers.put(serviceInfo.getName(), createFunctionDescriptor(serviceInfo, cls, method));
+            } else if (method.isAnnotationPresent(Exporter.class)) {
+                var serviceInfo = createAnnotationPrototype(namespacePrefix, method.getAnnotation(Exporter.class));
+                exportHandlers.put(serviceInfo.getName(), createFunctionDescriptor(serviceInfo, cls, method));
             }
         }
 
@@ -503,14 +508,12 @@ public class ComponentRegistry {
         return null;
     }
 
-    private void registerAdapter(ResourceAdapter annotation, Class<?> cls,
-                                 List<AdapterDescriptor> adapters) {
+    private void registerAdapter(ResourceAdapter annotation, Class<?> cls, List<AdapterDescriptor> adapters) {
 
         try {
             var adapter = new AdapterImpl(cls, annotation);
         } catch (Throwable t) {
-            Logging.INSTANCE.error("Adapter " + annotation.name() + " caused errors when loading and was " +
-                    "rejected", t);
+            Logging.INSTANCE.error("Adapter " + annotation.name() + " caused errors when loading and was " + "rejected", t);
         }
 
         System.out.println("ZIO PORCO UN ADAPTER " + annotation.name());
@@ -583,16 +586,17 @@ public class ComponentRegistry {
                 }
 
                 File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
-            throw new KlabUnimplementedException("DIOCÜ reimplement the component retrieval");
+                throw new KlabUnimplementedException("DIOCÜ reimplement the component retrieval");
                 //                try (var input = service.retrieveResource(result.getResourceUrn(),
-//                        result.getResourceVersion(), result.getAccessKey(),
-//                        "application/java-archive", scope); var output = new FileOutputStream(plugin)) {
-//                    IOUtils.copy(input, output);
-//                } catch (IOException e) {
-//                    scope.error(e);
-//                    return false;
-//                }
-//                loadComponents(pluginPath);
+                //                        result.getResourceVersion(), result.getAccessKey(),
+                //                        "application/java-archive", scope); var output = new
+                //                        FileOutputStream(plugin)) {
+                //                    IOUtils.copy(input, output);
+                //                } catch (IOException e) {
+                //                    scope.error(e);
+                //                    return false;
+                //                }
+                //                loadComponents(pluginPath);
             }
         }
 
@@ -602,8 +606,8 @@ public class ComponentRegistry {
         return true;
     }
 
-    public void scanPackage(String[] internalPackages, Map<Class<? extends Annotation>, BiConsumer<Annotation
-            , Class<?>>> annotationHandlers) {
+    public void scanPackage(String[] internalPackages, Map<Class<? extends Annotation>,
+            BiConsumer<Annotation, Class<?>>> annotationHandlers) {
 
         try (ScanResult scanResult =
                      new ClassGraph().enableAnnotationInfo().acceptPackages(internalPackages).scan()) {
@@ -706,6 +710,48 @@ public class ComponentRegistry {
         return ret;
     }
 
+    private ServiceInfo createAnnotationPrototype(String namespacePrefix, Exporter annotation) {
+
+        var ret = new ServiceInfoImpl();
+
+        ret.setName(namespacePrefix + annotation.schema());
+        ret.setDescription(annotation.description());
+        ret.setFunctionType(ServiceInfo.FunctionType.IMPORTER);
+        ret.getTargets().add(annotation.knowledgeClass());
+
+        for (KlabFunction.Argument argument : annotation.properties()) {
+            var arg = createArgument(argument);
+            ret.getArguments().put(arg.getName(), arg);
+        }
+
+        /*
+        TODO create the records in ResourceTransport!
+         */
+
+        return ret;
+    }
+
+    private ServiceInfo createAnnotationPrototype(String namespacePrefix, Importer annotation) {
+
+        var ret = new ServiceInfoImpl();
+
+        ret.setName(namespacePrefix + annotation.schema());
+        ret.setDescription(annotation.description());
+        ret.setFunctionType(ServiceInfo.FunctionType.IMPORTER);
+        ret.getTargets().add(annotation.knowledgeClass());
+
+        for (KlabFunction.Argument argument : annotation.properties()) {
+            var arg = createArgument(argument);
+            ret.getArguments().put(arg.getName(), arg);
+        }
+
+        /*
+        TODO create the records in ResourceTransport!
+         */
+
+        return ret;
+    }
+
     private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Argument argument) {
         var arg = new ServiceInfoImpl.ArgumentImpl();
         arg.setName(argument.name());
@@ -716,6 +762,7 @@ public class ComponentRegistry {
         for (Artifact.Type a : argument.type()) {
             arg.getType().add(a);
         }
+
         return arg;
     }
 
@@ -724,10 +771,10 @@ public class ComponentRegistry {
         var libraries = new ArrayList<LibraryDescriptor>();
         var adapters = new ArrayList<AdapterDescriptor>();
 
-        scanPackage(packageName, Map.of(Library.class, (annotation, cls) -> registerLibrary(
-                        (Library) annotation, cls, libraries), ResourceAdapter.class,
-                (annotation, cls) -> registerAdapter((ResourceAdapter) annotation, cls,
-                        adapters)));
+        scanPackage(packageName, Map.of(Library.class,
+                (annotation, cls) -> registerLibrary((Library) annotation, cls, libraries),
+                ResourceAdapter.class, (annotation, cls) -> registerAdapter((ResourceAdapter) annotation,
+                        cls, adapters)));
 
         localComponentDescriptor.libraries.addAll(libraries);
         localComponentDescriptor.adapters.addAll(adapters);
@@ -779,8 +826,7 @@ public class ComponentRegistry {
          remove anything not configured or deprecated; check integrity and certification for all components
           before loading them.
          */
-        if (Utils.Maven.needsUpdate("org.integratedmodelling", "klab.component.generators",
-                "1.0-SNAPSHOT")) {
+        if (Utils.Maven.needsUpdate("org.integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT")) {
             // shitdown
 
         }

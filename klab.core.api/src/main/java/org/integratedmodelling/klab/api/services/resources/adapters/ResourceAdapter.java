@@ -208,20 +208,6 @@ public @interface ResourceAdapter {
 
     }
 
-    @Documented
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.METHOD, ElementType.TYPE})
-    public @interface Importer {
-
-    }
-
-    @Documented
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.METHOD, ElementType.TYPE})
-    public @interface Exporter {
-
-    }
-
     /**
      * Annotates a method returning {@link Artifact.Type} and taking a {@link Resource} as argument. Only used
      * if the type is not specified in the {@link ResourceAdapter} arguments.

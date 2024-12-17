@@ -10,7 +10,6 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -42,9 +41,7 @@ import picocli.shell.jline3.PicocliCommands;
 import picocli.shell.jline3.PicocliCommands.PicocliCommandsFactory;
 
 import java.io.*;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -130,7 +127,7 @@ public enum KlabCLI {
             }
         } else {
             schema = ResourceTransport.INSTANCE.findSchema(arguments.getFirst(),
-                    service.capabilities(user()).getImportSchemata());
+                    service.capabilities(user()).getImportSchemata(), user());
         }
 
         if (schema == null) {
@@ -205,7 +202,7 @@ public enum KlabCLI {
         commandLine.getOut().println(Ansi.AUTO.string("Choose a transport schema:"));
         for (String key : schemata.keySet()) {
             for (var schema : schemata.get(key)) {
-                commandLine.getOut().println(Ansi.AUTO.string("   " + (n++) + ": @|green " + key + "." + schema.getSchemaId() + "|@ " +
+                commandLine.getOut().println(Ansi.AUTO.string("   " + (n++) + ": @|green " + schema.getSchemaId() + "|@ " +
                         "@|yellow " + schema.getDescription() + "|@"));
                 choices.add(Pair.of(key, schema));
             }

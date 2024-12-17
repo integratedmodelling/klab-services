@@ -65,4 +65,18 @@ public interface MessagingChannel extends Channel {
      * @return
      */
     boolean isConnected();
+
+    /**
+     * True if the scope is connected to one or more queues and is set up for sending messages.
+     *
+     * @return
+     */
+    boolean isSender();
+
+    /**
+     * True if the scope is connected to one or more queues and is set up for receiving messages.
+     *
+     * @return
+     */
+    boolean isReceiver();
 }

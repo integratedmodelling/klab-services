@@ -14,7 +14,6 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -470,11 +469,12 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
         queueNames.put(queue, s + "." + queue.name().toLowerCase());
     }
 
-
+    @Override
     public boolean isSender() {
         return sender;
     }
 
+    @Override
     public boolean isReceiver() {
         return receiver;
     }
