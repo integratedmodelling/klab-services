@@ -118,7 +118,7 @@ public enum KlabCLI {
 
     }
 
-    public void importWithSchema(KlabService service, List<String> arguments) {
+    public void importWithSchema(KlabService service, String suggestedUrn, List<String> arguments) {
 
         ResourceTransport.Schema schema = null;
         Urn result = null;
@@ -140,7 +140,7 @@ public enum KlabCLI {
             if (arguments.get(1).contains("://")) {
                 try {
                     var url = new URI(arguments.get(1)).toURL();
-                    result = service.importAsset(schema, schema.asset(url), null, user());
+                    result = service.importAsset(schema, schema.asset(url), suggestedUrn, user());
                 } catch (Exception e) {
                     commandLine.getErr().println("Import failed with exception:" + org.integratedmodelling.klab.api.utils.Utils.Exceptions.stackTrace(e));
                     return;
@@ -149,7 +149,7 @@ public enum KlabCLI {
                 File file = new File(arguments.get(1));
                 if (file.exists()) {
                     try {
-                        result = service.importAsset(schema, schema.asset(file), null, user());
+                        result = service.importAsset(schema, schema.asset(file), suggestedUrn, user());
                     } catch (Exception e) {
                         commandLine.getErr().println("Import failed with exception:" + Utils.Exceptions.stackTrace(e));
                         return;
@@ -177,7 +177,7 @@ public enum KlabCLI {
                     i++;
                 }
                 try {
-                    result = service.importAsset(schema, schema.asset(params), null, user());
+                    result = service.importAsset(schema, schema.asset(params), suggestedUrn, user());
                 } catch (Throwable t) {
                     commandLine.getErr().println("Import failed with exception:" + Utils.Exceptions.stackTrace(t));
                     return;

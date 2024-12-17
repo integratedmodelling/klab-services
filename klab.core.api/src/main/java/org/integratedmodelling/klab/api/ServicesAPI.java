@@ -91,6 +91,8 @@ public interface ServicesAPI {
     /**
      * Asset import using either multipart file import or properties, according to passed schema. Schema ID
      * must be in capabilities and a schema compatible with the media type will be looked up.
+     *
+     * If no URN is suggested, pass X:X:X:X
      */
     String IMPORT = "/import/{schema}/{urn}";
 

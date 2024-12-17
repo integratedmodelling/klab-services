@@ -131,7 +131,7 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
          * @param serviceType
          */
         protected static void importFromSchema(KlabService.Type serviceType, boolean help,
-                                               java.util.List<String> arguments) {
+                                               String suggestedUrn, java.util.List<String> arguments) {
 
             if (help) {
 
@@ -140,7 +140,7 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
 
             var service = KlabCLI.INSTANCE.user().getService(serviceType.classify());
             if (service != null) {
-                KlabCLI.INSTANCE.importWithSchema(service, arguments);
+                KlabCLI.INSTANCE.importWithSchema(service, suggestedUrn, arguments);
             }
         }
 
@@ -193,12 +193,18 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
                                 required = false)
             boolean help = false;
 
+            @CommandLine.Option(names = {"-u", "--urn"},
+                                defaultValue = "X:X:X:X",
+                                description = {"Pass suggested URN for import (result may differ)"},
+                                required = false)
+            String urn;
+
             @CommandLine.Parameters
             java.util.List<String> arguments;
 
             @Override
             public void run() {
-                importFromSchema(KlabService.Type.RESOURCES, help, arguments);
+                importFromSchema(KlabService.Type.RESOURCES, help, urn, arguments);
             }
         }
 
@@ -245,12 +251,18 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
                                 required = false)
             boolean help = false;
 
+            @CommandLine.Option(names = {"-u", "--urn"},
+                                defaultValue = "X:X:X:X",
+                                description = {"Pass suggested URN for import (result may differ)"},
+                                required = false)
+            String urn;
+
             @CommandLine.Parameters
             java.util.List<String> arguments;
 
             @Override
             public void run() {
-                importFromSchema(KlabService.Type.RUNTIME, help, arguments);
+                importFromSchema(KlabService.Type.RUNTIME, help, urn, arguments);
             }
         }
 

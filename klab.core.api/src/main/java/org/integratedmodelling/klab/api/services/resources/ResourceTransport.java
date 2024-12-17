@@ -43,7 +43,7 @@ public enum ResourceTransport {
          */
         public Asset asset(File file) {
             var ret = new Asset();
-            asset().setFile(file);
+            ret.setFile(file);
             return ret;
         }
 
@@ -55,7 +55,7 @@ public enum ResourceTransport {
          */
         public Asset asset(URL url) {
             var ret = new Asset();
-            asset().setUrl(url);
+            ret.setUrl(url);
             return ret;
         }
 
@@ -67,7 +67,7 @@ public enum ResourceTransport {
          */
         public Asset asset(Object... properties) {
             var ret = new Asset();
-            asset().setProperties(Parameters.create(properties));
+            ret.setProperties(Parameters.create(properties));
             return ret;
         }
 
