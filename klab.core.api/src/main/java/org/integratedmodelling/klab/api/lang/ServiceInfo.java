@@ -31,7 +31,24 @@ public interface ServiceInfo extends Serializable {
      * @author Ferd
      */
     enum FunctionType {
-        FUNCTION, VERB, ANNOTATION, IMPORTER, EXPORTER
+        /**
+         * Formal parameters matched to service call keys
+         */
+        FUNCTION,
+        /**
+         * TBD
+         */
+        VERB,
+        /**
+         * TBD (likely same as FUNCTION)
+         */
+        ANNOTATION,
+        /**
+         * Parameters associated to Java method based on type among the unnamed arguments. If named
+         * args are present, those are passed as Parameters to the first argument matching Parameters or
+         * Map.
+         */
+        FREEFORM
     }
 
     /**

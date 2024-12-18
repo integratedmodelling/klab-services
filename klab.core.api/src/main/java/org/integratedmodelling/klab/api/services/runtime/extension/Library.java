@@ -76,4 +76,10 @@ public @interface Library {
      */
     String description() default "";
 
+    /**
+     * Version should be mandatory only when the library is not part of a component.
+     *
+     * @return
+     */
+    String version() default "";
 }

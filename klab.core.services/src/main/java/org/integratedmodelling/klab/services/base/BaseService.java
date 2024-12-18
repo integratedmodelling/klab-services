@@ -5,6 +5,7 @@ import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -15,8 +16,10 @@ import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -24,6 +27,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.integratedmodelling.klab.runtime.language.LanguageService;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -413,37 +417,55 @@ public abstract class BaseService implements KlabService {
         return this.initialized;
     }
 
-//    @Override
-//    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
-//                                        Scope scope) {
-//        throw new KlabUnimplementedException("Cannot retrieve asset " + urn);
-//    }
+    //    @Override
+    //    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
+    //                                        Scope scope) {
+    //        throw new KlabUnimplementedException("Cannot retrieve asset " + urn);
+    //    }
 
-//    @Override
-//    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
-//                                        Scope scope) {
-//
-//        var component = getComponentRegistry().getComponent(urn, version);
-//        if (component != null && component.sourceArchive() != null && component.permissions().checkAuthorization(scope)) {
-//            try {
-//                return new FileInputStream(component.sourceArchive());
-//            } catch (FileNotFoundException e) {
-//                throw new KlabIOException(e);
-//            }
-//        }
-//
-//        // TODO projects, resource archives etc
-//
-//        return super.retrieveResource(urn, version, accessKey, format, scope);
-//    }
+    //    @Override
+    //    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
+    //                                        Scope scope) {
+    //
+    //        var component = getComponentRegistry().getComponent(urn, version);
+    //        if (component != null && component.sourceArchive() != null && component.permissions()
+    //        .checkAuthorization(scope)) {
+    //            try {
+    //                return new FileInputStream(component.sourceArchive());
+    //            } catch (FileNotFoundException e) {
+    //                throw new KlabIOException(e);
+    //            }
+    //        }
+    //
+    //        // TODO projects, resource archives etc
+    //
+    //        return super.retrieveResource(urn, version, accessKey, format, scope);
+    //    }
 
     @Override
-    public InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope, Object... options) {
+    public InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope,
+                                   Object... options) {
         return null;
     }
 
     @Override
-    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates, String suggestedUrn, Scope scope) {
-        return null;
+    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates
+            , String suggestedUrn, Scope scope) {
+
+        ServiceCall serviceCall = null;
+        if (assetCoordinates.getUrl() != null) {
+            serviceCall = ServiceCallImpl.create(schema.getSchemaId(), "URL", assetCoordinates.getUrl());
+        } else if (assetCoordinates.getFile() != null) {
+            serviceCall = ServiceCallImpl.create(schema.getSchemaId(), "FILE", assetCoordinates.getFile());
+        } else {
+            serviceCall = ServiceCallImpl.create(schema.getSchemaId(), assetCoordinates.getProperties());
+        }
+
+        if (suggestedUrn != null && !"X:X:X:X".equals(suggestedUrn)) {
+            serviceCall.getParameters().put("URN", suggestedUrn);
+        }
+
+        var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
+        return languageService.execute(serviceCall, scope, Urn.class);
     }
 }

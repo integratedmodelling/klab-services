@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.runtime.language;
 
+import com.jcraft.jsch.Session;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
@@ -11,6 +13,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -18,6 +21,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class LanguageService implements Language {
@@ -103,6 +107,7 @@ public class LanguageService implements Language {
                                    boolean isConstructor) {
         switch (descriptor.serviceInfo.getFunctionType()) {
             case ANNOTATION:
+                // TODO
                 break;
             case FUNCTION:
                 if (isConstructor) {
@@ -116,10 +121,33 @@ public class LanguageService implements Language {
                         return matchParameters(descriptor.method.getParameterTypes(), call, scope);
                     }
                 }
+            case FREEFORM:
+                return matchParametersFreeform(descriptor.method.getParameterTypes(), call, scope);
             case VERB:
-                break;
+                // TODO
         }
         return null;
+    }
+
+    /**
+     * Freeform matching between unnamed parameters and the method's arguments. Any Parameters matches the
+     * call's own. The passed args may not be PODs and this method should only be used within the same VM.
+     *
+     * @param parameterTypes
+     * @param call
+     * @param scope
+     * @return
+     */
+    private Object[] matchParametersFreeform(Class<?>[] parameterTypes, ServiceCall call, Scope scope) {
+        List<Object> payload = call.getParameters().getUnnamedArguments();
+        if (!call.getParameters().isEmpty()) {
+            payload.add(call.getParameters());
+        }
+        var args = Utils.Collections.matchArguments(parameterTypes, payload.toArray());
+        if (args == null && !payload.isEmpty()) {
+            return null;
+        }
+        return args;
     }
 
     private Object[] matchParameters(Class<?>[] parameterTypes, ServiceCall call, Scope scope) {
@@ -132,7 +160,7 @@ public class LanguageService implements Language {
         if (call.getParameters().getUnnamedArguments().size() == parameterTypes.length) {
             boolean ok = true;
             for (int i = 0; i < parameterTypes.length; i++) {
-                if (!(call.getParameters().getUnnamedArguments().get(i) == null || parameterTypes[i].isAssignableFrom(call.getParameters().getUnnamedArguments().get(0).getClass()))) {
+                if (!(call.getParameters().getUnnamedArguments().get(i) == null || parameterTypes[i].isAssignableFrom(call.getParameters().getUnnamedArguments().getFirst().getClass()))) {
                     ok = false;
                     break;
                 }
@@ -145,7 +173,11 @@ public class LanguageService implements Language {
 
         int i = 0;
         for (Class<?> cls : parameterTypes) {
-            if (Scope.class.isAssignableFrom(cls)) {
+            if (ContextScope.class.isAssignableFrom(cls) && scope instanceof ContextScope) {
+                ret[i] = scope;
+            } else if (SessionScope.class.isAssignableFrom(cls) && scope instanceof SessionScope) {
+                ret[i] = scope;
+            } else if (Scope.class.isAssignableFrom(cls)) {
                 ret[i] = scope;
             } else if (ServiceCall.class.isAssignableFrom(cls)) {
                 ret[i] = call;

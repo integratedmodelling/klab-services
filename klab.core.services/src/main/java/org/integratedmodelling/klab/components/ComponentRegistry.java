@@ -6,10 +6,12 @@ import io.github.classgraph.ScanResult;
 import javassist.Modifier;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.apache.tika.config.Param;
 import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -23,6 +25,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
@@ -76,9 +79,8 @@ public class ComponentRegistry {
     private MultiValuedMap<String, ComponentDescriptor> annotationFinder = new HashSetValuedHashMap<>();
     private MultiValuedMap<String, ComponentDescriptor> verbFinder = new HashSetValuedHashMap<>();
     private Map<Class<?>, Object> globalInstances = new HashMap<>();
-    private Map<String, FunctionDescriptor> importHandlers = new HashMap<>();
-    private Map<String, FunctionDescriptor> exportHandlers = new HashMap<>();
-
+    //    private Map<String, FunctionDescriptor> importHandlers = new HashMap<>();
+    //    private Map<String, FunctionDescriptor> exportHandlers = new HashMap<>();
 
     public List<ComponentDescriptor> resolveServiceCall(String name, Version version) {
         List<ComponentDescriptor> ret = new ArrayList<>();
@@ -221,6 +223,10 @@ public class ComponentRegistry {
      * Return the function descriptor that corresponds to the passed call, considering any version
      * requirements and arguments. If no version requirements are present, return the highest version among
      * the compatible ones.
+     * <p>
+     * The service call can also be used to locate export/import schemata by passing the schema ID as a
+     * service name and the properties as parameters, with "FILE" or "URL" as argument for bytestream-based
+     * schemata.
      *
      * @param call
      * @return
@@ -327,11 +333,13 @@ public class ComponentRegistry {
                 var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
                 verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
             } else if (method.isAnnotationPresent(Importer.class)) {
-                var serviceInfo = createAnnotationPrototype(namespacePrefix,method.getAnnotation(Importer.class));
-                importHandlers.put(serviceInfo.getName(), createFunctionDescriptor(serviceInfo, cls, method));
+                var serviceInfo = createAnnotationPrototype(namespacePrefix,
+                        method.getAnnotation(Importer.class));
+                prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
             } else if (method.isAnnotationPresent(Exporter.class)) {
-                var serviceInfo = createAnnotationPrototype(namespacePrefix, method.getAnnotation(Exporter.class));
-                exportHandlers.put(serviceInfo.getName(), createFunctionDescriptor(serviceInfo, cls, method));
+                var serviceInfo = createAnnotationPrototype(namespacePrefix,
+                        method.getAnnotation(Exporter.class));
+                prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
             }
         }
 
@@ -661,8 +669,6 @@ public class ComponentRegistry {
         ret.setName(namespacePrefix + annotation.name());
         ret.setDescription(annotation.description());
         ret.setFilter(annotation.filter());
-        //        ret.setImplementation(clss);
-        //        ret.setExecutorMethod(method == null ? null : method.getName());
         ret.setGeometry(annotation.geometry().isEmpty() ? null : Geometry.create(annotation.geometry()));
         ret.setLabel(annotation.dataflowLabel());
         ret.setReentrant(annotation.reentrant());
@@ -684,7 +690,6 @@ public class ComponentRegistry {
             var arg = createArgument(argument);
             ret.getExports().add(arg);
         }
-
 
         return ret;
     }
@@ -716,7 +721,7 @@ public class ComponentRegistry {
 
         ret.setName(namespacePrefix + annotation.schema());
         ret.setDescription(annotation.description());
-        ret.setFunctionType(ServiceInfo.FunctionType.IMPORTER);
+        ret.setFunctionType(ServiceInfo.FunctionType.FREEFORM);
         ret.getTargets().add(annotation.knowledgeClass());
 
         for (KlabFunction.Argument argument : annotation.properties()) {
@@ -737,7 +742,7 @@ public class ComponentRegistry {
 
         ret.setName(namespacePrefix + annotation.schema());
         ret.setDescription(annotation.description());
-        ret.setFunctionType(ServiceInfo.FunctionType.IMPORTER);
+        ret.setFunctionType(ServiceInfo.FunctionType.FREEFORM);
         ret.getTargets().add(annotation.knowledgeClass());
 
         for (KlabFunction.Argument argument : annotation.properties()) {
