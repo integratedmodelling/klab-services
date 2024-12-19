@@ -22,13 +22,13 @@ public enum ResourceTransport {
 
     INSTANCE;
 
-    private Map<String, List<Schema>> importSchemata = new HashMap<>();
-    private Map<String, List<Schema>> exportSchemata = new HashMap<>();
+    private final Map<String, List<Schema>> importSchemata = new HashMap<>();
+    private final Map<String, List<Schema>> exportSchemata = new HashMap<>();
 
-    public Schema COMPONENT_MAVEN;
-    public Schema COMPONENT_JAR;
-    public Schema PROJECT_ZIP;
-    public Schema PROJECT_GIT;
+//    public Schema COMPONENT_MAVEN;
+//    public Schema COMPONENT_JAR;
+//    public Schema PROJECT_ZIP;
+//    public Schema PROJECT_GIT;
 
 
     /**
@@ -343,28 +343,28 @@ public enum ResourceTransport {
      */
     ResourceTransport() {
 
-        addImport("component",
-                COMPONENT_MAVEN = Schema.create("component.maven",
-                        Schema.Type.PROPERTIES, KlabAsset.KnowledgeClass.COMPONENT, "Register a component " +
-                                "available on Maven " + "using " + "the component's Maven coordinates").with(
-                        "groupId", Artifact.Type.TEXT, false).with("adapterId", Artifact.Type.TEXT,
-                        false).with("version", Artifact.Type.TEXT, false),
-                COMPONENT_JAR = Schema.create("component.jar",
-                        Schema.Type.STREAM, KlabAsset.KnowledgeClass.COMPONENT, "Register a component by " +
-                                "directly " +
-                                "submitting a jar file").mediaType("application/java-archive").fileExtensions("jar"));
-
-        addImport("project.git",
-                PROJECT_GIT = Schema.create("project.git", Schema.Type.PROPERTIES,
-                        KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB project by submitting the URL " +
-                                "of a Git "
-                                + "repository and optional credentials").with("url", Artifact.Type.TEXT,
-                        false).with("username", Artifact.Type.TEXT, true).with("password",
-                        Artifact.Type.TEXT, true).with("token", Artifact.Type.TEXT, true),
-                PROJECT_ZIP = Schema.create("project.zip",
-                        Schema.Type.STREAM,
-                        KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB by directly submitting a zip " +
-                                "archive").mediaType("application/zip", "application/x-zip-compressed").fileExtensions("zip"));
+//        addImport("component",
+//                COMPONENT_MAVEN = Schema.create("component.maven",
+//                        Schema.Type.PROPERTIES, KlabAsset.KnowledgeClass.COMPONENT, "Register a component " +
+//                                "available on Maven " + "using " + "the component's Maven coordinates").with(
+//                        "groupId", Artifact.Type.TEXT, false).with("adapterId", Artifact.Type.TEXT,
+//                        false).with("version", Artifact.Type.TEXT, false),
+//                COMPONENT_JAR = Schema.create("component.jar",
+//                        Schema.Type.STREAM, KlabAsset.KnowledgeClass.COMPONENT, "Register a component by " +
+//                                "directly " +
+//                                "submitting a jar file").mediaType("application/java-archive").fileExtensions("jar"));
+//
+//        addImport("project.git",
+//                PROJECT_GIT = Schema.create("project.git", Schema.Type.PROPERTIES,
+//                        KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB project by submitting the URL " +
+//                                "of a Git "
+//                                + "repository and optional credentials").with("url", Artifact.Type.TEXT,
+//                        false).with("username", Artifact.Type.TEXT, true).with("password",
+//                        Artifact.Type.TEXT, true).with("token", Artifact.Type.TEXT, true),
+//                PROJECT_ZIP = Schema.create("project.zip",
+//                        Schema.Type.STREAM,
+//                        KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB by directly submitting a zip " +
+//                                "archive").mediaType("application/zip", "application/x-zip-compressed").fileExtensions("zip"));
 
     }
 

@@ -139,7 +139,9 @@ public class LanguageService implements Language {
      * @return
      */
     private Object[] matchParametersFreeform(Class<?>[] parameterTypes, ServiceCall call, Scope scope) {
-        List<Object> payload = call.getParameters().getUnnamedArguments();
+        List<Object> payload = new ArrayList<>(call.getParameters().getUnnamedArguments());
+        payload.add(call);
+        payload.add(scope);
         if (!call.getParameters().isEmpty()) {
             payload.add(call.getParameters());
         }

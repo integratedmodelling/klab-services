@@ -9,7 +9,9 @@ import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
+import org.integratedmodelling.klab.utilities.Utils;
 
+import java.io.File;
 import java.io.InputStream;
 
 @Library(name = "component", description = "Importers for components shared by all services", version =
@@ -19,7 +21,7 @@ public class ComponentIOLibrary {
     @Importer(schema = "jar", knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,
               description = "Import a component by directly uploading a jar file",
               mediaType = "application/java-archive", fileExtensions = {"jar"})
-    public static String importComponentDirect() {
+    public static String importComponentDirect(File file) {
         return null;
     }
 
@@ -36,6 +38,31 @@ public class ComponentIOLibrary {
                                              description = "Non-standard Maven repository", optional = true)
               })
     public static String importComponentMaven(Parameters<String> properties) {
+
+        if (Utils.Maven.needsUpdate(properties.get("groupId", String.class),
+                properties.get("artifactId", String.class),
+                properties.get("version", String.class))) {
+
+            var file = Utils.Maven.synchronizeArtifact(properties.get("groupId", String.class),
+                    properties.get("artifactId", String.class),
+                    properties.get("version", String.class), true);
+
+            if (file != null && file.exists()) {
+
+                /*
+                Unload any existing component
+                 */
+
+                /*
+                Update catalog
+                 */
+
+                /*
+                Load component
+                 */
+            }
+
+        }
         return null;
     }
 

@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Utils extends org.integratedmodelling.common.utils.Utils {
 
@@ -87,11 +88,31 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          */
         public static boolean needsUpdate(String mavenGroupId, String mavenArtifactId, String version) {
 
+            if (version.contains("SNAPSHOT")) {
+                // TODO if version exists in repo, check hash
+                return true;
+            }
+
+            var request = new MavenFetchRequest(mavenGroupId + ":" + mavenArtifactId + ":" + version);
+            var result = mavenFetcher.fetchArtifacts(request);
+            if (result.artifacts().findAny().isPresent()) {
+                return false;
+            }
+
+            // TODO check if version exists in repo
+
             return false;
         }
 
-        public File retrieveArtifact(String mavenGroupId, String mavenArtifactId, Version version,
+        public static File synchronizeArtifact(String mavenGroupId, String mavenArtifactId, String version,
                                      boolean verifySignature) {
+            var request = new MavenFetchRequest(mavenGroupId + ":" + mavenArtifactId + ":" + version);
+            var result = mavenFetcher.fetchArtifacts(request);
+            if (result.artifacts().findAny().isPresent()) {
+                AtomicReference<File> ret = new AtomicReference<>();
+                result.artifacts().peek(fetchedArtifact -> ret.set(fetchedArtifact.path().toFile()));
+                return ret.get();
+            }
             return null;
         }
 
