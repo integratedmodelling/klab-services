@@ -32,7 +32,7 @@ pipeline {
                        mc rm --recursive --force minio/klab/p2/org.integratedmodelling.klab.modeler/ || echo "klab/p2/org.integratedmodelling.klab.modeler/ does not exists"
                        mc cp --recursive ./p2/org.integratedmodelling.klab.modeler/target/repository/ minio/klab/p2/org.integratedmodelling.klab.modeler/
                        mc rm --recursive --force minio/klab/products/klab/ || echo "klab/products/klab/ does not exists"
-                       mc cp --recursive ./klab.distribution/target/distribution/ minio/klab/products/klab/
+                       mc mirror ./klab.distribution/target/distribution/ minio/klab/products/klab
                        """
                 }
             }
