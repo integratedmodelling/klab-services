@@ -1,14 +1,17 @@
 package org.integratedmodelling.klab.runtime.libraries;
 
+import org.apache.commons.codec.binary.Base16InputStream;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
@@ -37,7 +40,8 @@ public class ComponentIOLibrary {
                       @KlabFunction.Argument(name = "repository", type = Artifact.Type.TEXT,
                                              description = "Non-standard Maven repository", optional = true)
               })
-    public static String importComponentMaven(Parameters<String> properties) {
+    public static String importComponentMaven(Parameters<String> properties, BaseService service,
+                                              Scope scope) {
 
         if (Utils.Maven.needsUpdate(properties.get("groupId", String.class),
                 properties.get("artifactId", String.class),
@@ -47,19 +51,12 @@ public class ComponentIOLibrary {
                     properties.get("artifactId", String.class),
                     properties.get("version", String.class), true);
 
+            var componentRegistry = service.getComponentRegistry();
+
             if (file != null && file.exists()) {
-
-                /*
-                Unload any existing component
-                 */
-
-                /*
-                Update catalog
-                 */
-
-                /*
-                Load component
-                 */
+                var mavenCoordinates =
+                        properties.get("groupId") + ":" + properties.get("artifactId") + ":" + properties.get("version");
+                return componentRegistry.registerComponent(file, mavenCoordinates, scope);
             }
 
         }

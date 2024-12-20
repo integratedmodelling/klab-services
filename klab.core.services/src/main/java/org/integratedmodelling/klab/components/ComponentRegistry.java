@@ -6,13 +6,12 @@ import io.github.classgraph.ScanResult;
 import javassist.Modifier;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
-import org.apache.tika.config.Param;
 import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -25,7 +24,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
@@ -37,6 +35,7 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.extension.KlabComponent;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.pf4j.*;
@@ -49,6 +48,9 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 public class ComponentRegistry {
@@ -62,13 +64,14 @@ public class ComponentRegistry {
     //  Plugin-License
     private final ComponentDescriptor localComponentDescriptor =
             new ComponentDescriptor(LOCAL_SERVICE_COMPONENT, Version.CURRENT_VERSION, "Natively available " +
-                    "services", null, ResourcePrivileges.PUBLIC, new ArrayList<>(), new ArrayList<>(),
+                    "services", null, ResourcePrivileges.PUBLIC, null, new ArrayList<>(), new ArrayList<>(),
                     new HashMap<>(), new HashMap<>(), new HashMap<>());
 
     /**
      * Component descriptors, uniquely identified by id + version
      */
     private MultiValuedMap<String, ComponentDescriptor> components = new HashSetValuedHashMap<>();
+    private static Map<String, ServiceImplementation> serviceImplementations = new HashMap<>();
 
     /**
      * Here the key is each service URN, linked to all the components that provide it.
@@ -79,8 +82,52 @@ public class ComponentRegistry {
     private MultiValuedMap<String, ComponentDescriptor> annotationFinder = new HashSetValuedHashMap<>();
     private MultiValuedMap<String, ComponentDescriptor> verbFinder = new HashSetValuedHashMap<>();
     private Map<Class<?>, Object> globalInstances = new HashMap<>();
-    //    private Map<String, FunctionDescriptor> importHandlers = new HashMap<>();
-    //    private Map<String, FunctionDescriptor> exportHandlers = new HashMap<>();
+    private File catalogFile;
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    public ComponentRegistry(BaseService service, StartupOptions options) {
+        readConfiguration(service, options);
+        scheduler.scheduleAtFixedRate(() -> checkForUpdates(), 0, 5, TimeUnit.MINUTES);
+    }
+
+    private synchronized void checkForUpdates() {
+        for (var component : components.values()) {
+            if (component.mavenCoordinates() != null) {
+                System.out.println("TODO - check for updated Maven component");
+            }
+        }
+    }
+
+    private void readConfiguration(BaseService service, StartupOptions options) {
+
+        this.catalogFile =
+                ServiceConfiguration.INSTANCE.getFileWithTemplate("services/" + service.serviceType().name().toLowerCase() +
+                        "/components/catalog.json", "[]");
+
+        for (var descriptor : org.integratedmodelling.common.utils.Utils.Json.load(this.catalogFile,
+                ComponentDescriptor[].class)) {
+
+            for (var adapter : descriptor.adapters) {
+                adapterFinder.put(adapter.name, descriptor);
+            }
+            for (var serv : descriptor.services.keySet()) {
+                serviceFinder.put(serv, descriptor);
+            }
+            for (var annotation : descriptor.annotations.keySet()) {
+                annotationFinder.put(annotation, descriptor);
+            }
+            for (var verb : descriptor.verbs.keySet()) {
+                verbFinder.put(verb, descriptor);
+            }
+
+            components.put(descriptor.id(), descriptor);
+        }
+
+    }
+
+    private void saveConfiguration() {
+        Utils.Json.save(components.values().toArray(new ComponentDescriptor[]{}), this.catalogFile);
+    }
 
     public List<ComponentDescriptor> resolveServiceCall(String name, Version version) {
         List<ComponentDescriptor> ret = new ArrayList<>();
@@ -125,7 +172,8 @@ public class ComponentRegistry {
     }
 
     public record ComponentDescriptor(String id, Version version, String description, File sourceArchive,
-                                      ResourcePrivileges permissions, List<LibraryDescriptor> libraries,
+                                      ResourcePrivileges permissions, String mavenCoordinates,
+                                      List<LibraryDescriptor> libraries,
                                       List<AdapterDescriptor> adapters,
                                       Map<String, FunctionDescriptor> services,
                                       Map<String, FunctionDescriptor> annotations,
@@ -155,29 +203,31 @@ public class ComponentRegistry {
      */
     public static class FunctionDescriptor {
         public ServiceInfo serviceInfo;
-        public Class<?> implementation;
-        public Object mainClassInstance;
-        public Object wrappingClassInstance;
-        public Method method;
-        public Constructor<?> constructor;
         // check call style: 1 = call, scope, prototype; 2 = call, scope; 3 = custom, matched at
         // each call
         public int methodCall;
         public boolean staticMethod;
         public boolean staticClass;
         public boolean error;
+
+        public ServiceImplementation implementation() {
+            return serviceImplementations.get(serviceInfo.getName());
+        }
     }
 
-
-    public Pair<ComponentDescriptor, ResourceSet.Resource> installComponent(String mavenGroupId,
-                                                                            String mavenArtifactId,
-                                                                            Version version, Scope scope) {
-
-
-        return null;
+    /*
+    The part of the function descriptor that can't serialize to JSON
+     */
+    public static class ServiceImplementation {
+        public Class<?> implementation;
+        public Object mainClassInstance;
+        public Object wrappingClassInstance;
+        public Method method;
+        public Constructor<?> constructor;
     }
 
-    public Pair<ComponentDescriptor, ResourceSet> installComponent(File resourcePath, Scope scope) {
+    public Pair<ComponentDescriptor, ResourceSet> installComponent(File resourcePath,
+                                                                   String mavenCoordinates, Scope scope) {
 
         // TODO allow same path with different versions and replacing same version
 
@@ -193,7 +243,7 @@ public class ComponentRegistry {
 
             Plugin component = plugin.getPlugin();
             if (component instanceof KlabComponent comp) {
-                info = registerComponent(comp);
+                info = registerComponent(comp, mavenCoordinates);
                 ret.getNotifications().add(info.extractInfo());
                 ret.getResults().add(result);
 
@@ -247,13 +297,29 @@ public class ComponentRegistry {
     }
 
     /**
+     * Call with a new plugin file (located anywhere) and optional Maven coordinates to build the descriptors,
+     * entries in the catalog, and return a {@link KlabComponent} that can be activated, or null.
+     *
+     * @param componentJar
+     * @param mavenCoordinates
+     * @return the component URN or null
+     */
+    public String registerComponent(File componentJar, String mavenCoordinates, Scope scope) {
+        var result = installComponent(componentJar, mavenCoordinates, scope);
+        if (result != null && result.getSecond().isEmpty()) {
+            return result.getFirst().id();
+        }
+        return null;
+    }
+
+    /**
      * Discover and register all the extensions provided by this component but do not start it.
      * <p>
      * TODO make this return ComponentInfo
      *
      * @param component
      */
-    public ComponentDescriptor registerComponent(KlabComponent component) {
+    public ComponentDescriptor registerComponent(KlabComponent component, String mavenCoordinates) {
 
         var componentName = component.getName();
         var componentVersion = component.getVersion();
@@ -271,7 +337,8 @@ public class ComponentRegistry {
                         cls, adapters)));
 
         var componentDescriptor = new ComponentDescriptor(componentName, componentVersion, description,
-                sourceArchive, permissions, libraries, adapters, new HashMap<>(), new HashMap<>(),
+                sourceArchive, permissions, mavenCoordinates, libraries, adapters, new HashMap<>(),
+                new HashMap<>(),
                 new HashMap<>());
 
         // update catalog
@@ -291,6 +358,8 @@ public class ComponentRegistry {
         }
 
         this.components.put(componentName, componentDescriptor);
+
+        saveConfiguration();
 
         return componentDescriptor;
     }
@@ -351,17 +420,19 @@ public class ComponentRegistry {
                                                         Method method) {
 
         FunctionDescriptor ret = new FunctionDescriptor();
+        ServiceImplementation implementation = new ServiceImplementation();
+        serviceImplementations.put(serviceInfo.getName(), implementation);
 
         ret.serviceInfo = serviceInfo;
-        ret.implementation = clss;
+        implementation.implementation = clss;
 
         if (method != null) {
-            ret.method = method;
+            implementation.method = method;
             ret.methodCall = 3;
-            if (java.lang.reflect.Modifier.isStatic(ret.method.getModifiers()) || serviceInfo.isReentrant()) {
+            if (java.lang.reflect.Modifier.isStatic(implementation.method.getModifiers()) || serviceInfo.isReentrant()) {
                 // use a global class instance
-                ret.mainClassInstance = createGlobalClassInstance(ret);
-                ret.staticMethod = java.lang.reflect.Modifier.isStatic(ret.method.getModifiers());
+                implementation.mainClassInstance = createGlobalClassInstance(ret);
+                ret.staticMethod = java.lang.reflect.Modifier.isStatic(implementation.method.getModifiers());
             } else if (!serviceInfo.isReentrant()) {
                 // create the instance just for this prototype
                 try {
@@ -372,23 +443,24 @@ public class ComponentRegistry {
                     try first with the actual service class
                      */
                         try {
-                            ret.mainClassInstance =
-                                    ret.implementation.getDeclaredConstructor(ServiceConfiguration.INSTANCE.getMainService().getClass()).newInstance(mainService);
+                            implementation.mainClassInstance =
+                                    implementation.implementation.getDeclaredConstructor(ServiceConfiguration.INSTANCE.getMainService().getClass()).newInstance(mainService);
                         } catch (Throwable t) {
                         }
-                        if (ret.mainClassInstance == null) {
+                        if (implementation.mainClassInstance == null) {
                             try {
-                                ret.mainClassInstance =
-                                        ret.implementation.getDeclaredConstructor(KlabService.class).newInstance(mainService);
+                                implementation.mainClassInstance =
+                                        implementation.implementation.getDeclaredConstructor(KlabService.class).newInstance(mainService);
                             } catch (Throwable t) {
                             }
                         }
                     }
-                    if (ret.mainClassInstance == null) {
-                        ret.mainClassInstance = ret.implementation.getDeclaredConstructor().newInstance();
+                    if (implementation.mainClassInstance == null) {
+                        implementation.mainClassInstance =
+                                implementation.implementation.getDeclaredConstructor().newInstance();
                     }
                 } catch (Exception e) {
-                    Logging.INSTANCE.error("Cannot instantiate main class for function library " + ret.implementation.getCanonicalName() + ": " + e.getMessage());
+                    Logging.INSTANCE.error("Cannot instantiate main class for function library " + ret.implementation().implementation.getCanonicalName() + ": " + e.getMessage());
                     ret.error = true;
                 }
             }
@@ -398,29 +470,29 @@ public class ComponentRegistry {
             if (serviceInfo.isReentrant()) {
                 // create the instance just for this prototype
                 try {
-                    ret.mainClassInstance = createGlobalClassInstance(ret);
+                    implementation.mainClassInstance = createGlobalClassInstance(ret);
                 } catch (Exception e) {
                     ret.error = true;
                 }
             } else {
                 try {
-                    ret.constructor =
-                            ret.implementation.getDeclaredConstructor(getParameterClasses(serviceInfo, ret));
+                    implementation.constructor =
+                            implementation.implementation.getDeclaredConstructor(getParameterClasses(serviceInfo, ret));
                     ret.methodCall = 1;
                 } catch (NoSuchMethodException | SecurityException e) {
                     // move along
                 }
-                if (ret.constructor == null) {
+                if (implementation.constructor == null) {
                     try {
-                        ret.constructor =
-                                ret.implementation.getDeclaredConstructor(getParameterClasses(serviceInfo,
+                        implementation.constructor =
+                                implementation.implementation.getDeclaredConstructor(getParameterClasses(serviceInfo,
                                         ret));
                         ret.methodCall = 2;
                     } catch (NoSuchMethodException | SecurityException e) {
                         // move along
                     }
                 }
-                if (ret.constructor == null) {
+                if (implementation.constructor == null) {
                     ret.methodCall = 3;
                 }
             }
@@ -443,10 +515,10 @@ public class ComponentRegistry {
             case ANNOTATION:
                 break;
             case FUNCTION:
-                if (functionDescriptor.constructor != null) {
+                if (functionDescriptor.implementation().constructor != null) {
                     // TODO check: using the last constructor with parameters, or the empty constructor if
                     //  found.
-                    Class<?> cls = functionDescriptor.implementation;
+                    Class<?> cls = functionDescriptor.implementation().implementation;
                     if (cls == null) {
                         throw new KlabIllegalStateException("no declared executor class for service " + serviceInfo.getName() + ": constructor can't be extracted");
                     }
@@ -479,7 +551,7 @@ public class ComponentRegistry {
 
     private Object createGlobalClassInstance(FunctionDescriptor ret) {
         try {
-            Object instance = this.globalInstances.get(ret.implementation);
+            Object instance = this.globalInstances.get(ret.implementation().implementation);
             if (instance == null) {
                 // look for a constructor we know what to do with. If we are a service, we can first try
                 // with a constructor that takes it.
@@ -491,27 +563,27 @@ public class ComponentRegistry {
                      */
                     try {
                         instance =
-                                ret.implementation.getDeclaredConstructor(ServiceConfiguration.INSTANCE.getMainService().getClass()).newInstance(mainService);
+                                ret.implementation().implementation.getDeclaredConstructor(ServiceConfiguration.INSTANCE.getMainService().getClass()).newInstance(mainService);
                     } catch (Throwable t) {
                     }
                     if (instance == null) {
                         try {
                             instance =
-                                    ret.implementation.getDeclaredConstructor(KlabService.class).newInstance(mainService);
+                                    ret.implementation().implementation.getDeclaredConstructor(KlabService.class).newInstance(mainService);
                         } catch (Throwable t) {
                         }
                     }
                 }
                 if (instance == null) {
-                    instance = ret.implementation.getDeclaredConstructor().newInstance();
+                    instance = ret.implementation().implementation.getDeclaredConstructor().newInstance();
                 }
-                this.globalInstances.put(ret.implementation, instance);
+                this.globalInstances.put(ret.implementation().implementation, instance);
             }
             return instance;
         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException |
                  InvocationTargetException | NoSuchMethodException | SecurityException e) {
             ret.error = true;
-            Logging.INSTANCE.error("Cannot instantiate main class for function library " + ret.implementation.getCanonicalName() + ": " + e.getMessage());
+            Logging.INSTANCE.error("Cannot instantiate main class for function library " + ret.implementation().implementation.getCanonicalName() + ": " + e.getMessage());
         }
         return null;
     }
@@ -526,15 +598,6 @@ public class ComponentRegistry {
 
         System.out.println("ZIO PORCO UN ADAPTER " + annotation.name());
     }
-
-    /**
-     * Start the passed component so that its services can be used.
-     *
-     * @param component
-     */
-    public void loadComponent(KlabComponent component) {
-    }
-
 
     /**
      * Retrieve a component in a given version or the latest. TODO use this in other methods that use the
@@ -804,22 +867,22 @@ public class ComponentRegistry {
 
     }
 
-    /**
-     * Call this one if you plan on USING the plugin; call {@link #initializeComponents(File)} if you want to
-     * build the plugin archive but not load the plugins themselves. This one is for working with the plugins,
-     * the other for hosting and serving plugins. One or the other must be called before anything else.
-     *
-     * @param pluginRoot
-     */
-    public void loadComponents(File pluginRoot) {
-        initializeComponents(pluginRoot);
-        componentManager.startPlugins();
-    }
+    //    /**
+    //     * Call this one if you plan on USING the plugin; call {@link #initializeComponents(File)} if you
+    //     want to
+    //     * build the plugin archive but not load the plugins themselves. This one is for working with the
+    //     plugins,
+    //     * the other for hosting and serving plugins. One or the other must be called before anything else.
+    //     *
+    //     * @param pluginRoot
+    //     */
+    //    public void loadComponents(File pluginRoot) {
+    //        initializeComponents(pluginRoot);
+    //        componentManager.startPlugins();
+    //    }
 
     /**
-     * Use this call for the "master" service that installs components based on configuration. The resources
-     * service should use this entry point; others should use {@link #initializeComponents(File)} or
-     * {@link #loadComponents(File)}.
+     * Use this call for the "master" service that installs components based on configuration.
      *
      * @param configuration
      * @param pluginPath
@@ -841,8 +904,9 @@ public class ComponentRegistry {
 
     /**
      * Call to initialize and use the plugin system. No plugins will be discovered unless this is called. This
-     * finds but does not load the configured plugins. Call this one at initialization or
-     * {@link #loadComponents(File)} but not both.
+     * finds but does not load the configured plugins. Call this one at initialization.
+     * <p>
+     * TODO use the catalog and register components from Maven after update check
      *
      * @param pluginRoot
      */
@@ -854,7 +918,7 @@ public class ComponentRegistry {
         for (var wrapper : this.componentManager.getPlugins()) {
             Plugin plugin = wrapper.getPlugin();
             if (plugin instanceof KlabComponent component) {
-                registerComponent(component);
+                registerComponent(component, null /* TODO */);
             }
         }
 

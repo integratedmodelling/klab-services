@@ -68,7 +68,7 @@ public abstract class BaseService implements KlabService {
     private ScopeManager _scopeManager;
     private boolean initialized;
     private boolean operational;
-    private ComponentRegistry componentRegister = new ComponentRegistry();
+    private ComponentRegistry componentRegister;
     private String instanceKey = Utils.Names.newName();
 
     protected Parameters<Engine.Setting> settingsForSlaveServices = Parameters.createSynchronized();
@@ -91,6 +91,7 @@ public abstract class BaseService implements KlabService {
             throw new KlabIllegalStateException(e);
         }
         createServiceSecret();
+        componentRegister = new ComponentRegistry(this, options);
     }
 
     public ComponentRegistry getComponentRegistry() {

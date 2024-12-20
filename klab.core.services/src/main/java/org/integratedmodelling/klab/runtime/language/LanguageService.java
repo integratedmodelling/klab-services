@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.components.ComponentRegistry;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -75,20 +76,20 @@ public class LanguageService implements Language {
             }
         }
         if (descriptor != null && !descriptor.error) {
-            if (descriptor.method != null) {
+            if (descriptor.implementation().method != null) {
                 // can't be null
                 try {
-                    return (T) descriptor.method.invoke(descriptor.staticMethod ? null :
-                                                        descriptor.mainClassInstance,
+                    return (T) descriptor.implementation().method.invoke(descriptor.staticMethod ? null :
+                                                        descriptor.implementation().mainClassInstance,
                             getParameters(descriptor, call, scope, false));
                 } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                     scope.error("runtime error when invoking function " + call.getUrn());
                     return null;
                 }
-            } else if (descriptor.constructor != null) {
+            } else if (descriptor.implementation().constructor != null) {
                 Object[] args = getParameters(descriptor, call, scope, true);
                 try {
-                    return (T) descriptor.constructor.newInstance(args);
+                    return (T) descriptor.implementation().constructor.newInstance(args);
                 } catch (Throwable e) {
                     throw new KlabIllegalStateException(e);
                 }
@@ -96,11 +97,6 @@ public class LanguageService implements Language {
         }
         return null;
     }
-
-    //    @Override
-    //    public void loadComponent(ResourceSet resourceSet, Scope scope) {
-    //        // TODO implement
-    //    }
 
     private Object[] getParameters(ComponentRegistry.FunctionDescriptor descriptor, ServiceCall call,
                                    Scope scope,
@@ -111,18 +107,18 @@ public class LanguageService implements Language {
                 break;
             case FUNCTION:
                 if (isConstructor) {
-                    return matchParameters(descriptor.constructor.getParameterTypes(), call, scope);
+                    return matchParameters(descriptor.implementation().constructor.getParameterTypes(), call, scope);
                 } else {
                     if (descriptor.methodCall == 1) {
                         return new Object[]{call, scope, descriptor.serviceInfo};
                     } else if (descriptor.methodCall == 2) {
                         return new Object[]{call, scope};
                     } else {
-                        return matchParameters(descriptor.method.getParameterTypes(), call, scope);
+                        return matchParameters(descriptor.implementation().method.getParameterTypes(), call, scope);
                     }
                 }
             case FREEFORM:
-                return matchParametersFreeform(descriptor.method.getParameterTypes(), call, scope);
+                return matchParametersFreeform(descriptor.implementation().method.getParameterTypes(), call, scope);
             case VERB:
                 // TODO
         }
@@ -142,6 +138,11 @@ public class LanguageService implements Language {
         List<Object> payload = new ArrayList<>(call.getParameters().getUnnamedArguments());
         payload.add(call);
         payload.add(scope);
+        if (scope instanceof ServiceUserScope serviceUserScope) {
+            // add the service and the user identity
+            payload.add(serviceUserScope.getService());
+            payload.add(serviceUserScope.getUser());
+        }
         if (!call.getParameters().isEmpty()) {
             payload.add(call.getParameters());
         }

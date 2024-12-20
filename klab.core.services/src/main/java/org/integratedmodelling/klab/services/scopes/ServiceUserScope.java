@@ -74,6 +74,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     protected ServiceUserScope(ServiceUserScope parent) {
         super(parent.user, parent.isSender(), parent.isReceiver());
         copyMessagingSetup(parent);
+        this.service = parent.service;
         this.user = parent.user;
         this.parentScope = parent;
         this.data = parent.data;
@@ -81,6 +82,10 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         this.serviceMap.putAll(parent.serviceMap);
         this.defaultServiceMap.putAll(parent.defaultServiceMap);
         this.id = parent.id;
+    }
+
+    public KlabService getService() {
+        return this.service;
     }
 
     /**
