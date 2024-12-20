@@ -26,9 +26,11 @@ import java.lang.annotation.*;
 public @interface Importer {
 
     /**
-     * The unique ID of the import schema this implements. This is the complete ID as a dot-separated path,
-     * whose leading path is the "class" of the import and the last element specifies the import source or
-     * method (e.g. <code>component.jar</code>).
+     * The unique ID of the import schema this annotates. This is a single lowercase identifier that is used
+     * with the library's namespace to build the complete ID as a dot-separated path. The leading path
+     * ({@link org.integratedmodelling.klab.api.services.runtime.extension.Library}'s namespace is the "class"
+     * of the import and this schema ID specifies the import source or method (e.g.
+     * <code>component.jar</code>).
      *
      * @return
      */
