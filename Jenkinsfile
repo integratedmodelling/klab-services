@@ -15,6 +15,11 @@ pipeline {
                 sh './mvnw clean source:jar package'
             }
         }
+        stage('Install') {
+            steps {
+                sh './mvnw clean source:jar install -DskipTests -U'
+            }
+        }
         stage('Deploy artifacts') {
             when {
                 anyOf { branch 'develop'; branch 'master' }
@@ -32,7 +37,7 @@ pipeline {
                        mc rm --recursive --force minio/klab/p2/org.integratedmodelling.klab.modeler/ || echo "klab/p2/org.integratedmodelling.klab.modeler/ does not exists"
                        mc cp --recursive ./p2/org.integratedmodelling.klab.modeler/target/repository/ minio/klab/p2/org.integratedmodelling.klab.modeler/
                        mc rm --recursive --force minio/klab/products/klab/ || echo "klab/products/klab/ does not exists"
-                       mc mirror ./klab.distribution/target/distribution/ minio/klab/products/klab
+                       mc cp --recursive ./klab.distribution/target/distribution/ minio/klab/products/klab
                        """
                 }
             }
