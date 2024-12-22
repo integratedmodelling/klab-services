@@ -64,17 +64,19 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                 .fetchArtifacts(new MavenFetchRequest(
                         "org.integratedmodelling:klab.component.generators:1.0-SNAPSHOT"));
 
-        result.artifacts().peek(fetchedArtifact -> System.out.println(fetchedArtifact.coordinates() + ": " + fetchedArtifact.path())).toList();
+        result.artifacts().peek(fetchedArtifact -> System.out.println("CIUCCIA " + fetchedArtifact.coordinates() + ": " + fetchedArtifact.path())).toList();
+
+        System.out.println("FETCHATO: MO' PROVO CON L'ALTRO: " + Maven.synchronizeArtifact("org" +
+                ".integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT", true));
 
     }
-
 
     /**
      * Functions to access Maven artifacts
      */
     public static class Maven {
 
-        private static MavenFetcher mavenFetcher = new MavenFetcher()
+        private static final MavenFetcher mavenFetcher = new MavenFetcher()
                 .localRepositoryPath(System.getProperty("user.home") + "/.m2/repository")
                 .addRemoteRepository("ossrh", "https://oss.sonatype.org/content/repositories/snapshots");
 
@@ -93,6 +95,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                 return true;
             }
 
+            // NAH we should find a way to not fetch if it's there. No help from public API
             var request = new MavenFetchRequest(mavenGroupId + ":" + mavenArtifactId + ":" + version);
             var result = mavenFetcher.fetchArtifacts(request);
             if (result.artifacts().findAny().isPresent()) {
@@ -105,13 +108,11 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         }
 
         public static File synchronizeArtifact(String mavenGroupId, String mavenArtifactId, String version,
-                                     boolean verifySignature) {
+                                               boolean verifySignature) {
             var request = new MavenFetchRequest(mavenGroupId + ":" + mavenArtifactId + ":" + version);
             var result = mavenFetcher.fetchArtifacts(request);
             if (result.artifacts().findAny().isPresent()) {
-                AtomicReference<File> ret = new AtomicReference<>();
-                result.artifacts().peek(fetchedArtifact -> ret.set(fetchedArtifact.path().toFile()));
-                return ret.get();
+                return result.artifacts().toList().getFirst().path().toFile();
             }
             return null;
         }

@@ -307,7 +307,7 @@ public class ComponentRegistry {
      */
     public String registerComponent(File componentJar, String mavenCoordinates, Scope scope) {
         var result = installComponent(componentJar, mavenCoordinates, scope);
-        if (result != null && result.getSecond().isEmpty()) {
+        if (result != null && !result.getSecond().isEmpty()) {
             return result.getFirst().id();
         }
         return null;

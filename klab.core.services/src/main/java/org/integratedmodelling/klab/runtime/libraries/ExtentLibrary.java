@@ -34,6 +34,9 @@ import org.integratedmodelling.klab.runtime.scale.space.TileImpl;
 import org.integratedmodelling.klab.runtime.scale.time.TimeImpl;
 import org.integratedmodelling.klab.utilities.Utils;
 
+/**
+ * @deprecated these should be accessed through defines
+ */
 @Library(name = Library.CORE_LIBRARY, description = "Core extent functions to declare space and time " +
         "extents.")
 public class ExtentLibrary {
