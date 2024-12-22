@@ -24,6 +24,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
@@ -405,10 +406,12 @@ public class ComponentRegistry {
                 var serviceInfo = createAnnotationPrototype(namespacePrefix,
                         method.getAnnotation(Importer.class));
                 prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
+                ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
             } else if (method.isAnnotationPresent(Exporter.class)) {
                 var serviceInfo = createAnnotationPrototype(namespacePrefix,
                         method.getAnnotation(Exporter.class));
                 prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
+                ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
             }
         }
 

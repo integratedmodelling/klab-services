@@ -1375,9 +1375,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 required = new Class<?>[]{};
             }
 
-            // Must be same parameter number
-            if ((required.length == 0 && !(payload == null || payload.length == 0)) ||
-                    required.length > 0 && (payload == null || payload.length != required.length)) {
+            // Must be at least same parameter number w.r.t. supplied
+            if (required.length > 0 && (payload == null || payload.length < required.length)) {
                 return null;
             }
 

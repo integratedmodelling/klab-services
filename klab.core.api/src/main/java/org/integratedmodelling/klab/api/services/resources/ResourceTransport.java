@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.AuthenticatedIdentity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -25,10 +26,10 @@ public enum ResourceTransport {
     private final Map<String, List<Schema>> importSchemata = new HashMap<>();
     private final Map<String, List<Schema>> exportSchemata = new HashMap<>();
 
-//    public Schema COMPONENT_MAVEN;
-//    public Schema COMPONENT_JAR;
-//    public Schema PROJECT_ZIP;
-//    public Schema PROJECT_GIT;
+    //    public Schema COMPONENT_MAVEN;
+    //    public Schema COMPONENT_JAR;
+    //    public Schema PROJECT_ZIP;
+    //    public Schema PROJECT_GIT;
 
 
     /**
@@ -177,6 +178,7 @@ public enum ResourceTransport {
             }
             return this;
         }
+
 
         /**
          * For optional properties
@@ -335,6 +337,36 @@ public enum ResourceTransport {
         return ret;
     }
 
+    public void registerImportSchema(ServiceInfo serviceInfo) {
+
+        // create the schema
+        var namespace = Utils.Paths.getLeading(serviceInfo.getName(), '.');
+        var type = serviceInfo.listArguments().isEmpty() ? Schema.Type.STREAM : Schema.Type.PROPERTIES;
+        var schema = Schema.create(serviceInfo.getName(), type, serviceInfo.getTargets().iterator().next(),
+                serviceInfo.getDescription());
+
+        for (var arg : serviceInfo.listArguments()) {
+            schema = schema.with(arg.getName(), arg.getType().getFirst(), arg.isOptional());
+        }
+        addImport(namespace, schema);
+    }
+
+    public void registerExportSchema(ServiceInfo serviceInfo) {
+        // create the schema
+        var namespace = Utils.Paths.getLeading(serviceInfo.getName(), '.');
+        var type = serviceInfo.listArguments().isEmpty() ? Schema.Type.STREAM : Schema.Type.PROPERTIES;
+        var schema = Schema.create(serviceInfo.getName(), type, serviceInfo.getTargets().iterator().next(),
+                serviceInfo.getDescription());
+
+        // TODO revise, this is copied from import
+        for (var arg : serviceInfo.listArguments()) {
+            schema = schema.with(arg.getName(), arg.getType().getFirst(), arg.isOptional());
+        }
+
+        addExport(namespace, schema);
+    }
+
+
     /**
      * Adds the known formats. Others may be added by processing adapter import/export annotations or
      * components.
@@ -343,28 +375,36 @@ public enum ResourceTransport {
      */
     ResourceTransport() {
 
-//        addImport("component",
-//                COMPONENT_MAVEN = Schema.create("component.maven",
-//                        Schema.Type.PROPERTIES, KlabAsset.KnowledgeClass.COMPONENT, "Register a component " +
-//                                "available on Maven " + "using " + "the component's Maven coordinates").with(
-//                        "groupId", Artifact.Type.TEXT, false).with("adapterId", Artifact.Type.TEXT,
-//                        false).with("version", Artifact.Type.TEXT, false),
-//                COMPONENT_JAR = Schema.create("component.jar",
-//                        Schema.Type.STREAM, KlabAsset.KnowledgeClass.COMPONENT, "Register a component by " +
-//                                "directly " +
-//                                "submitting a jar file").mediaType("application/java-archive").fileExtensions("jar"));
-//
-//        addImport("project.git",
-//                PROJECT_GIT = Schema.create("project.git", Schema.Type.PROPERTIES,
-//                        KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB project by submitting the URL " +
-//                                "of a Git "
-//                                + "repository and optional credentials").with("url", Artifact.Type.TEXT,
-//                        false).with("username", Artifact.Type.TEXT, true).with("password",
-//                        Artifact.Type.TEXT, true).with("token", Artifact.Type.TEXT, true),
-//                PROJECT_ZIP = Schema.create("project.zip",
-//                        Schema.Type.STREAM,
-//                        KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB by directly submitting a zip " +
-//                                "archive").mediaType("application/zip", "application/x-zip-compressed").fileExtensions("zip"));
+        //        addImport("component",
+        //                COMPONENT_MAVEN = Schema.create("component.maven",
+        //                        Schema.Type.PROPERTIES, KlabAsset.KnowledgeClass.COMPONENT, "Register a
+        //                        component " +
+        //                                "available on Maven " + "using " + "the component's Maven
+        //                                coordinates").with(
+        //                        "groupId", Artifact.Type.TEXT, false).with("adapterId", Artifact.Type.TEXT,
+        //                        false).with("version", Artifact.Type.TEXT, false),
+        //                COMPONENT_JAR = Schema.create("component.jar",
+        //                        Schema.Type.STREAM, KlabAsset.KnowledgeClass.COMPONENT, "Register a
+        //                        component by " +
+        //                                "directly " +
+        //                                "submitting a jar file").mediaType("application/java-archive")
+        //                                .fileExtensions("jar"));
+        //
+        //        addImport("project.git",
+        //                PROJECT_GIT = Schema.create("project.git", Schema.Type.PROPERTIES,
+        //                        KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB project by submitting
+        //                        the URL " +
+        //                                "of a Git "
+        //                                + "repository and optional credentials").with("url", Artifact
+        //                                .Type.TEXT,
+        //                        false).with("username", Artifact.Type.TEXT, true).with("password",
+        //                        Artifact.Type.TEXT, true).with("token", Artifact.Type.TEXT, true),
+        //                PROJECT_ZIP = Schema.create("project.zip",
+        //                        Schema.Type.STREAM,
+        //                        KlabAsset.KnowledgeClass.PROJECT, "Register a k.LAB by directly
+        //                        submitting a zip " +
+        //                                "archive").mediaType("application/zip",
+        //                                "application/x-zip-compressed").fileExtensions("zip"));
 
     }
 
