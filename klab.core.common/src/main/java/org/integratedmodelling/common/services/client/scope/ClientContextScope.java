@@ -183,7 +183,8 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     @Override
     public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
-        return getService(RuntimeService.class).retrieveAssets(this, resultClass, queryData);
+//        return getService(RuntimeService.class).retrieveAssets(this, resultClass, queryData);
+        return null;
     }
 
     /**

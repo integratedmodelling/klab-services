@@ -43,23 +43,17 @@ public class ComponentIOLibrary {
     public static String importComponentMaven(Parameters<String> properties, BaseService service,
                                               Scope scope) {
 
-        if (Utils.Maven.needsUpdate(properties.get("groupId", String.class),
+        var file = Utils.Maven.synchronizeArtifact(properties.get("groupId", String.class),
                 properties.get("artifactId", String.class),
-                properties.get("version", String.class))) {
+                properties.get("version", String.class), true);
 
-            var file = Utils.Maven.synchronizeArtifact(properties.get("groupId", String.class),
-                    properties.get("artifactId", String.class),
-                    properties.get("version", String.class), true);
-
+        if (file != null && file.exists()) {
             var componentRegistry = service.getComponentRegistry();
-
-            if (file != null && file.exists()) {
-                var mavenCoordinates =
-                        properties.get("groupId") + ":" + properties.get("artifactId") + ":" + properties.get("version");
-                return componentRegistry.registerComponent(file, mavenCoordinates, scope);
-            }
-
+            return componentRegistry.registerComponent(file,
+                    properties.get("groupId") + ":" + properties.get("artifactId") + ":" + properties.get(
+                    "version"), scope);
         }
+
         return null;
     }
 

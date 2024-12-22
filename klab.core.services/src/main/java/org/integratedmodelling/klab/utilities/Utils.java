@@ -3,7 +3,25 @@ package org.integratedmodelling.klab.utilities;
 import maven.fetcher.MavenFetchRequest;
 import maven.fetcher.MavenFetcher;
 import org.apache.commons.io.FileUtils;
+import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import org.eclipse.aether.DefaultRepositoryCache;
 import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.NoLocalRepositoryManagerException;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.*;
+import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
+import org.eclipse.aether.spi.connector.transport.TransporterFactory;
+import org.eclipse.aether.transport.file.FileTransporterFactory;
+import org.eclipse.aether.transport.http.HttpTransporterFactory;
+import org.eclipse.aether.util.artifact.JavaScopes;
+import org.eclipse.aether.util.filter.DependencyFilterUtils;
+import org.eclipse.aether.util.graph.visitor.PreorderNodeListGenerator;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.CheckoutConflictException;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -80,9 +98,33 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                 .localRepositoryPath(System.getProperty("user.home") + "/.m2/repository")
                 .addRemoteRepository("ossrh", "https://oss.sonatype.org/content/repositories/snapshots");
 
+        public static File getLocalJarArtifact(String mavenGroupId, String mavenArtifactId, String version) {
+
+            var artifact = new DefaultArtifact(mavenGroupId + ":" + mavenArtifactId + ":" + version);
+            ArtifactRequest request = new ArtifactRequest();
+            request.setArtifact(artifact);
+            var session = Maven.buildSession(Maven.DEFAULT_REPO_LOCAL);
+
+            ArtifactResult zoaz    = null;
+            try {
+                zoaz = Maven.system.resolveArtifact(session, request);
+            } catch (ArtifactResolutionException e) {
+                throw new RuntimeException(e);
+            }
+
+            if (zoaz.isResolved()  && zoaz.getLocalArtifactResult().isAvailable()) {
+                return zoaz.getLocalArtifactResult().getFile();
+            }
+
+            return null;
+
+        }
+
         /**
          * True if the artifact is not in the local repository or it is there with a different hash. Should
          * work with SNAPSHOT artifacts to determine if there is a new build available.
+         *
+         * TODO pass a local file and verify vs the hash. Should add the hash to the repo
          *
          * @param mavenGroupId
          * @param mavenArtifactId
@@ -91,30 +133,93 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         public static boolean needsUpdate(String mavenGroupId, String mavenArtifactId, String version) {
 
             if (version.contains("SNAPSHOT")) {
-                // TODO if version exists in repo, check hash
-                return true;
+                // TODO if version exists in repo, check local hash vs. remote; if different, return true. At the moment whatever is
+                //  in the local repo will do.
+//                return true;
             }
-
-            // NAH we should find a way to not fetch if it's there. No help from public API
-            var request = new MavenFetchRequest(mavenGroupId + ":" + mavenArtifactId + ":" + version);
-            var result = mavenFetcher.fetchArtifacts(request);
-            if (result.artifacts().findAny().isPresent()) {
-                return false;
-            }
-
-            // TODO check if version exists in repo
-
-            return false;
+            return getLocalJarArtifact(mavenGroupId, mavenArtifactId, version) == null;
         }
 
         public static File synchronizeArtifact(String mavenGroupId, String mavenArtifactId, String version,
                                                boolean verifySignature) {
-            var request = new MavenFetchRequest(mavenGroupId + ":" + mavenArtifactId + ":" + version);
-            var result = mavenFetcher.fetchArtifacts(request);
-            if (result.artifacts().findAny().isPresent()) {
-                return result.artifacts().toList().getFirst().path().toFile();
+            if (needsUpdate(mavenGroupId, mavenArtifactId, version)) {
+                var request = new MavenFetchRequest(mavenGroupId + ":" + mavenArtifactId + ":" + version);
+                var result = mavenFetcher.fetchArtifacts(request);
+                if (result.artifacts().findAny().isPresent()) {
+                    return result.artifacts().toList().getFirst().path().toFile();
+                }
             }
-            return null;
+            return getLocalJarArtifact(mavenGroupId, mavenArtifactId, version);
+        }
+
+        private static final String DEFAULT_REPO_LOCAL = String.format("%s/.m2/repository", System.getProperty("user.home"));
+        private static final RemoteRepository DEFAULT_REPO_REMOTE = new RemoteRepository.Builder("central", "default", "https://repo1.maven.org/maven2/").build();
+        private static final Set<String> DEFAULT_SCOPES = Set.of(JavaScopes.RUNTIME);
+
+        private static final RepositorySystem system;
+
+        static {
+            var locator = MavenRepositorySystemUtils.newServiceLocator();
+
+            locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
+            locator.addService(TransporterFactory.class, FileTransporterFactory.class);
+            locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
+//            locator.addService(TransporterFactory.class, ClasspathTransporterFactory.class);
+
+            system = locator.getService(RepositorySystem.class);
+        }
+
+        public static List<String> resolve(String... coords) throws DependencyResolutionException, NoLocalRepositoryManagerException {
+            return resolve(List.of(coords), DEFAULT_SCOPES, DEFAULT_REPO_LOCAL, List.of(DEFAULT_REPO_REMOTE));
+        }
+
+        /**
+         * resolve
+         *
+         * @param coords      eg: org.apache.logging.log4j:log4j-core:2.19.0
+         * @param scopes      default to DEFAULT_SCOPES if null or empty
+         * @param localRepo   default to DEFAULT_REPO_LOCAL if null
+         * @param remoteRepos default to DEFAULT_REPO_REMOTE if null or empty
+         * @return jar files absolute path
+         **/
+        public static List<String> resolve(List<String> coords, Set<String> scopes, String localRepo, List<RemoteRepository> remoteRepos) throws DependencyResolutionException, NoLocalRepositoryManagerException {
+            if (coords.isEmpty()) return java.util.Collections.emptyList();
+            if (scopes == null || scopes.isEmpty()) scopes = DEFAULT_SCOPES;
+            if (localRepo == null) localRepo = DEFAULT_REPO_LOCAL;
+            if (remoteRepos == null || remoteRepos.isEmpty()) remoteRepos = List.of(DEFAULT_REPO_REMOTE);
+
+            RepositorySystemSession session = buildSession(localRepo);
+
+            List<Dependency> dependencies = coords.stream().map(DefaultArtifact::new).map(artifact -> new Dependency(artifact, null)).toList();
+            var collectRequest = new CollectRequest(dependencies, null, remoteRepos);
+
+            var request = new DependencyRequest(collectRequest, DependencyFilterUtils.classpathFilter(scopes));
+            DependencyResult result = system.resolveDependencies(session, request);
+
+            var nodeListGenerator = new PreorderNodeListGenerator();
+            result.getRoot().accept(nodeListGenerator);
+
+            return nodeListGenerator.getFiles().stream().map(File::getAbsolutePath).toList();
+        }
+
+        private static RepositorySystemSession buildSession(String localRepo) {
+            var session = MavenRepositorySystemUtils.newSession();
+            session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, new LocalRepository(localRepo)));
+            session.setCache(new DefaultRepositoryCache());
+            return session;
+        }
+
+        public static void main(String[] args) throws DependencyResolutionException, NoLocalRepositoryManagerException {
+            test();
+        }
+
+        public static void test() throws DependencyResolutionException, NoLocalRepositoryManagerException {
+            String localRepo = "out";
+            RemoteRepository aliRepo = new RemoteRepository.Builder("aliyun", "default", "https://maven.aliyun.com/repository/central").build();
+            List<RemoteRepository> remotes = List.of(DEFAULT_REPO_REMOTE, aliRepo);
+            var coords = List.of("org.apache.logging.log4j:log4j-core:2.20.0");
+            List<String> jars = resolve(coords, null, localRepo, remotes);
+            System.out.printf(">>>>>> jars: %s%n", jars);
         }
 
     }

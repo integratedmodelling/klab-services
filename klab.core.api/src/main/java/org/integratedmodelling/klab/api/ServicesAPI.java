@@ -405,8 +405,6 @@ public interface ServicesAPI {
 
         /**
          * POST endpoint to retrieve one or more assets from the digital twin based on a query
-         *
-         * @deprecated use the generic export mechanism
          */
         String RETRIEVE_ASSET = "/asset";
 
