@@ -25,10 +25,7 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
-import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.lang.Quantity;
-import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.*;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.provenance.Activity;
@@ -295,7 +292,8 @@ public class JacksonConfiguration {
                                       Notification.LexicalContext.class, ResolutionConstraint.class,
                                       KimObservationStrategy.Operation.class, RuntimeAsset.class,
                                       KimObservationStrategy.Filter.class, ObservationStrategy.class,
-                                      ObservationStrategy.Operation.class}) {
+                                      ObservationStrategy.Operation.class, ServiceInfo.class,
+                                      ServiceInfo.Argument.class}) {
             module.addSerializer(cls, new PolymorphicSerializer<>());
             module.addDeserializer(cls, new PolymorphicDeserializer<>(cls));
         }

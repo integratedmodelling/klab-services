@@ -456,9 +456,9 @@ public interface KlabService extends Service {
      *                         properties.
      * @param suggestedUrn     may be null if the submission does not specify one
      * @param scope
-     * @return
+     * @return the URN of the asset imported.
      */
-    Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates,
+    String importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates,
                     String suggestedUrn,
                     Scope scope);
 

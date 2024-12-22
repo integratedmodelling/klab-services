@@ -123,8 +123,7 @@ public class KlabServiceController {
                         "submissions is available");
             }
 
-            var result = instance.klabService().importAsset(s, s.asset(data), urn, scope);
-            return result == null ? null : result.getUrn();
+            return instance.klabService().importAsset(s, s.asset(data), urn, scope);
         }
         return null;
     }

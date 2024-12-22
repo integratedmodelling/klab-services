@@ -534,7 +534,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
 
     @Override
-    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates
+    public String importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates
             , String suggestedUrn, Scope scope) {
         // TODO establish which service we're targeting and route the request to it
         if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {

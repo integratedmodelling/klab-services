@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
@@ -41,7 +42,7 @@ public class ComponentIOLibrary {
                                              description = "Non-standard Maven repository", optional = true)
               })
     public static String importComponentMaven(Parameters<String> properties, BaseService service,
-                                              Scope scope) {
+                                           Scope scope) {
 
         var file = Utils.Maven.synchronizeArtifact(properties.get("groupId", String.class),
                 properties.get("artifactId", String.class),

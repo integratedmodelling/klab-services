@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.lang;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.documentation.Documentation;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -262,13 +263,13 @@ public class ServiceInfoImpl implements ServiceInfo {
     }
 
     @Override
-    public List<PairImpl<String, Level>> validate(ServiceCall function) {
-        List<PairImpl<String, Level>> ret = new ArrayList<>();
+    public List<Pair<String, Level>> validate(ServiceCall function) {
+        List<Pair<String, Level>> ret = new ArrayList<>();
         // validate existing arguments
         for (String arg : function.getParameters().keySet()) {
             ArgumentImpl argument = arguments.get(arg);
             if (argument == null) {
-                ret.add(new PairImpl<>(name + ": argument " + arg + " is not recognized", Level.SEVERE));
+                ret.add(Pair.of(name + ": argument " + arg + " is not recognized", Level.SEVERE));
             } else {
                 Object val = function.getParameters().get(arg);
                 // if ((val = classify(val, argument)) == null) {

@@ -476,14 +476,14 @@ public abstract class ServiceClient implements KlabService {
     }
 
     @Override
-    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates
+    public String importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates
             , String suggestedUrn, Scope scope) {
 
         if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
-            return new Urn(client.withScope(scope).post(ServicesAPI.IMPORT,
+            return client.withScope(scope).post(ServicesAPI.IMPORT,
                     assetCoordinates.getProperties(), String.class,
                     "schema"
-                    , schema.getSchemaId(), "urn", suggestedUrn));
+                    , schema.getSchemaId(), "urn", suggestedUrn);
         } else if (schema.getType() == ResourceTransport.Schema.Type.STREAM) {
             var file = assetCoordinates.getFile();
             if (file == null && assetCoordinates.getUrl() != null) {
@@ -497,10 +497,10 @@ public abstract class ServiceClient implements KlabService {
                             "does not specify a media type");
                 }
 
-                return new Urn(client.withScope(scope).providing(schema.getMediaTypes())
+                return client.withScope(scope).providing(schema.getMediaTypes())
                                      .upload(ServicesAPI.IMPORT,
                         assetCoordinates.getFile(), String.class,
-                        "schema", schema.getSchemaId(), "urn", suggestedUrn));
+                        "schema", schema.getSchemaId(), "urn", suggestedUrn);
             }
         }
 

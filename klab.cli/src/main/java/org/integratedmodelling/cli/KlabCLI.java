@@ -118,7 +118,7 @@ public enum KlabCLI {
     public void importWithSchema(KlabService service, String suggestedUrn, List<String> arguments) {
 
         ResourceTransport.Schema schema = null;
-        Urn result = null;
+        String result = null;
         if (arguments == null || arguments.isEmpty()) {
             schema = chooseSchemaInteractively(service.capabilities(user()).getImportSchemata());
             if (schema != null) {

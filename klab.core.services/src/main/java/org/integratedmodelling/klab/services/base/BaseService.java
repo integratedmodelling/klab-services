@@ -450,7 +450,7 @@ public abstract class BaseService implements KlabService {
     }
 
     @Override
-    public Urn importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates
+    public String importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates
             , String suggestedUrn, Scope scope) {
 
         ServiceCall serviceCall = null;
@@ -467,6 +467,6 @@ public abstract class BaseService implements KlabService {
         }
 
         var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
-        return languageService.execute(serviceCall, scope, Urn.class);
+        return languageService.execute(serviceCall, scope, String.class);
     }
 }

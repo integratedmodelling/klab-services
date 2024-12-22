@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -249,7 +250,7 @@ public interface ServiceInfo extends Serializable {
      * @return the collection of errors, each being a pair of <message, level>, or an empty collection if no
      * errors occurred
      */
-    List<PairImpl<String, Level>> validate(ServiceCall function);
+    List<Pair<String, Level>> validate(ServiceCall function);
 
     /**
      * Full synopsis - expecting a multi-line string with full description of options, arguments and
