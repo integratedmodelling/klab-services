@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
@@ -450,7 +451,8 @@ public interface KlabService extends Service {
      * @param options
      * @return
      */
-    InputStream exportAsset(String urn, String mediaType, Scope scope, Object... options);
+    InputStream exportAsset(String urn, KlabAsset.KnowledgeClass assetClass, String mediaType, Scope scope,
+                            Object... options);
 
     /**
      * @param schema           a valid schema that comes from those admitted in the service
@@ -461,7 +463,7 @@ public interface KlabService extends Service {
      * @return the URN of the asset imported.
      */
     String importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates,
-                    String suggestedUrn,
-                    Scope scope);
+                       String suggestedUrn,
+                       Scope scope);
 
 }

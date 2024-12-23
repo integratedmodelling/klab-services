@@ -422,33 +422,17 @@ public abstract class BaseService implements KlabService {
         return this.initialized;
     }
 
-    //    @Override
-    //    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
-    //                                        Scope scope) {
-    //        throw new KlabUnimplementedException("Cannot retrieve asset " + urn);
-    //    }
-
-    //    @Override
-    //    public InputStream retrieveResource(String urn, Version version, String accessKey, String format,
-    //                                        Scope scope) {
-    //
-    //        var component = getComponentRegistry().getComponent(urn, version);
-    //        if (component != null && component.sourceArchive() != null && component.permissions()
-    //        .checkAuthorization(scope)) {
-    //            try {
-    //                return new FileInputStream(component.sourceArchive());
-    //            } catch (FileNotFoundException e) {
-    //                throw new KlabIOException(e);
-    //            }
-    //        }
-    //
-    //        // TODO projects, resource archives etc
-    //
-    //        return super.retrieveResource(urn, version, accessKey, format, scope);
-    //    }
-
     @Override
-    public InputStream exportAsset(String urn, String mediaType, Scope scope, Object... options) {
+    public InputStream exportAsset(String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope, Object... options) {
+
+        // TODO find the schema with the passed class and media type
+
+        // TODO determine which class, method or adapter provides the implementation
+
+        // TODO find the object identified by the URN
+
+        // TODO apply the implementation to the passed parameter to obtain the result stream
+
         return null;
     }
 

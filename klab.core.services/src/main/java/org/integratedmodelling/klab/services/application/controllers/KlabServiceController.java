@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
@@ -75,6 +76,7 @@ public class KlabServiceController {
     @GetMapping(ServicesAPI.EXPORT)
     public void exportAsset(@PathVariable(name = "schema") String schema,
                             @PathVariable(name = "urn") String urn,
+                            @PathVariable(name = "class") KlabAsset.KnowledgeClass knowledgeClass,
                             @RequestHeader(HttpHeaders.ACCEPT) String mediaType,
                             HttpServletResponse response,
                             Principal principal) {
@@ -92,7 +94,7 @@ public class KlabServiceController {
                         "media type " + mediaType + " is available");
             }
 
-            var stream = instance.klabService().exportAsset(urn, mediaType, scope);
+            var stream = instance.klabService().exportAsset(urn, knowledgeClass, mediaType, scope);
             if (stream == null) {
                 throw new KlabResourceAccessException("Service cannot stream the asset identified by " + urn);
             }

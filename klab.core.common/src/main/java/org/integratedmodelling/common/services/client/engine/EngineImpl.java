@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -527,7 +528,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
 
     @Override
-    public InputStream exportAsset(String urn, String mediaType, Scope scope, Object... options) {
+    public InputStream exportAsset(String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope, Object... options) {
         // TODO establish which service we're targeting and route the request to it
         return null;
     }

@@ -100,7 +100,7 @@ public interface ServicesAPI {
      * Asset stream download for all services that have assets to download, using URN and content negotiation
      * for specifics
      */
-    String EXPORT = "/export/{schema}/{urn}";
+    String EXPORT = "/export/{class}/{urn}";
 
 
     /**

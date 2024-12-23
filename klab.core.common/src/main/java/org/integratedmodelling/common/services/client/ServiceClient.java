@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -457,11 +458,11 @@ public abstract class ServiceClient implements KlabService {
     }
 
     @Override
-    public InputStream exportAsset(String urn, String mediaType, Scope scope, Object... options) {
+    public InputStream exportAsset(String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope, Object... options) {
         try {
             var file =
                     client.withScope(scope).accepting(List.of(mediaType)).download(ServicesAPI.EXPORT,
-                            "urn", urn);
+                            "urn", urn, "class", knowledgeClass.name());
             return new FileInputStream(file);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);

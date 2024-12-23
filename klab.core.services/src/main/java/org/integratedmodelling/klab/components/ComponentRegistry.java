@@ -662,7 +662,7 @@ public class ComponentRegistry {
                 }
 
                 File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
-                try (var input = service.exportAsset(result.getResourceUrn(), "application/java-archive",
+                try (var input = service.exportAsset(result.getResourceUrn(), KlabAsset.KnowledgeClass.COMPONENT, "application/java-archive",
                         scope);
                      var output = new FileOutputStream(plugin)) {
                     IOUtils.copy(input, output);
