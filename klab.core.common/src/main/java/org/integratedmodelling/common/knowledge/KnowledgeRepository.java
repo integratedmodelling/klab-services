@@ -30,31 +30,65 @@ public enum KnowledgeRepository {
     /**
      * We keep all syntactic document we encounter here, in a multimap with different versions.
      */
-    MultivaluedMap<String, KlabDocument<?>> namespaceMap = new MultivaluedHashMap<>();
-    MultivaluedMap<String, Pair<Knowledge, Version>> assetMap = new MultivaluedHashMap<>();
-    Map<KlabAsset.KnowledgeClass, Function<KlabDocument<?>, Collection<Knowledge>>> processors =
-            new HashMap<>();
+    MultivaluedMap<String, KlabDocument<?>> documentMap = new MultivaluedHashMap<>();
+    MultivaluedMap<String, Pair<KlabAsset, Version>> assetMap = new MultivaluedHashMap<>();
+    //    Map<KlabAsset.KnowledgeClass, Function<KlabDocument<?>, Collection<Knowledge>>> processors =
+    //            new HashMap<>();
+
+    //    /**
+    //     * @param knowledgeClass
+    //     * @param processor
+    //     * @param <T>
+    //     */
+    //    public <T extends KlabDocument<?>> void setProcessor(KlabAsset.KnowledgeClass knowledgeClass,
+    //                                                         Function<T, Collection<Knowledge>> processor) {
+    //        this.processors.put(knowledgeClass, (Function<KlabDocument<?>, Collection<Knowledge>>)
+    //        processor);
+    //    }
 
     /**
-     * @param knowledgeClass
-     * @param processor
-     * @param <T>
+     * Knowledge assets can be registered from the outside, normally within the service whenever results are
+     * ingested.
+     *
+     * @param urn
+     * @param asset
+     * @param version
      */
-    public <T extends KlabDocument<?>> void setProcessor(KlabAsset.KnowledgeClass knowledgeClass,
-                                                         Function<T, Collection<Knowledge>> processor) {
-        this.processors.put(knowledgeClass, (Function<KlabDocument<?>, Collection<Knowledge>>) processor);
+    public void registerAsset(String urn, Knowledge asset, Version version) {
+        assetMap.add(urn, Pair.of(asset, version));
+    }
+
+    /**
+     * Retrieve any knowledge asset registered by the service. This is meant to hold derived assets such as
+     * models, concepts etc. as needed, and is normally used on the service side where services can keep the
+     * assets they need.
+     *
+     * @param urn
+     * @param assetClass
+     * @param version
+     * @param <T>
+     * @return
+     */
+    public <T extends Knowledge> T retrieveAsset(String urn, Class<T> assetClass, Version version) {
+        // TODO
+        return null;
     }
 
     /**
      * Load what necessary from the passed resource set and update any index. After this has returned, any
-     * results in the resource set are returned directly in order of reference. Assets that have been
+     * results in the resource set are returned directly in order of reference. This only loads documents,
+     * which can be further processed by the passed functors to store assets they contain; for components and
+     * the like, the extension mechanism must be extended. The functors determine what gets returned and only
+     * operates on the resource set's results.
      *
      * @param resourceSet
      * @param scope
      * @return any resolved knowledge items pointed to by the resourceSet {@link ResourceSet#getResults()}
      * method, or an empty list if the result list was empty or an error occurred.
      */
-    public <T extends KlabAsset> List<T> ingest(ResourceSet resourceSet, Scope scope, Class<T> resultClass) {
+    public <T extends KlabAsset> List<T> ingest(ResourceSet resourceSet, Scope scope, Class<T> resultClass,
+                                                Pair<KlabAsset.KnowledgeClass, Function<KlabAsset,
+                                                        List<KlabAsset>>>... functors) {
 
         if (resourceSet.isEmpty()) {
             return List.of();
@@ -62,7 +96,7 @@ public enum KnowledgeRepository {
 
         for (var res : Utils.Collections.join(resourceSet.getOntologies(), resourceSet.getNamespaces(),
                 resourceSet.getObservationStrategies(), resourceSet.getBehaviors())) {
-            if (!ingest(res, scope)) {
+            if (!ingestDocument(res, scope, functors)) {
                 return List.of();
             }
         }
@@ -122,8 +156,8 @@ public enum KnowledgeRepository {
             default -> null;
         };
 
-        if (namespace != null && namespaceMap.containsKey(namespace)) {
-            for (var doc : namespaceMap.get(namespace)) {
+        if (namespace != null && documentMap.containsKey(namespace)) {
+            for (var doc : documentMap.get(namespace)) {
                 if (doc.getVersion() == null && res.getResourceVersion() == null ||
                         (res.getResourceVersion() != null && doc.getVersion() != null && doc.getVersion().compatible(res.getResourceVersion()))) {
                     return doc;
@@ -134,10 +168,11 @@ public enum KnowledgeRepository {
         return null;
     }
 
-    private boolean ingest(ResourceSet.Resource resource, Scope scope) {
+    private boolean ingestDocument(ResourceSet.Resource resource, Scope scope, Pair<KlabAsset.KnowledgeClass,
+            Function<KlabAsset, List<KlabAsset>>>... functors) {
 
-        if (namespaceMap.containsKey(resource.getResourceUrn())) {
-            for (var doc : namespaceMap.get(resource.getResourceUrn())) {
+        if (documentMap.containsKey(resource.getResourceUrn())) {
+            for (var doc : documentMap.get(resource.getResourceUrn())) {
                 if (doc.getVersion() == null && resource.getResourceVersion() == null ||
                         (resource.getResourceVersion() != null && doc.getVersion() != null && doc.getVersion().compatible(resource.getResourceVersion()))) {
                     return true;
@@ -160,21 +195,25 @@ public enum KnowledgeRepository {
         };
 
         if (doc != null) {
-            var processor = this.processors.get(resource.getKnowledgeClass());
-            if (processor != null) {
-                for (var knowledge : processor.apply(doc)) {
-                    assetMap.add(knowledge.getUrn(), Pair.of(knowledge, doc.getVersion()));
+            if (functors != null) {
+                for (var functor : functors) {
+                    if (KlabAsset.classify(doc) == functor.getFirst()) {
+                        for (var knowledgeAsset : functor.getSecond().apply(doc)) {
+                            assetMap.add(knowledgeAsset.getUrn(), Pair.of(knowledgeAsset, doc.getVersion()));
+                        }
+                    }
                 }
             }
-            namespaceMap.add(resource.getResourceUrn(), doc);
+            documentMap.add(resource.getResourceUrn(), doc);
+
             return true;
         }
 
         return false;
     }
 
-    <T extends Knowledge> T resolve(String urn, Class<T> resultClass) {
-        return null;
-    }
+    //    <T extends Knowledge> T resolve(String urn, Class<T> resultClass) {
+    //        return null;
+    //    }
 
 }

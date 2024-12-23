@@ -92,7 +92,7 @@ public class KlabServiceController {
                         "media type " + mediaType + " is available");
             }
 
-            var stream = instance.klabService().exportAsset(urn, schemata.getFirst(), scope);
+            var stream = instance.klabService().exportAsset(urn, mediaType, scope);
             if (stream == null) {
                 throw new KlabResourceAccessException("Service cannot stream the asset identified by " + urn);
             }

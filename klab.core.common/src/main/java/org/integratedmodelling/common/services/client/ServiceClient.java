@@ -457,18 +457,11 @@ public abstract class ServiceClient implements KlabService {
     }
 
     @Override
-    public InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope,
-                                   Object... options) {
+    public InputStream exportAsset(String urn, String mediaType, Scope scope, Object... options) {
         try {
-            // TODO could use a stream() call on the client producing an outputstream and return a piped
-            //  stream
-            if (schema.getMediaTypes().isEmpty()) {
-                throw new KlabInternalErrorException("Cannot request an export with a schema that does not " +
-                        "contain a media type");
-            }
             var file =
-                    client.withScope(scope).accepting(schema.getMediaTypes()).download(ServicesAPI.EXPORT,
-                            "schema", schema, "urn", urn);
+                    client.withScope(scope).accepting(List.of(mediaType)).download(ServicesAPI.EXPORT,
+                            "urn", urn);
             return new FileInputStream(file);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);

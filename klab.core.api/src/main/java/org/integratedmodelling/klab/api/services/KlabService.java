@@ -442,13 +442,15 @@ public interface KlabService extends Service {
                                                                     ExternalAuthenticationCredentials credentials, Scope scope);
 
     /**
+     * This will find any export schema installed at service side to honor the request.
+     *
      * @param urn
-     * @param schema
+     * @param mediaType
      * @param scope
      * @param options
      * @return
      */
-    InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope, Object... options);
+    InputStream exportAsset(String urn, String mediaType, Scope scope, Object... options);
 
     /**
      * @param schema           a valid schema that comes from those admitted in the service

@@ -4,6 +4,8 @@
  */
 package org.integratedmodelling.klab.data.histogram;
 
+import org.integratedmodelling.klab.api.data.Histogram;
+import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
 import org.json.simple.JSONArray;
 
 import java.io.IOException;
@@ -539,6 +541,35 @@ public class SPDTHistogram<T extends Target<T>> {
             bins.add(bin.toJSON(format));
         }
         return bins;
+    }
+
+    public Histogram asHistogram() {
+        var ret = new HistogramImpl();
+        ret.setMax(this._maximum);
+        ret.setMin(this._minimum);
+        ret.setMissingCount(this._missingCount);
+        for (Bin<T> bin : getBins()) {
+            var hBin = new HistogramImpl.BinImpl();
+            hBin.setMean(bin.getMean());
+            hBin.setCount(bin.getCount());
+            hBin.setWeight(bin.getWeight());
+            switch (bin.getTarget()) {
+                case NumericTarget numericTarget -> {
+                    hBin.setMissingCount(numericTarget.getMissingCount());
+                    hBin.setSum(numericTarget.getSum());
+                    hBin.setSumSquared(numericTarget.getSumSquares());
+                }
+                case CategoricalTarget categoricalTarget -> {
+                    // TODO internalize the map and add to total in histogram
+                }
+                case SimpleTarget simpleTarget -> {
+                    hBin.setMissingCount(simpleTarget.getMissingCount());
+                }
+                default -> {}
+            }
+            ret.getBins().add(hBin);
+        }
+        return ret;
     }
 
     public String toJSONString(DecimalFormat format) {

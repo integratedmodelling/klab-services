@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 
 /**
@@ -104,6 +105,21 @@ public class Version implements Comparable<Version>, Serializable {
      */
     public Version(String version) {
         parseString(version);
+    }
+
+    /**
+     * If a URN contains a version segment, split it from it and return the URN and the version separately. If not, return the URN
+     * paired with EMPTY_VERSION.
+     *
+     * @param urn
+     * @return
+     */
+    public static Pair<String, Version> splitVersion(String urn) {
+        if (urn.contains("@")) {
+            var split = urn.split("@");
+            return Pair.of(split[0], create(split[1]));
+        }
+        return Pair.of(urn, EMPTY_VERSION);
     }
 
     private void parseString(final String str) {

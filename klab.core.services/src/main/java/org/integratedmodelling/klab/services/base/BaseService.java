@@ -5,6 +5,7 @@ import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
@@ -15,12 +16,15 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -444,9 +448,57 @@ public abstract class BaseService implements KlabService {
     //    }
 
     @Override
-    public InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope,
-                                   Object... options) {
+    public InputStream exportAsset(String urn, String mediaType, Scope scope, Object... options) {
         return null;
+    }
+
+
+    /**
+     * Calls {@link #ingestResources(ResourceSet, Scope, Class)} ignoring the class and only returning true or
+     * false if the resource set has errors.
+     *
+     * @param resourceSet
+     * @param scope
+     * @return
+     */
+    protected boolean ingestResources(ResourceSet resourceSet, Scope scope) {
+        if (Utils.Notifications.hasErrors(resourceSet.getNotifications())) {
+            return false;
+        }
+        ingestResources(resourceSet, scope, KlabAsset.class);
+        return true;
+    }
+
+    /**
+     * Can be overridden in each service to take what the service can handle from a ResourceSet. The default
+     * ingests all documents into the {@link KnowledgeRepository} and loads any components in results.
+     *
+     * @param resourceSet
+     * @param scope
+     * @return
+     */
+    protected <T extends KlabAsset> List<T> ingestResources(ResourceSet resourceSet, Scope scope, Class<T> resultClass) {
+        List<T> ret = new ArrayList<>();
+        for (var doc : KnowledgeRepository.INSTANCE.ingest(resourceSet, scope, Knowledge.class)) {
+            if (resultClass.isAssignableFrom(doc.getClass())) {
+                ret.add((T) doc);
+            }
+        }
+
+        boolean hasComponents = false;
+        for (var result : resourceSet.getResults()) {
+            switch (result.getKnowledgeClass()) {
+                case COMPONENT -> hasComponents = true;
+                default -> {
+                }
+            }
+        }
+
+        if (hasComponents) {
+            getComponentRegistry().loadComponents(resourceSet, scope);
+        }
+
+        return ret;
     }
 
     @Override

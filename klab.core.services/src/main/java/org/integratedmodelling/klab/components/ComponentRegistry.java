@@ -6,6 +6,7 @@ import io.github.classgraph.ScanResult;
 import javassist.Modifier;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.h2.util.IOUtils;
 import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -42,6 +43,7 @@ import org.integratedmodelling.klab.utilities.Utils;
 import org.pf4j.*;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -660,18 +662,17 @@ public class ComponentRegistry {
                 }
 
                 File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
-                throw new KlabUnimplementedException("DIOCÜ reimplement the component retrieval");
-                //                try (var input = service.retrieveResource(result.getResourceUrn(),
-                //                        result.getResourceVersion(), result.getAccessKey(),
-                //                        "application/java-archive", scope); var output = new
-                //                        FileOutputStream(plugin)) {
-                //                    IOUtils.copy(input, output);
-                //                } catch (IOException e) {
-                //                    scope.error(e);
-                //                    return false;
-                //                }
-                //                loadComponents(pluginPath);
+                try (var input = service.exportAsset(result.getResourceUrn(), "application/java-archive",
+                        scope);
+                     var output = new FileOutputStream(plugin)) {
+                    IOUtils.copy(input, output);
+                } catch (Exception e) {
+                    scope.error(e);
+                    return false;
+                }
+                installComponent(pluginPath, null, scope);
             }
+
         }
 
         // hopefully this is OK with plugins that have started already

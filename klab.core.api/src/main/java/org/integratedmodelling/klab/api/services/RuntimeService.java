@@ -136,6 +136,8 @@ public interface RuntimeService extends KlabService {
      * returned, it should contain informative notifications and the resolver will look for a different
      * strategy.
      *
+     * FIXME this should be internal and use a non-existing, generic ingest(ResourceSet)
+     *
      * @param contextualizables
      * @param scope
      * @return

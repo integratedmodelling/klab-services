@@ -6,6 +6,7 @@ import org.integratedmodelling.common.knowledge.ModelImpl;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
@@ -25,6 +26,7 @@ import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -40,6 +42,7 @@ import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
 import java.util.*;
+import java.util.function.Function;
 
 public class ResolverService extends BaseService implements Resolver {
 
@@ -51,15 +54,35 @@ public class ResolverService extends BaseService implements Resolver {
 
     private final String hardwareSignature = Utils.Names.getHardwareId();
     private ResolverConfiguration configuration;
-    private final ResolutionCompiler resolutionCompiler = new ResolutionCompiler();
+    private final ResolutionCompiler resolutionCompiler = new ResolutionCompiler(this);
 
     public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
         super(scope, Type.RESOLVER, options);
         //        setProvideScopesAutomatically(true);
         ServiceConfiguration.INSTANCE.setMainService(this);
         readConfiguration(options);
-        KnowledgeRepository.INSTANCE.setProcessor(KlabAsset.KnowledgeClass.NAMESPACE,
-                (ns) -> loadNamespace((KimNamespace) ns, scope));
+        //        // FIXME switch this to use the ingest() mechanism
+        //        KnowledgeRepository.INSTANCE.setProcessor(KlabAsset.KnowledgeClass.NAMESPACE,
+        //                (ns) -> loadNamespace((KimNamespace) ns, scope));
+    }
+
+    @Override
+    protected <T extends KlabAsset> List<T> ingestResources(ResourceSet resourceSet, Scope scope,
+                                                            Class<T> resultClass) {
+
+        List<T> ret = new ArrayList<>();
+
+        final Function<KlabAsset, List<KlabAsset>> namespaceTranslator =
+                (namespace) -> {
+                    if (namespace instanceof KimNamespace kimNamespace) {
+                        List<KlabAsset> mods = new ArrayList<>();
+                        kimNamespace.getStatements().stream().filter(statement -> statement instanceof KimModel kimModel).forEach(kimModel -> mods.add(loadModel((KimModel) kimModel, scope)));
+                        return mods;
+                    }
+                    return List.of();
+                };
+
+        return KnowledgeRepository.INSTANCE.ingest(resourceSet, scope, resultClass, Pair.of(KlabAsset.KnowledgeClass.NAMESPACE, namespaceTranslator));
     }
 
     private void readConfiguration(ServiceStartupOptions options) {
@@ -126,16 +149,17 @@ public class ResolverService extends BaseService implements Resolver {
         return configuration.getServiceId();
     }
 
-    private List<Knowledge> loadNamespace(KimNamespace namespace, Scope scope) {
-
-        List<Knowledge> ret = new ArrayList<>();
-        for (KlabStatement statement : namespace.getStatements()) {
-            if (statement instanceof KimModel) {
-                ret.add(loadModel((KimModel) statement, scope));
-            } // TODO the rest (?) - also needs a symbol table etc
-        }
-        return ret;
-    }
+    //    private <T> void loadNamespace(KimNamespace namespace, Scope scope) {
+    //
+    //        List<Knowledge> ret = new ArrayList<>();
+    //        for (KlabStatement statement : namespace.getStatements()) {
+    //            if (statement instanceof KimModel kimModel) {
+    //                var model = loadModel(kimModel, scope);
+    //                KnowledgeRepository.INSTANCE.registerAsset(model.getUrn(), model, namespace
+    //                .getVersion());
+    //            }
+    //        }
+    //    }
 
     private Model loadModel(KimModel statement, Scope scope) {
 

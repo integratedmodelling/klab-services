@@ -27,7 +27,12 @@ import java.util.List;
  */
 public class ResolutionCompiler {
 
+    private final ResolverService resolver;
     private double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
+
+    public ResolutionCompiler(ResolverService service) {
+        this.resolver = service;
+    }
 
     /**
      * Entry point for observations at root level.
@@ -305,10 +310,10 @@ public class ResolutionCompiler {
 
         // FIXME use virtual threads & join() to obtain a synchronized list of ResourceSet, then
         //  use a merging strategy to get models one by one in their latest release
-        var resources = scope.getService(ResourcesService.class);
 
+        var resources = scope.getService(ResourcesService.class);
         ResourceSet models = resources.queryModels(observable, scope);
-        var ret = new ArrayList<Model>(KnowledgeRepository.INSTANCE.ingest(models, scope, Model.class));
+        var ret = new ArrayList<Model>(resolver.ingestResources(models, scope, Model.class));
         ret.sort(prioritizer);
         return ret;
     }

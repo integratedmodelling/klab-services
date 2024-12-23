@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime;
 
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
@@ -557,15 +558,16 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                 if (resolution.isEmpty()) {
                     return resolution;
                 }
-                /*
-                we load directly and report errors if not
-                 */
-                if (getComponentRegistry().loadComponents(resolution, scope)) {
-                    ret = Utils.Resources.merge(ret, resolution);
-                } else {
-                    return Utils.Resources.createEmpty(Notification.error("Runtime: errors ingesting " +
-                            "resolved component for service " + contextualizable.getServiceCall().getUrn()));
+
+                // HERE we should use the knowledge repository, which needs to be specialized to hold
+                // components. OR the ingest(resourceset, scope) should
+                // be in the SERVICE and use the KR as needed. Load plugins, resource->adapters, service
+                // calls, projects, models etc. according to the needs of the
+                // service.
+                if (!ingestResources(resolution, scope)) {
+                    return ResourceSet.empty(Notification.error("Cannot receive resources from " + resourcesService.getServiceName()));
                 }
+                ret = Utils.Resources.merge(ret, resolution);
             } else if (contextualizable.getResourceUrn() != null) {
                 // TODO ensure resource or adapter is accessible
                 //                var resolution = resourcesService.resolveRe(contextualizable

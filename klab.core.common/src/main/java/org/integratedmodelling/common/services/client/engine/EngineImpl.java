@@ -527,8 +527,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
 
     @Override
-    public InputStream exportAsset(String urn, ResourceTransport.Schema schema, Scope scope,
-                                   Object... options) {
+    public InputStream exportAsset(String urn, String mediaType, Scope scope, Object... options) {
         // TODO establish which service we're targeting and route the request to it
         return null;
     }
