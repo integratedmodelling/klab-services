@@ -40,13 +40,6 @@ public interface ServiceCall extends Encodeable {
      */
     int getParameterCount();
 
-    //    /**
-    //     * Prototype. May be null if the function is unknown.
-    //     *
-    //     * @return
-    //     */
-    //    ServiceInfo getPrototype();
-
     /**
      * Return any parameter IDs that were passed with a syntax that defines those that can be changed by the
      * user (in k.IM, using the ?= operator).
@@ -62,7 +55,6 @@ public interface ServiceCall extends Encodeable {
      * @return
      */
     Version getRequiredVersion();
-
 
     ServiceCall withUnnamedParameters(Object... unnamedParameters);
 

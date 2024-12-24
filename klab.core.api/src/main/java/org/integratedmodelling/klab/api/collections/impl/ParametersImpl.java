@@ -186,10 +186,11 @@ public class ParametersImpl<T> implements Parameters<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public Object putUnnamed(Object value) {
+    @Override
+    public void putUnnamed(Object value) {
         String name = "_p" + (unnamedKeys.size() + 1);
         unnamedKeys.add((T) name);
-        return put((T) name, value);
+        put((T) name, value);
     }
 
     public boolean remove(Object key, Object value) {

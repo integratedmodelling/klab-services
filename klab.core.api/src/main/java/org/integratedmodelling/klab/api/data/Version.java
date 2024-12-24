@@ -108,8 +108,8 @@ public class Version implements Comparable<Version>, Serializable {
     }
 
     /**
-     * If a URN contains a version segment, split it from it and return the URN and the version separately. If not, return the URN
-     * paired with EMPTY_VERSION.
+     * If a URN contains a version segment, split it from it and return the URN and the version separately. If
+     * not, return the URN paired with EMPTY_VERSION.
      *
      * @param urn
      * @return
@@ -119,7 +119,7 @@ public class Version implements Comparable<Version>, Serializable {
             var split = urn.split("@");
             return Pair.of(split[0], create(split[1]));
         }
-        return Pair.of(urn, EMPTY_VERSION);
+        return Pair.of(urn, ANY_VERSION);
     }
 
     private void parseString(final String str) {
@@ -306,7 +306,8 @@ public class Version implements Comparable<Version>, Serializable {
     }
 
     public static boolean isAny(Version version) {
-        return version.major==255 && version.minor==255 && version.build==255 && version.modifier==null;
+        return version.major == 255 && version.minor == 255 && version.build == 255
+                && (version.modifier == null || version.modifier.isEmpty());
     }
 
     /**

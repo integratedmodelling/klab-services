@@ -82,6 +82,9 @@ public interface Parameters<T> extends Map<T, Object>, Serializable {
      */
     List<T> getNamedKeys();
 
+    @SuppressWarnings("unchecked")
+    void putUnnamed(Object value);
+
     /**
      * Like {@link #containsKey(Object)}, except it returns false also if the key is there but the corresponding object
      * is null.

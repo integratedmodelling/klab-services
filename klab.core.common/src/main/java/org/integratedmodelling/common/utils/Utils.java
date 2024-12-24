@@ -460,16 +460,21 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
              * @return
              */
             public File download(String apiRequest, Object... parameters) {
+
                 try {
                     var options = new Options();
                     var params = makeKeyMap(options, parameters);
                     var apiCall = substituteTemplateParameters(apiRequest, params);
 
-                    String mediaType = params.containsKey("format") ? params.get("format").toString() :
-                                       MediaType.OCTET_STREAM.type();
-                    String fileExtension =
-                            params.containsKey("format") ?
-                            MimeTypes.getDefaultMimeTypes().forName(params.get("format").toString()).getExtension() : "bin";
+                    String mediaType = forcedAcceptHeader == null ? (params.containsKey("format") ?
+                                                                     params.get("format").toString() :
+                                                                     MediaType.OCTET_STREAM.toString()) :
+                                       forcedAcceptHeader;
+
+                    String fileExtension = MimeTypes.getDefaultMimeTypes().forName(mediaType).getExtension();
+                    if (fileExtension == null || fileExtension.isEmpty()) {
+                        fileExtension = "bin";
+                    }
 
                     var ret = File.createTempFile("klab", "." + fileExtension);
                     var request = new HttpGet(URI.create(uri + apiCall + encodeParameters(params)));

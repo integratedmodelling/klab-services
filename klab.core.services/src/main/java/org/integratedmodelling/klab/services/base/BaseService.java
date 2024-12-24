@@ -474,9 +474,8 @@ public abstract class BaseService implements KlabService {
     @Override
     public InputStream exportAsset(String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope) {
         ServiceCall serviceCall = ServiceCallImpl.create(exportSchema.getSchemaId(), "MEDIA_TYPE", mediaType);
-        serviceCall.getParameters().getUnnamedArguments().add(urn);
-        serviceCall.getParameters().getUnnamedArguments().add(scope);
-        serviceCall.getParameters().getUnnamedArguments().add(this);
+        serviceCall.getParameters().putUnnamed(urn);
+        serviceCall.getParameters().putUnnamed(this);
         var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
         return languageService.execute(serviceCall, scope, InputStream.class);
     }
@@ -488,10 +487,10 @@ public abstract class BaseService implements KlabService {
         ServiceCall serviceCall = null;
         if (assetCoordinates.getUrl() != null) {
             serviceCall = ServiceCallImpl.create(schema.getSchemaId());
-            serviceCall.getParameters().getUnnamedArguments().add(assetCoordinates.getUrl());
+            serviceCall.getParameters().putUnnamed(assetCoordinates.getUrl());
         } else if (assetCoordinates.getFile() != null) {
             serviceCall = ServiceCallImpl.create(schema.getSchemaId());
-            serviceCall.getParameters().getUnnamedArguments().add(assetCoordinates.getFile());
+            serviceCall.getParameters().putUnnamed(assetCoordinates.getFile());
         } else {
             serviceCall = ServiceCallImpl.create(schema.getSchemaId(), assetCoordinates.getProperties());
         }
