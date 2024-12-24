@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -189,7 +190,6 @@ public class ServiceInfoImpl implements ServiceInfo {
     // stable ordering reflecting that of the declaration
     private Map<String, ArgumentImpl> arguments = new LinkedHashMap<>();
     private String description;
-//    private Class<?> implementation;
     private List<Type> type = new ArrayList<>();
     private Geometry geometry;
     private boolean distributed;
@@ -202,9 +202,9 @@ public class ServiceInfoImpl implements ServiceInfo {
     private List<ArgumentImpl> outputAnnotations = new ArrayList<>();
     private boolean isConst;
     private boolean reentrant;
-//    private String executorMethod;
     private FunctionType functionType;
     private Set<KnowledgeClass> targets = EnumSet.noneOf(KnowledgeClass.class);
+    private Set<String> mediaTypes = new HashSet<>();
 
     public String getLabel() {
         return label;
@@ -263,13 +263,13 @@ public class ServiceInfoImpl implements ServiceInfo {
     }
 
     @Override
-    public List<Pair<String, Level>> validate(ServiceCall function) {
-        List<Pair<String, Level>> ret = new ArrayList<>();
+    public List<Notification> validate(ServiceCall function) {
+        List<Notification> ret = new ArrayList<>();
         // validate existing arguments
         for (String arg : function.getParameters().keySet()) {
             ArgumentImpl argument = arguments.get(arg);
             if (argument == null) {
-                ret.add(Pair.of(name + ": argument " + arg + " is not recognized", Level.SEVERE));
+                ret.add(Notification.error(name + ": argument " + arg + " is not recognized"));
             } else {
                 Object val = function.getParameters().get(arg);
                 // if ((val = classify(val, argument)) == null) {
@@ -635,6 +635,19 @@ public class ServiceInfoImpl implements ServiceInfo {
 
     public void setFunctionType(FunctionType functionType) {
         this.functionType = functionType;
+    }
+
+    public void setTargets(Set<KnowledgeClass> targets) {
+        this.targets = targets;
+    }
+
+    @Override
+    public Set<String> getMediaTypes() {
+        return mediaTypes;
+    }
+
+    public void setMediaTypes(Set<String> mediaTypes) {
+        this.mediaTypes = mediaTypes;
     }
 
     @Override

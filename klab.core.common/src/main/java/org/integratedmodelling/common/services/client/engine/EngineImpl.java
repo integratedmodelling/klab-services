@@ -528,7 +528,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
 
     @Override
-    public InputStream exportAsset(String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope, Object... options) {
+    public InputStream exportAsset(String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope) {
         // TODO establish which service we're targeting and route the request to it
         return null;
     }

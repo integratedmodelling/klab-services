@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.File;
@@ -143,6 +144,7 @@ public enum ResourceTransport {
             Schema ret = new Schema();
             ret.setType(type);
             ret.setSchemaId(schemaId);
+            ret.setKnowledgeClass(knowledgeClassDefined);
             ret.setDescription(description);
             return ret;
         }
@@ -304,22 +306,31 @@ public enum ResourceTransport {
     }
 
     /**
-     * Find the export schemata within those identified with <code>schemaId</code> that are compatible with
-     * the passed media type and identity. If mediaType isn't null, the result should be unique.
+     * Find the export schemata applicable to the passed media type and identity. TODO use scope for
+     * permissions
      *
-     * @param schemaId
+     * @param knowledgeClass
      * @param mediaType
-     * @param identity
      * @return
      */
-    public List<Schema> findExportSchemata(String schemaId, String mediaType,
-                                           AuthenticatedIdentity identity) {
-        return findSchemata(exportSchemata, schemaId, mediaType, identity);
+    public List<Schema> findExportSchemata(KlabAsset.KnowledgeClass knowledgeClass, String mediaType,
+                                           KlabService.ServiceCapabilities serviceCapabilities, Scope scope) {
+
+        var ret = new ArrayList<Schema>();
+        for (var schemaId : serviceCapabilities.getExportSchemata().keySet()) {
+            for (var schema : serviceCapabilities.getExportSchemata().get(schemaId)) {
+                if (schema.mediaTypes.contains(mediaType) && (knowledgeClass == null || schema.knowledgeClass == knowledgeClass)) {
+                    ret.add(schema);
+                }
+            }
+        }
+        return ret;
     }
 
     // TODO pass scope for permissions
     private List<Schema> findSchemata(Map<String, List<Schema>> schemata, String schemaId, String mediaType
             , AuthenticatedIdentity identity) {
+
         List<Schema> ret = new ArrayList<>();
         if (schemata.containsKey(schemaId)) {
             for (var schema : schemata.get(schemaId)) {
@@ -344,6 +355,7 @@ public enum ResourceTransport {
         var type = serviceInfo.listArguments().isEmpty() ? Schema.Type.STREAM : Schema.Type.PROPERTIES;
         var schema = Schema.create(serviceInfo.getName(), type, serviceInfo.getTargets().iterator().next(),
                 serviceInfo.getDescription());
+        schema.getMediaTypes().addAll(serviceInfo.getMediaTypes());
 
         for (var arg : serviceInfo.listArguments()) {
             schema = schema.with(arg.getName(), arg.getType().getFirst(), arg.isOptional());
@@ -357,7 +369,7 @@ public enum ResourceTransport {
         var type = serviceInfo.listArguments().isEmpty() ? Schema.Type.STREAM : Schema.Type.PROPERTIES;
         var schema = Schema.create(serviceInfo.getName(), type, serviceInfo.getTargets().iterator().next(),
                 serviceInfo.getDescription());
-
+        schema.getMediaTypes().addAll(serviceInfo.getMediaTypes());
         // TODO revise, this is copied from import
         for (var arg : serviceInfo.listArguments()) {
             schema = schema.with(arg.getName(), arg.getType().getFirst(), arg.isOptional());
@@ -365,7 +377,6 @@ public enum ResourceTransport {
 
         addExport(namespace, schema);
     }
-
 
     /**
      * Adds the known formats. Others may be added by processing adapter import/export annotations or

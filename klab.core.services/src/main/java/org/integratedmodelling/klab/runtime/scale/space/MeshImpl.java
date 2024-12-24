@@ -7,13 +7,15 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.locationtech.jts.geom.Geometry;
 
+import java.io.Serial;
 import java.util.Collection;
 
 
 public class MeshImpl extends ShapeImpl implements Mesh {
 
+	@Serial
 	private static final long serialVersionUID = -7906419063910020731L;
-	private Collection<Shape> features;
+	private final Collection<Shape> features;
 
 	public MeshImpl(Geometry geometry, Projection projection, Collection<Shape> features) {
 		super(geometry, projection);

@@ -422,20 +422,6 @@ public abstract class BaseService implements KlabService {
         return this.initialized;
     }
 
-    @Override
-    public InputStream exportAsset(String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope, Object... options) {
-
-        // TODO find the schema with the passed class and media type
-
-        // TODO determine which class, method or adapter provides the implementation
-
-        // TODO find the object identified by the URN
-
-        // TODO apply the implementation to the passed parameter to obtain the result stream
-
-        return null;
-    }
-
 
     /**
      * Calls {@link #ingestResources(ResourceSet, Scope, Class)} ignoring the class and only returning true or
@@ -486,14 +472,26 @@ public abstract class BaseService implements KlabService {
     }
 
     @Override
+    public InputStream exportAsset(String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope) {
+        ServiceCall serviceCall = ServiceCallImpl.create(exportSchema.getSchemaId(), "MEDIA_TYPE", mediaType);
+        serviceCall.getParameters().getUnnamedArguments().add(urn);
+        serviceCall.getParameters().getUnnamedArguments().add(scope);
+        serviceCall.getParameters().getUnnamedArguments().add(this);
+        var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
+        return languageService.execute(serviceCall, scope, InputStream.class);
+    }
+
+    @Override
     public String importAsset(ResourceTransport.Schema schema, ResourceTransport.Schema.Asset assetCoordinates
             , String suggestedUrn, Scope scope) {
 
         ServiceCall serviceCall = null;
         if (assetCoordinates.getUrl() != null) {
-            serviceCall = ServiceCallImpl.create(schema.getSchemaId(), "URL", assetCoordinates.getUrl());
+            serviceCall = ServiceCallImpl.create(schema.getSchemaId());
+            serviceCall.getParameters().getUnnamedArguments().add(assetCoordinates.getUrl());
         } else if (assetCoordinates.getFile() != null) {
-            serviceCall = ServiceCallImpl.create(schema.getSchemaId(), "FILE", assetCoordinates.getFile());
+            serviceCall = ServiceCallImpl.create(schema.getSchemaId());
+            serviceCall.getParameters().getUnnamedArguments().add(assetCoordinates.getFile());
         } else {
             serviceCall = ServiceCallImpl.create(schema.getSchemaId(), assetCoordinates.getProperties());
         }

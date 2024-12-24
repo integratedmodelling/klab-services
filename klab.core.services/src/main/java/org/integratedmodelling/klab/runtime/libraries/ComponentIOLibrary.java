@@ -66,8 +66,7 @@ public class ComponentIOLibrary {
         return null;
     }
 
-    @Exporter(schema = "jar", description = "Export a component as a jar archive", mediaType = "application" +
-            "/java-archive", knowledgeClass =
+    @Exporter(schema = "jar", description = "Export a component as a jar archive", mediaType = "application/java-archive", knowledgeClass =
             KlabAsset.KnowledgeClass.COMPONENT)
     public static InputStream exportComponentDirect(String componentId, BaseService service, Scope scope) {
         var componentRegistry = service.getComponentRegistry();

@@ -451,8 +451,7 @@ public interface KlabService extends Service {
      * @param options
      * @return
      */
-    InputStream exportAsset(String urn, KlabAsset.KnowledgeClass assetClass, String mediaType, Scope scope,
-                            Object... options);
+    InputStream exportAsset(String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope);
 
     /**
      * @param schema           a valid schema that comes from those admitted in the service

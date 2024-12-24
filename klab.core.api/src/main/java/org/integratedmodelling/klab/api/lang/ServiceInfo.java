@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 
 /**
@@ -115,6 +116,7 @@ public interface ServiceInfo extends Serializable {
          */
         List<Artifact.Type> getType();
 
+
         /**
          * Final arguments are set only once and mandatorily.
          *
@@ -175,6 +177,12 @@ public interface ServiceInfo extends Serializable {
      * @return
      */
     Collection<KnowledgeClass> getTargets();
+
+    /**
+     * Supported media types when appropriate (usually within import/export schemata)
+     * @return
+     */
+    Set<String> getMediaTypes();
 
     /**
      * Service description if provided; empty string otherwise.
@@ -250,7 +258,7 @@ public interface ServiceInfo extends Serializable {
      * @return the collection of errors, each being a pair of <message, level>, or an empty collection if no
      * errors occurred
      */
-    List<Pair<String, Level>> validate(ServiceCall function);
+    List<Notification> validate(ServiceCall function);
 
     /**
      * Full synopsis - expecting a multi-line string with full description of options, arguments and
@@ -259,29 +267,15 @@ public interface ServiceInfo extends Serializable {
      *
      * @return longer description
      */
-    public String synopsis(Integer... flags);
+    String synopsis(Integer... flags);
 
     /**
      * One-line short synopsis intended to document usage without descriptions.
      *
      * @return short synopsis
      */
-    public String shortSynopsis();
+    String shortSynopsis();
 
-//    /**
-//     * Get the class of the object whose API the prototype specifies.
-//     *
-//     * @return Java class of object returned
-//     */
-//    public Class<?> executorClass();
-//
-//    /**
-//     * If this is not null, the arguments are for the method and not for class construction.
-//     *
-//     * @return
-//     */
-//    public String getExecutorMethod();
-//
     /**
      * If distributed, the service identified can be broadcast to multiple endpoints and the results can be
      * merged.

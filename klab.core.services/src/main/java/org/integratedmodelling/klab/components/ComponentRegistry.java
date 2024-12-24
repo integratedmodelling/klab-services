@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -661,8 +662,21 @@ public class ComponentRegistry {
                     return false;
                 }
 
+                final String mediaType = "application/java-archive";
+                var schemata =
+                        ResourceTransport.INSTANCE.findExportSchemata(KlabAsset.KnowledgeClass.COMPONENT,
+                                mediaType, service.capabilities(scope), scope);
+                if (schemata.isEmpty()) {
+                    throw new KlabAuthorizationException("No authorized export schema with media type " + mediaType +
+                            " is available");
+                } else if (schemata.size() > 1) {
+                    scope.warn("Ambiguous request: more than one export schema with " +
+                            "media type " + mediaType + " is available");
+                }
+
+
                 File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
-                try (var input = service.exportAsset(result.getResourceUrn(), KlabAsset.KnowledgeClass.COMPONENT, "application/java-archive",
+                try (var input = service.exportAsset(result.getResourceUrn(), schemata.getFirst(), mediaType,
                         scope);
                      var output = new FileOutputStream(plugin)) {
                     IOUtils.copy(input, output);
@@ -790,6 +804,9 @@ public class ComponentRegistry {
         ret.setDescription(annotation.description());
         ret.setFunctionType(ServiceInfo.FunctionType.FREEFORM);
         ret.getTargets().add(annotation.knowledgeClass());
+        if (annotation.mediaType() != null) {
+            ret.getMediaTypes().add(annotation.mediaType());
+        }
 
         for (KlabFunction.Argument argument : annotation.properties()) {
             var arg = createArgument(argument);
@@ -811,7 +828,9 @@ public class ComponentRegistry {
         ret.setDescription(annotation.description());
         ret.setFunctionType(ServiceInfo.FunctionType.FREEFORM);
         ret.getTargets().add(annotation.knowledgeClass());
-
+        if (annotation.mediaType() != null) {
+            ret.getMediaTypes().add(annotation.mediaType());
+        }
         for (KlabFunction.Argument argument : annotation.properties()) {
             var arg = createArgument(argument);
             ret.getArguments().put(arg.getName(), arg);

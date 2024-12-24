@@ -23,7 +23,7 @@ import java.util.Map;
 
 public class GridImpl implements Grid {
 
-    private List<Pair<Double, Double>> anchorPoints = new ArrayList<>();
+    private final List<Pair<Double, Double>> anchorPoints = new ArrayList<>();
 
     public static GridImpl promote(Grid grid) {
         if (grid instanceof GridImpl grid1) {

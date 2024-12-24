@@ -9,10 +9,12 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.io.WKBWriter;
 
+import java.io.Serial;
 import java.util.Arrays;
 
 public class TileImpl extends ShapeImpl implements Tile {
 
+    @Serial
     private static final long serialVersionUID = -645107030417341241L;
     private Grid grid;
     private long size = 1;

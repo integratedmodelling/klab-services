@@ -15,11 +15,13 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.scale.ExtentImpl;
 import org.locationtech.jts.geom.GeometryFactory;
 
+import java.io.Serial;
 import java.util.List;
 import java.util.Map;
 
 public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     static GeometryFactory gFactory = new GeometryFactory();

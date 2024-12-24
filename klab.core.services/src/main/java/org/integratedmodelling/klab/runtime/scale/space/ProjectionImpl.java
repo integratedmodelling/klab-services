@@ -19,7 +19,7 @@ public class ProjectionImpl implements Projection {
 
 	private static Projection defaultProjection;
 	private static Projection latlonProjection;
-	private static Projection[][] utmProjections = new Projection[2][60];
+	private static final Projection[][] utmProjections = new Projection[2][60];
 	
 	public ProjectionImpl(String definition) {
 		try {

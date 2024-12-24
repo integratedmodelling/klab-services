@@ -33,11 +33,13 @@ import org.locationtech.jts.io.WKTReader;
 import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.StringWriter;
 import java.util.*;
 
 public class ShapeImpl extends SpaceImpl implements Shape {
 
+    @Serial
     private static final long serialVersionUID = 5154895981013940462L;
 
     protected Geometry geometry;

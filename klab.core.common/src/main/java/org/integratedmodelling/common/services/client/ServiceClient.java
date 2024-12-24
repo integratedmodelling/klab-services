@@ -458,11 +458,11 @@ public abstract class ServiceClient implements KlabService {
     }
 
     @Override
-    public InputStream exportAsset(String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope, Object... options) {
+    public InputStream exportAsset(String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope) {
         try {
             var file =
                     client.withScope(scope).accepting(List.of(mediaType)).download(ServicesAPI.EXPORT,
-                            "urn", urn, "class", knowledgeClass.name());
+                            "urn", urn, "class", exportSchema.getKnowledgeClass().name());
             return new FileInputStream(file);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);

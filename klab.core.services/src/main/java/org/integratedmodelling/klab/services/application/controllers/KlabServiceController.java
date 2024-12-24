@@ -74,8 +74,7 @@ public class KlabServiceController {
      * @param principal
      */
     @GetMapping(ServicesAPI.EXPORT)
-    public void exportAsset(@PathVariable(name = "schema") String schema,
-                            @PathVariable(name = "urn") String urn,
+    public void exportAsset(@PathVariable(name = "urn") String urn,
                             @PathVariable(name = "class") KlabAsset.KnowledgeClass knowledgeClass,
                             @RequestHeader(HttpHeaders.ACCEPT) String mediaType,
                             HttpServletResponse response,
@@ -85,21 +84,24 @@ public class KlabServiceController {
 
             var scope = authorization.getScope();
             // retrieve schema. TODO not handling authorization yet
-            var schemata = ResourceTransport.INSTANCE.findExportSchemata(schema, mediaType, authorization);
+            var schemata = ResourceTransport.INSTANCE.findExportSchemata(knowledgeClass, mediaType,
+                    instance.klabService().capabilities(scope), scope);
+
             if (schemata.isEmpty()) {
                 throw new KlabAuthorizationException("No authorized export schema with media type " + mediaType +
                         " is available");
             } else if (schemata.size() > 1) {
-                throw new KlabInternalErrorException("Ambiguous request: more than one export schema with " +
+                scope.warn("Ambiguous request: more than one export schema with " +
                         "media type " + mediaType + " is available");
             }
 
-            var stream = instance.klabService().exportAsset(urn, knowledgeClass, mediaType, scope);
+            var stream = instance.klabService().exportAsset(urn, schemata.getFirst(), mediaType, scope);
             if (stream == null) {
                 throw new KlabResourceAccessException("Service cannot stream the asset identified by " + urn);
             }
 
             try {
+                response.setContentType(mediaType);
                 IOUtils.copy(stream, response.getOutputStream());
                 stream.close();
             } catch (IOException e) {
