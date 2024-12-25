@@ -45,6 +45,7 @@ import org.pf4j.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -60,6 +61,7 @@ import java.util.function.BiConsumer;
 public class ComponentRegistry {
 
     public static final String LOCAL_SERVICE_COMPONENT = "internal.local.service.component";
+    private final BaseService service;
     private PluginManager componentManager;
     private File pluginPath = null;
 
@@ -91,6 +93,7 @@ public class ComponentRegistry {
 
     public ComponentRegistry(BaseService service, StartupOptions options) {
         readConfiguration(service, options);
+        this.service = service;
         scheduler.scheduleAtFixedRate(() -> checkForUpdates(), 0, 5, TimeUnit.MINUTES);
     }
 
@@ -234,41 +237,44 @@ public class ComponentRegistry {
                                                                    String mavenCoordinates, Scope scope) {
 
         // TODO allow same path with different versions and replacing same version
+        var pluginDestination =
+                new File(pluginPath + File.separator + Utils.Files.getFileName(resourcePath));
+
+        // check if we're installing from a different location
+        if (resourcePath.getParent() == null || !resourcePath.toPath().getParent().equals(pluginPath.toPath())) {
+            try {
+                Files.copy(resourcePath.toPath(), pluginDestination.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                scope.error(e);
+                return Pair.of(null, ResourceSet.empty(Notification.error(e)));
+            }
+        } else if (!pluginDestination.exists()) {
+            pluginDestination = resourcePath;
+        }
 
         var ret = new ResourceSet();
         ComponentDescriptor info = null;
         try {
-            var pluginId = componentManager.loadPlugin(resourcePath.toPath());
+            var pluginId = componentManager.loadPlugin(pluginDestination.toPath());
             var plugin = componentManager.getPlugin(pluginId);
-            ResourceSet.Resource result = new ResourceSet.Resource("SERVICE ID TODO", pluginId, null,
+            ResourceSet.Resource result = new ResourceSet.Resource(service.serviceId(), pluginId, null,
                     Version.create(plugin.getDescriptor().getVersion()), KlabAsset.KnowledgeClass.COMPONENT);
-
-            // TODO dependencies
 
             Plugin component = plugin.getPlugin();
             if (component instanceof KlabComponent comp) {
                 info = registerComponent(comp, mavenCoordinates);
                 ret.getNotifications().add(info.extractInfo());
                 ret.getResults().add(result);
-
-                if (pluginPath != null) {
-                    componentManager.unloadPlugin(pluginId);
-                    var pluginDestination =
-                            new File(pluginPath + File.separator + Utils.Files.getFileName(resourcePath));
-                    Files.copy(resourcePath.toPath(), pluginDestination.toPath(),
-                            StandardCopyOption.REPLACE_EXISTING);
-                    // descriptor is already OK, just reload in the manager
-                    componentManager.loadPlugin(pluginDestination.toPath());
-                }
-
             } else {
-                ret.getNotifications().add(Notification.error("Plugin " + Utils.Files.getFileName(resourcePath) + " is " + "not a valid k.LAB component"));
-                ret.setEmpty(true);
+                ret = ResourceSet.empty(Notification.error("Plugin " + Utils.Files.getFileName(resourcePath) + " is " + "not a valid k.LAB component"));
+                Utils.Files.deleteQuietly(pluginDestination);
             }
         } catch (Throwable t) {
-            ret.getNotifications().add(Notification.create(t));
-            ret.setEmpty(true);
+            ret = ResourceSet.empty(Notification.create(t));
+            Utils.Files.deleteQuietly(pluginDestination);
         }
+
         return Pair.of(info, ret);
     }
 
@@ -680,11 +686,13 @@ public class ComponentRegistry {
                         scope);
                      var output = new FileOutputStream(plugin)) {
                     IOUtils.copy(input, output);
+                    // give the OS time to react - found that often the file is truncated
+                    TimeUnit.SECONDS.sleep(2);
                 } catch (Exception e) {
                     scope.error(e);
                     return false;
                 }
-                installComponent(pluginPath, null, scope);
+                installComponent(plugin, null, scope);
             }
 
         }

@@ -76,6 +76,7 @@ public class ComponentIOLibrary {
             try {
                 return new FileInputStream(component.sourceArchive());
             } catch (FileNotFoundException e) {
+                System.out.println("SUCA DIO CAN, CANNOT STREAM " + component.sourceArchive());
                 // just return null;
             }
         }

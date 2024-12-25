@@ -452,8 +452,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
 
             /**
-             * Download something into a file. If there is a "format" parameter, it must be a valid media type
-             * which will also determine the extension of the file.
+             * Download something into a temporary file. If there is a "format" parameter or the media type
+             * has been forced in the client using {@link #accepting(List)}, it must be a valid media type which will
+             * also determine the extension of the file.
              *
              * @param apiRequest
              * @param parameters
@@ -491,6 +492,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                         if (entity != null) {
                             try (var output = new FileOutputStream(ret)) {
                                 entity.writeTo(output);
+                            } catch (IOException exception) {
+                                scope.error(exception);
+                                return null;
                             }
                         }
                         return ret;

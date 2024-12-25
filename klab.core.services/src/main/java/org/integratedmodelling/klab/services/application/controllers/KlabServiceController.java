@@ -68,7 +68,8 @@ public class KlabServiceController {
      * Exporting uses content negotiation to find the schema. The Accept header must be set in the request
      * unless there is only one alternative.
      *
-     * @param schema
+     * @param urn
+     * @param knowledgeClass
      * @param mediaType
      * @param response
      * @param principal
