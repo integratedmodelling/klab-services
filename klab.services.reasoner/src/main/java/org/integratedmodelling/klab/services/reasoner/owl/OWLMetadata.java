@@ -68,12 +68,10 @@ public class OWLMetadata extends MetadataImpl implements Metadata {
         metadataVocabulary.put("http://integratedmodelling.org/ks/klab.owl#authorityId", NS.AUTHORITY_ID_PROPERTY);
         metadataVocabulary.put("http://integratedmodelling.org/ks/klab.owl#restrictingProperty", NS.TRAIT_RESTRICTING_PROPERTY);
         metadataVocabulary.put("http://integratedmodelling.org/ks/odo#isTypeDelegate", NS.IS_TYPE_DELEGATE);
+        metadataVocabulary.put("http://integratedmodelling.org/ks/odo#isCollective", NS.IS_COLLECTIVE);
         metadataVocabulary.put("http://integratedmodelling.org/ks/klab.owl#untransformedConceptId",
                 NS.UNTRANSFORMED_CONCEPT_PROPERTY);
         metadataVocabulary.put("http://integratedmodelling.org/odo#isSubjectiveTrait", NS.IS_SUBJECTIVE);
-//        metadataVocabulary.put("http://integratedmodelling.org/odo#inherencyIsDistributed",
-//                NS.INHERENCY_IS_DISTRIBUTED);
-//        metadataVocabulary.put("http://integratedmodelling.org/ks/observation.owl#isCoreKimType", NS.IS_CORE_KIM_TYPE);
     }
 
     public OWLMetadata(OWLEntity owl, OWLOntology ontology) {

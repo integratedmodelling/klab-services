@@ -622,6 +622,8 @@ public class Ontology {
         concept.getMetadata().put(property, literal);
         if (CoreOntology.NS.IS_ABSTRACT.equals(property)) {
             concept.setAbstract(Boolean.parseBoolean(literal.toString()));
+        } else if (NS.IS_COLLECTIVE.equals(property)) {
+            concept.setCollective(Boolean.parseBoolean(literal.toString()));
         } else if (CoreOntology.NS.CONCEPT_DEFINITION_PROPERTY.equals(property)) {
             concept.setUrn(removeOuterParentheses(literal.toString()));
         } else if (CoreOntology.NS.REFERENCE_NAME_PROPERTY.equals(property)) {

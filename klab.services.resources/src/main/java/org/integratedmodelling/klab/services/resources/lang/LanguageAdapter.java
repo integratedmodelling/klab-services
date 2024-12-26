@@ -172,6 +172,7 @@ public enum LanguageAdapter {
 
         // rebuild urn
         StringBuilder urn = new StringBuilder();
+
         for (var role : roles) {
             urn.append(urn.isEmpty() ? "" : " ").append(role.getUrn());
         }

@@ -136,12 +136,12 @@ public class CoreOntology {
 
         // core properties. TODO: these could be created in the root worldview namespace
         public static final String IS_ABSTRACT = "odo:isAbstract";
+        public static final String IS_COLLECTIVE = "odo:isCollective";
         public static final String BASE_DECLARATION = "klab:baseDeclaration";
         public static final String ORDER_PROPERTY = "klab:orderingRank";
         public static final String HAS_REALM_PROPERTY = "odo:hasRealm";
         public static final String HAS_IDENTITY_PROPERTY = "odo:hasIdentity";
         public static final String HAS_ATTRIBUTE_PROPERTY = "odo:hasAttribute";
-        //        public static final String HAS_CONTEXT_PROPERTY = "odo:hasContext";
         public static final String HAS_COMPRESENT_PROPERTY = "odo:hasCompresent";
         public static final String HAS_CAUSANT_PROPERTY = "odo:hasCausant";
         public static final String HAS_CAUSED_PROPERTY = "odo:hasCaused";
@@ -162,11 +162,6 @@ public class CoreOntology {
         public static final String REQUIRES_IDENTITY_PROPERTY = "odo:requiresIdentity";
         public static final String IS_TYPE_DELEGATE = "odo:isTypeDelegate";
         public static final String IS_NEGATION_OF = "odo:isNegationOf";
-
-//        @Deprecated
-//        public static final String INHERENCY_IS_DISTRIBUTED = "odo:inherencyIsDistributed";
-//        public static final String IS_CORE_KIM_TYPE = "observation:isCoreKimType";
-//        public static final String IS_CORE_KIM_TYPE = "observation:isCoreKimType";
 
         // annotation property that specifies the base SI unit for a physical property
         public static final String SI_UNIT_PROPERTY = "odo:unit";

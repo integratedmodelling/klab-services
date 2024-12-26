@@ -713,7 +713,7 @@ public class ObservableBuilder implements Observable.Builder {
 
     boolean isTrivial() {
         return causant == null && adjacent == null && caused == null && comparison == null
-                && compresent == null && inherent == null && cooccurrent == null & goal == null
+                && !collective && compresent == null && inherent == null && cooccurrent == null & goal == null
                 && traits.isEmpty() && roles.isEmpty() && deferredTarget == null && !hasUnaryOp;
     }
 
@@ -915,7 +915,7 @@ public class ObservableBuilder implements Observable.Builder {
          * display names that are legal for concept names. The two should work
          * independently.
          */
-        if (tids.size() > 0) {
+        if (!tids.isEmpty()) {
             Collections.sort(tids);
             for (String s : tids) {
                 cId += s;
@@ -944,7 +944,6 @@ public class ObservableBuilder implements Observable.Builder {
                                 "to " + inherent.displayName()
                                 + " as it already has an incompatible inherency: " + other.displayName(),
                         declaration);
-                var removeme = reasoner.compatible(inherent, other);
             }
             cleanId = getCleanId(inherent);
             cId += "Of" + cleanId;
@@ -1063,7 +1062,7 @@ public class ObservableBuilder implements Observable.Builder {
         List<String> rids = new ArrayList<>();
         Set<Concept> acceptedRoles = new HashSet<>();
 
-        if (roles != null && roles.size() > 0) {
+        if (roles != null && !roles.isEmpty()) {
             for (Concept role : roles) {
                 if (reasoner.roles(main).contains(role)) {
                     scope.error("concept " + main.displayName() + " already has role " + role.displayName(),
@@ -1075,7 +1074,7 @@ public class ObservableBuilder implements Observable.Builder {
             }
         }
 
-        if (rids.size() > 0) {
+        if (!rids.isEmpty()) {
             Collections.sort(rids);
             for (String s : rids) {
                 roleIds += s;
@@ -1134,6 +1133,10 @@ public class ObservableBuilder implements Observable.Builder {
             axioms.add(Axiom.AnnotationAssertion(conceptId, NS.IS_ABSTRACT, "true"));
         }
 
+        if (collective) {
+            axioms.add(Axiom.AnnotationAssertion(conceptId, NS.IS_COLLECTIVE, "true"));
+        }
+
         ontology.define(axioms);
         ret = ontology.getConcept(conceptId);
 
@@ -1168,10 +1171,6 @@ public class ObservableBuilder implements Observable.Builder {
             reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.IS_INHERENT_TO_PROPERTY),
                     inherent, ontology);
         }
-        //        if (context != null) {
-        //            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_CONTEXT_PROPERTY),
-        //            context, ontology);
-        //        }
         if (caused != null) {
             reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_CAUSED_PROPERTY), caused,
                     ontology);

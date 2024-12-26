@@ -1490,6 +1490,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             return true;
         }
 
+        if (concept.asConcept().isCollective() != other.asConcept().isCollective()) {
+            return false;
+        }
+
         /*
          * first use "isn't" based on the enum types to quickly cut out those that don't
          * match. Also works with concepts in different ontologies that have the same
@@ -2307,6 +2311,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         ObservableBuilder builder =
                 new ObservableBuilder(main, ontology, monitor, this).withDeclaration(concept);
 
+        builder.collective(concept.isCollective());
+
         if (concept.getSemanticModifier() != null) {
             Concept other = null;
             if (concept.getComparisonConcept() != null) {
@@ -2411,7 +2417,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             /*
              * handle unions and intersections
              */
-            if (concept.getOperands().size() > 0) {
+            if (!concept.getOperands().isEmpty()) {
                 List<Concept> concepts = new ArrayList<>();
                 concepts.add(ret);
                 for (KimConcept op : concept.getOperands()) {

@@ -486,7 +486,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
      */
     public String computeUrn() {
 
-        String ret = "";
+        String ret = isCollective() ? "each" : "";
         boolean complex = false;
 
         if (type.contains(SemanticType.NOTHING)) {
@@ -503,16 +503,16 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
             complex = true;
         }
 
-        String concepts = "";
+        StringBuilder concepts = new StringBuilder();
         boolean ccomplex = false;
 
         for (KimConcept trait : traits) {
-            concepts += (concepts.isEmpty() ? "" : " ") + parenthesize(((KimConceptImpl) trait).computeUrn());
+            concepts.append((concepts.isEmpty()) ? "" : " ").append(parenthesize(((KimConceptImpl) trait).computeUrn()));
             ccomplex = true;
         }
 
         for (KimConcept role : roles) {
-            concepts += (concepts.isEmpty() ? "" : " ") + parenthesize(((KimConceptImpl) role).computeUrn());
+            concepts.append((concepts.isEmpty()) ? "" : " ").append(parenthesize(((KimConceptImpl) role).computeUrn()));
             ccomplex = true;
         }
 
@@ -521,8 +521,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 //            ccomplex = true;
 //        }
 
-        concepts += (concepts.isEmpty() ? "" : " ") + (name == null ?
-                                                       ((KimConceptImpl) observable).computeUrn() : name);
+        concepts.append((concepts.isEmpty()) ? "" : " ").append(name == null ?
+                                                                ((KimConceptImpl) observable).computeUrn() : name);
 
         ret += (ret.isEmpty() ? "" : " ") + (ccomplex ? "(" : "") + concepts + (ccomplex ? ")" : "");
 
