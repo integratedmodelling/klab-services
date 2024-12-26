@@ -323,7 +323,34 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                         }, observation)
                 .onEvent(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted,
                         (message) -> {
-                            currentContext.error("Observation " + observation + " has failed to resolve");
+                            currentContext.error("Resolution of observation " + observation + " was aborted" +
+                                    " due to errors: " + message.getPayload(Object.class));
+                        }, observation)
+                .onEvent(Message.MessageClass.ObservationLifecycle,
+                        Message.MessageType.ResolutionUnsuccessful,
+                        (message) -> {
+                            var obs = message.getPayload(Observation.class);
+                            if (observering) {
+                                setCurrentContext(currentContext.withObserver(obs));
+                                // send UI event
+                                currentContext.ui(Message.create(currentContext,
+                                        Message.MessageClass.UserInterface,
+                                        Message.MessageType.CurrentContextModified));
+                                currentContext.info(obs + " is now the current observer (unresolved)");
+                            } else if (currentContext.getContextObservation() == null && obs.getObservable().is(SemanticType.SUBJECT)) {
+                                setCurrentContext(currentContext.within(obs));
+                                currentContext.ui(Message.create(currentContext,
+                                        Message.MessageClass.UserInterface,
+                                        Message.MessageType.CurrentContextModified));
+                                currentContext.info(obs + " is now the current context observation (unresolved)");
+                            } else if (obs.getObservable().is(SemanticType.COUNTABLE)) {
+                                currentContext.info("Observation " + observation + " accepted in " +
+                                        "unresolved state as an acknowledged substantial");
+                            } else {
+                                // unresolved dependent: context is now inconsistent
+                                currentContext.error("Dependent observation " + observation + " did not " +
+                                        "resolve and was rejected. Context is now inconsistent.");
+                            }
                         }, observation);
 
         currentContext
