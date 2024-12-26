@@ -107,6 +107,14 @@ public class SyntacticMatcher {
             return false;
         }
 
+        if (pattern.isCollective() != candidate.isCollective()) {
+            return false;
+        }
+
+        if (pattern.isNegated() != candidate.isNegated()) {
+            return false;
+        }
+
         if (pattern.is(SemanticType.UNION) || pattern.is(SemanticType.INTERSECTION)) {
             // pattern should have at most two arguments; we operate on a <tail, rest> basis.
             if (pattern.getOperands().size() != 2) {
@@ -137,14 +145,6 @@ public class SyntacticMatcher {
 
             return match(head, reasonerService.declareConcept(pattern.getOperands().getFirst())) &&
                     match(tail, reasonerService.declareConcept(pattern.getOperands().get(1)));
-        }
-
-        if (pattern.isCollective() != candidate.isCollective()) {
-            return false;
-        }
-
-        if (pattern.isNegated() != candidate.isNegated()) {
-            return false;
         }
 
         if (pattern.getSemanticModifier() != null) {

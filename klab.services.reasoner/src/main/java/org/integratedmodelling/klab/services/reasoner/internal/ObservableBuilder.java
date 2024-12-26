@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
+import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
 import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.common.lang.kim.KimConceptImpl;
@@ -1117,9 +1118,7 @@ public class ObservableBuilder implements Observable.Builder {
         axioms.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY, cDs));
         axioms.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cId));
         axioms.add(Axiom.SubClass(main.getNamespace() + ":" + main.getName(), conceptId));
-        //        if (distributedInherency) {
-        //            axioms.add(Axiom.AnnotationAssertion(conceptId, NS.INHERENCY_IS_DISTRIBUTED, "true"));
-        //        }
+
 
         /*
          * add the core observable concept ID using NS.CORE_OBSERVABLE_PROPERTY
@@ -1139,6 +1138,16 @@ public class ObservableBuilder implements Observable.Builder {
 
         ontology.define(axioms);
         ret = ontology.getConcept(conceptId);
+
+        if (ret instanceof ConceptImpl concept) {
+            // ... which it should always be .... We need these to send over via JSON although the info is in metadata
+            if (type.contains(SemanticType.ABSTRACT)) {
+                concept.setAbstract(true);
+            }
+            if (collective) {
+                concept.setCollective(true);
+            }
+        }
 
         this.axiomsAdded = true;
 
