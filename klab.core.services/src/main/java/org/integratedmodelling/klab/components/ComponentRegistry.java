@@ -63,7 +63,6 @@ import java.util.function.BiConsumer;
 
 public class ComponentRegistry {
 
-    public static final String ADAPTER_PREFIX = "klab.resource.adapter";
     public static final String LOCAL_SERVICE_COMPONENT = "internal.local.service.component";
     private final BaseService service;
     private PluginManager componentManager;
@@ -405,8 +404,7 @@ public class ComponentRegistry {
                 var serviceInfo = createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class));
                 verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
             } else if (clss.isAnnotationPresent(KlabAnnotation.class)) {
-                var serviceInfo = createPrototype(namespacePrefix,
-                                                  clss.getAnnotation(KlabAnnotation.class));
+                var serviceInfo = createPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation.class));
                 annotations.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
             }
         }
@@ -425,13 +423,11 @@ public class ComponentRegistry {
                 var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
                 verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
             } else if (method.isAnnotationPresent(Importer.class)) {
-                var serviceInfo = createPrototype(namespacePrefix,
-                                                  method.getAnnotation(Importer.class));
+                var serviceInfo = createPrototype(namespacePrefix, method.getAnnotation(Importer.class));
                 prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
                 ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
             } else if (method.isAnnotationPresent(Exporter.class)) {
-                var serviceInfo = createPrototype(namespacePrefix,
-                                                  method.getAnnotation(Exporter.class));
+                var serviceInfo = createPrototype(namespacePrefix, method.getAnnotation(Exporter.class));
                 prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
                 ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
             }
@@ -628,12 +624,11 @@ public class ComponentRegistry {
 
         try {
             var adapter = new AdapterImpl(cls, annotation);
+            this.adapters.put(adapter.getName(), adapter);
         } catch (Throwable t) {
-            Logging.INSTANCE.error(
-                    "Adapter " + annotation.name() + " caused errors when loading and was " + "rejected", t);
+            Logging.INSTANCE.error(t);
         }
 
-        System.out.println("ZIO PORCO UN ADAPTER " + annotation.name());
     }
 
     /**
@@ -1017,7 +1012,10 @@ public class ComponentRegistry {
         }
 
         @Override
-        public Artifact.Type getResourceType(Urn urn) {
+        public Artifact.Type resourceType(Urn urn) {
+            if (typeAttributor != null) {
+                // TODO
+            }
             return this.resourceType;
         }
 
@@ -1072,35 +1070,81 @@ public class ComponentRegistry {
 
         private void scanAdapterClass(Class<?> adapterClass) {
 
-            var namespace = ADAPTER_PREFIX + "." + name;
-
             // annotated methods
             for (Method method : adapterClass.getDeclaredMethods()) {
 
                 if (Modifier.isPublic(method.getModifiers()) && method.isAnnotationPresent(
                         ResourceAdapter.Encoder.class)) {
+
+                    this.encoder = createServiceImplementation(method, method.getAnnotation(
+                            ResourceAdapter.Encoder.class));
+
                 } else if (method.isAnnotationPresent(ResourceAdapter.Contextualizer.class)) {
                     //                var serviceInfo = createAnnotationPrototype(namespacePrefix,
                     //                                                            method.getAnnotation
                     //                                                            (KlabAnnotation.class));
                     //                annotations.add(Pair.of(serviceInfo, createFunctionDescriptor
                     //                (serviceInfo, cls, method)));
+                    if (!Resource.class.isAssignableFrom(method.getReturnType())) {
+                        throw new KlabIllegalStateException(
+                                "Adapter methods annotated with @Contextualizer must return a Resource");
+                    }
+
+                    this.contextualizer = createServiceImplementation(method, method.getAnnotation(
+                            ResourceAdapter.Contextualizer.class));
+
                 } else if (method.isAnnotationPresent(ResourceAdapter.Inspector.class)) {
+                    this.inspector = createServiceImplementation(method, method.getAnnotation(
+                            ResourceAdapter.Inspector.class));
                 } else if (method.isAnnotationPresent(ResourceAdapter.Publisher.class)) {
+                    this.publisher = createServiceImplementation(method, method.getAnnotation(
+                            ResourceAdapter.Publisher.class));
                 } else if (method.isAnnotationPresent(ResourceAdapter.Sanitizer.class)) {
+                    this.sanitizer = createServiceImplementation(method, method.getAnnotation(
+                            ResourceAdapter.Sanitizer.class));
                 } else if (method.isAnnotationPresent(ResourceAdapter.Validator.class)) {
+                    this.validator = createServiceImplementation(method, method.getAnnotation(
+                            ResourceAdapter.Validator.class));
                 } else if (method.isAnnotationPresent(ResourceAdapter.Type.class)) {
+
+                    if (!Artifact.Type.class.isAssignableFrom(method.getReturnType())) {
+                        throw new KlabIllegalStateException(
+                                "Adapter methods annotated with @Type must return an Artifact.Type");
+                    }
+                    this.typeAttributor = createServiceImplementation(method, method.getAnnotation(
+                            ResourceAdapter.Type.class));
+
                 } else if (method.isAnnotationPresent(Importer.class)) {
-                    var serviceInfo = createPrototype(namespace,
-                                                      method.getAnnotation(Importer.class));
-                    ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
+                    var serviceInfo = createPrototype(name, method.getAnnotation(Importer.class));
+                    var schema = ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
+                    schema.setAdapter(name);
+                    serviceImplementations.put(schema.getSchemaId(), createServiceImplementation(method, method.getAnnotation(
+                            Importer.class)));
                 } else if (method.isAnnotationPresent(Exporter.class)) {
-                    var serviceInfo = createPrototype(namespace,
-                                                      method.getAnnotation(Exporter.class));
-                    ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
+                    var serviceInfo = createPrototype(name, method.getAnnotation(Exporter.class));
+                    var schema = ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
+                    schema.setAdapter(name);
+                    serviceImplementations.put(schema.getSchemaId(), createServiceImplementation(method, method.getAnnotation(
+                            Exporter.class)));
                 }
             }
 
+            if (this.encoder == null) {
+                throw new KlabIllegalStateException(
+                        "Cannot load adapter " + name + ": missing encoder method");
+            }
+            if ((this.resourceType == null || this.resourceType == Artifact.Type.VOID) && typeAttributor == null) {
+                throw new KlabIllegalStateException(
+                        "Cannot load adapter " + name + ": missing type attribution in annotation or " +
+                                "methods");
+            }
+        }
+
+        private ServiceImplementation createServiceImplementation(Method method, Annotation annotation) {
+            ServiceImplementation ret = new ServiceImplementation();
+            ret.method = method;
+            // TODO instances, reentrancy etc
+            return ret;
         }
     }
 

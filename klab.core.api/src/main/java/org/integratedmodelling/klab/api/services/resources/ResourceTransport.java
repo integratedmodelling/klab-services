@@ -348,7 +348,7 @@ public enum ResourceTransport {
         return ret;
     }
 
-    public void registerImportSchema(ServiceInfo serviceInfo) {
+    public Schema registerImportSchema(ServiceInfo serviceInfo) {
 
         // create the schema
         var namespace = Utils.Paths.getLeading(serviceInfo.getName(), '.');
@@ -361,9 +361,10 @@ public enum ResourceTransport {
             schema = schema.with(arg.getName(), arg.getType().getFirst(), arg.isOptional());
         }
         addImport(namespace, schema);
+        return schema;
     }
 
-    public void registerExportSchema(ServiceInfo serviceInfo) {
+    public Schema registerExportSchema(ServiceInfo serviceInfo) {
         // create the schema
         var namespace = Utils.Paths.getLeading(serviceInfo.getName(), '.');
         var type = serviceInfo.listArguments().isEmpty() ? Schema.Type.STREAM : Schema.Type.PROPERTIES;
@@ -376,6 +377,7 @@ public enum ResourceTransport {
         }
 
         addExport(namespace, schema);
+        return schema;
     }
 
     /**

@@ -24,7 +24,7 @@ public interface Adapter {
      *
      * @return
      */
-    Artifact.Type getResourceType(Urn urn);
+    Artifact.Type resourceType(Urn urn);
 
     /**
      * Version. Cannot be null. Multiple versions of the same adapter may coexist in a service.
