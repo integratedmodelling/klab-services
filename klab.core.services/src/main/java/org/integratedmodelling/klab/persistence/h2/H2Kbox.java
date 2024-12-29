@@ -38,6 +38,7 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
  * clean model with little or no configuration.
  * 
  * @author ferdinando.villa
+ * @deprecated use the new noSQL storage
  *
  */
 public abstract class H2Kbox {

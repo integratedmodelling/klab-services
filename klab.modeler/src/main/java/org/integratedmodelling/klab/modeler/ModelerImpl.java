@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -422,10 +423,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         var resources = engine().serviceScope().getService(ResourcesService.class);
         if (resources instanceof ResourcesService.Admin admin) {
             Thread.ofVirtual().start(() -> {
-                var ret = admin.importProject(workspaceName, projectUrl, overwriteExisting, currentUser());
-                if (ret != null) {
-                    handleResultSets(ret);
-                }
+                // TODO use import schema, then resolve project to obtain the ResourceSet
+                throw new KlabUnimplementedException("import project");
+//                var ret = admin.importProject(workspaceName, projectUrl, overwriteExisting, currentUser());
+//                if (ret != null) {
+//                    handleResultSets(ret);
+//                }
             });
         } else if (getUI() != null) {
             getUI().alert(Notification.create("Service does not support this operation",

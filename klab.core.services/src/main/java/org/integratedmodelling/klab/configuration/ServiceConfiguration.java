@@ -16,12 +16,14 @@ package org.integratedmodelling.klab.configuration;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
+import org.integratedmodelling.common.data.DataBuilderImpl;
 import org.integratedmodelling.common.knowledge.ModelBuilderImpl;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
@@ -176,6 +178,11 @@ public enum ServiceConfiguration {
             @Override
             public Model.Builder getModelLearner(String outputResourceUrn) {
                 return new ModelBuilderImpl(outputResourceUrn);
+            }
+
+            @Override
+            public Data.Builder getDataBuilder() {
+                return new DataBuilderImpl();
             }
 
             @Override

@@ -160,10 +160,7 @@ public interface Resource extends Knowledge, Resolvable {
     }
 
     /**
-     * A builder can be obtained through {@link IResourceService#createResourceBuilder()} and is used to set
-     * all the properties of a {@link IResource} that will be built at publication. The builder is returned by
-     * {@link IResourceValidator#validate}.
-     *
+     * Resource builder
      * @author ferdinando.villa
      */
     interface Builder {
@@ -203,22 +200,12 @@ public interface Resource extends Knowledge, Resolvable {
         Builder addLocalResourcePath(String path);
 
         /**
-         * @param o
+         * Add an error notification to make the build produce a failed resource.
+         *
+         * @param notifications
          * @return the builder itself
          */
-        Builder addError(Object... o);
-
-        /**
-         * @param o
-         * @return the builder itself
-         */
-        Builder addWarning(Object... o);
-
-        /**
-         * @param o
-         * @return the builder itself
-         */
-        Builder addInfo(Object... o);
+        Builder withNotifications(Notification... notifications);
 
         /**
          * @param v
@@ -241,34 +228,18 @@ public interface Resource extends Knowledge, Resolvable {
          */
         Builder addHistory(Resource previousResource);
 
-        //		/**
-        //		 * For display.
-        //		 *
-        //		 * @param extent
-        //		 * @return
-        //		 */
-        //		Builder withSpatialExtent(SpatialExtent extent);
-
         /**
-         * Add a classification, which will be saved as a file upon building.
+         * Add a codelist, which will be saved as a file upon building.
          *
          * @param codelist
-         * @return
+         * @return the builder itself
          */
         Builder addCodeList(Codelist codelist);
-
-        /**
-         * True if error() was ever called.
-         *
-         * @return true in error
-         */
-        boolean hasErrors();
 
         /**
          * Build the resource with the passed URN. If there are errors, build a resource with errors; never
          * return null.
          *
-         * @param urn the resource URN to use
          * @return the built resource
          */
         Resource build();
@@ -387,23 +358,6 @@ public interface Resource extends Knowledge, Resolvable {
          */
         Builder withOutput(String name, Artifact.Type type);
 
-        //		/**
-        //		 * Add a URN that the result will depend on.
-        //		 *
-        //		 * @param urn
-        //		 * @return
-        //		 */
-        //		Builder withDependency(String urn);
-
-        //		/**
-        //		 * Add a categorizable ID which will be included in the resource and appear in
-        //		 * the editor for categorization.
-        //		 *
-        //		 * @param id
-        //		 * @return
-        //		 */
-        //		Builder withCategorizable(String id);
-
         /**
          * The builder knows in advance the URN for the prospective resource.
          *
@@ -419,36 +373,6 @@ public interface Resource extends Knowledge, Resolvable {
      * @return a long.
      */
     long getTimestamp();
-
-    //	/**
-    //	 * Granular resources have an overall geometry and can produce a set of
-    //	 * sub-resources indexable to cover different periods of time. Returning true
-    //	 * will mean that contextualize() will return potentially different resources
-    //	 * when called at contextualization, and that the resource is capable of
-    //	 * representing change in general. If so, the scale of contextualization should
-    //	 * be merged with the resource's geometry and the dynamic nature of the result
-    //	 * should decide whether change can be represented by it.
-    //	 *
-    //	 * @return
-    //	 */
-    //	boolean isDynamic();
-
-    //	/**
-    //	 * True if there is any error notification for this resource. Should always be
-    //	 * checked after URN retrieval.
-    //	 *
-    //	 * @return a boolean.
-    //	 */
-    //	boolean hasErrors();
-
-    //	/**
-    //	 * Return an empty string if the resource has no issues, otherwise a message
-    //	 * that describes any issue (errors, warnings and the like) that users should be
-    //	 * aware of. Currently used only if {{@link #hasErrors()} returns true.
-    //	 *
-    //	 * @return a (possibly empty) status message.
-    //	 */
-    //	String getStatusMessage();
 
     /**
      * Return all local resource file paths, as slash-separated strings starting at a point depending on the

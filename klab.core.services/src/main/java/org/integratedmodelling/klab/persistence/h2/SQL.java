@@ -35,7 +35,7 @@ import org.locationtech.jts.geom.Geometry;
 
 /**
  * Simple utility interfaces for cleaner code.
- * 
+ * @deprecated time to move on
  * @author ferdinando.villa
  *
  */

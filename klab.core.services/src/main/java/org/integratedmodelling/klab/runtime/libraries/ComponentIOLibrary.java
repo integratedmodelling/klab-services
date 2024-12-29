@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
@@ -37,6 +38,15 @@ public class ComponentIOLibrary {
         return null;
     }
 
+    /**
+     * Maven import also registers the component's rights if the service it's registered with is a resources
+     * service. For now direct file import does not.
+     *
+     * @param properties
+     * @param service
+     * @param scope
+     * @return
+     */
     @Importer(schema = "maven", knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,
               description = "Register a component using the archive's Maven coordinates",
               properties = {
@@ -58,16 +68,27 @@ public class ComponentIOLibrary {
 
         if (file != null && file.exists()) {
             var componentRegistry = service.getComponentRegistry();
-            return componentRegistry.registerComponent(file,
+            var ret = componentRegistry.registerComponent(file,
                     properties.get("groupId") + ":" + properties.get("artifactId") + ":" + properties.get(
                             "version"), scope);
+
+            if (ret != null && service instanceof ResourcesService resourcesService) {
+                Version version = properties.containsKey("version") ? Version.create(properties.get(
+                        "version", String.class)) : Version.ANY_VERSION;
+                var component = componentRegistry.getComponent(ret, version);
+                // TODO if the component comes with explicit access rights, record them
+                resourcesService.registerResource(component.id(), KlabAsset.KnowledgeClass.COMPONENT,
+                        component.sourceArchive(), scope);
+                return ret;
+            }
         }
 
         return null;
     }
 
-    @Exporter(schema = "jar", description = "Export a component as a jar archive", mediaType = "application/java-archive", knowledgeClass =
-            KlabAsset.KnowledgeClass.COMPONENT)
+    @Exporter(schema = "jar", description = "Export a component as a jar archive", mediaType = "application" +
+            "/java-archive", knowledgeClass =
+                      KlabAsset.KnowledgeClass.COMPONENT)
     public static InputStream exportComponentDirect(String componentId, BaseService service, Scope scope) {
         var componentRegistry = service.getComponentRegistry();
         var version = Version.splitVersion(componentId);

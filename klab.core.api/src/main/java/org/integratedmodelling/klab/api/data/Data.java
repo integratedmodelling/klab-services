@@ -22,6 +22,8 @@ import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 
+import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -84,11 +86,7 @@ public interface Data {
 
     interface ObjectBuilder {
 
-        /**
-         * @return
-         */
-
-        ObjectBuilder name();
+        ObjectBuilder name(String string);
 
         ObjectBuilder geometry(Geometry geometry);
 
@@ -255,6 +253,14 @@ public interface Data {
      * @return
      */
     Metadata getMetadata();
+
+    static Builder builder() {
+        Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+        if (configuration == null) {
+            throw new KlabIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
+        }
+        return configuration.getDataBuilder();
+    }
 
     static Data empty(String reason) {
         return new Data() {

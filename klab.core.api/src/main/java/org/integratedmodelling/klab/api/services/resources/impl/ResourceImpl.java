@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.resources.impl;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +15,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public class ResourceImpl implements Resource {
 
+    @Serial
     private static final long serialVersionUID = -4380402174665342610L;
 
     private String urn;
@@ -33,7 +35,6 @@ public class ResourceImpl implements Resource {
     private List<Resource> history = new ArrayList<>();
     private List<Notification> notifications = new ArrayList<>();
     private List<Attribute> attributes = new ArrayList<>();
-    //	private SpatialExtent spatialExtent;
     private List<Attribute> inputs = null;
     private List<Attribute> outputs = null;
     private List<String> categorizables = new ArrayList<>();
@@ -46,8 +47,6 @@ public class ResourceImpl implements Resource {
     public void setOutputs(List<Attribute> outputs) {
         this.outputs = outputs;
     }
-
-    //	private Map<String, String> exportFormats = new LinkedHashMap<>();
     private String localProjectName;
 
     public ResourceImpl() {
@@ -67,12 +66,10 @@ public class ResourceImpl implements Resource {
         this.parameters.putAll(other.parameters);
         this.localPaths.addAll(other.localPaths);
         this.history.addAll(other.history);
-//		this.spatialExtent = other.spatialExtent;
         this.notifications.addAll(other.notifications);
         this.attributes.addAll(other.attributes);
         this.inputs = other.inputs == null ? null : new ArrayList<>(other.inputs);
         this.outputs = other.outputs == null ? null : new ArrayList<>(other.outputs);
-//		this.exportFormats.putAll(other.exportFormats);
         this.categorizables.addAll(other.categorizables);
         this.codelists.addAll(other.codelists);
         this.localProjectName = other.localProjectName;
@@ -190,14 +187,6 @@ public class ResourceImpl implements Resource {
         this.localName = localName;
     }
 
-//	public SpatialExtent getSpatialExtent() {
-//		return spatialExtent;
-//	}
-//
-//	public void setSpatialExtent(SpatialExtent spatialExtent) {
-//		this.spatialExtent = spatialExtent;
-//	}
-
     public List<Attribute> getAttributes() {
         return attributes;
     }
@@ -214,14 +203,6 @@ public class ResourceImpl implements Resource {
         this.inputs = dependencies;
     }
 
-//	public Map<String, String> getExportFormats() {
-//		return exportFormats;
-//	}
-//
-//	public void setExportFormats(Map<String, String> exportFormats) {
-//		this.exportFormats = exportFormats;
-//	}
-
     public List<String> getCategorizables() {
         return categorizables;
     }
@@ -237,7 +218,6 @@ public class ResourceImpl implements Resource {
     public void setCodelists(List<String> codelists) {
         this.codelists = codelists;
     }
-
 
     @Override
     public String getLocalProjectName() {

@@ -13,15 +13,18 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.utils.Utils;
 
+import java.io.Serial;
 import java.util.*;
 import java.util.logging.Level;
 
 public class ServiceInfoImpl implements ServiceInfo {
 
+    @Serial
     private static final long serialVersionUID = -9168391783660976848L;
 
     public static class ArgumentImpl implements ServiceInfo.Argument {
 
+        @Serial
         private static final long serialVersionUID = -6573430853944135837L;
         private String name;
         private String shortName;

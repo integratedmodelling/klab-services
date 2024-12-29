@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 import java.io.File;
@@ -239,7 +240,7 @@ public interface ResourcesService extends KlabService {
     /**
      * @param contextualizedResource
      * @param geometry
-     * @param input may be null, pass if the resource requires inputs
+     * @param input                  may be null, pass if the resource requires inputs
      * @param scope
      * @return
      */
@@ -346,26 +347,41 @@ public interface ResourcesService extends KlabService {
     KActorsBehavior readBehavior(URL url);
 
     /**
+     * After importing any kind of resource, call this to register its permissions and ownership with the
+     * resources service. The import should always happen through the
+     * {@link KlabService#importAsset(ResourceTransport.Schema, ResourceTransport.Schema.Asset, String,
+     * Scope)} mechanism; the resources service adds management of distribution, ownership and review.
+     *
+     * @param urn
+     * @param knowledgeClass
+     * @param fileLocation    local file if any, or null. Should also build hash and backup file for
+     *                        unburdened copying if the file is opened.
+     * @param submittingScope
+     * @return
+     */
+    ResourceStatus registerResource(String urn, KnowledgeClass knowledgeClass, File fileLocation,
+                                    Scope submittingScope);
+    /**
      * Admin interface to submit/remove projects and configure the service.
      *
      * @author Ferd
      */
     interface Admin {
 
-        /**
-         * Add or update a project from an external source to the local repository.
-         *
-         * @param workspaceName
-         * @param projectUrl          can be a file (zip or existing folder), a git URL (with a potential
-         *                            branch name after a # sign) or a http URL from another resource
-         *                            manager.
-         * @param overwriteIfExisting self-explanatory. If the project is remote, reload if true.
-         * @param scope               a scope that must have previously locked the project
-         * @return true if operation succeeded and anything was done (false if project existed and wasn't
-         * overwritten)
-         */
-        List<ResourceSet> importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting,
-                                        UserScope scope);
+//        /**
+//         * Add or update a project from an external source to the local repository.
+//         *
+//         * @param workspaceName
+//         * @param projectUrl          can be a file (zip or existing folder), a git URL (with a potential
+//         *                            branch name after a # sign) or a http URL from another resource
+//         *                            manager.
+//         * @param overwriteIfExisting self-explanatory. If the project is remote, reload if true.
+//         * @param scope               a scope that must have previously locked the project
+//         * @return true if operation succeeded and anything was done (false if project existed and wasn't
+//         * overwritten)
+//         */
+//        List<ResourceSet> importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting,
+//                                        UserScope scope);
 
         /**
          * Create a new empty project. Use the update function to configure the manifest and the create/update
@@ -435,44 +451,53 @@ public interface ResourcesService extends KlabService {
         List<ResourceSet> manageRepository(String projectName, RepositoryState.Operation operation,
                                            String... arguments);
 
-        /**
-         * Add a resource fully specified by a resource object to those managed by this service. Resource is
-         * invisible from the outside until published. The resource adapter must be available to the service.
-         *
-         * @param resource
-         * @return the resource URN, potentially modified w.r.t. the one in the request.
-         */
-        ResourceSet createResource(Resource resource, UserScope scope);
+//        /**
+//         * Add a resource fully specified by a resource object to those managed by this service. Resource is
+//         * invisible from the outside until published. The resource adapter must be available to the service.
+//         *
+//         * @param resource
+//         * @return the resource URN, potentially modified w.r.t. the one in the request.
+//         * @deprecated subsume in the importAsset mechanism
+//         */
+//        ResourceSet createResource(Resource resource, UserScope scope);
+//
+//        /**
+//         * Create a resource from a dataflow, storing it in serialized form. The dataflow must be fully
+//         * resolved and all dependencies must be stated.
+//         *
+//         * @param dataflow
+//         * @param scope
+//         * @return
+//         * @deprecated subsume in the importAsset mechanism
+//         */
+//        ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope);
+//
+//        /**
+//         * Add a resource with file content or a k.LAB component to those managed by this service. Resource is
+//         * invisible from the outside until published. The resource adapter must be available to the service.
+//         *
+//         * @param resourcePath the URL to a local or remote directory or archive file that contains the
+//         *                     resource files. A resource.json file must be present, along with anything else
+//         *                     required by the adapter. If the file is a .jar file, the resource is assumed to
+//         *                     be a component and is treated as such.
+//         * @return the result including the resource URN in results, potentially modified w.r.t. the one in
+//         * the request. If a component, the URN is the plugin name from the jar manifest.
+//         * <p>
+//         * @deprecated use the resource import mechanism
+//         */
+//        ResourceSet createResource(File resourcePath, UserScope scope);
 
-        /**
-         * Create a resource from a dataflow, storing it in serialized form. The dataflow must be fully
-         * resolved and all dependencies must be stated.
-         *
-         * @param dataflow
-         * @param scope
-         * @return
-         */
-        ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope);
-
-        /**
-         * Add a resource with file content or a k.LAB component to those managed by this service. Resource is
-         * invisible from the outside until published. The resource adapter must be available to the service.
-         *
-         * @param resourcePath the URL to a local or remote directory or archive file that contains the
-         *                     resource files. A resource.json file must be present, along with anything else
-         *                     required by the adapter. If the file is a .jar file, the resource is assumed to
-         *                     be a component and is treated as such.
-         * @return the result including the resource URN in results, potentially modified w.r.t. the one in
-         * the request. If a component, the URN is the plugin name from the jar manifest.
-         * <p>
-         * TODO should have another that takes a URL, working the same way but also storing the
-         *  URL and checking for updates. Could recognize a Maven configuration and automatically
-         *  check for new versions as well.
-         */
-        ResourceSet createResource(File resourcePath, UserScope scope);
-
-        Resource createResource(String projectName, String urnId, String adapter,
-                                Parameters<String> resourceData, UserScope scope);
+//        /**
+//         * @param projectName
+//         * @param urnId
+//         * @param adapter
+//         * @param resourceData
+//         * @param scope
+//         * @return
+//         * @deprecated use the import mechanism
+//         */
+//        Resource createResource(String projectName, String urnId, String adapter,
+//                                Parameters<String> resourceData, UserScope scope);
 
         /**
          * Remove a document in a project. May be a resource when it's exclusive to the project.

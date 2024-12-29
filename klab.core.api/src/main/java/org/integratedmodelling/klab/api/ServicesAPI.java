@@ -417,7 +417,7 @@ public interface ServicesAPI {
     }
 
 
-    public interface RESOURCES {
+    interface RESOURCES {
 
         String RESOLVE_PROJECT = "/resolveProject/{projectName}";
         String QUERY_RESOURCES = "/queryResources";
@@ -448,7 +448,7 @@ public interface ServicesAPI {
         String READ_BEHAVIOR = "/readBehavior";
         //        String PUBLISH_PROJECT = "/publishProject";
         //        String UNPUBLISH_PROJECT = "/unpublishProject";
-        String CREATE_RESOURCE = "/createResource";
+//        String CREATE_RESOURCE = "/createResource";
         //        String PUBLISH_RESOURCE = "/publishResource";
         //        String UNPUBLISH_RESOURCE = "/unpublishResource";
         String LIST_PROJECTS = "/listProjects";
@@ -465,12 +465,12 @@ public interface ServicesAPI {
          */
         public interface ADMIN extends PluginAPI {
 
-            /**
-             * Import project. POST endpoint with ProjectRequest body.
-             *
-             * @deprecated use the generic import mechanism
-             */
-            String IMPORT_PROJECT = "/importProject";
+//            /**
+//             * Import project. POST endpoint with ProjectRequest body.
+//             *
+//             * @deprecated use the generic import mechanism
+//             */
+//            String IMPORT_PROJECT = "/importProject";
             /**
              * Create new empty project in passed workspace.
              */
@@ -490,15 +490,19 @@ public interface ServicesAPI {
              * changes in each workspace affected.
              */
             String UPDATE_DOCUMENT = "/updateDocument/{projectName}/{documentType}";
-            String CREATE_RESOURCE = "/createResource";
-            /**
-             * @deprecated use the generic import mechanism
-             */
-            String IMPORT_RESOURCE = "/importResource";
-            /**
-             * @deprecated use the generic import mechanism
-             */
-            String UPLOAD_RESOURCE = "/uploadResource";
+
+//            /**
+//             * Not sure if we should use anything other than a client-driven import for this.
+//             */
+//            String CREATE_RESOURCE = "/createResource";
+//            /**
+//             * @deprecated use the generic import mechanism
+//             */
+//            String IMPORT_RESOURCE = "/importResource";
+//            /**
+//             * @deprecated use the generic import mechanism
+//             */
+//            String UPLOAD_RESOURCE = "/uploadResource";
             String REMOVE_PROJECT = "/removeProject/{urn}";
             String REMOVE_WORKSPACE = "/removeWorkspace/{urn}";
             String REMOVE_DOCUMENT = "/removeDocument/{projectName}/{urn}";

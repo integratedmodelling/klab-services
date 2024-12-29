@@ -19,7 +19,7 @@ import java.io.PrintWriter;
 @CommandLine.Command(name = "resources", mixinStandardHelpOptions = true, version = Version.CURRENT,
                      description = {
                              "Commands to find, list, access and manipulate resources.", ""}, subcommands =
-                             {CLIResourcesView.Import.class, CLIResourcesView.Rights.class,
+                             {CLIResourcesView.Rights.class,
                               CLIResourcesView.Components.class,
                               CLIResourcesView.List.class, CLIResourcesView.Project.class,
                               CLIResourcesView.Workspace.class})
@@ -196,64 +196,68 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
         }
     }
 
-    @CommandLine.Command(name = "import", mixinStandardHelpOptions = true, version = Version.CURRENT,
-                         description = {
-                                 "Import a resource into the current resources service from a project, an " +
-                                         "archive file or a local directory.", ""}, subcommands = {})
-    public static class Import implements Runnable {
-
-        @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local" /* TODO initialize at null */,
-                            description = {"Resource service to connect to"}, required = false)
-        private String service;
-
-        @CommandLine.Parameters(description = "The URN of the resource that we inquire or assign rights for")
-        private String source;
-
-        @Override
-        public void run() {
-
-            var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-
-            File sourceFile = new File(source);
-
-            if (sourceFile.exists()) {
-                if (sourceFile.isDirectory()) {
-
-                    File manifest = new File(sourceFile + File.separator + "resource.json");
-                    if (manifest.exists()) {
-                        // TODO zip it up and send it over
-                    }
-
-                } else if ("jar".equals(Utils.Files.getFileExtension(sourceFile)) || "zip".equals(Utils.Files.getFileExtension(sourceFile))) {
-                    // TODO use other archive extensions
-                    if (service instanceof ResourcesService.Admin admin) {
-                        var result = admin.createResource(sourceFile, KlabCLI.INSTANCE.user());
-                        for (var notification : result.getNotifications()) {
-                            // TODO show nicely in console
-                            System.out.println(notification.getLevel() + ": " + notification.getMessage());
-                        }
-                    } else {
-                        throw new KlabIllegalStateException("Cannot perform admin operations on this " +
-                                "service");
-                    }
-                }
-            } else {
-                // resolve as URN
-            }
-
-            /*
-            1. Find resource
-            2. If no arguments, list rights
-            3. If arguments, set rights and report
-             */
-        }
-    }
+    //    @CommandLine.Command(name = "import", mixinStandardHelpOptions = true, version = Version.CURRENT,
+    //                         description = {
+    //                                 "Import a resource into the current resources service from a
+    //                                 project, an " +
+    //                                         "archive file or a local directory.", ""}, subcommands = {})
+    //    public static class Import implements Runnable {
+    //
+    //        @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local" /* TODO initialize at
+    //         null */,
+    //                            description = {"Resource service to connect to"}, required = false)
+    //        private String service;
+    //
+    //        @CommandLine.Parameters(description = "The URN of the resource that we inquire or assign
+    //        rights for")
+    //        private String source;
+    //
+    //        @Override
+    //        public void run() {
+    //
+    //            var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
+    //
+    //            File sourceFile = new File(source);
+    //
+    //            if (sourceFile.exists()) {
+    //                if (sourceFile.isDirectory()) {
+    //
+    //                    File manifest = new File(sourceFile + File.separator + "resource.json");
+    //                    if (manifest.exists()) {
+    //                        // TODO zip it up and send it over
+    //                    }
+    //
+    //                } else if ("jar".equals(Utils.Files.getFileExtension(sourceFile)) || "zip".equals
+    //                (Utils.Files.getFileExtension(sourceFile))) {
+    //                    // TODO use other archive extensions
+    //                    if (service instanceof ResourcesService.Admin admin) {
+    //                        var result = admin.createResource(sourceFile, KlabCLI.INSTANCE.user());
+    //                        for (var notification : result.getNotifications()) {
+    //                            // TODO show nicely in console
+    //                            System.out.println(notification.getLevel() + ": " + notification
+    //                            .getMessage());
+    //                        }
+    //                    } else {
+    //                        throw new KlabIllegalStateException("Cannot perform admin operations on this " +
+    //                                "service");
+    //                    }
+    //                }
+    //            } else {
+    //                // resolve as URN
+    //            }
+    //
+    //            /*
+    //            1. Find resource
+    //            2. If no arguments, list rights
+    //            3. If arguments, set rights and report
+    //             */
+    //        }
+    //    }
 
 
     @CommandLine.Command(name = "project", mixinStandardHelpOptions = true, version = Version.CURRENT,
                          description = {
-                                 "Project operations", ""}, subcommands = {CLIResourcesView.Project.Add.class,
-                                                                             CLIResourcesView.Project.Remove.class})
+                                 "Project operations", ""}, subcommands = {CLIResourcesView.Project.Remove.class})
     public static class Project implements Runnable {
 
         @CommandLine.Spec
@@ -328,70 +332,70 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
             }
         }
 
-        @CommandLine.Command(name = "add", mixinStandardHelpOptions = true, version = Version.CURRENT,
-                             description = {
-                                     "Add a new project to the scope of this service.", ""}, subcommands = {})
-        public static class Add implements Runnable {
-
-            @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
-                    "Resource service " +
-                            "to connect" +
-                            " to"},
-                                required = false)
-            private String service;
-
-            @CommandLine.Option(names = {"-w", "--workspace"}, defaultValue = "local", description = {
-                    "Workspace for " +
-                            "the " +
-                            "imported" +
-                            " project"
-            }, required = false)
-            private String workspace;
-
-            @CommandLine.Option(names = {"-f", "--force"}, defaultValue = "false", description = {"Force reimport of an" +
-                                                                                                          " existing " +
-                                                                                                          "project"},
-                                required = false)
-            private boolean force;
-
-            @CommandLine.Parameters
-            private String projectUrl;
-
-            @Override
-            public void run() {
-
-                /*
-                TODO select the workspace if the passed value isn't null - remove the "local" default and
-                 just create it if not existing.
-                 */
-
-                KlabCLI.INSTANCE.modeler().importProject(workspace, projectUrl, force);
-
-                //                try {
-                //                    var url = new File(projectUrl).isDirectory() ? new File(projectUrl)
-                //                    .toURI().toURL() :
-                //                              new URI(projectUrl).toURL();
-                //                    var service = KlabCLI.INSTANCE.service(this.service, ResourcesService
-                //                    .class);
-                //                    if (service instanceof ResourcesService.Admin admin) {
-                //                        if (admin.importProject(workspace, url.toString(), false).isEmpty
-                //                        ()) {
-                //                            System.out.println("project " + projectUrl + " was present or
-                //                            in error, not " + "added");
-                //                        } else {
-                //                            System.out.println("project " + projectUrl + " added to
-                //                            workspace " + workspace);
-                //                        }
-                //                    } else {
-                //                        System.out.println("service " + this.service + " does not have
-                //                        admin permissions " +
-                //                                "in" + " this scope");
-                //                    }
-                //                } catch (Exception e) {
-                //                    System.err.println("Invalid project URL entered");
-                //                }
-            }
-        }
+//        @CommandLine.Command(name = "add", mixinStandardHelpOptions = true, version = Version.CURRENT,
+//                             description = {
+//                                     "Add a new project to the scope of this service.", ""}, subcommands = {})
+//        public static class Add implements Runnable {
+//
+//            @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
+//                    "Resource service " +
+//                            "to connect" +
+//                            " to"},
+//                                required = false)
+//            private String service;
+//
+//            @CommandLine.Option(names = {"-w", "--workspace"}, defaultValue = "local", description = {
+//                    "Workspace for " +
+//                            "the " +
+//                            "imported" +
+//                            " project"
+//            }, required = false)
+//            private String workspace;
+//
+//            @CommandLine.Option(names = {"-f", "--force"}, defaultValue = "false", description = {"Force reimport of an" +
+//                                                                                                          " existing " +
+//                                                                                                          "project"},
+//                                required = false)
+//            private boolean force;
+//
+//            @CommandLine.Parameters
+//            private String projectUrl;
+//
+//            @Override
+//            public void run() {
+//
+//                /*
+//                TODO select the workspace if the passed value isn't null - remove the "local" default and
+//                 just create it if not existing.
+//                 */
+//
+//                KlabCLI.INSTANCE.modeler().importProject(workspace, projectUrl, force);
+//
+//                //                try {
+//                //                    var url = new File(projectUrl).isDirectory() ? new File(projectUrl)
+//                //                    .toURI().toURL() :
+//                //                              new URI(projectUrl).toURL();
+//                //                    var service = KlabCLI.INSTANCE.service(this.service, ResourcesService
+//                //                    .class);
+//                //                    if (service instanceof ResourcesService.Admin admin) {
+//                //                        if (admin.importProject(workspace, url.toString(), false).isEmpty
+//                //                        ()) {
+//                //                            System.out.println("project " + projectUrl + " was present or
+//                //                            in error, not " + "added");
+//                //                        } else {
+//                //                            System.out.println("project " + projectUrl + " added to
+//                //                            workspace " + workspace);
+//                //                        }
+//                //                    } else {
+//                //                        System.out.println("service " + this.service + " does not have
+//                //                        admin permissions " +
+//                //                                "in" + " this scope");
+//                //                    }
+//                //                } catch (Exception e) {
+//                //                    System.err.println("Invalid project URL entered");
+//                //                }
+//            }
+//        }
 
         @CommandLine.Command(name = "remove", mixinStandardHelpOptions = true, version = Version.CURRENT,
                              description =
@@ -431,7 +435,8 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
         @CommandLine.Command(name = "add", mixinStandardHelpOptions = true, version = Version.CURRENT,
                              description = {
-                                     "Check for updates in a resource's original repository and optionally load it.", ""}, subcommands = {})
+                                     "Check for updates in a resource's original repository and optionally " +
+                                             "load it.", ""}, subcommands = {})
         public static class Add implements Runnable {
 
             @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
@@ -454,7 +459,8 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
         @CommandLine.Command(name = "update", mixinStandardHelpOptions = true, version = Version.CURRENT,
                              description = {
-                                     "Check for updates in a resource's original repository and optionally load it.", ""}, subcommands = {})
+                                     "Check for updates in a resource's original repository and optionally " +
+                                             "load it.", ""}, subcommands = {})
         public static class Update implements Runnable {
 
             @CommandLine.Option(names = {"-s", "--service"}, defaultValue = "local", description = {
@@ -499,7 +505,8 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
 
     @CommandLine.Command(name = "workspace", mixinStandardHelpOptions = true, version = Version.CURRENT,
                          description =
-                                 {"Workspace operations", ""}, subcommands = {CLIResourcesView.Workspace.List.class,
+                                 {"Workspace operations", ""}, subcommands =
+                                 {CLIResourcesView.Workspace.List.class,
                                                                               CLIResourcesView.Workspace.Remove.class})
     public static class Workspace {
 

@@ -70,7 +70,7 @@ import org.integratedmodelling.klab.utilities.Utils;
  * with username=sa, password=sa
  * 
  * Use with org.h2.tools.Console
- * 
+ * @deprecated use noSQL storage
  * @author Ferd
  *
  */

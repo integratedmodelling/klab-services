@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -364,16 +365,16 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
         return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_URN, ResourceSet.class, "urn", urn);
     }
 
-    @Override
-    public List<ResourceSet> importProject(String workspaceName, String projectUrl,
-                                           boolean overwriteIfExisting,
-                                           UserScope scope) {
-        ProjectRequest request = new ProjectRequest();
-        request.setWorkspaceName(workspaceName);
-        request.setProjectUrl(projectUrl);
-        request.setOverwrite(overwriteIfExisting);
-        return client.postCollection(ServicesAPI.RESOURCES.ADMIN.IMPORT_PROJECT, request, ResourceSet.class);
-    }
+//    @Override
+//    public List<ResourceSet> importProject(String workspaceName, String projectUrl,
+//                                           boolean overwriteIfExisting,
+//                                           UserScope scope) {
+//        ProjectRequest request = new ProjectRequest();
+//        request.setWorkspaceName(workspaceName);
+//        request.setProjectUrl(projectUrl);
+//        request.setOverwrite(overwriteIfExisting);
+//        return client.postCollection(ServicesAPI.RESOURCES.ADMIN.IMPORT_PROJECT, request, ResourceSet.class);
+//    }
 
     @Override
     public ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
@@ -415,26 +416,31 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
                 projectName);
     }
 
-    @Override
-    public ResourceSet createResource(Resource resource, UserScope scope) {
-        return null;
-    }
+//    @Override
+//    public ResourceSet createResource(Resource resource, UserScope scope) {
+//        return null;
+//    }
+//
+//    @Override
+//    public ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope) {
+//        return null;
+//    }
+//
+////    @Override
+////    public ResourceSet createResource(File resourcePath, UserScope scope) {
+////        return client.withScope(scope).upload(ServicesAPI.RESOURCES.ADMIN.UPLOAD_RESOURCE, resourcePath,
+////                ResourceSet.class);
+////    }
+//
+//    @Override
+//    public Resource createResource(String projectName, String urnId, String adapter,
+//                                   Parameters<String> resourceData, UserScope scope) {
+//       return null;
+//    }
 
     @Override
-    public ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope) {
-        return null;
-    }
-
-    @Override
-    public ResourceSet createResource(File resourcePath, UserScope scope) {
-        return client.withScope(scope).upload(ServicesAPI.RESOURCES.ADMIN.UPLOAD_RESOURCE, resourcePath,
-                ResourceSet.class);
-    }
-
-    @Override
-    public Resource createResource(String projectName, String urnId, String adapter,
-                                   Parameters<String> resourceData, UserScope scope) {
-        return null;
+    public ResourceStatus registerResource(String urn, KnowledgeClass knowledgeClass, File file, Scope submittingScope) {
+        throw new KlabIllegalStateException("resources service: registerResource() should not be called by clients");
     }
 
     @Override

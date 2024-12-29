@@ -7,7 +7,6 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
@@ -18,7 +17,6 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -32,7 +30,6 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
@@ -43,6 +40,7 @@ import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
+import org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
@@ -73,18 +71,16 @@ import java.util.stream.Collectors;
 public class ResourcesProvider extends BaseService implements ResourcesService, ResourcesService.Admin {
 
 
-    private String hardwareSignature = Utils.Names.getHardwareId();
+    private final String hardwareSignature = Utils.Names.getHardwareId();
+    private final WorkspaceManager workspaceManager;
+    private final ResourcesKBox resourcesKbox;
 
-    private WorkspaceManager workspaceManager;
     /**
      * We keep a hash of all the resource URNs we serve for quick reference and search
+     *
+     * @deprecated use {@link org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox}
      */
     private Set<String> localResources = new HashSet<>();
-
-    /**
-     * record the time of last update of each project
-     */
-    private Map<String, Long> lastUpdate = new HashMap<>();
 
     /**
      * the only persistent info in this implementation is the catalog of resource status info. This is used
@@ -93,16 +89,21 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * material should be part of the provenance info associated to the items. The review process is organized
      * and maintained in the community service; only its initiation and the storage of the review status is
      * the job of the resources service.
+     *
+     * @deprecated use {@link org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox}
      */
     private DB db = null;
     private ConcurrentNavigableMap<String, ResourceStatus> catalog = null;
+    /**
+     * @deprecated use {@link org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox}
+     */
     private ModelKbox kbox;
     // set to true when the connected reasoner becomes operational
     private boolean semanticSearchAvailable = false;
     /*
      * "fair" read/write lock to ensure no reading during updates
      */
-    private ReadWriteLock updateLock = new ReentrantReadWriteLock(true);
+    private final ReadWriteLock updateLock = new ReentrantReadWriteLock(true);
 
     @SuppressWarnings("unchecked")
     public ResourcesProvider(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
@@ -116,33 +117,38 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
          */
         scanPackages((annotation, annotated) -> {
             if (!LanguageAdapter.INSTANCE.registerInstanceClass(annotation, annotated)) {
-                Logging.INSTANCE.error("Configuration error: multiple definitions, cannot redefine instance" +
-                        " implementation " + annotation.value());
-                serviceNotifications().add(Notification.create("Configuration error: multiple definitions, " +
-                        "cannot redefine instance" +
-                        " implementation " + annotation.value(), Notification.Level.Error));
+                Logging.INSTANCE.error(
+                        "Configuration error: multiple definitions, cannot redefine instance" + " " +
+                                "implementation " + annotation.value());
+                serviceNotifications().add(Notification.create(
+                        "Configuration error: multiple definitions, " + "cannot redefine instance" + " " +
+                                "implementation " + annotation.value(),
+                        Notification.Level.Error));
             }
         }, Instance.class);
 
 
-
         this.kbox = ModelKbox.create(this);
         this.workspaceManager = new WorkspaceManager(scope, getStartupOptions(), this,
-                this::resolveRemoteProject);
+                                                     this::resolveRemoteProject);
 
-        this.db = DBMaker.fileDB(getConfigurationSubdirectory(options, "catalog") + File.separator +
-                "resources.db").transactionEnable().closeOnJvmShutdown().make();
-        this.catalog =
-                db.treeMap("resourcesCatalog", GroupSerializer.STRING, GroupSerializer.JAVA).createOrOpen();
+        this.resourcesKbox = new ResourcesKBox(scope, options, this);
+
+        // FIXME remove along with MapDB and catalog
+        this.db = DBMaker.fileDB(getConfigurationSubdirectory(options,
+                                                              "catalog") + File.separator + "resources.db").transactionEnable().closeOnJvmShutdown().make();
+        this.catalog = db.treeMap("resourcesCatalog", GroupSerializer.STRING,
+                                  GroupSerializer.JAVA).createOrOpen();
 
         /*
         initialize the plugin system to handle components
          */
         getComponentRegistry().initializeComponents(this.workspaceManager.getConfiguration(),
-                getConfigurationSubdirectory(options, "components"));
+                                                    getConfigurationSubdirectory(options, "components"));
 
         // load predefined runtime libraries
-        getComponentRegistry().loadExtensions("org.integratedmodelling.klab.runtime.libraries");
+        getComponentRegistry().loadExtensions("org.integratedmodelling.klab.runtime.libraries",
+                                              "org.integratedmodelling.klab.services.resources.library");
 
     }
 
@@ -158,7 +164,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         Logging.INSTANCE.setSystemIdentifier("Resources service: ");
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
-                capabilities(serviceScope()).toString());
+                            capabilities(serviceScope()).toString());
 
 
         //        this.workspaceManager.loadWorkspace();
@@ -170,12 +176,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
          * Setup an embedded broker, possibly to be shared with other services, if we're local and there
          * is no configured broker.
          */
-        if (Utils.URLs.isLocalHost(this.getUrl()) && workspaceManager.getConfiguration().getBrokerURI() == null) {
+        if (Utils.URLs.isLocalHost(
+                this.getUrl()) && workspaceManager.getConfiguration().getBrokerURI() == null) {
             this.embeddedBroker = new EmbeddedBroker();
         }
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
-                capabilities(serviceScope()));
+                            capabilities(serviceScope()));
     }
 
     @Override
@@ -243,8 +250,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                         status = new ResourceStatus();
                         status.setReviewStatus(level);
                         status.setFileLocation(subdir);
-                        status.setType(Utils.Notifications.hasErrors(resource.getNotifications()) ?
-                                       ResourceStatus.Type.OFFLINE : ResourceStatus.Type.AVAILABLE);
+                        status.setType(Utils.Notifications.hasErrors(
+                                resource.getNotifications()) ? ResourceStatus.Type.OFFLINE :
+                                       ResourceStatus.Type.AVAILABLE);
                         status.setLegacy(legacy);
                         status.setKnowledgeClass(KnowledgeClass.RESOURCE);
                         // TODO fill in the rest
@@ -315,9 +323,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         for (var component : getComponentRegistry().resolveServiceCall(name, version)) {
             if (component.permissions().checkAuthorization(scope)) {
                 empty = false;
-                ret.getResults().add(new ResourceSet.Resource(this.serviceId(), component.id(), null,
-                        component.version(),
-                        KnowledgeClass.COMPONENT));
+                ret.getResults().add(
+                        new ResourceSet.Resource(this.serviceId(), component.id(), null, component.version(),
+                                                 KnowledgeClass.COMPONENT));
             }
         }
 
@@ -336,7 +344,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         if (adapter == null) {
             return Data.empty("Adapter " + resource.getAdapterType() + " not available");
         }
-        return adapter.contextualize(resource, geometry);
+        return adapter.encode(resource, geometry);
     }
 
     @Override
@@ -369,15 +377,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      *                            mirroring.
      * @param overwriteIfExisting self-explanatory. If the project is remote, reload if true.
      * @return
+     * @deprecated use project import schema + register resource
      */
-    @Override
+    //    @Override
     public synchronized List<ResourceSet> importProject(String workspaceName, String projectUrl,
                                                         boolean overwriteIfExisting, UserScope scope) {
 
         var storage = workspaceManager.importProject(projectUrl, workspaceName);
         if (storage == null) {
-            return List.of(Utils.Resources.createEmpty(Notification.create("Import failed for " + projectUrl,
-                    Notification.Level.Error)));
+            return List.of(Utils.Resources.createEmpty(
+                    Notification.create("Import failed for " + projectUrl, Notification.Level.Error)));
         }
 
         var project = workspaceManager.loadProject(storage, workspaceName);
@@ -413,10 +422,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public List<ResourceSet> createDocument(String projectName, String documentUrn,
-                                            ProjectStorage.ResourceType documentType,
-                                            UserScope scope) {
-        return this.workspaceManager.createDocument(projectName, documentType, documentUrn,
-                scope);
+                                            ProjectStorage.ResourceType documentType, UserScope scope) {
+        return this.workspaceManager.createDocument(projectName, documentType, documentUrn, scope);
     }
 
     @Override
@@ -493,7 +500,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public boolean shutdown(int secondsToWait) {
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
-                capabilities(serviceScope()));
+                            capabilities(serviceScope()));
 
         // try {
         // projectLoader.awaitTermination(secondsToWait, TimeUnit.SECONDS);
@@ -523,12 +530,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ret.getPermissions().add(CRUDOperation.UPDATE);
         ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
         ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
-        ret.setBrokerURI(embeddedBroker != null ? embeddedBroker.getURI() :
-                         workspaceManager.getConfiguration().getBrokerURI());
-        ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(getUrl()) ?
-                                        EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
-                                                Message.Queue.Warnings, Message.Queue.Events) :
-                                        EnumSet.noneOf(Message.Queue.class));
+        ret.setBrokerURI(
+                embeddedBroker != null ? embeddedBroker.getURI() :
+                workspaceManager.getConfiguration().getBrokerURI());
+        ret.setAvailableMessagingQueues(
+                Utils.URLs.isLocalHost(getUrl()) ? EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
+                                                              Message.Queue.Warnings,
+                                                              Message.Queue.Events) : EnumSet.noneOf(
+                        Message.Queue.class));
 
         return ret;
     }
@@ -656,45 +665,48 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * @param scope
      * @return
      */
-    private List<ResourceSet> collectProject(String projectName, CRUDOperation operation, String
-                                                     workspace,
+    private List<ResourceSet> collectProject(String projectName, CRUDOperation operation, String workspace,
                                              Scope scope) {
 
         List<ResourceSet> ret = new ArrayList<>();
 
-        List<KimOntology> ontologies =
-                this.workspaceManager.getOntologies(false).stream().filter(o -> projectName.equals(o.getProjectName())).toList();
-        List<KimNamespace> namespaces =
-                this.workspaceManager.getNamespaces().stream().filter(o -> projectName.equals(o.getProjectName())).toList();
+        List<KimOntology> ontologies = this.workspaceManager.getOntologies(false).stream().filter(
+                o -> projectName.equals(o.getProjectName())).toList();
+        List<KimNamespace> namespaces = this.workspaceManager.getNamespaces().stream().filter(
+                o -> projectName.equals(o.getProjectName())).toList();
         List<KimObservationStrategyDocument> strategies =
-                this.workspaceManager.getStrategyDocuments().stream().filter(o -> projectName.equals(o.getProjectName())).toList();
-        List<KActorsBehavior> behaviors =
-                this.workspaceManager.getBehaviors().stream().filter(o -> projectName.equals(o.getProjectName())).toList();
+                this.workspaceManager.getStrategyDocuments().stream().filter(
+                o -> projectName.equals(o.getProjectName())).toList();
+        List<KActorsBehavior> behaviors = this.workspaceManager.getBehaviors().stream().filter(
+                o -> projectName.equals(o.getProjectName())).toList();
 
         // Resources work independently and do not come with the project data.
 
         // check if the worldview is impacted, too
-        var worldviewOntologies =
-                getWorldview().getOntologies().stream().map(KlabAsset::getUrn).collect(Collectors.toSet());
-        var worldviewStrategies =
-                getWorldview().getObservationStrategies().stream().map(KlabAsset::getUrn).collect(Collectors.toSet());
+        var worldviewOntologies = getWorldview().getOntologies().stream().map(KlabAsset::getUrn).collect(
+                Collectors.toSet());
+        var worldviewStrategies = getWorldview().getObservationStrategies().stream().map(
+                KlabAsset::getUrn).collect(Collectors.toSet());
 
         var conts = Sets.intersection(worldviewOntologies,
-                ontologies.stream().map(KlabAsset::getUrn).collect(Collectors.toSet()));
+                                      ontologies.stream().map(KlabAsset::getUrn).collect(Collectors.toSet()));
         var cstra = Sets.intersection(worldviewStrategies,
-                strategies.stream().map(KlabAsset::getUrn).collect(Collectors.toSet()));
+                                      strategies.stream().map(KlabAsset::getUrn).collect(Collectors.toSet()));
 
         if (!conts.isEmpty() || !cstra.isEmpty()) {
             ret.add(Utils.Resources.create(this, Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER, operation,
-                    Utils.Collections.shallowCollection(
-                            ontologies.stream().filter(o -> conts.contains(o.getUrn())).toList(),
-                            strategies.stream().filter(o -> conts.contains(o.getUrn())).toList()).toArray(new KlabAsset[0])));
+                                           Utils.Collections.shallowCollection(ontologies.stream().filter(
+                                                                                       o -> conts.contains(o.getUrn())).toList(),
+                                                                               strategies.stream().filter(
+                                                                                       o -> conts.contains(
+                                                                                               o.getUrn())).toList()).toArray(
+                                                   new KlabAsset[0])));
         }
 
         ret.add(Utils.Resources.create(this, workspace, operation,
-                Utils.Collections.shallowCollection(ontologies,
-                        strategies,
-                        namespaces, behaviors).toArray(new KlabAsset[0])));
+                                       Utils.Collections.shallowCollection(ontologies, strategies, namespaces,
+                                                                           behaviors).toArray(
+                                               new KlabAsset[0])));
 
         return ret;
     }
@@ -711,18 +723,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return workspaceManager.manageRepository(projectName, operation, arguments);
     }
 
-    @Override
-    public ResourceSet createResource(Resource resource, UserScope scope) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+    //    @Override
+    //    public ResourceSet createResource(Resource resource, UserScope scope) {
+    //        // TODO Auto-generated method stub
+    //        return null;
+    //    }
+    //
+    //    @Override
+    //    public ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope) {
+    //        return null;
+    //    }
 
-    @Override
-    public ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope) {
-        return null;
-    }
-
-    @Override
+    //    @Override
+    @Deprecated // remove when the import mechanism can do this
     public ResourceSet createResource(File resourcePath, UserScope scope) {
 
         KnowledgeClass knowledgeClass = null;
@@ -759,21 +772,44 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return ret;
     }
 
+    //    @Override
+    //    public Resource createResource(String projectName, String urnId, String adapter,
+    //                                   Parameters<String> resourceData, UserScope scope) {
+    //        return null;
+    //    }
+
     @Override
-    public Resource createResource(String projectName, String urnId, String adapter,
-                                   Parameters<String> resourceData, UserScope scope) {
-        return null;
+    public ResourceStatus registerResource(String urn, KnowledgeClass knowledgeClass, File fileLocation,
+                                           Scope submittingScope) {
+
+        if (urn != null) {
+            // initial resource permissions
+            var status = new ResourceStatus();
+            if (scope.getIdentity() instanceof UserIdentity user) {
+                status.getPrivileges().getAllowedUsers().add(user.getUsername());
+                status.setOwner(user.getUsername());
+            }
+            status.setFileLocation(fileLocation);
+            status.setKnowledgeClass(knowledgeClass);
+            status.setReviewStatus(0);
+            status.setType(ResourceStatus.Type.AVAILABLE);
+            status.setLegacy(false);
+            catalog.put(urn, status);
+            db.commit();
+            return status;
+        }
+
+        return ResourceStatus.offline();
     }
 
     @Override
-    public List<ResourceSet> deleteDocument(String projectName, String assetUrn,
-                                            UserScope scope) {
+    public List<ResourceSet> deleteDocument(String projectName, String assetUrn, UserScope scope) {
         return null;
     }
 
-    public void setLocalName(String localName) {
-        this.localName = localName;
-    }
+    //    public void setLocalName(String localName) {
+    //        this.localName = localName;
+    //    }
 
 
     @Override
@@ -787,10 +823,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ResourceSet results = new ResourceSet();
         // FIXME use the observation's scale (pass the observation)
         for (ModelReference model : this.kbox.query(observable, scope)) {
-            results.getResults().add(new ResourceSet.Resource(getUrl().toString(),
-                    model.getName(), model.getProjectUrn(),
-                    model.getVersion(),
-                    KnowledgeClass.MODEL));
+            results.getResults().add(
+                    new ResourceSet.Resource(getUrl().toString(), model.getName(), model.getProjectUrn(),
+                                             model.getVersion(), KnowledgeClass.MODEL));
         }
 
         addDependencies(results, scope);
@@ -874,14 +909,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         List<String> ret = new ArrayList<>();
         Set<KnowledgeClass> wanted = EnumSet.noneOf(KnowledgeClass.class);
         if (resourceTypes != null && resourceTypes.length > 0) {
-            for (KnowledgeClass k : resourceTypes) {
-                wanted.add(k);
-            }
+            wanted.addAll(Arrays.asList(resourceTypes));
         } else {
             // we want them all
-            for (KnowledgeClass k : KnowledgeClass.values()) {
-                wanted.add(k);
-            }
+            wanted.addAll(Arrays.asList(KnowledgeClass.values()));
         }
 
         if (wanted.contains(KnowledgeClass.RESOURCE)) {
@@ -1008,9 +1039,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                 KimNamespace namespace = resolveNamespace(urn, scope);
                 if (namespace != null) {
 
-                    ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
-                            namespace.getProjectName(),
-                            namespace.getVersion(), KnowledgeClass.NAMESPACE));
+                    ret.getResults().add(
+                            new ResourceSet.Resource(getUrl().toString(), urn, namespace.getProjectName(),
+                                                     namespace.getVersion(), KnowledgeClass.NAMESPACE));
 
                 } else {
 
@@ -1028,8 +1059,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                         for (KlabStatement statement : namespace.getStatements()) {
                             if (urn.equals(statement.getUrn())) {
                                 ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
-                                        namespace.getProjectName(),
-                                        namespace.getVersion(), KlabAsset.classify(statement)));
+                                                                              namespace.getProjectName(),
+                                                                              namespace.getVersion(),
+                                                                              KlabAsset.classify(statement)));
                                 break;
                             }
                         }
@@ -1099,8 +1131,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
             if (sessionScope.getId() == null) {
-                throw new KlabIllegalArgumentException("resolver: session scope has no ID, cannot register " +
-                        "a scope autonomously");
+                throw new KlabIllegalArgumentException(
+                        "resolver: session scope has no ID, cannot register " + "a scope autonomously");
             }
 
             getScopeManager().registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
@@ -1124,8 +1156,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
             if (contextScope.getId() == null) {
-                throw new KlabIllegalArgumentException("resolver: context scope has no ID, cannot register " +
-                        "a scope autonomously");
+                throw new KlabIllegalArgumentException(
+                        "resolver: context scope has no ID, cannot register " + "a scope autonomously");
             }
 
             getScopeManager().registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());

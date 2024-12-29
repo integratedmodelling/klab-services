@@ -43,7 +43,9 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
  * are given, iteration will be in descending score order. Scores are doubles
  * and expected to be 0-1; the default value of a score when only some are
  * specified is 0.
- * 
+ *
+ * @deprecated time to move on
+ *
  * @author Ferd
  * @param <T>
  *

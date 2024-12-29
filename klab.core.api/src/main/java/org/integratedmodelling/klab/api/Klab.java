@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api;
 
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
@@ -42,7 +43,6 @@ public enum Klab {
         READ_FAILED,
         WRITE_FAILED,
         INTERNAL_ERROR
-
     }
 
     public enum ErrorContext {
@@ -124,6 +124,8 @@ public enum Klab {
         Model.Builder getModelBuilder(Object value);
 
         Model.Builder getModelLearner(String outputResourceUrn);
+
+        Data.Builder getDataBuilder();
 
         Quantity parseQuantity(String quantityDescription);
 
