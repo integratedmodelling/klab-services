@@ -606,6 +606,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
      * @return
      */
     private static String parenthesize(String ret) {
+
         int firstOpening = -1;
         int lastClosing = -1;
         int level = 0;

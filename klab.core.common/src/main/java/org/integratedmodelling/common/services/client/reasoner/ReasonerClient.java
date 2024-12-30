@@ -487,19 +487,19 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     @Override
     public Collection<Concept> affectedOrCreated(Semantics semantics) {
         // TODO Auto-generated method stub
-        return null;
+        return List.of();
     }
 
     @Override
     public Collection<Concept> affected(Semantics semantics) {
         // TODO Auto-generated method stub
-        return null;
+        return List.of();
     }
 
     @Override
     public Collection<Concept> created(Semantics semantics) {
         // TODO Auto-generated method stub
-        return null;
+        return List.of();
     }
 
     @Override
@@ -560,7 +560,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     @Override
     public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> type) {
         // TODO Auto-generated method stub
-        return null;
+        return List.of();
     }
 
     @Override

@@ -293,7 +293,7 @@ public class JacksonConfiguration {
                                       KimObservationStrategy.Operation.class, RuntimeAsset.class,
                                       KimObservationStrategy.Filter.class, ObservationStrategy.class,
                                       ObservationStrategy.Operation.class, ServiceInfo.class,
-                                      ServiceInfo.Argument.class}) {
+                                      ServiceInfo.Argument.class, Urn.class}) {
             module.addSerializer(cls, new PolymorphicSerializer<>());
             module.addDeserializer(cls, new PolymorphicDeserializer<>(cls));
         }

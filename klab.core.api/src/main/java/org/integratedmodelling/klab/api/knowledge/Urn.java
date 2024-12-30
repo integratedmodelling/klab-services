@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.knowledge;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -19,7 +20,8 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
  * @author Ferd
  *
  */
-public class Urn {
+public class Urn implements Serializable {
+
 
 	final public static String SINGLE_PARAMETER_KEY = "value";
 

@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -203,6 +204,7 @@ public class DataflowCompiler {
             ret = contextualizer.getServiceCall();
         } else if (contextualizer.getResourceUrn() != null) {
             ret = new ServiceCallImpl(RuntimeService.CoreFunctor.URN_RESOLVER.getServiceCall());
+            ret.getParameters().putUnnamed(new Urn(contextualizer.getResourceUrn()));
         } else if (contextualizer.getAccordingTo() != null) {
             ret = new ServiceCallImpl(RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCall());
         } else if (contextualizer.getClassification() != null) {

@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
@@ -920,20 +921,6 @@ public class ComponentRegistry {
 
     }
 
-    //    /**
-    //     * Call this one if you plan on USING the plugin; call {@link #initializeComponents(File)} if you
-    //     want to
-    //     * build the plugin archive but not load the plugins themselves. This one is for working with the
-    //     plugins,
-    //     * the other for hosting and serving plugins. One or the other must be called before anything else.
-    //     *
-    //     * @param pluginRoot
-    //     */
-    //    public void loadComponents(File pluginRoot) {
-    //        initializeComponents(pluginRoot);
-    //        componentManager.startPlugins();
-    //    }
-
     /**
      * Use this call for the "master" service that installs components based on configuration.
      *
@@ -990,6 +977,9 @@ public class ComponentRegistry {
         private Artifact.Type resourceType;
         private Version version;
         boolean universal;
+        boolean threadSafe;
+        Class<?> implementationClass;
+        Object implementation;
 
         private ServiceImplementation typeAttributor;
         private ServiceImplementation encoder;
@@ -999,11 +989,21 @@ public class ComponentRegistry {
         private ServiceImplementation sanitizer;
         private ServiceImplementation publisher;
 
-        public AdapterImpl(Class<?> adapterClass, ResourceAdapter annotation) {
+        public AdapterImpl(Class<?> implementationClass, ResourceAdapter annotation) {
             this.name = annotation.name();
             this.version = Version.create(annotation.version());
             this.universal = annotation.universal();
-            scanAdapterClass(adapterClass);
+            this.threadSafe = annotation.threadSafe();
+            this.implementationClass = implementationClass;
+            if (this.threadSafe) {
+                try {
+                    this.implementation = implementationClass.getDeclaredConstructor().newInstance();
+                } catch (Exception e) {
+                    throw new KlabInternalErrorException(
+                            name + ": thread safe adapters must have a single no-argument constructor");
+                }
+            }
+            scanAdapterClass(implementationClass);
         }
 
         @Override
@@ -1118,14 +1118,16 @@ public class ComponentRegistry {
                     var serviceInfo = createPrototype(name, method.getAnnotation(Importer.class));
                     var schema = ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
                     schema.setAdapter(name);
-                    serviceImplementations.put(schema.getSchemaId(), createServiceImplementation(method, method.getAnnotation(
-                            Importer.class)));
+                    serviceImplementations.put(schema.getSchemaId(), createServiceImplementation(method,
+                                                                                                 method.getAnnotation(
+                                                                                                         Importer.class)));
                 } else if (method.isAnnotationPresent(Exporter.class)) {
                     var serviceInfo = createPrototype(name, method.getAnnotation(Exporter.class));
                     var schema = ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
                     schema.setAdapter(name);
-                    serviceImplementations.put(schema.getSchemaId(), createServiceImplementation(method, method.getAnnotation(
-                            Exporter.class)));
+                    serviceImplementations.put(schema.getSchemaId(), createServiceImplementation(method,
+                                                                                                 method.getAnnotation(
+                                                                                                         Exporter.class)));
                 }
             }
 
@@ -1143,7 +1145,23 @@ public class ComponentRegistry {
         private ServiceImplementation createServiceImplementation(Method method, Annotation annotation) {
             ServiceImplementation ret = new ServiceImplementation();
             ret.method = method;
-            // TODO instances, reentrancy etc
+            if (!Modifier.isStatic(method.getModifiers())) {
+                if (this.threadSafe) {
+                    ret.mainClassInstance = this.implementation;
+                } else {
+                    try {
+                        for (var constructor : this.getClass().getConstructors()) {
+                            if (ret.constructor != null) {
+                                throw new KlabIllegalStateException(
+                                        name + ": adapter classes can only have one constructor");
+                            }
+                            ret.constructor = constructor;
+                        }
+                    } catch (Exception e) {
+                        throw new KlabInternalErrorException(e);
+                    }
+                }
+            }
             return ret;
         }
     }
