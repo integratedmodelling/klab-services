@@ -54,6 +54,7 @@ import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.internal.ObservableBuilder;
 import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
+import org.integratedmodelling.klab.services.reasoner.owl.OWLMetadata;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.Vocabulary;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -2018,7 +2019,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
          * basic attributes subjective deniable internal uni/bidirectional
          * (relationship)
          */
-        if (concept.isAbstract()) {
+        if (concept.isAbstract() || concept.getNamespace().equals(CoreOntology.CORE_ONTOLOGY_NAME)) {
             ontology.add(Axiom.AnnotationAssertion(mainId, CoreOntology.NS.IS_ABSTRACT, "true"));
         }
 

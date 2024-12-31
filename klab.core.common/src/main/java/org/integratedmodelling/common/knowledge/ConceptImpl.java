@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.knowledge;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -16,6 +17,7 @@ import org.springframework.util.StringUtils;
 
 public class ConceptImpl implements Concept {
 
+    @Serial
     private static final long serialVersionUID = -6871573029225503370L;
 
     private long id;

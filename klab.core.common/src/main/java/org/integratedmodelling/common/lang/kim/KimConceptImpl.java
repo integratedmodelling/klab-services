@@ -295,9 +295,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         this.roles = roles;
     }
 
-//    public void setTemplate(boolean template) {
-//        this.template = template;
-//    }
+    //    public void setTemplate(boolean template) {
+    //        this.template = template;
+    //    }
 
     public void setNegated(boolean negated) {
         this.negated = negated;
@@ -384,9 +384,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
                 case COMPRESENT:
                     ret.compresent = null;
                     break;
-//                case CONTEXT:
-//                    ret.context = null;
-//                    break;
+                //                case CONTEXT:
+                //                    ret.context = null;
+                //                    break;
                 case COOCCURRENT:
                     ret.cooccurrent = null;
                     break;
@@ -440,9 +440,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
                 case COMPRESENT:
                     ret.compresent = null;
                     break;
-//                case CONTEXT:
-//                    ret.context = null;
-//                    break;
+                //                case CONTEXT:
+                //                    ret.context = null;
+                //                    break;
                 case COOCCURRENT:
                     ret.cooccurrent = null;
                     break;
@@ -507,44 +507,47 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         boolean ccomplex = false;
 
         for (KimConcept trait : traits) {
-            concepts.append((concepts.isEmpty()) ? "" : " ").append(parenthesize(((KimConceptImpl) trait).computeUrn()));
+            concepts.append((concepts.isEmpty()) ? "" : " ").append(
+                    parenthesize(((KimConceptImpl) trait).computeUrn()));
             ccomplex = true;
         }
 
         for (KimConcept role : roles) {
-            concepts.append((concepts.isEmpty()) ? "" : " ").append(parenthesize(((KimConceptImpl) role).computeUrn()));
+            concepts.append((concepts.isEmpty()) ? "" : " ").append(
+                    parenthesize(((KimConceptImpl) role).computeUrn()));
             ccomplex = true;
         }
 
-//        for (KimConcept conc : unclassified) {
-//            concepts += (concepts.isEmpty() ? "" : " ") + conc;
-//            ccomplex = true;
-//        }
+        //        for (KimConcept conc : unclassified) {
+        //            concepts += (concepts.isEmpty() ? "" : " ") + conc;
+        //            ccomplex = true;
+        //        }
 
-        concepts.append((concepts.isEmpty()) ? "" : " ").append(name == null ?
-                                                                ((KimConceptImpl) observable).computeUrn() : name);
-
-        ret += (ret.isEmpty() ? "" : " ") + (ccomplex ? "(" : "") + concepts + (ccomplex ? ")" : "");
+        concepts.append((concepts.isEmpty()) ? "" : " ").append(
+                name == null ? ((KimConceptImpl) observable).computeUrn() : name);
+        var needsParentheses = ccomplex && !ret.equals("each");
+        ret += (ret.isEmpty() ? "" : " ") + (needsParentheses ? "(" : "") + concepts + (needsParentheses ?
+                                                                                        ")" : "");
 
         if (comparisonConcept != null) {
             ret += " " + semanticModifier.declaration[1] + " " + ((KimConceptImpl) comparisonConcept).computeUrn();
             complex = true;
         }
 
-//		if (authority != null) {
-//			ret += " identified as " + stringify(authorityTerm) + " by " + authority;
-//			complex = true;
-//		}
+        //		if (authority != null) {
+        //			ret += " identified as " + stringify(authorityTerm) + " by " + authority;
+        //			complex = true;
+        //		}
 
         if (inherent != null) {
             ret += " of " + ((KimConceptImpl) inherent).computeUrn();
             complex = true;
         }
 
-//        if (context != null) {
-//            ret += " within " + ((KimConceptImpl) context).computeUrn();
-//            complex = true;
-//        }
+        //        if (context != null) {
+        //            ret += " within " + ((KimConceptImpl) context).computeUrn();
+        //            complex = true;
+        //        }
 
         if (causant != null) {
             ret += " caused by " + ((KimConceptImpl) causant).computeUrn();
@@ -600,33 +603,17 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     }
 
     /**
-     * Add parentheses around a declaration unless it is already enclosed in parentheses.
+     * Add parentheses around a declaration unless it is already enclosed in parentheses or it is a single
+     * concept.
      *
      * @param ret
      * @return
      */
     private static String parenthesize(String ret) {
-
-        int firstOpening = -1;
-        int lastClosing = -1;
-        int level = 0;
-        for (int i = 0; i < ret.length(); i++) {
-            if (ret.charAt(i) == '(') {
-                if (level == 0) {
-                    firstOpening = i;
-                }
-                level++;
-            } else if (ret.charAt(i) == ')') {
-                level--;
-                if (level == 0) {
-                    lastClosing = i;
-                }
-            }
-        }
-
-        boolean enclosed = firstOpening == 0 && lastClosing == ret.length() - 1;
-
-        return enclosed ? ret : ("(" + ret + ")");
+        ret = ret.trim();
+        boolean enclosed = ret.startsWith("(") && ret.endsWith(")");
+        boolean trivial = !ret.trim().contains(" ");
+        return (enclosed || trivial) ? ret : ("(" + ret + ")");
     }
 
     private String stringify(String term) {
@@ -639,8 +626,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
         // stringify anything that's not a lowercase ID
         for (int i = 0; i < term.length(); i++) {
-            if (Character.isWhitespace(term.charAt(i)) || !(Character.isLetter(term.charAt(i))
-                    || Character.isDigit(term.charAt(i)) || term.charAt(i) == '_')) {
+            if (Character.isWhitespace(term.charAt(i)) || !(Character.isLetter(
+                    term.charAt(i)) || Character.isDigit(term.charAt(i)) || term.charAt(i) == '_')) {
                 ws = true;
                 break;
             }
@@ -666,12 +653,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
         KimConceptImpl other = (KimConceptImpl) obj;
         return Objects.equals(urn, other.urn);
     }
@@ -720,7 +704,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         }
 
         if (authority != null) {
-//            visitor.visitAuthority(authority, authorityTerm);
+            //            visitor.visitAuthority(authority, authorityTerm);
         }
 
         for (KimConcept trait : traits) {
