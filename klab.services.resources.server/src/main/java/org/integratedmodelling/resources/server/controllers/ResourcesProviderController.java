@@ -50,250 +50,354 @@ import java.util.List;
 @Tag(name = "Resources service core API")
 public class ResourcesProviderController {
 
-    @Autowired
-    private ResourcesServer resourcesServer;
+  @Autowired private ResourcesServer resourcesServer;
 
-    @Autowired
-    private ServiceAuthorizationManager authenticationManager;
+  @Autowired private ServiceAuthorizationManager authenticationManager;
 
-    /**
-     * Retrieve all the knowledge included in one or more projects. The return set contains all needed
-     * documnents with their versions, in order of dependency.
-     *
-     * @param projects
-     * @param principal
-     * @return the resources to load to ingest the knowledge included in the requested projects
-     */
-    @GetMapping(ServicesAPI.RESOURCES.PROJECTS)
-    public @ResponseBody List<ResourceSet> getProjects(@RequestParam Collection<String> projects,
-                                                       Principal principal) {
-        return resourcesServer.klabService().projects(projects,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  /**
+   * Retrieve all the knowledge included in one or more projects. The return set contains all needed
+   * documnents with their versions, in order of dependency.
+   *
+   * @param projects
+   * @param principal
+   * @return the resources to load to ingest the knowledge included in the requested projects
+   */
+  @GetMapping(ServicesAPI.RESOURCES.PROJECTS)
+  public @ResponseBody List<ResourceSet> getProjects(
+      @RequestParam Collection<String> projects, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .projects(
+            projects,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.PROJECT)
-    public @ResponseBody Project getProject(@PathVariable("projectName") String projectName,
-                                            Principal principal) {
-        return resourcesServer.klabService().resolveProject(projectName,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.PROJECT)
+  public @ResponseBody Project getProject(
+      @PathVariable("projectName") String projectName, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .resolveProject(
+            projectName,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.MODEL)
-    public @ResponseBody ResourceSet getModel(@PathVariable("modelName") String modelName,
-                                              Principal principal) {
-        return resourcesServer.klabService().model(modelName,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.MODEL)
+  public @ResponseBody ResourceSet getModel(
+      @PathVariable("modelName") String modelName, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .model(
+            modelName,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOLVE_URN)
-    public @ResponseBody ResourceSet resolve(@PathVariable("urn") String urn, Principal principal) {
-        return resourcesServer.klabService().resolve(urn,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_URN)
+  public @ResponseBody ResourceSet resolve(@PathVariable("urn") String urn, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .resolve(
+            urn,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOLVE_NAMESPACE_URN)
-    public @ResponseBody KimNamespace resolveNamespace(@PathVariable("urn") String urn, Principal principal) {
-        return resourcesServer.klabService().resolveNamespace(urn,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_NAMESPACE_URN)
+  public @ResponseBody KimNamespace resolveNamespace(
+      @PathVariable("urn") String urn, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .resolveNamespace(
+            urn,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOLVE_ONTOLOGY_URN)
-    public @ResponseBody KimOntology resolveOntology(@PathVariable("urn") String urn, Principal principal) {
-        return resourcesServer.klabService().resolveOntology(urn,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_ONTOLOGY_URN)
+  public @ResponseBody KimOntology resolveOntology(
+      @PathVariable("urn") String urn, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .resolveOntology(
+            urn,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN)
-    public @ResponseBody KimObservationStrategyDocument resolveObservationStrategyDocument(@PathVariable(
-            "urn") String urn, Principal principal) {
-        return resourcesServer.klabService().resolveObservationStrategyDocument(urn,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN)
+  public @ResponseBody KimObservationStrategyDocument resolveObservationStrategyDocument(
+      @PathVariable("urn") String urn, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .resolveObservationStrategyDocument(
+            urn,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.LIST_WORKSPACES)
-    public @ResponseBody Collection<Workspace> listWorkspaces() {
-        return resourcesServer.klabService().listWorkspaces();
-    }
+  @GetMapping(ServicesAPI.RESOURCES.LIST_WORKSPACES)
+  public @ResponseBody Collection<Workspace> listWorkspaces() {
+    return resourcesServer.klabService().listWorkspaces();
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOLVE_BEHAVIOR_URN)
-    public @ResponseBody KActorsBehavior resolveBehavior(@PathVariable("urn") String urn,
-                                                         Principal principal) {
-        return resourcesServer.klabService().resolveBehavior(urn,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_BEHAVIOR_URN)
+  public @ResponseBody KActorsBehavior resolveBehavior(
+      @PathVariable("urn") String urn, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .resolveBehavior(
+            urn,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    /**
-     * TODO this should be just RESOURCE and take all methods for the various CRUD ops:
-     *      GET for data relative to the resource including status and main content;
-     *      POST for contextualization with a ResolutionRequest;
-     *      PUT to create new;
-     *      PATCH to update;
-     *      DELETE to delete.
-     *
-     * @param urn
-     * @param principal
-     * @return
-     */
-    @GetMapping(ServicesAPI.RESOURCES.RESOURCE)
-    public @ResponseBody Resource resolveResource(@PathVariable("urn") String urn, Principal principal) {
-        return resourcesServer.klabService().resolveResource(urn,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  /**
+   * TODO this should be just RESOURCE and take all methods for the various CRUD ops: GET for data
+   * relative to the resource including status and main content; POST for contextualization with a
+   * ResolutionRequest; PUT to create new; PATCH to update; DELETE to delete.
+   *
+   * @param urn
+   * @param principal
+   * @return
+   */
+  @GetMapping(ServicesAPI.RESOURCES.RESOURCE)
+  public @ResponseBody Resource resolveResource(
+      @PathVariable("urn") String urn, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .resolveResource(
+            urn,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOLVE_WORKSPACE_URN)
-    public @ResponseBody Workspace resolveWorkspace(@PathVariable("urn") String urn, Principal principal) {
-        return resourcesServer.klabService().resolveWorkspace(urn,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_WORKSPACE_URN)
+  public @ResponseBody Workspace resolveWorkspace(
+      @PathVariable("urn") String urn, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .resolveWorkspace(
+            urn,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOLVE_SERVICE_CALL)
-    public @ResponseBody ResourceSet resolveServiceCall(@PathVariable("name") String name,
-                                                        @PathVariable(value = "version", required = false) String version,
-                                                        Principal principal) {
-        Version v = version == null ? null : Version.create(version);
-        return resourcesServer.klabService().resolveServiceCall(name, v,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_SERVICE_CALL)
+  public @ResponseBody ResourceSet resolveServiceCall(
+      @PathVariable("name") String name,
+      @PathVariable(value = "version", required = false) String version,
+      Principal principal) {
+    Version v = version == null ? null : Version.create(version);
+    return resourcesServer
+        .klabService()
+        .resolveServiceCall(
+            name,
+            v,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOURCE_STATUS)
-    public @ResponseBody ResourceStatus resourceStatus(@PathVariable("urn") String urn, Principal principal) {
-        return resourcesServer.klabService().resourceStatus(urn,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.RESOURCE_STATUS)
+  public @ResponseBody ResourceStatus resourceStatus(
+      @PathVariable("urn") String urn, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .resourceStatus(
+            urn,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOLVE_OBSERVABLE)
-    public @ResponseBody KimObservable resolveObservable(@RequestParam("definition") String definition) {
-        return resourcesServer.klabService().resolveObservable(definition);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_OBSERVABLE)
+  public @ResponseBody KimObservable resolveObservable(
+      @RequestParam("definition") String definition) {
+    return resourcesServer.klabService().resolveObservable(definition);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.DESCRIBE_CONCEPT)
-    public @ResponseBody KimConcept.Descriptor describeConcept(@PathVariable("conceptUrn") String conceptUrn) {
-        return resourcesServer.klabService().describeConcept(conceptUrn);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.DESCRIBE_CONCEPT)
+  public @ResponseBody KimConcept.Descriptor describeConcept(
+      @PathVariable("conceptUrn") String conceptUrn) {
+    return resourcesServer.klabService().describeConcept(conceptUrn);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOLVE_CONCEPT)
-    public @ResponseBody KimConcept resolveConcept(@PathVariable("definition") String definition) {
-        return resourcesServer.klabService().resolveConcept(definition);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_CONCEPT)
+  public @ResponseBody KimConcept resolveConcept(@PathVariable("definition") String definition) {
+    return resourcesServer.klabService().resolveConcept(definition);
+  }
 
-    /**
-     * This one creates the DataRequest from the binary input stream coming from the client. The request may
-     * include input data in an {@link org.integratedmodelling.klab.common.data.Instance} field.
-     *
-     * @param requestStream
-     * @param response
-     * @param principal
-     */
-    @PostMapping(value = ServicesAPI.RESOURCES.CONTEXTUALIZE, consumes =
-            MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public void contextualize(InputStream requestStream, HttpServletResponse response, Principal principal) {
+  /**
+   * This one creates the DataRequest from the binary input stream coming from the client. The
+   * request may include input data in an {@link org.integratedmodelling.klab.common.data.Instance}
+   * field.
+   *
+   * @param requestStream
+   * @param response
+   * @param principal
+   */
+  @PostMapping(
+      value = ServicesAPI.RESOURCES.CONTEXTUALIZE,
+      consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+  public void contextualize(
+      InputStream requestStream, HttpServletResponse response, Principal principal) {
 
-        if (principal instanceof EngineAuthorization authorization) {
+    if (principal instanceof EngineAuthorization authorization) {
 
-            try {
-                var decoder = DecoderFactory.get().binaryDecoder(requestStream, null);
-                var reader = new SpecificDatumReader<>(DataRequest.class);
-                var request = reader.read(null, decoder);
-                var scope = authorization.getScope();
-                var resource =
-                        resourcesServer.klabService().resolveResource(request.getResourceUrn().toString(),
-                                scope);
+      try {
+        var decoder = DecoderFactory.get().binaryDecoder(requestStream, null);
+        var reader = new SpecificDatumReader<>(DataRequest.class);
+        var request = reader.read(null, decoder);
+        var scope = authorization.getScope();
+        var resource =
+            resourcesServer
+                .klabService()
+                .resolveResource(request.getResourceUrn().toString(), scope);
 
-                Data input = null;
-                if (request.getInputData() != null) {
-                    input = new DataImpl(request.getInputData());
-                }
-
-                var data = resourcesServer.klabService().contextualize(resource,
-                        GeometryRepository.INSTANCE.get(request.getGeometry().toString(), Geometry.class),
-                        input, scope);
-
-                if (data instanceof DataImpl dataImpl) {
-                    try {
-                        var output = response.getOutputStream();
-                        dataImpl.copyTo(output);
-                        output.flush();
-                        return;
-                    } catch (Throwable t) {
-                        throw new KlabResourceAccessException(t);
-                    }
-                }
-            } catch (IOException e) {
-                throw new KlabIOException(e);
-            }
-
+        Data input = null;
+        if (request.getInputData() != null) {
+          input = new DataImpl(request.getInputData());
         }
 
-        throw new KlabIllegalStateException("Resource contextualizer: found unexpected implementations");
+        var data =
+            resourcesServer
+                .klabService()
+                .contextualize(
+                    resource,
+                    GeometryRepository.INSTANCE.get(
+                        request.getGeometry().toString(), Geometry.class),
+                    input,
+                    scope);
+
+        if (data instanceof DataImpl dataImpl) {
+          try {
+            var output = response.getOutputStream();
+            dataImpl.copyTo(output);
+            output.flush();
+            return;
+          } catch (Throwable t) {
+            throw new KlabResourceAccessException(t);
+          }
+        }
+      } catch (IOException e) {
+        throw new KlabIOException(e);
+      }
     }
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOLVE_DATAFLOW_URN)
-    public @ResponseBody KimObservationStrategyDocument resolveDataflow(@PathVariable("urn") String urn,
-                                                                        Principal principal) {
-        return resourcesServer.klabService().resolveDataflow(urn,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+    throw new KlabIllegalStateException(
+        "Resource contextualizer: found unexpected implementations");
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.GET_WORLDVIEW)
-    public @ResponseBody Worldview getWorldview() {
-        return resourcesServer.klabService().getWorldview();
-    }
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_DATAFLOW_URN)
+  public @ResponseBody KimObservationStrategyDocument resolveDataflow(
+      @PathVariable("urn") String urn, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .resolveDataflow(
+            urn,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.DEPENDENTS)
-    public @ResponseBody List<KimNamespace> dependents(@PathVariable("namespaceId") String namespaceId) {
-        return resourcesServer.klabService().dependents(namespaceId);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.GET_WORLDVIEW)
+  public @ResponseBody Worldview getWorldview() {
+    return resourcesServer.klabService().getWorldview();
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.PRECURSORS)
-    public List<KimNamespace> precursors(@PathVariable("namespaceId") String namespaceId) {
-        return resourcesServer.klabService().precursors(namespaceId);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.DEPENDENTS)
+  public @ResponseBody List<KimNamespace> dependents(
+      @PathVariable("namespaceId") String namespaceId) {
+    return resourcesServer.klabService().dependents(namespaceId);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.QUERY_RESOURCES)
-    public List<String> queryResources(@RequestParam("urnPattern") String urnPattern,
-                                       @RequestParam("resourceTypes") KlabAsset.KnowledgeClass... resourceTypes) {
-        return resourcesServer.klabService().queryResources(urnPattern, resourceTypes);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.PRECURSORS)
+  public List<KimNamespace> precursors(@PathVariable("namespaceId") String namespaceId) {
+    return resourcesServer.klabService().precursors(namespaceId);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOLVE_PROJECT)
-    public @ResponseBody Project resolveProject(@PathVariable("projectName") String projectName,
-                                                Principal principal) {
-        return resourcesServer.klabService().resolveProject(projectName,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.QUERY_RESOURCES)
+  public List<String> queryResources(
+      @RequestParam("urnPattern") String urnPattern,
+      @RequestParam("resourceTypes") KlabAsset.KnowledgeClass... resourceTypes) {
+    return resourcesServer.klabService().queryResources(urnPattern, resourceTypes);
+  }
 
-    // FIXME use POST and a ResolutionRequest
-    @PostMapping(ServicesAPI.RESOURCES.QUERY_MODELS)
-    public @ResponseBody ResourceSet queryModels(@RequestBody ResolutionRequest request,
-                                                 Principal principal) {
-        return resourcesServer.klabService().queryModels(request.getObservable(),
-                principal instanceof EngineAuthorization authorization ?
-                authorization.getScope(ContextScope.class)
-                             .withResolutionConstraints(request.getResolutionConstraints().toArray(new ResolutionConstraint[0])) : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_PROJECT)
+  public @ResponseBody Project resolveProject(
+      @PathVariable("projectName") String projectName, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .resolveProject(
+            projectName,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.MODEL_GEOMETRY)
-    public @ResponseBody Coverage modelGeometry(@PathVariable("modelUrn") String modelUrn) {
-        return resourcesServer.klabService().modelGeometry(modelUrn);
-    }
+  // FIXME use POST and a ResolutionRequest
+  @PostMapping(ServicesAPI.RESOURCES.QUERY_MODELS)
+  public @ResponseBody ResourceSet queryModels(
+      @RequestBody ResolutionRequest request, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .queryModels(
+            request.getObservable(),
+            principal instanceof EngineAuthorization authorization
+                ? authorization
+                    .getScope(ContextScope.class)
+                    .withResolutionConstraints(
+                        request.getResolutionConstraints().toArray(new ResolutionConstraint[0]))
+                : null);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.READ_BEHAVIOR)
-    public @ResponseBody KActorsBehavior readBehavior(@RequestParam("url") URL url) {
-        return resourcesServer.klabService().readBehavior(url);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.MODEL_GEOMETRY)
+  public @ResponseBody Coverage modelGeometry(@PathVariable("modelUrn") String modelUrn) {
+    return resourcesServer.klabService().modelGeometry(modelUrn);
+  }
 
-    @GetMapping(ServicesAPI.RESOURCES.RESOURCE_RIGHTS)
-    public ResourcePrivileges getResourceRights(@PathVariable("urn") String urn, Principal principal) {
-        return resourcesServer.klabService().getRights(urn,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.READ_BEHAVIOR)
+  public @ResponseBody KActorsBehavior readBehavior(@RequestParam("url") URL url) {
+    return resourcesServer.klabService().readBehavior(url);
+  }
 
-    @PutMapping(ServicesAPI.RESOURCES.RESOURCE_RIGHTS)
-    public boolean setResourceRights(@PathVariable("urn") String urn,
-                                     @RequestBody ResourcePrivileges resourcePrivileges,
-                                     Principal principal) {
-        return resourcesServer.klabService().setRights(urn, resourcePrivileges,
-                principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
-    }
+  @GetMapping(ServicesAPI.RESOURCES.RESOURCE_RIGHTS)
+  public ResourcePrivileges getResourceRights(
+      @PathVariable("urn") String urn, Principal principal) {
+    return resourcesServer
+        .klabService()
+        .getRights(
+            urn,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 
+  @PutMapping(ServicesAPI.RESOURCES.RESOURCE_RIGHTS)
+  public boolean setResourceRights(
+      @PathVariable("urn") String urn,
+      @RequestBody ResourcePrivileges resourcePrivileges,
+      Principal principal) {
+    return resourcesServer
+        .klabService()
+        .setRights(
+            urn,
+            resourcePrivileges,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
 }

@@ -18,9 +18,12 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * Match two concept using one as a syntactic pattern for the other. Used in the rule system to
- * filter resolution strategies.
+ * filter resolution strategies. Compared with {@link SemanticMatcher} this one requires the
+ * linguistic "pattern" to be the same, so it may fail when semantic matching succeeds. Used to
+ * recognize and decompose expressions, for example when selecting resolution strategies.
  *
- * <p>Keeps syntactic objects in a cache to minimize traffic to the resources service.
+ * <p>Keeps syntactic objects and results in a cache to minimize traffic to the resources service.
+ * Reasoner clients should also provide adequate caching of results for the same reason.
  */
 public class SyntacticMatcher {
 

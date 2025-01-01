@@ -4,6 +4,8 @@ import org.integratedmodelling.cli.KlabCLI;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -152,6 +154,8 @@ public class CLIReasonerView {
       var reasoner = ctx.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
       var observable = reasoner.resolveObservable(urn);
 
+      var geom = geometry == null ? null : Geometry.create(geometry);
+
       if (observable == null) {
         err.println(
             CommandLine.Help.Ansi.AUTO.string(
@@ -169,6 +173,10 @@ public class CLIReasonerView {
         observable = observable.builder(ctx).as(DescriptionType.ACKNOWLEDGEMENT).build();
       }
 
+      var observation =
+          DigitalTwin.createObservation(
+              KlabCLI.INSTANCE.modeler().getCurrentScope(), observable, geometry);
+
       out.println(
           CommandLine.Help.Ansi.AUTO.string(
               "Observation strategies for @|bold "
@@ -176,11 +184,12 @@ public class CLIReasonerView {
                   + "|@ of @|green "
                   + observable.getUrn()
                   + "|@:"));
-      //            for (var strategy : reasoner.inferStrategies(observable, ctx)) {
-      //                out.println(Utils.Strings.indent(strategy.toString(),
-      //                        Utils.Strings.fillUpLeftAligned(strategy.getCost() + ".",
-      //                                " ", 4)));
-      //            }
+      for (var strategy : reasoner.computeObservationStrategies(observation, ctx)) {
+        out.println(
+            Utils.Strings.indent(
+                strategy.toString(),
+                Utils.Strings.fillUpLeftAligned(strategy.getRank() + ".", " ", 4)));
+      }
     }
   }
 

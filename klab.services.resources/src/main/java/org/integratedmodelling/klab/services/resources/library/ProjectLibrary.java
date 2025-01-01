@@ -10,8 +10,10 @@ import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.services.base.BaseService;
 
-@Library(name = "project", description = "Import and export of k.IM projects", version =
-        Version.CURRENT)
+@Library(
+    name = "project",
+    description = "Import and export of k.IM projects",
+    version = Version.CURRENT)
 public class ProjectLibrary {
 
     @Importer(schema = "git", knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,

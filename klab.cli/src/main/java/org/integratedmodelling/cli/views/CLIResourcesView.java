@@ -1,20 +1,16 @@
 package org.integratedmodelling.cli.views;
 
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import org.integratedmodelling.cli.KlabCLI;
-import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.ResourcesNavigatorController;
 import picocli.CommandLine;
-
-import java.io.File;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 
 @CommandLine.Command(
     name = "resources",

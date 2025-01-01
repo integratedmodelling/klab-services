@@ -27,35 +27,35 @@ import java.util.List;
 @Secured(Role.ADMINISTRATOR)
 public class AdminController implements ServicesAPI.REASONER.ADMIN {
 
-    @Autowired
-    private ReasonerServer reasoner;
+  @Autowired private ReasonerServer reasoner;
 
-    @PostMapping(LOAD_KNOWLEDGE)
-    public @ResponseBody ResourceSet loadKnowledge(@RequestBody Worldview resources, Principal principal) {
-        if (principal instanceof EngineAuthorization authorization) {
-            var userScope = authorization.getScope(UserScope.class);
-            return reasoner.klabService().loadKnowledge(resources, userScope);
-        }
-        return ResourceSet.empty();
+  @PostMapping(LOAD_KNOWLEDGE)
+  public @ResponseBody ResourceSet loadKnowledge(
+      @RequestBody Worldview resources, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var userScope = authorization.getScope(UserScope.class);
+      return reasoner.klabService().loadKnowledge(resources, userScope);
     }
+    return ResourceSet.empty();
+  }
 
-    @PostMapping(UPDATE_KNOWLEDGE)
-    public @ResponseBody ResourceSet loadKnowledge(@RequestBody ResourceSet changes, Principal principal) {
-        if (principal instanceof EngineAuthorization authorization) {
-            var userScope = authorization.getScope(UserScope.class);
-            return reasoner.klabService().updateKnowledge(changes, userScope);
-        }
-        return ResourceSet.empty();
+  @PostMapping(UPDATE_KNOWLEDGE)
+  public @ResponseBody ResourceSet loadKnowledge(
+      @RequestBody ResourceSet changes, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var userScope = authorization.getScope(UserScope.class);
+      return reasoner.klabService().updateKnowledge(changes, userScope);
     }
+    return ResourceSet.empty();
+  }
 
-    @PostMapping(DEFINE_CONCEPT)
-    public @ResponseBody Concept defineConcept(@RequestBody KimConceptStatement statement, Principal principal) {
-        if (principal instanceof EngineAuthorization authorization) {
-            var userScope = authorization.getScope(UserScope.class);
-            return reasoner.klabService().defineConcept(statement, userScope);
-        }
-        return null;
+  @PostMapping(DEFINE_CONCEPT)
+  public @ResponseBody Concept defineConcept(
+      @RequestBody KimConceptStatement statement, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var userScope = authorization.getScope(UserScope.class);
+      return reasoner.klabService().defineConcept(statement, userScope);
     }
-
-
+    return null;
+  }
 }

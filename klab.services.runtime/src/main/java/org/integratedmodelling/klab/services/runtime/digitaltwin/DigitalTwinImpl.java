@@ -15,46 +15,45 @@ import org.integratedmodelling.klab.runtime.storage.StateStorageImpl;
 
 public class DigitalTwinImpl implements DigitalTwin {
 
-    KnowledgeGraph knowledgeGraph;
-    StateStorage stateStorage;
-    ContextScope rootScope;
+  KnowledgeGraph knowledgeGraph;
+  StateStorage stateStorage;
+  ContextScope rootScope;
 
-    public DigitalTwinImpl(RuntimeService service, ContextScope scope, KnowledgeGraph database) {
-        this.rootScope = scope;
-        this.knowledgeGraph = database.contextualize(scope);
-        this.stateStorage = new StateStorageImpl(service, scope);
-    }
+  public DigitalTwinImpl(RuntimeService service, ContextScope scope, KnowledgeGraph database) {
+    this.rootScope = scope;
+    this.knowledgeGraph = database.contextualize(scope);
+    this.stateStorage = new StateStorageImpl(service, scope);
+  }
 
-    @Override
-    public KnowledgeGraph knowledgeGraph() {
-        return this.knowledgeGraph;
-    }
+  @Override
+  public KnowledgeGraph knowledgeGraph() {
+    return this.knowledgeGraph;
+  }
 
-    @Override
-    public StateStorage stateStorage() {
-        return this.stateStorage;
-    }
+  @Override
+  public StateStorage stateStorage() {
+    return this.stateStorage;
+  }
 
-    @Override
-    public boolean ingest(Data data, Observation target) {
-        // TODO
-        return false;
-    }
+  @Override
+  public boolean ingest(Data data, Observation target) {
+    // TODO
+    return false;
+  }
 
-    @Override
-    public Provenance getProvenanceGraph(ContextScope context) {
-        return new ProvenanceGraph(this.knowledgeGraph, this.rootScope);
-    }
+  @Override
+  public Provenance getProvenanceGraph(ContextScope context) {
+    return new ProvenanceGraph(this.knowledgeGraph, this.rootScope);
+  }
 
-    @Override
-    public Dataflow<Observation> getDataflowGraph(ContextScope context) {
-        return new DataflowGraph(this.knowledgeGraph, this.rootScope);
-    }
+  @Override
+  public Dataflow<Observation> getDataflowGraph(ContextScope context) {
+    return new DataflowGraph(this.knowledgeGraph, this.rootScope);
+  }
 
-    @Override
-    public void dispose() {
-        this.knowledgeGraph.deleteContext();
-        this.stateStorage.clear();
-    }
-
+  @Override
+  public void dispose() {
+    this.knowledgeGraph.deleteContext();
+    this.stateStorage.clear();
+  }
 }

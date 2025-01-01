@@ -112,7 +112,7 @@ public class ModelReference {
 	private int maxTimeScaleFactor = Time.MAX_SCALE_RANK;
 	private int priority = 0;
 	private boolean specializedObservable = false;
-	private ResourcePrivileges permissions = ResourcePrivileges.PUBLIC; // TODO these must come from the service
+	private ResourcePrivileges permissions = ResourcePrivileges.PUBLIC;
 	private Version version;
 
 	transient private Concept observableConcept;

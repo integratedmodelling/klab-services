@@ -15,37 +15,34 @@ import org.neo4j.driver.ExecutableQuery;
 import java.net.URL;
 import java.util.List;
 
-public class KnowledgeGraphNeo4JRAM  extends KnowledgeGraphNeo4j implements KnowledgeGraph {
+public class KnowledgeGraphNeo4JRAM extends KnowledgeGraphNeo4j implements KnowledgeGraph {
 
-    @Override
-    public KnowledgeGraph contextualize(ContextScope scope) {
-        return null;
-    }
+  @Override
+  public KnowledgeGraph contextualize(ContextScope scope) {
+    return null;
+  }
 
-    @Override
-    public <T extends RuntimeAsset> T get(long id, Class<T> resultClass) {
-        return null;
-    }
+  @Override
+  public <T extends RuntimeAsset> T get(long id, Class<T> resultClass) {
+    return null;
+  }
 
-    @Override
-    public <T extends RuntimeAsset> List<T> get(RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
-        return List.of();
-    }
+  @Override
+  public <T extends RuntimeAsset> List<T> get(
+      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
+    return List.of();
+  }
 
-    @Override
-    public KnowledgeGraph merge(URL remoteDigitalTwinURL) {
-        return null;
-    }
+  @Override
+  public KnowledgeGraph merge(URL remoteDigitalTwinURL) {
+    return null;
+  }
 
-    @Override
-    public boolean isOnline() {
-        return false;
-    }
+  @Override
+  public boolean isOnline() {
+    return false;
+  }
 
-
-    @Override
-    public void shutdown() {
-
-    }
-
+  @Override
+  public void shutdown() {}
 }

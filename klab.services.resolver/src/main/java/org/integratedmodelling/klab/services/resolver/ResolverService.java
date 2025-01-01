@@ -46,363 +46,387 @@ import java.util.function.Function;
 
 public class ResolverService extends BaseService implements Resolver {
 
-    private static final String RESOLUTION_GRAPH_KEY = "__RESOLUTION_GRAPH__";
-    /**
-     * FIXME this should be modifiable at the scope level
+  private static final String RESOLUTION_GRAPH_KEY = "__RESOLUTION_GRAPH__";
+
+  /** FIXME this should be modifiable at the scope level */
+  private static double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
+
+  private final String hardwareSignature = Utils.Names.getHardwareId();
+  private ResolverConfiguration configuration;
+  private final ResolutionCompiler resolutionCompiler = new ResolutionCompiler(this);
+
+  public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
+    super(scope, Type.RESOLVER, options);
+    //        setProvideScopesAutomatically(true);
+    ServiceConfiguration.INSTANCE.setMainService(this);
+    readConfiguration(options);
+    //        // FIXME switch this to use the ingest() mechanism
+    //        KnowledgeRepository.INSTANCE.setProcessor(KlabAsset.KnowledgeClass.NAMESPACE,
+    //                (ns) -> loadNamespace((KimNamespace) ns, scope));
+  }
+
+  @Override
+  protected <T extends KlabAsset> List<T> ingestResources(
+      ResourceSet resourceSet, Scope scope, Class<T> resultClass) {
+
+    List<T> ret = new ArrayList<>();
+
+    final Function<KlabAsset, List<KlabAsset>> namespaceTranslator =
+        (namespace) -> {
+          if (namespace instanceof KimNamespace kimNamespace) {
+            List<KlabAsset> mods = new ArrayList<>();
+            kimNamespace.getStatements().stream()
+                .filter(statement -> statement instanceof KimModel kimModel)
+                .forEach(kimModel -> mods.add(loadModel((KimModel) kimModel, scope)));
+            return mods;
+          }
+          return List.of();
+        };
+
+    return KnowledgeRepository.INSTANCE.ingest(
+        resourceSet,
+        scope,
+        resultClass,
+        Pair.of(KlabAsset.KnowledgeClass.NAMESPACE, namespaceTranslator));
+  }
+
+  private void readConfiguration(ServiceStartupOptions options) {
+    File config = BaseService.getFileInConfigurationDirectory(options, "resolver.yaml");
+    if (config.exists() && config.length() > 0 && !options.isClean()) {
+      this.configuration = Utils.YAML.load(config, ResolverConfiguration.class);
+    } else {
+      // make an empty config
+      this.configuration = new ResolverConfiguration();
+      this.configuration.setServiceId(UUID.randomUUID().toString());
+      // TODO anything else we need
+      saveConfiguration();
+    }
+  }
+
+  private void saveConfiguration() {
+    File config = BaseService.getFileInConfigurationDirectory(startupOptions, "resolver.yaml");
+    org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
+  }
+
+  @Override
+  public boolean shutdown() {
+
+    serviceScope()
+        .send(
+            Message.MessageClass.ServiceLifecycle,
+            Message.MessageType.ServiceUnavailable,
+            capabilities(serviceScope()));
+
+    // TODO Auto-generated method stub
+    return super.shutdown();
+  }
+
+  @Override
+  public Capabilities capabilities(Scope scope) {
+
+    var ret = new ResolverCapabilitiesImpl();
+    ret.setLocalName(localName);
+    ret.setType(Type.RESOLVER);
+    ret.setUrl(getUrl());
+    ret.setServerId(hardwareSignature == null ? null : ("RESOLVER_" + hardwareSignature));
+    ret.setServiceId(configuration.getServiceId());
+    ret.setServiceName("Resolver");
+    ret.setBrokerURI(
+        (embeddedBroker != null && embeddedBroker.isOnline())
+            ? embeddedBroker.getURI()
+            : configuration.getBrokerURI());
+    ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
+    ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
+
+    ret.setAvailableMessagingQueues(
+        Utils.URLs.isLocalHost(getUrl())
+            ? EnumSet.of(Message.Queue.Info, Message.Queue.Errors, Message.Queue.Warnings)
+            : EnumSet.noneOf(Message.Queue.class));
+    return ret;
+  }
+
+  @Override
+  public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
+    var ret = resolutionCompiler.resolve(observation, contextScope);
+    if (!ret.isEmpty()) {
+      return new DataflowCompiler(observation, ret, contextScope).compile();
+    }
+    return Dataflow.empty(Observation.class);
+  }
+
+  @Override
+  public String serviceId() {
+    return configuration.getServiceId();
+  }
+
+  //    private <T> void loadNamespace(KimNamespace namespace, Scope scope) {
+  //
+  //        List<Knowledge> ret = new ArrayList<>();
+  //        for (KlabStatement statement : namespace.getStatements()) {
+  //            if (statement instanceof KimModel kimModel) {
+  //                var model = loadModel(kimModel, scope);
+  //                KnowledgeRepository.INSTANCE.registerAsset(model.getUrn(), model, namespace
+  //                .getVersion());
+  //            }
+  //        }
+  //    }
+
+  private Model loadModel(KimModel statement, Scope scope) {
+
+    var reasoner = scope.getService(Reasoner.class);
+
+    ModelImpl model = new ModelImpl();
+    model.getAnnotations().addAll(statement.getAnnotations()); // FIXME process annotations
+    for (KimObservable observable : statement.getObservables()) {
+      model.getObservables().add(reasoner.declareObservable(observable));
+    }
+    for (KimObservable observable : statement.getDependencies()) {
+      model.getDependencies().add(reasoner.declareObservable(observable));
+    }
+
+    // TODO learners, geometry covered etc.
+    model.setUrn(statement.getUrn());
+    model.setMetadata(
+        statement.getMetadata()); // FIXME add processed metadata with the existing symbol table
+    model.setNamespace(statement.getNamespace());
+    model.setProjectName(statement.getProjectName());
+
+    // TODO any literal value must be added first
+
+    for (var resourceUrn : statement.getResourceUrns()) {
+      // FIXME when >1 this should be one multi-resource contextualizable
+      // TODO use static builders instead of polymorphic constructors
+      model.getComputation().add(new ContextualizableImpl(resourceUrn));
+    }
+    model.getComputation().addAll(statement.getContextualization());
+
+    // FIXME use coverage from NS or model if any
+    model.setCoverage(Coverage.universal());
+
+    return model;
+  }
+
+  @Override
+  public boolean scopesAreReactive() {
+    return false;
+  }
+
+  @Override
+  public void initializeService() {
+
+    Logging.INSTANCE.setSystemIdentifier("Resolver service: ");
+
+    serviceScope()
+        .send(
+            Message.MessageClass.ServiceLifecycle,
+            Message.MessageType.ServiceInitializing,
+            capabilities(serviceScope()).toString());
+
+    /*
+     * Components
      */
-    private static double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
+    Set<String> extensionPackages = new LinkedHashSet<>();
+    extensionPackages.add("org.integratedmodelling.klab.runtime");
+    /*
+     * Check for updates, load and scan all new plug-ins, returning the main packages to scan
+     */
+    // FIXME update paths and simplify, put in BaseService
+    //        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
 
-    private final String hardwareSignature = Utils.Names.getHardwareId();
-    private ResolverConfiguration configuration;
-    private final ResolutionCompiler resolutionCompiler = new ResolutionCompiler(this);
+    /*
+     * Scan all packages registered under the parent package of all k.LAB services. TODO all
+     * assets from there should be given default permissions (or those encoded with their
+     * annotations) that are exposed to the admin API.
+     */
+    getComponentRegistry().loadExtensions(extensionPackages.toArray(new String[] {}));
 
-    public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
-        super(scope, Type.RESOLVER, options);
-        //        setProvideScopesAutomatically(true);
-        ServiceConfiguration.INSTANCE.setMainService(this);
-        readConfiguration(options);
-        //        // FIXME switch this to use the ingest() mechanism
-        //        KnowledgeRepository.INSTANCE.setProcessor(KlabAsset.KnowledgeClass.NAMESPACE,
-        //                (ns) -> loadNamespace((KimNamespace) ns, scope));
+    /**
+     * Setup an embedded broker, possibly to be shared with other services, if we're local and there
+     * is no configured broker.
+     */
+    if (Utils.URLs.isLocalHost(this.getUrl()) && this.configuration.getBrokerURI() == null) {
+      this.embeddedBroker = new EmbeddedBroker();
     }
 
-    @Override
-    protected <T extends KlabAsset> List<T> ingestResources(ResourceSet resourceSet, Scope scope,
-                                                            Class<T> resultClass) {
+    serviceScope()
+        .send(
+            Message.MessageClass.ServiceLifecycle,
+            Message.MessageType.ServiceAvailable,
+            capabilities(serviceScope()));
+  }
 
-        List<T> ret = new ArrayList<>();
+  @Override
+  public boolean operationalizeService() {
+    return true;
+  }
 
-        final Function<KlabAsset, List<KlabAsset>> namespaceTranslator =
-                (namespace) -> {
-                    if (namespace instanceof KimNamespace kimNamespace) {
-                        List<KlabAsset> mods = new ArrayList<>();
-                        kimNamespace.getStatements().stream().filter(statement -> statement instanceof KimModel kimModel).forEach(kimModel -> mods.add(loadModel((KimModel) kimModel, scope)));
-                        return mods;
-                    }
-                    return List.of();
-                };
+  @Override
+  public String encodeDataflow(Dataflow<Observation> dataflow) {
 
-        return KnowledgeRepository.INSTANCE.ingest(resourceSet, scope, resultClass, Pair.of(KlabAsset.KnowledgeClass.NAMESPACE, namespaceTranslator));
+    StringBuilder kdl = new StringBuilder(1024);
+
+    Map<String, String> resources = new HashMap<>();
+    for (Actuator actuator : dataflow.getComputation()) {
+      kdl.append("\n");
+      kdl.append(encodeActuator(actuator, 0, resources));
     }
 
-    private void readConfiguration(ServiceStartupOptions options) {
-        File config = BaseService.getFileInConfigurationDirectory(options, "resolver.yaml");
-        if (config.exists() && config.length() > 0 && !options.isClean()) {
-            this.configuration = Utils.YAML.load(config, ResolverConfiguration.class);
-        } else {
-            // make an empty config
-            this.configuration = new ResolverConfiguration();
-            this.configuration.setServiceId(UUID.randomUUID().toString());
-            // TODO anything else we need
-            saveConfiguration();
-        }
+    StringBuilder ret = new StringBuilder(2048);
+    ret.append(encodePreamble(dataflow));
+    ret.append("\n");
+    var res = encodeResources(dataflow, resources);
+    if (!res.isEmpty()) {
+      ret.append(res);
+      ret.append("\n");
     }
+    ret.append(kdl);
 
-    private void saveConfiguration() {
-        File config = BaseService.getFileInConfigurationDirectory(startupOptions, "resolver.yaml");
-        org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
-    }
-
-    @Override
-    public boolean shutdown() {
-
-        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
-                capabilities(serviceScope()));
-
-        // TODO Auto-generated method stub
-        return super.shutdown();
-    }
-
-    @Override
-    public Capabilities capabilities(Scope scope) {
-
-        var ret = new ResolverCapabilitiesImpl();
-        ret.setLocalName(localName);
-        ret.setType(Type.RESOLVER);
-        ret.setUrl(getUrl());
-        ret.setServerId(hardwareSignature == null ? null : ("RESOLVER_" + hardwareSignature));
-        ret.setServiceId(configuration.getServiceId());
-        ret.setServiceName("Resolver");
-        ret.setBrokerURI((embeddedBroker != null && embeddedBroker.isOnline()) ? embeddedBroker.getURI() :
-                         configuration.getBrokerURI());
-        ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
-        ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
-
-        ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(getUrl()) ?
-                                        EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
-                                                Message.Queue.Warnings) :
-                                        EnumSet.noneOf(Message.Queue.class));
-        return ret;
-    }
-
-    @Override
-    public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
-        var ret = resolutionCompiler.resolve(observation, contextScope);
-        if (!ret.isEmpty()) {
-            return new DataflowCompiler(observation, ret, contextScope).compile();
-        }
-        return Dataflow.empty(Observation.class);
-    }
-
-    @Override
-    public String serviceId() {
-        return configuration.getServiceId();
-    }
-
-    //    private <T> void loadNamespace(KimNamespace namespace, Scope scope) {
+    // if (offset == 0 && parentActuator == null) {
+    // ret += "@klab " + Version.CURRENT + "\n";
+    // ret += "@author 'k.LAB resolver " + creationTime + "'" + "\n";
+    // // TODO should encode coverage after the resolver.
+    // // if (coverage != null && coverage.getExtentCount() > 0) {
+    // // List<IServiceCall> scaleSpecs = ((Scale) coverage).getKimSpecification();
+    // // if (!scaleSpecs.isEmpty()) {
+    // // ret += "@coverage load_me_from_some_sidecar_file()";
+    // // ret += "\n";
+    // // }
+    // // }
+    // ret += "\n";
+    // }
     //
-    //        List<Knowledge> ret = new ArrayList<>();
-    //        for (KlabStatement statement : namespace.getStatements()) {
-    //            if (statement instanceof KimModel kimModel) {
-    //                var model = loadModel(kimModel, scope);
-    //                KnowledgeRepository.INSTANCE.registerAsset(model.getUrn(), model, namespace
-    //                .getVersion());
-    //            }
-    //        }
-    //    }
+    // Pair<IActuator, List<IActuator>> structure = getResolutionStructure();
+    //
+    // if (structure == null) {
+    // for (IActuator actuator : actuators) {
+    // ret += ((Actuator) actuator).encode(offset, null) + "\n";
+    // }
+    // return ret;
+    // }
+    //
+    // return ret + ((Actuator) structure.getFirst()).encode(0,
+    // structure.getSecond().isEmpty() ? (List<IActuator>) null : structure.getSecond());
+    return ret.toString();
+  }
 
-    private Model loadModel(KimModel statement, Scope scope) {
+  private StringBuffer encodeResources(
+      Dataflow<Observation> dataflow, Map<String, String> resources) {
+    StringBuffer ret = new StringBuffer(1024);
+    // TODO
+    return ret;
+  }
 
-        var reasoner = scope.getService(Reasoner.class);
+  private StringBuffer encodePreamble(Dataflow<Observation> dataflow) {
+    StringBuffer ret = new StringBuffer(1024);
+    ret.append("@klab " + Version.CURRENT + "\n");
+    ret.append("@author 'k.LAB resolver " + TimeInstant.create().toRFC3339String() + "'" + "\n");
+    return ret;
+  }
 
-        ModelImpl model = new ModelImpl();
-        model.getAnnotations().addAll(statement.getAnnotations()); // FIXME process annotations
-        for (KimObservable observable : statement.getObservables()) {
-            model.getObservables().add(reasoner.declareObservable(observable));
-        }
-        for (KimObservable observable : statement.getDependencies()) {
-            model.getDependencies().add(reasoner.declareObservable(observable));
-        }
+  private StringBuffer encodeActuator(
+      Actuator actuator, int offset, Map<String, String> resources) {
+    String ofs = org.integratedmodelling.common.utils.Utils.Strings.spaces(offset);
+    StringBuffer ret = new StringBuffer(1024);
 
-        // TODO learners, geometry covered etc.
-        model.setUrn(statement.getUrn());
-        model.setMetadata(
-                statement.getMetadata()); // FIXME add processed metadata with the existing symbol table
-        model.setNamespace(statement.getNamespace());
-        model.setProjectName(statement.getProjectName());
+    ret.append(
+        ofs
+            + actuator.getObservable().getDescriptionType().getKdlType()
+            + " "
+            + actuator.getObservable().getReferenceName()
+            + " (\n");
 
-        // TODO any literal value must be added first
-
-        for (var resourceUrn : statement.getResourceUrns()) {
-            // FIXME when >1 this should be one multi-resource contextualizable
-            // TODO use static builders instead of polymorphic constructors
-            model.getComputation().add(new ContextualizableImpl(resourceUrn));
-        }
-        model.getComputation().addAll(statement.getContextualization());
-
-        // FIXME use coverage from NS or model if any
-        model.setCoverage(Coverage.universal());
-
-        return model;
+    for (Actuator child : actuator.getChildren()) {
+      ret.append(encodeActuator(child, offset + 2, resources));
     }
 
-    @Override
-    public boolean scopesAreReactive() {
-        return false;
+    boolean done = false;
+    for (ServiceCall contextualizable : actuator.getComputation()) {
+      if (!done) {
+        ret.append(ofs + ofs + "compute\n");
+      }
+      ret.append(encodeServiceCall(contextualizable, offset + 6, resources) + "\n");
+      done = true;
     }
 
-    @Override
-    public void initializeService() {
-
-        Logging.INSTANCE.setSystemIdentifier("Resolver service: ");
-
-        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
-                capabilities(serviceScope()).toString());
-
-        /*
-         * Components
-         */
-        Set<String> extensionPackages = new LinkedHashSet<>();
-        extensionPackages.add("org.integratedmodelling.klab.runtime");
-        /*
-         * Check for updates, load and scan all new plug-ins, returning the main packages to scan
-         */
-        // FIXME update paths and simplify, put in BaseService
-        //        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
-
-        /*
-         * Scan all packages registered under the parent package of all k.LAB services. TODO all
-         * assets from there should be given default permissions (or those encoded with their
-         * annotations) that are exposed to the admin API.
-         */
-        getComponentRegistry().loadExtensions(extensionPackages.toArray(new String[]{}));
-
-        /**
-         * Setup an embedded broker, possibly to be shared with other services, if we're local and there
-         * is no configured broker.
-         */
-        if (Utils.URLs.isLocalHost(this.getUrl()) && this.configuration.getBrokerURI() == null) {
-            this.embeddedBroker = new EmbeddedBroker();
-        }
-
-        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
-                capabilities(serviceScope()));
-
-    }
-
-    @Override
-    public boolean operationalizeService() {
-        return true;
-    }
-
-    @Override
-    public String encodeDataflow(Dataflow<Observation> dataflow) {
-
-        StringBuilder kdl = new StringBuilder(1024);
-
-        Map<String, String> resources = new HashMap<>();
-        for (Actuator actuator : dataflow.getComputation()) {
-            kdl.append("\n");
-            kdl.append(encodeActuator(actuator, 0, resources));
-        }
-
-        StringBuilder ret = new StringBuilder(2048);
-        ret.append(encodePreamble(dataflow));
-        ret.append("\n");
-        var res = encodeResources(dataflow, resources);
-        if (!res.isEmpty()) {
-            ret.append(res);
-            ret.append("\n");
-        }
-        ret.append(kdl);
-
-        // if (offset == 0 && parentActuator == null) {
-        // ret += "@klab " + Version.CURRENT + "\n";
-        // ret += "@author 'k.LAB resolver " + creationTime + "'" + "\n";
-        // // TODO should encode coverage after the resolver.
-        // // if (coverage != null && coverage.getExtentCount() > 0) {
-        // // List<IServiceCall> scaleSpecs = ((Scale) coverage).getKimSpecification();
-        // // if (!scaleSpecs.isEmpty()) {
-        // // ret += "@coverage load_me_from_some_sidecar_file()";
-        // // ret += "\n";
-        // // }
-        // // }
-        // ret += "\n";
-        // }
-        //
-        // Pair<IActuator, List<IActuator>> structure = getResolutionStructure();
-        //
-        // if (structure == null) {
-        // for (IActuator actuator : actuators) {
-        // ret += ((Actuator) actuator).encode(offset, null) + "\n";
-        // }
-        // return ret;
-        // }
-        //
-        // return ret + ((Actuator) structure.getFirst()).encode(0,
-        // structure.getSecond().isEmpty() ? (List<IActuator>) null : structure.getSecond());
-        return ret.toString();
-    }
-
-    private StringBuffer encodeResources(Dataflow<Observation> dataflow, Map<String, String> resources) {
-        StringBuffer ret = new StringBuffer(1024);
-        // TODO
-        return ret;
-    }
-
-    private StringBuffer encodePreamble(Dataflow<Observation> dataflow) {
-        StringBuffer ret = new StringBuffer(1024);
-        ret.append("@klab " + Version.CURRENT + "\n");
-        ret.append("@author 'k.LAB resolver " + TimeInstant.create().toRFC3339String() + "'" + "\n");
-        return ret;
-    }
-
-    private StringBuffer encodeActuator(Actuator actuator, int offset, Map<String, String> resources) {
-        String ofs = org.integratedmodelling.common.utils.Utils.Strings.spaces(offset);
-        StringBuffer ret = new StringBuffer(1024);
-
-        ret.append(ofs + actuator.getObservable().getDescriptionType().getKdlType() + " "
-                + actuator.getObservable().getReferenceName() + " (\n");
-
-        for (Actuator child : actuator.getChildren()) {
-            ret.append(encodeActuator(child, offset + 2, resources));
-        }
-
-        boolean done = false;
-        for (ServiceCall contextualizable : actuator.getComputation()) {
-            if (!done) {
-                ret.append(ofs + ofs + "compute\n");
-            }
-            ret.append(encodeServiceCall(contextualizable, offset + 6, resources) + "\n");
-            done = true;
-        }
-
-        /*
-         * ? coverage
-         */
-
-        //        ret.append(ofs + ")" + (actuator.getAlias() == null ? "" : (" named " + actuator.getAlias
-        //        ()))
-        //                + (actuator.getObservable().getObserver() == null
-        //                ? ""
-        //                : (" as " + actuator.getObservable().getObserver().getName()))
-        //                + "\n");
-
-        return ret;
-    }
-
-    private String encodeServiceCall(ServiceCall contextualizable, int offset,
-                                     Map<String, String> resources) {
-        // TODO extract resource parameters and substitute with variables
-        return org.integratedmodelling.common.utils.Utils.Strings.spaces(offset) + contextualizable.encode(
-                Language.KOBSERVATION);
-    }
-
-    /**
-     * Replicate a remote scope in the scope manager. This should be called by the runtime service after
-     * creating it so if the scope has no ID we issue an error, as we do not create independent scopes.
-     *
-     * @param sessionScope a client scope that should record the ID for future communication. If the ID is
-     *                     null, the call has failed.
-     * @return
+    /*
+     * ? coverage
      */
-    @Override
-    public String registerSession(SessionScope sessionScope) {
 
-        if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
+    //        ret.append(ofs + ")" + (actuator.getAlias() == null ? "" : (" named " +
+    // actuator.getAlias
+    //        ()))
+    //                + (actuator.getObservable().getObserver() == null
+    //                ? ""
+    //                : (" as " + actuator.getObservable().getObserver().getName()))
+    //                + "\n");
 
-            if (sessionScope.getId() == null) {
-                throw new KlabIllegalArgumentException("resolver: session scope has no ID, cannot register " +
-                        "a scope autonomously");
-            }
+    return ret;
+  }
 
-            getScopeManager().registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
-            return serviceSessionScope.getId();
-        }
+  private String encodeServiceCall(
+      ServiceCall contextualizable, int offset, Map<String, String> resources) {
+    // TODO extract resource parameters and substitute with variables
+    return org.integratedmodelling.common.utils.Utils.Strings.spaces(offset)
+        + contextualizable.encode(Language.KOBSERVATION);
+  }
 
-        throw new KlabIllegalArgumentException("unexpected scope class");
+  /**
+   * Replicate a remote scope in the scope manager. This should be called by the runtime service
+   * after creating it so if the scope has no ID we issue an error, as we do not create independent
+   * scopes.
+   *
+   * @param sessionScope a client scope that should record the ID for future communication. If the
+   *     ID is null, the call has failed.
+   * @return
+   */
+  @Override
+  public String registerSession(SessionScope sessionScope) {
+
+    if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
+
+      if (sessionScope.getId() == null) {
+        throw new KlabIllegalArgumentException(
+            "resolver: session scope has no ID, cannot register " + "a scope autonomously");
+      }
+
+      getScopeManager()
+          .registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
+      return serviceSessionScope.getId();
     }
 
-    /**
-     * Replicate a remote scope in the scope manager. This should be called by the runtime service after
-     * creating it so if the scope has no ID we issue an error, as we do not create independent scopes.
-     *
-     * @param contextScope a client scope that should record the ID for future communication. If the ID is
-     *                     null, the call has failed.
-     * @return
-     */
-    @Override
-    public String registerContext(ContextScope contextScope) {
+    throw new KlabIllegalArgumentException("unexpected scope class");
+  }
 
-        contextScope.getData().put(RESOLUTION_GRAPH_KEY, ResolutionGraph.create(contextScope));
+  /**
+   * Replicate a remote scope in the scope manager. This should be called by the runtime service
+   * after creating it so if the scope has no ID we issue an error, as we do not create independent
+   * scopes.
+   *
+   * @param contextScope a client scope that should record the ID for future communication. If the
+   *     ID is null, the call has failed.
+   * @return
+   */
+  @Override
+  public String registerContext(ContextScope contextScope) {
 
-        if (contextScope instanceof ServiceContextScope serviceContextScope) {
+    contextScope.getData().put(RESOLUTION_GRAPH_KEY, ResolutionGraph.create(contextScope));
 
-            if (contextScope.getId() == null) {
-                throw new KlabIllegalArgumentException("resolver: context scope has no ID, cannot register " +
-                        "a scope autonomously");
-            }
+    if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
-            getScopeManager().registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
-            return serviceContextScope.getId();
-        }
+      if (contextScope.getId() == null) {
+        throw new KlabIllegalArgumentException(
+            "resolver: context scope has no ID, cannot register " + "a scope autonomously");
+      }
 
-        throw new KlabIllegalArgumentException("unexpected scope class");
-
+      getScopeManager()
+          .registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
+      return serviceContextScope.getId();
     }
 
-    public static ResolutionGraph getResolutionGraph(ContextScope scope) {
-        return scope.getData().get(RESOLUTION_GRAPH_KEY, ResolutionGraph.class);
-    }
+    throw new KlabIllegalArgumentException("unexpected scope class");
+  }
 
+  public static ResolutionGraph getResolutionGraph(ContextScope scope) {
+    return scope.getData().get(RESOLUTION_GRAPH_KEY, ResolutionGraph.class);
+  }
 }

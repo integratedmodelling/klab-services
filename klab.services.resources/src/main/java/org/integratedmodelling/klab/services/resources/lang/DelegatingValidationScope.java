@@ -15,45 +15,50 @@ import java.util.Map;
 
 public abstract class DelegatingValidationScope implements ReasoningValidationScope {
 
-    Map<String, ConceptDescriptor> descriptorMap = new HashMap<>();
+  Map<String, ConceptDescriptor> descriptorMap = new HashMap<>();
 
-    @Override
-    public ConceptDescriptor getConceptDescriptor(String conceptUrn) {
-        if (!descriptorMap.containsKey(conceptUrn) && resourcesService() != null) {
-            var descriptor = resourcesService().describeConcept(conceptUrn);
-            descriptorMap.put(conceptUrn, descriptor == null ? null :
-                                          new ConceptDescriptor(descriptor.namespace(),
-                                                  descriptor.conceptName(),
-                                                  WorldviewValidationScope.getMainType(descriptor.mainDeclaredType()),
-                                                  descriptor.label(), descriptor.description(),
-                                                  descriptor.isAbstract(), false));
-        }
-        return descriptorMap.get(conceptUrn);
+  @Override
+  public ConceptDescriptor getConceptDescriptor(String conceptUrn) {
+    if (!descriptorMap.containsKey(conceptUrn) && resourcesService() != null) {
+      var descriptor = resourcesService().describeConcept(conceptUrn);
+      descriptorMap.put(
+          conceptUrn,
+          descriptor == null
+              ? null
+              : new ConceptDescriptor(
+                  descriptor.namespace(),
+                  descriptor.conceptName(),
+                  WorldviewValidationScope.getMainType(descriptor.mainDeclaredType()),
+                  descriptor.label(),
+                  descriptor.description(),
+                  descriptor.isAbstract(),
+                  false));
     }
+    return descriptorMap.get(conceptUrn);
+  }
 
-    @Override
-    public LanguageValidationScope contextualize(EObject context) {
-        return this;
+  @Override
+  public LanguageValidationScope contextualize(EObject context) {
+    return this;
+  }
+
+  @Override
+  public SemanticSyntax.Type validate(SemanticSyntax concept, List<ValidationMessage> messages) {
+    if (reasoner() != null) {
+      // TODO
     }
+    return null;
+  }
 
-    @Override
-    public SemanticSyntax.Type validate(SemanticSyntax concept, List<ValidationMessage> messages) {
-        if (reasoner() != null) {
-            // TODO
-        }
-        return null;
+  @Override
+  public List<ValidationMessage> validateObservable(ObservableSyntax observable) {
+    if (reasoner() != null) {
+      // TODO
     }
+    return Collections.emptyList();
+  }
 
-    @Override
-    public List<ValidationMessage> validateObservable(ObservableSyntax observable) {
-        if (reasoner() != null) {
-            // TODO
-        }
-        return Collections.emptyList();
-    }
+  protected abstract Reasoner reasoner();
 
-    protected abstract Reasoner reasoner();
-
-    protected abstract ResourcesService resourcesService();
-
+  protected abstract ResourcesService resourcesService();
 }

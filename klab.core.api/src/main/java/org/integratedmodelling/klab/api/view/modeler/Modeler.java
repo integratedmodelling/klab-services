@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.view.modeler;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -128,6 +129,13 @@ public interface Modeler extends UIController {
      * @param service
      */
     void setCurrentService(KlabService service);
+
+    /**
+     * Return the innermost current scope available.
+     *
+     * @return
+     */
+    Scope getCurrentScope();
 
     /**
      * Make the passed context the current one. The context must belong to the current session or an exception
