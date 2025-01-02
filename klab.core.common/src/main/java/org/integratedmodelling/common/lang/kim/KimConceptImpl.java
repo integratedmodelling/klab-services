@@ -1,14 +1,17 @@
 package org.integratedmodelling.common.lang.kim;
 
+import java.io.Serial;
+import java.util.*;
+
+import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.SemanticClause;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
+import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-
-import java.io.Serial;
-import java.util.*;
 
 public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
@@ -40,10 +43,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   private KimConcept cooccurrent;
   private KimConcept adjacent;
   private String codeName;
-  private KimConcept temporalInherent;
   private boolean collective;
   private boolean pattern;
   private Set<String> patternVariables = new HashSet<>();
+  private List<Pair<ValueOperator, Object>> valueOperators = new ArrayList<>();
 
   public Set<SemanticType> getArgumentType() {
     return argumentType;
@@ -86,7 +89,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.cooccurrent = other.cooccurrent;
     this.adjacent = other.adjacent;
     this.codeName = other.codeName;
-    this.temporalInherent = other.temporalInherent;
+    //    this.temporalInherent = other.temporalInherent;
     this.argumentType = EnumSet.copyOf(other.argumentType);
   }
 
@@ -220,11 +223,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     return this.semanticRole;
   }
 
-  @Override
-  public KimConcept getTemporalInherent() {
-    return this.temporalInherent;
-  }
-
   public void setSemanticRole(SemanticRole semanticRole) {
     this.semanticRole = semanticRole;
   }
@@ -293,17 +291,12 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.roles = roles;
   }
 
-  //    public void setTemplate(boolean template) {
-  //        this.template = template;
-  //    }
-
   public void setNegated(boolean negated) {
     this.negated = negated;
   }
 
   public void setUrn(String urn) {
     this.urn = urn;
-    ;
   }
 
   public void setOperands(List<KimConcept> operands) {
@@ -328,10 +321,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
   public void setCodeName(String codeName) {
     this.codeName = codeName;
-  }
-
-  public void setTemporalInherent(KimConcept temporalInherent) {
-    this.temporalInherent = temporalInherent;
   }
 
   @Override
@@ -382,9 +371,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         case COMPRESENT:
           ret.compresent = null;
           break;
-        //                case CONTEXT:
-        //                    ret.context = null;
-        //                    break;
         case COOCCURRENT:
           ret.cooccurrent = null;
           break;
@@ -400,9 +386,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         case TRAIT:
           ret.traits.clear();
           break;
-        case TEMPORAL_INHERENT:
-          ret.temporalInherent = null;
-          break;
         case UNARY_OPERATOR:
           ((KimConceptImpl) ret.observable).semanticModifier = null;
           break;
@@ -411,7 +394,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       }
     }
 
-    this.urn = ret.urn = computeUrn();
+    ret.computeUrn();
 
     return ret;
   }
@@ -438,9 +421,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         case COMPRESENT:
           ret.compresent = null;
           break;
-        //                case CONTEXT:
-        //                    ret.context = null;
-        //                    break;
         case COOCCURRENT:
           ret.cooccurrent = null;
           break;
@@ -449,9 +429,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
           break;
         case INHERENT:
           ret.inherent = null;
-          break;
-        case TEMPORAL_INHERENT:
-          ret.temporalInherent = null;
           break;
         case ROLE:
           ret.roles = copyWithout(ret.roles, declaration);
@@ -464,7 +441,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       }
     }
 
-    this.urn = computeUrn();
+    ret.computeUrn();
 
     return ret;
   }
@@ -479,147 +456,172 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     return ret;
   }
 
-  /** Create a text declaration that can be parsed back into a concept. */
+  public List<Pair<SemanticRole, KimConcept>> getModifiers() {
+    List<Pair<SemanticRole, KimConcept>> ret = new ArrayList<>();
+    for (var role : SemanticRole.values()) {
+      switch (role) {
+        case INHERENT -> {
+          if (inherent != null) ret.add(Pair.of(role, inherent));
+        }
+        case ADJACENT -> {
+          if (adjacent != null) ret.add(Pair.of(role, adjacent));
+        }
+        case CAUSED -> {
+          if (caused != null) ret.add(Pair.of(role, caused));
+        }
+        case CAUSANT -> {
+          if (causant != null) ret.add(Pair.of(role, causant));
+        }
+        case COMPRESENT -> {
+          if (compresent != null) ret.add(Pair.of(role, compresent));
+        }
+        case GOAL -> {
+          if (goal != null) ret.add(Pair.of(role, goal));
+        }
+        case COOCCURRENT -> {
+          if (cooccurrent != null) ret.add(Pair.of(role, cooccurrent));
+        }
+        case RELATIONSHIP_SOURCE -> {
+          if (relationshipSource != null) ret.add(Pair.of(role, relationshipSource));
+        }
+        case RELATIONSHIP_TARGET -> {
+          if (relationshipTarget != null) ret.add(Pair.of(role, relationshipTarget));
+        }
+        default -> {}
+      }
+    }
+    return ret;
+  }
+
+  /** Create the normalized text declaration that can be parsed back into a concept. */
   public String computeUrn() {
 
-    String ret = isCollective() ? "each" : "";
-    boolean complex = false;
-
-    if (type.contains(SemanticType.NOTHING)) {
-      return "owl:Nothing";
+    if (this.urn != null) {
+      return this.urn;
     }
 
+    StringBuilder ret = new StringBuilder(isCollective() ? "each" : "");
+
     if (semanticModifier != null) {
-      ret += (ret.isEmpty() ? "" : " ") + semanticModifier.declaration[0];
-      complex = true;
+      ret.append(ret.isEmpty() ? "" : " ").append(semanticModifier.declaration[0]);
     }
 
     if (negated) {
-      ret += (ret.isEmpty() ? "" : " ") + "not";
-      complex = true;
+      ret.append(ret.isEmpty() ? "" : " ").append("not");
     }
 
-    StringBuilder concepts = new StringBuilder();
-    boolean ccomplex = false;
+    traits.sort(
+        (o1, o2) ->
+            ((KimConceptImpl) o1).computeUrn().compareTo(((KimConceptImpl) o2).computeUrn()));
 
     for (KimConcept trait : traits) {
-      concepts
-          .append((concepts.isEmpty()) ? "" : " ")
-          .append(parenthesize(((KimConceptImpl) trait).computeUrn()));
-      ccomplex = true;
+      ret.append((ret.isEmpty()) ? "" : " ")
+          .append(((KimConceptImpl) trait).computeUrnAndParenthesize());
     }
 
+    roles.sort(
+        (o1, o2) ->
+            ((KimConceptImpl) o1).computeUrn().compareTo(((KimConceptImpl) o2).computeUrn()));
     for (KimConcept role : roles) {
-      concepts
-          .append((concepts.isEmpty()) ? "" : " ")
-          .append(parenthesize(((KimConceptImpl) role).computeUrn()));
-      ccomplex = true;
+      ret.append((ret.isEmpty()) ? "" : " ")
+          .append(((KimConceptImpl) role).computeUrnAndParenthesize());
     }
 
-    //        for (KimConcept conc : unclassified) {
-    //            concepts += (concepts.isEmpty() ? "" : " ") + conc;
-    //            ccomplex = true;
-    //        }
-
-    concepts
-        .append((concepts.isEmpty()) ? "" : " ")
+    ret.append((ret.isEmpty()) ? "" : " ")
         .append(name == null ? ((KimConceptImpl) observable).computeUrn() : name);
-    var needsParentheses = ccomplex && !ret.equals("each");
-    ret +=
-        (ret.isEmpty() ? "" : " ")
-            + (needsParentheses ? "(" : "")
-            + concepts
-            + (needsParentheses ? ")" : "");
 
     if (comparisonConcept != null) {
-      ret +=
-          " "
-              + semanticModifier.declaration[1]
-              + " "
-              + ((KimConceptImpl) comparisonConcept).computeUrn();
-      complex = true;
+      ret.append(" ")
+          .append(semanticModifier.declaration[1])
+          .append(" ")
+          .append(((KimConceptImpl) comparisonConcept).computeUrn());
     }
-
-    //		if (authority != null) {
-    //			ret += " identified as " + stringify(authorityTerm) + " by " + authority;
-    //			complex = true;
-    //		}
 
     if (inherent != null) {
-      ret += " of " + ((KimConceptImpl) inherent).computeUrn();
-      complex = true;
+      ret.append(" of ").append(((KimConceptImpl) inherent).computeUrnAndParenthesize());
     }
 
-    //        if (context != null) {
-    //            ret += " within " + ((KimConceptImpl) context).computeUrn();
-    //            complex = true;
-    //        }
-
     if (causant != null) {
-      ret += " caused by " + ((KimConceptImpl) causant).computeUrn();
-      complex = true;
+      ret.append(" caused by ").append(((KimConceptImpl) causant).computeUrnAndParenthesize());
     }
 
     if (caused != null) {
-      ret += " causing " + ((KimConceptImpl) caused).computeUrn();
-      complex = true;
+      ret.append(" causing ").append(((KimConceptImpl) caused).computeUrnAndParenthesize());
     }
 
     if (compresent != null) {
-      ret += " with " + ((KimConceptImpl) compresent).computeUrn();
-      complex = true;
+      ret.append(" with ").append(((KimConceptImpl) compresent).computeUrnAndParenthesize());
     }
 
     if (cooccurrent != null) {
-      ret += " during " + ((KimConceptImpl) cooccurrent).computeUrn();
-      complex = true;
-    }
-
-    if (temporalInherent != null) {
-      ret += " during each " + ((KimConceptImpl) temporalInherent).computeUrn();
-      complex = true;
+      ret.append(" during ").append(((KimConceptImpl) cooccurrent).computeUrnAndParenthesize());
     }
 
     if (adjacent != null) {
-      ret += " adjacent to " + ((KimConceptImpl) adjacent).computeUrn();
-      complex = true;
+      ret.append(" adjacent to ").append(((KimConceptImpl) adjacent).computeUrnAndParenthesize());
     }
 
     if (goal != null) {
-      ret += " for " + ((KimConceptImpl) goal).computeUrn();
-      complex = true;
+      ret.append(" for ").append(((KimConceptImpl) goal).computeUrnAndParenthesize());
     }
 
     if (relationshipSource != null) {
-      ret += " linking " + ((KimConceptImpl) relationshipSource).computeUrn();
+      ret.append(" linking ")
+          .append(((KimConceptImpl) relationshipSource).computeUrnAndParenthesize());
       if (relationshipTarget != null) {
-        ret += " to " + ((KimConceptImpl) relationshipSource).computeUrn();
+        ret.append(" to ")
+            .append(((KimConceptImpl) relationshipTarget).computeUrnAndParenthesize());
       }
-      complex = true;
     }
 
-    boolean expression = false;
+    // TODO value operators
+
     for (KimConcept operand : operands) {
-      ret += " " + (expressionType == Expression.INTERSECTION ? "and" : "or") + " " + operand;
-      complex = true;
-      expression = true;
+      ret.append(" ")
+          .append(expressionType == Expression.INTERSECTION ? "and" : "or")
+          .append(" ")
+          .append(((KimConceptImpl) operand).computeUrnAndParenthesize());
     }
 
-    return (expression /* ccomplex || complex */) ? parenthesize(ret) : ret;
+    return this.urn = ret.toString();
   }
 
   /**
-   * Add parentheses around a declaration unless it is already enclosed in parentheses or it is a
-   * single concept.
+   * Compute the URN and add parentheses around it unless it is already enclosed in parentheses or
+   * it is a simple expression. The latter is zero+ predicates + one observable without semantic
+   * modifiers or value operators.
    *
-   * @param ret
-   * @return
+   * <p>TODO check if we need to parenthesize unary operators, <code>not</code> and <code>each
+   * </code>.
+   *
+   * @return the computed URN with parentheses where necessary.
    */
-  private static String parenthesize(String ret) {
-    ret = ret.trim();
-    boolean enclosed = ret.startsWith("(") && ret.endsWith(")");
-    boolean trivial = !ret.trim().contains(" ");
-    return (enclosed || trivial) ? ret : ("(" + ret + ")");
+  private String computeUrnAndParenthesize() {
+
+    String urn = computeUrn();
+    boolean trivial = getModifiers().isEmpty() && valueOperators.isEmpty();
+
+    if (trivial) {
+      var allTraits = type.contains(SemanticType.PREDICATE);
+      var countElements = traits.size() + roles.size();
+      if (observable == null && name != null) {
+        // may have the name in the traits, in which case the main element doesn't count
+        boolean present = false;
+        for (var predicate : Utils.Collections.join(traits, roles)) {
+          if (name.equals(predicate.getUrn())) {
+            present = true;
+            break;
+          }
+        }
+        if (!present) {
+          countElements ++;
+        }
+      } else if (observable != null){
+        countElements ++;
+      }
+      trivial = !allTraits || countElements == 1;
+    }
+    return trivial ? urn : ("(" + urn + ")");
   }
 
   private String stringify(String term) {
@@ -665,23 +667,23 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     if (obj == null) return false;
     if (getClass() != obj.getClass()) return false;
     KimConceptImpl other = (KimConceptImpl) obj;
-    return Objects.equals(urn, other.urn);
+    return Objects.equals(computeUrn(), other.computeUrn());
   }
 
-  /**
-   * Call after making modifications to finalize the concept and update the URN
-   *
-   * <p>TODO check abstract state as well
-   */
-  public void finalizeDefinition() {
-    this.urn = computeUrn();
+  public List<Pair<ValueOperator, Object>> getValueOperators() {
+    return valueOperators;
+  }
+
+  public void setValueOperators(List<Pair<ValueOperator, Object>> valueOperators) {
+    this.valueOperators = valueOperators;
   }
 
   public static KimConcept nothing() {
     var ret = new KimConceptImpl();
     ret.setName("Nothing");
-    ret.setNamespace("klab");
+    ret.setNamespace("owl");
     ret.setType(EnumSet.of(SemanticType.NOTHING));
+    ret.setUrn("owl:Nothing");
     return ret;
   }
 
@@ -746,9 +748,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       adjacent.visit(visitor);
     }
 
-    if (temporalInherent != null) {
-      temporalInherent.visit(visitor);
-    }
+    //    if (temporalInherent != null) {
+    //      temporalInherent.visit(visitor);
+    //    }
 
     if (goal != null) {
       goal.visit(visitor);
@@ -784,7 +786,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       case CAUSED_BY -> causant;
       case ADJACENT_TO -> adjacent;
       case CAUSING -> caused;
-      case DURING -> temporalInherent;
+      case DURING -> cooccurrent;
       case LINKING -> relationshipSource;
       case TO -> relationshipTarget;
     };

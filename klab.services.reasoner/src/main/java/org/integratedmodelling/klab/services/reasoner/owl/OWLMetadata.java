@@ -86,7 +86,6 @@ public class OWLMetadata extends MetadataImpl implements Metadata {
         NS.TRAIT_RESTRICTING_PROPERTY);
     metadataVocabulary.put(
         "http://integratedmodelling.org/ks/odo#isTypeDelegate", NS.IS_TYPE_DELEGATE);
-    metadataVocabulary.put("http://integratedmodelling.org/ks/odo#isCollective", NS.IS_COLLECTIVE);
     metadataVocabulary.put(
         "http://integratedmodelling.org/ks/klab.owl#untransformedConceptId",
         NS.UNTRANSFORMED_CONCEPT_PROPERTY);

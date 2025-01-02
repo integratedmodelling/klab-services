@@ -184,11 +184,11 @@ public interface KimConcept extends KlabStatement {
      */
     KimConcept semanticClause(SemanticClause semanticClause);
 
-    /**
-     * Return any temporal inherency for this occurrent ('during each').
-     *
-     * @return
-     */
-    KimConcept getTemporalInherent();
+//    /**
+//     * Return any temporal inherency for this occurrent ('during each').
+//     *
+//     * @return
+//     */
+//    KimConcept getTemporalInherent();
 
 }

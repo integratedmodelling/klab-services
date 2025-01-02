@@ -105,7 +105,7 @@ public class CoreOntology {
       return NS.HAS_REALM_PROPERTY;
     } else if (base.is(SemanticType.IDENTITY)) {
       return NS.HAS_IDENTITY_PROPERTY;
-    }else if (base.is(SemanticType.ROLE)) {
+    } else if (base.is(SemanticType.ROLE)) {
       return NS.HAS_ROLE_PROPERTY;
     }
     return NS.HAS_TRAIT_PROPERTY;
@@ -177,7 +177,6 @@ public class CoreOntology {
 
     // core properties. TODO: these could be created in the root worldview namespace
     public static final String IS_ABSTRACT = "odo:isAbstract";
-    public static final String IS_COLLECTIVE = "odo:isCollective";
     public static final String BASE_DECLARATION = "klab:baseDeclaration";
     public static final String ORDER_PROPERTY = "klab:orderingRank";
     public static final String HAS_ATTRIBUTE_PROPERTY = "odo:hasAttribute";

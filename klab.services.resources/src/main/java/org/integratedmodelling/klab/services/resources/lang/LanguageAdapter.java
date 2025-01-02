@@ -324,7 +324,7 @@ public enum LanguageAdapter {
 
     // TODO establish abstract and generic nature
 
-    ret.setUrn(ret.computeUrn());
+    ret.computeUrn();
 
     return ret;
   }
@@ -550,7 +550,7 @@ public enum LanguageAdapter {
     ret.setName(ret.getUrn());
     ret.setType(adaptSemanticType(observable.concept().mainType()));
     ret.setDocumentClass(documentClass);
-    ret.computeUrn();
+//    ret.computeUrn();
     return ret;
   }
 

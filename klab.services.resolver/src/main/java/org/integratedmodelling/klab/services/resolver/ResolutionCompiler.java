@@ -255,7 +255,7 @@ public class ResolutionCompiler {
       ResolutionGraph resolutionSoFar) {
     Scale scale = originalScale;
     ContextScope scope = originalScope;
-    if (observable.isCollective()) {
+    if (observable.getSemantics().isCollective()) {
       /*
        * Use the observer's scale if there is an observer
        */

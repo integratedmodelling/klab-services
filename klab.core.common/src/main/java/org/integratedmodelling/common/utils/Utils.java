@@ -13,6 +13,16 @@ import com.jcraft.jsch.JSch;
 import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.view.mxGraph;
+import java.io.*;
+import java.lang.reflect.Array;
+import java.net.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.*;
+import javax.swing.*;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
@@ -21,14 +31,13 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.mime.HttpMultipartMode;
-import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypes;
 import org.integratedmodelling.common.data.DataImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
@@ -36,7 +45,6 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -53,17 +61,6 @@ import org.integratedmodelling.klab.common.data.Instance;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.springframework.web.util.UriUtils;
-
-import javax.swing.*;
-import java.io.*;
-import java.lang.reflect.Array;
-import java.net.*;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.*;
 
 public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
@@ -590,11 +587,17 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     var payloadText = payload instanceof String
                                       ? (String) payload :
                                       Json.asString(payload);
+
+                    var uriBuilder = new URIBuilder(uri + apiCall);
+                    for (String key : params.keySet()) {
+                        uriBuilder = uriBuilder.addParameter(key, params.get(key).toString());
+                    }
+
                     var requestBuilder =
                             HttpRequest.newBuilder()
                                        .version(HttpClient.Version.HTTP_1_1)
                                        .timeout(Duration.ofSeconds(10))
-                                       .uri(URI.create(uri + apiCall + encodeParameters(params)));
+                                       .uri(uriBuilder.build());
                     if (forcedAcceptHeader != null) {
                         requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
                     } else {

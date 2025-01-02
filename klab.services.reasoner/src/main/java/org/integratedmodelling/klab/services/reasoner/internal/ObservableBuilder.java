@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -32,6 +33,7 @@ import java.util.*;
 /**
  * The working, server-side builder for observables. Clients will send a parameterized one that will
  * call methods on an instance of this at server side.
+ * @deprecated
  */
 public class ObservableBuilder implements Observable.Builder {
 
@@ -84,7 +86,7 @@ public class ObservableBuilder implements Observable.Builder {
   // withDeclaration() and the
   // builder is merely building it.
   private boolean declarationIsComplete = false;
-  private String urn;
+  //  private String urn;
 
   // marks the observable to build as dereifying for a resolution of inherents TODO check if this is
   //  still relevant
@@ -94,7 +96,7 @@ public class ObservableBuilder implements Observable.Builder {
   private Observable incarnatedAbstractObservable;
 
   private Observable deferredTarget;
-  private DescriptionType descriptionType;
+//  private DescriptionType descriptionType;
 
   public static ObservableBuilder getBuilder(
       Concept concept, Scope scope, ReasonerService reasoner) {
@@ -113,6 +115,7 @@ public class ObservableBuilder implements Observable.Builder {
     this.ontology = ontology;
     this.declaration = getDeclaration(main);
     this.type = main.getType();
+    this.collective = main.isCollective();
   }
 
   public ObservableBuilder(Concept main, Scope scope, ReasonerService reasoner) {
@@ -122,6 +125,7 @@ public class ObservableBuilder implements Observable.Builder {
     this.ontology = reasoner.owl().getOntology(main.getNamespace());
     this.declaration = getDeclaration(main);
     this.type.addAll(main.getType());
+    this.collective = main.isCollective();
   }
 
   /**
@@ -149,6 +153,7 @@ public class ObservableBuilder implements Observable.Builder {
     this.annotations.addAll(observable.getAnnotations());
     this.defaultValue = observable.getDefaultValue();
     this.resolutionDirectives.addAll(observable.getResolutionDirectives());
+    this.collective = observable.getSemantics().isCollective();
 
     for (Concept role : reasoner.directRoles(observable.getSemantics())) {
       this.roles.add(role);
@@ -160,7 +165,7 @@ public class ObservableBuilder implements Observable.Builder {
     // these are only used if buildObservable() is called
     this.unit = observable.getUnit();
     this.currency = observable.getCurrency();
-    this.valueOperators.addAll(observable.getValueOperators());
+//    this.valueOperators.addAll(observable.getValueOperators());
     this.scope = scope;
   }
 
@@ -176,7 +181,7 @@ public class ObservableBuilder implements Observable.Builder {
     this.caused = other.caused;
     this.comparison = other.comparison;
     this.compresent = other.compresent;
-    this.urn = other.urn;
+    //    this.urn = other.urn;
     this.inherent = other.inherent;
     this.cooccurrent = other.cooccurrent;
     this.goal = other.goal;
@@ -187,7 +192,6 @@ public class ObservableBuilder implements Observable.Builder {
     this.declaration = other.declaration;
     this.scope = other.scope;
     this.valueOperators.addAll(other.valueOperators);
-    // this.mustContextualize = other.mustContextualize;
     this.annotations.addAll(other.annotations);
     this.temporalInherent = other.temporalInherent;
     this.statedName = other.statedName;
@@ -198,13 +202,14 @@ public class ObservableBuilder implements Observable.Builder {
     this.reasoner = other.reasoner;
     this.defaultValue = other.defaultValue;
     this.resolutionDirectives.addAll(other.resolutionDirectives);
+    this.collective = other.collective;
   }
 
   //    @Override
   public ObservableBuilder withDeclaration(KimConcept declaration) {
     this.declaration = (KimConceptImpl) declaration;
     this.declarationIsComplete = true;
-    this.urn = declaration.getUrn();
+    //    this.urn = declaration.getUrn();
     return this;
   }
 
@@ -222,16 +227,6 @@ public class ObservableBuilder implements Observable.Builder {
     this.optional = optional;
     return this;
   }
-
-  //    @Override
-  //    public Observable.Builder within(Concept concept) {
-  //        this.context = concept;
-  //        if (this.declaration != null) {
-  //            ((KimConceptImpl) this.declaration).setContext(getDeclaration(concept));
-  //        }
-  //        isTrivial = false;
-  //        return this;
-  //    }
 
   @Override
   public Observable.Builder withTemporalInherent(Concept concept) {
@@ -338,7 +333,7 @@ public class ObservableBuilder implements Observable.Builder {
 
     if (incarnatedAbstractObservable != null) {
       incarnatedAbstractObservable =
-          incarnatedAbstractObservable.builder(scope).as(type, participants).build();
+          incarnatedAbstractObservable.builder(scope).as(type, participants).buildObservable();
     }
 
     if (argument != null) {
@@ -411,11 +406,11 @@ public class ObservableBuilder implements Observable.Builder {
     return this;
   }
 
-  @Override
-  public Observable.Builder as(DescriptionType descriptionType) {
-    this.descriptionType = descriptionType;
-    return this;
-  }
+//  @Override
+//  public Observable.Builder as(DescriptionType descriptionType) {
+//    this.descriptionType = descriptionType;
+//    return this;
+//  }
 
   /**
    * Copy the builder exactly but revise the declaration so that it does not include the operator.
@@ -509,11 +504,6 @@ public class ObservableBuilder implements Observable.Builder {
       for (int i = 0; i < rdelta.getSecond().size(); i++) {
         removedRoles.add(SemanticRole.ROLE);
       }
-      //            if (ret.context != null && ret.context.equals(concept)) {
-      //                ret.context = null;
-      //                ret.removed.add(concept);
-      //                removedRoles.add(SemanticRole.CONTEXT);
-      //            }
       if (ret.inherent != null && ret.inherent.equals(concept)) {
         ret.inherent = null;
         ret.removed.add(concept);
@@ -549,11 +539,6 @@ public class ObservableBuilder implements Observable.Builder {
         ret.removed.add(concept);
         removedRoles.add(SemanticRole.COOCCURRENT);
       }
-      if (ret.temporalInherent != null && reasoner.is(ret.temporalInherent, concept)) {
-        ret.temporalInherent = null;
-        ret.removed.add(concept);
-        removedRoles.add(SemanticRole.TEMPORAL_INHERENT);
-      }
     }
     if (!ret.removed.isEmpty()) {
       List<String> declarations = new ArrayList<>();
@@ -584,11 +569,6 @@ public class ObservableBuilder implements Observable.Builder {
       for (int i = 0; i < tdelta.getSecond().size(); i++) {
         removedRoles.add(SemanticRole.ROLE);
       }
-      //            if (ret.context != null && ret.context.is(concept)) {
-      //                ret.removed.add(ret.context);
-      //                ret.context = null;
-      //                removedRoles.add(SemanticRole.CONTEXT);
-      //            }
       if (ret.inherent != null && ret.inherent.is(concept)) {
         ret.removed.add(ret.inherent);
         ret.inherent = null;
@@ -624,11 +604,6 @@ public class ObservableBuilder implements Observable.Builder {
         ret.cooccurrent = null;
         removedRoles.add(SemanticRole.COOCCURRENT);
       }
-      if (ret.temporalInherent != null && ret.temporalInherent.is(concept)) {
-        ret.temporalInherent = null;
-        ret.removed.add(ret.temporalInherent);
-        removedRoles.add(SemanticRole.TEMPORAL_INHERENT);
-      }
     }
     if (!ret.removed.isEmpty()) {
       List<String> declarations = new ArrayList<>();
@@ -660,11 +635,6 @@ public class ObservableBuilder implements Observable.Builder {
       for (int i = 0; i < tdelta.getSecond().size(); i++) {
         removedRoles.add(SemanticRole.ROLE);
       }
-      //            if (ret.context != null && reasoner.subsumes(ret.context, concept)) {
-      //                ret.context = null;
-      //                ret.removed.add(concept);
-      //                removedRoles.add(SemanticRole.CONTEXT);
-      //            }
       if (ret.inherent != null && reasoner.is(ret.inherent, concept)) {
         ret.inherent = null;
         ret.removed.add(concept);
@@ -699,11 +669,6 @@ public class ObservableBuilder implements Observable.Builder {
         ret.cooccurrent = null;
         ret.removed.add(concept);
         removedRoles.add(SemanticRole.COOCCURRENT);
-      }
-      if (ret.temporalInherent != null && reasoner.is(ret.temporalInherent, concept)) {
-        ret.temporalInherent = null;
-        ret.removed.add(concept);
-        removedRoles.add(SemanticRole.TEMPORAL_INHERENT);
       }
     }
     if (!ret.removed.isEmpty()) {
@@ -785,32 +750,21 @@ public class ObservableBuilder implements Observable.Builder {
   @Override
   public Concept buildConcept() throws KlabValidationException {
 
-    // finalize the concept by recomputing its URN
-    if (declaration instanceof KimConceptImpl impl) {
-      impl.finalizeDefinition();
-      this.urn = impl.getUrn();
-    }
-
-    //        if (scope.hasErrors()) {
-    //
-    //            // build anyway but leave errors for notification
-    //
-    //            String message = "";
-    //            for (Notification error : notifications) {
-    //                message += (message.isEmpty() ? "" : "\n") + error.getMessage();
-    //            }
-    //            scope.error(message, declaration);
-    //        }
+    //    // finalize the concept by recomputing its URN
+    //    if (declaration instanceof KimConceptImpl impl) {
+    //      impl.finalizeDefinition();
+    //      this.urn = impl.getUrn();
+    //    }
 
     if (!resolveMain()) {
       return null;
     }
 
     /*
-     * correctly support trival case so we can use this without checking.
+     * correctly support trivial case so we can use this without checking.
      */
     if (isTrivial()) {
-      return main;
+      return adaptImplementation(main);
     }
 
     this.ontology = getTargetOntology();
@@ -874,10 +828,10 @@ public class ObservableBuilder implements Observable.Builder {
      */
     String rId = "";
 
-    if (collective) {
-      cId = cDs = "Each";
-      rId = "each_";
-    }
+    //    if (collective) {
+    //      cId = cDs = "Each";
+    //      rId = "each_";
+    //    }
 
     if (traits != null && traits.size() > 0) {
 
@@ -1166,13 +1120,6 @@ public class ObservableBuilder implements Observable.Builder {
       // }
     }
 
-    // if (distributedInherency) {
-    // // TODO revise - this must have proper declaration etc.
-    // // distinguish the label to avoid conflicts; semantically we are the same, so
-    // // the display label remains unchanged.
-    // cId += "Classifier";
-    // }
-
     /*
      * now that we use the builder to create even a simple concept, the abstract
      * status must be re-evaluated according to the engine's rules. TODO integrate
@@ -1198,24 +1145,8 @@ public class ObservableBuilder implements Observable.Builder {
       axioms.add(Axiom.AnnotationAssertion(conceptId, NS.IS_ABSTRACT, "true"));
     }
 
-    if (collective) {
-      axioms.add(Axiom.AnnotationAssertion(conceptId, NS.IS_COLLECTIVE, "true"));
-    }
-
     ontology.define(axioms);
     ret = ontology.getConcept(conceptId);
-
-    if (ret instanceof ConceptImpl concept) {
-      // ... which it should always be .... We need these to send over via JSON although the info is
-      // in metadata
-      if (type.contains(SemanticType.ABSTRACT)) {
-        concept.setAbstract(true);
-      }
-      if (collective) {
-        concept.setCollective(true);
-      }
-    }
-
     this.axiomsAdded = true;
 
     /*
@@ -1323,7 +1254,20 @@ public class ObservableBuilder implements Observable.Builder {
       scope.error("this declaration has logical errors and is inconsistent", declaration);
     }
 
-    return ret;
+    return adaptImplementation(ret);
+  }
+
+  private Concept adaptImplementation(Concept candidate) {
+
+    if (candidate instanceof ConceptImpl concept) {
+      var ret = collective ? concept.collective() : concept.singular();
+      if (type.contains(SemanticType.ABSTRACT)) {
+        ret.setAbstract(true);
+      }
+      return ret;
+    }
+
+    throw new KlabInternalErrorException("Unexpected Concept implementation");
   }
 
   private void evaluateAbstractStatus() {
@@ -1353,9 +1297,6 @@ public class ObservableBuilder implements Observable.Builder {
       if (remove) {
         this.type.remove(SemanticType.ABSTRACT);
       }
-
-    } else {
-      // TODO see if we need to add it
     }
   }
 
@@ -1377,8 +1318,7 @@ public class ObservableBuilder implements Observable.Builder {
             main,
             traits,
             roles,
-            inherent, /*context,
-                       */
+            inherent,
             caused,
             causant,
             compresent,
@@ -1405,7 +1345,7 @@ public class ObservableBuilder implements Observable.Builder {
   }
 
   @Override
-  public Observable build() throws KlabValidationException {
+  public Observable buildObservable() throws KlabValidationException {
 
     Concept obs = buildConcept();
 
@@ -1413,7 +1353,7 @@ public class ObservableBuilder implements Observable.Builder {
       return null;
     }
 
-    ObservableImpl ret = ObservableImpl.promote(obs, scope);
+    var ret = ObservableImpl.promote(obs, scope);
 
     if (currency != null) {
       ret.setCurrency(currency);
@@ -1426,6 +1366,7 @@ public class ObservableBuilder implements Observable.Builder {
     StringBuilder opId = new StringBuilder();
     StringBuilder cdId = new StringBuilder();
 
+    // TODO move to buildConcept
     for (Pair<ValueOperator, Object> op : valueOperators) {
 
       ValueOperator valueOperator = op.getFirst();
@@ -1484,7 +1425,7 @@ public class ObservableBuilder implements Observable.Builder {
         }
       }
 
-      ret.getValueOperators().add(Pair.of(valueOperator, valueOperand));
+//      ret.getValueOperators().add(Pair.of(valueOperator, valueOperand));
     }
 
     if (!opId.isEmpty()) {
@@ -1501,24 +1442,9 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     ret.setStatedName(this.statedName);
-    // ret.setTargetPredicate(targetPredicate);
     ret.setOptional(this.optional);
-    // ret.setMustContextualizeAtResolution(mustContextualize);
     ret.getAnnotations().addAll(annotations);
-    //        ret.setDistributedInherency(distributedInherency);
-    // ret.setTemporalInherent(temporalInherent);
-    //        ret.setDereifiedAttribute(this.dereifiedAttribute);
-    // ret.setDereified(this.dereified);
     ret.setGeneric(this.generic);
-    // ret.setGlobal(this.global);
-    // ret.setIncarnatedAbstractObservable(this.incarnatedAbstractObservable);
-    // ret.setDeferredTarget(this.deferredTarget);
-    // ret.setUrl(this.url);
-
-    // if (Units.INSTANCE.needsUnits(ret) && this.unit == null && this.currency ==
-    // null) {
-    // ret.setFluidUnits(true);
-    // }
 
     if (unitStatement != null) {
       /* TODO CHECK */
@@ -1548,15 +1474,10 @@ public class ObservableBuilder implements Observable.Builder {
       ret.setUrn(ret.getUrn() + " optional");
     }
 
-    if (this.descriptionType != null) {
-      // TODO validate
-      ret.setDescriptionType(this.descriptionType);
-    }
-
-    if (this.urn != null) {
-      // override the precomputed URN
-      ret.setUrn(this.urn);
-    }
+//    if (this.descriptionType != null) {
+//      // TODO validate
+//      ret.setDescriptionType(this.descriptionType);
+//    }
 
     return ret;
   }
@@ -1598,12 +1519,6 @@ public class ObservableBuilder implements Observable.Builder {
     return this;
   }
 
-  //    @Override
-  //    public Observable.Builder withDistributedInherency(boolean b) {
-  //        this.distributedInherency = b;
-  //        return this;
-  //    }
-
   @Override
   public Observable.Builder withValueOperator(ValueOperator operator, Object operand) {
     this.valueOperators.add(Pair.of(operator, operand));
@@ -1616,27 +1531,9 @@ public class ObservableBuilder implements Observable.Builder {
     return this;
   }
 
-  //    @Override
-  //    public Observable.Builder withTargetPredicate(Concept targetPredicate) {
-  //        this.targetPredicate = targetPredicate;
-  //        return this;
-  //    }
-
-  //    @Override
-  //    public Observable.Builder withDereifiedAttribute(String dereifiedAttribute) {
-  //        this.dereifiedAttribute = dereifiedAttribute;
-  //        return this;
-  //    }
-
   public boolean axiomsAdded() {
     return this.axiomsAdded;
   }
-
-  // @Override
-  // public Observable.Builder setDereified() {
-  // this.dereified = true;
-  // return this;
-  // }
 
   @Override
   public Observable.Builder named(String name, String referenceName) {
@@ -1669,10 +1566,15 @@ public class ObservableBuilder implements Observable.Builder {
   }
 
   @Override
-  public Observable.Builder generic(boolean generic) {
-    this.generic = generic;
-    return this;
+  public Observable.Builder withObserverSemantics(Concept observerSemantics) {
+    return null;
   }
+
+//  @Override
+//  public Observable.Builder generic(boolean generic) {
+//    this.generic = generic;
+//    return this;
+//  }
 
   @Override
   public Observable.Builder collective(boolean collective) {
@@ -1767,13 +1669,4 @@ public class ObservableBuilder implements Observable.Builder {
     }
     return Pair.of(ret, rem);
   }
-  //
-  //    public List<Notification> getNotifications() {
-  //        return notifications;
-  //    }
-  //
-  //    public void setNotifications(List<Notification> notifications) {
-  //        this.notifications = notifications;
-  //    }
-
 }

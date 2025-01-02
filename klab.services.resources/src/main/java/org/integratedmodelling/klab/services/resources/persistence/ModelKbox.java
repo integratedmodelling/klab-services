@@ -962,7 +962,7 @@ public class ModelKbox extends ObservableKbox {
       if (specialized != null
           && (oobsContext == null
               || !scope.getService(Reasoner.class).is(oobsContext, specialized))) {
-        oobs = oobs.builder(monitor).of(specialized).build();
+        oobs = oobs.builder(monitor).of(specialized).buildObservable();
       }
     }
     ret.add(oobs);

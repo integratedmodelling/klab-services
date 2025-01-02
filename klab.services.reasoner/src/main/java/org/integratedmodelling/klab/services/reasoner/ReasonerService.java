@@ -24,7 +24,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.Statement;
-import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -54,7 +53,6 @@ import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.internal.ObservableBuilder;
 import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
-import org.integratedmodelling.klab.services.reasoner.owl.OWLMetadata;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.Vocabulary;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -1221,18 +1219,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     StringBuilder ret = new StringBuilder(conceptDisplayName(o.asConcept()));
 
-    for (Pair<ValueOperator, Object> operator : o.getValueOperators()) {
-
-      ret.append(StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_')));
-
-      if (operator.getSecond() instanceof KimConcept concept) {
-        ret.append(conceptDisplayName(declareConcept(concept)));
-      } else if (operator.getSecond() instanceof KimObservable observable) {
-        ret.append(observableDisplayName(declareObservable(observable)));
-      } else {
-        ret.append("_").append(operator.getSecond().toString().replace(' ', '_'));
-      }
-    }
+//    for (Pair<ValueOperator, Object> operator : o.getValueOperators()) {
+//
+//      ret.append(StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_')));
+//
+//      if (operator.getSecond() instanceof KimConcept concept) {
+//        ret.append(conceptDisplayName(declareConcept(concept)));
+//      } else if (operator.getSecond() instanceof KimObservable observable) {
+//        ret.append(observableDisplayName(declareObservable(observable)));
+//      } else {
+//        ret.append("_").append(operator.getSecond().toString().replace(' ', '_'));
+//      }
+//    }
     return ret.toString();
   }
 
@@ -2660,8 +2658,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     builder =
         builder
             .optional(concept.isOptional())
-            .generic(concept.isGeneric()) /* .global(concept
-        .isGlobal()) */
+//            .generic(concept.isGeneric()) /* .global(concept
+//        .isGlobal()) */
             .named(concept.getFormalName());
 
     // TODO gather generic concepts and abstract ones
@@ -2683,7 +2681,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     // CHECK: fluidUnits = needsUnits() && !unitsSet;
 
-    return (Observable) builder.build();
+    return (Observable) builder.buildObservable();
   }
 
   public void registerConcept(Concept thing) {
@@ -2887,7 +2885,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public Observable buildObservable(ObservableBuildStrategy builder) {
     Observable.Builder ret = new ObservableBuilder(builder.getBaseObservable(), scope, this);
     ret = defineBuilder(builder, ret);
-    return ret.build();
+    return ret.buildObservable();
   }
 
   private Observable.Builder defineBuilder(
@@ -2989,17 +2987,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         case WITH_RESOLUTION_EXCEPTION -> {
           ret = ret.withResolutionException(op.getResolutionException());
         }
-        case AS_GENERIC -> {
-          ret = ret.generic((Boolean) op.getPod());
-        }
+//        case AS_GENERIC -> {
+//          ret = ret.generic((Boolean) op.getPod());
+//        }
         case WITH_ANNOTATION -> {
           for (Annotation annotation : op.getAnnotations()) {
             ret = ret.withAnnotation(annotation);
           }
         }
-        case AS_DESCRIPTION_TYPE -> {
-          ret = ret.as(op.getDescriptionType());
-        }
+//        case AS_DESCRIPTION_TYPE -> {
+//          ret = ret.as(op.getDescriptionType());
+//        }
         default ->
             throw new KlabUnimplementedException(
                 "ReasonerService::defineBuilder: unhandled " + "operation " + op.getType());

@@ -328,7 +328,7 @@ public class RuntimeService extends BaseService
           && scope.getContextObservation() != null) {
         observation1.setGeometry(scope.getContextObservation().getGeometry());
       } else if (observation.getObservable().is(SemanticType.COUNTABLE)
-          && observation.getObservable().isCollective()
+          && observation.getObservable().getSemantics().isCollective()
           && scope.getObserver() != null) {
         observation1.setGeometry(scope.getObservedGeometry());
       }

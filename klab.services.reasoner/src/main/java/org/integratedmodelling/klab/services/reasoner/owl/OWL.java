@@ -2973,89 +2973,6 @@ public class OWL {
     return ret;
   }
 
-  //
-  //
-  //
-  // /**
-  // * Given a collection of namespace-specified knowledge and/or collections
-  // * thereof, return the ontology of a namespace that sits on top of all others
-  // in
-  // * the asserted dependency chain and imports all concepts. If that is not
-  // * possible, return the "fallback" ontology which must already import all the
-  // * concepts (typically the one where the targets are used in a declaration).
-  // * Used to establish where to put derived concepts and restrictions so as to
-  // * avoid circular dependencies in the underlying OWL model while minimizing
-  // * redundant concepts.
-  // *
-  // * @param targets
-  // * @return
-  // */
-  // public Ontology getTargetOntology(Ontology fallback, Object... targets) {
-  //
-  // Set<String> graph = new HashSet<>();
-  // if (targets != null) {
-  // for (Object o : targets) {
-  // if (o instanceof KlabAsset || o instanceof KimStatement) {
-  // String nsid = getNamespace(o);
-  // if (Services.INSTANCE.getResources().resolveNamespace(nsid, scope) != null) {
-  // graph.add(nsid);
-  // }
-  // } else if (o instanceof Iterable) {
-  // for (Object u : (Iterable<?>) o) {
-  // if (u instanceof IKnowledge) {
-  // String nsid = getNamespace(o);
-  // if (Services.INSTANCE.getResources().resolveNamespace(nsid, scope) != null) {
-  // graph.add(nsid);
-  // }
-  // }
-  // }
-  // }
-  // }
-  // }
-  //
-  // String namespace = null;
-  // Set<String> os = new HashSet<>(graph);
-  // for (String a : graph) {
-  // if (namespace == null) {
-  // namespace = a;
-  // }
-  // for (String b : os) {
-  // KimNamespace ns = Services.INSTANCE.getResources().resolveNamespace(b,
-  // scope);
-  // if (!b.equals(a) && ns.getImports().containsKey(a)) {
-  // namespace = b;
-  // }
-  // }
-  // }
-  //
-  // /*
-  // * candidate namespace must already import all the others. If not, choose the
-  // * fallback ontology which must be guaranteed to contain all the imports
-  // already.
-  // */
-  // boolean transitive = true;
-  // KimNamespace ns =
-  // Services.INSTANCE.getResources().resolveNamespace(namespace, scope);
-  // for (String s : graph) {
-  // if (!s.equals(ns.getUrn()) && !ns.getImports().containsKey(s)) {
-  // transitive = false;
-  // break;
-  // }
-  // }
-  // return (Ontology) (transitive && ns != null ? getOntology(ns.getNamespace())
-  // : fallback);
-  // }
-  //
-  // String getNamespace(Object o) {
-  // if (o instanceof KimStatement) {
-  // return ((KimStatement)o).getNamespace();
-  // } else if (o instanceof Model) {
-  // return ((Model)o).getNamespace();
-  // }
-  // // FIXME throw some shit
-  // return null;
-  // }
-
   public Set<Concept> getOperands(Concept asConcept) {
     Set<Concept> ret = new HashSet<>();
     OWLClass _owl = getOWLClass(asConcept);
@@ -3080,4 +2997,5 @@ public class OWL {
     }
     return false;
   }
+
 }

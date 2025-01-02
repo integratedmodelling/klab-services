@@ -1,6 +1,7 @@
 package org.integratedmodelling.cli.views;
 
 import org.integratedmodelling.cli.KlabCLI;
+import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Version;
@@ -125,14 +126,14 @@ public class CLIReasonerView {
 
     @Parameters java.util.List<String> observables;
 
-    @Option(
-        names = {"-a", "--acknowledgement"},
-        defaultValue = "false",
-        description = {
-          "Force a direct" + " observable to represent the acknowledgement of the observable."
-        },
-        required = false)
-    boolean acknowledge;
+    //    @Option(
+    //        names = {"-a", "--acknowledgement"},
+    //        defaultValue = "false",
+    //        description = {
+    //          "Force a direct" + " observable to represent the acknowledgement of the observable."
+    //        },
+    //        required = false)
+    //    boolean acknowledge;
 
     @Override
     public void run() {
@@ -163,15 +164,15 @@ public class CLIReasonerView {
         return;
       }
 
-      if (acknowledge) {
-        if (!observable.getDescriptionType().isInstantiation()) {
-          err.println(
-              CommandLine.Help.Ansi.AUTO.string(
-                  "Cannot acknowledge something that is not" + " countable"));
-          return;
-        }
-        observable = observable.builder(ctx).as(DescriptionType.ACKNOWLEDGEMENT).build();
-      }
+      //      if (acknowledge) {
+      //        if (!observable.getDescriptionType().isInstantiation()) {
+      //          err.println(
+      //              CommandLine.Help.Ansi.AUTO.string(
+      //                  "Cannot acknowledge something that is not" + " countable"));
+      //          return;
+      //        }
+      //        observable = observable.builder(ctx).as(DescriptionType.ACKNOWLEDGEMENT).build();
+      //      }
 
       var observation =
           DigitalTwin.createObservation(
@@ -622,6 +623,13 @@ public class CLIReasonerView {
 
     @Spec CommandSpec commandSpec;
 
+    @Option(
+        names = {"-a", "--alternative"},
+        defaultValue = "false",
+        description = {"Include inherited " + "traits"},
+        required = false)
+    boolean alternative = false;
+
     @Parameters java.util.List<String> arguments;
 
     @Override
@@ -650,7 +658,14 @@ public class CLIReasonerView {
 
       for (var urn : tokens.stream().map(l -> Utils.Strings.join(l, " ")).toList()) {
 
-        var concept = reasoner.resolveConcept(urn);
+        Concept concept = null;
+
+        if (alternative && reasoner instanceof ReasonerClient reasonerClient) {
+          concept = reasonerClient.resolveConceptAlternative(urn);
+        } else {
+          concept = reasoner.resolveConcept(urn);
+        }
+
         if (concept != null) {
           out.println(AUTO.string("Normalized URN: @|blue " + concept.getUrn() + "|@"));
           out.println(describe(concept, reasoner));

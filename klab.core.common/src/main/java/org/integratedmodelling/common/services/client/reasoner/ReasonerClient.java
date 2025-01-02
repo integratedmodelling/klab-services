@@ -60,6 +60,11 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
         return client.get(ServicesAPI.CAPABILITIES, ReasonerCapabilitiesImpl.class);
     }
 
+    // TODO remove when the new semantic builder is in place
+    public Concept resolveConceptAlternative(String urn) {
+        return client.post("/resolve/dioporco", urn, Concept.class);
+    }
+
     @Override
     public Concept resolveConcept(String definition) {
         return client.post(ServicesAPI.REASONER.RESOLVE_CONCEPT, definition, Concept.class);

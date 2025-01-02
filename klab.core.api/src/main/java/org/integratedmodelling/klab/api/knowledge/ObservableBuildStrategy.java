@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,12 +41,13 @@ public class ObservableBuildStrategy implements Observable.Builder {
         OF, WITH,/* WITHIN, */GOAL, FROM, TO, WITH_ROLE, AS, WITH_TRAITS, WITHOUT, WITHOUT_ANY_CONCEPTS, WITHOUT_ANY_TYPES, ADJACENT,
         COOCCURRENT, COLLECTIVE,
         WITH_UNIT, WITH_CURRENCY, WITH_RANGE, WITH_VALUE_OPERATOR, LINKING, NAMED, WITHOUT_VALUE_OPERATORS, AS_OPTIONAL, WITHOUT_ROLES,
-        WITH_TEMPORAL_INHERENT, REFERENCE_NAMED, WITH_INLINE_VALUE,
-        WITH_DEFAULT_VALUE, WITH_RESOLUTION_EXCEPTION, AS_GENERIC, WITH_ANNOTATION, AS_DESCRIPTION_TYPE
+        WITH_TEMPORAL_INHERENT, REFERENCE_NAMED, WITH_INLINE_VALUE, WITH_OBSERVER_SEMANTICS,
+        WITH_DEFAULT_VALUE, WITH_RESOLUTION_EXCEPTION, AS_GENERIC, WITH_ANNOTATION/*, AS_DESCRIPTION_TYPE*/
     }
 
     public static class Operation implements Serializable {
 
+        @Serial
         private static final long serialVersionUID = -3560499809607527771L;
 
         private List<Annotation> annotations = new ArrayList<>();
@@ -321,11 +323,11 @@ public class ObservableBuildStrategy implements Observable.Builder {
         return this;
     }
 
-    @Override
-    public Builder as(DescriptionType descriptionType) {
-        this.operations.add(new Operation(OperationType.AS_DESCRIPTION_TYPE, descriptionType));
-        return this;
-    }
+//    @Override
+//    public Builder as(DescriptionType descriptionType) {
+//        this.operations.add(new Operation(OperationType.AS_DESCRIPTION_TYPE, descriptionType));
+//        return this;
+//    }
 
     @Override
     public Builder withTrait(Concept... concepts) {
@@ -360,7 +362,7 @@ public class ObservableBuildStrategy implements Observable.Builder {
     }
 
     @Override
-    public Observable build() throws KlabValidationException {
+    public Observable buildObservable() throws KlabValidationException {
         var reasoner = this.scope.getService(Reasoner.class);
         return reasoner.buildObservable(this);
     }
@@ -519,8 +521,8 @@ public class ObservableBuildStrategy implements Observable.Builder {
     }
 
     @Override
-    public Builder generic(boolean generic) {
-        this.operations.add(new Operation(OperationType.AS_GENERIC, generic));
+    public Builder withObserverSemantics(Concept observerSemantics) {
+        this.operations.add(new Operation(OperationType.WITH_OBSERVER_SEMANTICS, observerSemantics));
         return this;
     }
 

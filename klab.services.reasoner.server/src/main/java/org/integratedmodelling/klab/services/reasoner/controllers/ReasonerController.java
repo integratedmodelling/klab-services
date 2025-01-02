@@ -9,22 +9,31 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.reasoner.objects.DeclarationRequest;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.reasoner.ReasonerServer;
+import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class ReasonerController {
 
   @Autowired private ReasonerServer reasoner;
+
+  // FIXME REMOVE
+  @PostMapping("/resolve/dioporco")
+  public @ResponseBody Concept resolveConcept(@RequestBody String definition) {
+      var syntax = reasoner.klabService().serviceScope().getService(ResourcesService.class).resolveConcept(definition);
+      if (syntax != null) {
+        return SemanticsBuilder.create(syntax, reasoner.klabService()).buildConcept();
+      }
+      return null;
+  }
+
 
   /**
    * GET /resolve/concept
@@ -33,7 +42,13 @@ public class ReasonerController {
    * @return
    */
   @PostMapping(ServicesAPI.REASONER.RESOLVE_CONCEPT)
-  public @ResponseBody Concept resolveConcept(@RequestBody String definition) {
+  public @ResponseBody Concept resolveConcept(@RequestBody String definition, @RequestParam(name = "alt", required = false) boolean alternative) {
+    if (alternative) {
+      var syntax = reasoner.klabService().serviceScope().getService(ResourcesService.class).resolveConcept(definition);
+      if (syntax != null) {
+        return SemanticsBuilder.create(syntax, reasoner.klabService()).buildConcept();
+      }
+    }
     return reasoner.klabService().resolveConcept(definition);
   }
 

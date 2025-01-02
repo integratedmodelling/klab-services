@@ -7,29 +7,43 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
 
 public interface Concept extends Semantics {
 
-    /**
-     * @return
-     */
-    Set<SemanticType> getType();
+  /**
+   * @return
+   */
+  Set<SemanticType> getType();
 
-    /**
-     * The 'collective' character ('each' ...) belongs to the observable and not to the concept, but for
-     * consistent parsing we must add it to the Concept and propagate it to the observable. When the Concept
-     * is used alone, the collective character should be ignored as it is an attribute of the observation
-     * (determining the {@link DescriptionType#INSTANTIATION}) and does not affect the semantics.
-     *
-     * @return
-     */
-    boolean isCollective();
+  /**
+   * The 'collective' character ('each' ...) belongs to the observable and not to the concept, but
+   * for consistent parsing we must add it to the Concept and propagate it to the observable. When
+   * the Concept is used alone, the collective character should be ignored as it is an attribute of
+   * the observation (determining the {@link DescriptionType#INSTANTIATION}) and does not affect the
+   * semantics.
+   *
+   * @return
+   */
+  boolean isCollective();
 
-    /**
-     * This returns null in "normal" concepts, while a concept qualified with <code>any</code>,
-     * <code>all</code> or
-     * <code>no</code> will return, respectively, {@link LogicalConnector#UNION},
-     * {@link LogicalConnector#INTERSECTION} or , {@link LogicalConnector#EXCLUSION}.
-     *
-     * @return
-     */
-    LogicalConnector getQualifier();
+  /**
+   * This returns null in "normal" concepts, while a concept qualified with <code>any</code>, <code>
+   * all</code> or <code>no</code> will return, respectively, {@link LogicalConnector#UNION}, {@link
+   * LogicalConnector#INTERSECTION} or , {@link LogicalConnector#EXCLUSION}.
+   *
+   * @return
+   */
+  LogicalConnector getQualifier();
 
+  /**
+   * Make and return the singular version of this concept.
+   *
+   * @return
+   */
+  Concept singular();
+
+  /**
+   * Make and return the collective version of this concept. Calling this on anything other than a
+   * substantial will throw an exception.
+   *
+   * @return
+   */
+  Concept collective();
 }
