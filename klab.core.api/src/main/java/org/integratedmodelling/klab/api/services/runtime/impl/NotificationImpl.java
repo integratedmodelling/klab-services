@@ -93,6 +93,11 @@ public class NotificationImpl implements Notification, Serializable {
         public void setType(KlabAsset.KnowledgeClass type) {
             this.type = type;
         }
+
+        @Override
+        public String toString() {
+            return  offsetInDocument + "/" + length;
+        }
     }
 
     public NotificationImpl() {

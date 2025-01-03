@@ -399,7 +399,12 @@ public class WorkspaceManager {
         if (!errors.isEmpty()) {
           for (var error : errors) {
             scope.error(
-                "Observation strategy resource has errors: " + strategyUrl,
+                "Observation strategy resource has errors: "
+                    + strategyUrl
+                    + " "
+                    + error.getMessage()
+                    + "@"
+                    + error.getLexicalContext(),
                 Klab.ErrorCode.RESOURCE_VALIDATION,
                 Klab.ErrorContext.OBSERVATION_STRATEGY);
           }

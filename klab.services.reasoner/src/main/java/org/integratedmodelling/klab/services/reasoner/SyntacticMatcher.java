@@ -30,6 +30,9 @@ public class SyntacticMatcher {
   private ReasonerService reasonerService;
   private ResourcesService resourcesService;
 
+  /**
+   * @deprecated switch to the resources client and service along with a KimConcept cache
+   */
   private LoadingCache<String, KimObservable> conceptCache =
       CacheBuilder.newBuilder()
           .concurrencyLevel(20)

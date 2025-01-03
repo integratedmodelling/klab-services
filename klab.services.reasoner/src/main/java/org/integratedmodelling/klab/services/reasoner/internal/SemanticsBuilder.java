@@ -1,7 +1,11 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.lang.kim.KimConceptImpl;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;

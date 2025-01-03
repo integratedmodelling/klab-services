@@ -10,7 +10,6 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -77,7 +76,7 @@ public enum LanguageAdapter {
     return ret;
   }
 
-  public KimConcept adaptSemantics(
+  public KimConceptImpl adaptSemantics(
       SemanticSyntax semantics,
       String namespace,
       String projectName,
@@ -91,6 +90,8 @@ public enum LanguageAdapter {
 
     if (tokens.isEmpty()) {
       return null;
+    } else if (tokens.size() > 1) {
+      System.out.println("DIO PANDA MUST WRITE adaptSemanticSequence()");
     }
 
     // TODO first thing check if there are AND or OR restrictions and behave accordingly
@@ -132,64 +133,6 @@ public enum LanguageAdapter {
             return o1.getUrn().compareTo(o2.getUrn());
           }
         });
-    //
-    //        if (semantics.getUnaryOperator() != null && semantics.getUnaryOperator().getFirst() !=
-    // null) {
-    //
-    // ret.setSemanticModifier(UnarySemanticOperator.valueOf(semantics.getUnaryOperator().getFirst().name()));
-    //            if (semantics.getUnaryOperator().getSecond() != null) {
-    //                // TODO not sure we have any situation when there is more than one secondary
-    // concept
-    //
-    // ret.setComparisonConcept(adaptSemantics(semantics.getUnaryOperator().getSecond().getFirst(),
-    // namespace
-    //                        , projectName, documentClass));
-    //            }
-    //        }
-    //
-    //        for (var restriction : semantics.getRestrictions()) {
-    //            // TODO handle "each" - collective character of the argument, not sure that
-    // happens
-    //            var restricting = restriction.getSecond();
-    //            switch (restriction.getFirst()) {
-    //                case OF -> {
-    //                    ret.setInherent(adaptSemantics(restricting.getFirst(),
-    // namespace,projectName, documentClass));
-    //                }
-    //                case FOR -> {
-    //                    ret.setGoal(adaptSemantics(restricting.getFirst(), namespace,projectName,
-    // documentClass));
-    //                }
-    //                case WITH -> {
-    //                    ret.setCompresent(adaptSemantics(restricting.getFirst(),
-    // namespace,projectName, documentClass));
-    //                }
-    //                case ADJACENT -> {
-    //                    ret.setAdjacent(adaptSemantics(restricting.getFirst(),
-    // namespace,projectName, documentClass));
-    //                }
-    //                case CAUSING -> {
-    //                    ret.setCaused(adaptSemantics(restricting.getFirst(),
-    // namespace,projectName, documentClass));
-    //                }
-    //                case CAUSED_BY -> {
-    //                    ret.setCausant(adaptSemantics(restricting.getFirst(),
-    // namespace,projectName, documentClass));
-    //                }
-    //                case LINKING -> {
-    //                    ret.setRelationshipSource(adaptSemantics(restricting.getFirst(),
-    // namespace,projectName, documentClass));
-    //                    ret.setRelationshipTarget(adaptSemantics(restricting.get(1),
-    // namespace,projectName, documentClass));
-    //                }
-    //                case DURING -> {
-    //                    ret.setCooccurrent(adaptSemantics(restricting.getFirst(),
-    // namespace,projectName, documentClass));
-    //                }
-    //                default -> throw new KlabInternalErrorException("Unexpected concept
-    // restriction with semantic clause " + restriction.getFirst());
-    //            }
-    //        }
 
     // rebuild urn
     StringBuilder urn = new StringBuilder();
@@ -255,6 +198,10 @@ public enum LanguageAdapter {
           UnarySemanticOperator.valueOf(semantics.getUnaryOperator().getFirst().name()));
       if (semantics.getUnaryOperator().getSecond() != null) {
         // TODO not sure we have any situation when there is more than one secondary concept
+        if (semantics.getUnaryOperator().getSecond().size() > 1) {
+          System.out.println("DIO POLLO MUST WRITE adaptSemanticSequence()");
+        }
+
         ret.setComparisonConcept(
             adaptSemantics(
                 semantics.getUnaryOperator().getSecond().getFirst(),
@@ -265,66 +212,57 @@ public enum LanguageAdapter {
     }
 
     for (var restriction : semantics.getRestrictions()) {
-      switch (restriction.getFirst()) {
-        case OF -> {
-          ret.setInherent(
-              adaptSemantics(
-                  restriction.getSecond().getFirst(), namespace, projectName, documentClass));
-        }
-        case FOR -> {
-          ret.setGoal(
-              adaptSemantics(
-                  restriction.getSecond().getFirst(), namespace, projectName, documentClass));
-        }
-        case WITH -> {
-          ret.setCompresent(
-              adaptSemantics(
-                  restriction.getSecond().getFirst(), namespace, projectName, documentClass));
-        }
-        case ADJACENT -> {
-          ret.setAdjacent(
-              adaptSemantics(
-                  restriction.getSecond().getFirst(), namespace, projectName, documentClass));
-        }
-        case OR -> {}
-        case AND -> {}
-        case CAUSING -> {
-          ret.setCaused(
-              adaptSemantics(
-                  restriction.getSecond().getFirst(), namespace, projectName, documentClass));
-        }
-        case CAUSED_BY -> {
-          ret.setCausant(
-              adaptSemantics(
-                  restriction.getSecond().getFirst(), namespace, projectName, documentClass));
-        }
-        case LINKING -> {
-          ret.setRelationshipSource(
-              adaptSemantics(
-                  restriction.getSecond().get(0), namespace, projectName, documentClass));
-          ret.setRelationshipTarget(
-              adaptSemantics(
-                  restriction.getSecond().get(1), namespace, projectName, documentClass));
-        }
-        case CONTAINING -> {
-          // TODO
-          throw new IllegalStateException("no syntax for containment");
-        }
-        case CONTAINED_IN -> {
-          // TODO
-          throw new IllegalStateException("no syntax for containment");
-        }
-        case DURING -> { // TODO missing DURING_EACH - but is it necessary?
-          ret.setCooccurrent(
-              adaptSemantics(
-                  restriction.getSecond().get(0), namespace, projectName, documentClass));
+
+      // TODO not sure this happens
+      if (restriction.getSecond().size() > 1) {
+        System.out.println("DIO BUFFO MUST WRITE adaptSemanticSequence()");
+      }
+
+      boolean collective = restriction.getThird();
+      var operand =
+          adaptSemantics(restriction.getSecond().get(0), namespace, projectName, documentClass);
+      if (operand != null && collective) {
+        operand.setCollective(true);
+        operand.resetDefinition();
+      }
+
+      if (operand != null) {
+        switch (restriction.getFirst()) {
+          case OF -> ret.setInherent(operand);
+          case FOR -> ret.setGoal(operand);
+          case WITH -> ret.setCompresent(operand);
+          case ADJACENT -> ret.setAdjacent(operand);
+          case OR -> {}
+          case AND -> {}
+          case CAUSING -> ret.setCaused(operand);
+          case CAUSED_BY -> ret.setCausant(operand);
+          case LINKING -> {
+            ret.setRelationshipSource(operand);
+            var target =
+                adaptSemantics(
+                    restriction.getSecond().get(0), namespace, projectName, documentClass);
+            if (target != null && collective) {
+              target.setCollective(true);
+              target.resetDefinition();
+            }
+            ret.setRelationshipTarget(target);
+          }
+          case CONTAINING -> {
+            // TODO
+            throw new IllegalStateException("no syntax for containment");
+          }
+          case CONTAINED_IN -> {
+            // TODO
+            throw new IllegalStateException("no syntax for containment");
+          }
+          case DURING -> ret.setCooccurrent(operand);
         }
       }
     }
 
     // TODO establish abstract and generic nature
 
-    ret.computeUrn();
+    ret.finalizeDefinition();
 
     return ret;
   }
@@ -550,7 +488,7 @@ public enum LanguageAdapter {
     ret.setName(ret.getUrn());
     ret.setType(adaptSemanticType(observable.concept().mainType()));
     ret.setDocumentClass(documentClass);
-//    ret.computeUrn();
+    //    ret.computeUrn();
     return ret;
   }
 

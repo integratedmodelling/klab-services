@@ -17,7 +17,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
   @Serial private static final long serialVersionUID = 8531431719010407385L;
 
-  private SemanticRole semanticRole;
+//  private SemanticRole semanticRole;
   private String name;
   private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
   private KimConcept observable;
@@ -62,7 +62,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
   private KimConceptImpl(KimConceptImpl other) {
     super(other);
-    this.semanticRole = other.semanticRole;
+//    this.semanticRole = other.semanticRole;
     this.name = other.name;
     this.type = EnumSet.copyOf(other.type);
     this.observable = other.observable;
@@ -89,8 +89,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.cooccurrent = other.cooccurrent;
     this.adjacent = other.adjacent;
     this.codeName = other.codeName;
-    //    this.temporalInherent = other.temporalInherent;
     this.argumentType = EnumSet.copyOf(other.argumentType);
+    this.pattern = other.pattern;
+    this.patternVariables.addAll(other.patternVariables);
+    this.valueOperators.addAll(other.valueOperators);
   }
 
   @Override
@@ -218,14 +220,14 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     return this.codeName;
   }
 
-  @Override
-  public SemanticRole getSemanticRole() {
-    return this.semanticRole;
-  }
-
-  public void setSemanticRole(SemanticRole semanticRole) {
-    this.semanticRole = semanticRole;
-  }
+  //  @Override
+  //  public SemanticRole getSemanticRole() {
+  //    return this.semanticRole;
+  //  }
+  //
+  //  public void setSemanticRole(SemanticRole semanticRole) {
+  //    this.semanticRole = semanticRole;
+  //  }
 
   public void setName(String name) {
     this.name = name;
@@ -347,8 +349,20 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       ret.semanticModifier = null;
       ret.comparisonConcept = null;
       ret.type = this.argumentType;
-      ret.urn = ret.computeUrn();
     }
+    ret.resetDefinition();
+    return ret;
+  }
+
+  @Override
+  public KimConcept addOperator(UnarySemanticOperator operator, KimConcept operand,
+                                KimConcept comparisonConcept) {
+    KimConceptImpl ret = new KimConceptImpl(this);
+    ret.semanticModifier = operator;
+    ret.type = operator.getApplicableType(operand.getType()); // TODO check
+    ret.observable = operand;
+    ret.comparisonConcept = comparisonConcept;
+    ret.resetDefinition();
     return ret;
   }
 
@@ -394,7 +408,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       }
     }
 
-    ret.computeUrn();
+    ret.resetDefinition();
 
     return ret;
   }
@@ -441,7 +455,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       }
     }
 
-    ret.computeUrn();
+    ret.resetDefinition();
 
     return ret;
   }
@@ -493,11 +507,29 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     return ret;
   }
 
-  /** Create the normalized text declaration that can be parsed back into a concept. */
-  public String computeUrn() {
+  /** Call after a setting made after the concept had been finalized */
+  public void resetDefinition() {
+    this.urn = null;
+    finalizeDefinition();
+  }
+
+  /**
+   * Called after definition is complete. Will create the URN as a normalized text declaration that
+   * can be parsed back into a concept.
+   *
+   * <p>TODO must also establish abstract nature and handle generics *
+   *
+   * <p>TODO must also compute the code name and reference name, which shouldn't come from the
+   *  semantics.
+   */
+  public String finalizeDefinition() {
 
     if (this.urn != null) {
       return this.urn;
+    }
+
+    if (!isCollective() && observable != null && observable.isCollective()) {
+      collective = true;
     }
 
     StringBuilder ret = new StringBuilder(isCollective() ? "each" : "");
@@ -512,7 +544,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
     traits.sort(
         (o1, o2) ->
-            ((KimConceptImpl) o1).computeUrn().compareTo(((KimConceptImpl) o2).computeUrn()));
+            ((KimConceptImpl) o1)
+                .finalizeDefinition()
+                .compareTo(((KimConceptImpl) o2).finalizeDefinition()));
 
     for (KimConcept trait : traits) {
       ret.append((ret.isEmpty()) ? "" : " ")
@@ -521,20 +555,22 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
     roles.sort(
         (o1, o2) ->
-            ((KimConceptImpl) o1).computeUrn().compareTo(((KimConceptImpl) o2).computeUrn()));
+            ((KimConceptImpl) o1)
+                .finalizeDefinition()
+                .compareTo(((KimConceptImpl) o2).finalizeDefinition()));
     for (KimConcept role : roles) {
       ret.append((ret.isEmpty()) ? "" : " ")
           .append(((KimConceptImpl) role).computeUrnAndParenthesize());
     }
 
     ret.append((ret.isEmpty()) ? "" : " ")
-        .append(name == null ? ((KimConceptImpl) observable).computeUrn() : name);
+        .append(name == null ? ((KimConceptImpl) observable).finalizeDefinition() : name);
 
     if (comparisonConcept != null) {
       ret.append(" ")
           .append(semanticModifier.declaration[1])
           .append(" ")
-          .append(((KimConceptImpl) comparisonConcept).computeUrn());
+          .append(((KimConceptImpl) comparisonConcept).finalizeDefinition());
     }
 
     if (inherent != null) {
@@ -598,7 +634,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
    */
   private String computeUrnAndParenthesize() {
 
-    String urn = computeUrn();
+    String urn = finalizeDefinition();
     boolean trivial = getModifiers().isEmpty() && valueOperators.isEmpty();
 
     if (trivial) {
@@ -614,10 +650,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
           }
         }
         if (!present) {
-          countElements ++;
+          countElements++;
         }
-      } else if (observable != null){
-        countElements ++;
+      } else if (observable != null) {
+        countElements++;
       }
       trivial = !allTraits || countElements == 1;
     }
@@ -667,7 +703,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     if (obj == null) return false;
     if (getClass() != obj.getClass()) return false;
     KimConceptImpl other = (KimConceptImpl) obj;
-    return Objects.equals(computeUrn(), other.computeUrn());
+    return Objects.equals(finalizeDefinition(), other.finalizeDefinition());
   }
 
   public List<Pair<ValueOperator, Object>> getValueOperators() {
