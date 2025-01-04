@@ -90,9 +90,7 @@ public abstract class ObservableKbox extends H2Kbox {
       // return
       // reasoner.declareObservable(resourceService.resolveObservable(typeHash.get(id)));
       // }
-      return scope
-          .getService(Reasoner.class)
-          .declareObservable(resourceService.resolveObservable(typeHash.get(id)));
+      return scope.getService(Reasoner.class).resolveObservable(typeHash.get(id));
     }
     return null;
   }
@@ -686,8 +684,6 @@ public abstract class ObservableKbox extends H2Kbox {
       declaration = declaration.replace(key.getFirst().getUrn(), rep);
     }
 
-    return scope
-        .getService(Reasoner.class)
-        .declareConcept(resourceService.resolveConcept(declaration));
+    return scope.getService(Reasoner.class).resolveConcept(declaration);
   }
 }

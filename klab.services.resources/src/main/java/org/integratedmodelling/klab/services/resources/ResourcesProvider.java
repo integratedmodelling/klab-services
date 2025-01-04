@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.services.resources;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
@@ -63,6 +66,7 @@ import java.io.FileFilter;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -82,6 +86,30 @@ public class ResourcesProvider extends BaseService
    *     org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox}
    */
   private Set<String> localResources = new HashSet<>();
+
+  /** Caches for concepts and observables. */
+  private LoadingCache<String, KimConcept> concepts =
+      CacheBuilder.newBuilder()
+          .maximumSize(500)
+          // .expireAfterAccess(10, TimeUnit.MINUTES)
+          .build(
+              new CacheLoader<String, KimConcept>() {
+                public KimConcept load(String key) {
+                  return resolveConceptInternal(key);
+                }
+              });
+
+  /** Caches for concepts and observables. */
+  private LoadingCache<String, KimObservable> observables =
+      CacheBuilder.newBuilder()
+          .maximumSize(500)
+          // .expireAfterAccess(10, TimeUnit.MINUTES)
+          .build(
+              new CacheLoader<String, KimObservable>() {
+                public KimObservable load(String key) {
+                  return resolveObservableInternal(key);
+                }
+              });
 
   /**
    * the only persistent info in this implementation is the catalog of resource status info. This is
@@ -469,7 +497,14 @@ public class ResourcesProvider extends BaseService
       ProjectStorage.ResourceType documentType,
       String content,
       UserScope scope) {
-    return this.workspaceManager.updateDocument(projectName, documentType, content, scope);
+    var ret = this.workspaceManager.updateDocument(projectName, documentType, content, scope);
+    invalidateCaches();
+    return ret;
+  }
+
+  private void invalidateCaches() {
+    concepts.invalidateAll();
+    observables.invalidateAll();
   }
 
   @Override
@@ -497,6 +532,7 @@ public class ResourcesProvider extends BaseService
     //                this.localProjects.remove(projectName);
     //            }
     workspaceManager.removeProject(projectName);
+    invalidateCaches();
     db.commit();
 
     //        }/* finally {*/
@@ -512,6 +548,7 @@ public class ResourcesProvider extends BaseService
     for (Project project : workspace.getProjects()) {
       deleteProject(project.getUrn(), scope);
     }
+    invalidateCaches();
     //        try {
     //            updateLock.writeLock().lock();
     ////            this.localWorkspaces.remove(workspaceName);
@@ -595,7 +632,50 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
+  public KimConcept.Descriptor describeConcept(String conceptUrn) {
+    return workspaceManager.describeConcept(conceptUrn);
+  }
+
+  @Override
+  public KimConcept resolveConcept(String definition) {
+    try {
+      return concepts.get(removeExcessParentheses(definition));
+    } catch (ExecutionException e) {
+      scope.warn("invalid concept definition: " + definition);
+    }
+    return null;
+  }
+
+  @Override
   public KimObservable resolveObservable(String definition) {
+    try {
+      return observables.get(removeExcessParentheses(definition));
+    } catch (ExecutionException e) {
+      scope.warn("invalid observable definition: " + definition);
+    }
+    return null;
+  }
+
+  public KimConcept resolveConceptInternal(String definition) {
+    var parsed = this.workspaceManager.resolveConcept(definition);
+    if (parsed != null) {
+      boolean errors = false;
+      for (var notification : parsed.getNotifications()) {
+        if (notification.message().level() == LanguageValidationScope.Level.ERROR) {
+          errors = true;
+          scope.error(notification.message().message());
+        } else if (notification.message().level() == LanguageValidationScope.Level.WARNING) {
+          scope.error(notification.message().message());
+        }
+      }
+      return errors ? null : LanguageAdapter.INSTANCE.adaptSemantics(parsed, null, null, null);
+    }
+    return null;
+  }
+
+
+
+  public KimObservable resolveObservableInternal(String definition) {
     var parsed = this.workspaceManager.resolveObservable(removeExcessParentheses(definition));
     if (parsed != null) {
       boolean errors = false;
@@ -608,29 +688,6 @@ public class ResourcesProvider extends BaseService
         }
       }
       return errors ? null : LanguageAdapter.INSTANCE.adaptObservable(parsed, null, null, null);
-    }
-    return null;
-  }
-
-  @Override
-  public KimConcept.Descriptor describeConcept(String conceptUrn) {
-    return workspaceManager.describeConcept(conceptUrn);
-  }
-
-  @Override
-  public KimConcept resolveConcept(String definition) {
-    var parsed = this.workspaceManager.resolveConcept(removeExcessParentheses(definition));
-    if (parsed != null) {
-      boolean errors = false;
-      for (var notification : parsed.getNotifications()) {
-        if (notification.message().level() == LanguageValidationScope.Level.ERROR) {
-          errors = true;
-          scope.error(notification.message().message());
-        } else if (notification.message().level() == LanguageValidationScope.Level.WARNING) {
-          scope.error(notification.message().message());
-        }
-      }
-      return errors ? null : LanguageAdapter.INSTANCE.adaptSemantics(parsed, null, null, null);
     }
     return null;
   }

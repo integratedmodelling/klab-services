@@ -27,7 +27,7 @@ public class ObservationReasoner {
 
   private static Set<String> defaultVariables = Set.of("this", "context");
 
-  private Reasoner reasoner;
+  private ReasonerService reasoner;
   private List<KimObservationStrategy> observationStrategies = new ArrayList<>();
 
   private static class QuickSemanticFilter {

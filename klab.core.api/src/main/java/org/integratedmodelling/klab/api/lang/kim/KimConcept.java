@@ -1,10 +1,12 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.SemanticClause;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
+import org.integratedmodelling.klab.api.lang.ValueOperator;
 
 import java.util.Collection;
 import java.util.List;
@@ -121,6 +123,8 @@ public interface KimConcept extends KlabStatement {
   KimConcept addOperator(
       UnarySemanticOperator operator, KimConcept operand, KimConcept comparisonConcept);
 
+  List<Pair<SemanticRole, KimConcept>> getModifiers();
+
   /**
    * Collective resolution/perspective linked to the <code>each</code> keyword in the expression.
    * This determines the perspective in resolution: if a countable, resolution is instantiation; if
@@ -171,12 +175,12 @@ public interface KimConcept extends KlabStatement {
    */
   KimConcept getAdjacent();
 
-  /**
-   * Return a string suitable for naming a k.IM object after this concept.
-   *
-   * @return
-   */
-  String getCodeName();
+//  /**
+//   * Return a string suitable for naming a k.IM object after this concept.
+//   *
+//   * @return
+//   */
+//  String getCodeName();
 
   //  SemanticRole getSemanticRole();
 
@@ -186,6 +190,8 @@ public interface KimConcept extends KlabStatement {
    * @return
    */
   KimConcept getParent();
+
+  List<Pair<ValueOperator, Object>> getValueOperators();
 
   boolean isPattern();
 

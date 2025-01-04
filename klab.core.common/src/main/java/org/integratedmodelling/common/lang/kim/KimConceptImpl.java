@@ -17,7 +17,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
   @Serial private static final long serialVersionUID = 8531431719010407385L;
 
-//  private SemanticRole semanticRole;
+  //  private SemanticRole semanticRole;
   private String name;
   private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
   private KimConcept observable;
@@ -42,7 +42,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   private SemanticType fundamentalType;
   private KimConcept cooccurrent;
   private KimConcept adjacent;
-  private String codeName;
   private boolean collective;
   private boolean pattern;
   private Set<String> patternVariables = new HashSet<>();
@@ -62,7 +61,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
   private KimConceptImpl(KimConceptImpl other) {
     super(other);
-//    this.semanticRole = other.semanticRole;
     this.name = other.name;
     this.type = EnumSet.copyOf(other.type);
     this.observable = other.observable;
@@ -88,7 +86,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.fundamentalType = other.fundamentalType;
     this.cooccurrent = other.cooccurrent;
     this.adjacent = other.adjacent;
-    this.codeName = other.codeName;
     this.argumentType = EnumSet.copyOf(other.argumentType);
     this.pattern = other.pattern;
     this.patternVariables.addAll(other.patternVariables);
@@ -215,10 +212,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     return this.adjacent;
   }
 
-  @Override
-  public String getCodeName() {
-    return this.codeName;
-  }
+  //  @Override
+  //  public String getCodeName() {
+  //    return this.codeName;
+  //  }
 
   //  @Override
   //  public SemanticRole getSemanticRole() {
@@ -321,9 +318,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.adjacent = adjacent;
   }
 
-  public void setCodeName(String codeName) {
-    this.codeName = codeName;
-  }
+  //  public void setCodeName(String codeName) {
+  //    this.codeName = codeName;
+  //  }
 
   @Override
   public KimConcept getParent() {
@@ -355,8 +352,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   }
 
   @Override
-  public KimConcept addOperator(UnarySemanticOperator operator, KimConcept operand,
-                                KimConcept comparisonConcept) {
+  public KimConcept addOperator(
+      UnarySemanticOperator operator, KimConcept operand, KimConcept comparisonConcept) {
     KimConceptImpl ret = new KimConceptImpl(this);
     ret.semanticModifier = operator;
     ret.type = operator.getApplicableType(operand.getType()); // TODO check
@@ -470,6 +467,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     return ret;
   }
 
+  @Override
   public List<Pair<SemanticRole, KimConcept>> getModifiers() {
     List<Pair<SemanticRole, KimConcept>> ret = new ArrayList<>();
     for (var role : SemanticRole.values()) {
@@ -520,7 +518,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
    * <p>TODO must also establish abstract nature and handle generics *
    *
    * <p>TODO must also compute the code name and reference name, which shouldn't come from the
-   *  semantics.
+   * semantics.
    */
   public String finalizeDefinition() {
 
@@ -706,6 +704,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     return Objects.equals(finalizeDefinition(), other.finalizeDefinition());
   }
 
+  @Override
   public List<Pair<ValueOperator, Object>> getValueOperators() {
     return valueOperators;
   }

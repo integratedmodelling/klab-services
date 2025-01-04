@@ -724,12 +724,14 @@ public class ModelKbox extends ObservableKbox {
             && model.getObservables().getFirst().getSemantics().isCollective();
 
     // happens in error
-    if (model.getObservables().size() == 0 || model.getObservables().get(0) == null) {
+    if (model.getObservables().isEmpty() || model.getObservables().get(0) == null) {
       return ret;
     }
 
     Observable mainObservable =
-        scope.getService(Reasoner.class).declareObservable(model.getObservables().get(0));
+        scope
+            .getService(Reasoner.class)
+            .resolveObservable(model.getObservables().getFirst().getUrn());
 
     ret.addAll(getModelDescriptors(model, monitor));
 
@@ -738,12 +740,7 @@ public class ModelKbox extends ObservableKbox {
       for (KimObservable attr :
           model.getObservables().stream().filter(o -> o.getFormalName() != null).toList()) {
 
-        Observable observable = scope.getService(Reasoner.class).declareObservable(attr);
-
-        if (attr == null) {
-          // only in error
-          continue;
-        }
+        Observable observable = scope.getService(Reasoner.class).resolveObservable(attr.getUrn());
 
         /*
          * attribute type must have inherent type added if it's an instantiated quality
@@ -849,7 +846,7 @@ public class ModelKbox extends ObservableKbox {
     Observable main = null;
     for (KimObservable kobs : model.getObservables()) {
 
-      Observable oobs = scope.getService(Reasoner.class).declareObservable(kobs);
+      Observable oobs = scope.getService(Reasoner.class).resolveObservable(kobs.getUrn());
 
       if (first) {
         main = oobs;

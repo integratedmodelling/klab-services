@@ -165,7 +165,7 @@ public enum LanguageAdapter {
     ret.setType(adaptSemanticType(semantics.getType()));
     ret.setNegated(semantics.isNegated());
     ret.setCollective(semantics.isCollective());
-    ret.setCodeName(semantics.codeName());
+//    ret.setCodeName(semantics.codeName());
     ret.setDeprecation(semantics.getDeprecation());
     ret.setDeprecated(semantics.getDeprecation() != null);
     ret.setNamespace(namespace);
@@ -181,7 +181,7 @@ public enum LanguageAdapter {
         ret.setObservable(adaptSemantics(semantics.getObservable(), documentClass));
       } else {
         ret.setObservable(KimConceptImpl.nothing());
-        ret.setCodeName("invalid_concept");
+//        ret.setCodeName("invalid_concept");
       }
       for (var cr : semantics.getConceptReferences()) {
         var trait = adaptSemantics(cr, documentClass);

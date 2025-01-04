@@ -106,13 +106,18 @@ public class OWL {
   Ontology nonSemanticConcepts;
   OWLOntologyManager manager = null;
 
-  Concept thing;
-  Concept nothing;
+  private Concept thing;
+  private Concept nothing;
 
   private CoreOntology coreOntology;
 
   public OWL(Scope scope) {
     this.scope = scope;
+  }
+
+  public Concept nothing(String urn, Throwable... exceptions) {
+    // TODO return a special nothing with the passed URN and the exceptions in metadata
+    return nothing;
   }
 
   /**
@@ -520,11 +525,7 @@ public class OWL {
   }
 
   public void registerConcept(ConceptImpl concept) {
-    //    try {
     this.conceptsById.put(concept.getId(), concept);
-    //    } catch (IllegalArgumentException e) {
-    //      System.out.println("MERDA DIOCAN C'È GIÁ PORCA MADONNA " + concept.getUrn());
-    //    }
   }
 
   public String getConceptSpace(IRI iri) {
@@ -1533,7 +1534,7 @@ public class OWL {
     }
   }
 
-  public Concept makeNegation(Concept attribute, Ontology ontology) {
+  public Concept makeNegation(Concept attribute) {
 
     var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 
@@ -1546,7 +1547,7 @@ public class OWL {
     String prop =
         attribute.getMetadata().get(CoreOntology.NS.TRAIT_RESTRICTING_PROPERTY, String.class);
     String conceptId = "Not" + getCleanId(attribute);
-    Concept ret = ontology.getConcept(conceptId);
+    Concept ret = aontology.getConcept(conceptId);
     Concept parent = reas.parent(attribute);
 
     if (ret == null) {
@@ -1576,7 +1577,7 @@ public class OWL {
       ret = aontology.getConcept(conceptId);
 
       restrictSome(
-          ret, getProperty(CoreOntology.NS.IS_NEGATION_OF), attribute, (Ontology) ontology);
+          ret, getProperty(CoreOntology.NS.IS_NEGATION_OF), attribute, (Ontology) aontology);
     }
 
     return ret;
@@ -1619,13 +1620,48 @@ public class OWL {
   }
 
   /**
+   * Create a subclass of this concept in the internal ontology with the same metadata and type as
+   * the original. This is called when constructing a new concept that will be restricted with new
+   * restrictions not appropriate for the original concept. The URN will be set later and can be
+   * left blank in the returned concept but the final URN is passed for the class annotation.
+   *
+   * <p>The semantic type of the concept must be finalized when this is called.
+   *
+   * <p>The concept obtained must be passed back to {@link #finalizeConcept(ConceptImpl)} once the
+   * definition is complete to be registered with the reasoner and for its full metadata to be
+   * completed.
+   *
+   * @param ret
+   * @return
+   */
+  public synchronized Concept makeSubclass(Concept ret, String urn) {
+
+    var ontology = getOntology(INTERNAL_ONTOLOGY_ID);
+    var name = ontology.createIdForDefinition(urn);
+    List<Axiom> ax = new ArrayList<>();
+    ax.add(Axiom.ClassAssertion(name, ret.getType()));
+    ax.add(Axiom.SubClass(ret.getNamespace() + ":" + ret.getName(), name));
+    ax.add(Axiom.AnnotationAssertion(name, NS.CONCEPT_DEFINITION_PROPERTY, urn));
+    ontology.define(ax);
+    return ontology.getConcept(name);
+  }
+
+  public synchronized void finalizeConcept(ConceptImpl concept) {
+    if (reasoner != null) {
+      if (!reasoner.isSatisfiable(getOWLClass(concept))) {
+          concept.error("concept definition is semantically inconsistent");
+      }
+    }
+  }
+
+  /**
    * Turn a concept into its change if it's not already one, implementing the corresponding semantic
    * operator.
    *
    * @param concept the untransformed concept
    * @return the transformed concept
    */
-  public Concept makeChange(Concept concept) {
+  public synchronized Concept makeChange(Concept concept) {
 
     if (concept.is(SemanticType.CHANGE)) {
       return concept;
@@ -1689,7 +1725,7 @@ public class OWL {
    * @param concept the untransformed concept
    * @return the transformed concept
    */
-  public Concept makeRate(Concept concept) {
+  public synchronized Concept makeRate(Concept concept) {
 
     if (concept.is(SemanticType.RATE)) {
       return concept;
@@ -1753,7 +1789,7 @@ public class OWL {
    * @param concept the untransformed concept
    * @return the transformed concept
    */
-  public Concept makeChanged(Concept concept) {
+  public synchronized Concept makeChanged(Concept concept) {
 
     if (concept.is(SemanticType.CHANGED)) {
       return concept;
@@ -1816,7 +1852,7 @@ public class OWL {
    * @param concept the untransformed concept
    * @return the transformed concept
    */
-  public Concept makeCount(Concept concept) {
+  public synchronized Concept makeCount(Concept concept) {
 
     if (concept.is(SemanticType.NUMEROSITY)) {
       return concept;
@@ -1874,7 +1910,7 @@ public class OWL {
    * @param concept the untransformed concept
    * @return the transformed concept
    */
-  public Concept makeDistance(Concept concept) {
+  public synchronized Concept makeDistance(Concept concept) {
 
     if (concept.is(SemanticType.DISTANCE)) {
       return concept;
@@ -1927,7 +1963,7 @@ public class OWL {
    * @param concept the untransformed concept
    * @return the transformed concept
    */
-  public Concept makePresence(Concept concept) {
+  public synchronized Concept makePresence(Concept concept) {
 
     if (concept.is(SemanticType.PRESENCE)) {
       return concept;
@@ -1982,7 +2018,7 @@ public class OWL {
    * @param concept the untransformed concept. Must be a direct observable.
    * @return the transformed concept
    */
-  public Concept makeOccurrence(Concept concept) {
+  public synchronized Concept makeOccurrence(Concept concept) {
 
     if (concept.is(SemanticType.OCCURRENCE)) {
       return concept;
@@ -2036,7 +2072,7 @@ public class OWL {
    * @param concept the untransformed concept. Must be an event.
    * @return the transformed concept
    */
-  public Concept makeMagnitude(Concept concept) {
+  public synchronized Concept makeMagnitude(Concept concept) {
 
     if (concept.is(SemanticType.MAGNITUDE)) {
       return concept;
@@ -2089,7 +2125,7 @@ public class OWL {
    * @param concept the untransformed concept. Must be an event.
    * @return the transformed concept
    */
-  public Concept makeLevel(Concept concept) {
+  public synchronized Concept makeLevel(Concept concept) {
 
     if (concept.is(SemanticType.ORDERING)) {
       return concept;
@@ -2142,7 +2178,7 @@ public class OWL {
    * @param concept the untransformed concept. Must be an event.
    * @return the transformed concept
    */
-  public Concept makeProbability(Concept concept) {
+  public synchronized Concept makeProbability(Concept concept) {
 
     if (concept.is(SemanticType.PROBABILITY)) {
       return concept;
@@ -2194,7 +2230,7 @@ public class OWL {
    * @param concept the untransformed concept.
    * @return the transformed concept
    */
-  public Concept makeUncertainty(Concept concept) {
+  public synchronized Concept makeUncertainty(Concept concept) {
 
     if (concept.is(SemanticType.UNCERTAINTY)) {
       return concept;
@@ -2233,7 +2269,8 @@ public class OWL {
     return ontology.getConcept(conceptId);
   }
 
-  public Concept makeProportion(Concept concept, Concept comparison, boolean isPercentage) {
+  public synchronized Concept makeProportion(
+      Concept concept, Concept comparison, boolean isPercentage) {
 
     if (concept.is(SemanticType.PROPORTION) || concept.is(SemanticType.PERCENTAGE)) {
       return concept;
@@ -2311,7 +2348,7 @@ public class OWL {
     return ontology.getConcept(conceptId);
   }
 
-  public Concept makeRatio(Concept concept, Concept comparison) {
+  public synchronized Concept makeRatio(Concept concept, Concept comparison) {
 
     if (concept.is(SemanticType.RATIO)) {
       return concept;
@@ -2390,7 +2427,7 @@ public class OWL {
     return ontology.getConcept(conceptId);
   }
 
-  public Concept makeValue(Concept concept, Concept comparison, boolean monetary) {
+  public synchronized Concept makeValue(Concept concept, Concept comparison, boolean monetary) {
 
     if (concept.is(SemanticType.VALUE) || concept.is(SemanticType.MONETARY_VALUE)) {
       return concept;
@@ -2469,7 +2506,7 @@ public class OWL {
    * @param classified
    * @return
    */
-  public Concept makeType(Concept classified) {
+  public synchronized Concept makeType(Concept classified) {
 
     if (classified.is(SemanticType.CLASS)) {
       return classified;
@@ -2997,5 +3034,4 @@ public class OWL {
     }
     return false;
   }
-
 }

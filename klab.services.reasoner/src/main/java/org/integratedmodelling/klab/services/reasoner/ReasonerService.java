@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.services.reasoner;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
@@ -67,6 +69,7 @@ import java.io.File;
 import java.io.Serial;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
@@ -125,38 +128,35 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private Map<String, String> coreConceptPeers = new HashMap<>();
   private Map<Concept, Emergence> emergent = new HashMap<>();
   private IntelligentMap<Set<Emergence>> emergence;
-  // TODO fill in from classpath
-  private Map<String, Concept> concepts = Collections.synchronizedMap(new HashMap<>());
-  private Map<String, Observable> observables = Collections.synchronizedMap(new HashMap<>());
+  //  // TODO fill in from classpath
+  //  private Map<String, Concept> concepts = Collections.synchronizedMap(new HashMap<>());
+  //  private Map<String, Observable> observables = Collections.synchronizedMap(new HashMap<>());
   private ObservationReasoner observationReasoner;
   private Worldview worldview;
   private SyntacticMatcher syntacticMatcher;
 
-  // /**
-  // * Caches for concepts and observables, linked to the URI in the corresponding
-  // {@link
-  // KimScope}.
-  // */
-  // private LoadingCache<String, Concept> concepts = CacheBuilder.newBuilder()
-  // // .expireAfterAccess(10, TimeUnit.MINUTES)
-  // .build(new CacheLoader<String, Concept>(){
-  // public Concept load(String key) {
-  // KimConcept parsed =
-  // scope.getService(ResourcesService.class).resolveConcept(key);
-  // return declareConcept(parsed);
-  // }
-  // });
-  //
-  // private LoadingCache<String, Observable> observables =
-  // CacheBuilder.newBuilder()
-  // // .expireAfterAccess(10, TimeUnit.MINUTES)
-  // .build(new CacheLoader<String, Observable>(){
-  // public Observable load(String key) { // no checked exception
-  // KimObservable parsed =
-  // scope.getService(ResourcesService.class).resolveObservable(key);
-  // return declareObservable(parsed);
-  // }
-  // });
+  /** Caches for concepts and observables. */
+  private LoadingCache<String, Concept> concepts =
+      CacheBuilder.newBuilder()
+          .maximumSize(500)
+          // .expireAfterAccess(10, TimeUnit.MINUTES)
+          .build(
+              new CacheLoader<String, Concept>() {
+                public Concept load(String key) {
+                  return resolveConceptInternal(key);
+                }
+              });
+
+  private LoadingCache<String, Observable> observables =
+      CacheBuilder.newBuilder()
+          .maximumSize(500)
+          // .expireAfterAccess(10, TimeUnit.MINUTES)
+          .build(
+              new CacheLoader<String, Observable>() {
+                public Observable load(String key) { // no checked exception
+                  return resolveObservableInternal(key);
+                }
+              });
 
   Indexer indexer;
 
@@ -427,32 +427,44 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept resolveConcept(String definition) {
-    Concept ret = concepts.get(definition);
-    if (ret == null) {
-      KimConcept parsed = scope.getService(ResourcesService.class).resolveConcept(definition);
-      if (parsed != null) {
-        ret = declareConcept(parsed);
-        concepts.put(definition, ret);
-      } else {
-        // TODO add an error concept in case of errors or null
-      }
+    try {
+      return concepts.get(definition);
+    } catch (ExecutionException e) {
+      return owl.nothing(definition, e);
     }
-    return ret;
   }
 
   @Override
   public Observable resolveObservable(String definition) {
-    Observable ret = observables.get(definition);
-    if (ret == null) {
-      KimObservable parsed = scope.getService(ResourcesService.class).resolveObservable(definition);
+    try {
+      return observables.get(definition);
+    } catch (ExecutionException e) {
+      return ObservableImpl.promote(owl.nothing(definition, e), null);
+    }
+  }
+
+  public Concept resolveConceptInternal(String definition) {
+    Concept ret = null;
+    if (Urn.isAtomicConcept(definition)) {
+      ret = owl.getConcept(definition);
+    } else {
+      KimConcept parsed = scope.getService(ResourcesService.class).resolveConcept(definition);
       if (parsed != null) {
-        ret = declareObservable(parsed);
-        observables.put(definition, ret);
-      } else {
-        // TODO add an error observable in case of errors or null
+        ret = declareConcept(parsed);
+        concepts.put(definition, ret);
       }
     }
-    return ret;
+    return ret == null ? owl.nothing(definition) : ret;
+  }
+
+  public Observable resolveObservableInternal(String definition) {
+    Observable ret = null;
+    KimObservable parsed = scope.getService(ResourcesService.class).resolveObservable(definition);
+    if (parsed != null) {
+      ret = declareObservable(parsed);
+      observables.put(definition, ret);
+    }
+    return ret == null ? ObservableImpl.promote(owl.nothing(definition), null) : ret;
   }
 
   private Observable errorObservable(String definition) {
@@ -1219,18 +1231,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     StringBuilder ret = new StringBuilder(conceptDisplayName(o.asConcept()));
 
-//    for (Pair<ValueOperator, Object> operator : o.getValueOperators()) {
-//
-//      ret.append(StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_')));
-//
-//      if (operator.getSecond() instanceof KimConcept concept) {
-//        ret.append(conceptDisplayName(declareConcept(concept)));
-//      } else if (operator.getSecond() instanceof KimObservable observable) {
-//        ret.append(observableDisplayName(declareObservable(observable)));
-//      } else {
-//        ret.append("_").append(operator.getSecond().toString().replace(' ', '_'));
-//      }
-//    }
+    //    for (Pair<ValueOperator, Object> operator : o.getValueOperators()) {
+    //
+    //      ret.append(StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_')));
+    //
+    //      if (operator.getSecond() instanceof KimConcept concept) {
+    //        ret.append(conceptDisplayName(declareConcept(concept)));
+    //      } else if (operator.getSecond() instanceof KimObservable observable) {
+    //        ret.append(observableDisplayName(declareObservable(observable)));
+    //      } else {
+    //        ret.append("_").append(operator.getSecond().toString().replace(' ', '_'));
+    //      }
+    //    }
     return ret.toString();
   }
 
@@ -1295,6 +1307,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept baseParentTrait(Semantics trait) {
+
+    if (CoreOntology.isCore(trait.asConcept())) {
+      return trait.asConcept();
+    }
 
     String orig = trait.getMetadata().get(CoreOntology.NS.ORIGINAL_TRAIT, String.class);
     if (orig != null) {
@@ -1375,7 +1391,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept negated(Concept concept) {
-    return this.owl.makeNegation(concept.asConcept(), this.owl.getOntology(concept.getNamespace()));
+    return this.owl.makeNegation(concept.asConcept());
   }
 
   @Override
@@ -1396,7 +1412,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public Concept relationshipSource(Semantics relationship) {
     Collection<Concept> ret = relationshipSources(relationship);
-    return ret.size() == 0 ? null : ret.iterator().next();
+    return ret.isEmpty() ? null : ret.iterator().next();
   }
 
   @Override
@@ -1411,7 +1427,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public Concept relationshipTarget(Semantics relationship) {
     Collection<Concept> ret = relationshipTargets(relationship);
-    return ret.size() == 0 ? null : ret.iterator().next();
+    return ret.isEmpty() ? null : ret.iterator().next();
   }
 
   @Override
@@ -1483,8 +1499,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     serviceScope().setMaintenanceMode(true);
 
     // delete caches
-    this.concepts.clear();
-    this.observables.clear();
+    this.concepts.invalidateAll();
+    this.observables.invalidateAll();
 
     boolean inconsistent = false;
 
@@ -1640,13 +1656,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return null;
   }
 
-  @Override
+//  @Override
   public Concept declareConcept(KimConcept conceptDeclaration) {
     return declare(
         conceptDeclaration, this.owl.requireOntology(conceptDeclaration.getNamespace()), scope);
   }
 
-  @Override
+//  @Override
   public Observable declareObservable(KimObservable observableDeclaration) {
     return declare(
         observableDeclaration,
@@ -1654,7 +1670,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         scope);
   }
 
-  @Override
+//  @Override
   public Observable declareObservable(
       KimObservable observableDeclaration, Map<String, Object> patternVariables) {
 
@@ -1681,7 +1697,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return resolveObservable(urn);
   }
 
-  @Override
+//  @Override
   public Concept declareConcept(
       KimConcept observableDeclaration, Map<String, Object> patternVariables) {
 
@@ -2415,11 +2431,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   private Concept declareInternal(KimConcept concept, Ontology ontology, Scope monitor) {
 
-    Concept existing = concepts.get(concept.getUrn());
-    if (existing != null) {
-      return existing;
-    }
-
     Concept main = null;
 
     if (concept.getObservable() != null) {
@@ -2658,8 +2669,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     builder =
         builder
             .optional(concept.isOptional())
-//            .generic(concept.isGeneric()) /* .global(concept
-//        .isGlobal()) */
+            //            .generic(concept.isGeneric()) /* .global(concept
+            //        .isGlobal()) */
             .named(concept.getFormalName());
 
     // TODO gather generic concepts and abstract ones
@@ -2816,7 +2827,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return observationReasoner.computeMatchingStrategies(observation, scope);
   }
 
-  @Override
+//  @Override
   public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
     Set<Concept> ret = new HashSet<>();
     KimConcept peer = scope.getService(ResourcesService.class).resolveConcept(concept.getUrn());
@@ -2849,7 +2860,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return ret;
   }
 
-  @Override
+//  @Override
   public Concept replaceComponent(Concept original, Map<Concept, Concept> replacements) {
 
     /*
@@ -2987,17 +2998,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         case WITH_RESOLUTION_EXCEPTION -> {
           ret = ret.withResolutionException(op.getResolutionException());
         }
-//        case AS_GENERIC -> {
-//          ret = ret.generic((Boolean) op.getPod());
-//        }
+        //        case AS_GENERIC -> {
+        //          ret = ret.generic((Boolean) op.getPod());
+        //        }
         case WITH_ANNOTATION -> {
           for (Annotation annotation : op.getAnnotations()) {
             ret = ret.withAnnotation(annotation);
           }
         }
-//        case AS_DESCRIPTION_TYPE -> {
-//          ret = ret.as(op.getDescriptionType());
-//        }
+        //        case AS_DESCRIPTION_TYPE -> {
+        //          ret = ret.as(op.getDescriptionType());
+        //        }
         default ->
             throw new KlabUnimplementedException(
                 "ReasonerService::defineBuilder: unhandled " + "operation " + op.getType());

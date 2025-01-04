@@ -178,10 +178,10 @@ public class ResolverService extends BaseService implements Resolver {
     ModelImpl model = new ModelImpl();
     model.getAnnotations().addAll(statement.getAnnotations()); // FIXME process annotations
     for (KimObservable observable : statement.getObservables()) {
-      model.getObservables().add(reasoner.declareObservable(observable));
+      model.getObservables().add(reasoner.resolveObservable(observable.getUrn()));
     }
     for (KimObservable observable : statement.getDependencies()) {
-      model.getDependencies().add(reasoner.declareObservable(observable));
+      model.getDependencies().add(reasoner.resolveObservable(observable.getUrn()));
     }
 
     // TODO learners, geometry covered etc.

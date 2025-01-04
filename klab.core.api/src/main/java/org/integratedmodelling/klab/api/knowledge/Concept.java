@@ -1,9 +1,11 @@
 package org.integratedmodelling.klab.api.knowledge;
 
+import java.util.List;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public interface Concept extends Semantics {
 
@@ -38,6 +40,14 @@ public interface Concept extends Semantics {
    * @return
    */
   Concept singular();
+
+  /**
+   * Anything that came up during parsing. If there is any error notification, the type will be
+   * SemanticType.NOTHING.
+   *
+   * @return
+   */
+  List<Notification> getNotifications();
 
   /**
    * Make and return the collective version of this concept. Calling this on anything other than a

@@ -24,6 +24,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Function;
 
 import static picocli.CommandLine.Help.Ansi.AUTO;
@@ -52,7 +53,7 @@ public class CLIReasonerView {
 
     @Spec CommandSpec commandSpec;
 
-    @Parameters java.util.List<String> observables;
+    @Parameters List<String> observables;
 
     @Override
     public void run() {
@@ -61,11 +62,7 @@ public class CLIReasonerView {
       PrintWriter err = commandSpec.commandLine().getErr();
 
       var urn = Utils.Strings.join(observables, " ");
-      var reasoner =
-          KlabCLI.INSTANCE
-              .modeler()
-              .currentUser()
-              .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+      var reasoner = KlabCLI.INSTANCE.modeler().currentUser().getService(Reasoner.class);
       Concept concept = reasoner.resolveConcept(urn);
       if (concept == null) {
         err.println("Concept " + urn + " not found");
@@ -124,7 +121,7 @@ public class CLIReasonerView {
         required = false)
     String geometry;
 
-    @Parameters java.util.List<String> observables;
+    @Parameters List<String> observables;
 
     //    @Option(
     //        names = {"-a", "--acknowledgement"},
@@ -152,14 +149,14 @@ public class CLIReasonerView {
       }
 
       var urn = Utils.Strings.join(observables, " ");
-      var reasoner = ctx.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+      var reasoner = ctx.getService(Reasoner.class);
       var observable = reasoner.resolveObservable(urn);
 
       var geom = geometry == null ? null : Geometry.create(geometry);
 
       if (observable == null) {
         err.println(
-            CommandLine.Help.Ansi.AUTO.string(
+            AUTO.string(
                 "URN @|red " + urn + "|@ does not resolve to " + "a valid " + "observable"));
         return;
       }
@@ -179,7 +176,7 @@ public class CLIReasonerView {
               KlabCLI.INSTANCE.modeler().getCurrentScope(), observable, geometry);
 
       out.println(
-          CommandLine.Help.Ansi.AUTO.string(
+          AUTO.string(
               "Observation strategies for @|bold "
                   + observable.getDescriptionType().name().toLowerCase()
                   + "|@ of @|green "
@@ -204,7 +201,7 @@ public class CLIReasonerView {
 
     @Spec CommandSpec commandSpec;
 
-    @Parameters java.util.List<String> observables;
+    @Parameters List<String> observables;
 
     @Override
     public void run() {
@@ -213,11 +210,7 @@ public class CLIReasonerView {
       PrintWriter err = commandSpec.commandLine().getErr();
 
       var urn = Utils.Strings.join(observables, " ");
-      var reasoner =
-          KlabCLI.INSTANCE
-              .modeler()
-              .currentUser()
-              .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+      var reasoner = KlabCLI.INSTANCE.modeler().currentUser().getService(Reasoner.class);
       Concept concept = reasoner.resolveConcept(urn);
       if (concept == null) {
         err.println("Concept " + urn + " not found");
@@ -238,7 +231,7 @@ public class CLIReasonerView {
 
     @Spec CommandSpec commandSpec;
 
-    @Parameters java.util.List<String> arguments;
+    @Parameters List<String> arguments;
 
     @Override
     public void run() {
@@ -246,7 +239,7 @@ public class CLIReasonerView {
       PrintWriter out = commandSpec.commandLine().getOut();
       PrintWriter err = commandSpec.commandLine().getErr();
 
-      java.util.List<java.util.List<String>> tokens = new ArrayList<>();
+      List<List<String>> tokens = new ArrayList<>();
 
       var current = new ArrayList<String>();
       for (var token : arguments) {
@@ -272,7 +265,7 @@ public class CLIReasonerView {
       } else {
         var distance = reasoner.match(concepts.get(0), concepts.get(1));
         out.println(
-            CommandLine.Help.Ansi.AUTO.string(
+            AUTO.string(
                 "@|blue "
                     + concepts.get(0)
                     + (distance ? "|@ @|green DOES|@" : "|@ @|red DOES NOT|@")
@@ -296,7 +289,7 @@ public class CLIReasonerView {
 
     @Spec CommandSpec commandSpec;
 
-    @Parameters java.util.List<String> arguments;
+    @Parameters List<String> arguments;
 
     @Override
     public void run() {
@@ -304,7 +297,7 @@ public class CLIReasonerView {
       PrintWriter out = commandSpec.commandLine().getOut();
       PrintWriter err = commandSpec.commandLine().getErr();
 
-      java.util.List<java.util.List<String>> tokens = new ArrayList<>();
+      List<List<String>> tokens = new ArrayList<>();
 
       var current = new ArrayList<String>();
       for (var token : arguments) {
@@ -330,7 +323,7 @@ public class CLIReasonerView {
       } else {
         var distance = reasoner.is(concepts.get(0), concepts.get(1));
         out.println(
-            CommandLine.Help.Ansi.AUTO.string(
+            AUTO.string(
                 "@|blue "
                     + concepts.get(0)
                     + (distance ? "|@ @|green IS|@" : "|@ @|red IS NOT|@")
@@ -351,7 +344,7 @@ public class CLIReasonerView {
 
     @Spec CommandSpec commandSpec;
 
-    @Parameters java.util.List<String> arguments;
+    @Parameters List<String> arguments;
 
     @Override
     public void run() {
@@ -359,7 +352,7 @@ public class CLIReasonerView {
       PrintWriter out = commandSpec.commandLine().getOut();
       PrintWriter err = commandSpec.commandLine().getErr();
 
-      java.util.List<java.util.List<String>> tokens = new ArrayList<>();
+      List<List<String>> tokens = new ArrayList<>();
 
       var current = new ArrayList<String>();
       for (var token : arguments) {
@@ -412,7 +405,7 @@ public class CLIReasonerView {
   public static class BaseConcept implements Runnable {
 
     @Spec CommandSpec commandSpec;
-    @Parameters java.util.List<String> observables;
+    @Parameters List<String> observables;
 
     @Override
     public void run() {
@@ -421,11 +414,7 @@ public class CLIReasonerView {
       PrintWriter err = commandSpec.commandLine().getErr();
 
       var urn = Utils.Strings.join(observables, " ");
-      var reasoner =
-          KlabCLI.INSTANCE
-              .modeler()
-              .currentUser()
-              .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+      var reasoner = KlabCLI.INSTANCE.modeler().currentUser().getService(Reasoner.class);
 
       Concept concept = reasoner.resolveConcept(urn);
       if (concept == null) {
@@ -456,7 +445,7 @@ public class CLIReasonerView {
 
     @Spec CommandSpec commandSpec;
 
-    @Parameters java.util.List<String> observables;
+    @Parameters List<String> observables;
 
     @Override
     public void run() {
@@ -465,11 +454,7 @@ public class CLIReasonerView {
       PrintWriter err = commandSpec.commandLine().getErr();
 
       var urn = Utils.Strings.join(observables, " ");
-      var reasoner =
-          KlabCLI.INSTANCE
-              .modeler()
-              .currentUser()
-              .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+      var reasoner = KlabCLI.INSTANCE.modeler().currentUser().getService(Reasoner.class);
       Concept concept = reasoner.resolveConcept(urn);
       if (concept == null) {
         err.println("Concept " + urn + " not found");
@@ -496,7 +481,7 @@ public class CLIReasonerView {
         required = false)
     boolean inherited = false;
 
-    @Parameters java.util.List<String> observables;
+    @Parameters List<String> observables;
 
     @Override
     public void run() {
@@ -505,17 +490,13 @@ public class CLIReasonerView {
       PrintWriter err = commandSpec.commandLine().getErr();
 
       var urn = Utils.Strings.join(observables, " ");
-      var reasoner =
-          KlabCLI.INSTANCE
-              .modeler()
-              .currentUser()
-              .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+      var reasoner = KlabCLI.INSTANCE.modeler().currentUser().getService(Reasoner.class);
       Concept concept = reasoner.resolveConcept(urn);
       if (concept == null) {
         err.println("Concept " + urn + " not found");
       } else {
         for (Concept c : inherited ? reasoner.traits(concept) : reasoner.directTraits(concept)) {
-          out.println(CommandLine.Help.Ansi.AUTO.string("   @|yellow " + c + "|@ " + c.getType()));
+          out.println(AUTO.string("   @|yellow " + c + "|@ " + c.getType()));
         }
       }
     }
@@ -538,7 +519,7 @@ public class CLIReasonerView {
         required = false)
     boolean inherited = false;
 
-    @Parameters java.util.List<String> observables;
+    @Parameters List<String> observables;
 
     @Override
     public void run() {
@@ -547,11 +528,7 @@ public class CLIReasonerView {
       PrintWriter err = commandSpec.commandLine().getErr();
 
       var urn = Utils.Strings.join(observables, " ");
-      var reasoner =
-          KlabCLI.INSTANCE
-              .modeler()
-              .currentUser()
-              .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+      var reasoner = KlabCLI.INSTANCE.modeler().currentUser().getService(Reasoner.class);
       Concept concept = reasoner.resolveConcept(urn);
       if (concept == null) {
         err.println("Concept " + urn + " not found");
@@ -587,15 +564,11 @@ public class CLIReasonerView {
 
       PrintWriter out = commandSpec.commandLine().getOut();
       PrintWriter err = commandSpec.commandLine().getErr();
-      var reasoner =
-          KlabCLI.INSTANCE
-              .modeler()
-              .currentUser()
-              .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+      var reasoner = KlabCLI.INSTANCE.modeler().currentUser().getService(Reasoner.class);
 
-      if (reasoner instanceof org.integratedmodelling.klab.api.services.Reasoner.Admin) {
+      if (reasoner instanceof Reasoner.Admin) {
 
-        if (((org.integratedmodelling.klab.api.services.Reasoner.Admin) reasoner)
+        if (((Reasoner.Admin) reasoner)
             .exportNamespace(
                 namespace,
                 output == null ? Configuration.INSTANCE.getDefaultExportDirectory() : output)) {
@@ -630,7 +603,7 @@ public class CLIReasonerView {
         required = false)
     boolean alternative = false;
 
-    @Parameters java.util.List<String> arguments;
+    @Parameters List<String> arguments;
 
     @Override
     public void run() {
@@ -638,7 +611,7 @@ public class CLIReasonerView {
       PrintWriter out = commandSpec.commandLine().getOut();
       PrintWriter err = commandSpec.commandLine().getErr();
 
-      java.util.List<java.util.List<String>> tokens = new ArrayList<>();
+      List<List<String>> tokens = new ArrayList<>();
 
       var current = new ArrayList<String>();
       for (var token : arguments) {
@@ -672,6 +645,7 @@ public class CLIReasonerView {
         } else {
           out.println(AUTO.string("UNKNOWN: @|red " + urn + "|@"));
         }
+
         //
         //                for (IConcept c : concept.getOperands()) {
         //                    ret += (ret.isEmpty() ? "\n" : (concept.is(Type.UNION) ? "\n  OR\n" :
@@ -832,6 +806,21 @@ public class CLIReasonerView {
           .append(": ")
           .append(concept.getMetadata().get(key))
           .append("\n");
+    }
+
+    if (!concept.getNotifications().isEmpty()) {
+      ret.append("Notifications:\n");
+      for (var notification : concept.getNotifications()) {
+        var color =
+            switch (notification.getLevel()) {
+              case Debug -> AUTO.string("@|blue Debug  |@");
+              case Info -> AUTO.string("@|blue Info   |@");
+              case Warning -> AUTO.string("@|yellow Warning|@");
+              case Error -> AUTO.string("@|red Error  |@");
+              case SystemError -> AUTO.string("@|red SYSTEM |@");
+            };
+        ret.append("  ").append(color).append(notification.getMessage()).append("\n");
+      }
     }
 
     //        Unit unit = Units.INSTANCE.getDefaultUnitFor(concept);

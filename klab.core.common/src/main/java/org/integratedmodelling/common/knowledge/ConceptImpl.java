@@ -1,19 +1,15 @@
 package org.integratedmodelling.common.knowledge;
 
 import java.io.Serial;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.springframework.util.StringUtils;
 
 public class ConceptImpl implements Concept {
@@ -31,6 +27,7 @@ public class ConceptImpl implements Concept {
   private boolean collective;
   private List<Annotation> annotations = new ArrayList<>();
   private LogicalConnector qualifier;
+  private List<Notification> notifications = new ArrayList<>();
 
   public ConceptImpl() {}
 
@@ -213,6 +210,15 @@ public class ConceptImpl implements Concept {
   }
 
   @Override
+  public List<Notification> getNotifications() {
+    return notifications;
+  }
+
+  public void setNotifications(List<Notification> notifications) {
+    this.notifications = notifications;
+  }
+
+  @Override
   public ConceptImpl collective() {
 
     if (this.isCollective()) {
@@ -237,5 +243,18 @@ public class ConceptImpl implements Concept {
     ret.setReferenceName(this.getReferenceName().replaceFirst("each_", ""));
     ret.setUrn(this.getUrn().replaceFirst("each ", ""));
     return ret;
+  }
+
+  public void error(String s) {
+    notifications.add(Notification.error(s));
+    this.type = EnumSet.of(SemanticType.NOTHING);
+  }
+
+  public void info(String s) {
+    notifications.add(Notification.error(s));
+  }
+
+  public void warn(String s) {
+    notifications.add(Notification.error(s));
   }
 }

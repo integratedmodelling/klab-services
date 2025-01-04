@@ -213,6 +213,10 @@ public class Urn implements Serializable {
         || urn.startsWith(LOCAL_FILE_PREFIX);
   }
 
+  public static boolean isAtomicConcept(String urn) {
+    return !urn.trim().contains(" ") && URN_CONCEPT_PATTERN.matcher(urn).find();
+  }
+
   public static boolean isUniversal(String urn) {
     return urn.startsWith(KLAB_URN_PREFIX) || urn.startsWith("klab:");
   }

@@ -79,23 +79,23 @@ public class ReasonerController {
     return reasoner.klabService().resolveObservable(definition);
   }
 
-  @PostMapping(ServicesAPI.REASONER.DECLARE_OBSERVABLE)
-  public @ResponseBody Observable declareObservable(@RequestBody DeclarationRequest request) {
-    return request.getObservableDeclaration().getPattern() == null
-        ? reasoner.klabService().declareObservable(request.getObservableDeclaration())
-        : reasoner
-            .klabService()
-            .declareObservable(request.getObservableDeclaration(), request.getPatternVariables());
-  }
-
-  @PostMapping(ServicesAPI.REASONER.DECLARE_CONCEPT)
-  public @ResponseBody Concept declareConcept(@RequestBody DeclarationRequest request) {
-    return request.getConceptDeclaration().isPattern()
-        ? reasoner.klabService().declareConcept(request.getConceptDeclaration())
-        : reasoner
-            .klabService()
-            .declareConcept(request.getConceptDeclaration(), request.getPatternVariables());
-  }
+//  @PostMapping(ServicesAPI.REASONER.DECLARE_OBSERVABLE)
+//  public @ResponseBody Observable declareObservable(@RequestBody DeclarationRequest request) {
+//    return request.getObservableDeclaration().getPattern() == null
+//        ? reasoner.klabService().declareObservable(request.getObservableDeclaration())
+//        : reasoner
+//            .klabService()
+//            .declareObservable(request.getObservableDeclaration(), request.getPatternVariables());
+//  }
+//
+//  @PostMapping(ServicesAPI.REASONER.DECLARE_CONCEPT)
+//  public @ResponseBody Concept declareConcept(@RequestBody DeclarationRequest request) {
+//    return request.getConceptDeclaration().isPattern()
+//        ? reasoner.klabService().declareConcept(request.getConceptDeclaration())
+//        : reasoner
+//            .klabService()
+//            .declareConcept(request.getConceptDeclaration(), request.getPatternVariables());
+//  }
 
   /**
    * POST /subsumes

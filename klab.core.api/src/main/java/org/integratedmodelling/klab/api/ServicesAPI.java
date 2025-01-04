@@ -220,17 +220,17 @@ public interface ServicesAPI {
          */
         String RESOLVE_OBSERVABLE = REASONER_BASE + "/resolve/observable";
 
-        /**
-         * @protocol POST for a map containing the KimObservable definition as "OBSERVABLE" and possibly
-         * pattern variables
-         */
-        String DECLARE_OBSERVABLE = REASONER_BASE + "/declare/observable";
-
-        /**
-         * @protocol POST for a map containing the KimConcept definition as "OBSERVABLE" and possibly pattern
-         * variables
-         */
-        String DECLARE_CONCEPT = REASONER_BASE + "/declare/concept";
+//        /**
+//         * @protocol POST for a map containing the KimObservable definition as "OBSERVABLE" and possibly
+//         * pattern variables
+//         */
+//        String DECLARE_OBSERVABLE = REASONER_BASE + "/declare/observable";
+//
+//        /**
+//         * @protocol POST for a map containing the KimConcept definition as "OBSERVABLE" and possibly pattern
+//         * variables
+//         */
+//        String DECLARE_CONCEPT = REASONER_BASE + "/declare/concept";
 
         String SEMANTIC_SEARCH = REASONER_BASE + "/semanticSearch";
 
