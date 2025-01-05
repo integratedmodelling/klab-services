@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 
 /**
@@ -30,17 +31,18 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
  */
 public class SemanticsBuilder implements Observable.Builder {
 
-  KimConceptImpl syntax;
-  KimConceptImpl observerSyntax;
-  ReasonerService reasoner;
-  ResourcesService resourcesService;
-  Unit unit;
-  Currency currency;
-  NumericRange numericRange;
-  String statedName;
-  boolean optional;
-  boolean generic;
-  List<Annotation> annotations = new ArrayList<>();
+  private KimConceptImpl syntax;
+  private KimConceptImpl observerSyntax;
+  private ReasonerService reasoner;
+  private ResourcesService resourcesService;
+  private Unit unit;
+  private Currency currency;
+  private NumericRange numericRange;
+  private String statedName;
+  private boolean optional;
+  private boolean generic;
+  private List<Annotation> annotations = new ArrayList<>();
+  private Collection<Notification> notifications = new ArrayList<>();
 
   public static SemanticsBuilder create(KimConcept concept, ReasonerService reasoner) {
     var ret = new SemanticsBuilder();
@@ -311,7 +313,12 @@ public class SemanticsBuilder implements Observable.Builder {
     return null;
   }
 
-//  @Override
+  @Override
+  public Collection<Notification> getNotifications() {
+    return notifications;
+  }
+
+  //  @Override
 //  public Observable.Builder withReferenceName(String s) {
 //    return null;
 //  }

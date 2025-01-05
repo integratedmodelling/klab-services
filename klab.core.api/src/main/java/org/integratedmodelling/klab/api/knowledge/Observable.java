@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * Observables are concepts with additional information that specifies how they may be observed.
@@ -352,7 +353,9 @@ public interface Observable extends Semantics, Resolvable {
      */
     Builder withAnnotation(Annotation annotation);
 
-//    /**
+    Collection<Notification> getNotifications();
+
+    //    /**
 //     * Advanced. Use ONLY internally!
 //     *
 //     * @param s

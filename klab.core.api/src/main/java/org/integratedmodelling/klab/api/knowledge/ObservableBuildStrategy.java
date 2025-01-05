@@ -537,12 +537,6 @@ public class ObservableBuildStrategy implements Observable.Builder {
         return this;
     }
 
-//    @Override
-//    public Builder withReferenceName(String s) {
-//        this.operations.add(new Operation(OperationType.REFERENCE_NAMED, s));
-//        return this;
-//    }
-
     public List<Operation> getOperations() {
         return operations;
     }
@@ -575,10 +569,10 @@ public class ObservableBuildStrategy implements Observable.Builder {
         this.defaultValue = defaultValue;
     }
 
-//    @Override
-//    public Collection<Notification> getNotifications() {
-//        return this.notifications;
-//    }
+    @Override
+    public Collection<Notification> getNotifications() {
+        return this.notifications;
+    }
 
     public void setNotifications(List<Notification> notifications) {
         this.notifications = notifications;

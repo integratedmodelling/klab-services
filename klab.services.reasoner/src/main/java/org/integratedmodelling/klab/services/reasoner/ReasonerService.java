@@ -2138,10 +2138,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     indexer.index(concept);
 
-    if (mainId.equals("Coast")) {
-      System.out.println("PUERCO DIOS");
-    }
-
     if (concept.getDeclaredParent() != null) {
 
       //            List<Concept> concepts = new ArrayList<>();
@@ -2151,10 +2147,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         monitor.error(
             "parent declaration "
                 + concept.getDeclaredParent().getUrn()
-                + " does not "
-                + "identify "
-                + "known "
-                + "concepts",
+                + " does not identify known concepts",
             concept.getDeclaredParent());
         return null;
       } else {
@@ -2212,9 +2205,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     for (KimConcept inherited : concept.getTraitsInherited()) {
       Concept trait = declare(inherited, ontology, monitor);
-      if (trait == null) {
+      if (trait == null || trait.is(SemanticType.NOTHING)) {
         monitor.error(
-            "inherited " + inherited.getName() + " does not identify " + "known concepts",
+            "inherited " + inherited.getName() + " does not identify known concepts",
             inherited);
         // return null;
       } else {
@@ -2225,9 +2218,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     // TODO all the rest: creates, ....
     for (KimConcept affected : concept.getQualitiesAffected()) {
       Concept quality = declare(affected, ontology, monitor);
-      if (quality == null) {
+      if (quality == null || quality.is(SemanticType.NOTHING)) {
         monitor.error(
-            "affected " + affected.getName() + " does not identify " + "known concepts", affected);
+            "affected " + affected.getName() + " does not identify known concepts", affected);
       } else {
         this.owl.restrictSome(
             main, this.owl.getProperty(CoreOntology.NS.AFFECTS_PROPERTY), quality, ontology);
@@ -2236,9 +2229,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     for (KimConcept required : concept.getRequiredIdentities()) {
       Concept quality = declare(required, ontology, monitor);
-      if (quality == null) {
+      if (quality == null || quality.is(SemanticType.NOTHING)) {
         monitor.error(
-            "required " + required.getName() + " does not identify " + "known concepts", required);
+            "required " + required.getName() + " does not identify known concepts", required);
       } else {
         this.owl.restrictSome(
             main, this.owl.getProperty(NS.REQUIRES_IDENTITY_PROPERTY), quality, ontology);
@@ -2247,9 +2240,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     for (KimConcept affected : concept.getObservablesCreated()) {
       Concept quality = declare(affected, ontology, monitor);
-      if (quality == null) {
+      if (quality == null || quality.is(SemanticType.NOTHING)) {
         monitor.error(
-            "created " + affected.getName() + " does not identify known" + " concepts", affected);
+            "created " + affected.getName() + " does not identify known concepts", affected);
       } else {
         this.owl.restrictSome(main, this.owl.getProperty(NS.CREATES_PROPERTY), quality, ontology);
       }

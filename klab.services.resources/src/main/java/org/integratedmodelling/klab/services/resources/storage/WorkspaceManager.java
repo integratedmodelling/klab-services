@@ -2162,18 +2162,14 @@ public class WorkspaceManager {
       scope.error(
           Klab.ErrorCode.CIRCULAR_REFERENCES,
           Klab.ErrorContext.PROJECT,
-          "Projects in "
-              + "configuration have cyclic dependencies on each other: "
-              + "will not "
-              + "proceed. "
-              + "Review "
-              + "configuration");
+          "Projects in configuration have cyclic dependencies on each other: "
+              + "will not proceed. Review  configuration");
       this.loading.set(false);
       return false;
     } else {
 
-      TopologicalOrderIterator<Pair<String, Version>, DefaultEdge> sort =
-          new TopologicalOrderIterator(dependencyGraph);
+      var sort = new TopologicalOrderIterator<>(dependencyGraph);
+
       while (sort.hasNext()) {
         var proj = sort.next();
         // verify availability
@@ -2190,13 +2186,9 @@ public class WorkspaceManager {
                     + proj.getFirst()
                     + "@"
                     + proj.getSecond()
-                    + " is required"
-                    + " by "
-                    + "other "
-                    + "projects in workspace but incompatible version "
+                    + " is required by other projects in workspace but incompatible version "
                     + pd.manifest.getVersion()
-                    + " "
-                    + "is available in local workspace");
+                    + " is available in local workspace");
             unresolvedProjects.add(proj);
           }
         } else {
@@ -2219,14 +2211,9 @@ public class WorkspaceManager {
                       + proj.getFirst()
                       + "@"
                       + proj.getSecond()
-                      + " is "
-                      + "required by "
-                      + "other projects in workspace but incompatible "
-                      + "version "
+                      + " is required by other projects in workspace but incompatible version "
                       + externalProject.getManifest().getVersion()
-                      + " is "
-                      + "available "
-                      + "externally");
+                      + " is available externally");
               unresolvedProjects.add(proj);
             }
           } else {
@@ -2237,12 +2224,8 @@ public class WorkspaceManager {
                     + proj.getFirst()
                     + "@"
                     + proj.getSecond()
-                    + " is required"
-                    + " "
-                    + "by "
-                    + "other projects in workspace but cannot be resolved from "
-                    + "the "
-                    + "network");
+                    + " is required by other projects in workspace but cannot be resolved from "
+                    + "the network");
             unresolvedProjects.add(proj);
           }
         }

@@ -61,7 +61,7 @@ public class TypeFunctors {
   public Semantics changeArityToSingle(Semantics semantics) {
 
     if (semantics.asConcept().isCollective()) {
-      SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner)
+      semantics = SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner)
                       .collective(false)
                       .buildObservable();
     }
@@ -76,7 +76,7 @@ public class TypeFunctors {
   public Semantics changeArityToCollective(Semantics semantics) {
 
     if (!semantics.asConcept().isCollective()) {
-      SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner)
+      semantics = SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner)
           .collective(true)
           .buildObservable();
     }

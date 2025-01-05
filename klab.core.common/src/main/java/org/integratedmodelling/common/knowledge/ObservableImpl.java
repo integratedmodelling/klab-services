@@ -362,10 +362,6 @@ public class ObservableImpl implements Observable {
     this.defaultValue = defaultValue;
   }
 
-//  public void setValue(Object value) {
-//    this.value = value;
-//  }
-
   public void setStatedName(String statedName) {
     this.statedName = statedName;
   }
@@ -373,10 +369,6 @@ public class ObservableImpl implements Observable {
   public void setAnnotations(List<Annotation> annotations) {
     this.annotations = annotations;
   }
-
-//  public void setValueOperators(List<Pair<ValueOperator, Object>> valueOperators) {
-//    this.valueOperators = valueOperators;
-//  }
 
   public void setReferenceName(String referenceName) {
     this.referenceName = referenceName;
@@ -389,25 +381,6 @@ public class ObservableImpl implements Observable {
   public void setNamespace(String namespace) {
     this.namespace = namespace;
   }
-
-  //
-  //    @Override
-  //    public boolean isDistributedInherency() {
-  //        return distributedInherency;
-  //    }
-  //
-  //    public void setDistributedInherency(boolean distributedInherency) {
-  //        this.distributedInherency = distributedInherency;
-  //    }
-  //
-  //    @Override
-  //    public String getDereifiedAttribute() {
-  //        return dereifiedAttribute;
-  //    }
-  //
-  //    public void setDereifiedAttribute(String dereifiedAttribute) {
-  //        this.dereifiedAttribute = dereifiedAttribute;
-  //    }
 
   public void setSemantics(Concept semantics) {
     this.semantics = semantics;
