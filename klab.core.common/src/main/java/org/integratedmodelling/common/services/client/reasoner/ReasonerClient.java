@@ -50,6 +50,9 @@ import java.util.function.BiConsumer;
  */
 public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.Admin {
 
+  // TODO link to configuration for debugging
+  private boolean useCaches = true;
+
   /** Caches for concepts and observables. */
   private LoadingCache<String, Concept> concepts =
       CacheBuilder.newBuilder()
@@ -100,6 +103,9 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
   @Override
   public Concept resolveConcept(String definition) {
+    if (!useCaches) {
+      return resolveConceptInternal(removeExcessParentheses(definition));
+    }
     try {
       return concepts.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
@@ -110,6 +116,9 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
   @Override
   public Observable resolveObservable(String definition) {
+    if (!useCaches) {
+      return resolveObservableInternal(removeExcessParentheses(definition));
+    }
     try {
       return observables.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
@@ -189,11 +198,11 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     return client.postCollection(ServicesAPI.REASONER.PARENTS, target.asConcept(), Concept.class);
   }
 
-  @Override
-  public Builder observableBuilder(Observable observableImpl) {
-    // TODO Auto-generated method stub
-    return null;
-  }
+  //  @Override
+  //  public Builder observableBuilder(Observable observableImpl) {
+  //    // TODO Auto-generated method stub
+  //    return null;
+  //  }
 
   @Override
   public Concept parent(Semantics target) {

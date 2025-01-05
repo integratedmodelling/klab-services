@@ -37,7 +37,7 @@ public class ObservableImpl implements Observable {
   private Collection<ResolutionDirective> resolutionDirectives =
       EnumSet.noneOf(ResolutionDirective.class);
   private Object defaultValue;
-  private Object value;
+//  private Object value;
   private String statedName;
   private List<Annotation> annotations = new ArrayList<>();
 //  private List<Pair<ValueOperator, Object>> valueOperators = new ArrayList<>();
@@ -90,7 +90,7 @@ public class ObservableImpl implements Observable {
     this.generic = other.generic;
     this.resolutionDirectives = other.resolutionDirectives;
     this.defaultValue = other.defaultValue;
-    this.value = other.value;
+//    this.value = other.value;
     this.statedName = other.statedName;
     this.annotations.addAll(other.annotations);
 //    this.valueOperators = other.valueOperators;
@@ -221,11 +221,11 @@ public class ObservableImpl implements Observable {
   public ValueMediator mediator() {
     return this.unit == null ? (this.range == null ? this.currency : this.range) : this.unit;
   }
-
-  @Override
-  public Object getValue() {
-    return value;
-  }
+//
+//  @Override
+//  public Object getValue() {
+//    return value;
+//  }
 
   // @Override
   // public Concept context() {
@@ -362,9 +362,9 @@ public class ObservableImpl implements Observable {
     this.defaultValue = defaultValue;
   }
 
-  public void setValue(Object value) {
-    this.value = value;
-  }
+//  public void setValue(Object value) {
+//    this.value = value;
+//  }
 
   public void setStatedName(String statedName) {
     this.statedName = statedName;

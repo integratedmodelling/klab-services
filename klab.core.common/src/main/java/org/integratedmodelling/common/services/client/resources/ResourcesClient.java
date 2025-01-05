@@ -54,6 +54,8 @@ import java.util.function.BiConsumer;
 public class ResourcesClient extends ServiceClient
     implements ResourcesService, ResourcesService.Admin {
 
+  boolean useCaches = false;
+
   /** Caches for concepts and observables. */
   private LoadingCache<String, KimConcept> concepts =
       CacheBuilder.newBuilder()
@@ -340,6 +342,9 @@ public class ResourcesClient extends ServiceClient
 
   @Override
   public KimConcept resolveConcept(String definition) {
+    if (!useCaches) {
+      return resolveConceptInternal(removeExcessParentheses(definition));
+      }
     try {
       return concepts.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
@@ -350,6 +355,9 @@ public class ResourcesClient extends ServiceClient
 
   @Override
   public KimObservable resolveObservable(String definition) {
+    if (!useCaches) {
+      return resolveObservableInternal(removeExcessParentheses(definition));
+    }
     try {
       return observables.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {

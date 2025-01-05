@@ -165,7 +165,7 @@ public enum LanguageAdapter {
     ret.setType(adaptSemanticType(semantics.getType()));
     ret.setNegated(semantics.isNegated());
     ret.setCollective(semantics.isCollective());
-//    ret.setCodeName(semantics.codeName());
+    //    ret.setCodeName(semantics.codeName());
     ret.setDeprecation(semantics.getDeprecation());
     ret.setDeprecated(semantics.getDeprecation() != null);
     ret.setNamespace(namespace);
@@ -181,7 +181,7 @@ public enum LanguageAdapter {
         ret.setObservable(adaptSemantics(semantics.getObservable(), documentClass));
       } else {
         ret.setObservable(KimConceptImpl.nothing());
-//        ret.setCodeName("invalid_concept");
+        //        ret.setCodeName("invalid_concept");
       }
       for (var cr : semantics.getConceptReferences()) {
         var trait = adaptSemantics(cr, documentClass);
@@ -196,7 +196,8 @@ public enum LanguageAdapter {
     if (semantics.getUnaryOperator() != null && semantics.getUnaryOperator().getFirst() != null) {
       ret.setSemanticModifier(
           UnarySemanticOperator.valueOf(semantics.getUnaryOperator().getFirst().name()));
-      if (semantics.getUnaryOperator().getSecond() != null) {
+      if (semantics.getUnaryOperator().getSecond() != null
+          && !semantics.getUnaryOperator().getSecond().isEmpty()) {
         // TODO not sure we have any situation when there is more than one secondary concept
         if (semantics.getUnaryOperator().getSecond().size() > 1) {
           System.out.println("DIO POLLO MUST WRITE adaptSemanticSequence()");

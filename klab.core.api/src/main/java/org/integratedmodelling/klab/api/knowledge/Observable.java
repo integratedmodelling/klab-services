@@ -86,13 +86,13 @@ public interface Observable extends Semantics, Resolvable {
      * @param causant
      * @return the same builder this was called on, for chaining calls
      */
-    Builder from(Concept causant);
+    Builder withCausant(Concept causant);
 
     /**
      * @param caused
      * @return the same builder this was called on, for chaining calls
      */
-    Builder to(Concept caused);
+    Builder withCaused(Concept caused);
 
     /**
      * Add roles that become part of the semantics of the observable (Role Trait ... Observable)
@@ -119,16 +119,6 @@ public interface Observable extends Semantics, Resolvable {
      * @throws KlabValidationException
      */
     Builder as(UnarySemanticOperator type, Concept... participants) throws KlabValidationException;
-
-//    /**
-//     * Change the description type. Due to ontological constraints, basically only useful to swap
-//     * {@link DescriptionType#ACKNOWLEDGEMENT} and {@link DescriptionType#INSTANTIATION} on
-//     * substantials.
-//     *
-//     * @param descriptionType
-//     * @return
-//     */
-//    Builder as(DescriptionType descriptionType);
 
     /**
      * Add traits to the concept being built. Pair with (@link {@link #withTrait(Collection)} as
@@ -186,17 +176,6 @@ public interface Observable extends Semantics, Resolvable {
      */
     Observable buildObservable();
 
-    //        /**
-    //         * Return any exceptions accumulated through the building process before build() is
-    // called. If build()
-    //         * is called when getErrors() returns a non-empty collection, it will throw an
-    // exception collecting
-    //         * the messages from all exception in the list.
-    //         *
-    //         * @return any errors accumulated
-    //         */
-    //        Collection<Notification> getNotifications();
-
     /**
      * @param cooccurrent
      * @return
@@ -237,7 +216,8 @@ public interface Observable extends Semantics, Resolvable {
     Builder withCurrency(Currency currency);
 
     /**
-     * Value operators are added in the order they are received.
+     * Value operators are added in the order they are received. Any pre-existing value operator of
+     * the same type is removed and substituted in the same position.
      *
      * @param operator
      * @param valueOperand
@@ -270,32 +250,12 @@ public interface Observable extends Semantics, Resolvable {
      */
     Builder named(String name);
 
-    //        /**
-    //         * Set the flag that signifies distributed inherency (of each).
-    //         *
-    //         * @param ofEach
-    //         * @return
-    //         */
-    //        Builder withDistributedInherency(boolean ofEach);
-
     /**
      * Remove any value operators
      *
      * @return
      */
     Builder withoutValueOperators();
-
-    //        /**
-    //         * Tags the classifier of an abstract attribute as targeting a specific concrete
-    //         attribute, so that any
-    //         * classified objects that won't have that specific attribute can be recognized as
-    //         irrelevant to this
-    //         * observation and hidden.
-    //         *
-    //         * @param targetPredicate
-    //         * @return
-    //         */
-    //        Builder withTargetPredicate(Concept targetPredicate);
 
     /**
      * Set the observable resulting from buildObservable() as optional.
@@ -349,15 +309,6 @@ public interface Observable extends Semantics, Resolvable {
     Builder withCurrency(String currency);
 
     /**
-     * Add an inline value to the observable (will check with the IArtifact.Type of the observable
-     * at build).
-     *
-     * @param value
-     * @return
-     */
-    Builder withInlineValue(Object value);
-
-    /**
      * @param defaultValue
      * @return
      */
@@ -376,14 +327,6 @@ public interface Observable extends Semantics, Resolvable {
      * @return
      */
     Builder withRange(NumericRange range);
-
-//    /**
-//     * Make this observable generic or not
-//     *
-//     * @param generic
-//     * @return
-//     */
-//    Builder generic(boolean generic);
 
     /**
      * Set or reset the observer semantics.
@@ -409,13 +352,13 @@ public interface Observable extends Semantics, Resolvable {
      */
     Builder withAnnotation(Annotation annotation);
 
-    /**
-     * Advanced. Use ONLY internally!
-     *
-     * @param s
-     * @return
-     */
-    Builder withReferenceName(String s);
+//    /**
+//     * Advanced. Use ONLY internally!
+//     *
+//     * @param s
+//     * @return
+//     */
+//    Builder withReferenceName(String s);
   }
 
   /**
@@ -437,6 +380,7 @@ public interface Observable extends Semantics, Resolvable {
    * @return
    */
   Concept getObserverSemantics();
+
   /**
    * @return
    */
@@ -452,10 +396,10 @@ public interface Observable extends Semantics, Resolvable {
    */
   NumericRange getRange();
 
-//  /**
-//   * @return
-//   */
-//  List<Pair<ValueOperator, Object>> getValueOperators();
+  //  /**
+  //   * @return
+  //   */
+  //  List<Pair<ValueOperator, Object>> getValueOperators();
 
   /**
    * Each observable must be able to quickly assess the type of the description (observation
@@ -499,12 +443,13 @@ public interface Observable extends Semantics, Resolvable {
    */
   ValueMediator mediator();
 
-  /**
-   * Not null if the (quality) observable has been given a pre-observed value.
-   *
-   * @return
-   */
-  Object getValue();
+  //
+  //  /**
+  //   * Not null if the (quality) observable has been given a pre-observed value.
+  //   *
+  //   * @return
+  //   */
+  //  Object getValue();
 
   /**
    * If a default value was defined for a quality observable, it is returned here. It will be

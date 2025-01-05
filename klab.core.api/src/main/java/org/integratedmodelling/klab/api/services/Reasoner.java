@@ -157,13 +157,13 @@ public interface Reasoner extends KlabService {
    */
   Collection<Concept> parents(Semantics target);
 
-  /**
-   * Get a builder specified on the passed observable, used to obtain a modified observable.
-   *
-   * @param observableImpl
-   * @return
-   */
-  Builder observableBuilder(Observable observableImpl);
+//  /**
+//   * Get a builder specified on the passed observable, used to obtain a modified observable.
+//   *
+//   * @param observableImpl
+//   * @return
+//   */
+//  Builder observableBuilder(Observable observableImpl);
 
   /**
    * For fluency. Returns a single parent for a concept known to be part of a straight hierarchy. If

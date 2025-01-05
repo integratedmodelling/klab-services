@@ -1622,8 +1622,7 @@ public class OWL {
   /**
    * Create a subclass of this concept in the internal ontology with the same metadata and type as
    * the original. This is called when constructing a new concept that will be restricted with new
-   * restrictions not appropriate for the original concept. The URN will be set later and can be
-   * left blank in the returned concept but the final URN is passed for the class annotation.
+   * restrictions not appropriate for the original concept.
    *
    * <p>The semantic type of the concept must be finalized when this is called.
    *
@@ -1632,11 +1631,16 @@ public class OWL {
    * completed.
    *
    * @param ret
+   * @param urn the final URN of the concept after the finalized definition. Must not exist already.
    * @return
    */
   public synchronized Concept makeSubclass(Concept ret, String urn) {
 
-    var ontology = getOntology(INTERNAL_ONTOLOGY_ID);
+    if (urn.equals("earth:Region")) {
+      System.out.println("PORCO DIO");
+    }
+
+    var ontology = requireOntology(INTERNAL_ONTOLOGY_ID);
     var name = ontology.createIdForDefinition(urn);
     List<Axiom> ax = new ArrayList<>();
     ax.add(Axiom.ClassAssertion(name, ret.getType()));
@@ -1652,6 +1656,7 @@ public class OWL {
           concept.error("concept definition is semantically inconsistent");
       }
     }
+
   }
 
   /**
@@ -1695,7 +1700,6 @@ public class OWL {
       ax.add(Axiom.SubClass(NS.CORE_CHANGE, conceptId));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
-      ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
       ontology.define(ax);

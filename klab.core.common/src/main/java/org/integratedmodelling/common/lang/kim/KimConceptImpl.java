@@ -2,6 +2,8 @@ package org.integratedmodelling.common.lang.kim;
 
 import java.io.Serial;
 import java.util.*;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -211,20 +213,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   public KimConcept getAdjacent() {
     return this.adjacent;
   }
-
-  //  @Override
-  //  public String getCodeName() {
-  //    return this.codeName;
-  //  }
-
-  //  @Override
-  //  public SemanticRole getSemanticRole() {
-  //    return this.semanticRole;
-  //  }
-  //
-  //  public void setSemanticRole(SemanticRole semanticRole) {
-  //    this.semanticRole = semanticRole;
-  //  }
 
   public void setName(String name) {
     this.name = name;
@@ -442,10 +430,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
           ret.inherent = null;
           break;
         case ROLE:
-          ret.roles = copyWithout(ret.roles, declaration);
+          ret.roles = copyWithout(ret.roles, (trait) -> declaration.equals(trait.getUrn()));
           break;
         case TRAIT:
-          ret.traits = copyWithout(ret.traits, declaration);
+          ret.traits = copyWithout(ret.traits, (trait) -> declaration.equals(trait.getUrn()));
           break;
         default:
           break;
@@ -457,14 +445,46 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     return ret;
   }
 
-  private static List<KimConcept> copyWithout(List<KimConcept> concepts, String declaration) {
+  private static List<KimConcept> copyWithout(
+      List<KimConcept> concepts, Predicate<KimConcept> removeCheck) {
     List<KimConcept> ret = new ArrayList<>();
     for (KimConcept c : concepts) {
-      if (!c.toString().equals(declaration)) {
+      if (!removeCheck.test(c)) {
         ret.add(c);
       }
     }
     return ret;
+  }
+
+  public void addTraits(
+      List<KimConcept> traits, BiPredicate<KimConcept, KimConcept> checkForConflict) {
+    addPredicates(traits, this.traits, checkForConflict);
+  }
+
+  public void addRoles(
+      List<KimConcept> roles, BiPredicate<KimConcept, KimConcept> checkForConflict) {
+    addPredicates(roles, this.roles, checkForConflict);
+  }
+
+  private void addPredicates(
+      List<KimConcept> traitsToAdd,
+      List<KimConcept> originalTraits,
+      BiPredicate<KimConcept, KimConcept> checkForConflict) {
+    if (checkForConflict == null) {
+      originalTraits.addAll(traitsToAdd);
+    } else {
+      List<KimConcept> toRemove = new ArrayList<>();
+      for (var original : originalTraits) {
+        for (var newTrait : traitsToAdd) {
+          if (checkForConflict.test(newTrait, original)) {
+            toRemove.add(original);
+          }
+        }
+      }
+      originalTraits.removeAll(toRemove);
+      originalTraits.addAll(traitsToAdd);
+    }
+    resetDefinition();
   }
 
   @Override

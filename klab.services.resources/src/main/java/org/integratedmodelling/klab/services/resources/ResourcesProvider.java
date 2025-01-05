@@ -4,6 +4,16 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
+import java.io.File;
+import java.io.FileFilter;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -18,8 +28,8 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -59,17 +69,6 @@ import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.serializer.GroupSerializer;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.Nullable;
-import java.io.File;
-import java.io.FileFilter;
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
 
 @Service
 public class ResourcesProvider extends BaseService
@@ -672,8 +671,6 @@ public class ResourcesProvider extends BaseService
     }
     return null;
   }
-
-
 
   public KimObservable resolveObservableInternal(String definition) {
     var parsed = this.workspaceManager.resolveObservable(removeExcessParentheses(definition));

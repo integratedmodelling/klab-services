@@ -41,7 +41,7 @@ public class ObservableBuildStrategy implements Observable.Builder {
         OF, WITH,/* WITHIN, */GOAL, FROM, TO, WITH_ROLE, AS, WITH_TRAITS, WITHOUT, WITHOUT_ANY_CONCEPTS, WITHOUT_ANY_TYPES, ADJACENT,
         COOCCURRENT, COLLECTIVE,
         WITH_UNIT, WITH_CURRENCY, WITH_RANGE, WITH_VALUE_OPERATOR, LINKING, NAMED, WITHOUT_VALUE_OPERATORS, AS_OPTIONAL, WITHOUT_ROLES,
-        WITH_TEMPORAL_INHERENT, REFERENCE_NAMED, WITH_INLINE_VALUE, WITH_OBSERVER_SEMANTICS,
+        WITH_TEMPORAL_INHERENT, /*REFERENCE_NAMED,*/ /*WITH_INLINE_VALUE,*/ WITH_OBSERVER_SEMANTICS,
         WITH_DEFAULT_VALUE, WITH_RESOLUTION_EXCEPTION, AS_GENERIC, WITH_ANNOTATION/*, AS_DESCRIPTION_TYPE*/
     }
 
@@ -300,13 +300,13 @@ public class ObservableBuildStrategy implements Observable.Builder {
     }
 
     @Override
-    public Builder from(Concept causant) {
+    public Builder withCausant(Concept causant) {
         this.operations.add(new Operation(OperationType.FROM, causant));
         return this;
     }
 
     @Override
-    public Builder to(Concept caused) {
+    public Builder withCaused(Concept caused) {
         this.operations.add(new Operation(OperationType.TO, caused));
         return this;
     }
@@ -479,7 +479,6 @@ public class ObservableBuildStrategy implements Observable.Builder {
 
     @Override
     public Builder named(String name, String referenceName) {
-        this.operations.add(new Operation(OperationType.REFERENCE_NAMED, referenceName));
         this.operations.add(new Operation(OperationType.NAMED, name));
         return this;
     }
@@ -496,11 +495,11 @@ public class ObservableBuildStrategy implements Observable.Builder {
         return this;
     }
 
-    @Override
-    public Builder withInlineValue(Object value) {
-        this.operations.add(new Operation(OperationType.WITH_INLINE_VALUE, value));
-        return this;
-    }
+//    @Override
+//    public Builder withInlineValue(Object value) {
+//        this.operations.add(new Operation(OperationType.WITH_INLINE_VALUE, value));
+//        return this;
+//    }
 
     @Override
     public Builder withDefaultValue(Object defaultValue) {
@@ -538,11 +537,11 @@ public class ObservableBuildStrategy implements Observable.Builder {
         return this;
     }
 
-    @Override
-    public Builder withReferenceName(String s) {
-        this.operations.add(new Operation(OperationType.REFERENCE_NAMED, s));
-        return this;
-    }
+//    @Override
+//    public Builder withReferenceName(String s) {
+//        this.operations.add(new Operation(OperationType.REFERENCE_NAMED, s));
+//        return this;
+//    }
 
     public List<Operation> getOperations() {
         return operations;

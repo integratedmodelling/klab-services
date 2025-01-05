@@ -1,10 +1,11 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
 import java.util.*;
-
 import org.integratedmodelling.common.knowledge.ConceptImpl;
+import org.integratedmodelling.common.knowledge.ObservableImpl;
 import org.integratedmodelling.common.lang.kim.KimConceptImpl;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
@@ -20,7 +21,6 @@ import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
-import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 
 /**
  * Actual builder of concepts and observables. Uses the syntactic form for any transformations,
@@ -32,8 +32,8 @@ public class SemanticsBuilder implements Observable.Builder {
 
   KimConceptImpl syntax;
   KimConceptImpl observerSyntax;
-  boolean dirty;
   ReasonerService reasoner;
+  ResourcesService resourcesService;
   Unit unit;
   Currency currency;
   NumericRange numericRange;
@@ -45,6 +45,7 @@ public class SemanticsBuilder implements Observable.Builder {
   public static SemanticsBuilder create(KimConcept concept, ReasonerService reasoner) {
     var ret = new SemanticsBuilder();
     ret.reasoner = reasoner;
+    ret.resourcesService = reasoner.serviceScope().getService(ResourcesService.class);
     if (concept instanceof KimConceptImpl kimConcept) {
       ret.syntax = kimConcept;
       return ret;
@@ -55,6 +56,7 @@ public class SemanticsBuilder implements Observable.Builder {
   public static SemanticsBuilder create(Concept concept, ReasonerService reasoner) {
     var ret = new SemanticsBuilder();
     ret.reasoner = reasoner;
+    ret.resourcesService = reasoner.serviceScope().getService(ResourcesService.class);
     var syntax =
         reasoner.serviceScope().getService(ResourcesService.class).resolveConcept(concept.getUrn());
     if (syntax instanceof KimConceptImpl kimConcept) {
@@ -85,171 +87,165 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder of(Concept inherent) {
-    // TODO
-    this.dirty = true;
+    syntax.setInherent(resourcesService.resolveConcept(inherent.getUrn()));
+    syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder with(Concept compresent) {
-    // TODO
-    this.dirty = true;
+    syntax.setCompresent(resourcesService.resolveConcept(compresent.getUrn()));
+    syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withGoal(Concept goal) {
-    // TODO
-    this.dirty = true;
+    syntax.setGoal(resourcesService.resolveConcept(goal.getUrn()));
+    syntax.resetDefinition();
     return this;
   }
 
   @Override
-  public Observable.Builder from(Concept causant) {
-    // TODO
-    this.dirty = true;
+  public Observable.Builder withCausant(Concept causant) {
+    syntax.setCausant(resourcesService.resolveConcept(causant.getUrn()));
+    syntax.resetDefinition();
     return this;
   }
 
   @Override
-  public Observable.Builder to(Concept caused) {
-    // TODO
-    this.dirty = true;
+  public Observable.Builder withCaused(Concept caused) {
+    syntax.setCaused(resourcesService.resolveConcept(caused.getUrn()));
+    syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withRole(Concept role) {
-    // TODO
-    this.dirty = true;
+    //    syntax.getRoles().add(role);
     return this;
   }
 
   @Override
   public Observable.Builder as(UnarySemanticOperator type, Concept... participants)
       throws KlabValidationException {
-    // TODO
-    this.dirty = true;
+    syntax.setSemanticModifier(type);
+    if (participants != null && participants.length > 0) {
+      syntax.setComparisonConcept(resourcesService.resolveConcept(participants[0].getUrn()));
+    }
+    syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withTrait(Concept... concepts) {
-    // TODO
-    this.dirty = true;
-    return this;
+    return withTrait(Arrays.asList(concepts));
   }
 
   @Override
   public Observable.Builder withTrait(Collection<Concept> concepts) {
-    // TODO
-    this.dirty = true;
+    syntax.addTraits(
+        concepts.stream().map(c -> resourcesService.resolveConcept(c.getUrn())).toList(),
+        (added, original)-> {
+          var baseTraitAdded = reasoner.baseParentTrait(reasoner.resolveConcept(added.getUrn()));
+          var baseTraitOriginal = reasoner.baseParentTrait(reasoner.resolveConcept(added.getUrn()));
+          return baseTraitAdded.equals(baseTraitOriginal);
+        });
+
     return this;
   }
 
   @Override
   public Observable.Builder without(Collection<Concept> concepts) {
     // TODO
-    this.dirty = true;
     return this;
   }
 
   @Override
   public Observable.Builder without(Concept... concepts) {
     // TODO
-    this.dirty = true;
     return this;
   }
 
   @Override
   public Observable.Builder withCooccurrent(Concept cooccurrent) {
-    // TODO
-    this.dirty = true;
+    syntax.setCooccurrent(resourcesService.resolveConcept(cooccurrent.getUrn()));
+    syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withAdjacent(Concept adjacent) {
-    // TODO
-    this.dirty = true;
+    syntax.setAdjacent(resourcesService.resolveConcept(adjacent.getUrn()));
+    syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withoutAny(Collection<Concept> concepts) {
     // TODO
-    this.dirty = true;
     return this;
   }
 
   @Override
   public Observable.Builder withoutAny(SemanticType... type) {
     // TODO
-    this.dirty = true;
     return this;
   }
 
   @Override
   public Observable.Builder withoutAny(Concept... concepts) {
     // TODO
-    this.dirty = true;
     return this;
   }
 
   @Override
   public Observable.Builder withUnit(Unit unit) {
-    // TODO
-    this.dirty = true;
+    this.unit = unit;
     return this;
   }
 
   @Override
   public Observable.Builder withCurrency(Currency currency) {
-    // TODO
-    this.dirty = true;
+    this.currency = currency;
     return this;
   }
 
   @Override
   public Observable.Builder withValueOperator(ValueOperator operator, Object valueOperand) {
-    // TODO
-    this.dirty = true;
+    syntax.getValueOperators().add(Pair.of(operator, valueOperand));
+    syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Collection<Concept> removed(Semantics result) {
     // TODO
-    this.dirty = true;
     return List.of();
   }
 
   @Override
   public Observable.Builder linking(Concept source, Concept target) {
-    // TODO
-    this.dirty = true;
+    syntax.setRelationshipSource(resourcesService.resolveConcept(source.getUrn()));
+    syntax.setRelationshipTarget(resourcesService.resolveConcept(target.getUrn()));
+    syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder named(String name) {
-    // TODO
     this.statedName = name;
-    this.dirty = true;
     return this;
   }
 
   @Override
   public Observable.Builder withoutValueOperators() {
-    // TODO
-    this.dirty = true;
     return this;
   }
 
   @Override
   public Observable.Builder optional(boolean optional) {
-    // TODO
-    this.dirty = true;
+    this.optional = optional;
     return this;
   }
 
@@ -265,33 +261,29 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder named(String name, String referenceName) {
-    return null;
+    this.statedName = name;
+    return this;
   }
 
   @Override
   public Observable.Builder withUnit(String unit) {
-    return null;
+    return this;
   }
 
   @Override
   public Observable.Builder withCurrency(String currency) {
-    return null;
-  }
-
-  @Override
-  public Observable.Builder withInlineValue(Object value) {
-    return null;
+    return this;
   }
 
   @Override
   public Observable.Builder withDefaultValue(Object defaultValue) {
-    return null;
+    return this;
   }
 
   @Override
   public Observable.Builder withResolutionException(
       Observable.ResolutionDirective resolutionDirective) {
-    return null;
+    return this;
   }
 
   @Override
@@ -301,15 +293,16 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder withObserverSemantics(Concept observerSemantics) {
-    return null;
+    this.observerSyntax = (KimConceptImpl) resourcesService.resolveConcept(observerSyntax.getUrn());
+    return this;
   }
 
   @Override
   public Observable.Builder collective(boolean collective) {
     if (syntax.isCollective() != collective) {
       syntax.setCollective(collective);
-      this.dirty = true;
     }
+    syntax.resetDefinition();
     return this;
   }
 
@@ -318,10 +311,10 @@ public class SemanticsBuilder implements Observable.Builder {
     return null;
   }
 
-  @Override
-  public Observable.Builder withReferenceName(String s) {
-    return null;
-  }
+//  @Override
+//  public Observable.Builder withReferenceName(String s) {
+//    return null;
+//  }
 
   // TODO use a cache
   private Concept buildConcept(KimConcept kimConcept) {
@@ -400,7 +393,7 @@ public class SemanticsBuilder implements Observable.Builder {
     var identities = new ArrayList<Concept>();
     var acceptedRoles = new ArrayList<Concept>();
 
-    if (valueOperators.size() + modifiers.size() + traits.size() + roles.size() > 0) {
+    if ((valueOperators.size() + modifiers.size() + traits.size()) + roles.size() > 0) {
 
       var parent = ret;
       ret = (ConceptImpl) reasoner.owl().makeSubclass(ret, kimConcept.getUrn());
@@ -506,7 +499,7 @@ public class SemanticsBuilder implements Observable.Builder {
                   throw new KlabInternalErrorException("Unexpected modifier in semantic builder");
             };
 
-        if (inherited != null && !reasoner.compatible(modifying.singular(), inherited)) {
+        if (inherited != null && !reasoner.is(modifying.singular(), inherited)) {
           ret.error(
               "cannot set concept "
                   + modifying.getUrn()
@@ -550,13 +543,13 @@ public class SemanticsBuilder implements Observable.Builder {
 
       // and value ops
       for (var valueOperator : valueOperators) {
-        // TODO
+        addValueOperator(valueOperator, ret);
       }
 
       reasoner.owl().finalizeConcept(ret);
     }
 
-    // set collective and abstract
+    // set collective and abstract FIXME make this semantic and that's it
     if (kimConcept.isCollective()) {
       ret = ret.collective();
     } else {
@@ -565,9 +558,73 @@ public class SemanticsBuilder implements Observable.Builder {
 
     // set other metadata
 
+    // TODO code name should be same as reference name and equal the lowercase URN with changed : ->
+    //  _, ' ' -> __, '()' -> ___ and any value op with a base64 hash of the value
+
     ret.setUrn(kimConcept.getUrn());
 
     return ret;
+  }
+
+  private void addValueOperator(Pair<ValueOperator, Object> valueOperator, ConceptImpl ret) {
+
+    //    ValueOperator valueOperator = op.getFirst();
+    //    Object valueOperand = op.getSecond();
+    //
+    //    ret.setUrn(ret.getUrn() + " " + valueOperator.declaration);
+    //
+    //    opId.append((opId.isEmpty()) ? "" : "_").append(valueOperator.textForm);
+    //    cdId.append((cdId.isEmpty()) ? "" : "_").append(valueOperator.textForm);
+    //
+    //    /*
+    //     * turn these into their parsed form so we have their properly computed
+    //     * reference name
+    //     */
+    //    if (valueOperand instanceof KimObservable) {
+    //      valueOperand = reasoner.declareObservable((KimObservable) valueOperand);
+    //    } else if (valueOperand instanceof KimConcept) {
+    //      valueOperand = reasoner.declareConcept((KimConcept) valueOperand);
+    //    }
+    //
+    //    if (valueOperand instanceof Concept) {
+    //
+    //      ret.setUrn(ret.getUrn() + " " + ((Concept) valueOperand).getUrn());
+    //
+    //      opId.append((opId.isEmpty()) ? "" : "_")
+    //          .append(((Concept) valueOperand).getReferenceName());
+    //      cdId.append((cdId.isEmpty()) ? "" : "_")
+    //          .append(
+    //                  ((Concept) valueOperand).displayName().replaceAll("\\-", "_").replaceAll("
+    // ", "_"));
+    //
+    //      if (name == null) {
+    //        ret.setName(
+    //                ret.getName()
+    //                        + "_"
+    //                        + ((Concept) valueOperand)
+    //                        .displayName()
+    //                        .replaceAll("\\-", "_")
+    //                        .replaceAll(" ", "_"));
+    //      }
+    //
+    //    } else if (valueOperand instanceof Observable) {
+    //
+    //      ret.setUrn(ret.getUrn() + " (" + ((Observable) valueOperand).getUrn() + ")");
+    //      opId.append((opId.isEmpty()) ? "" : "_")
+    //          .append(((Observable) valueOperand).getReferenceName());
+    //      cdId.append((cdId.isEmpty()) ? "" : "_").append(((Observable)
+    // valueOperand).displayName());
+    //
+    //    } else {
+    //
+    //      if (valueOperand != null) {
+    //
+    //        ret.setUrn(ret.getUrn() + " " + valueOperand);
+    //
+    //        opId.append((opId.isEmpty()) ? "" : "_").append(getCodeForm(valueOperand, true));
+    //        cdId.append((cdId.isEmpty()) ? "" : "_").append(getCodeForm(valueOperand, false));
+    //      }
+    //    }
   }
 
   @Override
@@ -581,6 +638,56 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable buildObservable() {
-    return null;
+
+    Concept obs = buildConcept();
+
+    var ret = ObservableImpl.promote(obs, reasoner.serviceScope());
+
+    if (currency != null) {
+      ret.setCurrency(currency);
+      ret.setUrn(ret.getUrn() + " in " + ret.getCurrency());
+    } else if (unit != null) {
+      ret.setUnit(unit);
+      ret.setUrn(ret.getUrn() + " in " + ret.getUnit());
+    }
+
+    if (observerSyntax != null) {
+      ret.setObserverSemantics(buildConcept(observerSyntax));
+    }
+
+    ret.setStatedName(this.statedName);
+    ret.setOptional(this.optional);
+    ret.getAnnotations().addAll(annotations);
+    ret.setGeneric(this.generic);
+    //
+    //    if (unitStatement != null) {
+    //      /* TODO CHECK */
+    //      Unit unit = new UnitImpl(this.unitStatement);
+    //      ret.setUnit(unit);
+    //      ret.setUrn(ret.getUrn() + " in " + ret.getCurrency());
+    //    }
+    //    if (currencyStatement != null) {
+    //      /* TODO CHECK */
+    //      Currency currency = Currency.create(currencyStatement);
+    //      ret.setCurrency(currency);
+    //      ret.setUrn(ret.getUrn() + " in " + ret.getCurrency());
+    //    }
+    //
+    //    if (this.inlineValue != null) {
+    //      ret.setValue(this.inlineValue);
+    //    }
+    //
+    //    if (this.range != null) {
+    //      /* TODO CHECK */
+    //      ret.setRange(this.range);
+    //      ret.setUrn(ret.getUrn() + " " + this.range);
+    //    }
+
+    if (this.optional) {
+      ret.setOptional(true);
+      ret.setUrn(ret.getUrn() + " optional");
+    }
+
+    return ret;
   }
 }

@@ -17,8 +17,8 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
  */
 public class SemanticMatcher {
 
-  private ReasonerService reasonerService;
-  private ResourcesService resourcesService;
+  private final ReasonerService reasonerService;
+  private final ResourcesService resourcesService;
 
   /**
    * Cache for non-contextual matching with inherency=true and no abstract predicates incarnation

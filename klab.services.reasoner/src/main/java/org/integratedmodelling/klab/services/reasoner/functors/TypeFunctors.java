@@ -7,7 +7,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
-import org.integratedmodelling.klab.services.reasoner.internal.ObservableBuilder;
+import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 
 import java.util.List;
 
@@ -61,11 +61,9 @@ public class TypeFunctors {
   public Semantics changeArityToSingle(Semantics semantics) {
 
     if (semantics.asConcept().isCollective()) {
-      ObservableBuilder builder =
-          new ObservableBuilder(
-              semantics.asConcept(), reasoner.serviceScope(), (ReasonerService) reasoner);
-      builder.collective(false);
-      return builder.buildObservable();
+      SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner)
+                      .collective(false)
+                      .buildObservable();
     }
 
     return semantics;
@@ -78,11 +76,9 @@ public class TypeFunctors {
   public Semantics changeArityToCollective(Semantics semantics) {
 
     if (!semantics.asConcept().isCollective()) {
-      ObservableBuilder builder =
-          new ObservableBuilder(
-              semantics.asConcept(), reasoner.serviceScope(), (ReasonerService) reasoner);
-      builder.collective(true);
-      return builder.buildObservable();
+      SemanticsBuilder.create(semantics.asConcept(), (ReasonerService) reasoner)
+          .collective(true)
+          .buildObservable();
     }
 
     return semantics;
