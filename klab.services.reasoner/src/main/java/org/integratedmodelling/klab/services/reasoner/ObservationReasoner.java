@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.reasoner;
 
 import com.google.common.collect.Sets;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
+import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
@@ -11,8 +12,10 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.CoreLibrary;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.objects.ObservationStrategyImpl;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -175,33 +178,46 @@ public class ObservationReasoner {
           if we get here, the strategy definition is a match: compile the observation strategy
           operations for the observable and scope
         */
-
-        var os = new ObservationStrategyImpl();
-
-        os.setDocumentation(strategy.getDescription()); // TODO compile template
-        os.setUrn(strategy.getUrn());
-
-        for (var operation : strategy.getOperations()) {
-
-          var op = new ObservationStrategyImpl.OperationImpl();
-          op.setType(operation.getType());
-
-          if (operation.getObservable() != null) {
-            op.setObservable(
-                operation.getObservable().getPatternVariables().isEmpty()
-                    ? reasoner.declareObservable(operation.getObservable())
-                    : reasoner.declareObservable(operation.getObservable(), patternVariableValues));
-          }
-          for (var function : operation.getFunctions()) {
-            op.getContextualizables().add(new ContextualizableImpl(function));
-          }
-          os.getOperations().add(op);
-        }
-        ret.add(os);
+        ret.add(contextualizeStrategy(strategy, patternVariableValues));
       }
     }
 
     return ret;
+  }
+
+  private ObservationStrategy contextualizeStrategy(
+      KimObservationStrategy strategy, Map<String, Object> patternVariableValues) {
+    var os = new ObservationStrategyImpl();
+
+    os.setDocumentation(strategy.getDescription()); // TODO compile template
+    os.setUrn(strategy.getUrn());
+
+    for (var operation : strategy.getOperations()) {
+
+      var op = new ObservationStrategyImpl.OperationImpl();
+      op.setType(operation.getType());
+
+      if (operation.getObservable() != null) {
+        op.setObservable(
+            operation.getObservable().getPatternVariables().isEmpty()
+                ? reasoner.declareObservable(operation.getObservable())
+                : reasoner.declareObservable(operation.getObservable(), patternVariableValues));
+      }
+      for (var function : operation.getFunctions()) {
+        op.getContextualizables().add(new ContextualizableImpl(function));
+      }
+      for (var deferred : operation.getDeferredStrategies()) {
+        op.getContextualizables()
+            .add(
+                new ContextualizableImpl(
+                    ServiceCallImpl.create(
+                        RuntimeService.CoreFunctor.DEFER_RESOLUTION.getServiceCall(),
+                        "strategy",
+                        contextualizeStrategy(deferred, patternVariableValues))));
+      }
+      os.getOperations().add(op);
+    }
+    return os;
   }
 
   private Object matchFunction(

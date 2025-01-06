@@ -89,10 +89,10 @@ public enum LanguageAdapter {
   }
 
   private List<KimConceptImpl> asTokens(
-          List<SemanticSyntax> second,
-          String namespace,
-          String projectName,
-          KlabAsset.KnowledgeClass documentClass) {
+      List<SemanticSyntax> second,
+      String namespace,
+      String projectName,
+      KlabAsset.KnowledgeClass documentClass) {
     var ret = new ArrayList<KimConceptImpl>();
     for (var token : second) {
       ret.addAll(asTokens(token, namespace, projectName, documentClass));
@@ -273,7 +273,6 @@ public enum LanguageAdapter {
     return ret;
   }
 
-
   public KimNamespace adaptNamespace(
       NamespaceSyntax namespace, String projectName, Collection<Notification> notifications) {
 
@@ -409,6 +408,7 @@ public enum LanguageAdapter {
     ret.setLength(model.getCodeLength());
     ret.setProjectName(namespace.getProjectName());
     ret.setDocumentClass(KlabAsset.KnowledgeClass.NAMESPACE);
+    ret.getResourceUrns().addAll(model.getResourceUrns());
 
     // TODO docstring set through next-gen literate programming features
 

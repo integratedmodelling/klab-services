@@ -57,12 +57,8 @@ public class ResolverService extends BaseService implements Resolver {
 
   public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
     super(scope, Type.RESOLVER, options);
-    //        setProvideScopesAutomatically(true);
     ServiceConfiguration.INSTANCE.setMainService(this);
     readConfiguration(options);
-    //        // FIXME switch this to use the ingest() mechanism
-    //        KnowledgeRepository.INSTANCE.setProcessor(KlabAsset.KnowledgeClass.NAMESPACE,
-    //                (ns) -> loadNamespace((KimNamespace) ns, scope));
   }
 
   @Override
@@ -158,18 +154,6 @@ public class ResolverService extends BaseService implements Resolver {
   public String serviceId() {
     return configuration.getServiceId();
   }
-
-  //    private <T> void loadNamespace(KimNamespace namespace, Scope scope) {
-  //
-  //        List<Knowledge> ret = new ArrayList<>();
-  //        for (KlabStatement statement : namespace.getStatements()) {
-  //            if (statement instanceof KimModel kimModel) {
-  //                var model = loadModel(kimModel, scope);
-  //                KnowledgeRepository.INSTANCE.registerAsset(model.getUrn(), model, namespace
-  //                .getVersion());
-  //            }
-  //        }
-  //    }
 
   private Model loadModel(KimModel statement, Scope scope) {
 
