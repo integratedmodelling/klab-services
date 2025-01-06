@@ -458,12 +458,16 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
   public void addTraits(
       List<KimConcept> traits, BiPredicate<KimConcept, KimConcept> checkForConflict) {
-    addPredicates(traits, this.traits, checkForConflict);
+    if (!traits.isEmpty()) {
+      addPredicates(traits, this.traits, checkForConflict);
+    }
   }
 
   public void addRoles(
       List<KimConcept> roles, BiPredicate<KimConcept, KimConcept> checkForConflict) {
-    addPredicates(roles, this.roles, checkForConflict);
+    if (!roles.isEmpty()) {
+      addPredicates(roles, this.roles, checkForConflict);
+    }
   }
 
   private void addPredicates(
@@ -550,10 +554,21 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       collective = true;
     }
 
+    String main = "";
     StringBuilder ret = new StringBuilder(isCollective() ? "each" : "");
 
     if (semanticModifier != null) {
       ret.append(ret.isEmpty() ? "" : " ").append(semanticModifier.declaration[0]);
+      ret.append((ret.isEmpty()) ? "" : " ")
+          .append(name == null ? ((KimConceptImpl) observable).finalizeDefinition() : name);
+      if (comparisonConcept != null) {
+        ret.append(" ")
+           .append(semanticModifier.declaration[1])
+           .append(" ")
+           .append(((KimConceptImpl) comparisonConcept).finalizeDefinition());
+      }
+      main = ret.toString();
+      ret = new StringBuilder();
     }
 
     if (negated) {
@@ -581,14 +596,11 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
           .append(((KimConceptImpl) role).computeUrnAndParenthesize());
     }
 
-    ret.append((ret.isEmpty()) ? "" : " ")
-        .append(name == null ? ((KimConceptImpl) observable).finalizeDefinition() : name);
-
-    if (comparisonConcept != null) {
-      ret.append(" ")
-          .append(semanticModifier.declaration[1])
-          .append(" ")
-          .append(((KimConceptImpl) comparisonConcept).finalizeDefinition());
+    if (semanticModifier == null) {
+      ret.append((ret.isEmpty()) ? "" : " ")
+          .append(name == null ? ((KimConceptImpl) observable).finalizeDefinition() : name);
+    } else {
+      ret.append((ret.isEmpty()) ? "" : " ").append(main);
     }
 
     if (inherent != null) {

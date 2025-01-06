@@ -76,23 +76,45 @@ public enum LanguageAdapter {
     return ret;
   }
 
+  private List<KimConceptImpl> asTokens(
+      SemanticSyntax semanticSyntax,
+      String namespace,
+      String projectName,
+      KlabAsset.KnowledgeClass documentClass) {
+    List<KimConceptImpl> tokens = new ArrayList<>();
+    for (var token : semanticSyntax) {
+      tokens.add(adaptSemanticToken(token, namespace, projectName, documentClass));
+    }
+    return tokens;
+  }
+
+  private List<KimConceptImpl> asTokens(
+          List<SemanticSyntax> second,
+          String namespace,
+          String projectName,
+          KlabAsset.KnowledgeClass documentClass) {
+    var ret = new ArrayList<KimConceptImpl>();
+    for (var token : second) {
+      ret.addAll(asTokens(token, namespace, projectName, documentClass));
+    }
+    return ret;
+  }
+
   public KimConceptImpl adaptSemantics(
       SemanticSyntax semantics,
       String namespace,
       String projectName,
       KlabAsset.KnowledgeClass documentClass) {
+    return adaptSemanticSequence(asTokens(semantics, namespace, projectName, documentClass));
+  }
 
-    List<KimConceptImpl> tokens = new ArrayList<>();
-
-    for (var token : semantics) {
-      tokens.add(adaptSemanticToken(token, namespace, projectName, documentClass));
-    }
-
-    if (tokens.isEmpty()) {
-      return null;
-    } else if (tokens.size() > 1) {
-      System.out.println("DIO PANDA MUST WRITE adaptSemanticSequence()");
-    }
+  /**
+   * FIXME this will not work right: e.g. data:Normalized change rate of geography:Elevation will be
+   * interpreted as change rate of data:Normalized geography:Elevation. Needs to tokenize
+   * intelligently from the last, apply traits where they belong and bring the first "each" or
+   * distribution operator to the final concept
+   */
+  private KimConceptImpl adaptSemanticSequence(List<KimConceptImpl> tokens) {
 
     // TODO first thing check if there are AND or OR restrictions and behave accordingly
 
@@ -101,53 +123,43 @@ public enum LanguageAdapter {
     List<KimConcept> roles = new ArrayList<>();
     List<KimConcept> traits = new ArrayList<>();
 
+    var isNothing = false;
+    var observableIsCollective = false;
     for (var token : tokens) {
-
       if (token.getType().contains(SemanticType.OBSERVABLE)) {
         ret = token;
+        observableIsCollective = token.isCollective();
+        if (observableIsCollective) {
+          token.setCollective(false);
+          token.resetDefinition();
+        }
       } else if (token.getType().contains(SemanticType.ROLE)) {
         roles.add(token);
       } else if (token.getType().contains(SemanticType.PREDICATE)) {
         traits.add(token);
+      } else if (token.getType().contains(SemanticType.NOTHING)) {
+        isNothing = true;
       }
     }
 
     if (ret == null) {
       // no observable
-      ret = tokens.getFirst();
+      ret = tokens.getLast();
       traits.remove(ret);
       roles.remove(ret);
     }
 
-    roles.sort(
-        new Comparator<KimConcept>() {
-          @Override
-          public int compare(KimConcept o1, KimConcept o2) {
-            return o1.getUrn().compareTo(o2.getUrn());
-          }
-        });
-    traits.sort(
-        new Comparator<KimConcept>() {
-          @Override
-          public int compare(KimConcept o1, KimConcept o2) {
-            return o1.getUrn().compareTo(o2.getUrn());
-          }
-        });
+    ret.addTraits(traits, null);
+    ret.addRoles(roles, null);
 
-    // rebuild urn
-    StringBuilder urn = new StringBuilder();
-
-    for (var role : roles) {
-      urn.append(urn.isEmpty() ? "" : " ").append(role.getUrn());
+    if (observableIsCollective) {
+      ret.setCollective(true);
+      ret.resetDefinition();
     }
-    for (var trait : traits) {
-      urn.append(urn.isEmpty() ? "" : " ").append(trait.getUrn());
-    }
-    urn.append(urn.isEmpty() ? "" : " ").append(ret.getUrn());
 
-    ret.setUrn(urn.toString());
-    ret.getTraits().addAll(traits);
-    ret.getRoles().addAll(roles);
+    if (isNothing) {
+      ret.setType(EnumSet.of(SemanticType.NOTHING));
+    }
 
     return ret;
   }
@@ -198,30 +210,23 @@ public enum LanguageAdapter {
           UnarySemanticOperator.valueOf(semantics.getUnaryOperator().getFirst().name()));
       if (semantics.getUnaryOperator().getSecond() != null
           && !semantics.getUnaryOperator().getSecond().isEmpty()) {
-        // TODO not sure we have any situation when there is more than one secondary concept
-        if (semantics.getUnaryOperator().getSecond().size() > 1) {
-          System.out.println("DIO POLLO MUST WRITE adaptSemanticSequence()");
-        }
 
         ret.setComparisonConcept(
-            adaptSemantics(
-                semantics.getUnaryOperator().getSecond().getFirst(),
-                namespace,
-                projectName,
-                documentClass));
+            adaptSemanticSequence(
+                asTokens(
+                    semantics.getUnaryOperator().getSecond().getFirst(),
+                    namespace,
+                    projectName,
+                    documentClass)));
       }
     }
 
     for (var restriction : semantics.getRestrictions()) {
 
-      // TODO not sure this happens
-      if (restriction.getSecond().size() > 1) {
-        System.out.println("DIO BUFFO MUST WRITE adaptSemanticSequence()");
-      }
-
       boolean collective = restriction.getThird();
       var operand =
-          adaptSemantics(restriction.getSecond().get(0), namespace, projectName, documentClass);
+          adaptSemanticSequence(
+              asTokens(restriction.getSecond(), namespace, projectName, documentClass));
       if (operand != null && collective) {
         operand.setCollective(true);
         operand.resetDefinition();
@@ -267,6 +272,7 @@ public enum LanguageAdapter {
 
     return ret;
   }
+
 
   public KimNamespace adaptNamespace(
       NamespaceSyntax namespace, String projectName, Collection<Notification> notifications) {

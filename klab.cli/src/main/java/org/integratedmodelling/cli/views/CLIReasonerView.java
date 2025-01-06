@@ -595,14 +595,6 @@ public class CLIReasonerView {
   public static class Info implements Runnable {
 
     @Spec CommandSpec commandSpec;
-
-    @Option(
-        names = {"-a", "--alternative"},
-        defaultValue = "false",
-        description = {"Include inherited " + "traits"},
-        required = false)
-    boolean alternative = false;
-
     @Parameters List<String> arguments;
 
     @Override
@@ -631,13 +623,7 @@ public class CLIReasonerView {
 
       for (var urn : tokens.stream().map(l -> Utils.Strings.join(l, " ")).toList()) {
 
-        Concept concept = null;
-
-        if (alternative && reasoner instanceof ReasonerClient reasonerClient) {
-          concept = reasonerClient.resolveConceptAlternative(urn);
-        } else {
-          concept = reasoner.resolveConcept(urn);
-        }
+        Concept concept = reasoner.resolveConcept(urn);
 
         if (concept != null) {
           out.println(AUTO.string("Normalized URN: @|blue " + concept.getUrn() + "|@"));
@@ -763,7 +749,7 @@ public class CLIReasonerView {
       ret.append("\nTraits:\n");
       for (var trait : allTraits) {
         ret.append("    ")
-            .append(trait.getUrn())
+            .append(decl(trait))
             .append(dirTraits.contains(trait) ? " [direct]" : " [indirect]")
             .append(" ")
             .append(trait.getType())
@@ -777,7 +763,7 @@ public class CLIReasonerView {
       ret.append("\nRoles:\n");
       for (var trait : allRoles) {
         ret.append("    ")
-            .append(trait.getUrn())
+            .append(decl(trait))
             .append(dirRoles.contains(trait) ? " [direct]" : " [indirect]")
             .append("\n");
       }
@@ -787,7 +773,7 @@ public class CLIReasonerView {
     if (!affected.isEmpty()) {
       ret.append("\nAffects:\n");
       for (var quality : affected) {
-        ret.append("    ").append(quality.getUrn()).append("\n");
+        ret.append("    ").append(decl(quality)).append("\n");
       }
     }
 

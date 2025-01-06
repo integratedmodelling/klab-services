@@ -24,27 +24,23 @@ public class ReasonerController {
 
   @Autowired private ReasonerServer reasoner;
 
-  // FIXME REMOVE
-  @PostMapping("/resolve/dioporco")
-  public @ResponseBody Concept resolveConcept(@RequestBody String definition) {
-      var syntax = reasoner.klabService().serviceScope().getService(ResourcesService.class).resolveConcept(definition);
-      if (syntax != null) {
-        return SemanticsBuilder.create(syntax, reasoner.klabService()).buildConcept();
-      }
-      return null;
-  }
-
-
   /**
-   * GET /resolve/concept
+   * POST /resolve/concept from URN
    *
    * @param definition
    * @return
    */
   @PostMapping(ServicesAPI.REASONER.RESOLVE_CONCEPT)
-  public @ResponseBody Concept resolveConcept(@RequestBody String definition, @RequestParam(name = "alt", required = false) boolean alternative) {
+  public @ResponseBody Concept resolveConcept(
+      @RequestBody String definition,
+      @RequestParam(name = "alt", required = false) boolean alternative) {
     if (alternative) {
-      var syntax = reasoner.klabService().serviceScope().getService(ResourcesService.class).resolveConcept(definition);
+      var syntax =
+          reasoner
+              .klabService()
+              .serviceScope()
+              .getService(ResourcesService.class)
+              .resolveConcept(definition);
       if (syntax != null) {
         return SemanticsBuilder.create(syntax, reasoner.klabService()).buildConcept();
       }
@@ -79,23 +75,24 @@ public class ReasonerController {
     return reasoner.klabService().resolveObservable(definition);
   }
 
-//  @PostMapping(ServicesAPI.REASONER.DECLARE_OBSERVABLE)
-//  public @ResponseBody Observable declareObservable(@RequestBody DeclarationRequest request) {
-//    return request.getObservableDeclaration().getPattern() == null
-//        ? reasoner.klabService().declareObservable(request.getObservableDeclaration())
-//        : reasoner
-//            .klabService()
-//            .declareObservable(request.getObservableDeclaration(), request.getPatternVariables());
-//  }
-//
-//  @PostMapping(ServicesAPI.REASONER.DECLARE_CONCEPT)
-//  public @ResponseBody Concept declareConcept(@RequestBody DeclarationRequest request) {
-//    return request.getConceptDeclaration().isPattern()
-//        ? reasoner.klabService().declareConcept(request.getConceptDeclaration())
-//        : reasoner
-//            .klabService()
-//            .declareConcept(request.getConceptDeclaration(), request.getPatternVariables());
-//  }
+  //  @PostMapping(ServicesAPI.REASONER.DECLARE_OBSERVABLE)
+  //  public @ResponseBody Observable declareObservable(@RequestBody DeclarationRequest request) {
+  //    return request.getObservableDeclaration().getPattern() == null
+  //        ? reasoner.klabService().declareObservable(request.getObservableDeclaration())
+  //        : reasoner
+  //            .klabService()
+  //            .declareObservable(request.getObservableDeclaration(),
+  // request.getPatternVariables());
+  //  }
+  //
+  //  @PostMapping(ServicesAPI.REASONER.DECLARE_CONCEPT)
+  //  public @ResponseBody Concept declareConcept(@RequestBody DeclarationRequest request) {
+  //    return request.getConceptDeclaration().isPattern()
+  //        ? reasoner.klabService().declareConcept(request.getConceptDeclaration())
+  //        : reasoner
+  //            .klabService()
+  //            .declareConcept(request.getConceptDeclaration(), request.getPatternVariables());
+  //  }
 
   /**
    * POST /subsumes
