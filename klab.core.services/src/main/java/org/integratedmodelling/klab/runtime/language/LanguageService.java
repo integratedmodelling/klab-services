@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 
@@ -63,8 +64,7 @@ public class LanguageService implements Language {
   @SuppressWarnings("unchecked")
   @Override
   public <T> T execute(ServiceCall call, Scope scope, Class<T> resultClass) {
-    ComponentRegistry.FunctionDescriptor descriptor =
-        this.componentRegistry.getFunctionDescriptor(call);
+    Extensions.FunctionDescriptor descriptor = this.componentRegistry.getFunctionDescriptor(call);
     if (descriptor == null) {
       /*
       check the resource service in the scope to see if we can find a component that supports this call
@@ -108,7 +108,7 @@ public class LanguageService implements Language {
   }
 
   private Object[] getParameters(
-      ComponentRegistry.FunctionDescriptor descriptor,
+      Extensions.FunctionDescriptor descriptor,
       ServiceCall call,
       Scope scope,
       boolean isConstructor) {

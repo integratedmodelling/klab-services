@@ -1248,6 +1248,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             : configuration.getBrokerURI());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
+    ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
 
     ret.setAvailableMessagingQueues(
         Utils.URLs.isLocalHost(getUrl())

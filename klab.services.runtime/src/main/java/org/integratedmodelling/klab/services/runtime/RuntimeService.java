@@ -194,6 +194,7 @@ public class RuntimeService extends BaseService
         embeddedBroker != null ? embeddedBroker.getURI() : configuration.getBrokerURI());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
+    ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
 
     return ret;
   }

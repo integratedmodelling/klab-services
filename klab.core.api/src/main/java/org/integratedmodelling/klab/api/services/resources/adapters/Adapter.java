@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 
 /**
  * The descriptor for a resource adapter, built from the annotation in a class annotated with
@@ -32,6 +33,13 @@ public interface Adapter {
      * @return
      */
     Version getVersion();
+
+    /**
+     * Return the serializable descriptor for the adapter.
+     *
+     * @return
+     */
+    Extensions.AdapterDescriptor getAdapterInfo();
 
     /**
      * If true, the adapter provides a resource contextualizer method that must be called through

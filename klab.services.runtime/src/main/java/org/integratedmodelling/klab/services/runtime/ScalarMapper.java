@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.runtime.storage.BooleanStorage;
 import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
@@ -46,7 +47,7 @@ public class ScalarMapper {
         };
   }
 
-  public void add(ServiceCall serviceCall, ComponentRegistry.FunctionDescriptor descriptor) {
+  public void add(ServiceCall serviceCall, Extensions.FunctionDescriptor descriptor) {
 
     // check out the expected data value vs. the observation
 

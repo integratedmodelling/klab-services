@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.rest;
 
 
+@Deprecated
 public class ComponentReference {
     
     private String name;

@@ -13,6 +13,8 @@ import java.util.Set;
  * The (legacy) hub sends a list of nodes. In the new structure we add a service type and a primary flag so
  * that we can use the same structure and authentication strategy for all services. Nodes with the default
  * type (Legacy node) will be discarded and the user scope built from the new node types.
+ *
+ * @deprecated no more generic nodes with all this stuff
  */
 public class ServiceReference {
 

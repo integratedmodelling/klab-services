@@ -7,9 +7,9 @@ import java.util.Set;
 
 /**
  * Node capabilities: similar to engine but with resource list and status
- * 
- * @author ferdinando.villa
  *
+ * @author ferdinando.villa
+ * @deprecated legacy
  */
 public class NodeCapabilities {
 
@@ -30,7 +30,7 @@ public class NodeCapabilities {
 	private long refreshFrequencyMillis;
 	private int loadFactor;
 	private boolean online;
-	
+
 	public String getName() {
 		return name;
 	}
@@ -62,7 +62,7 @@ public class NodeCapabilities {
 	public void setOwner(IdentityReference owner) {
 		this.owner = owner;
 	}
-	
+
 	public List<AuthorityReference> getAuthorities() {
 		return authorities;
 	}
@@ -109,7 +109,7 @@ public class NodeCapabilities {
 	 * resources. Engines do not normally have mirrors but they may use this field
 	 * to notify that they are part of a high-availability cluster for a load
 	 * balancer.
-	 * 
+	 *
 	 * @return all mirrors. Possibly empty, never null.
 	 */
 	public List<String> getMirrors() {

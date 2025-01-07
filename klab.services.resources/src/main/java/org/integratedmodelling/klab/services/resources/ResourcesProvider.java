@@ -43,6 +43,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
+import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
@@ -400,15 +401,49 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public ResourceSet resolveResource(String urn, Scope scope) {
-    // TODO
+  public ResourceSet resolveResource(String urnId, Scope scope) {
+
+    var urn = Urn.of(urnId);
+    ResourceSet ret = new ResourceSet();
+    if (urn.isUniversal()) {
+
+      var adapter = getComponentRegistry().getAdapter(urn.getCatalog(), Version.ANY_VERSION, scope);
+      if (adapter == null) {
+        return ResourceSet.empty(
+            Notification.error("No adapter available for " + urn.getCatalog()));
+      }
+
+      var info = adapter.getAdapterInfo();
+      if (info.validatedPhases().contains(ResourceAdapter.Validator.LifecyclePhase.UrnSyntax)) {
+        // TODO validate the URN before returning
+      }
+
+      ret.getResults()
+          .add(
+              new ResourceSet.Resource(
+                  this.serviceId(),
+                  urn.getUrn(),
+                  null,
+                  adapter.getVersion(),
+                  KnowledgeClass.RESOURCE));
+
+    } else if (urn.isLocal()) {
+
+      // must have project and be same user. Staging area is accessible.
+
+    } else {
+
+      // use the resource
+    }
+
     return ResourceSet.empty(Notification.error("UNIMPLEMENTED"));
   }
 
   @Override
   public Data contextualize(
       Resource resource, Geometry geometry, @Nullable Data input, Scope scope) {
-    var adapter = getComponentRegistry().getAdapter(resource.getAdapterType(), scope);
+    var adapter =
+        getComponentRegistry().getAdapter(resource.getAdapterType(), resource.getVersion(), scope);
     if (adapter == null) {
       return Data.empty("Adapter " + resource.getAdapterType() + " not available");
     }
@@ -607,6 +642,7 @@ public class ResourcesProvider extends BaseService
     ret.setServerId(hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature));
     ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
     ret.getServiceNotifications().addAll(serviceNotifications());
+    ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
     // TODO capabilities are being asked from same machine as the one that runs the server. This
     // call
     //  should have a @Nullable scope. The condition here is silly.
@@ -798,11 +834,13 @@ public class ResourcesProvider extends BaseService
 
     // check if the worldview is impacted, too
     var worldviewOntologies =
-        retrieveWorldview().getOntologies().stream().map(KlabAsset::getUrn).collect(Collectors.toSet());
+        retrieveWorldview().getOntologies().stream()
+            .map(KlabAsset::getUrn)
+            .collect(Collectors.toSet());
     var worldviewStrategies =
         retrieveWorldview().getObservationStrategies().stream()
-                           .map(KlabAsset::getUrn)
-                           .collect(Collectors.toSet());
+            .map(KlabAsset::getUrn)
+            .collect(Collectors.toSet());
 
     var conts =
         Sets.intersection(

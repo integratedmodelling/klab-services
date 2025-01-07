@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.components;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
+import jakarta.validation.Valid;
+import jakarta.validation.Validation;
 import javassist.Modifier;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
@@ -36,10 +38,7 @@ import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.services.runtime.extension.KlabAnnotation;
-import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
-import org.integratedmodelling.klab.api.services.runtime.extension.Library;
-import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
+import org.integratedmodelling.klab.api.services.runtime.extension.*;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.extension.KlabComponent;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -72,8 +71,8 @@ public class ComponentRegistry {
   // we keep the local services and adapters in here
   // FIXME the permissions should come from the external permission system, not as the internal
   //  Plugin-License
-  private final ComponentDescriptor localComponentDescriptor =
-      new ComponentDescriptor(
+  private final Extensions.ComponentDescriptor localComponentDescriptor =
+      new Extensions.ComponentDescriptor(
           LOCAL_SERVICE_COMPONENT,
           Version.CURRENT_VERSION,
           "Natively available " + "services",
@@ -87,18 +86,22 @@ public class ComponentRegistry {
           new HashMap<>());
 
   /** Component descriptors, uniquely identified by id + version */
-  private MultiValuedMap<String, ComponentDescriptor> components = new HashSetValuedHashMap<>();
+  private MultiValuedMap<String, Extensions.ComponentDescriptor> components =
+      new HashSetValuedHashMap<>();
 
   private static Map<String, ServiceImplementation> serviceImplementations = new HashMap<>();
 
   /** Here the key is each service URN, linked to all the components that provide it. */
   private MultiValuedMap<String, Adapter> adapters = new HashSetValuedHashMap<>();
 
-  private MultiValuedMap<String, ComponentDescriptor> adapterFinder = new HashSetValuedHashMap<>();
-  private MultiValuedMap<String, ComponentDescriptor> serviceFinder = new HashSetValuedHashMap<>();
-  private MultiValuedMap<String, ComponentDescriptor> annotationFinder =
+  private MultiValuedMap<String, Extensions.ComponentDescriptor> adapterFinder =
       new HashSetValuedHashMap<>();
-  private MultiValuedMap<String, ComponentDescriptor> verbFinder = new HashSetValuedHashMap<>();
+  private MultiValuedMap<String, Extensions.ComponentDescriptor> serviceFinder =
+      new HashSetValuedHashMap<>();
+  private MultiValuedMap<String, Extensions.ComponentDescriptor> annotationFinder =
+      new HashSetValuedHashMap<>();
+  private MultiValuedMap<String, Extensions.ComponentDescriptor> verbFinder =
+      new HashSetValuedHashMap<>();
   private Map<Class<?>, Object> globalInstances = new HashMap<>();
   private File catalogFile;
   private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
@@ -124,18 +127,19 @@ public class ComponentRegistry {
             "services/" + service.serviceType().name().toLowerCase() + "/components/catalog.json",
             "[]");
 
-    for (var descriptor : Utils.Json.load(this.catalogFile, ComponentDescriptor[].class)) {
+    for (var descriptor :
+        Utils.Json.load(this.catalogFile, Extensions.ComponentDescriptor[].class)) {
 
-      for (var adapter : descriptor.adapters) {
-        adapterFinder.put(adapter.name, descriptor);
+      for (var adapter : descriptor.adapters()) {
+        adapterFinder.put(adapter.name(), descriptor);
       }
-      for (var serv : descriptor.services.keySet()) {
+      for (var serv : descriptor.services().keySet()) {
         serviceFinder.put(serv, descriptor);
       }
-      for (var annotation : descriptor.annotations.keySet()) {
+      for (var annotation : descriptor.annotations().keySet()) {
         annotationFinder.put(annotation, descriptor);
       }
-      for (var verb : descriptor.verbs.keySet()) {
+      for (var verb : descriptor.verbs().keySet()) {
         verbFinder.put(verb, descriptor);
       }
 
@@ -144,18 +148,19 @@ public class ComponentRegistry {
   }
 
   private void saveConfiguration() {
-    Utils.Json.save(components.values().toArray(new ComponentDescriptor[] {}), this.catalogFile);
+    Utils.Json.save(
+        components.values().toArray(new Extensions.ComponentDescriptor[] {}), this.catalogFile);
   }
 
-  public List<ComponentDescriptor> resolveServiceCall(String name, Version version) {
-    List<ComponentDescriptor> ret = new ArrayList<>();
-    ComponentDescriptor target = null;
+  public List<Extensions.ComponentDescriptor> resolveServiceCall(String name, Version version) {
+    List<Extensions.ComponentDescriptor> ret = new ArrayList<>();
+    Extensions.ComponentDescriptor target = null;
     for (var component : serviceFinder.get(name)) {
       if (version == null) {
-        if (target == null || component.version.greater(target.version)) {
+        if (target == null || component.version().greater(target.version())) {
           target = component;
         }
-      } else if (version.compatible(component.version)) {
+      } else if (version.compatible(component.version())) {
         target = component;
       }
     }
@@ -168,90 +173,8 @@ public class ComponentRegistry {
     return ret;
   }
 
-  /**
-   * The adapter identifier may include a version after @; if not, retrieve the latest version
-   * available. Even if present, it must be authorized to the passed scope.
-   *
-   * @param adapterType
-   * @param scope
-   * @return
-   */
-  public Adapter getAdapter(String adapterType, Scope scope) {
-    return null;
-  }
-
-  public record AdapterDescriptor(
-      String name,
-      boolean universal,
-      boolean validating,
-      boolean reentrant,
-      boolean contextualizing,
-      boolean sanitizing,
-      boolean inspecting,
-      boolean publishing,
-      List<ResourceTransport.Schema> importSchemata,
-      List<ResourceTransport.Schema> exportSchemata /* TODO */) {}
-
-  public record LibraryDescriptor(
-      String name,
-      String description,
-      List<Pair<ServiceInfo, FunctionDescriptor>> services,
-      List<Pair<ServiceInfo, FunctionDescriptor>> annotations,
-      List<Pair<ServiceInfo, FunctionDescriptor>> verbs) {}
-
-  public record ComponentDescriptor(
-      String id,
-      Version version,
-      String description,
-      File sourceArchive,
-      ResourcePrivileges permissions,
-      String mavenCoordinates,
-      List<LibraryDescriptor> libraries,
-      List<AdapterDescriptor> adapters,
-      Map<String, FunctionDescriptor> services,
-      Map<String, FunctionDescriptor> annotations,
-      Map<String, FunctionDescriptor> verbs) {
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      ComponentDescriptor that = (ComponentDescriptor) o;
-      return Objects.equals(id, that.id) && Objects.equals(version, that.version);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(id, version);
-    }
-
-    public Notification extractInfo() {
-      return Notification.info(
-          "Component "
-              + id()
-              + " ["
-              + version
-              + "]: "
-              + services().size()
-              + "services, "
-              + adapters.size()
-              + " adapters, "
-              + annotations.size()
-              + " annotations");
-    }
-  }
-
-  /**
-   * This descriptor contains everything needed to execute a service, including the service info.
-   */
-  public static class FunctionDescriptor {
-    public ServiceInfo serviceInfo;
-    // check call style: 1 = call, scope, prototype; 2 = call, scope; 3 = custom, matched at
-    // each call
-    public int methodCall;
-    public boolean staticMethod;
-    public boolean staticClass;
-    public boolean error;
+  public Collection<Extensions.ComponentDescriptor> getComponents(Scope scope) {
+    return components.values().stream().filter(/* TODO permissions */ c -> true).toList();
   }
 
   /*
@@ -269,11 +192,11 @@ public class ComponentRegistry {
     public Method method;
   }
 
-  public ServiceImplementation implementation(FunctionDescriptor descriptor) {
+  public ServiceImplementation implementation(Extensions.FunctionDescriptor descriptor) {
     return serviceImplementations.get(descriptor.serviceInfo.getName());
   }
 
-  public Pair<ComponentDescriptor, ResourceSet> installComponent(
+  public Pair<Extensions.ComponentDescriptor, ResourceSet> installComponent(
       File resourcePath, String mavenCoordinates, Scope scope) {
 
     // TODO allow same path with different versions and replacing same version
@@ -295,7 +218,7 @@ public class ComponentRegistry {
     }
 
     var ret = new ResourceSet();
-    ComponentDescriptor info = null;
+    Extensions.ComponentDescriptor info = null;
     try {
       var pluginId = componentManager.loadPlugin(pluginDestination.toPath());
       var plugin = componentManager.getPlugin(pluginId);
@@ -342,19 +265,19 @@ public class ComponentRegistry {
    * @param call
    * @return
    */
-  public FunctionDescriptor getFunctionDescriptor(ServiceCall call) {
+  public Extensions.FunctionDescriptor getFunctionDescriptor(ServiceCall call) {
     var version = call.getRequiredVersion();
-    ComponentDescriptor target = null;
+    Extensions.ComponentDescriptor target = null;
     for (var component : serviceFinder.get(call.getUrn())) {
       if (version == null) {
-        if (target == null || component.version.greater(target.version)) {
+        if (target == null || component.version().greater(target.version())) {
           target = component;
         }
-      } else if (version.compatible(component.version)) {
+      } else if (version.compatible(component.version())) {
         target = component;
       }
     }
-    return target == null ? null : target.services.get(call.getUrn());
+    return target == null ? null : target.services().get(call.getUrn());
   }
 
   /**
@@ -383,15 +306,15 @@ public class ComponentRegistry {
    *
    * @param component
    */
-  public ComponentDescriptor registerComponent(
+  public Extensions.ComponentDescriptor registerComponent(
       KlabComponent component, String mavenCoordinates, File pluginFile) {
 
     // TODO negotiate updates before we open the file.
 
     var componentName = component.getName();
     var componentVersion = component.getVersion();
-    var libraries = new ArrayList<LibraryDescriptor>();
-    var adapters = new ArrayList<AdapterDescriptor>();
+    var libraries = new ArrayList<Extensions.LibraryDescriptor>();
+    var adapters = new ArrayList<Extensions.AdapterDescriptor>();
     var license = component.getWrapper().getDescriptor().getLicense();
     var description = component.getWrapper().getDescriptor().getPluginDescription();
     var sourceArchive =
@@ -410,7 +333,7 @@ public class ComponentRegistry {
             (annotation, cls) -> registerAdapter((ResourceAdapter) annotation, cls, adapters)));
 
     var componentDescriptor =
-        new ComponentDescriptor(
+        new Extensions.ComponentDescriptor(
             componentName,
             componentVersion,
             description,
@@ -424,16 +347,16 @@ public class ComponentRegistry {
             new HashMap<>());
 
     // update catalog
-    for (var library : componentDescriptor.libraries) {
-      for (var service : library.services) {
+    for (var library : componentDescriptor.libraries()) {
+      for (var service : library.services()) {
         serviceFinder.put(service.getFirst().getName(), componentDescriptor);
         componentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
       }
-      for (var service : library.annotations) {
+      for (var service : library.annotations()) {
         annotationFinder.put(service.getFirst().getName(), componentDescriptor);
         componentDescriptor.annotations().put(service.getFirst().getName(), service.getSecond());
       }
-      for (var service : library.verbs) {
+      for (var service : library.verbs()) {
         verbFinder.put(service.getFirst().getName(), componentDescriptor);
         componentDescriptor.verbs().put(service.getFirst().getName(), service.getSecond());
       }
@@ -447,14 +370,14 @@ public class ComponentRegistry {
   }
 
   private void registerLibrary(
-      Library annotation, Class<?> cls, List<LibraryDescriptor> libraries) {
+      Library annotation, Class<?> cls, List<Extensions.LibraryDescriptor> libraries) {
 
     String namespacePrefix =
         Library.CORE_LIBRARY.equals(annotation.name()) ? "" : (annotation.name() + ".");
 
-    var prototypes = new ArrayList<Pair<ServiceInfo, FunctionDescriptor>>();
-    var annotations = new ArrayList<Pair<ServiceInfo, FunctionDescriptor>>();
-    var verbs = new ArrayList<Pair<ServiceInfo, FunctionDescriptor>>();
+    var prototypes = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
+    var annotations = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
+    var verbs = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
 
     for (Class<?> clss : cls.getClasses()) {
       if (clss.isAnnotationPresent(KlabFunction.class)) {
@@ -498,14 +421,14 @@ public class ComponentRegistry {
     }
 
     libraries.add(
-        new LibraryDescriptor(
+        new Extensions.LibraryDescriptor(
             annotation.name(), annotation.description(), prototypes, annotations, verbs));
   }
 
-  private FunctionDescriptor createFunctionDescriptor(
+  private Extensions.FunctionDescriptor createFunctionDescriptor(
       ServiceInfo serviceInfo, Class<?> clss, Method method) {
 
-    FunctionDescriptor ret = new FunctionDescriptor();
+    var ret = new Extensions.FunctionDescriptor();
     ServiceImplementation implementation = new ServiceImplementation();
     serviceImplementations.put(serviceInfo.getName(), implementation);
 
@@ -601,6 +524,14 @@ public class ComponentRegistry {
     return ret;
   }
 
+  public Adapter getAdapter(String urn, Version version, Scope scope) {
+    // TODO handle permissions
+
+    return adapters.containsKey(urn)
+        ? /* TODO handle version */ adapters.get(urn).iterator().next()
+        : null;
+  }
+
   /**
    * Return the default parameterization for functions and constructors according to function type
    * and allowed "style".
@@ -610,7 +541,7 @@ public class ComponentRegistry {
    * @return
    */
   private Class<?>[] getParameterClasses(
-      ServiceInfo serviceInfo, FunctionDescriptor functionDescriptor) {
+      ServiceInfo serviceInfo, Extensions.FunctionDescriptor functionDescriptor) {
     switch (serviceInfo.getFunctionType()) {
       case ANNOTATION:
         break;
@@ -659,7 +590,7 @@ public class ComponentRegistry {
         "can't assess parameter types for " + serviceInfo.getName());
   }
 
-  private Object createGlobalClassInstance(FunctionDescriptor ret) {
+  private Object createGlobalClassInstance(Extensions.FunctionDescriptor ret) {
     try {
       Object instance = this.globalInstances.get(implementation(ret).implementation);
       if (instance == null) {
@@ -714,7 +645,7 @@ public class ComponentRegistry {
   }
 
   private void registerAdapter(
-      ResourceAdapter annotation, Class<?> cls, List<AdapterDescriptor> adapters) {
+      ResourceAdapter annotation, Class<?> cls, List<Extensions.AdapterDescriptor> adapters) {
 
     try {
       var adapter = new AdapterImpl(cls, annotation);
@@ -732,15 +663,15 @@ public class ComponentRegistry {
    * @param version
    * @return
    */
-  public ComponentDescriptor getComponent(String urn, Version version) {
+  public Extensions.ComponentDescriptor getComponent(String urn, Version version) {
 
-    ComponentDescriptor ret = null;
+    Extensions.ComponentDescriptor ret = null;
     for (var component : components.get(urn)) {
       if (version == null) {
-        if (ret == null || component.version.greater(ret.version)) {
+        if (ret == null || component.version().greater(ret.version())) {
           ret = component;
         }
-      } else if (version.compatible(component.version)) {
+      } else if (version.compatible(component.version())) {
         ret = component;
       }
     }
@@ -991,8 +922,8 @@ public class ComponentRegistry {
 
   public void loadExtensions(String... packageName) {
 
-    var libraries = new ArrayList<LibraryDescriptor>();
-    var adapters = new ArrayList<AdapterDescriptor>();
+    var libraries = new ArrayList<Extensions.LibraryDescriptor>();
+    var adapters = new ArrayList<Extensions.AdapterDescriptor>();
 
     scanPackage(
         packageName,
@@ -1002,24 +933,24 @@ public class ComponentRegistry {
             ResourceAdapter.class,
             (annotation, cls) -> registerAdapter((ResourceAdapter) annotation, cls, adapters)));
 
-    localComponentDescriptor.libraries.addAll(libraries);
-    localComponentDescriptor.adapters.addAll(adapters);
+    localComponentDescriptor.libraries().addAll(libraries);
+    localComponentDescriptor.adapters().addAll(adapters);
 
     this.components.put(LOCAL_SERVICE_COMPONENT, localComponentDescriptor);
 
     // update catalog
-    for (var library : localComponentDescriptor.libraries) {
-      for (var service : library.services) {
+    for (var library : localComponentDescriptor.libraries()) {
+      for (var service : library.services()) {
         serviceFinder.put(service.getFirst().getName(), localComponentDescriptor);
         localComponentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
       }
-      for (var service : library.annotations) {
+      for (var service : library.annotations()) {
         annotationFinder.put(service.getFirst().getName(), localComponentDescriptor);
         localComponentDescriptor
             .annotations()
             .put(service.getFirst().getName(), service.getSecond());
       }
-      for (var service : library.verbs) {
+      for (var service : library.verbs()) {
         verbFinder.put(service.getFirst().getName(), localComponentDescriptor);
         localComponentDescriptor.verbs().put(service.getFirst().getName(), service.getSecond());
       }
@@ -1079,14 +1010,15 @@ public class ComponentRegistry {
 
   public class AdapterImpl implements Adapter {
 
-    private String name;
+    private final String name;
     private Artifact.Type resourceType;
-    private Version version;
+    private final Version version;
     boolean universal;
     boolean threadSafe;
     Class<?> implementationClass;
     Object implementation;
-
+    Set<ResourceAdapter.Validator.LifecyclePhase> validationPhases =
+        EnumSet.noneOf(ResourceAdapter.Validator.LifecyclePhase.class);
     private ServiceImplementation typeAttributor;
     private ServiceImplementation encoder;
     private ServiceImplementation contextualizer;
@@ -1094,6 +1026,7 @@ public class ComponentRegistry {
     private ServiceImplementation inspector;
     private ServiceImplementation sanitizer;
     private ServiceImplementation publisher;
+    private final Extensions.AdapterDescriptor adapterInfo;
 
     public AdapterImpl(Class<?> implementationClass, ResourceAdapter annotation) {
       this.name = annotation.name();
@@ -1109,7 +1042,7 @@ public class ComponentRegistry {
               name + ": thread safe adapters must have a single no-argument constructor");
         }
       }
-      scanAdapterClass(implementationClass);
+      this.adapterInfo = scanAdapterClass(implementationClass);
     }
 
     @Override
@@ -1165,6 +1098,11 @@ public class ComponentRegistry {
     }
 
     @Override
+    public Extensions.AdapterDescriptor getAdapterInfo() {
+      return this.adapterInfo;
+    }
+
+    @Override
     public Data encode(Resource resource, Geometry geometry, Object... contextParameters) {
 
       // TODO use the reference implementation if adapter allows; otherwise create an implementation
@@ -1176,7 +1114,11 @@ public class ComponentRegistry {
       return Data.empty("Unimplemented, zio can");
     }
 
-    private void scanAdapterClass(Class<?> adapterClass) {
+    private Extensions.AdapterDescriptor scanAdapterClass(Class<?> adapterClass) {
+
+      var validations = EnumSet.noneOf(ResourceAdapter.Validator.LifecyclePhase.class);
+      List<ResourceTransport.Schema> exportSchemata = new ArrayList<>();
+      List<ResourceTransport.Schema> importSchemata = new ArrayList<>();
 
       // annotated methods
       for (Method method : adapterClass.getDeclaredMethods()) {
@@ -1216,9 +1158,9 @@ public class ComponentRegistry {
               createServiceImplementation(
                   method, method.getAnnotation(ResourceAdapter.Sanitizer.class));
         } else if (method.isAnnotationPresent(ResourceAdapter.Validator.class)) {
-          this.validator =
-              createServiceImplementation(
-                  method, method.getAnnotation(ResourceAdapter.Validator.class));
+          var a = method.getAnnotation(ResourceAdapter.Validator.class);
+          this.validator = createServiceImplementation(method, a);
+          validations.addAll(Arrays.asList(a.phase()));
         } else if (method.isAnnotationPresent(ResourceAdapter.Type.class)) {
 
           if (!Artifact.Type.class.isAssignableFrom(method.getReturnType())) {
@@ -1232,6 +1174,7 @@ public class ComponentRegistry {
           var serviceInfo = createPrototype(name, method.getAnnotation(Importer.class));
           var schema = ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
           schema.setAdapter(name);
+          importSchemata.add(schema);
           serviceImplementations.put(
               schema.getSchemaId(),
               createServiceImplementation(method, method.getAnnotation(Importer.class)));
@@ -1239,6 +1182,7 @@ public class ComponentRegistry {
           var serviceInfo = createPrototype(name, method.getAnnotation(Exporter.class));
           var schema = ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
           schema.setAdapter(name);
+          exportSchemata.add(schema);
           serviceImplementations.put(
               schema.getSchemaId(),
               createServiceImplementation(method, method.getAnnotation(Exporter.class)));
@@ -1257,6 +1201,19 @@ public class ComponentRegistry {
                 + ": missing type attribution in annotation or "
                 + "methods");
       }
+
+      return new Extensions.AdapterDescriptor(
+          name,
+          version,
+          universal,
+          threadSafe,
+          hasContextualizer(),
+          hasSanitizer(),
+          hasInspector(),
+          hasPublisher(),
+          validations,
+          importSchemata,
+          exportSchemata);
     }
 
     private ServiceImplementation createServiceImplementation(

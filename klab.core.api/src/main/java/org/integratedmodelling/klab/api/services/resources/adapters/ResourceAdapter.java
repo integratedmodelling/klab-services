@@ -86,6 +86,12 @@ public @interface ResourceAdapter {
     public @interface Validator {
 
         enum LifecyclePhase {
+
+            /**
+             * The adapter wants to validate URNs before they are used.
+             */
+            UrnSyntax,
+
             /**
              * The resource is being imported for the first time. A local name, resource builder, resource
              * parameters and any resource contents (as a file or directory) will be matched to the parameters
