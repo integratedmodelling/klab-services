@@ -311,7 +311,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       if (resources.status().isAvailable()
           && resources.capabilities(serviceScope()).isWorldviewProvider()) {
 
-        var notifications = loadKnowledge(resources.getWorldview(), serviceScope());
+        var notifications = loadKnowledge(resources.retrieveWorldview(), serviceScope());
 
         if (!Utils.Resources.hasErrors(notifications)) {
           //                    setOperational(false);
@@ -426,7 +426,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (Urn.isAtomicConcept(definition)) {
       ret = owl.getConcept(definition);
     } else {
-      KimConcept parsed = scope.getService(ResourcesService.class).resolveConcept(definition);
+      KimConcept parsed = scope.getService(ResourcesService.class).retrieveConcept(definition);
       if (parsed != null) {
         ret = declareConcept(parsed);
 //        concepts.put(definition, ret);
@@ -437,7 +437,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   public Observable resolveObservableInternal(String definition) {
     Observable ret = null;
-    KimObservable parsed = scope.getService(ResourcesService.class).resolveObservable(definition);
+    KimObservable parsed = scope.getService(ResourcesService.class).retrieveObservable(definition);
     if (parsed != null) {
       ret = declareObservable(parsed);
       observables.put(definition, ret);
@@ -1509,7 +1509,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         var notifications = new ArrayList<Notification>();
         var parsingScope =
             getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
-        var ontology = resourceService.resolveOntology(resource.getResourceUrn(), parsingScope);
+        var ontology = resourceService.retrieveOntology(resource.getResourceUrn(), parsingScope);
         for (var statement : ontology.getStatements()) {
           defineConcept(statement, parsingScope);
         }
@@ -1537,7 +1537,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         var parsingScope =
             getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
         var observationStrategyDocument =
-            resourceService.resolveObservationStrategyDocument(
+            resourceService.retrieveObservationStrategyDocument(
                 resource.getResourceUrn(), parsingScope);
 
         observationReasoner.releaseNamespace(observationStrategyDocument.getUrn());
@@ -2799,7 +2799,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   //  @Override
   public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
     Set<Concept> ret = new HashSet<>();
-    KimConcept peer = scope.getService(ResourcesService.class).resolveConcept(concept.getUrn());
+    KimConcept peer = scope.getService(ResourcesService.class).retrieveConcept(concept.getUrn());
     peer.visit(
         new Statement.Visitor() {
           @Override
@@ -2851,7 +2851,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       declaration = declaration.replace(key.getUrn(), rep);
     }
 
-    return declareConcept(scope.getService(ResourcesService.class).resolveConcept(declaration));
+    return declareConcept(scope.getService(ResourcesService.class).retrieveConcept(declaration));
   }
 
   @Override

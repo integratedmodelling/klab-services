@@ -13,7 +13,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ReactiveScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
@@ -241,7 +240,7 @@ public abstract class KAgent implements ReActor {
         KActorsBehavior ret = null;
         var behaviorReference = message.getPayload(String.class);
         if (Utils.Urns.isUrn(behaviorReference)) {
-            ret = scope.getService(ResourcesService.class).resolveBehavior(behaviorReference, scope);
+            ret = scope.getService(ResourcesService.class).retrieveBehavior(behaviorReference, scope);
         } else {
         }//            ret = scope.getService(ResourcesService.class).readBehavior(behaviorReference, scope);
 

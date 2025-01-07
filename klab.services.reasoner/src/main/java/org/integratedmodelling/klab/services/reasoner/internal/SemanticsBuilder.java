@@ -60,7 +60,7 @@ public class SemanticsBuilder implements Observable.Builder {
     ret.reasoner = reasoner;
     ret.resourcesService = reasoner.serviceScope().getService(ResourcesService.class);
     var syntax =
-        reasoner.serviceScope().getService(ResourcesService.class).resolveConcept(concept.getUrn());
+        reasoner.serviceScope().getService(ResourcesService.class).retrieveConcept(concept.getUrn());
     if (syntax instanceof KimConceptImpl kimConcept) {
       ret.syntax = kimConcept;
       return ret;
@@ -75,7 +75,7 @@ public class SemanticsBuilder implements Observable.Builder {
         reasoner
             .serviceScope()
             .getService(ResourcesService.class)
-            .resolveConcept(observable.getSemantics().getUrn());
+            .retrieveConcept(observable.getSemantics().getUrn());
     if (syntax instanceof KimConceptImpl kimConcept) {
       ret.syntax = kimConcept;
       ret.unit = observable.getUnit();
@@ -89,35 +89,35 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder of(Concept inherent) {
-    syntax.setInherent(resourcesService.resolveConcept(inherent.getUrn()));
+    syntax.setInherent(resourcesService.retrieveConcept(inherent.getUrn()));
     syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder with(Concept compresent) {
-    syntax.setCompresent(resourcesService.resolveConcept(compresent.getUrn()));
+    syntax.setCompresent(resourcesService.retrieveConcept(compresent.getUrn()));
     syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withGoal(Concept goal) {
-    syntax.setGoal(resourcesService.resolveConcept(goal.getUrn()));
+    syntax.setGoal(resourcesService.retrieveConcept(goal.getUrn()));
     syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withCausant(Concept causant) {
-    syntax.setCausant(resourcesService.resolveConcept(causant.getUrn()));
+    syntax.setCausant(resourcesService.retrieveConcept(causant.getUrn()));
     syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withCaused(Concept caused) {
-    syntax.setCaused(resourcesService.resolveConcept(caused.getUrn()));
+    syntax.setCaused(resourcesService.retrieveConcept(caused.getUrn()));
     syntax.resetDefinition();
     return this;
   }
@@ -133,7 +133,7 @@ public class SemanticsBuilder implements Observable.Builder {
       throws KlabValidationException {
     syntax.setSemanticModifier(type);
     if (participants != null && participants.length > 0) {
-      syntax.setComparisonConcept(resourcesService.resolveConcept(participants[0].getUrn()));
+      syntax.setComparisonConcept(resourcesService.retrieveConcept(participants[0].getUrn()));
     }
     syntax.resetDefinition();
     return this;
@@ -147,7 +147,7 @@ public class SemanticsBuilder implements Observable.Builder {
   @Override
   public Observable.Builder withTrait(Collection<Concept> concepts) {
     syntax.addTraits(
-        concepts.stream().map(c -> resourcesService.resolveConcept(c.getUrn())).toList(),
+        concepts.stream().map(c -> resourcesService.retrieveConcept(c.getUrn())).toList(),
         (added, original)-> {
           var baseTraitAdded = reasoner.baseParentTrait(reasoner.resolveConcept(added.getUrn()));
           var baseTraitOriginal = reasoner.baseParentTrait(reasoner.resolveConcept(added.getUrn()));
@@ -171,14 +171,14 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder withCooccurrent(Concept cooccurrent) {
-    syntax.setCooccurrent(resourcesService.resolveConcept(cooccurrent.getUrn()));
+    syntax.setCooccurrent(resourcesService.retrieveConcept(cooccurrent.getUrn()));
     syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withAdjacent(Concept adjacent) {
-    syntax.setAdjacent(resourcesService.resolveConcept(adjacent.getUrn()));
+    syntax.setAdjacent(resourcesService.retrieveConcept(adjacent.getUrn()));
     syntax.resetDefinition();
     return this;
   }
@@ -228,8 +228,8 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder linking(Concept source, Concept target) {
-    syntax.setRelationshipSource(resourcesService.resolveConcept(source.getUrn()));
-    syntax.setRelationshipTarget(resourcesService.resolveConcept(target.getUrn()));
+    syntax.setRelationshipSource(resourcesService.retrieveConcept(source.getUrn()));
+    syntax.setRelationshipTarget(resourcesService.retrieveConcept(target.getUrn()));
     syntax.resetDefinition();
     return this;
   }
@@ -295,7 +295,7 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder withObserverSemantics(Concept observerSemantics) {
-    this.observerSyntax = (KimConceptImpl) resourcesService.resolveConcept(observerSyntax.getUrn());
+    this.observerSyntax = (KimConceptImpl) resourcesService.retrieveConcept(observerSyntax.getUrn());
     return this;
   }
 

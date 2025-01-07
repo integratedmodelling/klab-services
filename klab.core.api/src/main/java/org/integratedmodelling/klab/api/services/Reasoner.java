@@ -2,12 +2,9 @@ package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -864,8 +861,8 @@ public interface Reasoner extends KlabService {
      * as the one where the changes have been made. The resources to load must be available through
      * the URL of the reasoner service, which must be in the request, and be open for access by the
      * reasoner through its {@link
-     * org.integratedmodelling.klab.api.ServicesAPI.RESOURCES#RESOLVE_ONTOLOGY_URN} and {@link
-     * org.integratedmodelling.klab.api.ServicesAPI.RESOURCES#RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN}.
+     * org.integratedmodelling.klab.api.ServicesAPI.RESOURCES#RETRIEVE_ONTOLOGY} and {@link
+     * org.integratedmodelling.klab.api.ServicesAPI.RESOURCES#RETRIEVE_OBSERVATION_STRATEGY_DOCUMENT}.
      *
      * <p>As always with a resource set, the order of loading in the input is assumed to be the
      * correct one, courtesy of the resources service that has produced the input {@link

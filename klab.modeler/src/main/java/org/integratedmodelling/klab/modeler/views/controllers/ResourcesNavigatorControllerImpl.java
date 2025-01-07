@@ -82,12 +82,12 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
                 // new workspace!
                 var service = getController().engine().serviceScope().getService(ResourcesService.class);
                 if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(changes.getWorkspace())) {
-                    var worldview = service.getWorldview();
+                    var worldview = service.retrieveWorldview();
                     if (worldview != null) {
                         container = new NavigableWorldview(worldview);
                     }
                 } else {
-                    var workspace = service.resolveWorkspace(changes.getWorkspace(), getController().user());
+                    var workspace = service.retrieveWorkspace(changes.getWorkspace(), getController().user());
                     if (workspace != null) {
                         container = new NavigableWorkspace(workspace);
                     }
@@ -257,10 +257,10 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
         var capabilities = service.capabilities(getController().engine().serviceScope());
         if (capabilities.isWorldviewProvider()) {
             assetMap.put(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER,
-                    new NavigableWorldview(service.getWorldview()));
+                    new NavigableWorldview(service.retrieveWorldview()));
         }
         for (var workspaceId : capabilities.getWorkspaceNames()) {
-            var workspace = service.resolveWorkspace(workspaceId, getController().user());
+            var workspace = service.retrieveWorkspace(workspaceId, getController().user());
             if (workspace != null) {
                 assetMap.put(workspaceId, new NavigableWorkspace(workspace));
             }

@@ -22,19 +22,20 @@ import java.lang.annotation.Target;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 
 /**
- * Tags a class that contains extensions for one of the k.LAB components. Extensions can be contextualizers,
- * actor functions or other elements; the tag they are annotated with determines the use that can be made of
- * them and their registration in a service. Libraries have a name that is prepended to the name of any object
- * it declares; only the core k.LAB implementation is allowed to use the CORE_LIBRARY identifier, which makes
- * them available with a single identifier.
- * <p>
- * Some libraries can be imported with an "import" instruction from a language. Others are pre-loaded in test
- * cases and scripts. Libraries are used to provide k.Actors actions and k.IM contextualizers through static
- * inner classes or methods, which should bear the annotation {@link Verb} or {@link KlabFunction}.
- * <p>
- * Contextualizers implementations from the core libraries can be overridden from configuration using classes
- * from loaded plug-ins, so that the runtime can be customized to specific needs in terms of accuracy or
- * logics.
+ * Tags a class that contains extensions for one of the k.LAB components. Extensions can be
+ * contextualizers, actor functions or other elements; the tag they are annotated with determines
+ * the use that can be made of them and their registration in a service. Libraries have a name that
+ * is prepended to the name of any object it declares; only the core k.LAB implementation is allowed
+ * to use the CORE_LIBRARY identifier, which makes them available with a single identifier.
+ *
+ * <p>Some libraries can be imported with an "import" instruction from a language. Others are
+ * pre-loaded in test cases and scripts. Libraries are used to provide k.Actors actions and k.IM
+ * contextualizers through static inner classes or methods, which should bear the annotation {@link
+ * Verb} or {@link KlabFunction}.
+ *
+ * <p>Contextualizers implementations from the core libraries can be overridden from configuration
+ * using classes from loaded plug-ins, so that the runtime can be customized to specific needs in
+ * terms of accuracy or logics.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
@@ -44,42 +45,42 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 @Target(ElementType.TYPE)
 public @interface Library {
 
-    String CORE_LIBRARY = "__CORE_LIBRARY__";
+  String CORE_LIBRARY = "__CORE_LIBRARY__";
 
-    /**
-     * ID of the component. Must be unique, please use unambiguous paths like package or project names.
-     * Provides a namespace for its internal classes.
-     *
-     * @return component id
-     */
-    String name();
+  /**
+   * ID of the component. Must be unique, please use unambiguous paths like package or project
+   * names. Provides a namespace for its internal classes.
+   *
+   * @return component id
+   */
+  String name();
 
-    /**
-     * If this library should be loaded by default into a particular type of behavior (e.g. test case), set
-     * the type(s) here.
-     *
-     * @return
-     */
-    KActorsBehavior.Type[] defaultFor() default {};
+  /**
+   * If this library should be loaded by default into a particular type of behavior (e.g. test
+   * case), set the type(s) here.
+   *
+   * @return
+   */
+  KActorsBehavior.Type[] defaultFor() default {};
 
-    /**
-     * List of other project or component IDs that this one depends on.
-     *
-     * @return id of projects or components we need
-     */
-    String[] requires() default {};
+  /**
+   * List of other project or component IDs that this one depends on.
+   *
+   * @return id of projects or components we need
+   */
+  String[] requires() default {};
 
-    /**
-     * Descriptions should be given as they percolate to the k.Actors editor
-     *
-     * @return
-     */
-    String description() default "";
+  /**
+   * Descriptions should be given as they percolate to the k.Actors editor
+   *
+   * @return
+   */
+  String description() default "";
 
-    /**
-     * Version should be mandatory only when the library is not part of a component.
-     *
-     * @return
-     */
-    String version() default "";
+  /**
+   * Version should be mandatory only when the library is not part of a component.
+   *
+   * @return
+   */
+  String version() default "";
 }

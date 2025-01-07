@@ -10,7 +10,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.reasoner.objects.DeclarationRequest;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -40,7 +39,7 @@ public class ReasonerController {
               .klabService()
               .serviceScope()
               .getService(ResourcesService.class)
-              .resolveConcept(definition);
+              .retrieveConcept(definition);
       if (syntax != null) {
         return SemanticsBuilder.create(syntax, reasoner.klabService()).buildConcept();
       }

@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.services.resolver;
 
-import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -321,7 +320,7 @@ public class ResolutionCompiler {
     //  use a merging strategy to get models one by one in their latest release
 
     var resources = scope.getService(ResourcesService.class);
-    ResourceSet models = resources.queryModels(observable, scope);
+    ResourceSet models = resources.resolveModels(observable, scope);
     var ret = new ArrayList<Model>(resolver.ingestResources(models, scope, Model.class));
     ret.sort(prioritizer);
     return ret;

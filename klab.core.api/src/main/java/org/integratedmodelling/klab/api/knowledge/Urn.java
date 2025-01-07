@@ -48,7 +48,7 @@ public class Urn implements Serializable {
    *
    * @param urn
    */
-  public Urn(String urn) {
+  private Urn(String urn) {
     fullUrn = urn;
     if (urn.startsWith(KLAB_URN_PREFIX)) {
       urn = urn.substring(KLAB_URN_PREFIX.length());
@@ -73,7 +73,7 @@ public class Urn implements Serializable {
     this.tokens = urn.split(":");
   }
 
-  public Urn(String urn, Map<String, String> urnParameters) {
+  private Urn(String urn, Map<String, String> urnParameters) {
     this(urn);
     if (urnParameters != null && !urnParameters.isEmpty()) {
       this.parameters.putAll(urnParameters);
@@ -166,7 +166,7 @@ public class Urn implements Serializable {
    * @return
    */
   public Version getVersion() {
-    return tokens.length > 4 ? new Version(tokens[4]) : null;
+    return tokens.length > 4 ? new Version(tokens[4]) : Version.ANY_VERSION;
   }
 
   /**
@@ -288,6 +288,14 @@ public class Urn implements Serializable {
     // at least two colons in successive positions with something in the middle
     int ln = urn.indexOf(':');
     return ln > 0 && urn.lastIndexOf(':') > (ln + 1);
+  }
+
+  public static Urn of(String urn) {
+    return new Urn(urn);
+  }
+
+  public static Urn of(String urn, Map<String, String> urnParameters) {
+    return new Urn(urn, urnParameters);
   }
 
   public static String applyParameters(String urn, Map<String, String> urnParameters) {

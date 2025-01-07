@@ -23,7 +23,6 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -36,7 +35,6 @@ import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequ
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
@@ -266,38 +264,38 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public List<ResourceSet> projects(Collection<String> projects, Scope scope) {
+  public List<ResourceSet> resolveProjects(Collection<String> projects, Scope scope) {
     // TODO Auto-generated method stub
     return null;
   }
 
   @Override
-  public ResourceSet model(String modelName, Scope scope) {
+  public ResourceSet resolveModel(String modelName, Scope scope) {
     // TODO Auto-generated method stub
     return null;
   }
 
   @Override
-  public KimNamespace resolveNamespace(String urn, Scope scope) {
+  public KimNamespace retrieveNamespace(String urn, Scope scope) {
     return client
         .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RESOLVE_NAMESPACE_URN, KimNamespace.class, "urn", urn);
+        .get(ServicesAPI.RESOURCES.RETRIEVE_NAMESPACE, KimNamespace.class, "urn", urn);
   }
 
   @Override
-  public KimOntology resolveOntology(String urn, Scope scope) {
+  public KimOntology retrieveOntology(String urn, Scope scope) {
     return client
         .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RESOLVE_ONTOLOGY_URN, KimOntology.class, "urn", urn);
+        .get(ServicesAPI.RESOURCES.RETRIEVE_ONTOLOGY, KimOntology.class, "urn", urn);
   }
 
   @Override
-  public KimObservationStrategyDocument resolveObservationStrategyDocument(
+  public KimObservationStrategyDocument retrieveObservationStrategyDocument(
       String urn, Scope scope) {
     return client
         .withScope(scope)
         .get(
-            ServicesAPI.RESOURCES.RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN,
+            ServicesAPI.RESOURCES.RETRIEVE_OBSERVATION_STRATEGY_DOCUMENT,
             KimObservationStrategyDocument.class,
             "urn",
             urn);
@@ -309,22 +307,22 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public KActorsBehavior resolveBehavior(String urn, Scope scope) {
+  public KActorsBehavior retrieveBehavior(String urn, Scope scope) {
     return client
         .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RESOLVE_BEHAVIOR_URN, KActorsBehavior.class, "urn", urn);
+        .get(ServicesAPI.RESOURCES.RETRIEVE_BEHAVIOR, KActorsBehavior.class, "urn", urn);
   }
 
   @Override
-  public Resource resolveResource(String urn, Scope scope) {
-    return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOURCE, Resource.class, "urn", urn);
+  public Resource retrieveResource(String urn, Scope scope) {
+    return client.withScope(scope).get(ServicesAPI.RESOURCES.RETRIEVE_RESOURCE, Resource.class, "urn", urn);
   }
 
   @Override
-  public Workspace resolveWorkspace(String urn, Scope scope) {
+  public Workspace retrieveWorkspace(String urn, Scope scope) {
     return client
         .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RESOLVE_WORKSPACE_URN, Workspace.class, "urn", urn);
+        .get(ServicesAPI.RESOURCES.RETRIEVE_WORKSPACE, Workspace.class, "urn", urn);
   }
 
   @Override
@@ -341,7 +339,18 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public KimConcept resolveConcept(String definition) {
+  public ResourceSet resolveResource(String urn, Scope scope) {
+    return client
+            .withScope(scope)
+            .get(
+                    ServicesAPI.RESOURCES.RESOLVE_RESOURCE,
+                    ResourceSet.class,
+                    "urn",
+                    urn);
+  }
+
+  @Override
+  public KimConcept retrieveConcept(String definition) {
     if (!useCaches) {
       return resolveConceptInternal(removeExcessParentheses(definition));
       }
@@ -354,7 +363,7 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public KimObservable resolveObservable(String definition) {
+  public KimObservable retrieveObservable(String definition) {
     if (!useCaches) {
       return resolveObservableInternal(removeExcessParentheses(definition));
     }
@@ -377,7 +386,7 @@ public class ResourcesClient extends ServiceClient
   // TODO CACHE
   public KimObservable resolveObservableInternal(String definition) {
     return client.get(
-        ServicesAPI.RESOURCES.RESOLVE_OBSERVABLE, KimObservable.class, "definition", definition);
+            ServicesAPI.RESOURCES.RETRIEVE_OBSERVABLE, KimObservable.class, "definition", definition);
   }
 
   @Override
@@ -387,7 +396,7 @@ public class ResourcesClient extends ServiceClient
 
   public KimConcept resolveConceptInternal(String definition) {
     return client.get(
-        ServicesAPI.RESOURCES.RESOLVE_CONCEPT, KimConcept.class, "definition", definition);
+            ServicesAPI.RESOURCES.RETRIEVE_CONCEPT, KimConcept.class, "definition", definition);
   }
 
   @Override
@@ -405,14 +414,14 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public KimObservationStrategyDocument resolveDataflow(String urn, Scope scope) {
+  public KimObservationStrategyDocument retrieveDataflow(String urn, Scope scope) {
     // TODO Auto-generated method stub
     return null;
   }
 
   @Override
-  public Worldview getWorldview() {
-    return client.get(ServicesAPI.RESOURCES.GET_WORLDVIEW, Worldview.class);
+  public Worldview retrieveWorldview() {
+    return client.get(ServicesAPI.RESOURCES.RETRIEVE_WORLDVIEW, Worldview.class);
   }
 
   @Override
@@ -428,13 +437,13 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public ResourceSet queryModels(Observable observable, ContextScope scope) {
+  public ResourceSet resolveModels(Observable observable, ContextScope scope) {
     ResolutionRequest request = new ResolutionRequest();
     request.setObservable(observable);
     request.setResolutionConstraints(scope.getResolutionConstraints());
     return client
         .withScope(scope)
-        .post(ServicesAPI.RESOURCES.QUERY_MODELS, request, ResourceSet.class);
+        .post(ServicesAPI.RESOURCES.RESOLVE_MODELS, request, ResourceSet.class);
   }
 
   @Override
@@ -450,7 +459,7 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public Project resolveProject(String projectName, Scope scope) {
+  public Project retrieveProject(String projectName, Scope scope) {
     // TODO Auto-generated method stub
     return null;
   }

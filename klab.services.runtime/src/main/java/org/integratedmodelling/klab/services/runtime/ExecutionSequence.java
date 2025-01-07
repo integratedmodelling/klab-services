@@ -223,8 +223,9 @@ public class ExecutionSequence {
            * no available implementations remain.
            */
           List<Object> runArguments = new ArrayList<>();
-          if (descriptor.implementation().method != null) {
-            for (var argument : descriptor.implementation().method.getParameterTypes()) {
+          if (componentRegistry.implementation(descriptor).method != null) {
+            for (var argument :
+                componentRegistry.implementation(descriptor).method.getParameterTypes()) {
               if (ContextScope.class.isAssignableFrom(argument)) {
                 // TODO consider wrapping into read-only delegating wrappers
                 runArguments.add(scope);
@@ -285,7 +286,10 @@ public class ExecutionSequence {
                   () -> {
                     try {
                       var context =
-                          descriptor.implementation().method.invoke(null, runArguments.toArray());
+                          componentRegistry
+                              .implementation(descriptor)
+                              .method
+                              .invoke(null, runArguments.toArray());
                       setExecutionContext(context == null ? observation : context);
                       return true;
                     } catch (Exception e) {
@@ -294,16 +298,16 @@ public class ExecutionSequence {
                     }
                     return true;
                   });
-            } else if (descriptor.implementation().mainClassInstance != null) {
+            } else if (componentRegistry.implementation(descriptor).mainClassInstance != null) {
               executors.add(
                   () -> {
                     try {
                       var context =
-                          descriptor
-                              .implementation()
+                          componentRegistry
+                              .implementation(descriptor)
                               .method
                               .invoke(
-                                  descriptor.implementation().mainClassInstance,
+                                  componentRegistry.implementation(descriptor).mainClassInstance,
                                   runArguments.toArray());
                       setExecutionContext(context == null ? observation : context);
                       return true;

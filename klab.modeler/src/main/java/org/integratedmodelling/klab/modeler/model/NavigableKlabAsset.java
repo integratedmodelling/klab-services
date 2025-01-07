@@ -237,14 +237,14 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
 
     private KlabAsset resolveAsset(KnowledgeClass type, String urn, ResourcesService service, Scope scope) {
         return switch (type) {
-            case RESOURCE -> service.resolveResource(urn, scope);
-            case NAMESPACE -> service.resolveNamespace(urn, scope);
-            case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> service.resolveBehavior(urn, scope);
-            case ONTOLOGY -> service.resolveOntology(urn, scope);
-            case OBSERVATION_STRATEGY_DOCUMENT -> service.resolveObservationStrategyDocument(urn, scope);
+            case RESOURCE -> service.retrieveResource(urn, scope);
+            case NAMESPACE -> service.retrieveNamespace(urn, scope);
+            case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> service.retrieveBehavior(urn, scope);
+            case ONTOLOGY -> service.retrieveOntology(urn, scope);
+            case OBSERVATION_STRATEGY_DOCUMENT -> service.retrieveObservationStrategyDocument(urn, scope);
             case COMPONENT ->
                     throw new KlabUnimplementedException("resolving components within navigable assets");
-            case PROJECT -> service.resolveProject(urn, scope);
+            case PROJECT -> service.retrieveProject(urn, scope);
             default -> throw new KlabUnimplementedException("resolving unsupported type " + type + " of " +
                     "navigable assets");
         };

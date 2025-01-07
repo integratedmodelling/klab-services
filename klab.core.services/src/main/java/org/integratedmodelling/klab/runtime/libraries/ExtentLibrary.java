@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.runtime.libraries;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -311,7 +310,7 @@ public class ExtentLibrary {
         String value = call.getParameters().get("value", String.class);
         Scale ret = null;
         if (Utils.Urns.isUrn(value)) {
-            Resource resource = scope.getService(ResourcesService.class).resolveResource(value, scope);
+            Resource resource = scope.getService(ResourcesService.class).retrieveResource(value, scope);
             if (resource != null) {
                 ret = Scale.create(resource.getGeometry());
             }

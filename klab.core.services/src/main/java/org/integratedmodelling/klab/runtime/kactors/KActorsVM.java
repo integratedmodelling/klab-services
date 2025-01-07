@@ -610,7 +610,7 @@ public class KActorsVM implements VM {
              * TODO match the arguments to the correspondent names for the declaration of main()
              */
             KActorsBehavior childBehavior = scope.getMainScope().getService(ResourcesService.class)
-                                                 .resolveBehavior(code.getBehavior(), scope.getMainScope());
+                                                 .retrieveBehavior(code.getBehavior(), scope.getMainScope());
             if (childBehavior == null) {
                 scope.error("unreferenced child behavior: " + code.getBehavior() + " when execute " +
                         "instantiation");
@@ -639,7 +639,7 @@ public class KActorsVM implements VM {
         }
 
         KActorsBehavior actorBehavior = scope.getMainScope().getService(ResourcesService.class)
-                                             .resolveBehavior(code.getBehavior(), scope.getMainScope());
+                                             .retrieveBehavior(code.getBehavior(), scope.getMainScope());
         if (actorBehavior != null) {
 
             /*
@@ -1043,7 +1043,7 @@ public class KActorsVM implements VM {
                 // TODO eval all args
                 break;
             case URN:
-                ret = new Urn(arg.getStatedValue().toString());
+                ret = Urn.of(arg.getStatedValue().toString());
                 break;
             case CALLCHAIN:
                 ret = executeFunctionChain(arg.getCallChain(), scope.getBehavior(), scope);

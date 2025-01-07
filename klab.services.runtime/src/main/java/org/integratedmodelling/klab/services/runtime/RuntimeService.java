@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -636,13 +637,15 @@ public class RuntimeService extends BaseService
                   "Cannot receive resources from " + resourcesService.getServiceName()));
         }
         ret = Utils.Resources.merge(ret, resolution);
-      } else if (contextualizable.getResourceUrn() != null) {
-        // TODO ensure resource or adapter is accessible
-        //                var resolution = resourcesService.resolveRe(contextualizable
-        //                .getServiceCall().getUrn(), scope);
-        //                if (resolution.isEmpty()) {
-        //                    return resolution;
-        //                }
+      }
+
+      for (var urn : contextualizable.getResourceUrns()) {
+
+        // ensure resource or adapter is accessible
+        var resolution = resourcesService.resolveResource(urn.getUrn(), scope);
+        if (resolution.isEmpty()) {
+          return resolution;
+        }
       }
     }
 

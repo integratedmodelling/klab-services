@@ -260,7 +260,7 @@ public class ResourcesProvider extends BaseService
    *
    * @return
    */
-  public Worldview getWorldview() {
+  public Worldview retrieveWorldview() {
     return this.workspaceManager.getWorldview();
   }
 
@@ -334,31 +334,31 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public KimNamespace resolveNamespace(String urn, Scope scope) {
+  public KimNamespace retrieveNamespace(String urn, Scope scope) {
     return this.workspaceManager.getNamespace(urn);
     // TODO check scope for authorization
   }
 
   @Override
-  public KimOntology resolveOntology(String urn, Scope scope) {
+  public KimOntology retrieveOntology(String urn, Scope scope) {
     return this.workspaceManager.getOntology(urn);
     // TODO check scope for authorization
   }
 
   @Override
-  public KActorsBehavior resolveBehavior(String urn, Scope scope) {
+  public KActorsBehavior retrieveBehavior(String urn, Scope scope) {
     return this.workspaceManager.getBehavior(urn);
     // TODO check scope for authorization
   }
 
-  public KimObservationStrategyDocument resolveObservationStrategyDocument(
+  public KimObservationStrategyDocument retrieveObservationStrategyDocument(
       String urn, Scope scope) {
     return this.workspaceManager.getStrategyDocument(urn);
     // TODO check scope for authorization
   }
 
   @Override
-  public Resource resolveResource(String urn, Scope scope) {
+  public Resource retrieveResource(String urn, Scope scope) {
     if (localResources.contains(Urn.removeParameters(urn))) {
       // TODO
     }
@@ -366,7 +366,7 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public Workspace resolveWorkspace(String urn, Scope scope) {
+  public Workspace retrieveWorkspace(String urn, Scope scope) {
     // TODO check permissions in scope, possibly filter the workspace's projects
     return this.workspaceManager.getWorkspace(urn);
   }
@@ -400,6 +400,12 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
+  public ResourceSet resolveResource(String urn, Scope scope) {
+    // TODO
+    return ResourceSet.empty(Notification.error("UNIMPLEMENTED"));
+  }
+
+  @Override
   public Data contextualize(
       Resource resource, Geometry geometry, @Nullable Data input, Scope scope) {
     var adapter = getComponentRegistry().getAdapter(resource.getAdapterType(), scope);
@@ -410,7 +416,7 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public KimObservationStrategyDocument resolveDataflow(String urn, Scope scope) {
+  public KimObservationStrategyDocument retrieveDataflow(String urn, Scope scope) {
     // TODO Auto-generated method stub
     return null;
   }
@@ -636,7 +642,7 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public KimConcept resolveConcept(String definition) {
+  public KimConcept retrieveConcept(String definition) {
     try {
       return concepts.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
@@ -646,7 +652,7 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public KimObservable resolveObservable(String definition) {
+  public KimObservable retrieveObservable(String definition) {
     try {
       return observables.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
@@ -698,7 +704,7 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public List<ResourceSet> projects(Collection<String> projects, Scope scope) {
+  public List<ResourceSet> resolveProjects(Collection<String> projects, Scope scope) {
 
     ResourceSet ret = new ResourceSet();
 
@@ -727,13 +733,13 @@ public class ResourcesProvider extends BaseService
       // directly, although this doesn't apply if we have the whole workspace
 
       graph.addVertex(ns.getResourceUrn());
-      KimNamespace namespace = resolveNamespace(ns.getResourceUrn(), scope);
+      KimNamespace namespace = retrieveNamespace(ns.getResourceUrn(), scope);
       if (namespace == null) {
         ret.setEmpty(true);
         return ret;
       }
       for (String imp : namespace.getImports().keySet()) {
-        KimNamespace imported = resolveNamespace(imp, scope);
+        KimNamespace imported = retrieveNamespace(imp, scope);
         if (imported == null) {
           ret.setEmpty(true);
           return ret;
@@ -792,11 +798,11 @@ public class ResourcesProvider extends BaseService
 
     // check if the worldview is impacted, too
     var worldviewOntologies =
-        getWorldview().getOntologies().stream().map(KlabAsset::getUrn).collect(Collectors.toSet());
+        retrieveWorldview().getOntologies().stream().map(KlabAsset::getUrn).collect(Collectors.toSet());
     var worldviewStrategies =
-        getWorldview().getObservationStrategies().stream()
-            .map(KlabAsset::getUrn)
-            .collect(Collectors.toSet());
+        retrieveWorldview().getObservationStrategies().stream()
+                           .map(KlabAsset::getUrn)
+                           .collect(Collectors.toSet());
 
     var conts =
         Sets.intersection(
@@ -831,7 +837,7 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public ResourceSet model(String modelName, Scope scope) {
+  public ResourceSet resolveModel(String modelName, Scope scope) {
     // TODO Auto-generated method stub
     return null;
   }
@@ -931,7 +937,7 @@ public class ResourcesProvider extends BaseService
   //    }
 
   @Override
-  public ResourceSet queryModels(Observable observable, ContextScope scope) {
+  public ResourceSet resolveModels(Observable observable, ContextScope scope) {
 
     if (!semanticSearchAvailable) {
       Logging.INSTANCE.warn(
@@ -1005,7 +1011,7 @@ public class ResourcesProvider extends BaseService
       return true;
     }
 
-    KimNamespace namespace = resolveNamespace(ns, scope);
+    KimNamespace namespace = retrieveNamespace(ns, scope);
     if (namespace == null) {
       // TODO use services in scope
       return false;
@@ -1078,7 +1084,7 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public Project resolveProject(String projectName, Scope scope) {
+  public Project retrieveProject(String projectName, Scope scope) {
     // TODO check scope
     return workspaceManager.getProject(projectName);
   }
@@ -1153,7 +1159,7 @@ public class ResourcesProvider extends BaseService
       case KIM_OBJECT -> {
 
         /** TODO may be a project or even a workspace */
-        KimNamespace namespace = resolveNamespace(urn, scope);
+        KimNamespace namespace = retrieveNamespace(urn, scope);
         if (namespace != null) {
 
           ret.getResults()
@@ -1172,7 +1178,7 @@ public class ResourcesProvider extends BaseService
            */
           String ns = Utils.Paths.getLeading(urn, '.');
           String nm = Utils.Paths.getLast(urn, '.');
-          namespace = resolveNamespace(ns, scope);
+          namespace = retrieveNamespace(ns, scope);
           /*
            * TODO check permissions!
            */

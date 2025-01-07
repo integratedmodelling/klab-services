@@ -419,38 +419,34 @@ public interface ServicesAPI {
 
     interface RESOURCES {
 
-        String RESOLVE_PROJECT = "/resolveProject/{projectName}";
+        String RETRIEVE_PROJECT = "/retrieveProject/{projectName}";
         String QUERY_RESOURCES = "/queryResources";
         String PRECURSORS = "/precursors/{namespaceId}";
         String PROJECTS = "/projects";
         String PROJECT = "/project/{projectName}";
-        String MODEL = "/model/{modelName}";
+        String RESOLVE_MODEL = "/model/{modelName}";
         String RESOLVE_URN = "/resolve/" + URN_PARAMETER;
-        String RESOLVE_NAMESPACE_URN = "/resolveNamespace/" + URN_PARAMETER;
-        String RESOLVE_ONTOLOGY_URN = "/resolveOntology/" + URN_PARAMETER;
-        String RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN =
-                "/resolveObservationStrategyDocument/" + URN_PARAMETER;
+        String RETRIEVE_NAMESPACE = "/retrieveNamespace/{urn}";
+        String RETRIEVE_ONTOLOGY = "/retrieveOntology/{urn}";
+        String RESOLVE_RESOURCE = "/resolveResource/{urn}";
+        String RETRIEVE_OBSERVATION_STRATEGY_DOCUMENT =
+                "/retrieveObservationStrategyDocument/" + URN_PARAMETER;
         String LIST_WORKSPACES = "/listWorkspaces";
-        String RESOLVE_BEHAVIOR_URN = "/resolveBehavior/" + URN_PARAMETER;
-        String RESOURCE = "/resource/" + URN_PARAMETER;
-        String RESOLVE_WORKSPACE_URN = "/resolveWorkspace/" + URN_PARAMETER;
+        String RETRIEVE_BEHAVIOR = "/retrieveBehavior/" + URN_PARAMETER;
+        String RETRIEVE_RESOURCE = "/resource/" + URN_PARAMETER;
+        String RETRIEVE_WORKSPACE = "/retrieveWorkspace/" + URN_PARAMETER;
         String RESOLVE_SERVICE_CALL = "/resolveServiceCall/{name}";
         String RESOURCE_STATUS = "/resourceStatus/" + URN_PARAMETER;
-        String RESOLVE_OBSERVABLE = "/resolveObservable";
+        String RETRIEVE_OBSERVABLE = "/retrieveObservable";
         String DESCRIBE_CONCEPT = "/describeConcept/{conceptUrn}";
-        String RESOLVE_CONCEPT = "/resolveConcept/{definition}";
+        String RETRIEVE_CONCEPT = "/retrieveConcept/{definition}";
         String CONTEXTUALIZE = "/contextualize";
-        String RESOLVE_DATAFLOW_URN = "/resolveDataflow/" + URN_PARAMETER;
-        String GET_WORLDVIEW = "/getWorldview";
+        String RETRIEVE_DATAFLOW = "/retrieveDataflow/" + URN_PARAMETER;
+        String RETRIEVE_WORLDVIEW = "/getWorldview";
         String DEPENDENTS = "/dependents/{namespaceId}";
-        String QUERY_MODELS = "/queryModels";
+        String RESOLVE_MODELS = "/retrieveModels";
         String MODEL_GEOMETRY = "/modelGeometry/{modelUrn}";
         String READ_BEHAVIOR = "/readBehavior";
-        //        String PUBLISH_PROJECT = "/publishProject";
-        //        String UNPUBLISH_PROJECT = "/unpublishProject";
-//        String CREATE_RESOURCE = "/createResource";
-        //        String PUBLISH_RESOURCE = "/publishResource";
-        //        String UNPUBLISH_RESOURCE = "/unpublishResource";
         String LIST_PROJECTS = "/listProjects";
         String LIST_RESOURCE_URNS = "/listResourceUrns";
         /**
@@ -465,12 +461,6 @@ public interface ServicesAPI {
          */
         public interface ADMIN extends PluginAPI {
 
-//            /**
-//             * Import project. POST endpoint with ProjectRequest body.
-//             *
-//             * @deprecated use the generic import mechanism
-//             */
-//            String IMPORT_PROJECT = "/importProject";
             /**
              * Create new empty project in passed workspace.
              */
@@ -490,19 +480,6 @@ public interface ServicesAPI {
              * changes in each workspace affected.
              */
             String UPDATE_DOCUMENT = "/updateDocument/{projectName}/{documentType}";
-
-//            /**
-//             * Not sure if we should use anything other than a client-driven import for this.
-//             */
-//            String CREATE_RESOURCE = "/createResource";
-//            /**
-//             * @deprecated use the generic import mechanism
-//             */
-//            String IMPORT_RESOURCE = "/importResource";
-//            /**
-//             * @deprecated use the generic import mechanism
-//             */
-//            String UPLOAD_RESOURCE = "/uploadResource";
             String REMOVE_PROJECT = "/removeProject/{urn}";
             String REMOVE_WORKSPACE = "/removeWorkspace/{urn}";
             String REMOVE_DOCUMENT = "/removeDocument/{projectName}/{urn}";

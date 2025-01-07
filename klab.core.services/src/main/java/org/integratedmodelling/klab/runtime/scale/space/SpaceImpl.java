@@ -206,7 +206,7 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
                 throw new KlabIllegalArgumentException("cannot create spatial extent from resource: " +
                         "resource services not available");
             }
-            var resource = scope.getService(ResourcesService.class).resolveResource(resourceUrn, scope);
+            var resource = scope.getService(ResourcesService.class).retrieveResource(resourceUrn, scope);
             dimension =
                     resource.getGeometry().getDimensions().stream().filter(
                             d -> d.getType() == Type.SPACE).findAny().get();

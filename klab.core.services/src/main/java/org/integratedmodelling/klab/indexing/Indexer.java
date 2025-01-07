@@ -103,7 +103,7 @@ public class Indexer {
 
             Document document = new Document();
 
-            Urn urn = new Urn(resource.getUrn());
+            Urn urn = Urn.of(resource.getUrn());
 
             document.add(new StringField("id", urn.getUrn(), Store.YES));
             document.add(new StringField("namespace", urn.getNamespace(), Store.YES));

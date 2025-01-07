@@ -185,12 +185,12 @@ public enum KnowledgeRepository {
         // TODO honor version in request
         var resources = scope.getService(ResourcesService.class);
         KlabDocument<?> doc = switch (resource.getKnowledgeClass()) {
-            case NAMESPACE -> resources.resolveNamespace(resource.getResourceUrn(), scope);
+            case NAMESPACE -> resources.retrieveNamespace(resource.getResourceUrn(), scope);
             case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION, COMPONENT ->
-                    resources.resolveBehavior(resource.getResourceUrn(), scope);
-            case ONTOLOGY -> resources.resolveOntology(resource.getResourceUrn(), scope);
+                    resources.retrieveBehavior(resource.getResourceUrn(), scope);
+            case ONTOLOGY -> resources.retrieveOntology(resource.getResourceUrn(), scope);
             case OBSERVATION_STRATEGY_DOCUMENT ->
-                    resources.resolveObservationStrategyDocument(resource.getResourceUrn(), scope);
+                    resources.retrieveObservationStrategyDocument(resource.getResourceUrn(), scope);
             default -> null;
         };
 

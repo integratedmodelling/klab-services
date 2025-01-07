@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -28,7 +29,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.common.data.DataImpl;
 import org.integratedmodelling.klab.common.data.DataRequest;
-import org.integratedmodelling.klab.common.data.Instance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
@@ -67,7 +67,7 @@ public class ResourcesProviderController {
       @RequestParam Collection<String> projects, Principal principal) {
     return resourcesServer
         .klabService()
-        .projects(
+        .resolveProjects(
             projects,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
@@ -79,19 +79,19 @@ public class ResourcesProviderController {
       @PathVariable("projectName") String projectName, Principal principal) {
     return resourcesServer
         .klabService()
-        .resolveProject(
+        .retrieveProject(
             projectName,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
                 : null);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.MODEL)
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_MODEL)
   public @ResponseBody ResourceSet getModel(
       @PathVariable("modelName") String modelName, Principal principal) {
     return resourcesServer
         .klabService()
-        .model(
+        .resolveModel(
             modelName,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
@@ -109,36 +109,36 @@ public class ResourcesProviderController {
                 : null);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_NAMESPACE_URN)
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_NAMESPACE)
   public @ResponseBody KimNamespace resolveNamespace(
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
-        .resolveNamespace(
+        .retrieveNamespace(
             urn,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
                 : null);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_ONTOLOGY_URN)
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_ONTOLOGY)
   public @ResponseBody KimOntology resolveOntology(
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
-        .resolveOntology(
+        .retrieveOntology(
             urn,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
                 : null);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN)
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_OBSERVATION_STRATEGY_DOCUMENT)
   public @ResponseBody KimObservationStrategyDocument resolveObservationStrategyDocument(
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
-        .resolveObservationStrategyDocument(
+        .retrieveObservationStrategyDocument(
             urn,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
@@ -150,12 +150,12 @@ public class ResourcesProviderController {
     return resourcesServer.klabService().listWorkspaces();
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_BEHAVIOR_URN)
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_BEHAVIOR)
   public @ResponseBody KActorsBehavior resolveBehavior(
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
-        .resolveBehavior(
+        .retrieveBehavior(
             urn,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
@@ -171,24 +171,48 @@ public class ResourcesProviderController {
    * @param principal
    * @return
    */
-  @GetMapping(ServicesAPI.RESOURCES.RESOURCE)
-  public @ResponseBody Resource resolveResource(
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_RESOURCE)
+  public @ResponseBody Resource retrieveResource(
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
-        .resolveResource(
+        .retrieveResource(
             urn,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
                 : null);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_WORKSPACE_URN)
+  /**
+   * TODO this should be just RESOURCE and take all methods for the various CRUD ops: GET for data
+   * relative to the resource including status and main content; POST for contextualization with a
+   * ResolutionRequest; PUT to create new; PATCH to update; DELETE to delete.
+   *
+   * @param urn
+   * @param principal
+   * @return
+   */
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_RESOURCE)
+  public @ResponseBody ResourceSet resolveResource(
+      @PathVariable("urn") String urn,
+      @PathVariable("version") String version,
+      Principal principal) {
+    var tUrn = Urn.of(urn);
+    return resourcesServer
+        .klabService()
+        .resolveResource(
+            tUrn.getUrn(),
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
+
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_WORKSPACE)
   public @ResponseBody Workspace resolveWorkspace(
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
-        .resolveWorkspace(
+        .retrieveWorkspace(
             urn,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
@@ -223,10 +247,10 @@ public class ResourcesProviderController {
                 : null);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_OBSERVABLE)
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_OBSERVABLE)
   public @ResponseBody KimObservable resolveObservable(
       @RequestParam("definition") String definition) {
-    return resourcesServer.klabService().resolveObservable(definition);
+    return resourcesServer.klabService().retrieveObservable(definition);
   }
 
   @GetMapping(ServicesAPI.RESOURCES.DESCRIBE_CONCEPT)
@@ -235,9 +259,9 @@ public class ResourcesProviderController {
     return resourcesServer.klabService().describeConcept(conceptUrn);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_CONCEPT)
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_CONCEPT)
   public @ResponseBody KimConcept resolveConcept(@PathVariable("definition") String definition) {
-    return resourcesServer.klabService().resolveConcept(definition);
+    return resourcesServer.klabService().retrieveConcept(definition);
   }
 
   /**
@@ -265,7 +289,7 @@ public class ResourcesProviderController {
         var resource =
             resourcesServer
                 .klabService()
-                .resolveResource(request.getResourceUrn().toString(), scope);
+                .retrieveResource(request.getResourceUrn().toString(), scope);
 
         Data input = null;
         if (request.getInputData() != null) {
@@ -301,21 +325,21 @@ public class ResourcesProviderController {
         "Resource contextualizer: found unexpected implementations");
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_DATAFLOW_URN)
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_DATAFLOW)
   public @ResponseBody KimObservationStrategyDocument resolveDataflow(
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
-        .resolveDataflow(
+        .retrieveDataflow(
             urn,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
                 : null);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.GET_WORLDVIEW)
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_WORLDVIEW)
   public @ResponseBody Worldview getWorldview() {
-    return resourcesServer.klabService().getWorldview();
+    return resourcesServer.klabService().retrieveWorldview();
   }
 
   @GetMapping(ServicesAPI.RESOURCES.DEPENDENTS)
@@ -336,12 +360,12 @@ public class ResourcesProviderController {
     return resourcesServer.klabService().queryResources(urnPattern, resourceTypes);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_PROJECT)
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_PROJECT)
   public @ResponseBody Project resolveProject(
       @PathVariable("projectName") String projectName, Principal principal) {
     return resourcesServer
         .klabService()
-        .resolveProject(
+        .retrieveProject(
             projectName,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
@@ -349,12 +373,12 @@ public class ResourcesProviderController {
   }
 
   // FIXME use POST and a ResolutionRequest
-  @PostMapping(ServicesAPI.RESOURCES.QUERY_MODELS)
+  @PostMapping(ServicesAPI.RESOURCES.RESOLVE_MODELS)
   public @ResponseBody ResourceSet queryModels(
       @RequestBody ResolutionRequest request, Principal principal) {
     return resourcesServer
         .klabService()
-        .queryModels(
+        .resolveModels(
             request.getObservable(),
             principal instanceof EngineAuthorization authorization
                 ? authorization

@@ -47,99 +47,98 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
  */
 public interface Dataflow<T extends Artifact> extends Serializable, RuntimeAsset {
 
-    default RuntimeAsset.Type classify() {
-        return Type.DATAFLOW;
-    }
+  default RuntimeAsset.Type classify() {
+    return Type.DATAFLOW;
+  }
 
-    /**
-     * An empty dataflow is a valid dataflow that produces an {@link Artifact#isEmpty() empty artifact} when
-     * run in its scale.
-     *
-     * @return true if the dataflow is empty
-     */
-    boolean isEmpty();
+  /**
+   * An empty dataflow is a valid dataflow that produces an {@link Artifact#isEmpty() empty
+   * artifact} when run in its scale.
+   *
+   * @return true if the dataflow is empty
+   */
+  boolean isEmpty();
 
-    /**
-     * The merged resource set describing any external resource (including worldview, namespaces, projects,
-     * resources, components and service calls) this dataflow needs in order to run and where to get it. The
-     * dependencies in here will have been coordinated with the runtime so they're guaranteed available after
-     * resolution unless the runtime changes.
-     *
-     * @return
-     */
-    ResourceSet getRequirements();
+  /**
+   * The merged resource set describing any external resource (including worldview, namespaces,
+   * projects, resources, components and service calls) this dataflow needs in order to run and
+   * where to get it. The dependencies in here will have been coordinated with the runtime so
+   * they're guaranteed available after resolution unless the runtime changes.
+   *
+   * @return
+   */
+  ResourceSet getRequirements();
 
-    /**
-     * The geometry is the total coverage of this dataflow, resulting from compounding the coverage of all the
-     * actuators it contains. When the dataflow results from resolution, the only situation in which it
-     * contains a specific extent is when the dataflow builds an instance (but the root dataflow may union >1
-     * of those). The geometry of curated dataflows may consist of representational constraints added or
-     * derived from the models compiled in it, such as geometry (e.g. grid) or occurrent time.
-     *
-     * @return
-     */
-    Geometry getCoverage();
+  /**
+   * The geometry is the total coverage of this dataflow, resulting from compounding the coverage of
+   * all the actuators it contains. When the dataflow results from resolution, the only situation in
+   * which it contains a specific extent is when the dataflow builds an instance (but the root
+   * dataflow may union >1 of those). The geometry of curated dataflows may consist of
+   * representational constraints added or derived from the models compiled in it, such as geometry
+   * (e.g. grid) or occurrent time.
+   *
+   * @return
+   */
+  Geometry getCoverage();
 
-    /**
-     * The root-level actuators in the dataflow. They correspond to successive resolutions, with sequential
-     * dependency on one another. For example, change is computed as an independent resolution to be executed
-     * after the first resolution has computed the initial conditions.
-     *
-     * @return
-     */
-    List<Actuator> getComputation();
+  /**
+   * The root-level actuators in the dataflow. They correspond to successive resolutions, with
+   * sequential dependency on one another. For example, change is computed as an independent
+   * resolution to be executed after the first resolution has computed the initial conditions.
+   *
+   * @return
+   */
+  List<Actuator> getComputation();
 
-    /**
-     * A dataflow that resolves a specific observation includes the observation itself as a target. The
-     * root dataflow has a null here.
-     *
-     * @return
-     */
-    Observation getTarget();
-    /**
-     * Return a new empty dataflow.
-     *
-     * @param <T>
-     * @param resultClass
-     * @return
-     */
-    public static <T extends Artifact> Dataflow<T> empty(Class<T> resultClass) {
-        return new Dataflow<T>() {
+  /**
+   * A dataflow that resolves a specific observation includes the observation itself as a target.
+   * The root dataflow has a null here.
+   *
+   * @return
+   */
+  Observation getTarget();
 
-            @Override
-            public long getId() {
-                return 0;
-            }
+  /**
+   * Return a new empty dataflow.
+   *
+   * @param <T>
+   * @param resultClass
+   * @return
+   */
+  public static <T extends Artifact> Dataflow<T> empty(Class<T> resultClass) {
+    return new Dataflow<T>() {
 
-            @Serial
-            private static final long serialVersionUID = -1115441423700817816L;
+      @Override
+      public long getId() {
+        return 0;
+      }
 
-            @Override
-            public boolean isEmpty() {
-                return true;
-            }
+      @Serial private static final long serialVersionUID = -1115441423700817816L;
 
-            @Override
-            public ResourceSet getRequirements() {
-                return ResourceSet.empty();
-            }
+      @Override
+      public boolean isEmpty() {
+        return true;
+      }
 
-            @Override
-            public Coverage getCoverage() {
-                return Coverage.empty();
-            }
+      @Override
+      public ResourceSet getRequirements() {
+        return ResourceSet.empty();
+      }
 
-            @Override
-            public List<Actuator> getComputation() {
-                return Collections.emptyList();
-            }
+      @Override
+      public Coverage getCoverage() {
+        return Coverage.empty();
+      }
 
-            @Override
-            public Observation getTarget() {
-                return null;
-            }
+      @Override
+      public List<Actuator> getComputation() {
+        return Collections.emptyList();
+      }
 
-        };
-    }
-
+      @Override
+      public Observation getTarget() {
+        return null;
+      }
+    };
+  }
 }

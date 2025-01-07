@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -176,12 +177,15 @@ public class ResolverService extends BaseService implements Resolver {
     model.setProjectName(statement.getProjectName());
 
     // TODO any literal value must be added first
+    // TODO use static builders for Contextualizable instead of polymorphic constructors
 
-    for (var resourceUrn : statement.getResourceUrns()) {
-      // FIXME when >1 this should be one multi-resource contextualizable
-      // TODO use static builders instead of polymorphic constructors
-      model.getComputation().add(new ContextualizableImpl(resourceUrn));
+    if (!statement.getResourceUrns().isEmpty()) {
+      model
+          .getComputation()
+          .add(
+              new ContextualizableImpl(statement.getResourceUrns().stream().map(Urn::of).toList()));
     }
+
     model.getComputation().addAll(statement.getContextualization());
 
     // FIXME use coverage from NS or model if any

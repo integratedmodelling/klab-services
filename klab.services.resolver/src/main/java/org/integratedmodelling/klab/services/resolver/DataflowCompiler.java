@@ -214,9 +214,12 @@ public class DataflowCompiler {
 
     if (contextualizer.getServiceCall() != null) {
       ret = contextualizer.getServiceCall();
-    } else if (contextualizer.getResourceUrn() != null) {
-      ret = new ServiceCallImpl(RuntimeService.CoreFunctor.URN_RESOLVER.getServiceCall());
-      ret.getParameters().putUnnamed(new Urn(contextualizer.getResourceUrn()));
+    } else if (!contextualizer.getResourceUrns().isEmpty()) {
+      ret =
+          new ServiceCallImpl(
+              RuntimeService.CoreFunctor.URN_RESOLVER.getServiceCall(),
+              "urns",
+              contextualizer.getResourceUrns());
     } else if (contextualizer.getAccordingTo() != null) {
       ret = new ServiceCallImpl(RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCall());
     } else if (contextualizer.getClassification() != null) {
@@ -225,8 +228,9 @@ public class DataflowCompiler {
       ret = new ServiceCallImpl(RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCall());
     } else if (contextualizer.getExpression() != null) {
       ret = new ServiceCallImpl(RuntimeService.CoreFunctor.EXPRESSION_RESOLVER.getServiceCall());
-    } else if (contextualizer.getObservationStrategy() != null) {
-      ret = new ServiceCallImpl(RuntimeService.CoreFunctor.DEFER_RESOLUTION.getServiceCall());
+      //    } else if (contextualizer.getObservationStrategy() != null) {
+      //      ret = new
+      // ServiceCallImpl(RuntimeService.CoreFunctor.DEFER_RESOLUTION.getServiceCall());
     } else if (contextualizer.getLiteral() != null) {
       ret = new ServiceCallImpl(RuntimeService.CoreFunctor.CONSTANT_RESOLVER.getServiceCall());
     }

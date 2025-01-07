@@ -64,1106 +64,1223 @@ import java.util.function.BiConsumer;
 
 public class ComponentRegistry {
 
-    public static final String LOCAL_SERVICE_COMPONENT = "internal.local.service.component";
-    private final BaseService service;
-    private PluginManager componentManager;
-    private File pluginPath = null;
+  public static final String LOCAL_SERVICE_COMPONENT = "internal.local.service.component";
+  private final BaseService service;
+  private PluginManager componentManager;
+  private File pluginPath = null;
 
-    // we keep the local services and adapters in here
-    // FIXME the permissions should come from the external permission system, not as the internal
-    //  Plugin-License
-    private final ComponentDescriptor localComponentDescriptor = new ComponentDescriptor(
-            LOCAL_SERVICE_COMPONENT, Version.CURRENT_VERSION, "Natively available " + "services", null,
-            ResourcePrivileges.PUBLIC, null, new ArrayList<>(), new ArrayList<>(), new HashMap<>(),
-            new HashMap<>(), new HashMap<>());
+  // we keep the local services and adapters in here
+  // FIXME the permissions should come from the external permission system, not as the internal
+  //  Plugin-License
+  private final ComponentDescriptor localComponentDescriptor =
+      new ComponentDescriptor(
+          LOCAL_SERVICE_COMPONENT,
+          Version.CURRENT_VERSION,
+          "Natively available " + "services",
+          null,
+          ResourcePrivileges.PUBLIC,
+          null,
+          new ArrayList<>(),
+          new ArrayList<>(),
+          new HashMap<>(),
+          new HashMap<>(),
+          new HashMap<>());
 
-    /**
-     * Component descriptors, uniquely identified by id + version
-     */
-    private MultiValuedMap<String, ComponentDescriptor> components = new HashSetValuedHashMap<>();
-    private static Map<String, ServiceImplementation> serviceImplementations = new HashMap<>();
+  /** Component descriptors, uniquely identified by id + version */
+  private MultiValuedMap<String, ComponentDescriptor> components = new HashSetValuedHashMap<>();
 
-    /**
-     * Here the key is each service URN, linked to all the components that provide it.
-     */
-    private MultiValuedMap<String, Adapter> adapters = new HashSetValuedHashMap<>();
-    private MultiValuedMap<String, ComponentDescriptor> adapterFinder = new HashSetValuedHashMap<>();
-    private MultiValuedMap<String, ComponentDescriptor> serviceFinder = new HashSetValuedHashMap<>();
-    private MultiValuedMap<String, ComponentDescriptor> annotationFinder = new HashSetValuedHashMap<>();
-    private MultiValuedMap<String, ComponentDescriptor> verbFinder = new HashSetValuedHashMap<>();
-    private Map<Class<?>, Object> globalInstances = new HashMap<>();
-    private File catalogFile;
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+  private static Map<String, ServiceImplementation> serviceImplementations = new HashMap<>();
 
-    public ComponentRegistry(BaseService service, StartupOptions options) {
-        readConfiguration(service, options);
-        this.service = service;
-        scheduler.scheduleAtFixedRate(() -> checkForUpdates(), 0, 5, TimeUnit.MINUTES);
+  /** Here the key is each service URN, linked to all the components that provide it. */
+  private MultiValuedMap<String, Adapter> adapters = new HashSetValuedHashMap<>();
+
+  private MultiValuedMap<String, ComponentDescriptor> adapterFinder = new HashSetValuedHashMap<>();
+  private MultiValuedMap<String, ComponentDescriptor> serviceFinder = new HashSetValuedHashMap<>();
+  private MultiValuedMap<String, ComponentDescriptor> annotationFinder =
+      new HashSetValuedHashMap<>();
+  private MultiValuedMap<String, ComponentDescriptor> verbFinder = new HashSetValuedHashMap<>();
+  private Map<Class<?>, Object> globalInstances = new HashMap<>();
+  private File catalogFile;
+  private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+  public ComponentRegistry(BaseService service, StartupOptions options) {
+    readConfiguration(service, options);
+    this.service = service;
+    scheduler.scheduleAtFixedRate(() -> checkForUpdates(), 0, 5, TimeUnit.MINUTES);
+  }
+
+  private synchronized void checkForUpdates() {
+    for (var component : components.values()) {
+      if (component.mavenCoordinates() != null) {
+        System.out.println("TODO - check for updated Maven component");
+      }
     }
+  }
 
-    private synchronized void checkForUpdates() {
-        for (var component : components.values()) {
-            if (component.mavenCoordinates() != null) {
-                System.out.println("TODO - check for updated Maven component");
-            }
+  private void readConfiguration(BaseService service, StartupOptions options) {
+
+    this.catalogFile =
+        ServiceConfiguration.INSTANCE.getFileWithTemplate(
+            "services/" + service.serviceType().name().toLowerCase() + "/components/catalog.json",
+            "[]");
+
+    for (var descriptor : Utils.Json.load(this.catalogFile, ComponentDescriptor[].class)) {
+
+      for (var adapter : descriptor.adapters) {
+        adapterFinder.put(adapter.name, descriptor);
+      }
+      for (var serv : descriptor.services.keySet()) {
+        serviceFinder.put(serv, descriptor);
+      }
+      for (var annotation : descriptor.annotations.keySet()) {
+        annotationFinder.put(annotation, descriptor);
+      }
+      for (var verb : descriptor.verbs.keySet()) {
+        verbFinder.put(verb, descriptor);
+      }
+
+      components.put(descriptor.id(), descriptor);
+    }
+  }
+
+  private void saveConfiguration() {
+    Utils.Json.save(components.values().toArray(new ComponentDescriptor[] {}), this.catalogFile);
+  }
+
+  public List<ComponentDescriptor> resolveServiceCall(String name, Version version) {
+    List<ComponentDescriptor> ret = new ArrayList<>();
+    ComponentDescriptor target = null;
+    for (var component : serviceFinder.get(name)) {
+      if (version == null) {
+        if (target == null || component.version.greater(target.version)) {
+          target = component;
         }
+      } else if (version.compatible(component.version)) {
+        target = component;
+      }
+    }
+    if (target != null) {
+      /*
+      TODO add all dependencies first
+       */
+      ret.add(target);
+    }
+    return ret;
+  }
+
+  /**
+   * The adapter identifier may include a version after @; if not, retrieve the latest version
+   * available. Even if present, it must be authorized to the passed scope.
+   *
+   * @param adapterType
+   * @param scope
+   * @return
+   */
+  public Adapter getAdapter(String adapterType, Scope scope) {
+    return null;
+  }
+
+  public record AdapterDescriptor(
+      String name,
+      boolean universal,
+      boolean validating,
+      boolean reentrant,
+      boolean contextualizing,
+      boolean sanitizing,
+      boolean inspecting,
+      boolean publishing,
+      List<ResourceTransport.Schema> importSchemata,
+      List<ResourceTransport.Schema> exportSchemata /* TODO */) {}
+
+  public record LibraryDescriptor(
+      String name,
+      String description,
+      List<Pair<ServiceInfo, FunctionDescriptor>> services,
+      List<Pair<ServiceInfo, FunctionDescriptor>> annotations,
+      List<Pair<ServiceInfo, FunctionDescriptor>> verbs) {}
+
+  public record ComponentDescriptor(
+      String id,
+      Version version,
+      String description,
+      File sourceArchive,
+      ResourcePrivileges permissions,
+      String mavenCoordinates,
+      List<LibraryDescriptor> libraries,
+      List<AdapterDescriptor> adapters,
+      Map<String, FunctionDescriptor> services,
+      Map<String, FunctionDescriptor> annotations,
+      Map<String, FunctionDescriptor> verbs) {
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      ComponentDescriptor that = (ComponentDescriptor) o;
+      return Objects.equals(id, that.id) && Objects.equals(version, that.version);
     }
 
-    private void readConfiguration(BaseService service, StartupOptions options) {
+    @Override
+    public int hashCode() {
+      return Objects.hash(id, version);
+    }
 
-        this.catalogFile = ServiceConfiguration.INSTANCE.getFileWithTemplate(
-                "services/" + service.serviceType().name().toLowerCase() + "/components/catalog.json", "[]");
+    public Notification extractInfo() {
+      return Notification.info(
+          "Component "
+              + id()
+              + " ["
+              + version
+              + "]: "
+              + services().size()
+              + "services, "
+              + adapters.size()
+              + " adapters, "
+              + annotations.size()
+              + " annotations");
+    }
+  }
 
-        for (var descriptor : Utils.Json.load(this.catalogFile, ComponentDescriptor[].class)) {
+  /**
+   * This descriptor contains everything needed to execute a service, including the service info.
+   */
+  public static class FunctionDescriptor {
+    public ServiceInfo serviceInfo;
+    // check call style: 1 = call, scope, prototype; 2 = call, scope; 3 = custom, matched at
+    // each call
+    public int methodCall;
+    public boolean staticMethod;
+    public boolean staticClass;
+    public boolean error;
+  }
 
-            for (var adapter : descriptor.adapters) {
-                adapterFinder.put(adapter.name, descriptor);
-            }
-            for (var serv : descriptor.services.keySet()) {
-                serviceFinder.put(serv, descriptor);
-            }
-            for (var annotation : descriptor.annotations.keySet()) {
-                annotationFinder.put(annotation, descriptor);
-            }
-            for (var verb : descriptor.verbs.keySet()) {
-                verbFinder.put(verb, descriptor);
-            }
+  /*
+  The part of the function descriptor that can't serialize to JSON
+   */
+  public static class ServiceImplementation {
+    public Class<?> implementation;
+    // if not null, the class is reentrant and we use this instance
+    public Object mainClassInstance;
+    // otherwise we create it on demand using this constructor, with argument matching
+    public Constructor<?> constructor;
+    // if not null, the class is a non-static subclass
+    public Object wrappingClassInstance;
+    // if
+    public Method method;
+  }
 
-            components.put(descriptor.id(), descriptor);
+  public ServiceImplementation implementation(FunctionDescriptor descriptor) {
+    return serviceImplementations.get(descriptor.serviceInfo.getName());
+  }
+
+  public Pair<ComponentDescriptor, ResourceSet> installComponent(
+      File resourcePath, String mavenCoordinates, Scope scope) {
+
+    // TODO allow same path with different versions and replacing same version
+    var pluginDestination =
+        new File(pluginPath + File.separator + Utils.Files.getFileName(resourcePath));
+
+    // check if we're installing from a different location
+    if (resourcePath.getParent() == null
+        || !resourcePath.toPath().getParent().equals(pluginPath.toPath())) {
+      try {
+        Files.copy(
+            resourcePath.toPath(), pluginDestination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      } catch (IOException e) {
+        scope.error(e);
+        return Pair.of(null, ResourceSet.empty(Notification.error(e)));
+      }
+    } else if (!pluginDestination.exists()) {
+      pluginDestination = resourcePath;
+    }
+
+    var ret = new ResourceSet();
+    ComponentDescriptor info = null;
+    try {
+      var pluginId = componentManager.loadPlugin(pluginDestination.toPath());
+      var plugin = componentManager.getPlugin(pluginId);
+      ResourceSet.Resource result =
+          new ResourceSet.Resource(
+              service.serviceId(),
+              pluginId,
+              null,
+              Version.create(plugin.getDescriptor().getVersion()),
+              KlabAsset.KnowledgeClass.COMPONENT);
+
+      Plugin component = plugin.getPlugin();
+      if (component instanceof KlabComponent comp) {
+        info = registerComponent(comp, mavenCoordinates, pluginDestination);
+        ret.getNotifications().add(info.extractInfo());
+        ret.getResults().add(result);
+      } else {
+        ret =
+            ResourceSet.empty(
+                Notification.error(
+                    "Plugin "
+                        + Utils.Files.getFileName(resourcePath)
+                        + " is "
+                        + "not a valid k.LAB component"));
+        Utils.Files.deleteQuietly(pluginDestination);
+      }
+    } catch (Throwable t) {
+      ret = ResourceSet.empty(Notification.create(t));
+      Utils.Files.deleteQuietly(pluginDestination);
+    }
+
+    return Pair.of(info, ret);
+  }
+
+  /**
+   * Return the function descriptor that corresponds to the passed call, considering any version
+   * requirements and arguments. If no version requirements are present, return the highest version
+   * among the compatible ones.
+   *
+   * <p>The service call can also be used to locate export/import schemata by passing the schema ID
+   * as a service name and the properties as parameters, with "FILE" or "URL" as argument for
+   * bytestream-based schemata.
+   *
+   * @param call
+   * @return
+   */
+  public FunctionDescriptor getFunctionDescriptor(ServiceCall call) {
+    var version = call.getRequiredVersion();
+    ComponentDescriptor target = null;
+    for (var component : serviceFinder.get(call.getUrn())) {
+      if (version == null) {
+        if (target == null || component.version.greater(target.version)) {
+          target = component;
         }
+      } else if (version.compatible(component.version)) {
+        target = component;
+      }
+    }
+    return target == null ? null : target.services.get(call.getUrn());
+  }
 
+  /**
+   * Call with a new plugin file (located anywhere) and optional Maven coordinates to build the
+   * descriptors, entries in the catalog, and return a {@link KlabComponent} that can be activated,
+   * or null.
+   *
+   * @param componentJar
+   * @param mavenCoordinates
+   * @return the component URN or null
+   */
+  public String registerComponent(File componentJar, String mavenCoordinates, Scope scope) {
+    var result = installComponent(componentJar, mavenCoordinates, scope);
+    if (result != null && !result.getSecond().isEmpty()) {
+      return result.getFirst().id();
+    }
+    return null;
+  }
+
+  /**
+   * Discover and register all the extensions provided by this component but do not start it. If the
+   * plugin exists and has Maven coordinates in components.json, it is provided to other services
+   * and we're in charge of checking for updates, so ensure we have a file hash for the update
+   * service to check and replace the file if a new snapshot is discovered in the local repository
+   * with a different hash.
+   *
+   * @param component
+   */
+  public ComponentDescriptor registerComponent(
+      KlabComponent component, String mavenCoordinates, File pluginFile) {
+
+    // TODO negotiate updates before we open the file.
+
+    var componentName = component.getName();
+    var componentVersion = component.getVersion();
+    var libraries = new ArrayList<LibraryDescriptor>();
+    var adapters = new ArrayList<AdapterDescriptor>();
+    var license = component.getWrapper().getDescriptor().getLicense();
+    var description = component.getWrapper().getDescriptor().getPluginDescription();
+    var sourceArchive =
+        component.getWrapper().getPluginPath() == null
+            ? null
+            : component.getWrapper().getPluginPath().toFile();
+    var permissions =
+        license == null ? ResourcePrivileges.PUBLIC : ResourcePrivileges.create(license);
+
+    scanPackage(
+        component,
+        Map.of(
+            Library.class,
+            (annotation, cls) -> registerLibrary((Library) annotation, cls, libraries),
+            ResourceAdapter.class,
+            (annotation, cls) -> registerAdapter((ResourceAdapter) annotation, cls, adapters)));
+
+    var componentDescriptor =
+        new ComponentDescriptor(
+            componentName,
+            componentVersion,
+            description,
+            sourceArchive,
+            permissions,
+            mavenCoordinates,
+            libraries,
+            adapters,
+            new HashMap<>(),
+            new HashMap<>(),
+            new HashMap<>());
+
+    // update catalog
+    for (var library : componentDescriptor.libraries) {
+      for (var service : library.services) {
+        serviceFinder.put(service.getFirst().getName(), componentDescriptor);
+        componentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
+      }
+      for (var service : library.annotations) {
+        annotationFinder.put(service.getFirst().getName(), componentDescriptor);
+        componentDescriptor.annotations().put(service.getFirst().getName(), service.getSecond());
+      }
+      for (var service : library.verbs) {
+        verbFinder.put(service.getFirst().getName(), componentDescriptor);
+        componentDescriptor.verbs().put(service.getFirst().getName(), service.getSecond());
+      }
     }
 
-    private void saveConfiguration() {
-        Utils.Json.save(components.values().toArray(new ComponentDescriptor[]{}), this.catalogFile);
+    this.components.put(componentName, componentDescriptor);
+
+    saveConfiguration();
+
+    return componentDescriptor;
+  }
+
+  private void registerLibrary(
+      Library annotation, Class<?> cls, List<LibraryDescriptor> libraries) {
+
+    String namespacePrefix =
+        Library.CORE_LIBRARY.equals(annotation.name()) ? "" : (annotation.name() + ".");
+
+    var prototypes = new ArrayList<Pair<ServiceInfo, FunctionDescriptor>>();
+    var annotations = new ArrayList<Pair<ServiceInfo, FunctionDescriptor>>();
+    var verbs = new ArrayList<Pair<ServiceInfo, FunctionDescriptor>>();
+
+    for (Class<?> clss : cls.getClasses()) {
+      if (clss.isAnnotationPresent(KlabFunction.class)) {
+        var serviceInfo =
+            createContextualizerPrototype(namespacePrefix, clss.getAnnotation(KlabFunction.class));
+        prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
+      } else if (clss.isAnnotationPresent(Verb.class)) {
+        var serviceInfo = createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class));
+        verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
+      } else if (clss.isAnnotationPresent(KlabAnnotation.class)) {
+        var serviceInfo =
+            createPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation.class));
+        annotations.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
+      }
     }
 
-    public List<ComponentDescriptor> resolveServiceCall(String name, Version version) {
-        List<ComponentDescriptor> ret = new ArrayList<>();
-        ComponentDescriptor target = null;
-        for (var component : serviceFinder.get(name)) {
-            if (version == null) {
-                if (target == null || component.version.greater(target.version)) {
-                    target = component;
-                }
-            } else if (version.compatible(component.version)) {
-                target = component;
-            }
-        }
-        if (target != null) {
+    // annotated methods
+    for (Method method : cls.getDeclaredMethods()) {
+      if (Modifier.isPublic(method.getModifiers())
+          && method.isAnnotationPresent(KlabFunction.class)) {
+        var serviceInfo =
+            createContextualizerPrototype(
+                namespacePrefix, method.getAnnotation(KlabFunction.class));
+        prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
+      } else if (method.isAnnotationPresent(KlabAnnotation.class)) {
+        var serviceInfo =
+            createPrototype(namespacePrefix, method.getAnnotation(KlabAnnotation.class));
+        annotations.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
+      } else if (method.isAnnotationPresent(Verb.class)) {
+        var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
+        verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
+      } else if (method.isAnnotationPresent(Importer.class)) {
+        var serviceInfo = createPrototype(namespacePrefix, method.getAnnotation(Importer.class));
+        prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
+        ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
+      } else if (method.isAnnotationPresent(Exporter.class)) {
+        var serviceInfo = createPrototype(namespacePrefix, method.getAnnotation(Exporter.class));
+        prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
+        ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
+      }
+    }
+
+    libraries.add(
+        new LibraryDescriptor(
+            annotation.name(), annotation.description(), prototypes, annotations, verbs));
+  }
+
+  private FunctionDescriptor createFunctionDescriptor(
+      ServiceInfo serviceInfo, Class<?> clss, Method method) {
+
+    FunctionDescriptor ret = new FunctionDescriptor();
+    ServiceImplementation implementation = new ServiceImplementation();
+    serviceImplementations.put(serviceInfo.getName(), implementation);
+
+    ret.serviceInfo = serviceInfo;
+    implementation.implementation = clss;
+
+    if (method != null) {
+      implementation.method = method;
+      ret.methodCall = 3;
+      if (java.lang.reflect.Modifier.isStatic(implementation.method.getModifiers())
+          || serviceInfo.isReentrant()) {
+        // use a global class instance
+        implementation.mainClassInstance = createGlobalClassInstance(ret);
+        ret.staticMethod =
+            java.lang.reflect.Modifier.isStatic(implementation.method.getModifiers());
+      } else if (!serviceInfo.isReentrant()) {
+        // create the instance just for this prototype
+        try {
+          if (ServiceConfiguration.INSTANCE.getMainService() != null) {
+
+            var mainService = ServiceConfiguration.INSTANCE.getMainService();
             /*
-            TODO add all dependencies first
+            try first with the actual service class
              */
-            ret.add(target);
+            try {
+              implementation.mainClassInstance =
+                  implementation
+                      .implementation
+                      .getDeclaredConstructor(
+                          ServiceConfiguration.INSTANCE.getMainService().getClass())
+                      .newInstance(mainService);
+            } catch (Throwable t) {
+            }
+            if (implementation.mainClassInstance == null) {
+              try {
+                implementation.mainClassInstance =
+                    implementation
+                        .implementation
+                        .getDeclaredConstructor(KlabService.class)
+                        .newInstance(mainService);
+              } catch (Throwable t) {
+              }
+            }
+          }
+          if (implementation.mainClassInstance == null) {
+            implementation.mainClassInstance =
+                implementation.implementation.getDeclaredConstructor().newInstance();
+          }
+        } catch (Exception e) {
+          Logging.INSTANCE.error(
+              "Cannot instantiate main class for function library "
+                  + implementation(ret).implementation.getCanonicalName()
+                  + ": "
+                  + e.getMessage());
+          ret.error = true;
         }
-        return ret;
+      }
+    } else {
+
+      // analyze constructor
+      if (serviceInfo.isReentrant()) {
+        // create the instance just for this prototype
+        try {
+          implementation.mainClassInstance = createGlobalClassInstance(ret);
+        } catch (Exception e) {
+          ret.error = true;
+        }
+      } else {
+        try {
+          implementation.constructor =
+              implementation.implementation.getDeclaredConstructor(
+                  getParameterClasses(serviceInfo, ret));
+          ret.methodCall = 1;
+        } catch (NoSuchMethodException | SecurityException e) {
+          // move along
+        }
+        if (implementation.constructor == null) {
+          try {
+            implementation.constructor =
+                implementation.implementation.getDeclaredConstructor(
+                    getParameterClasses(serviceInfo, ret));
+            ret.methodCall = 2;
+          } catch (NoSuchMethodException | SecurityException e) {
+            // move along
+          }
+        }
+        if (implementation.constructor == null) {
+          ret.methodCall = 3;
+        }
+      }
     }
 
-    /**
-     * The adapter identifier may include a version after @; if not, retrieve the latest version available.
-     * Even if present, it must be authorized to the passed scope.
-     *
-     * @param adapterType
-     * @param scope
-     * @return
-     */
-    public Adapter getAdapter(String adapterType, Scope scope) {
-        return null;
-    }
+    return ret;
+  }
 
-    public record AdapterDescriptor(String name /* TODO */) {
-    }
+  /**
+   * Return the default parameterization for functions and constructors according to function type
+   * and allowed "style".
+   *
+   * @param serviceInfo
+   * @param functionDescriptor
+   * @return
+   */
+  private Class<?>[] getParameterClasses(
+      ServiceInfo serviceInfo, FunctionDescriptor functionDescriptor) {
+    switch (serviceInfo.getFunctionType()) {
+      case ANNOTATION:
+        break;
+      case FUNCTION:
+        if (implementation(functionDescriptor).constructor != null) {
+          // TODO check: using the last constructor with parameters, or the empty constructor if
+          //  found.
+          Class<?> cls = implementation(functionDescriptor).implementation;
+          if (cls == null) {
+            throw new KlabIllegalStateException(
+                "no declared executor class for service "
+                    + serviceInfo.getName()
+                    + ": "
+                    + "constructor can't be extracted");
+          }
+          Class[] ret = null;
+          for (Constructor<?> constructor : cls.getConstructors()) {
+            if (ret == null || ret.length == 0) {
+              ret = constructor.getParameterTypes();
+            }
+          }
+          if (ret == null) {
+            throw new KlabIllegalStateException(
+                "no usable constructor for service "
+                    + serviceInfo.getName()
+                    + " served by "
+                    + "class "
+                    + cls.getCanonicalName());
+          }
+          return ret;
 
-    public record LibraryDescriptor(String name, String description,
-                                    List<Pair<ServiceInfo, FunctionDescriptor>> services,
-                                    List<Pair<ServiceInfo, FunctionDescriptor>> annotations,
-                                    List<Pair<ServiceInfo, FunctionDescriptor>> verbs) {
-    }
-
-    public record ComponentDescriptor(String id, Version version, String description, File sourceArchive,
-                                      ResourcePrivileges permissions, String mavenCoordinates,
-                                      List<LibraryDescriptor> libraries, List<AdapterDescriptor> adapters,
-                                      Map<String, FunctionDescriptor> services,
-                                      Map<String, FunctionDescriptor> annotations,
-                                      Map<String, FunctionDescriptor> verbs) {
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ComponentDescriptor that = (ComponentDescriptor) o;
-            return Objects.equals(id, that.id) && Objects.equals(version, that.version);
+        } else {
+          //                    if (callMethod == 1) {
+          //                        return new Class[]{ServiceCall.class, Scope.class,
+          //                        ServiceInfo.class};
+          //                    } else if (callMethod == 2) {
+          //                        return new Class[]{ServiceCall.class, Scope.class};
+          //                    }
         }
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(id, version);
-        }
+        break;
+      case VERB:
+        break;
+    }
+    throw new KlabIllegalArgumentException(
+        "can't assess parameter types for " + serviceInfo.getName());
+  }
 
-        public Notification extractInfo() {
-            return Notification.info(
-                    "Component " + id() + " [" + version + "]: " + services().size() + "services, " + adapters.size() + " adapters, " + annotations.size() + " annotations");
+  private Object createGlobalClassInstance(FunctionDescriptor ret) {
+    try {
+      Object instance = this.globalInstances.get(implementation(ret).implementation);
+      if (instance == null) {
+        // look for a constructor we know what to do with. If we are a service, we can first try
+        // with a constructor that takes it.
+        if (ServiceConfiguration.INSTANCE.getMainService() != null) {
+
+          var mainService = ServiceConfiguration.INSTANCE.getMainService();
+          /*
+          try first with the actual service class
+           */
+          try {
+            instance =
+                implementation(ret)
+                    .implementation
+                    .getDeclaredConstructor(
+                        ServiceConfiguration.INSTANCE.getMainService().getClass())
+                    .newInstance(mainService);
+          } catch (Throwable t) {
+          }
+          if (instance == null) {
+            try {
+              instance =
+                  implementation(ret)
+                      .implementation
+                      .getDeclaredConstructor(KlabService.class)
+                      .newInstance(mainService);
+            } catch (Throwable t) {
+            }
+          }
         }
+        if (instance == null) {
+          instance = implementation(ret).implementation.getDeclaredConstructor().newInstance();
+        }
+        this.globalInstances.put(implementation(ret).implementation, instance);
+      }
+      return instance;
+    } catch (InstantiationException
+        | IllegalAccessException
+        | IllegalArgumentException
+        | InvocationTargetException
+        | NoSuchMethodException
+        | SecurityException e) {
+      ret.error = true;
+      Logging.INSTANCE.error(
+          "Cannot instantiate main class for function library "
+              + implementation(ret).implementation.getCanonicalName()
+              + ": "
+              + e.getMessage());
+    }
+    return null;
+  }
+
+  private void registerAdapter(
+      ResourceAdapter annotation, Class<?> cls, List<AdapterDescriptor> adapters) {
+
+    try {
+      var adapter = new AdapterImpl(cls, annotation);
+      this.adapters.put(adapter.getName(), adapter);
+    } catch (Throwable t) {
+      Logging.INSTANCE.error(t);
+    }
+  }
+
+  /**
+   * Retrieve a component in a given version or the latest. TODO use this in other methods that use
+   * the logic.
+   *
+   * @param urn
+   * @param version
+   * @return
+   */
+  public ComponentDescriptor getComponent(String urn, Version version) {
+
+    ComponentDescriptor ret = null;
+    for (var component : components.get(urn)) {
+      if (version == null) {
+        if (ret == null || component.version.greater(ret.version)) {
+          ret = component;
+        }
+      } else if (version.compatible(component.version)) {
+        ret = component;
+      }
+    }
+    return ret;
+  }
+
+  /**
+   * Load any component in the passed resource set that is not already present.
+   *
+   * @param resourceSet
+   * @return
+   */
+  public boolean loadComponents(ResourceSet resourceSet, Scope scope) {
+
+    Set<String> available = new HashSet<>();
+    for (var result : resourceSet.getResults()) {
+      if (result.getKnowledgeClass() == KlabAsset.KnowledgeClass.COMPONENT) {
+        for (var existing : components.get(result.getResourceUrn())) {
+          if (result.getResourceVersion() == null
+              || existing.version().compatible(result.getResourceVersion())) {
+            available.add(result.getResourceUrn());
+          }
+        }
+      }
     }
 
-    /**
-     * This descriptor contains everything needed to execute a service, including the service info.
-     */
-    public static class FunctionDescriptor {
-        public ServiceInfo serviceInfo;
-        // check call style: 1 = call, scope, prototype; 2 = call, scope; 3 = custom, matched at
-        // each call
-        public int methodCall;
-        public boolean staticMethod;
-        public boolean staticClass;
-        public boolean error;
+    // if we get here, we need to retrieve and load the component
+    if (available.size() == resourceSet.getResults().size()) {
+      return true;
+    }
 
-        public ServiceImplementation implementation() {
-            return serviceImplementations.get(serviceInfo.getName());
+    for (var result : resourceSet.getResults()) {
+
+      if (!available.contains(result.getResourceUrn())) {
+        // load from service
+        var service = scope.getService(result.getServiceId(), ResourcesService.class);
+        if (service == null) {
+          return false;
         }
+
+        final String mediaType = "application/java-archive";
+        var schemata =
+            ResourceTransport.INSTANCE.findExportSchemata(
+                KlabAsset.KnowledgeClass.COMPONENT, mediaType, service.capabilities(scope), scope);
+        if (schemata.isEmpty()) {
+          throw new KlabAuthorizationException(
+              "No authorized export schema with media type " + mediaType + " is available");
+        } else if (schemata.size() > 1) {
+          scope.warn(
+              "Ambiguous request: more than one export schema with "
+                  + "media type "
+                  + mediaType
+                  + " is available");
+        }
+
+        File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
+        try (var input =
+                service.exportAsset(
+                    result.getResourceUrn(), schemata.getFirst(), mediaType, scope);
+            var output = new FileOutputStream(plugin)) {
+          IOUtils.copy(input, output);
+          // give the OS time to react - found that often the file is truncated
+          TimeUnit.SECONDS.sleep(2);
+        } catch (Exception e) {
+          scope.error(e);
+          return false;
+        }
+        installComponent(plugin, null, scope);
+      }
+    }
+
+    // hopefully this is OK with plugins that have started already
+    componentManager.startPlugins();
+
+    return true;
+  }
+
+  public void scanPackage(
+      String[] internalPackages,
+      Map<Class<? extends Annotation>, BiConsumer<Annotation, Class<?>>> annotationHandlers) {
+
+    try (ScanResult scanResult =
+        new ClassGraph().enableAnnotationInfo().acceptPackages(internalPackages).scan()) {
+      for (Class<? extends Annotation> ah : annotationHandlers.keySet()) {
+        for (ClassInfo routeClassInfo : scanResult.getClassesWithAnnotation(ah)) {
+          try {
+            Class<?> cls = Class.forName(routeClassInfo.getName());
+            Annotation annotation = cls.getAnnotation(ah);
+            if (annotation != null) {
+              annotationHandlers.get(ah).accept(annotation, cls);
+            }
+          } catch (ClassNotFoundException e) {
+            Logging.INSTANCE.error(e);
+          }
+        }
+      }
+    }
+  }
+
+  public void scanPackage(
+      KlabComponent component,
+      Map<Class<? extends Annotation>, BiConsumer<Annotation, Class<?>>> annotationHandlers) {
+
+    try (ScanResult scanResult =
+        new ClassGraph()
+            .enableAnnotationInfo()
+            .addClassLoader(component.getWrapper().getPluginClassLoader())
+            .acceptPackages(component.getClass().getPackageName())
+            .scan()) {
+      for (Class<? extends Annotation> ah : annotationHandlers.keySet()) {
+        for (ClassInfo routeClassInfo : scanResult.getClassesWithAnnotation(ah)) {
+          try {
+            Class<?> cls =
+                Class.forName(
+                    routeClassInfo.getName(), false, component.getWrapper().getPluginClassLoader());
+            Annotation annotation = cls.getAnnotation(ah);
+            if (annotation != null) {
+              annotationHandlers.get(ah).accept(annotation, cls);
+            }
+          } catch (ClassNotFoundException e) {
+            Logging.INSTANCE.error(e);
+          }
+        }
+      }
+    }
+  }
+
+  private ServiceInfoImpl createVerbPrototype(String namespacePrefix, Verb annotation) {
+    // TODO
+    return null;
+  }
+
+  private ServiceInfoImpl createContextualizerPrototype(
+      String namespacePrefix, KlabFunction annotation) {
+
+    var ret = new ServiceInfoImpl();
+
+    ret.setName(namespacePrefix + annotation.name());
+    ret.setDescription(annotation.description());
+    ret.setFilter(annotation.filter());
+    ret.setGeometry(
+        annotation.geometry().isEmpty() ? null : Geometry.create(annotation.geometry()));
+    ret.setLabel(annotation.dataflowLabel());
+    ret.setReentrant(annotation.reentrant());
+    ret.setFunctionType(ServiceInfo.FunctionType.FUNCTION);
+
+    for (Artifact.Type a : annotation.type()) {
+      ret.getType().add(a);
+    }
+
+    for (KlabFunction.Argument argument : annotation.parameters()) {
+      var arg = createArgument(argument);
+      ret.getArguments().put(arg.getName(), arg);
+    }
+    for (KlabFunction.Argument argument : annotation.exports()) {
+      var arg = createArgument(argument);
+      ret.getImports().add(arg);
+    }
+    for (KlabFunction.Argument argument : annotation.imports()) {
+      var arg = createArgument(argument);
+      ret.getExports().add(arg);
+    }
+
+    return ret;
+  }
+
+  private ServiceInfoImpl createPrototype(String namespacePrefix, KlabAnnotation annotation) {
+
+    var ret = new ServiceInfoImpl();
+
+    ret.setName(namespacePrefix + annotation.name());
+    ret.setDescription(annotation.description());
+    //        ret.setImplementation(clss);
+    //        ret.setExecutorMethod(method == null ? null : method.getName());
+    ret.setFunctionType(ServiceInfo.FunctionType.ANNOTATION);
+    for (KlabAsset.KnowledgeClass kcl : annotation.targets()) {
+      ret.getTargets().add(kcl);
+    }
+
+    for (KlabFunction.Argument argument : annotation.parameters()) {
+      var arg = createArgument(argument);
+      ret.getArguments().put(arg.getName(), arg);
+    }
+
+    return ret;
+  }
+
+  private ServiceInfoImpl createPrototype(String namespacePrefix, Exporter annotation) {
+
+    var ret = new ServiceInfoImpl();
+
+    ret.setName(namespacePrefix + annotation.schema());
+    ret.setDescription(annotation.description());
+    ret.setFunctionType(ServiceInfo.FunctionType.FREEFORM);
+    ret.getTargets().add(annotation.knowledgeClass());
+    if (annotation.mediaType() != null) {
+      ret.getMediaTypes().add(annotation.mediaType());
+    }
+
+    for (KlabFunction.Argument argument : annotation.properties()) {
+      var arg = createArgument(argument);
+      ret.getArguments().put(arg.getName(), arg);
     }
 
     /*
-    The part of the function descriptor that can't serialize to JSON
+    TODO create the records in ResourceTransport!
      */
-    public static class ServiceImplementation {
-        public Class<?> implementation;
-        // if not null, the class is reentrant and we use this instance
-        public Object mainClassInstance;
-        // otherwise we create it on demand using this constructor, with argument matching
-        public Constructor<?> constructor;
-        // if not null, the class is a non-static subclass
-        public Object wrappingClassInstance;
-        // if
-        public Method method;
+
+    return ret;
+  }
+
+  private ServiceInfoImpl createPrototype(String namespacePrefix, Importer annotation) {
+
+    var ret = new ServiceInfoImpl();
+
+    ret.setName(namespacePrefix + annotation.schema());
+    ret.setDescription(annotation.description());
+    ret.setFunctionType(ServiceInfo.FunctionType.FREEFORM);
+    ret.getTargets().add(annotation.knowledgeClass());
+    if (annotation.mediaType() != null) {
+      ret.getMediaTypes().add(annotation.mediaType());
+    }
+    for (KlabFunction.Argument argument : annotation.properties()) {
+      var arg = createArgument(argument);
+      ret.getArguments().put(arg.getName(), arg);
     }
 
-    public Pair<ComponentDescriptor, ResourceSet> installComponent(File resourcePath, String mavenCoordinates,
-                                                                   Scope scope) {
-
-        // TODO allow same path with different versions and replacing same version
-        var pluginDestination = new File(pluginPath + File.separator + Utils.Files.getFileName(resourcePath));
-
-        // check if we're installing from a different location
-        if (resourcePath.getParent() == null || !resourcePath.toPath().getParent().equals(
-                pluginPath.toPath())) {
-            try {
-                Files.copy(resourcePath.toPath(), pluginDestination.toPath(),
-                           StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                scope.error(e);
-                return Pair.of(null, ResourceSet.empty(Notification.error(e)));
-            }
-        } else if (!pluginDestination.exists()) {
-            pluginDestination = resourcePath;
-        }
-
-        var ret = new ResourceSet();
-        ComponentDescriptor info = null;
-        try {
-            var pluginId = componentManager.loadPlugin(pluginDestination.toPath());
-            var plugin = componentManager.getPlugin(pluginId);
-            ResourceSet.Resource result = new ResourceSet.Resource(service.serviceId(), pluginId, null,
-                                                                   Version.create(
-                                                                           plugin.getDescriptor().getVersion()),
-                                                                   KlabAsset.KnowledgeClass.COMPONENT);
-
-            Plugin component = plugin.getPlugin();
-            if (component instanceof KlabComponent comp) {
-                info = registerComponent(comp, mavenCoordinates, pluginDestination);
-                ret.getNotifications().add(info.extractInfo());
-                ret.getResults().add(result);
-            } else {
-                ret = ResourceSet.empty(Notification.error("Plugin " + Utils.Files.getFileName(
-                        resourcePath) + " is " + "not a valid k.LAB component"));
-                Utils.Files.deleteQuietly(pluginDestination);
-            }
-        } catch (Throwable t) {
-            ret = ResourceSet.empty(Notification.create(t));
-            Utils.Files.deleteQuietly(pluginDestination);
-        }
-
-        return Pair.of(info, ret);
-    }
-
-
-    /**
-     * Return the function descriptor that corresponds to the passed call, considering any version
-     * requirements and arguments. If no version requirements are present, return the highest version among
-     * the compatible ones.
-     * <p>
-     * The service call can also be used to locate export/import schemata by passing the schema ID as a
-     * service name and the properties as parameters, with "FILE" or "URL" as argument for bytestream-based
-     * schemata.
-     *
-     * @param call
-     * @return
+    /*
+    TODO create the records in ResourceTransport!
      */
-    public FunctionDescriptor getFunctionDescriptor(ServiceCall call) {
-        var version = call.getRequiredVersion();
-        ComponentDescriptor target = null;
-        for (var component : serviceFinder.get(call.getUrn())) {
-            if (version == null) {
-                if (target == null || component.version.greater(target.version)) {
-                    target = component;
-                }
-            } else if (version.compatible(component.version)) {
-                target = component;
-            }
-        }
-        return target == null ? null : target.services.get(call.getUrn());
+
+    return ret;
+  }
+
+  private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Argument argument) {
+    var arg = new ServiceInfoImpl.ArgumentImpl();
+    arg.setName(argument.name());
+    arg.setDescription(argument.description());
+    arg.setOptional(argument.optional());
+    arg.setConst(argument.constant());
+    arg.setArtifact(argument.artifact());
+    for (Artifact.Type a : argument.type()) {
+      arg.getType().add(a);
     }
 
-    /**
-     * Call with a new plugin file (located anywhere) and optional Maven coordinates to build the descriptors,
-     * entries in the catalog, and return a {@link KlabComponent} that can be activated, or null.
-     *
-     * @param componentJar
-     * @param mavenCoordinates
-     * @return the component URN or null
+    return arg;
+  }
+
+  public void loadExtensions(String... packageName) {
+
+    var libraries = new ArrayList<LibraryDescriptor>();
+    var adapters = new ArrayList<AdapterDescriptor>();
+
+    scanPackage(
+        packageName,
+        Map.of(
+            Library.class,
+            (annotation, cls) -> registerLibrary((Library) annotation, cls, libraries),
+            ResourceAdapter.class,
+            (annotation, cls) -> registerAdapter((ResourceAdapter) annotation, cls, adapters)));
+
+    localComponentDescriptor.libraries.addAll(libraries);
+    localComponentDescriptor.adapters.addAll(adapters);
+
+    this.components.put(LOCAL_SERVICE_COMPONENT, localComponentDescriptor);
+
+    // update catalog
+    for (var library : localComponentDescriptor.libraries) {
+      for (var service : library.services) {
+        serviceFinder.put(service.getFirst().getName(), localComponentDescriptor);
+        localComponentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
+      }
+      for (var service : library.annotations) {
+        annotationFinder.put(service.getFirst().getName(), localComponentDescriptor);
+        localComponentDescriptor
+            .annotations()
+            .put(service.getFirst().getName(), service.getSecond());
+      }
+      for (var service : library.verbs) {
+        verbFinder.put(service.getFirst().getName(), localComponentDescriptor);
+        localComponentDescriptor.verbs().put(service.getFirst().getName(), service.getSecond());
+      }
+    }
+  }
+
+  /**
+   * Use this call for the "master" service that installs components based on configuration.
+   *
+   * @param configuration
+   * @param pluginPath
+   */
+  public void initializeComponents(ResourcesConfiguration configuration, File pluginPath) {
+
+    /*
+    TODO check all existing resources against the configuration; retrieve whatever needs updating;
+     remove anything not configured or deprecated; check integrity and certification for all components
+      before loading them.
      */
-    public String registerComponent(File componentJar, String mavenCoordinates, Scope scope) {
-        var result = installComponent(componentJar, mavenCoordinates, scope);
-        if (result != null && !result.getSecond().isEmpty()) {
-            return result.getFirst().id();
-        }
-        return null;
-    }
-
-    /**
-     * Discover and register all the extensions provided by this component but do not start it. If the plugin
-     * exists and has Maven coordinates in components.json, it is provided to other services and we're in
-     * charge of checking for updates, so ensure we have a file hash for the update service to check and
-     * replace the file if a new snapshot is discovered in the local repository with a different hash.
-     *
-     * @param component
-     */
-    public ComponentDescriptor registerComponent(KlabComponent component, String mavenCoordinates,
-                                                 File pluginFile) {
-
-        // TODO negotiate updates before we open the file.
-
-        var componentName = component.getName();
-        var componentVersion = component.getVersion();
-        var libraries = new ArrayList<LibraryDescriptor>();
-        var adapters = new ArrayList<AdapterDescriptor>();
-        var license = component.getWrapper().getDescriptor().getLicense();
-        var description = component.getWrapper().getDescriptor().getPluginDescription();
-        var sourceArchive = component.getWrapper().getPluginPath() == null ? null :
-                            component.getWrapper().getPluginPath().toFile();
-        var permissions = license == null ? ResourcePrivileges.PUBLIC : ResourcePrivileges.create(license);
-
-        scanPackage(component, Map.of(Library.class,
-                                      (annotation, cls) -> registerLibrary((Library) annotation, cls,
-                                                                           libraries), ResourceAdapter.class,
-                                      (annotation, cls) -> registerAdapter((ResourceAdapter) annotation, cls,
-                                                                           adapters)));
-
-        var componentDescriptor = new ComponentDescriptor(componentName, componentVersion, description,
-                                                          sourceArchive, permissions, mavenCoordinates,
-                                                          libraries, adapters, new HashMap<>(),
-                                                          new HashMap<>(), new HashMap<>());
-
-        // update catalog
-        for (var library : componentDescriptor.libraries) {
-            for (var service : library.services) {
-                serviceFinder.put(service.getFirst().getName(), componentDescriptor);
-                componentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
-            }
-            for (var service : library.annotations) {
-                annotationFinder.put(service.getFirst().getName(), componentDescriptor);
-                componentDescriptor.annotations().put(service.getFirst().getName(), service.getSecond());
-            }
-            for (var service : library.verbs) {
-                verbFinder.put(service.getFirst().getName(), componentDescriptor);
-                componentDescriptor.verbs().put(service.getFirst().getName(), service.getSecond());
-            }
-        }
-
-        this.components.put(componentName, componentDescriptor);
-
-        saveConfiguration();
-
-        return componentDescriptor;
-    }
-
-    private void registerLibrary(Library annotation, Class<?> cls, List<LibraryDescriptor> libraries) {
-
-        String namespacePrefix = Library.CORE_LIBRARY.equals(
-                annotation.name()) ? "" : (annotation.name() + ".");
-
-        var prototypes = new ArrayList<Pair<ServiceInfo, FunctionDescriptor>>();
-        var annotations = new ArrayList<Pair<ServiceInfo, FunctionDescriptor>>();
-        var verbs = new ArrayList<Pair<ServiceInfo, FunctionDescriptor>>();
-
-        for (Class<?> clss : cls.getClasses()) {
-            if (clss.isAnnotationPresent(KlabFunction.class)) {
-                var serviceInfo = createContextualizerPrototype(namespacePrefix,
-                                                                clss.getAnnotation(KlabFunction.class));
-                prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
-            } else if (clss.isAnnotationPresent(Verb.class)) {
-                var serviceInfo = createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class));
-                verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
-            } else if (clss.isAnnotationPresent(KlabAnnotation.class)) {
-                var serviceInfo = createPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation.class));
-                annotations.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
-            }
-        }
-
-        // annotated methods
-        for (Method method : cls.getDeclaredMethods()) {
-            if (Modifier.isPublic(method.getModifiers()) && method.isAnnotationPresent(KlabFunction.class)) {
-                var serviceInfo = createContextualizerPrototype(namespacePrefix,
-                                                                method.getAnnotation(KlabFunction.class));
-                prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
-            } else if (method.isAnnotationPresent(KlabAnnotation.class)) {
-                var serviceInfo = createPrototype(namespacePrefix,
-                                                  method.getAnnotation(KlabAnnotation.class));
-                annotations.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
-            } else if (method.isAnnotationPresent(Verb.class)) {
-                var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
-                verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
-            } else if (method.isAnnotationPresent(Importer.class)) {
-                var serviceInfo = createPrototype(namespacePrefix, method.getAnnotation(Importer.class));
-                prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
-                ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
-            } else if (method.isAnnotationPresent(Exporter.class)) {
-                var serviceInfo = createPrototype(namespacePrefix, method.getAnnotation(Exporter.class));
-                prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
-                ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
-            }
-        }
-
-        libraries.add(
-                new LibraryDescriptor(annotation.name(), annotation.description(), prototypes, annotations,
-                                      verbs));
-    }
-
-    private FunctionDescriptor createFunctionDescriptor(ServiceInfo serviceInfo, Class<?> clss,
-                                                        Method method) {
-
-        FunctionDescriptor ret = new FunctionDescriptor();
-        ServiceImplementation implementation = new ServiceImplementation();
-        serviceImplementations.put(serviceInfo.getName(), implementation);
-
-        ret.serviceInfo = serviceInfo;
-        implementation.implementation = clss;
-
-        if (method != null) {
-            implementation.method = method;
-            ret.methodCall = 3;
-            if (java.lang.reflect.Modifier.isStatic(
-                    implementation.method.getModifiers()) || serviceInfo.isReentrant()) {
-                // use a global class instance
-                implementation.mainClassInstance = createGlobalClassInstance(ret);
-                ret.staticMethod = java.lang.reflect.Modifier.isStatic(implementation.method.getModifiers());
-            } else if (!serviceInfo.isReentrant()) {
-                // create the instance just for this prototype
-                try {
-                    if (ServiceConfiguration.INSTANCE.getMainService() != null) {
-
-                        var mainService = ServiceConfiguration.INSTANCE.getMainService();
-                    /*
-                    try first with the actual service class
-                     */
-                        try {
-                            implementation.mainClassInstance =
-                                    implementation.implementation.getDeclaredConstructor(
-                                    ServiceConfiguration.INSTANCE.getMainService().getClass()).newInstance(
-                                    mainService);
-                        } catch (Throwable t) {
-                        }
-                        if (implementation.mainClassInstance == null) {
-                            try {
-                                implementation.mainClassInstance =
-                                        implementation.implementation.getDeclaredConstructor(
-                                        KlabService.class).newInstance(mainService);
-                            } catch (Throwable t) {
-                            }
-                        }
-                    }
-                    if (implementation.mainClassInstance == null) {
-                        implementation.mainClassInstance =
-                                implementation.implementation.getDeclaredConstructor().newInstance();
-                    }
-                } catch (Exception e) {
-                    Logging.INSTANCE.error(
-                            "Cannot instantiate main class for function library " + ret.implementation().implementation.getCanonicalName() + ": " + e.getMessage());
-                    ret.error = true;
-                }
-            }
-        } else {
-
-            // analyze constructor
-            if (serviceInfo.isReentrant()) {
-                // create the instance just for this prototype
-                try {
-                    implementation.mainClassInstance = createGlobalClassInstance(ret);
-                } catch (Exception e) {
-                    ret.error = true;
-                }
-            } else {
-                try {
-                    implementation.constructor = implementation.implementation.getDeclaredConstructor(
-                            getParameterClasses(serviceInfo, ret));
-                    ret.methodCall = 1;
-                } catch (NoSuchMethodException | SecurityException e) {
-                    // move along
-                }
-                if (implementation.constructor == null) {
-                    try {
-                        implementation.constructor = implementation.implementation.getDeclaredConstructor(
-                                getParameterClasses(serviceInfo, ret));
-                        ret.methodCall = 2;
-                    } catch (NoSuchMethodException | SecurityException e) {
-                        // move along
-                    }
-                }
-                if (implementation.constructor == null) {
-                    ret.methodCall = 3;
-                }
-            }
-
-        }
-
-        return ret;
-    }
-
-    /**
-     * Return the default parameterization for functions and constructors according to function type and
-     * allowed "style".
-     *
-     * @param serviceInfo
-     * @param functionDescriptor
-     * @return
-     */
-    private Class<?>[] getParameterClasses(ServiceInfo serviceInfo, FunctionDescriptor functionDescriptor) {
-        switch (serviceInfo.getFunctionType()) {
-            case ANNOTATION:
-                break;
-            case FUNCTION:
-                if (functionDescriptor.implementation().constructor != null) {
-                    // TODO check: using the last constructor with parameters, or the empty constructor if
-                    //  found.
-                    Class<?> cls = functionDescriptor.implementation().implementation;
-                    if (cls == null) {
-                        throw new KlabIllegalStateException(
-                                "no declared executor class for service " + serviceInfo.getName() + ": " +
-                                        "constructor can't be extracted");
-                    }
-                    Class[] ret = null;
-                    for (Constructor<?> constructor : cls.getConstructors()) {
-                        if (ret == null || ret.length == 0) {
-                            ret = constructor.getParameterTypes();
-                        }
-                    }
-                    if (ret == null) {
-                        throw new KlabIllegalStateException(
-                                "no usable constructor for service " + serviceInfo.getName() + " served by "
-                                        + "class " + cls.getCanonicalName());
-                    }
-                    return ret;
-
-                } else {
-                    //                    if (callMethod == 1) {
-                    //                        return new Class[]{ServiceCall.class, Scope.class,
-                    //                        ServiceInfo.class};
-                    //                    } else if (callMethod == 2) {
-                    //                        return new Class[]{ServiceCall.class, Scope.class};
-                    //                    }
-                }
-
-                break;
-            case VERB:
-                break;
-        }
-        throw new KlabIllegalArgumentException("can't assess parameter types for " + serviceInfo.getName());
-    }
-
-    private Object createGlobalClassInstance(FunctionDescriptor ret) {
-        try {
-            Object instance = this.globalInstances.get(ret.implementation().implementation);
-            if (instance == null) {
-                // look for a constructor we know what to do with. If we are a service, we can first try
-                // with a constructor that takes it.
-                if (ServiceConfiguration.INSTANCE.getMainService() != null) {
-
-                    var mainService = ServiceConfiguration.INSTANCE.getMainService();
-                    /*
-                    try first with the actual service class
-                     */
-                    try {
-                        instance = ret.implementation().implementation.getDeclaredConstructor(
-                                ServiceConfiguration.INSTANCE.getMainService().getClass()).newInstance(
-                                mainService);
-                    } catch (Throwable t) {
-                    }
-                    if (instance == null) {
-                        try {
-                            instance = ret.implementation().implementation.getDeclaredConstructor(
-                                    KlabService.class).newInstance(mainService);
-                        } catch (Throwable t) {
-                        }
-                    }
-                }
-                if (instance == null) {
-                    instance = ret.implementation().implementation.getDeclaredConstructor().newInstance();
-                }
-                this.globalInstances.put(ret.implementation().implementation, instance);
-            }
-            return instance;
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException |
-                 InvocationTargetException | NoSuchMethodException | SecurityException e) {
-            ret.error = true;
-            Logging.INSTANCE.error(
-                    "Cannot instantiate main class for function library " + ret.implementation().implementation.getCanonicalName() + ": " + e.getMessage());
-        }
-        return null;
-    }
-
-    private void registerAdapter(ResourceAdapter annotation, Class<?> cls, List<AdapterDescriptor> adapters) {
-
-        try {
-            var adapter = new AdapterImpl(cls, annotation);
-            this.adapters.put(adapter.getName(), adapter);
-        } catch (Throwable t) {
-            Logging.INSTANCE.error(t);
-        }
+    if (Utils.Maven.needsUpdate(
+        "org.integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT")) {
+      // shitdown
 
     }
 
-    /**
-     * Retrieve a component in a given version or the latest. TODO use this in other methods that use the
-     * logic.
-     *
-     * @param urn
-     * @param version
-     * @return
-     */
-    public ComponentDescriptor getComponent(String urn, Version version) {
+    initializeComponents(pluginPath);
+  }
 
-        ComponentDescriptor ret = null;
-        for (var component : components.get(urn)) {
-            if (version == null) {
-                if (ret == null || component.version.greater(ret.version)) {
-                    ret = component;
-                }
-            } else if (version.compatible(component.version)) {
-                ret = component;
-            }
-        }
-        return ret;
-
+  /**
+   * Call to initialize and use the plugin system. No plugins will be discovered unless this is
+   * called. This finds but does not load the configured plugins. Call this one at initialization.
+   *
+   * <p>TODO use the catalog and register components from Maven after update check
+   *
+   * @param pluginRoot
+   */
+  public void initializeComponents(File pluginRoot) {
+    this.componentManager = new DefaultPluginManager(pluginRoot.toPath());
+    this.componentManager.loadPlugins();
+    this.pluginPath = pluginRoot;
+    // TODO configuration
+    for (var wrapper : this.componentManager.getPlugins()) {
+      Plugin plugin = wrapper.getPlugin();
+      if (plugin instanceof KlabComponent component) {
+        registerComponent(component, null, null /* TODO */);
+      }
     }
 
-    /**
-     * Load any component in the passed resource set that is not already present.
-     *
-     * @param resourceSet
-     * @return
-     */
-    public boolean loadComponents(ResourceSet resourceSet, Scope scope) {
-
-        Set<String> available = new HashSet<>();
-        for (var result : resourceSet.getResults()) {
-            if (result.getKnowledgeClass() == KlabAsset.KnowledgeClass.COMPONENT) {
-                for (var existing : components.get(result.getResourceUrn())) {
-                    if (result.getResourceVersion() == null || existing.version().compatible(
-                            result.getResourceVersion())) {
-                        available.add(result.getResourceUrn());
-                    }
-                }
-            }
-        }
-
-        // if we get here, we need to retrieve and load the component
-        if (available.size() == resourceSet.getResults().size()) {
-            return true;
-        }
-
-        for (var result : resourceSet.getResults()) {
-
-            if (!available.contains(result.getResourceUrn())) {
-                // load from service
-                var service = scope.getService(result.getServiceId(), ResourcesService.class);
-                if (service == null) {
-                    return false;
-                }
-
-                final String mediaType = "application/java-archive";
-                var schemata = ResourceTransport.INSTANCE.findExportSchemata(
-                        KlabAsset.KnowledgeClass.COMPONENT, mediaType, service.capabilities(scope), scope);
-                if (schemata.isEmpty()) {
-                    throw new KlabAuthorizationException(
-                            "No authorized export schema with media type " + mediaType + " is available");
-                } else if (schemata.size() > 1) {
-                    scope.warn(
-                            "Ambiguous request: more than one export schema with " + "media type " + mediaType + " is available");
-                }
-
-
-                File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
-                try (var input = service.exportAsset(result.getResourceUrn(), schemata.getFirst(), mediaType,
-                                                     scope); var output = new FileOutputStream(plugin)) {
-                    IOUtils.copy(input, output);
-                    // give the OS time to react - found that often the file is truncated
-                    TimeUnit.SECONDS.sleep(2);
-                } catch (Exception e) {
-                    scope.error(e);
-                    return false;
-                }
-                installComponent(plugin, null, scope);
-            }
-
-        }
-
-        // hopefully this is OK with plugins that have started already
-        componentManager.startPlugins();
-
-        return true;
-    }
-
-    public void scanPackage(String[] internalPackages,
-                            Map<Class<? extends Annotation>, BiConsumer<Annotation, Class<?>>> annotationHandlers) {
-
-        try (ScanResult scanResult = new ClassGraph().enableAnnotationInfo().acceptPackages(
-                internalPackages).scan()) {
-            for (Class<? extends Annotation> ah : annotationHandlers.keySet()) {
-                for (ClassInfo routeClassInfo : scanResult.getClassesWithAnnotation(ah)) {
-                    try {
-                        Class<?> cls = Class.forName(routeClassInfo.getName());
-                        Annotation annotation = cls.getAnnotation(ah);
-                        if (annotation != null) {
-                            annotationHandlers.get(ah).accept(annotation, cls);
-                        }
-                    } catch (ClassNotFoundException e) {
-                        Logging.INSTANCE.error(e);
-                    }
-                }
-            }
-        }
-    }
-
-    public void scanPackage(KlabComponent component,
-                            Map<Class<? extends Annotation>, BiConsumer<Annotation, Class<?>>> annotationHandlers) {
-
-        try (ScanResult scanResult = new ClassGraph().enableAnnotationInfo().addClassLoader(
-                component.getWrapper().getPluginClassLoader()).acceptPackages(
-                component.getClass().getPackageName()).scan()) {
-            for (Class<? extends Annotation> ah : annotationHandlers.keySet()) {
-                for (ClassInfo routeClassInfo : scanResult.getClassesWithAnnotation(ah)) {
-                    try {
-                        Class<?> cls = Class.forName(routeClassInfo.getName(), false,
-                                                     component.getWrapper().getPluginClassLoader());
-                        Annotation annotation = cls.getAnnotation(ah);
-                        if (annotation != null) {
-                            annotationHandlers.get(ah).accept(annotation, cls);
-                        }
-                    } catch (ClassNotFoundException e) {
-                        Logging.INSTANCE.error(e);
-                    }
-                }
-            }
-        }
-    }
-
-    private ServiceInfoImpl createVerbPrototype(String namespacePrefix, Verb annotation) {
-        // TODO
-        return null;
-    }
-
-    private ServiceInfoImpl createContextualizerPrototype(String namespacePrefix, KlabFunction annotation) {
-
-        var ret = new ServiceInfoImpl();
-
-        ret.setName(namespacePrefix + annotation.name());
-        ret.setDescription(annotation.description());
-        ret.setFilter(annotation.filter());
-        ret.setGeometry(annotation.geometry().isEmpty() ? null : Geometry.create(annotation.geometry()));
-        ret.setLabel(annotation.dataflowLabel());
-        ret.setReentrant(annotation.reentrant());
-        ret.setFunctionType(ServiceInfo.FunctionType.FUNCTION);
-
-        for (Artifact.Type a : annotation.type()) {
-            ret.getType().add(a);
-        }
-
-        for (KlabFunction.Argument argument : annotation.parameters()) {
-            var arg = createArgument(argument);
-            ret.getArguments().put(arg.getName(), arg);
-        }
-        for (KlabFunction.Argument argument : annotation.exports()) {
-            var arg = createArgument(argument);
-            ret.getImports().add(arg);
-        }
-        for (KlabFunction.Argument argument : annotation.imports()) {
-            var arg = createArgument(argument);
-            ret.getExports().add(arg);
-        }
-
-        return ret;
-    }
-
-    private ServiceInfoImpl createPrototype(String namespacePrefix, KlabAnnotation annotation) {
-
-        var ret = new ServiceInfoImpl();
-
-        ret.setName(namespacePrefix + annotation.name());
-        ret.setDescription(annotation.description());
-        //        ret.setImplementation(clss);
-        //        ret.setExecutorMethod(method == null ? null : method.getName());
-        ret.setFunctionType(ServiceInfo.FunctionType.ANNOTATION);
-        for (KlabAsset.KnowledgeClass kcl : annotation.targets()) {
-            ret.getTargets().add(kcl);
-        }
-
-        for (KlabFunction.Argument argument : annotation.parameters()) {
-            var arg = createArgument(argument);
-            ret.getArguments().put(arg.getName(), arg);
-        }
-
-        return ret;
-    }
-
-    private ServiceInfoImpl createPrototype(String namespacePrefix, Exporter annotation) {
-
-        var ret = new ServiceInfoImpl();
-
-        ret.setName(namespacePrefix + annotation.schema());
-        ret.setDescription(annotation.description());
-        ret.setFunctionType(ServiceInfo.FunctionType.FREEFORM);
-        ret.getTargets().add(annotation.knowledgeClass());
-        if (annotation.mediaType() != null) {
-            ret.getMediaTypes().add(annotation.mediaType());
-        }
-
-        for (KlabFunction.Argument argument : annotation.properties()) {
-            var arg = createArgument(argument);
-            ret.getArguments().put(arg.getName(), arg);
-        }
-
-        /*
-        TODO create the records in ResourceTransport!
-         */
-
-        return ret;
-    }
-
-    private ServiceInfoImpl createPrototype(String namespacePrefix, Importer annotation) {
-
-        var ret = new ServiceInfoImpl();
-
-        ret.setName(namespacePrefix + annotation.schema());
-        ret.setDescription(annotation.description());
-        ret.setFunctionType(ServiceInfo.FunctionType.FREEFORM);
-        ret.getTargets().add(annotation.knowledgeClass());
-        if (annotation.mediaType() != null) {
-            ret.getMediaTypes().add(annotation.mediaType());
-        }
-        for (KlabFunction.Argument argument : annotation.properties()) {
-            var arg = createArgument(argument);
-            ret.getArguments().put(arg.getName(), arg);
-        }
-
-        /*
-        TODO create the records in ResourceTransport!
-         */
-
-        return ret;
-    }
-
-    private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Argument argument) {
-        var arg = new ServiceInfoImpl.ArgumentImpl();
-        arg.setName(argument.name());
-        arg.setDescription(argument.description());
-        arg.setOptional(argument.optional());
-        arg.setConst(argument.constant());
-        arg.setArtifact(argument.artifact());
-        for (Artifact.Type a : argument.type()) {
-            arg.getType().add(a);
-        }
-
-        return arg;
-    }
-
-    public void loadExtensions(String... packageName) {
-
-        var libraries = new ArrayList<LibraryDescriptor>();
-        var adapters = new ArrayList<AdapterDescriptor>();
-
-        scanPackage(packageName, Map.of(Library.class,
-                                        (annotation, cls) -> registerLibrary((Library) annotation, cls,
-                                                                             libraries),
-                                        ResourceAdapter.class,
-                                        (annotation, cls) -> registerAdapter((ResourceAdapter) annotation,
-                                                                             cls, adapters)));
-
-        localComponentDescriptor.libraries.addAll(libraries);
-        localComponentDescriptor.adapters.addAll(adapters);
-
-        this.components.put(LOCAL_SERVICE_COMPONENT, localComponentDescriptor);
-
-        // update catalog
-        for (var library : localComponentDescriptor.libraries) {
-            for (var service : library.services) {
-                serviceFinder.put(service.getFirst().getName(), localComponentDescriptor);
-                localComponentDescriptor.services().put(service.getFirst().getName(), service.getSecond());
-            }
-            for (var service : library.annotations) {
-                annotationFinder.put(service.getFirst().getName(), localComponentDescriptor);
-                localComponentDescriptor.annotations().put(service.getFirst().getName(), service.getSecond());
-            }
-            for (var service : library.verbs) {
-                verbFinder.put(service.getFirst().getName(), localComponentDescriptor);
-                localComponentDescriptor.verbs().put(service.getFirst().getName(), service.getSecond());
-            }
-        }
-
-    }
-
-    /**
-     * Use this call for the "master" service that installs components based on configuration.
-     *
-     * @param configuration
-     * @param pluginPath
-     */
-    public void initializeComponents(ResourcesConfiguration configuration, File pluginPath) {
-
-        /*
-        TODO check all existing resources against the configuration; retrieve whatever needs updating;
-         remove anything not configured or deprecated; check integrity and certification for all components
-          before loading them.
-         */
-        if (Utils.Maven.needsUpdate("org.integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT")) {
-            // shitdown
-
-        }
-
-        initializeComponents(pluginPath);
-    }
-
-    /**
-     * Call to initialize and use the plugin system. No plugins will be discovered unless this is called. This
-     * finds but does not load the configured plugins. Call this one at initialization.
-     * <p>
-     * TODO use the catalog and register components from Maven after update check
-     *
-     * @param pluginRoot
-     */
-    public void initializeComponents(File pluginRoot) {
-        this.componentManager = new DefaultPluginManager(pluginRoot.toPath());
-        this.componentManager.loadPlugins();
-        this.pluginPath = pluginRoot;
-        // TODO configuration
-        for (var wrapper : this.componentManager.getPlugins()) {
-            Plugin plugin = wrapper.getPlugin();
-            if (plugin instanceof KlabComponent component) {
-                registerComponent(component, null, null /* TODO */);
-            }
-        }
-
-        this.componentManager.addPluginStateListener(new PluginStateListener() {
-            @Override
-            public void pluginStateChanged(PluginStateEvent event) {
-                System.out.println("HOLA! Plugin state: " + event);
-            }
+    this.componentManager.addPluginStateListener(
+        new PluginStateListener() {
+          @Override
+          public void pluginStateChanged(PluginStateEvent event) {
+            System.out.println("HOLA! Plugin state: " + event);
+          }
         });
+  }
+
+  public class AdapterImpl implements Adapter {
+
+    private String name;
+    private Artifact.Type resourceType;
+    private Version version;
+    boolean universal;
+    boolean threadSafe;
+    Class<?> implementationClass;
+    Object implementation;
+
+    private ServiceImplementation typeAttributor;
+    private ServiceImplementation encoder;
+    private ServiceImplementation contextualizer;
+    private ServiceImplementation validator;
+    private ServiceImplementation inspector;
+    private ServiceImplementation sanitizer;
+    private ServiceImplementation publisher;
+
+    public AdapterImpl(Class<?> implementationClass, ResourceAdapter annotation) {
+      this.name = annotation.name();
+      this.version = Version.create(annotation.version());
+      this.universal = annotation.universal();
+      this.threadSafe = annotation.threadSafe();
+      this.implementationClass = implementationClass;
+      if (this.threadSafe) {
+        try {
+          this.implementation = implementationClass.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+          throw new KlabInternalErrorException(
+              name + ": thread safe adapters must have a single no-argument constructor");
+        }
+      }
+      scanAdapterClass(implementationClass);
     }
 
-
-    public class AdapterImpl implements Adapter {
-
-        private String name;
-        private Artifact.Type resourceType;
-        private Version version;
-        boolean universal;
-        boolean threadSafe;
-        Class<?> implementationClass;
-        Object implementation;
-
-        private ServiceImplementation typeAttributor;
-        private ServiceImplementation encoder;
-        private ServiceImplementation contextualizer;
-        private ServiceImplementation validator;
-        private ServiceImplementation inspector;
-        private ServiceImplementation sanitizer;
-        private ServiceImplementation publisher;
-
-        public AdapterImpl(Class<?> implementationClass, ResourceAdapter annotation) {
-            this.name = annotation.name();
-            this.version = Version.create(annotation.version());
-            this.universal = annotation.universal();
-            this.threadSafe = annotation.threadSafe();
-            this.implementationClass = implementationClass;
-            if (this.threadSafe) {
-                try {
-                    this.implementation = implementationClass.getDeclaredConstructor().newInstance();
-                } catch (Exception e) {
-                    throw new KlabInternalErrorException(
-                            name + ": thread safe adapters must have a single no-argument constructor");
-                }
-            }
-            scanAdapterClass(implementationClass);
-        }
-
-        @Override
-        public String getName() {
-            return this.name;
-        }
-
-        @Override
-        public Artifact.Type resourceType(Urn urn) {
-            if (typeAttributor != null) {
-                // TODO
-            }
-            return this.resourceType;
-        }
-
-        @Override
-        public Version getVersion() {
-            return this.version;
-        }
-
-        @Override
-        public boolean hasContextualizer() {
-            return contextualizer != null;
-        }
-
-        @Override
-        public boolean hasInspector() {
-            return inspector != null;
-        }
-
-        @Override
-        public boolean hasValidator() {
-            return validator != null;
-        }
-
-        @Override
-        public boolean hasSanitizer() {
-            return sanitizer != null;
-        }
-
-        @Override
-        public boolean hasPublisher() {
-            return publisher != null;
-        }
-
-        @Override
-        public Resource contextualize(Resource resource, ContextScope scope, Object... contextParameters) {
-            if (contextualizer != null) {
-                // TODO
-            }
-            return resource;
-        }
-
-        @Override
-        public Data encode(Resource resource, Geometry geometry, Object... contextParameters) {
-
-            // TODO use the reference implementation if adapter allows; otherwise create an implementation for
-            //  this request
-
-            // TODO contextualize the resource to the geometry if needed by the adapter implementation
-
-            return Data.empty("Unimplemented, zio can");
-        }
-
-        private void scanAdapterClass(Class<?> adapterClass) {
-
-            // annotated methods
-            for (Method method : adapterClass.getDeclaredMethods()) {
-
-                if (Modifier.isPublic(method.getModifiers()) && method.isAnnotationPresent(
-                        ResourceAdapter.Encoder.class)) {
-
-                    this.encoder = createServiceImplementation(method, method.getAnnotation(
-                            ResourceAdapter.Encoder.class));
-
-                } else if (method.isAnnotationPresent(ResourceAdapter.Contextualizer.class)) {
-                    //                var serviceInfo = createAnnotationPrototype(namespacePrefix,
-                    //                                                            method.getAnnotation
-                    //                                                            (KlabAnnotation.class));
-                    //                annotations.add(Pair.of(serviceInfo, createFunctionDescriptor
-                    //                (serviceInfo, cls, method)));
-                    if (!Resource.class.isAssignableFrom(method.getReturnType())) {
-                        throw new KlabIllegalStateException(
-                                "Adapter methods annotated with @Contextualizer must return a Resource");
-                    }
-
-                    this.contextualizer = createServiceImplementation(method, method.getAnnotation(
-                            ResourceAdapter.Contextualizer.class));
-
-                } else if (method.isAnnotationPresent(ResourceAdapter.Inspector.class)) {
-                    this.inspector = createServiceImplementation(method, method.getAnnotation(
-                            ResourceAdapter.Inspector.class));
-                } else if (method.isAnnotationPresent(ResourceAdapter.Publisher.class)) {
-                    this.publisher = createServiceImplementation(method, method.getAnnotation(
-                            ResourceAdapter.Publisher.class));
-                } else if (method.isAnnotationPresent(ResourceAdapter.Sanitizer.class)) {
-                    this.sanitizer = createServiceImplementation(method, method.getAnnotation(
-                            ResourceAdapter.Sanitizer.class));
-                } else if (method.isAnnotationPresent(ResourceAdapter.Validator.class)) {
-                    this.validator = createServiceImplementation(method, method.getAnnotation(
-                            ResourceAdapter.Validator.class));
-                } else if (method.isAnnotationPresent(ResourceAdapter.Type.class)) {
-
-                    if (!Artifact.Type.class.isAssignableFrom(method.getReturnType())) {
-                        throw new KlabIllegalStateException(
-                                "Adapter methods annotated with @Type must return an Artifact.Type");
-                    }
-                    this.typeAttributor = createServiceImplementation(method, method.getAnnotation(
-                            ResourceAdapter.Type.class));
-
-                } else if (method.isAnnotationPresent(Importer.class)) {
-                    var serviceInfo = createPrototype(name, method.getAnnotation(Importer.class));
-                    var schema = ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
-                    schema.setAdapter(name);
-                    serviceImplementations.put(schema.getSchemaId(), createServiceImplementation(method,
-                                                                                                 method.getAnnotation(
-                                                                                                         Importer.class)));
-                } else if (method.isAnnotationPresent(Exporter.class)) {
-                    var serviceInfo = createPrototype(name, method.getAnnotation(Exporter.class));
-                    var schema = ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
-                    schema.setAdapter(name);
-                    serviceImplementations.put(schema.getSchemaId(), createServiceImplementation(method,
-                                                                                                 method.getAnnotation(
-                                                                                                         Exporter.class)));
-                }
-            }
-
-            if (this.encoder == null) {
-                throw new KlabIllegalStateException(
-                        "Cannot load adapter " + name + ": missing encoder method");
-            }
-            if ((this.resourceType == null || this.resourceType == Artifact.Type.VOID) && typeAttributor == null) {
-                throw new KlabIllegalStateException(
-                        "Cannot load adapter " + name + ": missing type attribution in annotation or " +
-                                "methods");
-            }
-        }
-
-        private ServiceImplementation createServiceImplementation(Method method, Annotation annotation) {
-            ServiceImplementation ret = new ServiceImplementation();
-            ret.method = method;
-            if (!Modifier.isStatic(method.getModifiers())) {
-                if (this.threadSafe) {
-                    ret.mainClassInstance = this.implementation;
-                } else {
-                    try {
-                        for (var constructor : this.getClass().getConstructors()) {
-                            if (ret.constructor != null) {
-                                throw new KlabIllegalStateException(
-                                        name + ": adapter classes can only have one constructor");
-                            }
-                            ret.constructor = constructor;
-                        }
-                    } catch (Exception e) {
-                        throw new KlabInternalErrorException(e);
-                    }
-                }
-            }
-            return ret;
-        }
+    @Override
+    public String getName() {
+      return this.name;
     }
 
+    @Override
+    public Artifact.Type resourceType(Urn urn) {
+      if (typeAttributor != null) {
+        // TODO
+      }
+      return this.resourceType;
+    }
+
+    @Override
+    public Version getVersion() {
+      return this.version;
+    }
+
+    @Override
+    public boolean hasContextualizer() {
+      return contextualizer != null;
+    }
+
+    @Override
+    public boolean hasInspector() {
+      return inspector != null;
+    }
+
+    @Override
+    public boolean hasValidator() {
+      return validator != null;
+    }
+
+    @Override
+    public boolean hasSanitizer() {
+      return sanitizer != null;
+    }
+
+    @Override
+    public boolean hasPublisher() {
+      return publisher != null;
+    }
+
+    @Override
+    public Resource contextualize(
+        Resource resource, ContextScope scope, Object... contextParameters) {
+      if (contextualizer != null) {
+        // TODO
+      }
+      return resource;
+    }
+
+    @Override
+    public Data encode(Resource resource, Geometry geometry, Object... contextParameters) {
+
+      // TODO use the reference implementation if adapter allows; otherwise create an implementation
+      // for
+      //  this request
+
+      // TODO contextualize the resource to the geometry if needed by the adapter implementation
+
+      return Data.empty("Unimplemented, zio can");
+    }
+
+    private void scanAdapterClass(Class<?> adapterClass) {
+
+      // annotated methods
+      for (Method method : adapterClass.getDeclaredMethods()) {
+
+        if (Modifier.isPublic(method.getModifiers())
+            && method.isAnnotationPresent(ResourceAdapter.Encoder.class)) {
+
+          this.encoder =
+              createServiceImplementation(
+                  method, method.getAnnotation(ResourceAdapter.Encoder.class));
+
+        } else if (method.isAnnotationPresent(ResourceAdapter.Contextualizer.class)) {
+          //                var serviceInfo = createAnnotationPrototype(namespacePrefix,
+          //                                                            method.getAnnotation
+          //                                                            (KlabAnnotation.class));
+          //                annotations.add(Pair.of(serviceInfo, createFunctionDescriptor
+          //                (serviceInfo, cls, method)));
+          if (!Resource.class.isAssignableFrom(method.getReturnType())) {
+            throw new KlabIllegalStateException(
+                "Adapter methods annotated with @Contextualizer must return a Resource");
+          }
+
+          this.contextualizer =
+              createServiceImplementation(
+                  method, method.getAnnotation(ResourceAdapter.Contextualizer.class));
+
+        } else if (method.isAnnotationPresent(ResourceAdapter.Inspector.class)) {
+          this.inspector =
+              createServiceImplementation(
+                  method, method.getAnnotation(ResourceAdapter.Inspector.class));
+        } else if (method.isAnnotationPresent(ResourceAdapter.Publisher.class)) {
+          this.publisher =
+              createServiceImplementation(
+                  method, method.getAnnotation(ResourceAdapter.Publisher.class));
+        } else if (method.isAnnotationPresent(ResourceAdapter.Sanitizer.class)) {
+          this.sanitizer =
+              createServiceImplementation(
+                  method, method.getAnnotation(ResourceAdapter.Sanitizer.class));
+        } else if (method.isAnnotationPresent(ResourceAdapter.Validator.class)) {
+          this.validator =
+              createServiceImplementation(
+                  method, method.getAnnotation(ResourceAdapter.Validator.class));
+        } else if (method.isAnnotationPresent(ResourceAdapter.Type.class)) {
+
+          if (!Artifact.Type.class.isAssignableFrom(method.getReturnType())) {
+            throw new KlabIllegalStateException(
+                "Adapter methods annotated with @Type must return an Artifact.Type");
+          }
+          this.typeAttributor =
+              createServiceImplementation(method, method.getAnnotation(ResourceAdapter.Type.class));
+
+        } else if (method.isAnnotationPresent(Importer.class)) {
+          var serviceInfo = createPrototype(name, method.getAnnotation(Importer.class));
+          var schema = ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
+          schema.setAdapter(name);
+          serviceImplementations.put(
+              schema.getSchemaId(),
+              createServiceImplementation(method, method.getAnnotation(Importer.class)));
+        } else if (method.isAnnotationPresent(Exporter.class)) {
+          var serviceInfo = createPrototype(name, method.getAnnotation(Exporter.class));
+          var schema = ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
+          schema.setAdapter(name);
+          serviceImplementations.put(
+              schema.getSchemaId(),
+              createServiceImplementation(method, method.getAnnotation(Exporter.class)));
+        }
+      }
+
+      if (this.encoder == null) {
+        throw new KlabIllegalStateException(
+            "Cannot load adapter " + name + ": missing encoder method");
+      }
+      if ((this.resourceType == null || this.resourceType == Artifact.Type.VOID)
+          && typeAttributor == null) {
+        throw new KlabIllegalStateException(
+            "Cannot load adapter "
+                + name
+                + ": missing type attribution in annotation or "
+                + "methods");
+      }
+    }
+
+    private ServiceImplementation createServiceImplementation(
+        Method method, Annotation annotation) {
+      ServiceImplementation ret = new ServiceImplementation();
+      ret.method = method;
+      if (!Modifier.isStatic(method.getModifiers())) {
+        if (this.threadSafe) {
+          ret.mainClassInstance = this.implementation;
+        } else {
+          try {
+            for (var constructor : this.getClass().getConstructors()) {
+              if (ret.constructor != null) {
+                throw new KlabIllegalStateException(
+                    name + ": adapter classes can only have one constructor");
+              }
+              ret.constructor = constructor;
+            }
+          } catch (Exception e) {
+            throw new KlabInternalErrorException(e);
+          }
+        }
+      }
+      return ret;
+    }
+  }
 }

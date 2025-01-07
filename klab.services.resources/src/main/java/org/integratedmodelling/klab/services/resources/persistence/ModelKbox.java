@@ -790,8 +790,8 @@ public class ModelKbox extends ObservableKbox {
     boolean isTemporal = false;
     String enumeratedSpaceDomain = null;
     String enumeratedSpaceLocation = null;
-    Project project = resourceService.resolveProject(model.getProjectName(), scope);
-    KimNamespace namespace = resourceService.resolveNamespace(model.getNamespace(), scope);
+    Project project = resourceService.retrieveProject(model.getProjectName(), scope);
+    KimNamespace namespace = resourceService.retrieveNamespace(model.getNamespace(), scope);
 
     if (scale != null) {
 
