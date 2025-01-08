@@ -35,7 +35,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
   private KimClassification classification;
   private KimLookupTable lookupTable;
   private String accordingTo;
-  private List<Urn> resourceUrns = new ArrayList<>();
+  private List<String> resourceUrns = new ArrayList<>();
   private Collection<Pair<String, Artifact.Type>> inputs;
   private Parameters<String> parameters = Parameters.create();
   private Collection<String> interactiveParameters = new ArrayList<>();
@@ -55,7 +55,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     this.serviceCall = serviceCall;
   }
 
-  public ContextualizableImpl(List<Urn> resourceUrns) {
+  public ContextualizableImpl(List<String> resourceUrns) {
     this.resourceUrns.addAll(resourceUrns);
   }
 
@@ -119,7 +119,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
   }
 
   @Override
-  public List<Urn> getResourceUrns() {
+  public List<String> getResourceUrns() {
     return this.resourceUrns;
   }
 
@@ -217,7 +217,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     this.accordingTo = accordingTo;
   }
 
-  public void setResourceUrns(List<Urn> resourceUrns) {
+  public void setResourceUrns(List<String> resourceUrns) {
     this.resourceUrns = resourceUrns;
   }
 

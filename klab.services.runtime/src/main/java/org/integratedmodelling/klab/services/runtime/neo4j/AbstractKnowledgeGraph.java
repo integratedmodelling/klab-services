@@ -162,7 +162,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("type", activity.getType().name());
           ret.put("name", activity.getName());
           ret.put("id", activity.getId());
-          ret.put("serviceId", activity.getServiceId());
+          ret.put("urn", activity.getUrn());
           ret.put("observationUrn", activity.getObservationUrn());
           ret.put("serviceName", activity.getServiceName());
           ret.put(
@@ -185,5 +185,11 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     }
 
     return Utils.Maps.removeNullValues(ret);
+  }
+
+  public void indexObservation(Observation observation) {
+    // TODO spawn a thread to finalize the storage for a successful contextualization without
+    //  interrupting a running dataflow.
+    System.out.println("FINALIZING " + observation);
   }
 }

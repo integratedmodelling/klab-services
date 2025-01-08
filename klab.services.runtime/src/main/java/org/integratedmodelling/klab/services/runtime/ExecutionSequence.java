@@ -8,10 +8,12 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
@@ -21,15 +23,18 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.storage.BooleanStorage;
 import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
 import org.integratedmodelling.klab.runtime.storage.FloatStorage;
 import org.integratedmodelling.klab.runtime.storage.KeyedStorage;
+import org.integratedmodelling.klab.services.runtime.neo4j.AbstractKnowledgeGraph;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -37,6 +42,7 @@ import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.ojalgo.concurrent.Parallelism;
 
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -92,7 +98,11 @@ public class ExecutionSequence {
         current = new ArrayList<>();
       }
       currentGroup = pair.getSecond();
-      current.add(new ExecutorOperation(pair.getFirst()));
+      var operation = new ExecutorOperation(pair.getFirst());
+      if (!operation.isOperational()) {
+        return false;
+      }
+      current.add(operation);
     }
 
     if (current != null) {
@@ -123,7 +133,6 @@ public class ExecutionSequence {
       if (scope.getParallelism() == Parallelism.ONE) {
         for (var operation : operationGroup) {
           if (!operation.run()) {
-
             return false;
           }
         }
@@ -153,40 +162,81 @@ public class ExecutionSequence {
     private final Observation observation;
     protected List<Supplier<Boolean>> executors = new ArrayList<>();
     private boolean scalar;
+    private boolean operational;
     private KnowledgeGraph.Operation operation;
 
     public ExecutorOperation(Actuator actuator) {
       this.id = actuator.getId();
       this.operation = operations.get(actuator);
       this.observation = scope.getObservation(this.id);
-      compile(actuator);
+      this.operational = compile(actuator);
     }
 
-    private void compile(Actuator actuator) {
+    private boolean compile(Actuator actuator) {
 
       // TODO compile info for provenance from actuator
 
       ScalarMapper scalarMapper = null;
 
-      // TODO separate scalar calls into groups and compile them into one assembled functor
+      // each service call may produce one or more function descriptors
+      // separate scalar calls into groups and compile them into one assembled functor
       for (var call : actuator.getComputation()) {
+
+        Extensions.FunctionDescriptor currentDescriptor = null;
+
+        /*
+         * These will accumulate arguments that may be required by the invoked method
+         */
+        Resource resource = null;
+        Urn urn = null;
+        Expression expression = null;
+        LookupTable lookupTable = null;
 
         var preset = RuntimeService.CoreFunctor.classify(call);
         if (preset != null) {
+
+          /* Turn the call into the appropriate function descriptor for the actual call, provided by
+          the adapter or by the runtime. */
+
           switch (preset) {
-            case URN_RESOLVER -> {}
-            case URN_INSTANTIATOR -> {}
-            case EXPRESSION_RESOLVER -> {}
-            case LUT_RESOLVER -> {}
-            case CONSTANT_RESOLVER -> {}
+            case URN_RESOLVER, URN_INSTANTIATOR -> {
+              urn = Urn.of(call.getParameters().get("urn", String.class));
+              resource =
+                  scope.getService(ResourcesService.class).retrieveResource(urn.getUrn(), scope);
+              var adapter =
+                  componentRegistry.getAdapter(
+                      resource.getAdapterType(), Version.ANY_VERSION, scope);
+              currentDescriptor = adapter.getEncoder();
+            }
+            case EXPRESSION_RESOLVER -> {
+              System.out.println("RESOLVE THE FEKKIN' EXPRESSION " + call.getParameters());
+              // TODO compile the expression in scope, add the compiled Expression in either scalar mapper or
+              //  not
+            }
+            case LUT_RESOLVER -> {
+              // Parameter in dataflow should be URN of LUT + @version. If the LUT is inline in a
+              // model it should still have a URN (that of the model + "lut"?)
+              System.out.println("RESOLVE THE FEKKIN' LUT " + call.getParameters());
+            }
+            case CONSTANT_RESOLVER -> {
+              System.out.println("RESOLVE THE FEKKIN' CONSTANT " + call.getParameters());
+              // directly add a constant scalar mapper::run that returns the value and continue
+              // executors.add(whatever);
+              continue;
+            }
           }
+        } else {
+          // TODO this should return a list of candidates, to match based on the parameters. For
+          //  numeric there should be a float and double version.
+          currentDescriptor = componentRegistry.getFunctionDescriptor(call);
         }
 
-        // TODO this should return a list of candidates, to match based on the parameters. For
-        // numeric there
-        //  should be a float and double version.
-        var descriptor = componentRegistry.getFunctionDescriptor(call);
-        if (descriptor.serviceInfo.getGeometry().isScalar()) {
+        if (currentDescriptor == null) {
+          scope.error("Cannot compile executor for " + actuator);
+          return false;
+        }
+
+        if (currentDescriptor.serviceInfo.getGeometry().isScalar()) {
 
           if (scalarMapper == null) {
             scalarMapper = new ScalarMapper(observation, digitalTwin, scope);
@@ -197,9 +247,10 @@ public class ExecutionSequence {
            * whatever mapping strategy is configured in the scope, using a different class per
            * strategy.
            */
-          scalarMapper.add(call, descriptor);
+          scalarMapper.add(call, currentDescriptor);
 
           System.out.println("SCALAR");
+
         } else {
           if (scalarMapper != null) {
             // offload the scalar mapping to the executors
@@ -223,9 +274,9 @@ public class ExecutionSequence {
            * no available implementations remain.
            */
           List<Object> runArguments = new ArrayList<>();
-          if (componentRegistry.implementation(descriptor).method != null) {
+          if (componentRegistry.implementation(currentDescriptor).method != null) {
             for (var argument :
-                componentRegistry.implementation(descriptor).method.getParameterTypes()) {
+                componentRegistry.implementation(currentDescriptor).method.getParameterTypes()) {
               if (ContextScope.class.isAssignableFrom(argument)) {
                 // TODO consider wrapping into read-only delegating wrappers
                 runArguments.add(scope);
@@ -271,7 +322,15 @@ public class ExecutionSequence {
                 runArguments.add(scale.getSpace());
               } else if (Time.class.isAssignableFrom(argument)) {
                 runArguments.add(scale.getTime());
-              } else {
+              } else if (Resource.class.isAssignableFrom(argument) && resource != null) {
+                runArguments.add(resource);
+              } else if (Expression.class.isAssignableFrom(argument) && expression != null) {
+                runArguments.add(expression);
+              } else if (Urn.class.isAssignableFrom(argument) && urn != null) {
+                runArguments.add(urn);
+              } else if (LookupTable.class.isAssignableFrom(argument) && lookupTable != null) {
+                runArguments.add(lookupTable);
+              } else { // TODO add a Data builder!
                 scope.error(
                     "Cannot map argument of type "
                         + argument.getCanonicalName()
@@ -281,13 +340,14 @@ public class ExecutionSequence {
               }
             }
 
-            if (descriptor.staticMethod) {
+            if (currentDescriptor.staticMethod) {
+              Extensions.FunctionDescriptor finalDescriptor1 = currentDescriptor;
               executors.add(
                   () -> {
                     try {
                       var context =
                           componentRegistry
-                              .implementation(descriptor)
+                              .implementation(finalDescriptor1)
                               .method
                               .invoke(null, runArguments.toArray());
                       setExecutionContext(context == null ? observation : context);
@@ -298,16 +358,19 @@ public class ExecutionSequence {
                     }
                     return true;
                   });
-            } else if (componentRegistry.implementation(descriptor).mainClassInstance != null) {
+            } else if (componentRegistry.implementation(currentDescriptor).mainClassInstance
+                != null) {
+              Extensions.FunctionDescriptor finalDescriptor = currentDescriptor;
               executors.add(
                   () -> {
                     try {
                       var context =
                           componentRegistry
-                              .implementation(descriptor)
+                              .implementation(finalDescriptor)
                               .method
                               .invoke(
-                                  componentRegistry.implementation(descriptor).mainClassInstance,
+                                  componentRegistry.implementation(finalDescriptor)
+                                      .mainClassInstance,
                                   runArguments.toArray());
                       setExecutionContext(context == null ? observation : context);
                       return true;
@@ -325,6 +388,8 @@ public class ExecutionSequence {
       if (scalarMapper != null) {
         executors.add(scalarMapper::run);
       }
+
+      return true;
     }
 
     public boolean run() {
@@ -344,9 +409,17 @@ public class ExecutionSequence {
 
       if (operation != null) {
         operation.success(scope, observation, resolvedCoverage);
+        if (scope.getDigitalTwin().knowledgeGraph()
+            instanceof AbstractKnowledgeGraph knowledgeGraph) {
+          knowledgeGraph.indexObservation(observation);
+        }
       }
 
       return true;
+    }
+
+    public boolean isOperational() {
+      return operational;
     }
   }
 

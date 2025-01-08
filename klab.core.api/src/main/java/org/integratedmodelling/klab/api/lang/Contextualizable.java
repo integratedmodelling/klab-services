@@ -362,15 +362,16 @@ public interface Contextualizable extends KlabStatement {
    *
    * @return the urn
    */
-  List<Urn> getResourceUrns();
+  List<String> getResourceUrns();
 
-//  /**
-//   * Contextualization requires a trip back to the resolver to resolve a contextualization strategy
-//   * in the current contextualization context.
-//   *
-//   * @return
-//   */
-//  ObservationStrategy getObservationStrategy();
+  //  /**
+  //   * Contextualization requires a trip back to the resolver to resolve a contextualization
+  // strategy
+  //   * in the current contextualization context.
+  //   *
+  //   * @return
+  //   */
+  //  ObservationStrategy getObservationStrategy();
 
   /**
    * Resources such as expressions or URN-specified remote computations may have requirements that

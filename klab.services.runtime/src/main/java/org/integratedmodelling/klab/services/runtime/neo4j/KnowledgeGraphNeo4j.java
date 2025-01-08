@@ -611,6 +611,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             node.get("serviceType").isNull()
                 ? null
                 : KlabService.Type.valueOf(node.get("serviceType").asString()));
+        instance.setUrn(node.get("urn").isNull() ? null : node.get("urn").asString());
         instance.setDataflow(
             node.get("dataflow").isNull() ? null : node.get("dataflow").asString());
         instance.setType(Activity.Type.valueOf(instance.getName()));

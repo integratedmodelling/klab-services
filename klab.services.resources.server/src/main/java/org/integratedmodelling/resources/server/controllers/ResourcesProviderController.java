@@ -194,14 +194,11 @@ public class ResourcesProviderController {
    */
   @GetMapping(ServicesAPI.RESOURCES.RESOLVE_RESOURCE)
   public @ResponseBody ResourceSet resolveResource(
-      @PathVariable("urn") String urn,
-      @PathVariable("version") String version,
-      Principal principal) {
-    var tUrn = Urn.of(urn);
+      @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
         .resolveResource(
-            tUrn.getUrn(),
+            urn,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
                 : null);

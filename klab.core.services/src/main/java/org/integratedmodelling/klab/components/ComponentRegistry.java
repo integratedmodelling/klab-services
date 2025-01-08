@@ -1019,13 +1019,13 @@ public class ComponentRegistry {
     Object implementation;
     Set<ResourceAdapter.Validator.LifecyclePhase> validationPhases =
         EnumSet.noneOf(ResourceAdapter.Validator.LifecyclePhase.class);
-    private ServiceImplementation typeAttributor;
-    private ServiceImplementation encoder;
-    private ServiceImplementation contextualizer;
-    private ServiceImplementation validator;
-    private ServiceImplementation inspector;
-    private ServiceImplementation sanitizer;
-    private ServiceImplementation publisher;
+    private Extensions.FunctionDescriptor typeAttributor;
+    private Extensions.FunctionDescriptor encoder;
+    private Extensions.FunctionDescriptor contextualizer;
+    private Extensions.FunctionDescriptor validator;
+    private Extensions.FunctionDescriptor inspector;
+    private Extensions.FunctionDescriptor sanitizer;
+    private Extensions.FunctionDescriptor publisher;
     private final Extensions.AdapterDescriptor adapterInfo;
 
     public AdapterImpl(Class<?> implementationClass, ResourceAdapter annotation) {
@@ -1089,6 +1089,36 @@ public class ComponentRegistry {
     }
 
     @Override
+    public Extensions.FunctionDescriptor getEncoder() {
+      return this.encoder;
+    }
+
+    @Override
+    public Extensions.FunctionDescriptor getInspector() {
+      return this.inspector;
+    }
+
+    @Override
+    public Extensions.FunctionDescriptor getContextualizer() {
+      return this.contextualizer;
+    }
+
+    @Override
+    public Extensions.FunctionDescriptor getPublisher() {
+      return this.publisher;
+    }
+
+    @Override
+    public Extensions.FunctionDescriptor getSanitizer() {
+      return this.sanitizer;
+    }
+
+    @Override
+    public Extensions.FunctionDescriptor getValidator() {
+      return this.validator;
+    }
+
+    @Override
     public Resource contextualize(
         Resource resource, ContextScope scope, Object... contextParameters) {
       if (contextualizer != null) {
@@ -1123,43 +1153,57 @@ public class ComponentRegistry {
       // annotated methods
       for (Method method : adapterClass.getDeclaredMethods()) {
 
-        if (Modifier.isPublic(method.getModifiers())
-            && method.isAnnotationPresent(ResourceAdapter.Encoder.class)) {
-
-          this.encoder =
+        if (method.isAnnotationPresent(ResourceAdapter.Encoder.class)) {
+          var funcData =
               createServiceImplementation(
                   method, method.getAnnotation(ResourceAdapter.Encoder.class));
+          serviceImplementations.put(
+              funcData.getFirst().serviceInfo.getName(), funcData.getSecond());
+          this.encoder = funcData.getFirst();
 
         } else if (method.isAnnotationPresent(ResourceAdapter.Contextualizer.class)) {
-          //                var serviceInfo = createAnnotationPrototype(namespacePrefix,
-          //                                                            method.getAnnotation
-          //                                                            (KlabAnnotation.class));
-          //                annotations.add(Pair.of(serviceInfo, createFunctionDescriptor
-          //                (serviceInfo, cls, method)));
+
           if (!Resource.class.isAssignableFrom(method.getReturnType())) {
             throw new KlabIllegalStateException(
                 "Adapter methods annotated with @Contextualizer must return a Resource");
           }
 
-          this.contextualizer =
+          var funcData =
               createServiceImplementation(
-                  method, method.getAnnotation(ResourceAdapter.Contextualizer.class));
+                  method, method.getAnnotation(ResourceAdapter.Validator.class));
+          serviceImplementations.put(
+              funcData.getFirst().serviceInfo.getName(), funcData.getSecond());
+          this.contextualizer = funcData.getFirst();
 
         } else if (method.isAnnotationPresent(ResourceAdapter.Inspector.class)) {
-          this.inspector =
+          var funcData =
               createServiceImplementation(
                   method, method.getAnnotation(ResourceAdapter.Inspector.class));
+          serviceImplementations.put(
+              funcData.getFirst().serviceInfo.getName(), funcData.getSecond());
+          this.inspector = funcData.getFirst();
         } else if (method.isAnnotationPresent(ResourceAdapter.Publisher.class)) {
-          this.publisher =
+          var funcData =
               createServiceImplementation(
                   method, method.getAnnotation(ResourceAdapter.Publisher.class));
+          serviceImplementations.put(
+              funcData.getFirst().serviceInfo.getName(), funcData.getSecond());
+          this.publisher = funcData.getFirst();
         } else if (method.isAnnotationPresent(ResourceAdapter.Sanitizer.class)) {
-          this.sanitizer =
+          var funcData =
               createServiceImplementation(
                   method, method.getAnnotation(ResourceAdapter.Sanitizer.class));
+          serviceImplementations.put(
+              funcData.getFirst().serviceInfo.getName(), funcData.getSecond());
+          this.sanitizer = funcData.getFirst();
         } else if (method.isAnnotationPresent(ResourceAdapter.Validator.class)) {
           var a = method.getAnnotation(ResourceAdapter.Validator.class);
-          this.validator = createServiceImplementation(method, a);
+          var funcData =
+              createServiceImplementation(
+                  method, method.getAnnotation(ResourceAdapter.Validator.class));
+          serviceImplementations.put(
+              funcData.getFirst().serviceInfo.getName(), funcData.getSecond());
+          this.validator = funcData.getFirst();
           validations.addAll(Arrays.asList(a.phase()));
         } else if (method.isAnnotationPresent(ResourceAdapter.Type.class)) {
 
@@ -1167,8 +1211,11 @@ public class ComponentRegistry {
             throw new KlabIllegalStateException(
                 "Adapter methods annotated with @Type must return an Artifact.Type");
           }
-          this.typeAttributor =
+          var funcData =
               createServiceImplementation(method, method.getAnnotation(ResourceAdapter.Type.class));
+          serviceImplementations.put(
+              funcData.getFirst().serviceInfo.getName(), funcData.getSecond());
+          this.typeAttributor = funcData.getFirst();
 
         } else if (method.isAnnotationPresent(Importer.class)) {
           var serviceInfo = createPrototype(name, method.getAnnotation(Importer.class));
@@ -1177,7 +1224,8 @@ public class ComponentRegistry {
           importSchemata.add(schema);
           serviceImplementations.put(
               schema.getSchemaId(),
-              createServiceImplementation(method, method.getAnnotation(Importer.class)));
+              createServiceImplementation(method, method.getAnnotation(Importer.class))
+                  .getSecond());
         } else if (method.isAnnotationPresent(Exporter.class)) {
           var serviceInfo = createPrototype(name, method.getAnnotation(Exporter.class));
           var schema = ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
@@ -1185,7 +1233,8 @@ public class ComponentRegistry {
           exportSchemata.add(schema);
           serviceImplementations.put(
               schema.getSchemaId(),
-              createServiceImplementation(method, method.getAnnotation(Exporter.class)));
+              createServiceImplementation(method, method.getAnnotation(Exporter.class))
+                  .getSecond());
         }
       }
 
@@ -1216,28 +1265,38 @@ public class ComponentRegistry {
           exportSchemata);
     }
 
-    private ServiceImplementation createServiceImplementation(
+    private Pair<Extensions.FunctionDescriptor, ServiceImplementation> createServiceImplementation(
         Method method, Annotation annotation) {
-      ServiceImplementation ret = new ServiceImplementation();
-      ret.method = method;
+      ServiceImplementation impl = new ServiceImplementation();
+      impl.method = method;
       if (!Modifier.isStatic(method.getModifiers())) {
         if (this.threadSafe) {
-          ret.mainClassInstance = this.implementation;
+          impl.mainClassInstance = this.implementation;
         } else {
           try {
             for (var constructor : this.getClass().getConstructors()) {
-              if (ret.constructor != null) {
+              if (impl.constructor != null) {
                 throw new KlabIllegalStateException(
                     name + ": adapter classes can only have one constructor");
               }
-              ret.constructor = constructor;
+              impl.constructor = constructor;
             }
           } catch (Exception e) {
             throw new KlabInternalErrorException(e);
           }
         }
       }
-      return ret;
+
+      // function URN is non-conflicting with anything user-related and will be linked to
+      // the service implementation so it can be called as usual
+      String functionUrn = "ADAPTER." + name + "." + annotation.getClass().getCanonicalName();
+      var ret = new Extensions.FunctionDescriptor();
+      ret.methodCall = 3;
+      ret.staticMethod = Modifier.isStatic(method.getModifiers());
+      var serviceInfo = new ServiceInfoImpl();
+      serviceInfo.setName(functionUrn);
+      ret.serviceInfo = serviceInfo;
+      return Pair.of(ret, impl);
     }
   }
 }

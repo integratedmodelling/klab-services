@@ -181,10 +181,7 @@ public class ResolverService extends BaseService implements Resolver {
     // TODO use static builders for Contextualizable instead of polymorphic constructors
 
     if (!statement.getResourceUrns().isEmpty()) {
-      model
-          .getComputation()
-          .add(
-              new ContextualizableImpl(statement.getResourceUrns().stream().map(Urn::of).toList()));
+      model.getComputation().add(new ContextualizableImpl(statement.getResourceUrns()));
     }
 
     model.getComputation().addAll(statement.getContextualization());

@@ -16,10 +16,7 @@ import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -552,11 +549,11 @@ public class RuntimeService extends BaseService
       KnowledgeGraph.Operation contextualization) {
 
     /*
-    Load or confirm availability of all needed resources and create any non-existing observations
+    TODO Load or confirm availability of all needed resources and create any non-existing observations
      */
 
     /*
-    find contextualization scale and hook point into the DT from the scope
+    TODO find contextualization scale and hook point into the DT from the scope
      */
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
@@ -565,8 +562,15 @@ public class RuntimeService extends BaseService
         var executionSequence =
             new ExecutionSequence(
                 contextualization, dataflow, getComponentRegistry(), serviceContextScope);
-        executionSequence.compile(rootActuator);
-        if (!executionSequence.isEmpty()) {
+        var compiled = executionSequence.compile(rootActuator);
+        if (!compiled) {
+          contextualization.fail(
+              contextScope,
+              dataflow.getTarget(),
+              new KlabCompilationError(
+                  "Could not compile execution sequence for this target observation"));
+          return Observation.empty();
+        } else if (!executionSequence.isEmpty()) {
           if (!executionSequence.run()) {
             contextualization.fail(
                 contextScope, dataflow.getTarget(), executionSequence.getCause());
@@ -612,7 +616,7 @@ public class RuntimeService extends BaseService
     ResourceSet ret = new ResourceSet();
     // TODO FIXME USE ALL SERVICES
     var resourcesService = scope.getService(ResourcesService.class);
-    /**
+    /*
      * These are the contextualizables that need resolution at the runtime side, the others come
      * with their definition and are directly inserted in the dataflow
      */
@@ -643,10 +647,11 @@ public class RuntimeService extends BaseService
       for (var urn : contextualizable.getResourceUrns()) {
 
         // ensure resource or adapter is accessible
-        var resolution = resourcesService.resolveResource(urn.getUrn(), scope);
+        var resolution = resourcesService.resolveResource(urn, scope);
         if (resolution.isEmpty()) {
           return resolution;
         }
+        ret = Utils.Resources.merge(ret, resolution);
       }
     }
 
@@ -664,7 +669,7 @@ public class RuntimeService extends BaseService
       scope.close();
       return true;
     } catch (Throwable t) {
-      //
+      // shut up
     }
     return false;
   }
@@ -675,7 +680,7 @@ public class RuntimeService extends BaseService
       scope.close();
       return true;
     } catch (Throwable t) {
-      //
+      // shut up
     }
     return false;
   }

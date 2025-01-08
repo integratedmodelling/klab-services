@@ -427,6 +427,8 @@ public class ResourcesProvider extends BaseService
                   adapter.getVersion(),
                   KnowledgeClass.RESOURCE));
 
+      return ret;
+
     } else if (urn.isLocal()) {
 
       // must have project and be same user. Staging area is accessible.
