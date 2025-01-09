@@ -396,9 +396,24 @@ public abstract class ServiceInstance<T extends BaseService> {
       }
 
       if (okEssentials && okOperationals && !operationalized.get()) {
+
         setBusy(true);
         operationalized.set(true);
         klabService().setOperational(klabService().operationalizeService());
+
+        // register remote components and adapters with our component registry
+        for (var service : klabService().serviceScope().getServices(ResourcesService.class)) {
+          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+        }
+        for (var service : klabService().serviceScope().getServices(Reasoner.class)) {
+          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+        }
+        for (var service : klabService().serviceScope().getServices(Resolver.class)) {
+          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+        }
+        for (var service : klabService().serviceScope().getServices(RuntimeService.class)) {
+          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+        }
         setBusy(false);
       }
     } catch (Throwable t) {

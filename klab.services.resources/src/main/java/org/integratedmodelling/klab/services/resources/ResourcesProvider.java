@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -45,6 +46,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
+import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
@@ -361,11 +363,41 @@ public class ResourcesProvider extends BaseService
 
   @Override
   public Resource retrieveResource(List<String> urns, Scope scope) {
-    //    if (localResources.contains(Urn.removeParameters(urn))) {
-    //      // TODO
-    //    }
+    if (urns.size() > 1) {
+      // TODO find or cache a merged resource for these URNs with validation and shit
+      throw new KlabUnimplementedException("Multiple URNs in retrieveResource");
+    }
+    return retrieveResource(urns.getFirst(), scope);
+  }
+
+  private Resource retrieveResource(String urnId, Scope scope) {
+
+    var urn = Urn.of(urnId);
+
+    if (urn.isUniversal()) {
+      return createUniversalResource(urn, scope);
+    }
+
+    // TODO use kbox
     return null;
   }
+
+  private Resource createUniversalResource(Urn urn, Scope scope) {
+    var adapter = getComponentRegistry().getAdapter(urn.getCatalog(), urn.getVersion(), scope);
+    if (adapter == null) {
+      return null;
+    }
+    // TODO see if we need a resource builder within the adapter.
+    var ret = new ResourceImpl();
+    ret.setUrn(urn.getUrn());
+    ret.setAdapterType(urn.getCatalog());
+    ret.setVersion(adapter.getVersion());
+    ret.setServiceId(serviceId());
+    // TODO adapter must report the overall geometry, generally or on a URN basis
+    ret.setGeometry(Geometry.create("S2"));
+    return ret;
+  }
+
 
   @Override
   public Workspace retrieveWorkspace(String urn, Scope scope) {
@@ -479,7 +511,11 @@ public class ResourcesProvider extends BaseService
     if (adapter == null) {
       return Data.empty("Adapter " + resource.getAdapterType() + " not available");
     }
-    return adapter.encode(resource, geometry);
+    var builder = Data.builder();
+    if (!adapter.encode(resource, geometry, builder)) {
+      return Data.empty("Resource encoding failed");
+    }
+    return builder.build();
   }
 
   @Override

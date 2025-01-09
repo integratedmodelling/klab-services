@@ -1172,7 +1172,8 @@ public class ComponentRegistry {
     }
 
     @Override
-    public Data encode(Resource resource, Geometry geometry, Object... contextParameters) {
+    public boolean encode(
+        Resource resource, Geometry geometry, Data.Builder builder, Object... contextParameters) {
 
       // TODO use the reference implementation if adapter allows; otherwise create an implementation
       // for
@@ -1180,7 +1181,7 @@ public class ComponentRegistry {
 
       // TODO contextualize the resource to the geometry if needed by the adapter implementation
 
-      return Data.empty("Unimplemented, zio can");
+      return false;
     }
 
     private Extensions.AdapterDescriptor scanAdapterClass(Class<?> adapterClass) {

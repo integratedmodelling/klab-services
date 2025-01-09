@@ -151,11 +151,12 @@ public interface Adapter {
    *
    * @param resource
    * @param geometry
+   * @param builder
    * @param contextParameters anything else that is recognizable by its type and can be matched to
    *     the executor method. Normally includes context scope, service, URN or URN parameters,
    *     storage buffers (which may also determine the encoding type) and filling curves, semantics
    *     etc.
    * @return
    */
-  Data encode(Resource resource, Geometry geometry, Object... contextParameters);
+  boolean encode(Resource resource, Geometry geometry, Data.Builder builder, Object... contextParameters);
 }
