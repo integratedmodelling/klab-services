@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -360,9 +361,9 @@ public class ResourcesProvider extends BaseService
 
   @Override
   public Resource retrieveResource(List<String> urns, Scope scope) {
-//    if (localResources.contains(Urn.removeParameters(urn))) {
-//      // TODO
-//    }
+    //    if (localResources.contains(Urn.removeParameters(urn))) {
+    //      // TODO
+    //    }
     return null;
   }
 
@@ -410,6 +411,26 @@ public class ResourcesProvider extends BaseService
     return ResourceSet.empty(Notification.error("UNIMPLEMENTED"));
   }
 
+  @Override
+  public Resource contextualizeResource(Resource resource, Geometry geometry, Scope scope) {
+    var adapter =
+        getComponentRegistry()
+            .getAdapter(
+                resource.getAdapterType(), /* TODO needs adapter version */
+                Version.ANY_VERSION,
+                scope);
+    if (adapter == null) {
+      throw new KlabIllegalStateException(
+          "Cannot contextualize resource "
+              + resource.getUrn()
+              + ": unknown adapter "
+              + resource.getAdapterType());
+    }
+    return adapter.hasContextualizer()
+        ? adapter.contextualize(resource, scope, geometry)
+        : resource;
+  }
+
   private ResourceSet resolveResourceUrn(String urnId, Scope scope) {
 
     var urn = Urn.of(urnId);
@@ -419,7 +440,7 @@ public class ResourcesProvider extends BaseService
       var adapter = getComponentRegistry().getAdapter(urn.getCatalog(), Version.ANY_VERSION, scope);
       if (adapter == null) {
         return ResourceSet.empty(
-                Notification.error("No adapter available for " + urn.getCatalog()));
+            Notification.error("No adapter available for " + urn.getCatalog()));
       }
 
       var info = adapter.getAdapterInfo();
@@ -428,13 +449,13 @@ public class ResourcesProvider extends BaseService
       }
 
       ret.getResults()
-         .add(
-                 new ResourceSet.Resource(
-                         this.serviceId(),
-                         urn.getUrn(),
-                         null,
-                         adapter.getVersion(),
-                         KnowledgeClass.RESOURCE));
+          .add(
+              new ResourceSet.Resource(
+                  this.serviceId(),
+                  urn.getUrn(),
+                  null,
+                  adapter.getVersion(),
+                  KnowledgeClass.RESOURCE));
 
       return ret;
 

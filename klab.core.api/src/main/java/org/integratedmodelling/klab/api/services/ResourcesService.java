@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
+import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 
 import java.io.File;
 import java.net.URL;
@@ -220,6 +221,18 @@ public interface ResourcesService extends KlabService {
    * @return
    */
   ResourceSet resolveResource(List<String> urn, Scope scope);
+
+  /**
+   * Return a version of the passed resource that is primed to be used in the passed geometry. Not
+   * all adapters require this step before use; in this case the {@link
+   * Extensions.AdapterDescriptor#contextualizing()} relative to the adapter will return true.
+   *
+   * @param resource
+   * @param geometry
+   * @param scope
+   * @return
+   */
+  Resource contextualizeResource(Resource resource, Geometry geometry, Scope scope);
 
   /**
    * Inquire about resource availability for the passed urn and scope. Should work for all types of

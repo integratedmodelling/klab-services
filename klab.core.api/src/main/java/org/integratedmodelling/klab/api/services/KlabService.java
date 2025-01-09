@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.InputStream;
@@ -295,6 +296,8 @@ public interface KlabService extends Service {
          * @return the broker URL or null
          */
         URI getBrokerURI();
+
+        List<Extensions.ComponentDescriptor> getComponents();
     }
 
     /**

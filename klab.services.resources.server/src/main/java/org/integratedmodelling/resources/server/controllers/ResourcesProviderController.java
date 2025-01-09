@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
@@ -29,6 +30,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.common.data.DataImpl;
 import org.integratedmodelling.klab.common.data.DataRequest;
+import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
@@ -172,6 +174,23 @@ public class ResourcesProviderController {
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
                 : null);
+  }
+
+  @PostMapping(ServicesAPI.RESOURCES.CONTEXTUALIZE_RESOURCE)
+  public @ResponseBody Resource contextualizeResource(
+          @RequestBody ResourceContextualizationRequest request, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      return resourcesServer
+          .klabService()
+          .contextualizeResource(
+              resourcesServer
+                  .klabService()
+                  .retrieveResource(List.of(request.getUrn()), authorization.getScope()),
+              Geometry.create(request.getGeometry()),
+              authorization.getScope());
+    }
+    throw new KlabInternalErrorException("Resources service: unexpected authorization");
+
   }
 
   @PostMapping(ServicesAPI.RESOURCES.RESOLVE_RESOURCE)

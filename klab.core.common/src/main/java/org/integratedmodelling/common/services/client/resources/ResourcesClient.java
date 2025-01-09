@@ -34,11 +34,13 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.common.data.DataRequest;
+import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import javax.annotation.Nullable;
@@ -346,6 +348,22 @@ public class ResourcesClient extends ServiceClient
                     ServicesAPI.RESOURCES.RESOLVE_RESOURCE,
                     urns,
                     ResourceSet.class);
+  }
+
+  @Override
+  public Resource contextualizeResource(Resource resource, Geometry geometry, Scope scope) {
+
+    var request = new ResourceContextualizationRequest();
+
+    request.setUrn(resource.getUrn());
+    request.setGeometry(geometry.encode());
+
+    return client
+            .withScope(scope)
+            .post(
+                    ServicesAPI.RESOURCES.CONTEXTUALIZE_RESOURCE,
+                    resource,
+                    ResourceImpl.class);
   }
 
   @Override

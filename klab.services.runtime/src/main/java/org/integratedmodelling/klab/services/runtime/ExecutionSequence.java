@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -31,6 +32,8 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.integratedmodelling.klab.data.ClientResourceContextualizer;
+import org.integratedmodelling.klab.data.ServiceResourceContextualizer;
 import org.integratedmodelling.klab.runtime.storage.BooleanStorage;
 import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
 import org.integratedmodelling.klab.runtime.storage.FloatStorage;
@@ -199,21 +202,66 @@ public class ExecutionSequence {
           /* Turn the call into the appropriate function descriptor for the actual call, provided by
           the adapter or by the runtime. */
 
+          Resource finalResource = resource;
           switch (preset) {
             case URN_RESOLVER -> {
+
               var urns = call.getParameters().getList("urns", String.class);
-              resource =
-                  scope.getService(ResourcesService.class).retrieveResource(urns, scope);
+              // TODO use all services
+              resource = scope.getService(ResourcesService.class).retrieveResource(urns, scope);
+
+              /*
+              1. check if we have the adapter locally. If so we can use it directly.
+               */
               var adapter =
                   componentRegistry.getAdapter(
-                      resource.getAdapterType(), Version.ANY_VERSION, scope);
-              // TODO
-              if (adapter.hasContextualizer()) {
-                resource = adapter.contextualize(resource, scope);
+                      resource.getAdapterType(), /* TODO adapter version! */
+                      Version.ANY_VERSION,
+                      scope);
+              if (adapter != null) {
+
+                if (adapter.hasContextualizer()) {
+                  resource = adapter.contextualize(resource, scope, observation.getGeometry());
+                }
+
+                // enqueue data extraction from adapter method
+                final var contextualizer = new ServiceResourceContextualizer(adapter, resource);
+                executors.add(() -> contextualizer.contextualize(observation, scope));
+                continue;
+
+              } else {
+
+                /*
+                2. Use the adapter from the service that provides it.
+                 */
+
+                var service =
+                    scope.getServices(ResourcesService.class).stream()
+                        .filter(r -> r.serviceId().equals(finalResource.getServiceId()))
+                        .findFirst();
+
+                if (service.isEmpty()) {
+                  throw new KlabInternalErrorException("Illegal service ID in resource " + resource.getUrn());
+                }
+
+                var adapterInfo =
+                    componentRegistry.findAdapter(
+                        resource.getAdapterType(), /* TODO need the version in the resource */
+                        Version.ANY_VERSION);
+
+                // TODO validate type chain
+                if (adapterInfo.contextualizing()) {
+                  resource =
+                      service
+                          .get()
+                          .contextualizeResource(resource, observation.getGeometry(), scope);
+                }
+
+                // enqueue data extraction from service method
+                final var contextualizer = new ClientResourceContextualizer(service.get(), resource);
+                executors.add(() -> contextualizer.contextualize(observation, scope));
+                continue;
               }
-              urn = Urn.of(resource.getUrn());
-              // TODO set type for type chain validation
-              currentDescriptor = adapter.getEncoder();
             }
             case EXPRESSION_RESOLVER -> {
               System.out.println("RESOLVE THE FEKKIN' EXPRESSION " + call.getParameters());

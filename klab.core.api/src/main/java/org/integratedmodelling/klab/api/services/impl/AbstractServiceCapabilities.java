@@ -103,6 +103,7 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
     this.exportSchemata = exportSchemata;
   }
 
+  @Override
   public List<Extensions.ComponentDescriptor> getComponents() {
     return components;
   }

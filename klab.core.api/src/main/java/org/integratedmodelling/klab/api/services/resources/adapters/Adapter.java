@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 
 /**
@@ -142,7 +143,7 @@ public interface Adapter {
    * @param contextParameters
    * @return
    */
-  Resource contextualize(Resource resource, ContextScope scope, Object... contextParameters);
+  Resource contextualize(Resource resource, Scope scope, Object... contextParameters);
 
   /**
    * Extract the data. Resource must have been contextualized if {@link #hasContextualizer()}

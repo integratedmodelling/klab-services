@@ -102,6 +102,11 @@ public class ComponentRegistry {
       new HashSetValuedHashMap<>();
   private MultiValuedMap<String, Extensions.ComponentDescriptor> verbFinder =
       new HashSetValuedHashMap<>();
+  /*
+   * Adapter descriptors include those registered from other services.
+   */
+  private MultiValuedMap<String, Extensions.AdapterDescriptor> adapterDescriptorFinder =
+      new HashSetValuedHashMap<>();
   private Map<Class<?>, Object> globalInstances = new HashMap<>();
   private File catalogFile;
   private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
@@ -110,6 +115,19 @@ public class ComponentRegistry {
     readConfiguration(service, options);
     this.service = service;
     scheduler.scheduleAtFixedRate(() -> checkForUpdates(), 0, 5, TimeUnit.MINUTES);
+  }
+
+  /**
+   * Call passing the capabilities of any service whose components we want to index.
+   *
+   * @param capabilities
+   */
+  public void registerService(KlabService.ServiceCapabilities capabilities) {
+    for (var component : capabilities.getComponents()) {
+      for (var adapter : component.adapters()) {
+        this.adapterDescriptorFinder.put(adapter.name(), adapter);
+      }
+    }
   }
 
   private synchronized void checkForUpdates() {
@@ -524,6 +542,27 @@ public class ComponentRegistry {
     return ret;
   }
 
+  /**
+   * Find an adapter provided by one of the known services. The correct call sequence for this one
+   * passes the adapter ID from a resolved {@link Resource}, which guarantees that the adapter is
+   * available on the same service the resource comes from.
+   */
+  public Extensions.AdapterDescriptor findAdapter(String adapterId, Version version) {
+    // TODO handle permissions
+
+    return adapterDescriptorFinder.containsKey(adapterId)
+        ? /* TODO handle version */ adapterDescriptorFinder.get(adapterId).iterator().next()
+        : null;
+  }
+
+  /**
+   * Retrieve an adapter if any. Only works if the adapter is locally present.
+   *
+   * @param urn
+   * @param version
+   * @param scope
+   * @return
+   */
   public Adapter getAdapter(String urn, Version version, Scope scope) {
     // TODO handle permissions
 
@@ -650,6 +689,7 @@ public class ComponentRegistry {
     try {
       var adapter = new AdapterImpl(cls, annotation);
       this.adapters.put(adapter.getName(), adapter);
+      this.adapterDescriptorFinder.put(adapter.getName(), adapter.getAdapterInfo());
     } catch (Throwable t) {
       Logging.INSTANCE.error(t);
     }
@@ -1119,8 +1159,7 @@ public class ComponentRegistry {
     }
 
     @Override
-    public Resource contextualize(
-        Resource resource, ContextScope scope, Object... contextParameters) {
+    public Resource contextualize(Resource resource, Scope scope, Object... contextParameters) {
       if (contextualizer != null) {
         // TODO
       }
@@ -1145,6 +1184,8 @@ public class ComponentRegistry {
     }
 
     private Extensions.AdapterDescriptor scanAdapterClass(Class<?> adapterClass) {
+
+      var capabilities = service.capabilities(service.serviceScope());
 
       var validations = EnumSet.noneOf(ResourceAdapter.Validator.LifecyclePhase.class);
       List<ResourceTransport.Schema> exportSchemata = new ArrayList<>();
@@ -1254,6 +1295,8 @@ public class ComponentRegistry {
       return new Extensions.AdapterDescriptor(
           name,
           version,
+          capabilities.getServiceId(),
+          capabilities.getType(),
           universal,
           threadSafe,
           hasContextualizer(),

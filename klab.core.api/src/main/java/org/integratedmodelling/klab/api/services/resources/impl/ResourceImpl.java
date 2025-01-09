@@ -39,6 +39,7 @@ public class ResourceImpl implements Resource {
     private List<Attribute> outputs = null;
     private List<String> categorizables = new ArrayList<>();
     private List<String> codelists = new ArrayList<>();
+    private String serviceId;
 
     public List<Attribute> getOutputs() {
         return outputs;
@@ -222,6 +223,19 @@ public class ResourceImpl implements Resource {
     @Override
     public String getLocalProjectName() {
         return localProjectName;
+    }
+
+    @Override
+    public String getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(String serviceId) {
+        this.serviceId = serviceId;
+    }
+
+    public void setLocalProjectName(String localProjectName) {
+        this.localProjectName = localProjectName;
     }
 
     public String toString() {

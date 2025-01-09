@@ -441,6 +441,7 @@ public interface ServicesAPI {
         String DESCRIBE_CONCEPT = "/describeConcept/{conceptUrn}";
         String RETRIEVE_CONCEPT = "/retrieveConcept/{definition}";
         String CONTEXTUALIZE = "/contextualize";
+        String CONTEXTUALIZE_RESOURCE = "/contextualizeResource";
         String RETRIEVE_DATAFLOW = "/retrieveDataflow/{urn}";
         String RETRIEVE_WORLDVIEW = "/getWorldview";
         String DEPENDENTS = "/dependents/{namespaceId}";
