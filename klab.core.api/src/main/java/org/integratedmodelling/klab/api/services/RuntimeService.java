@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
@@ -42,13 +43,32 @@ public interface RuntimeService extends KlabService {
    */
   enum CoreFunctor {
 
-    // TODO add descriptions and arguments + flags for constant, scalar vs. vector
+    // TODO store parameters and arguments for validation. At the moment it's just convention and
+    //  documentation.
+    /**
+     * Resolve one or more URNs. Comes with a 'urns' parameter carrying a list of URNs for multiple
+     * resource sets.
+     */
     URN_RESOLVER("klab.core.urn.resolver"),
-    @Deprecated
-    URN_INSTANTIATOR("klab.core.urn.instantiator"), // probably we don't need this
+    /**
+     * Contextualize a scalar or vector expression. Comes with an 'expression' parameter carrying
+     * the k.IM KimExpression syntactic object for compilation and analysis.
+     */
     EXPRESSION_RESOLVER("klab.core.urn.resolver"),
+    /**
+     * Contextualize a lookup table (or classification) within a scalar wrapper. Comes with a 'lut'
+     * parameter carrying the URN of the lookup table to be resolved through resources.
+     */
     LUT_RESOLVER("klab.core.urn.resolver"),
+    /**
+     * Contextualize a constant value. Comes with a 'value' parameter in case of POD values or with
+     * a 'urn' parameter for complex values to be resolved through resources.
+     */
     CONSTANT_RESOLVER("klab.core.urn.resolver"),
+    /**
+     * Defer the resolution of the observations produced by this contextualization. Comes with a
+     * 'strategy' parameter containing the contextualized ObservationStrategy to use.
+     */
     DEFER_RESOLUTION("klab.core.resolution.defer");
 
     private String serviceCallUrn;

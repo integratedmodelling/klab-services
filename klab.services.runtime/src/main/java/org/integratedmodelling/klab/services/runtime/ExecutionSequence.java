@@ -6,6 +6,7 @@ import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
@@ -199,23 +200,31 @@ public class ExecutionSequence {
           the adapter or by the runtime. */
 
           switch (preset) {
-            case URN_RESOLVER, URN_INSTANTIATOR -> {
-              urn = Urn.of(call.getParameters().get("urn", String.class));
+            case URN_RESOLVER -> {
+              var urns = call.getParameters().getList("urns", String.class);
               resource =
-                  scope.getService(ResourcesService.class).retrieveResource(urn.getUrn(), scope);
+                  scope.getService(ResourcesService.class).retrieveResource(urns, scope);
               var adapter =
                   componentRegistry.getAdapter(
                       resource.getAdapterType(), Version.ANY_VERSION, scope);
+              // TODO
+              if (adapter.hasContextualizer()) {
+                resource = adapter.contextualize(resource, scope);
+              }
+              urn = Urn.of(resource.getUrn());
+              // TODO set type for type chain validation
               currentDescriptor = adapter.getEncoder();
             }
             case EXPRESSION_RESOLVER -> {
               System.out.println("RESOLVE THE FEKKIN' EXPRESSION " + call.getParameters());
-              // TODO compile the expression in scope, add the compiled Expression in either scalar mapper or
+              // TODO compile the expression in scope, add the compiled Expression in either scalar
+              // mapper or
               //  not
             }
             case LUT_RESOLVER -> {
-              // Parameter in dataflow should be URN of LUT + @version. If the LUT is inline in a
-              // model it should still have a URN (that of the model + "lut"?)
+              // Parameter in dataflow should be URN of LUT + @version, resolved through the
+              // knowledge repo. If the LUT is inline in a
+              // model it should still have a URN (that of the model + ".lut.n"?)
               System.out.println("RESOLVE THE FEKKIN' LUT " + call.getParameters());
             }
             case CONSTANT_RESOLVER -> {
@@ -223,6 +232,9 @@ public class ExecutionSequence {
               // directly add a constant scalar mapper::run that returns the value and continue
               // executors.add(whatever);
               continue;
+            }
+            case DEFER_RESOLUTION -> {
+              System.out.println("DEFER ZIOCAN");
             }
           }
         } else {
@@ -284,6 +296,10 @@ public class ExecutionSequence {
                 runArguments.add(scope);
               } else if (Observation.class.isAssignableFrom(argument)) {
                 runArguments.add(observation);
+              } else if (Data.Builder.class.isAssignableFrom(argument)) {
+                // TODO produce a data builder for the specified geometry and semantics
+                // TODO handle the preferred types if any
+                System.out.println("ZOZ");
               } else if (ServiceCall.class.isAssignableFrom(argument)) {
                 runArguments.add(call);
               } else if (Parameters.class.isAssignableFrom(argument)) {

@@ -162,43 +162,25 @@ public class ResourcesProviderController {
                 : null);
   }
 
-  /**
-   * TODO this should be just RESOURCE and take all methods for the various CRUD ops: GET for data
-   * relative to the resource including status and main content; POST for contextualization with a
-   * ResolutionRequest; PUT to create new; PATCH to update; DELETE to delete.
-   *
-   * @param urn
-   * @param principal
-   * @return
-   */
-  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_RESOURCE)
+  @PostMapping(ServicesAPI.RESOURCES.RETRIEVE_RESOURCE)
   public @ResponseBody Resource retrieveResource(
-      @PathVariable("urn") String urn, Principal principal) {
+      @RequestBody List<String> urns, Principal principal) {
     return resourcesServer
         .klabService()
         .retrieveResource(
-            urn,
+            urns,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
                 : null);
   }
 
-  /**
-   * TODO this should be just RESOURCE and take all methods for the various CRUD ops: GET for data
-   * relative to the resource including status and main content; POST for contextualization with a
-   * ResolutionRequest; PUT to create new; PATCH to update; DELETE to delete.
-   *
-   * @param urn
-   * @param principal
-   * @return
-   */
-  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_RESOURCE)
+  @PostMapping(ServicesAPI.RESOURCES.RESOLVE_RESOURCE)
   public @ResponseBody ResourceSet resolveResource(
-      @PathVariable("urn") String urn, Principal principal) {
+      @RequestBody List<String> urns, Principal principal) {
     return resourcesServer
         .klabService()
         .resolveResource(
-            urn,
+            urns,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
                 : null);
@@ -286,7 +268,8 @@ public class ResourcesProviderController {
         var resource =
             resourcesServer
                 .klabService()
-                .retrieveResource(request.getResourceUrn().toString(), scope);
+                .retrieveResource(
+                    request.getResourceUrns().stream().map(CharSequence::toString).toList(), scope);
 
         Data input = null;
         if (request.getInputData() != null) {

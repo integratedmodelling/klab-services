@@ -359,10 +359,10 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public Resource retrieveResource(String urn, Scope scope) {
-    if (localResources.contains(Urn.removeParameters(urn))) {
-      // TODO
-    }
+  public Resource retrieveResource(List<String> urns, Scope scope) {
+//    if (localResources.contains(Urn.removeParameters(urn))) {
+//      // TODO
+//    }
     return null;
   }
 
@@ -401,7 +401,16 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public ResourceSet resolveResource(String urnId, Scope scope) {
+  public ResourceSet resolveResource(List<String> urnIds, Scope scope) {
+
+    if (urnIds.size() == 1) {
+      return resolveResourceUrn(urnIds.getFirst(), scope);
+    }
+
+    return ResourceSet.empty(Notification.error("UNIMPLEMENTED"));
+  }
+
+  private ResourceSet resolveResourceUrn(String urnId, Scope scope) {
 
     var urn = Urn.of(urnId);
     ResourceSet ret = new ResourceSet();
@@ -410,7 +419,7 @@ public class ResourcesProvider extends BaseService
       var adapter = getComponentRegistry().getAdapter(urn.getCatalog(), Version.ANY_VERSION, scope);
       if (adapter == null) {
         return ResourceSet.empty(
-            Notification.error("No adapter available for " + urn.getCatalog()));
+                Notification.error("No adapter available for " + urn.getCatalog()));
       }
 
       var info = adapter.getAdapterInfo();
@@ -419,13 +428,13 @@ public class ResourcesProvider extends BaseService
       }
 
       ret.getResults()
-          .add(
-              new ResourceSet.Resource(
-                  this.serviceId(),
-                  urn.getUrn(),
-                  null,
-                  adapter.getVersion(),
-                  KnowledgeClass.RESOURCE));
+         .add(
+                 new ResourceSet.Resource(
+                         this.serviceId(),
+                         urn.getUrn(),
+                         null,
+                         adapter.getVersion(),
+                         KnowledgeClass.RESOURCE));
 
       return ret;
 

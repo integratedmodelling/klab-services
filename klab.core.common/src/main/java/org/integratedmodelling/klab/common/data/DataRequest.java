@@ -15,10 +15,10 @@ import org.apache.avro.message.SchemaStore;
 dependencies for adapters that require input besides parameters. */
 @org.apache.avro.specific.AvroGenerated
 public class DataRequest extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 5982449775754734915L;
+  private static final long serialVersionUID = -981833698399272121L;
 
 
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"DataRequest\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"doc\":\"The data request sent to the ResourcesService endpoint. It may include an Instance to satisfy\\r\\ndependencies for adapters that require input besides parameters.\",\"fields\":[{\"name\":\"geometry\",\"type\":\"string\"},{\"name\":\"resourceUrn\",\"type\":\"string\"},{\"name\":\"inputData\",\"type\":[\"null\",{\"type\":\"record\",\"name\":\"Instance\",\"doc\":\"The payload of any contextualization is a top-level Instance. Any ERROR-level\\r\\nnotification in the top-level Instance means that contextualization has failed.\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"geometry\",\"type\":\"string\"},{\"name\":\"empty\",\"type\":\"boolean\",\"default\":false},{\"name\":\"notifications\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Notification\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"activityUrn\",\"type\":[\"null\",\"string\"]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"code\",\"type\":[\"null\",\"int\"]},{\"name\":\"level\",\"type\":{\"type\":\"enum\",\"name\":\"Level\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}}]}}},{\"name\":\"attributes\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"states\",\"type\":[\"null\",{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"State\",\"doc\":\"State record\",\"fields\":[{\"name\":\"urn\",\"type\":\"string\"},{\"name\":\"fillingCurve\",\"type\":[\"string\",\"null\"],\"default\":\"S2XY\"},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]}]}}]},{\"name\":\"instances\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"Instance\"}]}]}]}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"DataRequest\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"doc\":\"The data request sent to the ResourcesService endpoint. It may include an Instance to satisfy\\r\\ndependencies for adapters that require input besides parameters.\",\"fields\":[{\"name\":\"geometry\",\"type\":\"string\"},{\"name\":\"resourceUrns\",\"type\":{\"type\":\"array\",\"items\":\"string\"}},{\"name\":\"inputData\",\"type\":[\"null\",{\"type\":\"record\",\"name\":\"Instance\",\"doc\":\"The payload of any contextualization is a top-level Instance. Any ERROR-level\\r\\nnotification in the top-level Instance means that contextualization has failed.\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"geometry\",\"type\":\"string\"},{\"name\":\"empty\",\"type\":\"boolean\",\"default\":false},{\"name\":\"notifications\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Notification\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"activityUrn\",\"type\":[\"null\",\"string\"]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"code\",\"type\":[\"null\",\"int\"]},{\"name\":\"level\",\"type\":{\"type\":\"enum\",\"name\":\"Level\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}}]}}},{\"name\":\"attributes\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"states\",\"type\":[\"null\",{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"State\",\"doc\":\"State record\",\"fields\":[{\"name\":\"urn\",\"type\":\"string\"},{\"name\":\"fillingCurve\",\"type\":[\"string\",\"null\"],\"default\":\"S2XY\"},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]}]}}]},{\"name\":\"instances\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"Instance\"}]}]}]}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static final SpecificData MODEL$ = new SpecificData();
@@ -75,7 +75,7 @@ public class DataRequest extends org.apache.avro.specific.SpecificRecordBase imp
   }
 
   private java.lang.CharSequence geometry;
-  private java.lang.CharSequence resourceUrn;
+  private java.util.List<java.lang.CharSequence> resourceUrns;
   private org.integratedmodelling.klab.common.data.Instance inputData;
 
   /**
@@ -88,12 +88,12 @@ public class DataRequest extends org.apache.avro.specific.SpecificRecordBase imp
   /**
    * All-args constructor.
    * @param geometry The new value for geometry
-   * @param resourceUrn The new value for resourceUrn
+   * @param resourceUrns The new value for resourceUrns
    * @param inputData The new value for inputData
    */
-  public DataRequest(java.lang.CharSequence geometry, java.lang.CharSequence resourceUrn, org.integratedmodelling.klab.common.data.Instance inputData) {
+  public DataRequest(java.lang.CharSequence geometry, java.util.List<java.lang.CharSequence> resourceUrns, org.integratedmodelling.klab.common.data.Instance inputData) {
     this.geometry = geometry;
-    this.resourceUrn = resourceUrn;
+    this.resourceUrns = resourceUrns;
     this.inputData = inputData;
   }
 
@@ -108,7 +108,7 @@ public class DataRequest extends org.apache.avro.specific.SpecificRecordBase imp
   public java.lang.Object get(int field$) {
     switch (field$) {
     case 0: return geometry;
-    case 1: return resourceUrn;
+    case 1: return resourceUrns;
     case 2: return inputData;
     default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
@@ -120,7 +120,7 @@ public class DataRequest extends org.apache.avro.specific.SpecificRecordBase imp
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
     case 0: geometry = (java.lang.CharSequence)value$; break;
-    case 1: resourceUrn = (java.lang.CharSequence)value$; break;
+    case 1: resourceUrns = (java.util.List<java.lang.CharSequence>)value$; break;
     case 2: inputData = (org.integratedmodelling.klab.common.data.Instance)value$; break;
     default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
@@ -144,20 +144,20 @@ public class DataRequest extends org.apache.avro.specific.SpecificRecordBase imp
   }
 
   /**
-   * Gets the value of the 'resourceUrn' field.
-   * @return The value of the 'resourceUrn' field.
+   * Gets the value of the 'resourceUrns' field.
+   * @return The value of the 'resourceUrns' field.
    */
-  public java.lang.CharSequence getResourceUrn() {
-    return resourceUrn;
+  public java.util.List<java.lang.CharSequence> getResourceUrns() {
+    return resourceUrns;
   }
 
 
   /**
-   * Sets the value of the 'resourceUrn' field.
+   * Sets the value of the 'resourceUrns' field.
    * @param value the value to set.
    */
-  public void setResourceUrn(java.lang.CharSequence value) {
-    this.resourceUrn = value;
+  public void setResourceUrns(java.util.List<java.lang.CharSequence> value) {
+    this.resourceUrns = value;
   }
 
   /**
@@ -219,7 +219,7 @@ public class DataRequest extends org.apache.avro.specific.SpecificRecordBase imp
     implements org.apache.avro.data.RecordBuilder<DataRequest> {
 
     private java.lang.CharSequence geometry;
-    private java.lang.CharSequence resourceUrn;
+    private java.util.List<java.lang.CharSequence> resourceUrns;
     private org.integratedmodelling.klab.common.data.Instance inputData;
     private org.integratedmodelling.klab.common.data.Instance.Builder inputDataBuilder;
 
@@ -238,8 +238,8 @@ public class DataRequest extends org.apache.avro.specific.SpecificRecordBase imp
         this.geometry = data().deepCopy(fields()[0].schema(), other.geometry);
         fieldSetFlags()[0] = other.fieldSetFlags()[0];
       }
-      if (isValidValue(fields()[1], other.resourceUrn)) {
-        this.resourceUrn = data().deepCopy(fields()[1].schema(), other.resourceUrn);
+      if (isValidValue(fields()[1], other.resourceUrns)) {
+        this.resourceUrns = data().deepCopy(fields()[1].schema(), other.resourceUrns);
         fieldSetFlags()[1] = other.fieldSetFlags()[1];
       }
       if (isValidValue(fields()[2], other.inputData)) {
@@ -261,8 +261,8 @@ public class DataRequest extends org.apache.avro.specific.SpecificRecordBase imp
         this.geometry = data().deepCopy(fields()[0].schema(), other.geometry);
         fieldSetFlags()[0] = true;
       }
-      if (isValidValue(fields()[1], other.resourceUrn)) {
-        this.resourceUrn = data().deepCopy(fields()[1].schema(), other.resourceUrn);
+      if (isValidValue(fields()[1], other.resourceUrns)) {
+        this.resourceUrns = data().deepCopy(fields()[1].schema(), other.resourceUrns);
         fieldSetFlags()[1] = true;
       }
       if (isValidValue(fields()[2], other.inputData)) {
@@ -313,41 +313,41 @@ public class DataRequest extends org.apache.avro.specific.SpecificRecordBase imp
     }
 
     /**
-      * Gets the value of the 'resourceUrn' field.
+      * Gets the value of the 'resourceUrns' field.
       * @return The value.
       */
-    public java.lang.CharSequence getResourceUrn() {
-      return resourceUrn;
+    public java.util.List<java.lang.CharSequence> getResourceUrns() {
+      return resourceUrns;
     }
 
 
     /**
-      * Sets the value of the 'resourceUrn' field.
-      * @param value The value of 'resourceUrn'.
+      * Sets the value of the 'resourceUrns' field.
+      * @param value The value of 'resourceUrns'.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.common.data.DataRequest.Builder setResourceUrn(java.lang.CharSequence value) {
+    public org.integratedmodelling.klab.common.data.DataRequest.Builder setResourceUrns(java.util.List<java.lang.CharSequence> value) {
       validate(fields()[1], value);
-      this.resourceUrn = value;
+      this.resourceUrns = value;
       fieldSetFlags()[1] = true;
       return this;
     }
 
     /**
-      * Checks whether the 'resourceUrn' field has been set.
-      * @return True if the 'resourceUrn' field has been set, false otherwise.
+      * Checks whether the 'resourceUrns' field has been set.
+      * @return True if the 'resourceUrns' field has been set, false otherwise.
       */
-    public boolean hasResourceUrn() {
+    public boolean hasResourceUrns() {
       return fieldSetFlags()[1];
     }
 
 
     /**
-      * Clears the value of the 'resourceUrn' field.
+      * Clears the value of the 'resourceUrns' field.
       * @return This builder.
       */
-    public org.integratedmodelling.klab.common.data.DataRequest.Builder clearResourceUrn() {
-      resourceUrn = null;
+    public org.integratedmodelling.klab.common.data.DataRequest.Builder clearResourceUrns() {
+      resourceUrns = null;
       fieldSetFlags()[1] = false;
       return this;
     }
@@ -434,7 +434,7 @@ public class DataRequest extends org.apache.avro.specific.SpecificRecordBase imp
       try {
         DataRequest record = new DataRequest();
         record.geometry = fieldSetFlags()[0] ? this.geometry : (java.lang.CharSequence) defaultValue(fields()[0]);
-        record.resourceUrn = fieldSetFlags()[1] ? this.resourceUrn : (java.lang.CharSequence) defaultValue(fields()[1]);
+        record.resourceUrns = fieldSetFlags()[1] ? this.resourceUrns : (java.util.List<java.lang.CharSequence>) defaultValue(fields()[1]);
         if (inputDataBuilder != null) {
           try {
             record.inputData = this.inputDataBuilder.build();
@@ -479,7 +479,18 @@ public class DataRequest extends org.apache.avro.specific.SpecificRecordBase imp
   {
     out.writeString(this.geometry);
 
-    out.writeString(this.resourceUrn);
+    long size0 = this.resourceUrns.size();
+    out.writeArrayStart();
+    out.setItemCount(size0);
+    long actualSize0 = 0;
+    for (java.lang.CharSequence e0: this.resourceUrns) {
+      actualSize0++;
+      out.startItem();
+      out.writeString(e0);
+    }
+    out.writeArrayEnd();
+    if (actualSize0 != size0)
+      throw new java.util.ConcurrentModificationException("Array-size written was " + size0 + ", but element count was " + actualSize0 + ".");
 
     if (this.inputData == null) {
       out.writeIndex(0);
@@ -498,7 +509,20 @@ public class DataRequest extends org.apache.avro.specific.SpecificRecordBase imp
     if (fieldOrder == null) {
       this.geometry = in.readString(this.geometry instanceof Utf8 ? (Utf8)this.geometry : null);
 
-      this.resourceUrn = in.readString(this.resourceUrn instanceof Utf8 ? (Utf8)this.resourceUrn : null);
+      long size0 = in.readArrayStart();
+      java.util.List<java.lang.CharSequence> a0 = this.resourceUrns;
+      if (a0 == null) {
+        a0 = new SpecificData.Array<java.lang.CharSequence>((int)size0, SCHEMA$.getField("resourceUrns").schema());
+        this.resourceUrns = a0;
+      } else a0.clear();
+      SpecificData.Array<java.lang.CharSequence> ga0 = (a0 instanceof SpecificData.Array ? (SpecificData.Array<java.lang.CharSequence>)a0 : null);
+      for ( ; 0 < size0; size0 = in.arrayNext()) {
+        for ( ; size0 != 0; size0--) {
+          java.lang.CharSequence e0 = (ga0 != null ? ga0.peek() : null);
+          e0 = in.readString(e0 instanceof Utf8 ? (Utf8)e0 : null);
+          a0.add(e0);
+        }
+      }
 
       if (in.readIndex() != 1) {
         in.readNull();
@@ -518,7 +542,20 @@ public class DataRequest extends org.apache.avro.specific.SpecificRecordBase imp
           break;
 
         case 1:
-          this.resourceUrn = in.readString(this.resourceUrn instanceof Utf8 ? (Utf8)this.resourceUrn : null);
+          long size0 = in.readArrayStart();
+          java.util.List<java.lang.CharSequence> a0 = this.resourceUrns;
+          if (a0 == null) {
+            a0 = new SpecificData.Array<java.lang.CharSequence>((int)size0, SCHEMA$.getField("resourceUrns").schema());
+            this.resourceUrns = a0;
+          } else a0.clear();
+          SpecificData.Array<java.lang.CharSequence> ga0 = (a0 instanceof SpecificData.Array ? (SpecificData.Array<java.lang.CharSequence>)a0 : null);
+          for ( ; 0 < size0; size0 = in.arrayNext()) {
+            for ( ; size0 != 0; size0--) {
+              java.lang.CharSequence e0 = (ga0 != null ? ga0.peek() : null);
+              e0 = in.readString(e0 instanceof Utf8 ? (Utf8)e0 : null);
+              a0.add(e0);
+            }
+          }
           break;
 
         case 2:

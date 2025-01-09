@@ -187,13 +187,14 @@ public interface ResourcesService extends KlabService {
   KActorsBehavior retrieveBehavior(String urn, Scope scope);
 
   /**
-   * Return the parsed contents of a resource.
+   * Return the parsed contents of a resource. One or more resource URNs can be passed; if multiple,
+   * the result will be a validated multi-resource container.
    *
-   * @param urn
+   * @param urns
    * @param scope
    * @return
    */
-  Resource retrieveResource(String urn, Scope scope);
+  Resource retrieveResource(List<String> urns, Scope scope);
 
   Workspace retrieveWorkspace(String urn, Scope scope);
 
@@ -209,13 +210,16 @@ public interface ResourcesService extends KlabService {
 
   /**
    * Check if a resource with the passed URN is available in this service and enabled within the
-   * passed scope. If so, ensure we have the adapters needed to contextualize it.
+   * passed scope. If so, ensure we have the adapters needed to contextualize it. Multiple URNs may
+   * be passed, in which case all will be validated both for accessibility and composability in a
+   * multi-URN resource (which should be cached in an internal catalog so it can be accessed with
+   * its own URN later).
    *
-   * @param urn the URN, possibly containing a version
+   * @param urn one or more URNs, possibly containing a version
    * @param scope
    * @return
    */
-  ResourceSet resolveResource(String urn, Scope scope);
+  ResourceSet resolveResource(List<String> urn, Scope scope);
 
   /**
    * Inquire about resource availability for the passed urn and scope. Should work for all types of

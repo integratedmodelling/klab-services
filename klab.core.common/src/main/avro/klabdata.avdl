@@ -46,7 +46,7 @@ protocol KlabData {
      */
 	record DataRequest {
 		string geometry;
-		string resourceUrn;
+		array<string> resourceUrns;
 		Instance? inputData;
 	}
 

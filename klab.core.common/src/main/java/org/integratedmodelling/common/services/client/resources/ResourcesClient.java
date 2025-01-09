@@ -314,8 +314,8 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public Resource retrieveResource(String urn, Scope scope) {
-    return client.withScope(scope).get(ServicesAPI.RESOURCES.RETRIEVE_RESOURCE, Resource.class, "urn", urn);
+  public Resource retrieveResource(List<String> urns, Scope scope) {
+    return client.withScope(scope).post(ServicesAPI.RESOURCES.RETRIEVE_RESOURCE, urns, Resource.class);
   }
 
   @Override
@@ -339,14 +339,13 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public ResourceSet resolveResource(String urn, Scope scope) {
+  public ResourceSet resolveResource(List<String> urns, Scope scope) {
     return client
             .withScope(scope)
-            .get(
+            .post(
                     ServicesAPI.RESOURCES.RESOLVE_RESOURCE,
-                    ResourceSet.class,
-                    "urn",
-                    urn);
+                    urns,
+                    ResourceSet.class);
   }
 
   @Override
@@ -407,7 +406,7 @@ public class ResourcesClient extends ServiceClient
         DataRequest.newBuilder()
             .setInputData(data instanceof DataImpl data1 ? data1.asInstance() : null)
             .setGeometry(geometry.encode())
-            .setResourceUrn(contextualizedResource.getUrn())
+            .setResourceUrns(List.of(contextualizedResource.getUrn()))
             .build();
 
     return client.postData(request);

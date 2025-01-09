@@ -644,10 +644,11 @@ public class RuntimeService extends BaseService
         ret = Utils.Resources.merge(ret, resolution);
       }
 
-      for (var urn : contextualizable.getResourceUrns()) {
+      if (!contextualizable.getResourceUrns().isEmpty()) {
 
-        // ensure resource or adapter is accessible
-        var resolution = resourcesService.resolveResource(urn, scope);
+        // ensure resource or adapter is accessible, pre-cache any multiple URN configuration
+        var resolution =
+            resourcesService.resolveResource(contextualizable.getResourceUrns(), scope);
         if (resolution.isEmpty()) {
           return resolution;
         }

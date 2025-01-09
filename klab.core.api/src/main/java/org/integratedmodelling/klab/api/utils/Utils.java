@@ -3649,6 +3649,19 @@ public class Utils {
 
     public static class Data {
 
+        public static List<Object> convertArrayToList(Object array) {
+            Class ofArray = array.getClass().getComponentType();
+//            if (ofArray.isPrimitive()) {
+                List ar = new ArrayList();
+                int length = Array.getLength(array);
+                for (int i = 0; i < length; i++) {
+                    ar.add(Array.get(array, i));
+                }
+                return ar;
+//            }
+//            List<Object> ret = new ArrayList<>();
+        }
+
         public static boolean isData(Object c) {
             return c != null && !(c instanceof Number && Double.isNaN(((Number) c).doubleValue()));
         }

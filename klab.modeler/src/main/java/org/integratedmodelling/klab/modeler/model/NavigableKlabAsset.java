@@ -237,7 +237,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
 
     private KlabAsset resolveAsset(KnowledgeClass type, String urn, ResourcesService service, Scope scope) {
         return switch (type) {
-            case RESOURCE -> service.retrieveResource(urn, scope);
+            case RESOURCE -> service.retrieveResource(List.of(urn), scope);
             case NAMESPACE -> service.retrieveNamespace(urn, scope);
             case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> service.retrieveBehavior(urn, scope);
             case ONTOLOGY -> service.retrieveOntology(urn, scope);
