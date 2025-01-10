@@ -13,18 +13,21 @@ import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
-import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.*;
+import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -41,6 +44,10 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.*;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.extension.KlabComponent;
+import org.integratedmodelling.klab.runtime.storage.BooleanStorage;
+import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
+import org.integratedmodelling.klab.runtime.storage.FloatStorage;
+import org.integratedmodelling.klab.runtime.storage.KeyedStorage;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -1159,7 +1166,8 @@ public class ComponentRegistry {
     }
 
     @Override
-    public Resource contextualize(Resource resource, Scope scope, Object... contextParameters) {
+    public Resource contextualize(
+        Resource resource, Geometry geometry, Scope scope, Object... contextParameters) {
       if (contextualizer != null) {
         // TODO
       }
@@ -1173,13 +1181,45 @@ public class ComponentRegistry {
 
     @Override
     public boolean encode(
-        Resource resource, Geometry geometry, Data.Builder builder, Object... contextParameters) {
+        Resource resource,
+        Geometry geometry,
+        Data.Builder builder,
+        Observation observation,
+        Observable observable,
+        Urn urn,
+        Parameters<String> urnParameters,
+        Scope scope) {
 
-      // TODO use the reference implementation if adapter allows; otherwise create an implementation
-      // for
-      //  this request
+      var implementation = implementation(this.encoder);
+      if (implementation != null) {
 
-      // TODO contextualize the resource to the geometry if needed by the adapter implementation
+        // TODO create implementation with own instance if not reentrant
+
+        var ret =
+            executeMethod(
+                implementation,
+                resource,
+                geometry,
+                builder,
+                observation,
+                observable,
+                urn,
+                urnParameters,
+                null,
+                null,
+                null,
+                null,
+                scope);
+
+        if (ret instanceof Throwable) {
+          scope.error(ret);
+          return false;
+        } else if (ret instanceof Boolean) {
+          return (Boolean)ret;
+        }
+
+        return true;
+      }
 
       return false;
     }
@@ -1342,5 +1382,175 @@ public class ComponentRegistry {
       ret.serviceInfo = serviceInfo;
       return Pair.of(ret, impl);
     }
+  }
+
+  public static Object executeMethod(
+      ServiceImplementation implementation,
+      Resource resource,
+      Geometry geometry,
+      Data.Builder builder,
+      Observation observation,
+      Observable observable,
+      Urn urn,
+      Parameters<String> urnParameters,
+      ServiceCall serviceCall,
+      Storage storage,
+      Expression expression,
+      LookupTable lookupTable,
+      Scope scope) {
+
+    var arguments =
+        matchArguments(
+            implementation.method,
+            resource,
+            geometry,
+            builder,
+            observation,
+            observable,
+            urn,
+            urnParameters,
+            serviceCall,
+            storage,
+            expression,
+            lookupTable,
+            scope);
+    if (arguments == null) {
+      return new KlabCompilationError(
+          "Cannot match arguments for call to " + implementation.method);
+    }
+
+    try {
+      return implementation.method.invoke(implementation.mainClassInstance, arguments.toArray());
+    } catch (Exception e) {
+      return new KlabCompilationError(e);
+    }
+  }
+
+  /**
+   * Painful argument matcher for method using or inferring all possible arguments
+   *
+   * @param method
+   * @param resource
+   * @param geometry
+   * @param builder
+   * @param observation
+   * @param observable
+   * @param urn
+   * @param urnParameters
+   * @param serviceCall
+   * @param storage
+   * @param expression
+   * @param lookupTable
+   * @param scope
+   * @return
+   */
+  public static List<Object> matchArguments(
+      Method method,
+      Resource resource,
+      Geometry geometry,
+      Data.Builder builder,
+      Observation observation,
+      Observable observable,
+      Urn urn,
+      Parameters<String> urnParameters,
+      ServiceCall serviceCall,
+      Storage storage,
+      Expression expression,
+      LookupTable lookupTable,
+      Scope scope) {
+    List<Object> runArguments = new ArrayList<>();
+    DigitalTwin digitalTwin = null;
+    if (scope instanceof ContextScope contextScope) {
+      digitalTwin = contextScope.getDigitalTwin();
+    }
+    Scale scale = geometry instanceof Scale scale1 ? scale1 : null;
+
+    if (method != null) {
+      for (var argument : method.getParameterTypes()) {
+        if (ContextScope.class.isAssignableFrom(argument)) {
+          // TODO consider wrapping into read-only delegating wrappers
+          runArguments.add(scope);
+        } else if (Scope.class.isAssignableFrom(argument)) {
+          runArguments.add(scope);
+        } else if (Observation.class.isAssignableFrom(argument)) {
+          runArguments.add(observation);
+        } else if (Data.Builder.class.isAssignableFrom(argument)) {
+          runArguments.add(builder);
+        } else if (ServiceCall.class.isAssignableFrom(argument)) {
+          runArguments.add(serviceCall);
+        } else if (Parameters.class.isAssignableFrom(argument)) {
+          runArguments.add(urnParameters);
+        } else if (DoubleStorage.class.isAssignableFrom(argument)) {
+          storage =
+              digitalTwin == null
+                  ? null
+                  : digitalTwin
+                      .stateStorage()
+                      .promoteStorage(observation, storage, DoubleStorage.class);
+          runArguments.add(storage);
+        } else if (FloatStorage.class.isAssignableFrom(argument)) {
+          storage =
+              digitalTwin == null
+                  ? null
+                  : digitalTwin
+                      .stateStorage()
+                      .promoteStorage(observation, storage, DoubleStorage.class);
+          runArguments.add(storage);
+        } else if (BooleanStorage.class.isAssignableFrom(argument)) {
+          storage =
+              digitalTwin == null
+                  ? null
+                  : digitalTwin
+                      .stateStorage()
+                      .promoteStorage(observation, storage, DoubleStorage.class);
+          runArguments.add(storage);
+        } else if (KeyedStorage.class.isAssignableFrom(argument)) {
+          storage =
+              digitalTwin == null
+                  ? null
+                  : digitalTwin
+                      .stateStorage()
+                      .promoteStorage(observation, storage, DoubleStorage.class);
+          runArguments.add(storage);
+        } else if (Scale.class.isAssignableFrom(argument)) {
+          if (scale == null && geometry != null) {
+            scale = Scale.create(geometry);
+          }
+          runArguments.add(scale);
+        } else if (Geometry.class.isAssignableFrom(argument)) {
+          runArguments.add(geometry);
+        } else if (Observable.class.isAssignableFrom(argument)) {
+          runArguments.add(observable);
+        } else if (Space.class.isAssignableFrom(argument)) {
+          if (scale == null && geometry != null) {
+            scale = Scale.create(geometry);
+          }
+          runArguments.add(scale == null ? null : scale.getSpace());
+        } else if (Time.class.isAssignableFrom(argument)) {
+          if (scale == null && geometry != null) {
+            scale = Scale.create(geometry);
+          }
+          runArguments.add(scale == null ? null : scale.getTime());
+        } else if (Resource.class.isAssignableFrom(argument) && resource != null) {
+          runArguments.add(resource);
+        } else if (Expression.class.isAssignableFrom(argument) && expression != null) {
+          runArguments.add(expression);
+        } else if (Urn.class.isAssignableFrom(argument) && urn != null) {
+          runArguments.add(urn);
+        } else if (LookupTable.class.isAssignableFrom(argument) && lookupTable != null) {
+          runArguments.add(lookupTable);
+        } else {
+          scope.error(
+              "Cannot map argument of type "
+                  + argument.getCanonicalName()
+                  + " to known objects in call to "
+                  + method);
+          runArguments.add(null);
+        }
+      }
+      return runArguments;
+    }
+
+    return null;
   }
 }

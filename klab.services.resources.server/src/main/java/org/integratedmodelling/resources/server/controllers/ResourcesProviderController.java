@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -23,6 +24,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
@@ -178,7 +180,7 @@ public class ResourcesProviderController {
 
   @PostMapping(ServicesAPI.RESOURCES.CONTEXTUALIZE_RESOURCE)
   public @ResponseBody Resource contextualizeResource(
-          @RequestBody ResourceContextualizationRequest request, Principal principal) {
+      @RequestBody ResourceContextualizationRequest request, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       return resourcesServer
           .klabService()
@@ -190,7 +192,6 @@ public class ResourcesProviderController {
               authorization.getScope());
     }
     throw new KlabInternalErrorException("Resources service: unexpected authorization");
-
   }
 
   @PostMapping(ServicesAPI.RESOURCES.RESOLVE_RESOURCE)
@@ -289,19 +290,27 @@ public class ResourcesProviderController {
                 .klabService()
                 .retrieveResource(
                     request.getResourceUrns().stream().map(CharSequence::toString).toList(), scope);
+        var observable =
+            resourcesServer
+                .klabService()
+                .serviceScope()
+                .getService(Reasoner.class)
+                .resolveObservable(request.getObservable().toString());
+
+        var geometry =
+            GeometryRepository.INSTANCE.get(request.getGeometry().toString(), Geometry.class);
 
         Data input = null;
         if (request.getInputData() != null) {
           input = new DataImpl(request.getInputData());
         }
 
-        var data =
+        Data data =
             resourcesServer
                 .klabService()
                 .contextualize(
                     resource,
-                    GeometryRepository.INSTANCE.get(
-                        request.getGeometry().toString(), Geometry.class),
+                    DigitalTwin.createObservation(scope, observable, geometry),
                     input,
                     scope);
 

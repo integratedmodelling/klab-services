@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -267,12 +268,13 @@ public interface ResourcesService extends KlabService {
 
   /**
    * @param contextualizedResource
-   * @param geometry
+   * @param observation must have a geometry set
    * @param input may be null, pass if the resource requires inputs
    * @param scope
    * @return
    */
-  Data contextualize(Resource contextualizedResource, Geometry geometry, Data input, Scope scope);
+  Data contextualize(
+      Resource contextualizedResource, Observation observation, Data input, Scope scope);
 
   /**
    * @param urn

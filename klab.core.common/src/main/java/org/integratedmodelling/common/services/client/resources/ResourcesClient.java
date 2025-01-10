@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -418,12 +419,13 @@ public class ResourcesClient extends ServiceClient
 
   @Override
   public Data contextualize(
-      Resource contextualizedResource, Geometry geometry, @Nullable Data data, Scope scope) {
+          Resource contextualizedResource, Observation observation, @Nullable Data data, Scope scope) {
 
     DataRequest request =
         DataRequest.newBuilder()
             .setInputData(data instanceof DataImpl data1 ? data1.asInstance() : null)
-            .setGeometry(geometry.encode())
+                   // .setObservable(observation.getObservable().getUrn())
+            .setGeometry(observation.getGeometry().encode())
             .setResourceUrns(List.of(contextualizedResource.getUrn()))
             .build();
 

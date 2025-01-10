@@ -205,7 +205,6 @@ public class ExecutionSequence {
           Resource finalResource = resource;
           switch (preset) {
             case URN_RESOLVER -> {
-
               var urns = call.getParameters().getList("urns", String.class);
               // TODO use all services
               resource = scope.getService(ResourcesService.class).retrieveResource(urns, scope);
@@ -221,11 +220,12 @@ public class ExecutionSequence {
               if (adapter != null) {
 
                 if (adapter.hasContextualizer()) {
-                  resource = adapter.contextualize(resource, scope, observation.getGeometry());
+                  resource = adapter.contextualize(resource, observation.getGeometry(), scope);
                 }
 
                 // enqueue data extraction from adapter method
-                final var contextualizer = new ServiceResourceContextualizer(adapter, resource);
+                final var contextualizer =
+                    new ServiceResourceContextualizer(adapter, resource, observation);
                 executors.add(() -> contextualizer.contextualize(observation, scope));
                 continue;
 
@@ -241,7 +241,8 @@ public class ExecutionSequence {
                         .findFirst();
 
                 if (service.isEmpty()) {
-                  throw new KlabInternalErrorException("Illegal service ID in resource " + resource.getUrn());
+                  throw new KlabInternalErrorException(
+                      "Illegal service ID in resource " + resource.getUrn());
                 }
 
                 var adapterInfo =
@@ -258,7 +259,8 @@ public class ExecutionSequence {
                 }
 
                 // enqueue data extraction from service method
-                final var contextualizer = new ClientResourceContextualizer(service.get(), resource);
+                final var contextualizer =
+                    new ClientResourceContextualizer(service.get(), resource, observation);
                 executors.add(() -> contextualizer.contextualize(observation, scope));
                 continue;
               }
@@ -333,75 +335,26 @@ public class ExecutionSequence {
            * Should match arguments, check if they all match, and if not move to the next until
            * no available implementations remain.
            */
-          List<Object> runArguments = new ArrayList<>();
           if (componentRegistry.implementation(currentDescriptor).method != null) {
-            for (var argument :
-                componentRegistry.implementation(currentDescriptor).method.getParameterTypes()) {
-              if (ContextScope.class.isAssignableFrom(argument)) {
-                // TODO consider wrapping into read-only delegating wrappers
-                runArguments.add(scope);
-              } else if (Scope.class.isAssignableFrom(argument)) {
-                runArguments.add(scope);
-              } else if (Observation.class.isAssignableFrom(argument)) {
-                runArguments.add(observation);
-              } else if (Data.Builder.class.isAssignableFrom(argument)) {
-                // TODO produce a data builder for the specified geometry and semantics
-                // TODO handle the preferred types if any
-                System.out.println("ZOZ");
-              } else if (ServiceCall.class.isAssignableFrom(argument)) {
-                runArguments.add(call);
-              } else if (Parameters.class.isAssignableFrom(argument)) {
-                runArguments.add(call.getParameters());
-              } else if (DoubleStorage.class.isAssignableFrom(argument)) {
-                storage =
-                    digitalTwin
-                        .stateStorage()
-                        .promoteStorage(observation, storage, DoubleStorage.class);
-                runArguments.add(storage);
-              } else if (FloatStorage.class.isAssignableFrom(argument)) {
-                storage =
-                    digitalTwin
-                        .stateStorage()
-                        .promoteStorage(observation, storage, DoubleStorage.class);
-                runArguments.add(storage);
-              } else if (BooleanStorage.class.isAssignableFrom(argument)) {
-                storage =
-                    digitalTwin
-                        .stateStorage()
-                        .promoteStorage(observation, storage, DoubleStorage.class);
-                runArguments.add(storage);
-              } else if (KeyedStorage.class.isAssignableFrom(argument)) {
-                storage =
-                    digitalTwin
-                        .stateStorage()
-                        .promoteStorage(observation, storage, DoubleStorage.class);
-                runArguments.add(storage);
-              } else if (Scale.class.isAssignableFrom(argument)) {
-                runArguments.add(scale);
-              } else if (Geometry.class.isAssignableFrom(argument)) {
-                runArguments.add(scale);
-              } else if (Observable.class.isAssignableFrom(argument)) {
-                runArguments.add(observation.getObservable());
-              } else if (Space.class.isAssignableFrom(argument)) {
-                runArguments.add(scale.getSpace());
-              } else if (Time.class.isAssignableFrom(argument)) {
-                runArguments.add(scale.getTime());
-              } else if (Resource.class.isAssignableFrom(argument) && resource != null) {
-                runArguments.add(resource);
-              } else if (Expression.class.isAssignableFrom(argument) && expression != null) {
-                runArguments.add(expression);
-              } else if (Urn.class.isAssignableFrom(argument) && urn != null) {
-                runArguments.add(urn);
-              } else if (LookupTable.class.isAssignableFrom(argument) && lookupTable != null) {
-                runArguments.add(lookupTable);
-              } else { // TODO add a Data builder!
-                scope.error(
-                    "Cannot map argument of type "
-                        + argument.getCanonicalName()
-                        + " to known objects in call to "
-                        + call.getUrn());
-                runArguments.add(null);
-              }
+
+            var runArguments =
+                ComponentRegistry.matchArguments(
+                    componentRegistry.implementation(currentDescriptor).method,
+                    resource,
+                    observation.getGeometry(),
+                    null,
+                    observation,
+                    observation.getObservable(),
+                    urn,
+                    call.getParameters(),
+                    call,
+                    storage,
+                    expression,
+                    lookupTable,
+                    scope);
+
+            if (runArguments == null) {
+              return false;
             }
 
             if (currentDescriptor.staticMethod) {

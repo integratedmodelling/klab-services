@@ -14,6 +14,8 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 /**
  * Computes semantic distance between concepts, with configurable caching. Clients should also
  * provide similar caching to minimize network traffic.
+ *
+ * TODO integrate within ReasonerService and remove the corresponding code from there.
  */
 public class SemanticMatcher {
 

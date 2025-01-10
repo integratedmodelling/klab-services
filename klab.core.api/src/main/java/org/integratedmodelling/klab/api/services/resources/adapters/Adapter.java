@@ -1,11 +1,14 @@
 package org.integratedmodelling.klab.api.services.resources.adapters;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
@@ -44,8 +47,8 @@ public interface Adapter {
 
   /**
    * If true, the adapter provides a resource contextualizer method that must be called through
-   * {@link #contextualize(Resource, ContextScope, Object...)} before the resource is used, normally
-   * once per process stage in occurrents..
+   * {@link #contextualize(Resource, Geometry, Scope, Object...)} (Resource, ContextScope,
+   * Object...)} before the resource is used, normally once per process stage in occurrents..
    *
    * @return
    */
@@ -139,24 +142,30 @@ public interface Adapter {
    * need to call this and the method will simply return the input resource.
    *
    * @param resource
+   * @param geometry
    * @param scope
    * @param contextParameters
    * @return
    */
-  Resource contextualize(Resource resource, Scope scope, Object... contextParameters);
+  Resource contextualize(
+      Resource resource, Geometry geometry, Scope scope, Object... contextParameters);
 
   /**
    * Extract the data. Resource must have been contextualized if {@link #hasContextualizer()}
    * returns true.
    *
-   * @param resource
-   * @param geometry
-   * @param builder
-   * @param contextParameters anything else that is recognizable by its type and can be matched to
-   *     the executor method. Normally includes context scope, service, URN or URN parameters,
-   *     storage buffers (which may also determine the encoding type) and filling curves, semantics
-   *     etc.
+   * <p>Takes a maximal list of parameters that will be matched to the possible arguments of the
+   * encoder method.
+   *
    * @return
    */
-  boolean encode(Resource resource, Geometry geometry, Data.Builder builder, Object... contextParameters);
+  boolean encode(
+      Resource resource,
+      Geometry geometry,
+      Data.Builder builder,
+      Observation observation,
+      Observable observable,
+      Urn urn,
+      Parameters<String> urnParameters,
+      Scope scope);
 }

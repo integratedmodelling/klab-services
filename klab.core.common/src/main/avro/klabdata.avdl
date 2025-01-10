@@ -45,6 +45,7 @@ protocol KlabData {
 	 * dependencies for adapters that require input besides parameters.
      */
 	record DataRequest {
+		string observable;
 		string geometry;
 		array<string> resourceUrns;
 		Instance? inputData;

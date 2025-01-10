@@ -20,6 +20,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
@@ -32,6 +33,7 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -393,11 +395,11 @@ public class ResourcesProvider extends BaseService
     ret.setAdapterType(urn.getCatalog());
     ret.setVersion(adapter.getVersion());
     ret.setServiceId(serviceId());
+    ret.setType(adapter.resourceType(urn));
     // TODO adapter must report the overall geometry, generally or on a URN basis
     ret.setGeometry(Geometry.create("S2"));
     return ret;
   }
-
 
   @Override
   public Workspace retrieveWorkspace(String urn, Scope scope) {
@@ -459,7 +461,7 @@ public class ResourcesProvider extends BaseService
               + resource.getAdapterType());
     }
     return adapter.hasContextualizer()
-        ? adapter.contextualize(resource, scope, geometry)
+        ? adapter.contextualize(resource, geometry, scope)
         : resource;
   }
 
@@ -505,14 +507,23 @@ public class ResourcesProvider extends BaseService
 
   @Override
   public Data contextualize(
-      Resource resource, Geometry geometry, @Nullable Data input, Scope scope) {
+      Resource resource, Observation observation, @Nullable Data input, Scope scope) {
     var adapter =
         getComponentRegistry().getAdapter(resource.getAdapterType(), resource.getVersion(), scope);
     if (adapter == null) {
       return Data.empty("Adapter " + resource.getAdapterType() + " not available");
     }
     var builder = Data.builder();
-    if (!adapter.encode(resource, geometry, builder)) {
+    Urn urn = Urn.of(resource.getUrn());
+    if (!adapter.encode(
+        resource,
+        observation.getGeometry(),
+        builder,
+        observation,
+        observation.getObservable(),
+        urn,
+        Parameters.create(urn.getParameters()),
+        scope)) {
       return Data.empty("Resource encoding failed");
     }
     return builder.build();

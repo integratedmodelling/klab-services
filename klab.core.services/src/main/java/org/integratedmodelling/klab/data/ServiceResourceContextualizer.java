@@ -3,18 +3,18 @@ package org.integratedmodelling.klab.data;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 
 /**
- * One of these is created per resource contextualization request. Drives the functions in the
- * adapter to create the contextualized resource payload, which is an Instance object from the Avro
- * schema.
+ * Service-side contextualization helper, used when the adapter is available locally. One of these
+ * is created per resource contextualization request. Drives the functions in the adapter to create
+ * the contextualized resource payload, which is an Instance object from the Avro schema.
  */
 public class ServiceResourceContextualizer extends AbstractResourceContextualizer {
 
   private final Adapter adapter;
-  private final Resource resource;
 
   /**
    * Pass a previously contextualized resource
@@ -22,15 +22,21 @@ public class ServiceResourceContextualizer extends AbstractResourceContextualize
    * @param adapter
    * @param resource
    */
-  public ServiceResourceContextualizer(Adapter adapter, Resource resource) {
+  public ServiceResourceContextualizer(
+      Adapter adapter, Resource resource, Observation observation) {
+    super(resource, observation);
     this.adapter = adapter;
-    this.resource = resource;
   }
 
   @Override
-  protected Data getData(Resource resource, Geometry geometry, ContextScope scope) {
+  protected Data getData(Geometry geometry, ContextScope scope) {
+
     Data.Builder builder = Data.builder();
-    adapter.encode(resource, geometry, builder, scope);
+
+    // TODO add observation, observable, urn, input data if the resource requires them, observation
+    //  storage and anything the adapter may want.
+    var inputData = getInputData(scope);
+    adapter.encode(resource, geometry, builder, observation, observable, urn, urnParameters, scope);
     return builder.build();
   }
 }

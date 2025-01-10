@@ -17,7 +17,6 @@ import org.integratedmodelling.klab.common.data.Instance;
 public class ClientResourceContextualizer extends AbstractResourceContextualizer {
 
   private final ResourcesService service;
-  private final Resource resource;
 
   /**
    * Pass a previously contextualized resource
@@ -25,13 +24,13 @@ public class ClientResourceContextualizer extends AbstractResourceContextualizer
    * @param service
    * @param resource
    */
-  public ClientResourceContextualizer(ResourcesService service, Resource resource) {
+  public ClientResourceContextualizer(ResourcesService service, Resource resource, Observation observation) {
+    super(resource, observation);
     this.service = service;
-    this.resource = resource;
   }
 
   @Override
-  protected Data getData(Resource resource, Geometry geometry, ContextScope scope) {
-    return service.contextualize(resource, geometry, getInputData(resource, scope), scope);
+  protected Data getData(Geometry geometry, ContextScope scope) {
+    return service.contextualize(resource, observation, getInputData(scope), scope);
   }
 }
