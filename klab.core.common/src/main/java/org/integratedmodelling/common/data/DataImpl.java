@@ -92,6 +92,11 @@ public class DataImpl implements Data {
     return this.instance;
   }
 
+  @Override
+  public String toString() {
+    return "DataImpl{" + "instance=" + instance + '}';
+  }
+
   public void copyTo(OutputStream dataStream) {
     try {
       var encoder = EncoderFactory.get().binaryEncoder(dataStream, null);

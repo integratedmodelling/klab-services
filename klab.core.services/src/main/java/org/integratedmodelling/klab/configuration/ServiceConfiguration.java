@@ -42,7 +42,6 @@ import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.utils.Utils.OS;
 import org.integratedmodelling.klab.data.mediation.CurrencyServiceImpl;
@@ -183,6 +182,11 @@ public enum ServiceConfiguration {
             @Override
             public Data.Builder getDataBuilder() {
                 return new DataBuilderImpl();
+            }
+
+            @Override
+            public Data.Builder getDataBuilder(String name, Geometry geometry) {
+                return new DataBuilderImpl(name, geometry);
             }
 
             @Override

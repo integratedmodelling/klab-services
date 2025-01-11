@@ -264,9 +264,18 @@ public interface Data {
     Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
     if (configuration == null) {
       throw new KlabIllegalStateException(
-          "k.LAB environment not configured to promote a geometry to a scale");
+          "k.LAB environment not configured to create a data builder");
     }
     return configuration.getDataBuilder();
+  }
+
+  static Builder builder(String name, Geometry geometry) {
+    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+    if (configuration == null) {
+      throw new KlabIllegalStateException(
+          "k.LAB environment not configured to create a data builder");
+    }
+    return configuration.getDataBuilder(name, geometry);
   }
 
   static Data empty(String reason) {

@@ -127,6 +127,8 @@ public enum Klab {
 
         Data.Builder getDataBuilder();
 
+        Data.Builder getDataBuilder(String name, Geometry geometry);
+
         Quantity parseQuantity(String quantityDescription);
 
         /**

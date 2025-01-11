@@ -78,8 +78,16 @@ public class DataBuilderImpl implements Data.Builder {
     initInstance();
   }
 
+  public DataBuilderImpl(String name, Geometry geometry) {
+    initInstance();
+    instanceBuilder.setName(name);
+    instanceBuilder.setGeometry(geometry.encode());
+  }
+
   private void initInstance() {
     this.instanceBuilder = Instance.newBuilder();
+    this.instanceBuilder.setName("");
+    this.instanceBuilder.setGeometry(Geometry.EMPTY.encode());
     this.instanceBuilder.setStates(new ArrayList<>());
     this.instanceBuilder.setMetadata(new LinkedHashMap<>());
     this.instanceBuilder.setAttributes(new LinkedHashMap<>());

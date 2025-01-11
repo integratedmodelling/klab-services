@@ -30,8 +30,8 @@ protocol KlabData {
 	 * notification in the top-level Instance means that contextualization has failed.
      */
 	record Instance {
-		string name;
-		string geometry;
+		string? name;
+		string? geometry;
 		boolean empty = false;
 		union {null, array<Notification>} notifications;
 		union {null, map<string>} attributes;
