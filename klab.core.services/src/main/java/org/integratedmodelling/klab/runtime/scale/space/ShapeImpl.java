@@ -1103,7 +1103,9 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     @Override
     public <T extends Locator> T as(Class<T> cls) {
-        // TODO Auto-generated method stub
+        if (cls.equals(org.integratedmodelling.klab.api.geometry.Geometry.class)) {
+            return (T) org.integratedmodelling.klab.api.geometry.Geometry.create(encode());
+        }
         return null;
     }
 

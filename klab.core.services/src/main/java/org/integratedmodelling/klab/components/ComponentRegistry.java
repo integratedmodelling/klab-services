@@ -84,7 +84,7 @@ public class ComponentRegistry {
           Version.CURRENT_VERSION,
           "Natively available " + "services",
           null,
-          ResourcePrivileges.PUBLIC,
+          null,
           null,
           new ArrayList<>(),
           new ArrayList<>(),
@@ -363,7 +363,7 @@ public class ComponentRegistry {
             componentVersion,
             description,
             sourceArchive,
-            permissions,
+            Utils.Files.hash(sourceArchive),
             mavenCoordinates,
             libraries,
             adapters,
@@ -697,6 +697,7 @@ public class ComponentRegistry {
       var adapter = new AdapterImpl(cls, annotation);
       this.adapters.put(adapter.getName(), adapter);
       this.adapterDescriptorFinder.put(adapter.getName(), adapter.getAdapterInfo());
+      adapters.add(adapter.getAdapterInfo());
     } catch (Throwable t) {
       Logging.INSTANCE.error(t);
     }
@@ -1215,7 +1216,7 @@ public class ComponentRegistry {
           scope.error(ret);
           return false;
         } else if (ret instanceof Boolean) {
-          return (Boolean)ret;
+          return (Boolean) ret;
         }
 
         return true;

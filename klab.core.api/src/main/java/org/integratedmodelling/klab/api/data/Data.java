@@ -15,12 +15,8 @@
  */
 package org.integratedmodelling.klab.api.data;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.PrimitiveIterator;
-import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
-import java.util.function.IntConsumer;
 
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -28,298 +24,308 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
- * Encoded k.LAB data object, resulting from decoding a resource URN in a specified geometry. The interface
- * supports both direct building within an existing artifact or setting of data into the Avro-based encoding
- * for remote operation.
- * <p>
- * A builder is passed to any adapter
- * {@link org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter.Encoder} that requests
- * one. by the runtime. The built a {@code KlabData} object built can send binary data to a client or directly
- * construct an artifact.
- * <p>
- * A <code>Data</code> object can also be passed to
- * {@link org.integratedmodelling.klab.api.services.ResourcesService#contextualize(Resource, Geometry, Data,
- * Scope)} if the contextualization requires inputs. TODO the ContextScope should be able to produce a lazy
- * Data object from the list of requirements.
- * <p>
- * TODO explore stream-based options for the transfer.
+ * Encoded k.LAB data object, resulting from decoding a resource URN in a specified geometry. The
+ * interface supports both direct building within an existing artifact or setting of data into the
+ * Avro-based encoding for remote operation.
+ *
+ * <p>A <code>Data.Builder</code> is passed to any adapter {@link
+ * org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter.Encoder} that
+ * requests one. by the runtime. The runtime calls its #build method to create a {@code Data} object
+ * that can send binary data to a requesting runtime or directly construct an artifact when the
+ * adapter is available locally.
+ *
+ * <p>A <code>Data</code> object can also be passed to {@link
+ * org.integratedmodelling.klab.api.services.ResourcesService#contextualize(Resource, Observation,
+ * Data, Scope)} if the contextualization requires inputs. TODO the ContextScope should be able to
+ * produce a lazy Data object from the list of requirements.
+ *
+ * <p>TODO explore stream-based options for the transfer.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
 public interface Data {
 
-    @FunctionalInterface
-    interface IntFiller {
-        void add(int value);
-    }
+  @FunctionalInterface
+  interface IntFiller {
+    void add(int value);
+  }
 
-    @FunctionalInterface
-    interface FloatFiller {
-        void add(float value);
-    }
+  @FunctionalInterface
+  interface FloatFiller {
+    void add(float value);
+  }
 
-    @FunctionalInterface
-    interface BooleanFiller {
-        void add(boolean value);
-    }
+  @FunctionalInterface
+  interface BooleanFiller {
+    void add(boolean value);
+  }
 
-    @FunctionalInterface
-    interface DoubleFiller {
-        void add(double value);
-    }
+  @FunctionalInterface
+  interface DoubleFiller {
+    void add(double value);
+  }
 
-    @FunctionalInterface
-    interface KeyedFiller {
-        void add(Object value);
-    }
+  @FunctionalInterface
+  interface KeyedFiller {
+    void add(Object value);
+  }
 
-    @FunctionalInterface
-    interface ObjectFiller {
-        ObjectBuilder add();
-    }
+  @FunctionalInterface
+  interface ObjectFiller {
+    ObjectBuilder newObject();
+  }
 
-    interface ObjectBuilder {
+  interface ObjectBuilder {
 
-        ObjectBuilder name(String string);
+    ObjectBuilder name(String string);
 
-        ObjectBuilder geometry(Geometry geometry);
+    ObjectBuilder withMetadata(String key, Object value);
 
-        /**
-         * To create object states or sub-objects, a new builder in the context of this one may be requested.
-         *
-         * @return
-         */
-        Builder builder();
-    }
+    ObjectBuilder geometry(Geometry geometry);
 
     /**
-     * Any of the space-filling curves can be used in the data encoding. Each state with multiple values must
-     * define the curve it uses. Normally these are used for 2D space but there may be 3D and others in the
-     * future, so extend as needed.
-     */
-    enum FillCurve {
-        S2_XY,
-        S2_YX,
-        S2_SIERPINSKI_3,
-        S2_HILBERT
-        // ... TODO more as needed. Sierpinsky can have different orders; the arrowhead can be extended to 3D
-    }
-
-    /**
-     * This returns an index iterator for the data geometry using the fill curve specified.
-     *
-     * @param curve
-     * @return
-     */
-    PrimitiveIterator.OfLong getFillCurve(FillCurve curve);
-
-    /**
-     * A builder is passed to a resource encoder and is used to define the result of a resource's
-     * contextualization.
-     * <p>
-     * TODO maybe would be better to have type-specific builders (or ALSO have them) and adapt
-     *  the resource type to the builder requested in the encoder parameters.
-     */
-    interface Builder {
-
-        /**
-         * The default fill curve for the state geometry under consideration. Normally the fastest possible. A
-         * different one can be constructed and passed to the fillers as required.
-         *
-         * @return
-         */
-        FillCurve fillCurve();
-
-        /**
-         * Return the adder for a state whose values are boolean.
-         *
-         * @param fillCurve pass {@link #fillCurve()} for the default X/Y curve
-         * @return the adder for state
-         */
-        BooleanFiller booleanState(FillCurve fillCurve);
-
-        BooleanFiller booleanState(String stateIdentifier, FillCurve fillCurve);
-
-        FloatFiller floatState(FillCurve fillCurve);
-
-        FloatFiller floatState(String stateIdentifier, FillCurve fillCurve);
-
-        IntFiller intState(FillCurve fillCurve);
-
-        IntFiller intState(String stateIdentifier, FillCurve fillCurve);
-
-        DoubleFiller doubleState(FillCurve fillCurve);
-
-        DoubleFiller doubleState(String stateIdentifier, FillCurve fillCurve);
-
-        KeyedFiller keyedState(FillCurve fillCurve);
-
-        KeyedFiller keyedState(String stateIdentifier, FillCurve fillCurve);
-
-        ObjectFiller objectCollection();
-
-        ObjectFiller objectCollection(String observationIdentifier);
-
-        /**
-         * Add a notification to be added to the result. If an error-level notification is added, nothing is
-         * sent except the notification and any execution metadata.
-         *
-         * @param notification
-         */
-        void notification(Notification notification);
-
-        /**
-         * Build the final data object.
-         *
-         * @return the finished data
-         */
-        Data build();
-    }
-
-    /**
-     * If empty, nothing besides notifications should be accessed.
+     * To create object states or sub-objects, a new builder in the context of this one may be
+     * requested.
      *
      * @return
      */
-    boolean isEmpty();
+    Builder builder();
+
+    /** Call this to add the new object to the object collection that created it. */
+    void add();
+  }
+
+  /**
+   * Any of the space-filling curves can be used in the data encoding. Each state with multiple
+   * values must define the curve it uses. Normally these are used for 2D space but there may be 3D
+   * and others in the future, so extend as needed.
+   */
+  enum FillCurve {
+    S2_XY,
+    S2_YX,
+    S2_SIERPINSKI_3,
+    S2_HILBERT
+    // ... TODO more as needed. Sierpinsky can have different orders; the arrowhead can be extended
+    // to 3D
+  }
+
+  /**
+   * This returns an index iterator for the data geometry using the fill curve specified.
+   *
+   * @param curve
+   * @return
+   */
+  PrimitiveIterator.OfLong getFillCurve(FillCurve curve);
+
+  /**
+   * A builder is passed to a resource encoder and is used to define the result of a resource's
+   * contextualization.
+   *
+   * <p>TODO maybe would be better to have type-specific builders (or ALSO have them) and adapt the
+   * resource type to the builder requested in the encoder parameters.
+   */
+  interface Builder {
 
     /**
-     * The artifact type of the primary artifact.
+     * The default fill curve for the state geometry under consideration. Normally the fastest
+     * possible. A different one can be constructed and passed to the fillers as required.
      *
      * @return
      */
-    Artifact.Type getArtifactType();
+    FillCurve fillCurve();
 
     /**
-     * Return any notifications passed through a builder. Notifications are a global list that refers to all
-     * artifacts.
+     * Return the adder for a state whose values are boolean.
      *
-     * @return all notifications
+     * @param fillCurve pass {@link #fillCurve()} for the default X/Y curve
+     * @return the adder for state
      */
-    List<Notification> getNotifications();
+    BooleanFiller booleanState(FillCurve fillCurve);
+
+    BooleanFiller booleanState(String stateIdentifier, FillCurve fillCurve);
+
+    FloatFiller floatState(FillCurve fillCurve);
+
+    FloatFiller floatState(String stateIdentifier, FillCurve fillCurve);
+
+    IntFiller intState(FillCurve fillCurve);
+
+    IntFiller intState(String stateIdentifier, FillCurve fillCurve);
+
+    DoubleFiller doubleState(FillCurve fillCurve);
+
+    DoubleFiller doubleState(String stateIdentifier, FillCurve fillCurve);
+
+    KeyedFiller keyedState(FillCurve fillCurve);
+
+    KeyedFiller keyedState(String stateIdentifier, FillCurve fillCurve);
+
+    ObjectFiller objectCollection();
+
+    ObjectFiller objectCollection(String observationIdentifier);
 
     /**
-     * Return the number of objects at the level of this data response, 0 if !type.isCountable(), 0 or more if
-     * object or event.
+     * Add a notification to be added to the result. If an error-level notification is added,
+     * nothing is sent except the notification and any execution metadata.
      *
-     * @return
+     * @param notification
      */
-    int getObjectCount();
+    void notification(Notification notification);
 
     /**
-     * The number of states in the primary artifact, normally 1 if type == quality or 0 if not.
+     * Build the final data object.
      *
-     * @return
+     * @return the finished data
      */
-    int getStateCount();
+    Data build();
+  }
 
-    /**
-     * @param i
-     * @return
-     */
-    Scale getObjectScale(int i);
+  /**
+   * If empty, nothing besides notifications should be accessed.
+   *
+   * @return
+   */
+  boolean isEmpty();
 
-    /**
-     * @param i
-     * @return
-     */
-    String getObjectName(int i);
+  /**
+   * The artifact type of the primary artifact.
+   *
+   * @return
+   */
+  Artifact.Type getArtifactType();
 
-    /**
-     * @param i
-     * @return
-     */
-    Metadata getObjectMetadata(int i);
+  /**
+   * Return any notifications passed through a builder. Notifications are a global list that refers
+   * to all artifacts.
+   *
+   * @return all notifications
+   */
+  List<Notification> getNotifications();
 
-    /**
-     * Normally null, unless the resource is a characterizer that classifies an object or a resolves an
-     * abstract trait or role into one or more (in OR) concrete ones. The results are worldview-bound.
-     *
-     * @return
-     * @deprecated should use the observable of an Artifact with collapsed scale for each subcontext of
-     * interest
-     */
-    Concept getSemantics();
+  /**
+   * Return the number of objects at the level of this data response, 0 if !type.isCountable(), 0 or
+   * more if object or event.
+   *
+   * @return
+   */
+  int getObjectCount();
 
-    /**
-     * Get overall metadata for the resource extraction operation.
-     *
-     * @return
-     */
-    Metadata getMetadata();
+  /**
+   * The number of states in the primary artifact, normally 1 if type == quality or 0 if not.
+   *
+   * @return
+   */
+  int getStateCount();
 
-    static Builder builder() {
-        Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
-        if (configuration == null) {
-            throw new KlabIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
-        }
-        return configuration.getDataBuilder();
+  /**
+   * @param i
+   * @return
+   */
+  Scale getObjectScale(int i);
+
+  /**
+   * @param i
+   * @return
+   */
+  String getObjectName(int i);
+
+  /**
+   * @param i
+   * @return
+   */
+  Metadata getObjectMetadata(int i);
+
+  /**
+   * Normally null, unless the resource is a characterizer that classifies an object or a resolves
+   * an abstract trait or role into one or more (in OR) concrete ones. The results are
+   * worldview-bound.
+   *
+   * @return
+   * @deprecated should use the observable of an Artifact with collapsed scale for each subcontext
+   *     of interest
+   */
+  Concept getSemantics();
+
+  /**
+   * Get overall metadata for the resource extraction operation.
+   *
+   * @return
+   */
+  Metadata getMetadata();
+
+  static Builder builder() {
+    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+    if (configuration == null) {
+      throw new KlabIllegalStateException(
+          "k.LAB environment not configured to promote a geometry to a scale");
     }
+    return configuration.getDataBuilder();
+  }
 
-    static Data empty(String reason) {
-        return new Data() {
+  static Data empty(String reason) {
+    return new Data() {
 
-            @Override
-            public PrimitiveIterator.OfLong getFillCurve(FillCurve curve) {
-                return null;
-            }
+      @Override
+      public PrimitiveIterator.OfLong getFillCurve(FillCurve curve) {
+        return null;
+      }
 
-            @Override
-            public boolean isEmpty() {
-                return true;
-            }
+      @Override
+      public boolean isEmpty() {
+        return true;
+      }
 
-            @Override
-            public Artifact.Type getArtifactType() {
-                return null;
-            }
+      @Override
+      public Artifact.Type getArtifactType() {
+        return null;
+      }
 
-            @Override
-            public List<Notification> getNotifications() {
-                return List.of(Notification.error(reason));
-            }
+      @Override
+      public List<Notification> getNotifications() {
+        return List.of(Notification.error(reason));
+      }
 
-            @Override
-            public int getObjectCount() {
-                return 0;
-            }
+      @Override
+      public int getObjectCount() {
+        return 0;
+      }
 
-            @Override
-            public int getStateCount() {
-                return 0;
-            }
+      @Override
+      public int getStateCount() {
+        return 0;
+      }
 
-            @Override
-            public Scale getObjectScale(int i) {
-                return null;
-            }
+      @Override
+      public Scale getObjectScale(int i) {
+        return null;
+      }
 
-            @Override
-            public String getObjectName(int i) {
-                return "";
-            }
+      @Override
+      public String getObjectName(int i) {
+        return "";
+      }
 
-            @Override
-            public Metadata getObjectMetadata(int i) {
-                return null;
-            }
+      @Override
+      public Metadata getObjectMetadata(int i) {
+        return null;
+      }
 
-            @Override
-            public Concept getSemantics() {
-                return null;
-            }
+      @Override
+      public Concept getSemantics() {
+        return null;
+      }
 
-            @Override
-            public Metadata getMetadata() {
-                return null;
-            }
-        };
-    }
-
+      @Override
+      public Metadata getMetadata() {
+        return null;
+      }
+    };
+  }
 }

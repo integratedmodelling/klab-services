@@ -15,10 +15,10 @@ import org.apache.avro.message.SchemaStore;
 notification in the top-level Instance means that contextualization has failed. */
 @org.apache.avro.specific.AvroGenerated
 public class Instance extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = -2146269386455013185L;
+  private static final long serialVersionUID = 3007806464549826577L;
 
 
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Instance\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"doc\":\"The payload of any contextualization is a top-level Instance. Any ERROR-level\\r\\nnotification in the top-level Instance means that contextualization has failed.\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"geometry\",\"type\":\"string\"},{\"name\":\"empty\",\"type\":\"boolean\",\"default\":false},{\"name\":\"notifications\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Notification\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"activityUrn\",\"type\":[\"null\",\"string\"]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"code\",\"type\":[\"null\",\"int\"]},{\"name\":\"level\",\"type\":{\"type\":\"enum\",\"name\":\"Level\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}}]}}},{\"name\":\"attributes\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"states\",\"type\":[\"null\",{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"State\",\"doc\":\"State record\",\"fields\":[{\"name\":\"urn\",\"type\":\"string\"},{\"name\":\"fillingCurve\",\"type\":[\"string\",\"null\"],\"default\":\"S2XY\"},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]}]}}]},{\"name\":\"instances\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"Instance\"}]}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Instance\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"doc\":\"The payload of any contextualization is a top-level Instance. Any ERROR-level\\r\\nnotification in the top-level Instance means that contextualization has failed.\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"geometry\",\"type\":\"string\"},{\"name\":\"empty\",\"type\":\"boolean\",\"default\":false},{\"name\":\"notifications\",\"type\":[\"null\",{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Notification\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"activityUrn\",\"type\":[\"null\",\"string\"]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"code\",\"type\":[\"null\",\"int\"]},{\"name\":\"level\",\"type\":{\"type\":\"enum\",\"name\":\"Level\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}}]}}]},{\"name\":\"attributes\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"states\",\"type\":[\"null\",{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"State\",\"doc\":\"State record\",\"fields\":[{\"name\":\"urn\",\"type\":\"string\"},{\"name\":\"fillingCurve\",\"type\":[\"string\",\"null\"],\"default\":\"S2XY\"},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]}]}}]},{\"name\":\"instances\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"Instance\"}]}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static final SpecificData MODEL$ = new SpecificData();
@@ -792,18 +792,24 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
 
     out.writeBoolean(this.empty);
 
-    long size0 = this.notifications.size();
-    out.writeArrayStart();
-    out.setItemCount(size0);
-    long actualSize0 = 0;
-    for (org.integratedmodelling.klab.common.data.Notification e0: this.notifications) {
-      actualSize0++;
-      out.startItem();
-      e0.customEncode(out);
+    if (this.notifications == null) {
+      out.writeIndex(0);
+      out.writeNull();
+    } else {
+      out.writeIndex(1);
+      long size0 = this.notifications.size();
+      out.writeArrayStart();
+      out.setItemCount(size0);
+      long actualSize0 = 0;
+      for (org.integratedmodelling.klab.common.data.Notification e0: this.notifications) {
+        actualSize0++;
+        out.startItem();
+        e0.customEncode(out);
+      }
+      out.writeArrayEnd();
+      if (actualSize0 != size0)
+        throw new java.util.ConcurrentModificationException("Array-size written was " + size0 + ", but element count was " + actualSize0 + ".");
     }
-    out.writeArrayEnd();
-    if (actualSize0 != size0)
-      throw new java.util.ConcurrentModificationException("Array-size written was " + size0 + ", but element count was " + actualSize0 + ".");
 
     if (this.attributes == null) {
       out.writeIndex(0);
@@ -898,21 +904,26 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
 
       this.empty = in.readBoolean();
 
-      long size0 = in.readArrayStart();
-      java.util.List<org.integratedmodelling.klab.common.data.Notification> a0 = this.notifications;
-      if (a0 == null) {
-        a0 = new SpecificData.Array<org.integratedmodelling.klab.common.data.Notification>((int)size0, SCHEMA$.getField("notifications").schema());
-        this.notifications = a0;
-      } else a0.clear();
-      SpecificData.Array<org.integratedmodelling.klab.common.data.Notification> ga0 = (a0 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.common.data.Notification>)a0 : null);
-      for ( ; 0 < size0; size0 = in.arrayNext()) {
-        for ( ; size0 != 0; size0--) {
-          org.integratedmodelling.klab.common.data.Notification e0 = (ga0 != null ? ga0.peek() : null);
-          if (e0 == null) {
-            e0 = new org.integratedmodelling.klab.common.data.Notification();
+      if (in.readIndex() != 1) {
+        in.readNull();
+        this.notifications = null;
+      } else {
+        long size0 = in.readArrayStart();
+        java.util.List<org.integratedmodelling.klab.common.data.Notification> a0 = this.notifications;
+        if (a0 == null) {
+          a0 = new SpecificData.Array<org.integratedmodelling.klab.common.data.Notification>((int)size0, SCHEMA$.getField("notifications").schema().getTypes().get(1));
+          this.notifications = a0;
+        } else a0.clear();
+        SpecificData.Array<org.integratedmodelling.klab.common.data.Notification> ga0 = (a0 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.common.data.Notification>)a0 : null);
+        for ( ; 0 < size0; size0 = in.arrayNext()) {
+          for ( ; size0 != 0; size0--) {
+            org.integratedmodelling.klab.common.data.Notification e0 = (ga0 != null ? ga0.peek() : null);
+            if (e0 == null) {
+              e0 = new org.integratedmodelling.klab.common.data.Notification();
+            }
+            e0.customDecode(in);
+            a0.add(e0);
           }
-          e0.customDecode(in);
-          a0.add(e0);
         }
       }
 
@@ -1020,21 +1031,26 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
           break;
 
         case 3:
-          long size0 = in.readArrayStart();
-          java.util.List<org.integratedmodelling.klab.common.data.Notification> a0 = this.notifications;
-          if (a0 == null) {
-            a0 = new SpecificData.Array<org.integratedmodelling.klab.common.data.Notification>((int)size0, SCHEMA$.getField("notifications").schema());
-            this.notifications = a0;
-          } else a0.clear();
-          SpecificData.Array<org.integratedmodelling.klab.common.data.Notification> ga0 = (a0 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.common.data.Notification>)a0 : null);
-          for ( ; 0 < size0; size0 = in.arrayNext()) {
-            for ( ; size0 != 0; size0--) {
-              org.integratedmodelling.klab.common.data.Notification e0 = (ga0 != null ? ga0.peek() : null);
-              if (e0 == null) {
-                e0 = new org.integratedmodelling.klab.common.data.Notification();
+          if (in.readIndex() != 1) {
+            in.readNull();
+            this.notifications = null;
+          } else {
+            long size0 = in.readArrayStart();
+            java.util.List<org.integratedmodelling.klab.common.data.Notification> a0 = this.notifications;
+            if (a0 == null) {
+              a0 = new SpecificData.Array<org.integratedmodelling.klab.common.data.Notification>((int)size0, SCHEMA$.getField("notifications").schema().getTypes().get(1));
+              this.notifications = a0;
+            } else a0.clear();
+            SpecificData.Array<org.integratedmodelling.klab.common.data.Notification> ga0 = (a0 instanceof SpecificData.Array ? (SpecificData.Array<org.integratedmodelling.klab.common.data.Notification>)a0 : null);
+            for ( ; 0 < size0; size0 = in.arrayNext()) {
+              for ( ; size0 != 0; size0--) {
+                org.integratedmodelling.klab.common.data.Notification e0 = (ga0 != null ? ga0.peek() : null);
+                if (e0 == null) {
+                  e0 = new org.integratedmodelling.klab.common.data.Notification();
+                }
+                e0.customDecode(in);
+                a0.add(e0);
               }
-              e0.customDecode(in);
-              a0.add(e0);
             }
           }
           break;

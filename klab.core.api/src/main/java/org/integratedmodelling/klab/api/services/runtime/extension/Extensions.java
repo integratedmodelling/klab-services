@@ -80,25 +80,33 @@ public interface Extensions {
 
   /**
    * Describes a component which may bring with itself libraries and adapters with their content.
+   * The usage rights are hosted within the rights system and are not part of the descriptor; the
+   * rights in the manifest are used to initialize the component's rights in the hosting service.
    *
-   * @param id
-   * @param version
-   * @param description
-   * @param sourceArchive
-   * @param permissions
-   * @param mavenCoordinates
-   * @param libraries
-   * @param adapters
-   * @param services
-   * @param annotations
-   * @param verbs
+   * @param id the mandatory, unique component URN.
+   * @param version the mandatory version number, propagating to all contained elements
+   * @param description the mandatory description
+   * @param sourceArchive the local file hosting the component. Even if the component is used after
+   *     unpacking the file, this should be kept for validation and integrity.
+   * @param fileHash if the file hash is null, the component should never be used except in a local
+   *     configuration and with admin privileges
+   * @param mavenCoordinates the Maven/Gradle string identifying the component if it comes from
+   *     Maven, consisting of groupId:artifactId:version
+   * @param libraries descriptors for all {@link Library}-annotated classes in the component.
+   * @param adapters descriptors for all {@link ResourceAdapter}-annotated classes in the component
+   * @param services descriptors for all {@link KlabService}-annotated methods and classes,
+   *     including those hosted within libraries.
+   * @param annotations descriptor for all special annotations and their handler methods, including
+   *     those in libraries
+   * @param verbs descriptor for all {@link Verb}-annotated methods and classes in the component,
+   *     including those in libraries.
    */
   record ComponentDescriptor(
       String id,
       Version version,
       String description,
       File sourceArchive,
-      ResourcePrivileges permissions,
+      String fileHash,
       String mavenCoordinates,
       List<LibraryDescriptor> libraries,
       List<AdapterDescriptor> adapters,
@@ -143,7 +151,7 @@ public interface Extensions {
     // check call style: 1 = call, scope, prototype; 2 = call, scope; 3 = custom, matched at
     // each call
     public int methodCall;
-    public boolean staticClass;  // TODO remove (not now because it messes up config)
+    public boolean staticClass; // TODO remove (not now because it messes up config)
     public boolean staticMethod;
     public boolean error;
   }

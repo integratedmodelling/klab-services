@@ -3,51 +3,93 @@ package org.integratedmodelling.common.data;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.common.data.Instance;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
 
+/** Builder that wraps an Instance directly */
 public class DataBuilderImpl implements Data.Builder {
 
-  private final Instance.Builder instanceBuilder = Instance.newBuilder();
+  private Instance.Builder instanceBuilder;
+  private ObjectFiller.ObjectBuilder objectBuilder; // not null if the instance is for an object
 
   class ObjectFiller implements Data.ObjectFiller {
 
     class ObjectBuilder implements Data.ObjectBuilder {
 
-      public ObjectBuilder() {
+      private final Instance.Builder objectBuilder = Instance.newBuilder();
 
-      }
+      public ObjectBuilder() {}
 
       Geometry geometry;
       String name;
+      DataBuilderImpl parentBuilder;
       DataBuilderImpl dataBuilder;
 
       @Override
       public Data.ObjectBuilder name(String string) {
-        this.name = name;
+        this.objectBuilder.setName(string);
+        return this;
+      }
+
+      @Override
+      public Data.ObjectBuilder withMetadata(String key, Object value) {
+        this.objectBuilder.getMetadata().put(key, Utils.Data.asString(value));
         return this;
       }
 
       @Override
       public Data.ObjectBuilder geometry(Geometry geometry) {
-        this.geometry = geometry;
+        this.objectBuilder.setGeometry(geometry.as(Geometry.class).encode());
         return this;
       }
 
       @Override
       public Data.Builder builder() {
-        this.dataBuilder = new DataBuilderImpl();
+        this.dataBuilder = new DataBuilderImpl(this);
         return this.dataBuilder;
+      }
+
+      @Override
+      public void add() {
+        if (dataBuilder != null) {
+          objectBuilder.getInstances().add(dataBuilder.instanceBuilder.build());
+        }
+        parentBuilder.instanceBuilder.getInstances().add(objectBuilder.build());
       }
     }
 
     @Override
-    public Data.ObjectBuilder add() {
+    public Data.ObjectBuilder newObject() {
       var ret = new ObjectBuilder();
+      ret.objectBuilder.setNotifications(new ArrayList<>());
+      ret.objectBuilder.setAttributes(new LinkedHashMap<>());
+      ret.objectBuilder.setMetadata(new LinkedHashMap<>());
+      ret.objectBuilder.setInstances(new ArrayList<>());
+      ret.objectBuilder.setStates(new ArrayList<>());
+      ret.parentBuilder = DataBuilderImpl.this;
       return ret;
     }
+  }
+
+  public DataBuilderImpl() {
+    initInstance();
+  }
+
+  private void initInstance() {
+    this.instanceBuilder = Instance.newBuilder();
+    this.instanceBuilder.setStates(new ArrayList<>());
+    this.instanceBuilder.setMetadata(new LinkedHashMap<>());
+    this.instanceBuilder.setAttributes(new LinkedHashMap<>());
+    this.instanceBuilder.setNotifications(new ArrayList<>());
+    this.instanceBuilder.setInstances(new ArrayList<>());
+  }
+
+  private DataBuilderImpl(ObjectFiller.ObjectBuilder objectBuilder) {
+    initInstance();
+    this.objectBuilder = objectBuilder;
   }
 
   @Override
@@ -120,6 +162,6 @@ public class DataBuilderImpl implements Data.Builder {
 
   @Override
   public Data build() {
-    return null;
+    return new DataImpl(instanceBuilder.build());
   }
 }
