@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
+import java.util.Map;
+import java.util.Set;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -21,9 +23,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-
-import java.util.Map;
-import java.util.Set;
 
 /**
  * The digital twin is a graph model composed of observations and all their history. Each {@link

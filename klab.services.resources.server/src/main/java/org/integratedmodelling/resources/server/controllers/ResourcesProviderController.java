@@ -2,8 +2,15 @@ package org.integratedmodelling.resources.server.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.security.Principal;
+import java.util.Collection;
+import java.util.List;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
+import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -17,7 +24,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -30,7 +36,6 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
-import org.integratedmodelling.common.data.DataImpl;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -41,13 +46,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.security.Principal;
-import java.util.Collection;
-import java.util.List;
 
 @RestController
 @Secured(Role.USER)
@@ -302,7 +300,7 @@ public class ResourcesProviderController {
 
         Data input = null;
         if (request.getInputData() != null) {
-          input = new DataImpl(request.getInputData());
+          input = BaseDataImpl.create(request.getInputData());
         }
 
         Data data =
@@ -314,7 +312,7 @@ public class ResourcesProviderController {
                     input,
                     scope);
 
-        if (data instanceof DataImpl dataImpl) {
+        if (data instanceof BaseDataImpl dataImpl) {
           try {
             var output = response.getOutputStream();
             dataImpl.copyTo(output);

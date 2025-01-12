@@ -14,6 +14,20 @@ import org.springframework.util.StringUtils;
 
 public class ConceptImpl implements Concept {
 
+  /**
+   * Numeric IDs for concepts that are not in ontologies (including owl:Nothing in its non-semantic
+   * version). These are fixed across reasoners. Positive concept IDs may be attributed on a
+   * reasoner-specific basis.
+   */
+  public static final long NOTHING_ID = 0;
+
+  public static final long NONSEMANTIC_SUBJECT_ID = -1;
+  public static final long NONSEMANTIC_EVENT_ID = -2;
+  public static final long NONSEMANTIC_RELATIONSHIP_ID = -3;
+  public static final long NONSEMANTIC_NUMBER_ID = -4;
+  public static final long NONSEMANTIC_CATEGORY_ID = -5;
+  public static final long NONSEMANTIC_BOOLEAN_ID = -6;
+
   @Serial private static final long serialVersionUID = -6871573029225503370L;
 
   private long id;

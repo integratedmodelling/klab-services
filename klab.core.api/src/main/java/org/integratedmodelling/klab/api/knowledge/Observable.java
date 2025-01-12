@@ -356,12 +356,12 @@ public interface Observable extends Semantics, Resolvable {
     Collection<Notification> getNotifications();
 
     //    /**
-//     * Advanced. Use ONLY internally!
-//     *
-//     * @param s
-//     * @return
-//     */
-//    Builder withReferenceName(String s);
+    //     * Advanced. Use ONLY internally!
+    //     *
+    //     * @param s
+    //     * @return
+    //     */
+    //    Builder withReferenceName(String s);
   }
 
   /**
@@ -520,5 +520,95 @@ public interface Observable extends Semantics, Resolvable {
           "k.LAB environment not configured to promote a concept to observable");
     }
     return configuration.promoteConceptToObservable(concept);
+  }
+
+  /**
+   * Return a unique non-semantic observable for collective subject observations
+   *
+   * @return
+   */
+  static Observable objects() {
+    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+    if (configuration == null) {
+      throw new KlabIllegalStateException(
+          "k.LAB environment not configured");
+    }
+    return configuration.promoteConceptToObservable(
+        configuration.getNonSemanticConcept(SemanticType.SUBJECT));
+  }
+
+  /**
+   * Return a unique non-semantic observable for collective event observations
+   *
+   * @return
+   */
+  static Observable events() {
+    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+    if (configuration == null) {
+      throw new KlabIllegalStateException(
+              "k.LAB environment not configured");
+    }
+    return configuration.promoteConceptToObservable(
+            configuration.getNonSemanticConcept(SemanticType.EVENT));
+  }
+
+  /**
+   * Return a unique non-semantic observable for collective relationship observations
+   *
+   * @return
+   */
+  static Observable relationships() {
+    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+    if (configuration == null) {
+      throw new KlabIllegalStateException(
+              "k.LAB environment not configured");
+    }
+    return configuration.promoteConceptToObservable(
+            configuration.getNonSemanticConcept(SemanticType.RELATIONSHIP));
+  }
+
+  /**
+   * Return a unique non-semantic observable for number observations.
+   *
+   * @return
+   */
+  static Observable number() {
+    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+    if (configuration == null) {
+      throw new KlabIllegalStateException(
+              "k.LAB environment not configured");
+    }
+    return configuration.promoteConceptToObservable(
+            configuration.getNonSemanticConcept(SemanticType.QUANTIFIABLE));
+  }
+
+  /**
+   * Return a unique non-semantic observable for textual categories.
+   *
+   * @return
+   */
+  static Observable text() {
+    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+    if (configuration == null) {
+      throw new KlabIllegalStateException(
+              "k.LAB environment not configured");
+    }
+    return configuration.promoteConceptToObservable(
+            configuration.getNonSemanticConcept(SemanticType.CATEGORY));
+  }
+
+  /**
+   * Return a unique non-semantic observable for booleans.
+   *
+   * @return
+   */
+  static Observable bool() {
+    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+    if (configuration == null) {
+      throw new KlabIllegalStateException(
+              "k.LAB environment not configured");
+    }
+    return configuration.promoteConceptToObservable(
+            configuration.getNonSemanticConcept(SemanticType.PRESENCE));
   }
 }

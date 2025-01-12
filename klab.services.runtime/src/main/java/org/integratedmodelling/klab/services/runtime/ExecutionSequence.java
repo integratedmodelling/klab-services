@@ -1,43 +1,32 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import com.google.common.collect.ImmutableList;
-import org.integratedmodelling.common.runtime.ActuatorImpl;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
-import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.provenance.Activity;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
-import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.data.ClientResourceContextualizer;
 import org.integratedmodelling.klab.data.ServiceResourceContextualizer;
-import org.integratedmodelling.klab.runtime.storage.BooleanStorage;
-import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
-import org.integratedmodelling.klab.runtime.storage.FloatStorage;
-import org.integratedmodelling.klab.runtime.storage.KeyedStorage;
 import org.integratedmodelling.klab.services.runtime.neo4j.AbstractKnowledgeGraph;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.jgrapht.Graph;
@@ -45,13 +34,6 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.ojalgo.concurrent.Parallelism;
-
-import java.lang.reflect.Method;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 /**
  * Object that follows the execution of the actuators. Each run produces a new context that is the
@@ -351,6 +333,7 @@ public class ExecutionSequence {
                     storage,
                     expression,
                     lookupTable,
+                    null, // TODO this won't work
                     scope);
 
             if (runArguments == null) {

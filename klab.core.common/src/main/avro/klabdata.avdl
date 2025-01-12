@@ -8,21 +8,9 @@ protocol KlabData {
 	record Notification {
 		string message;
 		string? activityUrn;
-		union {null, map<string>} metadata;
-		int?    code;
-		Level  level;
-	}
-
-	/**
-	 * State record
- 	 */
-	record State {
-		string urn;
-		string? fillingCurve = "S2XY";
-		union {null, array<double>} doubleData;
-		union {null, array<long>} longData;
-		union {null, array<int>} intData;
-		union {null, array<float>} floatData;
+		union{null, map<string>} metadata;
+		int? code;
+		Level level;
 	}
 
 	/**
@@ -30,14 +18,20 @@ protocol KlabData {
 	 * notification in the top-level Instance means that contextualization has failed.
      */
 	record Instance {
-		string? name;
-		string? geometry;
+		string name;
+		string geometry;
+		string observable;
+		string? fillingCurve = "S1_LINEAR";
 		boolean empty = false;
-		union {null, array<Notification>} notifications;
-		union {null, map<string>} attributes;
-		union {null, map<string>} metadata;
-		union {null, array<State>} states;
-		union {null, array<Instance>} instances;
+		array<Notification> notifications;
+		map<string> metadata;
+		// children
+		union{null, array<Instance>} instances;
+		// only one of the following may be instantiated. Cannot use unions on these.
+		union{null, array<double>} doubleData;
+		union{null, array<long>} longData;
+		union{null, array<int>} intData;
+		union{null, array<float>} floatData;
 	}
 
 	/**

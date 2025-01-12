@@ -6,8 +6,6 @@ import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
-import org.integratedmodelling.klab.common.data.Instance;
 
 /**
  * One of these is created per resource contextualization operation. Drives the functions in the

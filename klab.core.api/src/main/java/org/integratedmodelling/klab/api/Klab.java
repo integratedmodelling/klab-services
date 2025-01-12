@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api;
 
+import java.util.Collection;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -7,15 +8,11 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
-import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
-
-import java.util.Collection;
-import java.util.Map;
 
 /**
  * Holds global configurations and functions that allow generic interfaces to expose constructor methods that
@@ -125,9 +122,11 @@ public enum Klab {
 
         Model.Builder getModelLearner(String outputResourceUrn);
 
-        Data.Builder getDataBuilder();
+        Data.Builder getDataBuilder(String name, Observable observable, Geometry geometry);
 
-        Data.Builder getDataBuilder(String name, Geometry geometry);
+//        Data.Builder getDataBuilderObsolete();
+//
+//        Data.Builder getDataBuilderObsolete(String name, Geometry geometry);
 
         Quantity parseQuantity(String quantityDescription);
 
@@ -138,6 +137,8 @@ public enum Klab {
          * @return
          */
         Extent<?> createExtentCopy(Extent<?> extent);
+
+        Concept getNonSemanticConcept(SemanticType semanticType);
     }
 
     private Configuration configuration;

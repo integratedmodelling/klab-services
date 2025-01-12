@@ -1,106 +1,31 @@
-/*
- * This file is part of k.LAB.
- *
- * k.LAB is free software: you can redistribute it and/or modify
- * it under the terms of the Affero GNU General Public License as published
- * by the Free Software Foundation, either version 3 of the License,
- * or (at your option) any later version.
- *
- * A copy of the GNU Affero General Public License is distributed in the root
- * directory of the k.LAB distribution (LICENSE.txt). If this cannot be found
- * see <http://www.gnu.org/licenses/>.
- *
- * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned
- * in author tags. All rights reserved.
- */
 package org.integratedmodelling.klab.api.data;
-
-import java.util.List;
-import java.util.PrimitiveIterator;
 
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
+import java.util.List;
+import java.util.Map;
+
 /**
- * Encoded k.LAB data object, resulting from decoding a resource URN in a specified geometry. The
- * interface supports both direct building within an existing artifact or setting of data into the
- * Avro-based encoding for remote operation.
+ * The <code>Data</code> object encapsulates the network-transmissible data package specified
+ * through the Avro schema and understood by all k.LAB services. If the {@link
+ * org.integratedmodelling.klab.api.services.resources.adapters.Adapter} used is available locally,
+ * no network transmission will happen. A Data object must be created with a name, an Observable and
+ * a Geometry.
  *
- * <p>A <code>Data.Builder</code> is passed to any adapter {@link
- * org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter.Encoder} that
- * requests one. by the runtime. The runtime calls its #build method to create a {@code Data} object
- * that can send binary data to a requesting runtime or directly construct an artifact when the
- * adapter is available locally.
- *
- * <p>A <code>Data</code> object can also be passed to {@link
- * org.integratedmodelling.klab.api.services.ResourcesService#contextualize(Resource, Observation,
- * Data, Scope)} if the contextualization requires inputs. TODO the ContextScope should be able to
- * produce a lazy Data object from the list of requirements.
- *
- * <p>TODO explore stream-based options for the transfer.
- *
- * @author ferdinando.villa
- * @version $Id: $Id
+ * <p>A Data object that wraps a quality observation will be unmarshalled with an appropriate
+ * subclass implementing one of the {@link java.util.PrimitiveIterator} interfaces, so that the
+ * numbers can be extracted as needed without boxing as long as the primitive iterator methods are
+ * used. In the case of a category quality, the object will implement {@link
+ * java.util.PrimitiveIterator.OfInt} and the dataKey will be instantiated as well so that the
+ * (Integer) numbers can be translated to the needed objects, normally {@link
+ * org.integratedmodelling.klab.api.knowledge.Concept} instances.
  */
 public interface Data {
-
-  @FunctionalInterface
-  interface IntFiller {
-    void add(int value);
-  }
-
-  @FunctionalInterface
-  interface FloatFiller {
-    void add(float value);
-  }
-
-  @FunctionalInterface
-  interface BooleanFiller {
-    void add(boolean value);
-  }
-
-  @FunctionalInterface
-  interface DoubleFiller {
-    void add(double value);
-  }
-
-  @FunctionalInterface
-  interface KeyedFiller {
-    void add(Object value);
-  }
-
-  @FunctionalInterface
-  interface ObjectFiller {
-    ObjectBuilder newObject();
-  }
-
-  interface ObjectBuilder {
-
-    ObjectBuilder name(String string);
-
-    ObjectBuilder withMetadata(String key, Object value);
-
-    ObjectBuilder geometry(Geometry geometry);
-
-    /**
-     * To create object states or sub-objects, a new builder in the context of this one may be
-     * requested.
-     *
-     * @return
-     */
-    Builder builder();
-
-    /** Call this to add the new object to the object collection that created it. */
-    void add();
-  }
 
   /**
    * Any of the space-filling curves can be used in the data encoding. Each state with multiple
@@ -108,232 +33,259 @@ public interface Data {
    * and others in the future, so extend as needed.
    */
   enum FillCurve {
+    S1_LINEAR,
     S2_XY,
     S2_YX,
     S2_SIERPINSKI_3,
     S2_HILBERT
-    // ... TODO more as needed. Sierpinsky can have different orders; the arrowhead can be extended
+    // ... TODO more as needed. Sierpinski can have different orders; the arrowhead can be extended
     // to 3D
   }
 
-  /**
-   * This returns an index iterator for the data geometry using the fill curve specified.
-   *
-   * @param curve
-   * @return
-   */
-  PrimitiveIterator.OfLong getFillCurve(FillCurve curve);
+  interface Filler {}
 
-  /**
-   * A builder is passed to a resource encoder and is used to define the result of a resource's
-   * contextualization.
-   *
-   * <p>TODO maybe would be better to have type-specific builders (or ALSO have them) and adapt the
-   * resource type to the builder requested in the encoder parameters.
-   */
+  @FunctionalInterface
+  interface IntFiller extends Filler {
+    void add(int value);
+  }
+
+  @FunctionalInterface
+  interface FloatFiller extends Filler {
+    void add(float value);
+  }
+
+  @FunctionalInterface
+  interface BooleanFiller extends Filler {
+    void add(boolean value);
+  }
+
+  @FunctionalInterface
+  interface DoubleFiller extends Filler {
+    void add(double value);
+  }
+
+  @FunctionalInterface
+  interface KeyedFiller extends Filler {
+    void add(Object value);
+  }
+
   interface Builder {
 
     /**
-     * The default fill curve for the state geometry under consideration. Normally the fastest
-     * possible. A different one can be constructed and passed to the fillers as required.
-     *
-     * @return
-     */
-    FillCurve fillCurve();
-
-    /**
-     * Return the adder for a state whose values are boolean.
-     *
-     * @param fillCurve pass {@link #fillCurve()} for the default X/Y curve
-     * @return the adder for state
-     */
-    BooleanFiller booleanState(FillCurve fillCurve);
-
-    BooleanFiller booleanState(String stateIdentifier, FillCurve fillCurve);
-
-    FloatFiller floatState(FillCurve fillCurve);
-
-    FloatFiller floatState(String stateIdentifier, FillCurve fillCurve);
-
-    IntFiller intState(FillCurve fillCurve);
-
-    IntFiller intState(String stateIdentifier, FillCurve fillCurve);
-
-    DoubleFiller doubleState(FillCurve fillCurve);
-
-    DoubleFiller doubleState(String stateIdentifier, FillCurve fillCurve);
-
-    KeyedFiller keyedState(FillCurve fillCurve);
-
-    KeyedFiller keyedState(String stateIdentifier, FillCurve fillCurve);
-
-    ObjectFiller objectCollection();
-
-    ObjectFiller objectCollection(String observationIdentifier);
-
-    /**
-     * Add a notification to be added to the result. If an error-level notification is added,
-     * nothing is sent except the notification and any execution metadata.
+     * Add the passed notification. Returns self.
      *
      * @param notification
+     * @return
      */
-    void notification(Notification notification);
+    Builder notification(Notification notification);
 
     /**
-     * Build the final data object.
+     * Add the passed non-semantic metadata. Returns self.
      *
-     * @return the finished data
+     * @param key
+     * @param value
+     * @return
+     */
+    Builder metadata(String key, Object value);
+
+    /**
+     * Returns a new builder on which build() must be called to confirm the transaction. The
+     * geometry is mandatorily that of the builder and the name is the URN of the observable. On the
+     * builder, one of the fillers must be called to set the numbers.
+     *
+     * @param observable
+     * @return
+     */
+    Builder state(Observable observable);
+
+    /**
+     * Returns a new builder for an object, on which build() must be called to confirm the
+     * transaction. The API ensures that the object is sound after this call, but the builder can be
+     * used to add metadata, states or child objects.
+     *
+     * @param name
+     * @param observable
+     * @param geometry
+     * @return
+     */
+    Builder object(String name, Observable observable, Geometry geometry);
+
+    /**
+     * Return a filler for the quality data object being built. Will throw an exception if the
+     * observable is not a quality and the class is not compatible with the observable's {@link
+     * org.integratedmodelling.klab.api.knowledge.DescriptionType}.
+     *
+     * @param fillerClass
+     * @return
+     * @param <T>
+     */
+    <T extends Filler> T filler(Class<T> fillerClass);
+
+    /**
+     * Must be called on any secondary builders. Should NOT be called on the root builder, passed to
+     * encoders. Nothing needs to be done with the output which is automatically added if this comes
+     * from a {@link #state(Observable)} or {@link #object(String, Observable, Geometry)} call.
+     *
+     * @return
      */
     Data build();
   }
 
   /**
-   * If empty, nothing besides notifications should be accessed.
+   * The name. Never null; in quality observations, it will be the URN of the observable or the
+   * stated name if there is one.
    *
    * @return
    */
-  boolean isEmpty();
+  String name();
 
   /**
-   * The artifact type of the primary artifact.
+   * The observable URN. Never null.
    *
    * @return
    */
-  Artifact.Type getArtifactType();
+  String semantics();
 
   /**
-   * Return any notifications passed through a builder. Notifications are a global list that refers
-   * to all artifacts.
-   *
-   * @return all notifications
-   */
-  List<Notification> getNotifications();
-
-  /**
-   * Return the number of objects at the level of this data response, 0 if !type.isCountable(), 0 or
-   * more if object or event.
+   * The geometry. Never null.
    *
    * @return
    */
-  int getObjectCount();
+  Geometry geometry();
 
   /**
-   * The number of states in the primary artifact, normally 1 if type == quality or 0 if not.
+   * Metadata. Possibly empty, never null.
    *
    * @return
    */
-  int getStateCount();
+  Metadata metadata();
 
   /**
-   * @param i
-   * @return
-   */
-  Scale getObjectScale(int i);
-
-  /**
-   * @param i
-   * @return
-   */
-  String getObjectName(int i);
-
-  /**
-   * @param i
-   * @return
-   */
-  Metadata getObjectMetadata(int i);
-
-  /**
-   * Normally null, unless the resource is a characterizer that classifies an object or a resolves
-   * an abstract trait or role into one or more (in OR) concrete ones. The results are
-   * worldview-bound.
-   *
-   * @return
-   * @deprecated should use the observable of an Artifact with collapsed scale for each subcontext
-   *     of interest
-   */
-  Concept getSemantics();
-
-  /**
-   * Get overall metadata for the resource extraction operation.
+   * If empty, the data cannot be used. Normally there will be notifications explaining why.
    *
    * @return
    */
-  Metadata getMetadata();
+  boolean empty();
 
-  static Builder builder() {
+  /**
+   * Any notifications added. If any notification is ERROR level, empty() will be true.
+   *
+   * @return
+   */
+  List<Notification> notifications();
+
+  /**
+   * States in a data object whose observable is a quality. There may be states also in the result
+   * of contextualization of a process or a non-collective observation. If the contextualization is
+   * for a quality, the first state should normally be the observable requested, and other ancillary
+   * observations may have been produced if requested through an observation constraint.
+   *
+   * <p>Each returned object will implement one of the {@link java.util.PrimitiveIterator} classes.
+   * A class switch should be used along with the {@link #fillCurve()} to transfer the data to the
+   * storage, filtering through the {@link #dataKey()} if appropriate.
+   *
+   * @return
+   */
+  List<Data> states();
+
+  /**
+   * The objects returned from a data object whose observable is countable and collective.
+   *
+   * @return
+   */
+  List<Data> objects();
+
+  /**
+   * Mandatory in data objects that represent states, null otherwise. Return the desired fill curve.
+   *
+   * @return
+   */
+  FillCurve fillCurve();
+
+  /**
+   * This is not null only when the observable is a categorical quality, i.e its {@link
+   * org.integratedmodelling.klab.api.knowledge.DescriptionType} is {@link
+   * org.integratedmodelling.klab.api.knowledge.DescriptionType#CATEGORIZATION}. In this case the
+   * data object will implement {@link java.util.PrimitiveIterator.OfInt} and can be iterated to
+   * extract the categories.
+   *
+   * @return
+   */
+  Map<Integer, String> dataKey();
+
+  /**
+   * The number of objects returned by {@link #objects()} in object data, or the number of values in
+   * states. The observable should be the guide in asking the right questions about the data.
+   *
+   * @return
+   */
+  long size();
+
+  static Data.Builder builder(String name, Observable observable, Geometry geometry) {
     Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
     if (configuration == null) {
       throw new KlabIllegalStateException(
           "k.LAB environment not configured to create a data builder");
     }
-    return configuration.getDataBuilder();
+    return configuration.getDataBuilder(name, observable, geometry);
   }
 
-  static Builder builder(String name, Geometry geometry) {
-    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
-    if (configuration == null) {
-      throw new KlabIllegalStateException(
-          "k.LAB environment not configured to create a data builder");
-    }
-    return configuration.getDataBuilder(name, geometry);
-  }
+  static Data empty(Notification notification) {
 
-  static Data empty(String reason) {
     return new Data() {
-
       @Override
-      public PrimitiveIterator.OfLong getFillCurve(FillCurve curve) {
-        return null;
+      public String name() {
+        return "unknown";
       }
 
       @Override
-      public boolean isEmpty() {
+      public String semantics() {
+        return "owl:Nothing";
+      }
+
+      @Override
+      public Geometry geometry() {
+        return Geometry.EMPTY;
+      }
+
+      @Override
+      public Metadata metadata() {
+        return Metadata.create();
+      }
+
+      @Override
+      public boolean empty() {
         return true;
       }
 
       @Override
-      public Artifact.Type getArtifactType() {
+      public List<Notification> notifications() {
+        return List.of(notification);
+      }
+
+      @Override
+      public List<Data> states() {
+        return List.of();
+      }
+
+      @Override
+      public List<Data> objects() {
+        return List.of();
+      }
+
+      @Override
+      public FillCurve fillCurve() {
         return null;
       }
 
       @Override
-      public List<Notification> getNotifications() {
-        return List.of(Notification.error(reason));
+      public Map<Integer, String> dataKey() {
+        return Map.of();
       }
 
       @Override
-      public int getObjectCount() {
+      public long size() {
         return 0;
-      }
-
-      @Override
-      public int getStateCount() {
-        return 0;
-      }
-
-      @Override
-      public Scale getObjectScale(int i) {
-        return null;
-      }
-
-      @Override
-      public String getObjectName(int i) {
-        return "";
-      }
-
-      @Override
-      public Metadata getObjectMetadata(int i) {
-        return null;
-      }
-
-      @Override
-      public Concept getSemantics() {
-        return null;
-      }
-
-      @Override
-      public Metadata getMetadata() {
-        return null;
       }
     };
   }

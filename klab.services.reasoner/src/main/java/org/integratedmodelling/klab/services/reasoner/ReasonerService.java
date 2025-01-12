@@ -1578,6 +1578,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return false;
     }
 
+    // non-semantic concepts can only be the same thing.
+    if (concept instanceof ConceptImpl concept1 && concept1.getId() <= 0) {
+      return other instanceof ConceptImpl concept2 && concept2.getId() == concept1.getId();
+    }
+
     /*
      * first use "isn't" based on the enum types to quickly cut out those that don't
      * match. Also works with concepts in different ontologies that have the same

@@ -39,7 +39,7 @@ import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.tika.mime.MimeTypes;
-import org.integratedmodelling.common.data.DataImpl;
+import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -349,7 +349,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             parseHeaders(response);
             var decoder = DecoderFactory.get().binaryDecoder(response.body(), null);
             var reader = new SpecificDatumReader<>(Instance.class);
-            return new DataImpl(reader.read(null, decoder));
+            return BaseDataImpl.create(reader.read(null, decoder));
           }
 
         } catch (Throwable e) {

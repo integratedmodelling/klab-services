@@ -413,7 +413,8 @@ public class ResourcesProvider extends BaseService
     ResourceSet ret = new ResourceSet();
     boolean empty = true;
     for (var component : getComponentRegistry().resolveServiceCall(name, version)) {
-      if (/*component.permissions().checkAuthorization(scope)*/ true /* TODO check permissions */) {
+      if (
+      /*component.permissions().checkAuthorization(scope)*/ true /* TODO check permissions */) {
         empty = false;
         ret.getResults()
             .add(
@@ -507,13 +508,18 @@ public class ResourcesProvider extends BaseService
 
   @Override
   public Data contextualize(
-      Resource resource, Observation observation, @Nullable Data input, Scope scope) {
+          Resource resource, Observation observation, @Nullable Data input, Scope scope) {
     var adapter =
         getComponentRegistry().getAdapter(resource.getAdapterType(), resource.getVersion(), scope);
     if (adapter == null) {
-      return Data.empty("Adapter " + resource.getAdapterType() + " not available");
+      return Data.empty(
+          Notification.error("Adapter " + resource.getAdapterType() + " not available"));
     }
-    var builder = Data.builder();
+    var name =
+        observation.getObservable().getStatedName() == null
+            ? observation.getObservable().getUrn()
+            : observation.getObservable().getStatedName();
+    var builder = Data.builder(name, observation.getObservable(), observation.getGeometry());
     Urn urn = Urn.of(resource.getUrn());
     if (!adapter.encode(
         resource,
@@ -523,8 +529,9 @@ public class ResourcesProvider extends BaseService
         observation.getObservable(),
         urn,
         Parameters.create(urn.getParameters()),
+        input,
         scope)) {
-      return Data.empty("Resource encoding failed");
+      return Data.empty(Notification.error("Resource encoding failed"));
     }
     return builder.build();
   }

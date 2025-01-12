@@ -3,17 +3,21 @@ package org.integratedmodelling.common.services.client.resources;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import java.io.File;
+import java.net.URL;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
+import javax.annotation.Nullable;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
-import org.integratedmodelling.common.data.DataImpl;
+import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.RepositoryState;
-import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -43,14 +47,6 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
 import org.integratedmodelling.klab.rest.ServiceReference;
-
-import javax.annotation.Nullable;
-import java.io.File;
-import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.function.BiConsumer;
 
 public class ResourcesClient extends ServiceClient
     implements ResourcesService, ResourcesService.Admin {
@@ -423,7 +419,7 @@ public class ResourcesClient extends ServiceClient
 
     DataRequest request =
         DataRequest.newBuilder()
-            .setInputData(data instanceof DataImpl data1 ? data1.asInstance() : null)
+            .setInputData(data instanceof BaseDataImpl data1 ? data1.asInstance() : null)
                    // .setObservable(observation.getObservable().getUrn())
             .setGeometry(observation.getGeometry().encode())
             .setResourceUrns(List.of(contextualizedResource.getUrn()))

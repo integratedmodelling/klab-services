@@ -9,7 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.common.data.Instance;
+import org.integratedmodelling.klab.api.services.Reasoner;
 
 public abstract class AbstractResourceContextualizer {
 
@@ -30,13 +30,18 @@ public abstract class AbstractResourceContextualizer {
 
   public boolean contextualize(Observation observation, ContextScope scope) {
     var data = getData(observation.getGeometry(), scope);
-    if (data == null || data.isEmpty()) {
+    var reasoner = scope.getService(Reasoner.class);
+    if (data == null || data.empty()) {
       return false;
     }
     if (observation.getObservable().is(SemanticType.QUALITY)) {
 
     } else if (observation.getObservable().is(SemanticType.COUNTABLE)) {
-
+      var cScope = scope.within(observation);
+//      Observable obs;
+//      for (int i = 0; i < data.getObjectCount(); i++) {
+//          obs = obs == null ? data.getObjectScale()
+//      }
     }
     return true;
   }

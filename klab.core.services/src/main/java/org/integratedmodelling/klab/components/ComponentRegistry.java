@@ -3,8 +3,20 @@ package org.integratedmodelling.klab.components;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
-import jakarta.validation.Valid;
-import jakarta.validation.Validation;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import javassist.Modifier;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
@@ -52,21 +64,6 @@ import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.pf4j.*;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 
 public class ComponentRegistry {
 
@@ -1189,6 +1186,7 @@ public class ComponentRegistry {
         Observable observable,
         Urn urn,
         Parameters<String> urnParameters,
+        Data inputData,
         Scope scope) {
 
       var implementation = implementation(this.encoder);
@@ -1206,6 +1204,7 @@ public class ComponentRegistry {
                 observable,
                 urn,
                 urnParameters,
+                null,
                 null,
                 null,
                 null,
@@ -1398,6 +1397,7 @@ public class ComponentRegistry {
       Storage storage,
       Expression expression,
       LookupTable lookupTable,
+      Data inputData,
       Scope scope) {
 
     var arguments =
@@ -1414,6 +1414,7 @@ public class ComponentRegistry {
             storage,
             expression,
             lookupTable,
+            inputData,
             scope);
     if (arguments == null) {
       return new KlabCompilationError(
@@ -1458,6 +1459,7 @@ public class ComponentRegistry {
       Storage storage,
       Expression expression,
       LookupTable lookupTable,
+      Data inputData,
       Scope scope) {
     List<Object> runArguments = new ArrayList<>();
     DigitalTwin digitalTwin = null;
@@ -1477,6 +1479,8 @@ public class ComponentRegistry {
           runArguments.add(observation);
         } else if (Data.Builder.class.isAssignableFrom(argument)) {
           runArguments.add(builder);
+        } else if (Data.class.isAssignableFrom(argument)) {
+          runArguments.add(inputData);
         } else if (ServiceCall.class.isAssignableFrom(argument)) {
           runArguments.add(serviceCall);
         } else if (Parameters.class.isAssignableFrom(argument)) {

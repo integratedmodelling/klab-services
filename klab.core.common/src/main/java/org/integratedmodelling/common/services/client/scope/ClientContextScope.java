@@ -1,16 +1,16 @@
 package org.integratedmodelling.common.services.client.scope;
 
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.Future;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -20,12 +20,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
-
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.Future;
 
 public abstract class ClientContextScope extends ClientSessionScope implements ContextScope {
 

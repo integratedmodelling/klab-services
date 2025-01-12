@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 
@@ -167,5 +166,6 @@ public interface Adapter {
       Observable observable,
       Urn urn,
       Parameters<String> urnParameters,
+      Data inputs,
       Scope scope);
 }

@@ -1,10 +1,7 @@
 package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
-import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.RepositoryState;
-import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -274,7 +271,7 @@ public interface ResourcesService extends KlabService {
    * @return
    */
   Data contextualize(
-      Resource contextualizedResource, Observation observation, Data input, Scope scope);
+          Resource contextualizedResource, Observation observation, Data input, Scope scope);
 
   /**
    * @param urn

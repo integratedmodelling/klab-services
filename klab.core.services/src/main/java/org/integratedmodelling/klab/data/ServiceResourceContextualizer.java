@@ -31,12 +31,19 @@ public class ServiceResourceContextualizer extends AbstractResourceContextualize
   @Override
   protected Data getData(Geometry geometry, ContextScope scope) {
 
-    Data.Builder builder = Data.builder();
+    var name =
+        observation.getObservable().getStatedName() == null
+            ? observation.getObservable().getUrn()
+            : observation.getObservable().getStatedName();
+
+    Data.Builder builder =
+        Data.builder(name, observation.getObservable(), observation.getGeometry());
 
     // TODO add observation, observable, urn, input data if the resource requires them, observation
     //  storage and anything the adapter may want.
     var inputData = getInputData(scope);
-    adapter.encode(resource, geometry, builder, observation, observable, urn, urnParameters, scope);
+    adapter.encode(
+        resource, geometry, builder, observation, observable, urn, urnParameters, inputData, scope);
     return builder.build();
   }
 }
