@@ -412,9 +412,16 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public Future<Observation> resolve(long id, ContextScope scope) {
+  public CompletableFuture<Observation> resolve(long id, ContextScope scope) {
 
     if (scope instanceof ServiceContextScope serviceContextScope) {
+
+      /*
+      TODO must consult the knowledge graph to see if we have a pre-resolved dataflow that
+       can handle this observation. Could be done by looking up an existing RESOLUTION activity
+       that was linked to the overall covered geometry of the dataflow. Should use the spatial
+       queries in Neo4J or maintain a separate spatial index for the dataflows/activities.
+       */
 
       var resolver = serviceContextScope.getService(Resolver.class);
       var observation = serviceContextScope.getObservation(id);

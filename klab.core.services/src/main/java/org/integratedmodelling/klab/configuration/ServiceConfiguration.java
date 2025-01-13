@@ -121,6 +121,14 @@ public enum ServiceConfiguration {
           }
 
           @Override
+          public Observable promoteConceptToObservable(Concept concept, String named) {
+            var ret = (ObservableImpl) promoteConceptToObservable(concept);
+            ret.setStatedName(named);
+            ret.setUrn(ret.getUrn() + " named " + named);
+            return ret;
+          }
+
+          @Override
           public Builder getObservableBuilder(Concept observable, Scope scope) {
             return new ObservableBuildStrategy(observable, scope);
           }

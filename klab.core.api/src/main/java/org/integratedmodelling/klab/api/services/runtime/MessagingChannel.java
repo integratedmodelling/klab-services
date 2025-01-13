@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import java.io.Closeable;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -59,7 +60,7 @@ public interface MessagingChannel extends Channel {
    * @param <T>
    * @return
    */
-  <T> Future<T> trackMessages(Message.Match match, Function<Message, T> supplier);
+  <T> CompletableFuture<T> trackMessages(Message.Match match, Function<Message, T> supplier);
 
   /**
    * True if {@link #connectToService(KlabService.ServiceCapabilities, UserIdentity, Consumer)} has

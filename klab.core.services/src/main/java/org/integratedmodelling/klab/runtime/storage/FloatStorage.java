@@ -1,8 +1,10 @@
 package org.integratedmodelling.klab.runtime.storage;
 
 import org.eclipse.collections.api.block.function.primitive.LongToFloatFunction;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.geometry.Offset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -20,11 +22,25 @@ public class FloatStorage implements Storage {
 
 	}
 
+	/**
+	 * This should become the default way to set storage. Pass a geometry (equal to the native one or
+	 * partially covering it, but always in phase) and the desired fill curve, then call add(double)
+	 * on it.
+	 *
+	 * @param bufferGeometry
+	 * @param fillCurve
+	 * @return
+	 */
+	public Data.FloatFiller buffer(Geometry bufferGeometry, Data.FillCurve fillCurve) {
+		return null;
+	}
+
 	@Override
 	public Type getType() {
 		return Type.FLOAT	;
 	}
 
+	@Deprecated
 	public void set(float value, Offset locator) {
 
 	}

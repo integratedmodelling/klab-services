@@ -10,6 +10,10 @@ public class LongDataImpl extends BaseDataImpl implements PrimitiveIterator.OfLo
     public LongDataImpl(Observable observable, Geometry geometry, String name, Instance instance) {
         super(observable, geometry, name, instance);
     }
+    @Override
+    public boolean hasStates() {
+        return true;
+    }
 
     @Override
     public long nextLong() {

@@ -94,6 +94,8 @@ public enum Klab {
 
         Observable promoteConceptToObservable(Concept concept);
 
+        Observable promoteConceptToObservable(Concept concept, String named);
+
         Observable.Builder getObservableBuilder(Concept observable, Scope scope);
 
         Observable.Builder getObservableBuilder(Observable observable, Scope scope);

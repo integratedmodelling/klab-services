@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
  * The digital twin is a graph model composed of observations and all their history. Each {@link
@@ -93,7 +94,7 @@ public interface DigitalTwin {
    * @param target
    * @return
    */
-  boolean ingest(Data data, Observation target);
+  boolean ingest(Data data, Observation target, ContextScope scope);
 
   /**
    * Dispose of all storage and data, either in memory only or also on any attached storage. Whether
@@ -147,6 +148,11 @@ public interface DigitalTwin {
           }
         } else if (o instanceof Urn urn) {
           resourceUrn = urn.getUrn();
+        } else if (o instanceof Data data) {
+          observable = scope.getService(Reasoner.class).resolveObservable(data.semantics());
+          geometry = data.geometry();
+          name = data.name();
+          metadata.putAll(data.metadata());
         } else if (o instanceof KimSymbolDefinition symbol) {
 
           // must be an "observation" class

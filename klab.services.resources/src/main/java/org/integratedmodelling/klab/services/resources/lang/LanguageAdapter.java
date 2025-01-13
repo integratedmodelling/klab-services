@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.*;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -413,6 +414,27 @@ public enum LanguageAdapter {
     // TODO docstring set through next-gen literate programming features
 
     boolean inactive = false;
+
+    if (model.getDataType() != null) {
+        switch (model.getDataType()) {
+            case NUMBER -> {
+              // MIERDA TODO needs a syntactic counterpart, too
+              //              ret.getObservables().add(Observable.number(model.getName()));
+            }
+            case TEXT -> {
+            }
+            case BOOLEAN -> {
+            }
+            case SUBJECTS -> {
+            }
+            case EVENTS -> {
+            }
+            case RELATIONSHIPS -> {
+            }
+        }
+        throw new KlabUnimplementedException("non-semantic model support");
+    }
+
     for (var observable : model.getObservables()) {
       var obs =
           adaptObservable(

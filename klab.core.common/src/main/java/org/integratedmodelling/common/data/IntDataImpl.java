@@ -12,6 +12,11 @@ public class IntDataImpl extends BaseDataImpl implements PrimitiveIterator.OfInt
     }
 
     @Override
+    public boolean hasStates() {
+        return true;
+    }
+
+    @Override
     public int nextInt() {
         return 0;
     }

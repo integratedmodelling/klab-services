@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumWriter;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -16,7 +17,7 @@ import org.integratedmodelling.klab.common.data.Instance;
 
 /**
  * The base implementation for a {@link Data} interface, used when the observation it describes is
- * not a quality.
+ * not a quality. For those the system will build an iterating one of the correct type.
  */
 public class BaseDataImpl implements Data {
 
@@ -27,6 +28,14 @@ public class BaseDataImpl implements Data {
   private boolean empty = false;
   private Map<Integer, String> dataKey;
   private Metadata metadata = Metadata.create();
+
+  private BaseDataImpl(Instance instance) {
+    this.instance = instance;
+    this.semantics = instance.getObservable().toString();
+    this.geometry =
+        GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class);
+    this.name = instance.getName().toString();
+  }
 
   public BaseDataImpl(Observable observable, Geometry geometry, String name, Instance instance) {
     this.semantics = observable.getUrn();
@@ -66,12 +75,7 @@ public class BaseDataImpl implements Data {
   }
 
   @Override
-  public List<Data> states() {
-    return List.of();
-  }
-
-  @Override
-  public List<Data> objects() {
+  public List<Data> children() {
     if (instance.getInstances() == null || instance.getInstances().isEmpty()) {
       return List.of();
     }
@@ -90,7 +94,12 @@ public class BaseDataImpl implements Data {
 
   @Override
   public long size() {
-    return 0;
+    return instance.getInstances().size();
+  }
+
+  @Override
+  public boolean hasStates() {
+    return false;
   }
 
   public void setEmpty(boolean empty) {
@@ -113,6 +122,11 @@ public class BaseDataImpl implements Data {
     this.metadata = metadata;
   }
 
+  @Override
+  public String toString() {
+    return "BaseDataImpl{" + semantics + '\'' + ", instance=" + instance + '}';
+  }
+
   public Instance asInstance() {
     return this.instance;
   }
@@ -132,8 +146,16 @@ public class BaseDataImpl implements Data {
 
     //        var Observable = scope.getService(Reasoner.class).resolveObservable(instance.)
 
-    if (instance.getDoubleData() != null) {}
+    if (instance.getDoubleData() != null) {
 
-    return null; // FAAAK
+    } else if (instance.getFloatData() != null) {
+
+    } else if (instance.getIntData() != null) {
+
+    } else if (instance.getLongData() != null) {
+
+    }
+
+    return new BaseDataImpl(instance);
   }
 }

@@ -2,6 +2,7 @@ package org.integratedmodelling.common.services.client.scope;
 
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
@@ -106,7 +107,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public Future<Observation> observe(Observation observation) {
+    public CompletableFuture<Observation> observe(Observation observation) {
 
         var runtime = getService(RuntimeService.class);
         long taskId = runtime.submit(observation, this);
@@ -122,7 +123,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         // failure: this just returns the unresolved observation
         info("Submission of " + observation + " failed");
 
-        return ConcurrentUtils.constantFuture(observation);
+        return CompletableFuture.completedFuture(observation);
 
     }
 

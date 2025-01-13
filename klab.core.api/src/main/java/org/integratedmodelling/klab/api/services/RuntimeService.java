@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 /**
@@ -134,7 +135,7 @@ public interface RuntimeService extends KlabService {
    * @return the ID of the task running in the runtime, which must be identical to the observation
    *     URN and will be sent to the scope with the resolution result message.
    */
-  Future<Observation> resolve(long id, ContextScope scope);
+  CompletableFuture<Observation> resolve(long id, ContextScope scope);
 
   /**
    * Retrieve any assets from the knowledge graph in the digital twin matching a given class and

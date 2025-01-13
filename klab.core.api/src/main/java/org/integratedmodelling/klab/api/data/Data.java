@@ -4,7 +4,6 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.List;
@@ -28,18 +27,28 @@ import java.util.Map;
 public interface Data {
 
   /**
-   * Any of the space-filling curves can be used in the data encoding. Each state with multiple
-   * values must define the curve it uses. Normally these are used for 2D space but there may be 3D
-   * and others in the future, so extend as needed.
+   * Any of the space-filling curves are used in the data encoding. The {@link Data} object contains
+   * a filling curve, which must be applied to the observation {@link Storage} for proper
+   * arrangement. Each state with multiple values must define the curve it uses. Normally these are
+   * used for 2D space but there may be 3D and others in the future, so extend as needed.
+   *
+   * <p>The dimensions field is for validation: the curve can scan those dimensions only unless the
+   * value is -1.
    */
   enum FillCurve {
-    S1_LINEAR,
-    S2_XY,
-    S2_YX,
-    S2_SIERPINSKI_3,
-    S2_HILBERT
+    S1_LINEAR(-1),
+    S2_XY(2),
+    S2_YX(2),
+    S2_SIERPINSKI_3(2),
+    S2_HILBERT(2);
     // ... TODO more as needed. Sierpinski can have different orders; the arrowhead can be extended
     // to 3D
+
+    public final int dimensions;
+
+    FillCurve(int dimensions) {
+      this.dimensions = dimensions;
+    }
   }
 
   interface Filler {}
@@ -47,6 +56,11 @@ public interface Data {
   @FunctionalInterface
   interface IntFiller extends Filler {
     void add(int value);
+  }
+
+  @FunctionalInterface
+  interface LongFiller extends Filler {
+    void add(long value);
   }
 
   @FunctionalInterface
@@ -66,6 +80,11 @@ public interface Data {
 
   @FunctionalInterface
   interface KeyedFiller extends Filler {
+    void add(Object value);
+  }
+
+  @FunctionalInterface
+  interface ObjectFiller extends Filler {
     void add(Object value);
   }
 
@@ -175,10 +194,16 @@ public interface Data {
   List<Notification> notifications();
 
   /**
-   * States in a data object whose observable is a quality. There may be states also in the result
-   * of contextualization of a process or a non-collective observation. If the contextualization is
-   * for a quality, the first state should normally be the observable requested, and other ancillary
-   * observations may have been produced if requested through an observation constraint.
+   * The objects returned from a data object whose observable is countable and collective. This
+   * returns any object instances AND any state instances. The only situation that cannot happen is
+   * that the data resulting from contextualizing a quality contain objects as children.
+   *
+   * <p>States result from a data object whose observable is a quality. There may be states also in
+   * the result of contextualization of a process or a non-collective observation; a collective
+   * observation may also produce states along with objects, which should be linked to the context
+   * observation. If the contextualization is for a quality, the first state should normally be the
+   * observable requested, and other ancillary observations may have been produced if requested
+   * through an observation constraint.
    *
    * <p>Each returned object will implement one of the {@link java.util.PrimitiveIterator} classes.
    * A class switch should be used along with the {@link #fillCurve()} to transfer the data to the
@@ -186,14 +211,7 @@ public interface Data {
    *
    * @return
    */
-  List<Data> states();
-
-  /**
-   * The objects returned from a data object whose observable is countable and collective.
-   *
-   * @return
-   */
-  List<Data> objects();
+  List<Data> children();
 
   /**
    * Mandatory in data objects that represent states, null otherwise. Return the desired fill curve.
@@ -214,12 +232,21 @@ public interface Data {
   Map<Integer, String> dataKey();
 
   /**
-   * The number of objects returned by {@link #objects()} in object data, or the number of values in
-   * states. The observable should be the guide in asking the right questions about the data.
+   * The number of objects returned by {@link #children()} in object data, or the number of values
+   * in states, or both. If size() == 0 the data specify no child observations. The observable
+   * should be the guide in asking the right questions about the data.
    *
    * @return
    */
   long size();
+
+  /**
+   * True if the instance contains state values. In that case it will need to be cast to the
+   * appropriate primivite iterator to obtain the data.
+   *
+   * @return
+   */
+  boolean hasStates();
 
   static Data.Builder builder(String name, Observable observable, Geometry geometry) {
     Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
@@ -264,12 +291,7 @@ public interface Data {
       }
 
       @Override
-      public List<Data> states() {
-        return List.of();
-      }
-
-      @Override
-      public List<Data> objects() {
+      public List<Data> children() {
         return List.of();
       }
 
@@ -286,6 +308,11 @@ public interface Data {
       @Override
       public long size() {
         return 0;
+      }
+
+      @Override
+      public boolean hasStates() {
+        return false;
       }
     };
   }

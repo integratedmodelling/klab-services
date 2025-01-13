@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.storage;
 
+import java.util.function.LongToIntFunction;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -8,17 +9,15 @@ import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.geometry.Offset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 
-import java.util.function.LongToIntFunction;
-
 /**
  * Base storage providing the general methods. Children enable either boxed I/O or faster native operation
  * (recommended). The runtime makes the choice.
  *
  * @author Ferd
  */
-public class IntStorage implements Storage {
+public class LongStorage implements Storage {
 
-    public IntStorage(Scale scale, StateStorageImpl scope) {
+    public LongStorage(Scale scale, StateStorageImpl scope) {
     }
 
     @Override
@@ -56,7 +55,7 @@ public class IntStorage implements Storage {
      * @param fillCurve
      * @return
      */
-    public Data.IntFiller buffer(Geometry bufferGeometry, Data.FillCurve fillCurve) {
+    public Data.LongFiller buffer(Geometry bufferGeometry, Data.FillCurve fillCurve) {
         return null;
     }
 

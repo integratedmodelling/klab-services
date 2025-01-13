@@ -33,6 +33,7 @@ import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 
@@ -200,7 +201,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   }
 
   @Override
-  public Future<Observation> resolve(long id, ContextScope scope) {
+  public CompletableFuture<Observation> resolve(long id, ContextScope scope) {
 
     /*
     Set up the task to track the messages. We do this before invoking the method so it's guaranteed to

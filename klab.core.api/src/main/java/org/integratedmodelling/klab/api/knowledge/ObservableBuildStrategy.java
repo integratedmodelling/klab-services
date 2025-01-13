@@ -16,566 +16,538 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
- * A builder that just registers actions called on it and gets sent to a reasoner to replicate them in the
- * reasoner and return the result, which may contain operation results in its metadata.
+ * A builder that just registers actions called on it and gets sent to a reasoner to replicate them
+ * in the reasoner and return the result, which may contain operation results in its metadata.
  *
  * @author Ferd
  */
 public class ObservableBuildStrategy implements Observable.Builder {
 
-    private static final String REMOVED_CONCEPTS_METADATA_KEY = "observable.builder.metadata.removed" +
-            ".concepts";
+  private static final String REMOVED_CONCEPTS_METADATA_KEY =
+      "observable.builder.metadata.removed.concepts";
 
-    private static final long serialVersionUID = -5968594309897960639L;
+  @Serial private static final long serialVersionUID = -5968594309897960639L;
 
-    transient private Scope scope;
+  private final transient Scope scope;
 
-    // all the methods codified as an enum
-    public enum OperationType {
-        OF, WITH,/* WITHIN, */GOAL, FROM, TO, WITH_ROLE, AS, WITH_TRAITS, WITHOUT, WITHOUT_ANY_CONCEPTS, WITHOUT_ANY_TYPES, ADJACENT,
-        COOCCURRENT, COLLECTIVE,
-        WITH_UNIT, WITH_CURRENCY, WITH_RANGE, WITH_VALUE_OPERATOR, LINKING, NAMED, WITHOUT_VALUE_OPERATORS, AS_OPTIONAL, WITHOUT_ROLES,
-        WITH_TEMPORAL_INHERENT, /*REFERENCE_NAMED,*/ /*WITH_INLINE_VALUE,*/ WITH_OBSERVER_SEMANTICS,
-        WITH_DEFAULT_VALUE, WITH_RESOLUTION_EXCEPTION, AS_GENERIC, WITH_ANNOTATION/*, AS_DESCRIPTION_TYPE*/
+  // all the methods codified as an enum
+  public enum OperationType {
+    OF,
+    WITH,
+    GOAL,
+    FROM,
+    TO,
+    WITH_ROLE,
+    AS,
+    WITH_TRAITS,
+    WITHOUT,
+    WITHOUT_ANY_CONCEPTS,
+    WITHOUT_ANY_TYPES,
+    ADJACENT,
+    COOCCURRENT,
+    COLLECTIVE,
+    WITH_UNIT,
+    WITH_CURRENCY,
+    WITH_RANGE,
+    WITH_VALUE_OPERATOR,
+    LINKING,
+    NAMED,
+    WITHOUT_VALUE_OPERATORS,
+    AS_OPTIONAL,
+    WITHOUT_ROLES,
+    WITH_TEMPORAL_INHERENT, /*REFERENCE_NAMED,*/ /*WITH_INLINE_VALUE,*/
+    WITH_OBSERVER_SEMANTICS,
+    WITH_DEFAULT_VALUE,
+    WITH_RESOLUTION_EXCEPTION,
+    AS_GENERIC,
+    WITH_ANNOTATION /*, AS_DESCRIPTION_TYPE*/
+  }
+
+  public static class Operation implements Serializable {
+
+    @Serial private static final long serialVersionUID = -3560499809607527771L;
+
+    private List<Annotation> annotations = new ArrayList<>();
+    private ResolutionDirective resolutionDirective;
+
+    private DescriptionType descriptionType;
+    private Unit unit;
+    private Currency currency;
+    private NumericRange range;
+    private OperationType type;
+    private Object pod;
+    private List<Concept> concepts = new ArrayList<>();
+    private List<SemanticType> types = new ArrayList<>();
+    private List<SemanticRole> roles = new ArrayList<>();
+
+    private Pair<ValueOperator, Object> valueOperation;
+    private UnarySemanticOperator operator;
+
+    public Operation() {}
+
+    public Operation(OperationType type, Object value) {
+      this.type = type;
+      this.pod = value;
     }
 
-    public static class Operation implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = -3560499809607527771L;
-
-        private List<Annotation> annotations = new ArrayList<>();
-        private ResolutionDirective resolutionDirective;
-
-        private DescriptionType descriptionType;
-        private Unit unit;
-        private Currency currency;
-        private NumericRange range;
-        private OperationType type;
-        private Object pod;
-        private List<Concept> concepts = new ArrayList<>();
-        private List<SemanticType> types = new ArrayList<>();
-        private List<SemanticRole> roles = new ArrayList<>();
-
-        private Pair<ValueOperator, Object> valueOperation;
-        private UnarySemanticOperator operator;
-
-        public Operation() {
-
-        }
-
-        public Operation(OperationType type, Object value) {
-            this.type = type;
-            this.pod = value;
-        }
-
-        public Operation(OperationType type, Concept... concepts) {
-            this.type = type;
-            for (Concept concept : concepts) {
-                this.concepts.add(concept);
-            }
-        }
-
-        public Operation(OperationType type, SemanticType... types) {
-            this.type = type;
-            for (SemanticType concept : types) {
-                this.types.add(concept);
-            }
-        }
-
-        public Operation(OperationType type, SemanticRole... types) {
-            this.type = type;
-            for (SemanticRole concept : types) {
-                this.roles.add(concept);
-            }
-        }
-
-        public Operation(OperationType type, UnarySemanticOperator operator, Concept... concepts) {
-            this.type = type;
-            this.operator = operator;
-            for (Concept concept : concepts) {
-                this.concepts.add(concept);
-            }
-        }
-
-        public Operation(OperationType operationType, Unit unit) {
-            this.type = operationType;
-            this.unit = unit;
-        }
-
-        public Operation(OperationType operationType, Currency unit) {
-            this.type = operationType;
-            this.currency = unit;
-        }
-
-        public Operation(OperationType operationType, NumericRange unit) {
-            this.type = operationType;
-            this.range = unit;
-        }
-
-        public Operation(OperationType operationType, Pair<ValueOperator, Object> unit) {
-            this.type = operationType;
-            this.valueOperation = unit;
-        }
-
-        public Operation(OperationType operationType, DescriptionType descriptionType) {
-            this.type = operationType;
-            this.descriptionType = descriptionType;
-        }
-
-        public Operation(OperationType operationType, boolean generic) {
-            this.type = operationType;
-            this.pod = generic;
-        }
-
-        public Operation(OperationType operationType) {
-            this.type = operationType;
-        }
-
-        public Operation(OperationType operationType, String name) {
-            this.type = operationType;
-            this.pod = name;
-        }
-
-        public Operation(OperationType operationType, ResolutionDirective resolutionDirective) {
-            this.type = operationType;
-            this.resolutionDirective = resolutionDirective;
-        }
-
-        public Operation(OperationType operationType, Annotation annotation) {
-            this.type = operationType;
-            this.annotations.add(annotation);
-        }
-
-        public DescriptionType getDescriptionType() {
-            return descriptionType;
-        }
-
-        public void setDescriptionType(DescriptionType descriptionType) {
-            this.descriptionType = descriptionType;
-        }
-
-        public OperationType getType() {
-            return type;
-        }
-
-        public void setType(OperationType type) {
-            this.type = type;
-        }
-
-        public Object getPod() {
-            return pod;
-        }
-
-        public void setPod(Object pod) {
-            this.pod = pod;
-        }
-
-        public List<Concept> getConcepts() {
-            return concepts;
-        }
-
-        public void setConcepts(List<Concept> concepts) {
-            this.concepts = concepts;
-        }
-
-        public UnarySemanticOperator getOperator() {
-            return operator;
-        }
-
-        public void setOperator(UnarySemanticOperator operator) {
-            this.operator = operator;
-        }
-
-        public List<SemanticType> getTypes() {
-            return types;
-        }
-
-        public void setTypes(List<SemanticType> types) {
-            this.types = types;
-        }
-
-        public List<SemanticRole> getRoles() {
-            return roles;
-        }
-
-        public void setRoles(List<SemanticRole> roles) {
-            this.roles = roles;
-        }
-
-        public Unit getUnit() {
-            return unit;
-        }
-
-        public void setUnit(Unit unit) {
-            this.unit = unit;
-        }
-
-        public Currency getCurrency() {
-            return currency;
-        }
-
-        public void setCurrency(Currency currency) {
-            this.currency = currency;
-        }
-
-        public NumericRange getRange() {
-            return range;
-        }
-
-        public void setRange(NumericRange range) {
-            this.range = range;
-        }
-
-        public Pair<ValueOperator, Object> getValueOperation() {
-            return valueOperation;
-        }
-
-        public void setValueOperation(Pair<ValueOperator, Object> valueOperation) {
-            this.valueOperation = valueOperation;
-        }
-
-        public ResolutionDirective getResolutionException() {
-            return resolutionDirective;
-        }
-
-        public void setResolutionException(ResolutionDirective resolutionDirective) {
-            this.resolutionDirective = resolutionDirective;
-        }
-
-        public List<Annotation> getAnnotations() {
-            return annotations;
-        }
-
-        public void setAnnotations(List<Annotation> annotations) {
-            this.annotations = annotations;
-        }
-
+    public Operation(OperationType type, Concept... concepts) {
+      this.type = type;
+      this.concepts.addAll(Arrays.asList(concepts));
     }
 
-    private Observable baseObservable;
-    private Concept baseConcept;
-    private List<Operation> operations = new ArrayList<>();
-    private Object defaultValue;
-    private List<Notification> notifications = new ArrayList<>();
-
-    public ObservableBuildStrategy(Observable observable, Scope scope) {
-        this.baseObservable = observable;
-        this.scope = scope;
+    public Operation(OperationType type, SemanticType... types) {
+      this.type = type;
+      this.types.addAll(Arrays.asList(types));
     }
 
-    public ObservableBuildStrategy(Concept observable, Scope scope) {
-        this.baseConcept = observable;
-        this.scope = scope;
+    public Operation(OperationType type, SemanticRole... types) {
+      this.type = type;
+      this.roles.addAll(Arrays.asList(types));
     }
 
-    @Override
-    public Builder of(Concept inherent) {
-        this.operations.add(new Operation(OperationType.OF, inherent));
-        return this;
+    public Operation(OperationType type, UnarySemanticOperator operator, Concept... concepts) {
+      this.type = type;
+      this.operator = operator;
+      this.concepts.addAll(Arrays.asList(concepts));
     }
 
-    @Override
-    public Builder with(Concept compresent) {
-        this.operations.add(new Operation(OperationType.WITH, compresent));
-        return this;
+    public Operation(OperationType operationType, Unit unit) {
+      this.type = operationType;
+      this.unit = unit;
     }
 
-//    @Override
-//    public Builder within(Concept context) {
-//        this.operations.add(new Operation(OperationType.WITHIN, context));
-//        return this;
-//    }
-
-    @Override
-    public Builder withGoal(Concept goal) {
-        this.operations.add(new Operation(OperationType.GOAL, goal));
-        return this;
+    public Operation(OperationType operationType, Currency unit) {
+      this.type = operationType;
+      this.currency = unit;
     }
 
-    @Override
-    public Builder withCausant(Concept causant) {
-        this.operations.add(new Operation(OperationType.FROM, causant));
-        return this;
+    public Operation(OperationType operationType, NumericRange unit) {
+      this.type = operationType;
+      this.range = unit;
     }
 
-    @Override
-    public Builder withCaused(Concept caused) {
-        this.operations.add(new Operation(OperationType.TO, caused));
-        return this;
+    public Operation(OperationType operationType, Pair<ValueOperator, Object> unit) {
+      this.type = operationType;
+      this.valueOperation = unit;
     }
 
-    @Override
-    public Builder withRole(Concept role) {
-        this.operations.add(new Operation(OperationType.WITH_ROLE, role));
-        return this;
+    public Operation(OperationType operationType, DescriptionType descriptionType) {
+      this.type = operationType;
+      this.descriptionType = descriptionType;
     }
 
-    @Override
-    public Builder as(UnarySemanticOperator type, Concept... participants) throws KlabValidationException {
-        this.operations.add(new Operation(OperationType.AS, type, participants));
-        return this;
+    public Operation(OperationType operationType, boolean generic) {
+      this.type = operationType;
+      this.pod = generic;
     }
 
-//    @Override
-//    public Builder as(DescriptionType descriptionType) {
-//        this.operations.add(new Operation(OperationType.AS_DESCRIPTION_TYPE, descriptionType));
-//        return this;
-//    }
-
-    @Override
-    public Builder withTrait(Concept... concepts) {
-        this.operations.add(new Operation(OperationType.WITH_TRAITS, concepts));
-        return this;
+    public Operation(OperationType operationType) {
+      this.type = operationType;
     }
 
-    @Override
-    public Builder withTrait(Collection<Concept> concepts) {
-        this.operations.add(new Operation(OperationType.WITH_TRAITS,
-                concepts.toArray(new Concept[concepts.size()])));
-        return this;
+    public Operation(OperationType operationType, String name) {
+      this.type = operationType;
+      this.pod = name;
     }
 
-    @Override
-    public Builder without(Collection<Concept> concepts) {
-        this.operations.add(new Operation(OperationType.WITHOUT,
-                concepts.toArray(new Concept[concepts.size()])));
-        return this;
+    public Operation(OperationType operationType, ResolutionDirective resolutionDirective) {
+      this.type = operationType;
+      this.resolutionDirective = resolutionDirective;
     }
 
-    @Override
-    public Builder without(Concept... concepts) {
-        this.operations.add(new Operation(OperationType.WITHOUT, concepts));
-        return this;
+    public Operation(OperationType operationType, Annotation annotation) {
+      this.type = operationType;
+      this.annotations.add(annotation);
     }
 
-    @Override
-    public Concept buildConcept() throws KlabValidationException {
-        var reasoner = this.scope.getService(Reasoner.class);
-        return reasoner.buildConcept(this);
+    public DescriptionType getDescriptionType() {
+      return descriptionType;
     }
 
-    @Override
-    public Observable buildObservable() throws KlabValidationException {
-        var reasoner = this.scope.getService(Reasoner.class);
-        return reasoner.buildObservable(this);
+    public void setDescriptionType(DescriptionType descriptionType) {
+      this.descriptionType = descriptionType;
     }
 
-    @Override
-    public Builder withCooccurrent(Concept cooccurrent) {
-        this.operations.add(new Operation(OperationType.WITH, cooccurrent));
-        return this;
+    public OperationType getType() {
+      return type;
     }
 
-    @Override
-    public Builder withAdjacent(Concept adjacent) {
-        this.operations.add(new Operation(OperationType.ADJACENT, adjacent));
-        return this;
+    public void setType(OperationType type) {
+      this.type = type;
     }
 
-    @Override
-    public Builder withoutAny(Collection<Concept> concepts) {
-        this.operations.add(new Operation(OperationType.WITHOUT_ANY_CONCEPTS,
-                concepts.toArray(new Concept[concepts.size()])));
-        return this;
+    public Object getPod() {
+      return pod;
     }
 
-    @Override
-    public Builder withoutAny(SemanticType... type) {
-        this.operations.add(new Operation(OperationType.WITHOUT_ANY_TYPES, type));
-        return this;
+    public void setPod(Object pod) {
+      this.pod = pod;
     }
 
-    @Override
-    public Builder withoutAny(Concept... concepts) {
-        this.operations.add(new Operation(OperationType.WITHOUT_ANY_CONCEPTS, concepts));
-        return this;
+    public List<Concept> getConcepts() {
+      return concepts;
     }
 
-    @Override
-    public Builder withUnit(Unit unit) {
-        this.operations.add(new Operation(OperationType.WITH_UNIT, unit));
-        return this;
+    public void setConcepts(List<Concept> concepts) {
+      this.concepts = concepts;
     }
 
-    @Override
-    public Builder withCurrency(Currency currency) {
-        this.operations.add(new Operation(OperationType.WITH_CURRENCY, currency));
-        return this;
+    public UnarySemanticOperator getOperator() {
+      return operator;
     }
 
-    @Override
-    public Builder withValueOperator(ValueOperator operator, Object valueOperand) {
-        this.operations.add(new Operation(OperationType.WITH_VALUE_OPERATOR, Pair.of(operator,
-                valueOperand)));
-        return this;
+    public void setOperator(UnarySemanticOperator operator) {
+      this.operator = operator;
     }
 
-    @Override
-    public Collection<Concept> removed(Semantics result) {
-        // find the removed concepts in the metadata using private key
-        return result.getMetadata().get(REMOVED_CONCEPTS_METADATA_KEY, Collections.emptyList());
+    public List<SemanticType> getTypes() {
+      return types;
     }
 
-    @Override
-    public Builder linking(Concept source, Concept target) {
-        this.operations.add(new Operation(OperationType.LINKING, source, target));
-        return this;
+    public void setTypes(List<SemanticType> types) {
+      this.types = types;
     }
 
-    @Override
-    public Builder named(String name) {
-        this.operations.add(new Operation(OperationType.NAMED, name));
-        return this;
-    }
-//
-//    @Override
-//    public Builder withDistributedInherency(boolean ofEach) {
-//        this.operations.add(new Operation(OperationType.WITH_DISTRIBUTED_INHERENCY, ofEach));
-//        return this;
-//    }
-
-    @Override
-    public Builder withoutValueOperators() {
-        this.operations.add(new Operation(OperationType.WITHOUT_VALUE_OPERATORS));
-        return this;
+    public List<SemanticRole> getRoles() {
+      return roles;
     }
 
-//    @Override
-//    public Builder withTargetPredicate(Concept targetPredicate) {
-//        this.operations.add(new Operation(OperationType.WITH_TARGET_PREDICATE, targetPredicate));
-//        return this;
-//    }
-
-    @Override
-    public Builder optional(boolean optional) {
-        this.operations.add(new Operation(OperationType.AS_OPTIONAL, optional));
-        return this;
+    public void setRoles(List<SemanticRole> roles) {
+      this.roles = roles;
     }
 
-    @Override
-    public Builder without(SemanticRole... roles) {
-        this.operations.add(new Operation(OperationType.WITHOUT_ROLES, roles));
-        return this;
+    public Unit getUnit() {
+      return unit;
     }
 
-    @Override
-    public Builder withTemporalInherent(Concept concept) {
-        this.operations.add(new Operation(OperationType.WITH_TEMPORAL_INHERENT, concept));
-        return this;
+    public void setUnit(Unit unit) {
+      this.unit = unit;
     }
 
-//    @Override
-//    public Builder withDereifiedAttribute(String dereifiedAttribute) {
-//        this.operations.add(new Operation(OperationType.WITH_DEREIFIED_ATTRIBUTE, dereifiedAttribute));
-//        return this;
-//    }
-
-    @Override
-    public Builder named(String name, String referenceName) {
-        this.operations.add(new Operation(OperationType.NAMED, name));
-        return this;
+    public Currency getCurrency() {
+      return currency;
     }
 
-    @Override
-    public Builder withUnit(String unit) {
-        this.operations.add(new Operation(OperationType.WITH_UNIT, unit));
-        return this;
+    public void setCurrency(Currency currency) {
+      this.currency = currency;
     }
 
-    @Override
-    public Builder withCurrency(String currency) {
-        this.operations.add(new Operation(OperationType.WITH_CURRENCY, currency));
-        return this;
+    public NumericRange getRange() {
+      return range;
     }
 
-//    @Override
-//    public Builder withInlineValue(Object value) {
-//        this.operations.add(new Operation(OperationType.WITH_INLINE_VALUE, value));
-//        return this;
-//    }
-
-    @Override
-    public Builder withDefaultValue(Object defaultValue) {
-        this.operations.add(new Operation(OperationType.WITH_DEFAULT_VALUE, defaultValue));
-        return this;
+    public void setRange(NumericRange range) {
+      this.range = range;
     }
 
-    @Override
-    public Builder withResolutionException(ResolutionDirective resolutionDirective) {
-        this.operations.add(new Operation(OperationType.WITH_RESOLUTION_EXCEPTION, resolutionDirective));
-        return this;
+    public Pair<ValueOperator, Object> getValueOperation() {
+      return valueOperation;
     }
 
-    @Override
-    public Builder withRange(NumericRange range) {
-        this.operations.add(new Operation(OperationType.WITH_RANGE, range));
-        return this;
+    public void setValueOperation(Pair<ValueOperator, Object> valueOperation) {
+      this.valueOperation = valueOperation;
     }
 
-    @Override
-    public Builder withObserverSemantics(Concept observerSemantics) {
-        this.operations.add(new Operation(OperationType.WITH_OBSERVER_SEMANTICS, observerSemantics));
-        return this;
+    public ResolutionDirective getResolutionException() {
+      return resolutionDirective;
     }
 
-    @Override
-    public Builder collective(boolean collective) {
-        this.operations.add(new Operation(OperationType.COLLECTIVE, collective));
-        return this;
+    public void setResolutionException(ResolutionDirective resolutionDirective) {
+      this.resolutionDirective = resolutionDirective;
     }
 
-    @Override
-    public Builder withAnnotation(Annotation annotation) {
-        this.operations.add(new Operation(OperationType.WITH_ANNOTATION, annotation));
-        return this;
+    public List<Annotation> getAnnotations() {
+      return annotations;
     }
 
-    public List<Operation> getOperations() {
-        return operations;
+    public void setAnnotations(List<Annotation> annotations) {
+      this.annotations = annotations;
     }
+  }
 
-    public void setOperations(List<Operation> operations) {
-        this.operations = operations;
-    }
+  private Observable baseObservable;
+  private Concept baseConcept;
+  private List<Operation> operations = new ArrayList<>();
+  private Object defaultValue;
+  private List<Notification> notifications = new ArrayList<>();
 
-    public Concept getBaseConcept() {
-        return baseConcept;
-    }
+  public ObservableBuildStrategy(Observable observable, Scope scope) {
+    this.baseObservable = observable;
+    this.scope = scope;
+  }
 
-    public void setBaseConcept(Concept baseConcept) {
-        this.baseConcept = baseConcept;
-    }
+  public ObservableBuildStrategy(Concept observable, Scope scope) {
+    this.baseConcept = observable;
+    this.scope = scope;
+  }
 
-    public Observable getBaseObservable() {
-        return baseObservable;
-    }
+  @Override
+  public Builder of(Concept inherent) {
+    this.operations.add(new Operation(OperationType.OF, inherent));
+    return this;
+  }
 
-    public void setBaseObservable(Observable baseObservable) {
-        this.baseObservable = baseObservable;
-    }
+  @Override
+  public Builder with(Concept compresent) {
+    this.operations.add(new Operation(OperationType.WITH, compresent));
+    return this;
+  }
 
-    public Object getDefaultValue() {
-        return defaultValue;
-    }
+  @Override
+  public Builder withGoal(Concept goal) {
+    this.operations.add(new Operation(OperationType.GOAL, goal));
+    return this;
+  }
 
-    public void setDefaultValue(Object defaultValue) {
-        this.defaultValue = defaultValue;
-    }
+  @Override
+  public Builder withCausant(Concept causant) {
+    this.operations.add(new Operation(OperationType.FROM, causant));
+    return this;
+  }
 
-    @Override
-    public Collection<Notification> getNotifications() {
-        return this.notifications;
-    }
+  @Override
+  public Builder withCaused(Concept caused) {
+    this.operations.add(new Operation(OperationType.TO, caused));
+    return this;
+  }
 
-    public void setNotifications(List<Notification> notifications) {
-        this.notifications = notifications;
-    }
+  @Override
+  public Builder withRole(Concept role) {
+    this.operations.add(new Operation(OperationType.WITH_ROLE, role));
+    return this;
+  }
 
+  @Override
+  public Builder as(UnarySemanticOperator type, Concept... participants)
+      throws KlabValidationException {
+    this.operations.add(new Operation(OperationType.AS, type, participants));
+    return this;
+  }
+
+  @Override
+  public Builder withTrait(Concept... concepts) {
+    this.operations.add(new Operation(OperationType.WITH_TRAITS, concepts));
+    return this;
+  }
+
+  @Override
+  public Builder withTrait(Collection<Concept> concepts) {
+    this.operations.add(new Operation(OperationType.WITH_TRAITS, concepts.toArray(new Concept[0])));
+    return this;
+  }
+
+  @Override
+  public Builder without(Collection<Concept> concepts) {
+    this.operations.add(new Operation(OperationType.WITHOUT, concepts.toArray(new Concept[0])));
+    return this;
+  }
+
+  @Override
+  public Builder without(Concept... concepts) {
+    this.operations.add(new Operation(OperationType.WITHOUT, concepts));
+    return this;
+  }
+
+  @Override
+  public Concept buildConcept() throws KlabValidationException {
+    var reasoner = this.scope.getService(Reasoner.class);
+    return reasoner.buildConcept(this);
+  }
+
+  @Override
+  public Observable buildObservable() throws KlabValidationException {
+    var reasoner = this.scope.getService(Reasoner.class);
+    return reasoner.buildObservable(this);
+  }
+
+  @Override
+  public Builder withCooccurrent(Concept cooccurrent) {
+    this.operations.add(new Operation(OperationType.WITH, cooccurrent));
+    return this;
+  }
+
+  @Override
+  public Builder withAdjacent(Concept adjacent) {
+    this.operations.add(new Operation(OperationType.ADJACENT, adjacent));
+    return this;
+  }
+
+  @Override
+  public Builder withoutAny(Collection<Concept> concepts) {
+    this.operations.add(
+        new Operation(OperationType.WITHOUT_ANY_CONCEPTS, concepts.toArray(new Concept[0])));
+    return this;
+  }
+
+  @Override
+  public Builder withoutAny(SemanticType... type) {
+    this.operations.add(new Operation(OperationType.WITHOUT_ANY_TYPES, type));
+    return this;
+  }
+
+  @Override
+  public Builder withoutAny(Concept... concepts) {
+    this.operations.add(new Operation(OperationType.WITHOUT_ANY_CONCEPTS, concepts));
+    return this;
+  }
+
+  @Override
+  public Builder withUnit(Unit unit) {
+    this.operations.add(new Operation(OperationType.WITH_UNIT, unit));
+    return this;
+  }
+
+  @Override
+  public Builder withCurrency(Currency currency) {
+    this.operations.add(new Operation(OperationType.WITH_CURRENCY, currency));
+    return this;
+  }
+
+  @Override
+  public Builder withValueOperator(ValueOperator operator, Object valueOperand) {
+    this.operations.add(
+        new Operation(OperationType.WITH_VALUE_OPERATOR, Pair.of(operator, valueOperand)));
+    return this;
+  }
+
+  @Override
+  public Collection<Concept> removed(Semantics result) {
+    // find the removed concepts in the metadata using private key
+    return result.getMetadata().get(REMOVED_CONCEPTS_METADATA_KEY, Collections.emptyList());
+  }
+
+  @Override
+  public Builder linking(Concept source, Concept target) {
+    this.operations.add(new Operation(OperationType.LINKING, source, target));
+    return this;
+  }
+
+  @Override
+  public Builder named(String name) {
+    this.operations.add(new Operation(OperationType.NAMED, name));
+    return this;
+  }
+
+  @Override
+  public Builder withoutValueOperators() {
+    this.operations.add(new Operation(OperationType.WITHOUT_VALUE_OPERATORS));
+    return this;
+  }
+
+  @Override
+  public Builder optional(boolean optional) {
+    this.operations.add(new Operation(OperationType.AS_OPTIONAL, optional));
+    return this;
+  }
+
+  @Override
+  public Builder without(SemanticRole... roles) {
+    this.operations.add(new Operation(OperationType.WITHOUT_ROLES, roles));
+    return this;
+  }
+
+  @Override
+  public Builder withTemporalInherent(Concept concept) {
+    this.operations.add(new Operation(OperationType.WITH_TEMPORAL_INHERENT, concept));
+    return this;
+  }
+
+  @Override
+  public Builder named(String name, String referenceName) {
+    this.operations.add(new Operation(OperationType.NAMED, name));
+    return this;
+  }
+
+  @Override
+  public Builder withUnit(String unit) {
+    this.operations.add(new Operation(OperationType.WITH_UNIT, unit));
+    return this;
+  }
+
+  @Override
+  public Builder withCurrency(String currency) {
+    this.operations.add(new Operation(OperationType.WITH_CURRENCY, currency));
+    return this;
+  }
+
+  @Override
+  public Builder withDefaultValue(Object defaultValue) {
+    this.operations.add(new Operation(OperationType.WITH_DEFAULT_VALUE, defaultValue));
+    return this;
+  }
+
+  @Override
+  public Builder withResolutionException(ResolutionDirective resolutionDirective) {
+    this.operations.add(
+        new Operation(OperationType.WITH_RESOLUTION_EXCEPTION, resolutionDirective));
+    return this;
+  }
+
+  @Override
+  public Builder withRange(NumericRange range) {
+    this.operations.add(new Operation(OperationType.WITH_RANGE, range));
+    return this;
+  }
+
+  @Override
+  public Builder withObserverSemantics(Concept observerSemantics) {
+    this.operations.add(new Operation(OperationType.WITH_OBSERVER_SEMANTICS, observerSemantics));
+    return this;
+  }
+
+  @Override
+  public Builder collective(boolean collective) {
+    this.operations.add(new Operation(OperationType.COLLECTIVE, collective));
+    return this;
+  }
+
+  @Override
+  public Builder withAnnotation(Annotation annotation) {
+    this.operations.add(new Operation(OperationType.WITH_ANNOTATION, annotation));
+    return this;
+  }
+
+  public List<Operation> getOperations() {
+    return operations;
+  }
+
+  public void setOperations(List<Operation> operations) {
+    this.operations = operations;
+  }
+
+  public Concept getBaseConcept() {
+    return baseConcept;
+  }
+
+  public void setBaseConcept(Concept baseConcept) {
+    this.baseConcept = baseConcept;
+  }
+
+  public Observable getBaseObservable() {
+    return baseObservable;
+  }
+
+  public void setBaseObservable(Observable baseObservable) {
+    this.baseObservable = baseObservable;
+  }
+
+  public Object getDefaultValue() {
+    return defaultValue;
+  }
+
+  public void setDefaultValue(Object defaultValue) {
+    this.defaultValue = defaultValue;
+  }
+
+  @Override
+  public Collection<Notification> getNotifications() {
+    return this.notifications;
+  }
+
+  public void setNotifications(List<Notification> notifications) {
+    this.notifications = notifications;
+  }
 }

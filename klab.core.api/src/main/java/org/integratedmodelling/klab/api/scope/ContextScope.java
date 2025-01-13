@@ -4,6 +4,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Mutable;
@@ -203,7 +204,7 @@ public interface ContextScope extends SessionScope {
    * @return a {@link Future} producing the resolved observation when resolution is finished. If
    *     resolution has failed, the observation in the future will be unresolved.
    */
-  Future<Observation> observe(@Mutable Observation observation);
+  CompletableFuture<Observation> observe(@Mutable Observation observation);
 
   /**
    * Return all observations affected by the passed one in this scope, either through model
