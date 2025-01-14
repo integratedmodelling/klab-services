@@ -638,11 +638,6 @@ public class RuntimeService extends BaseService
           return resolution;
         }
 
-        // HERE we should use the knowledge repository, which needs to be specialized to hold
-        // components. OR the ingest(resourceset, scope) should
-        // be in the SERVICE and use the KR as needed. Load plugins, resource->adapters, service
-        // calls, projects, models etc. according to the needs of the
-        // service.
         if (!ingestResources(resolution, scope)) {
           return ResourceSet.empty(
               Notification.error(

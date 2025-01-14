@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.api;
 
 import java.util.Collection;
+import java.util.PrimitiveIterator;
+
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -141,6 +143,16 @@ public enum Klab {
         Extent<?> createExtentCopy(Extent<?> extent);
 
         Concept getNonSemanticConcept(SemanticType semanticType);
+
+        /**
+         * Return a long iterator for the states pointed to by the passed geometry according to the
+         * passed fill curve.
+         *
+         * @param geometry
+         * @param fillCurve
+         * @return
+         */
+        PrimitiveIterator.OfLong getGeometryIterator(Geometry geometry, Data.FillCurve fillCurve);
     }
 
     private Configuration configuration;

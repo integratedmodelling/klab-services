@@ -184,12 +184,12 @@ public class ExecutionSequence {
           /* Turn the call into the appropriate function descriptor for the actual call, provided by
           the adapter or by the runtime. */
 
-          Resource finalResource = resource;
           switch (preset) {
             case URN_RESOLVER -> {
               var urns = call.getParameters().getList("urns", String.class);
               // TODO use all services
               resource = scope.getService(ResourcesService.class).retrieveResource(urns, scope);
+              final Resource finalResource = resource;
 
               /*
               1. check if we have the adapter locally. If so we can use it directly.

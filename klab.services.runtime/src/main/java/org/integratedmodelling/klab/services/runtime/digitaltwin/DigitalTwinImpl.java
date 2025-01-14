@@ -79,6 +79,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
           return executor.invokeAll(tasks).stream().noneMatch(Future::isCancelled);
         } catch (InterruptedException e) {
+          scope.error(e);
           return false;
         }
       }
@@ -90,7 +91,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       var storage = scope.getDigitalTwin().stateStorage().getOrCreateStorage(target, Storage.class);
 
       if (data instanceof DoubleDataImpl doubleData) {
-        // TODO ingest data using storage; mind the fill curve
+        // TODO handle floats
         var doubleStorage =
             scope
                 .getDigitalTwin()
@@ -101,7 +102,6 @@ public class DigitalTwinImpl implements DigitalTwin {
           buffer.add(doubleData.nextDouble());
         }
       } else if (data instanceof LongDataImpl longData) {
-        // TODO ingest data using storage; mind the fill curve
         var longStorage =
             scope
                 .getDigitalTwin()
@@ -112,8 +112,6 @@ public class DigitalTwinImpl implements DigitalTwin {
           buffer.add(longData.nextLong());
         }
       } else if (data instanceof IntDataImpl intData) {
-        // TODO see if the storage is int; mind the fill curve; may also have a data key, must
-        //  cache the translated value
         var key = intData.getDataKey();
         if (key == null) {
           var intStorage =
@@ -126,7 +124,7 @@ public class DigitalTwinImpl implements DigitalTwin {
             buffer.add(intData.nextInt());
           }
         } else {
-          // TODO
+          // TODO have the data object adapt the key to the observable before use
           var table = new HashMap<Integer, Object>();
 
         }

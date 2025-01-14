@@ -37,6 +37,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -279,6 +280,32 @@ public enum ServiceConfiguration {
                       "Requested non-semantic concept of unexpected type");
             }
             return ret;
+          }
+
+          @Override
+          public PrimitiveIterator.OfLong getGeometryIterator(
+              Geometry geometry, Data.FillCurve fillCurve) {
+            return switch (fillCurve) {
+              case SN_LINEAR -> new PrimitiveIterator.OfLong() {
+
+                long size = geometry.size();
+                long current = 0;
+
+                @Override
+                public long nextLong() {
+                  return current++;
+                }
+
+                @Override
+                public boolean hasNext() {
+                  return current < size;
+                }
+              };
+              // TODO the rest
+              default ->
+                  throw new KlabUnimplementedException(
+                      "ServiceConfiguration::getGeometryIterator(" + fillCurve + ")");
+            };
           }
         });
   }

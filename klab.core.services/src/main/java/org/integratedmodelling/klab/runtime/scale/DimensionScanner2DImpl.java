@@ -176,6 +176,16 @@ public class DimensionScanner2DImpl implements DimensionScanner2D {
     }
 
     @Override
+    public long[] getExtentOffsets() {
+        return new long[]{0,0};
+    }
+
+    @Override
+    public List<Geometry> split() {
+        return List.of(this);
+    }
+
+    @Override
     public boolean infiniteTime() {
         return originalScale.infiniteTime();
     }

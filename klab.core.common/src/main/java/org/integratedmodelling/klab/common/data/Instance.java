@@ -15,10 +15,10 @@ import org.apache.avro.message.SchemaStore;
 notification in the top-level Instance means that contextualization has failed. */
 @org.apache.avro.specific.AvroGenerated
 public class Instance extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = -8864873956865470223L;
+  private static final long serialVersionUID = 5638178090020097471L;
 
 
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Instance\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"doc\":\"The payload of any contextualization is a top-level Instance. Any ERROR-level\\r\\nnotification in the top-level Instance means that contextualization has failed.\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"geometry\",\"type\":\"string\"},{\"name\":\"observable\",\"type\":\"string\"},{\"name\":\"fillingCurve\",\"type\":[\"string\",\"null\"],\"default\":\"S1_LINEAR\"},{\"name\":\"empty\",\"type\":\"boolean\",\"default\":false},{\"name\":\"notifications\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Notification\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"activityUrn\",\"type\":[\"null\",\"string\"]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"code\",\"type\":[\"null\",\"int\"]},{\"name\":\"level\",\"type\":{\"type\":\"enum\",\"name\":\"Level\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}}]}}},{\"name\":\"metadata\",\"type\":{\"type\":\"map\",\"values\":\"string\"}},{\"name\":\"instances\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"Instance\"}]},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Instance\",\"namespace\":\"org.integratedmodelling.klab.common.data\",\"doc\":\"The payload of any contextualization is a top-level Instance. Any ERROR-level\\r\\nnotification in the top-level Instance means that contextualization has failed.\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"geometry\",\"type\":\"string\"},{\"name\":\"observable\",\"type\":\"string\"},{\"name\":\"fillingCurve\",\"type\":[\"string\",\"null\"],\"default\":\"SN_LINEAR\"},{\"name\":\"empty\",\"type\":\"boolean\",\"default\":false},{\"name\":\"notifications\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Notification\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"activityUrn\",\"type\":[\"null\",\"string\"]},{\"name\":\"metadata\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]},{\"name\":\"code\",\"type\":[\"null\",\"int\"]},{\"name\":\"level\",\"type\":{\"type\":\"enum\",\"name\":\"Level\",\"symbols\":[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"]}}]}}},{\"name\":\"metadata\",\"type\":{\"type\":\"map\",\"values\":\"string\"}},{\"name\":\"instances\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"Instance\"}]},{\"name\":\"doubleData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"double\"}]},{\"name\":\"longData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"long\"}]},{\"name\":\"intData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"int\"}]},{\"name\":\"floatData\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"float\"}]},{\"name\":\"dataKey\",\"type\":[\"null\",{\"type\":\"map\",\"values\":\"string\"}]}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static final SpecificData MODEL$ = new SpecificData();
@@ -86,6 +86,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
   private java.util.List<java.lang.Long> longData;
   private java.util.List<java.lang.Integer> intData;
   private java.util.List<java.lang.Float> floatData;
+  private java.util.Map<java.lang.CharSequence,java.lang.CharSequence> dataKey;
 
   /**
    * Default constructor.  Note that this does not initialize fields
@@ -108,8 +109,9 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
    * @param longData The new value for longData
    * @param intData The new value for intData
    * @param floatData The new value for floatData
+   * @param dataKey The new value for dataKey
    */
-  public Instance(java.lang.CharSequence name, java.lang.CharSequence geometry, java.lang.CharSequence observable, java.lang.CharSequence fillingCurve, java.lang.Boolean empty, java.util.List<org.integratedmodelling.klab.common.data.Notification> notifications, java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata, java.util.List<org.integratedmodelling.klab.common.data.Instance> instances, java.util.List<java.lang.Double> doubleData, java.util.List<java.lang.Long> longData, java.util.List<java.lang.Integer> intData, java.util.List<java.lang.Float> floatData) {
+  public Instance(java.lang.CharSequence name, java.lang.CharSequence geometry, java.lang.CharSequence observable, java.lang.CharSequence fillingCurve, java.lang.Boolean empty, java.util.List<org.integratedmodelling.klab.common.data.Notification> notifications, java.util.Map<java.lang.CharSequence,java.lang.CharSequence> metadata, java.util.List<org.integratedmodelling.klab.common.data.Instance> instances, java.util.List<java.lang.Double> doubleData, java.util.List<java.lang.Long> longData, java.util.List<java.lang.Integer> intData, java.util.List<java.lang.Float> floatData, java.util.Map<java.lang.CharSequence,java.lang.CharSequence> dataKey) {
     this.name = name;
     this.geometry = geometry;
     this.observable = observable;
@@ -122,6 +124,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
     this.longData = longData;
     this.intData = intData;
     this.floatData = floatData;
+    this.dataKey = dataKey;
   }
 
   @Override
@@ -146,6 +149,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
     case 9: return longData;
     case 10: return intData;
     case 11: return floatData;
+    case 12: return dataKey;
     default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
@@ -167,6 +171,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
     case 9: longData = (java.util.List<java.lang.Long>)value$; break;
     case 10: intData = (java.util.List<java.lang.Integer>)value$; break;
     case 11: floatData = (java.util.List<java.lang.Float>)value$; break;
+    case 12: dataKey = (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>)value$; break;
     default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
@@ -376,6 +381,23 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
   }
 
   /**
+   * Gets the value of the 'dataKey' field.
+   * @return The value of the 'dataKey' field.
+   */
+  public java.util.Map<java.lang.CharSequence,java.lang.CharSequence> getDataKey() {
+    return dataKey;
+  }
+
+
+  /**
+   * Sets the value of the 'dataKey' field.
+   * @param value the value to set.
+   */
+  public void setDataKey(java.util.Map<java.lang.CharSequence,java.lang.CharSequence> value) {
+    this.dataKey = value;
+  }
+
+  /**
    * Creates a new Instance RecordBuilder.
    * @return A new Instance RecordBuilder
    */
@@ -428,6 +450,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
     private java.util.List<java.lang.Long> longData;
     private java.util.List<java.lang.Integer> intData;
     private java.util.List<java.lang.Float> floatData;
+    private java.util.Map<java.lang.CharSequence,java.lang.CharSequence> dataKey;
 
     /** Creates a new Builder */
     private Builder() {
@@ -488,6 +511,10 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
         this.floatData = data().deepCopy(fields()[11].schema(), other.floatData);
         fieldSetFlags()[11] = other.fieldSetFlags()[11];
       }
+      if (isValidValue(fields()[12], other.dataKey)) {
+        this.dataKey = data().deepCopy(fields()[12].schema(), other.dataKey);
+        fieldSetFlags()[12] = other.fieldSetFlags()[12];
+      }
     }
 
     /**
@@ -543,6 +570,10 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       if (isValidValue(fields()[11], other.floatData)) {
         this.floatData = data().deepCopy(fields()[11].schema(), other.floatData);
         fieldSetFlags()[11] = true;
+      }
+      if (isValidValue(fields()[12], other.dataKey)) {
+        this.dataKey = data().deepCopy(fields()[12].schema(), other.dataKey);
+        fieldSetFlags()[12] = true;
       }
     }
 
@@ -1025,6 +1056,46 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
       return this;
     }
 
+    /**
+      * Gets the value of the 'dataKey' field.
+      * @return The value.
+      */
+    public java.util.Map<java.lang.CharSequence,java.lang.CharSequence> getDataKey() {
+      return dataKey;
+    }
+
+
+    /**
+      * Sets the value of the 'dataKey' field.
+      * @param value The value of 'dataKey'.
+      * @return This builder.
+      */
+    public org.integratedmodelling.klab.common.data.Instance.Builder setDataKey(java.util.Map<java.lang.CharSequence,java.lang.CharSequence> value) {
+      validate(fields()[12], value);
+      this.dataKey = value;
+      fieldSetFlags()[12] = true;
+      return this;
+    }
+
+    /**
+      * Checks whether the 'dataKey' field has been set.
+      * @return True if the 'dataKey' field has been set, false otherwise.
+      */
+    public boolean hasDataKey() {
+      return fieldSetFlags()[12];
+    }
+
+
+    /**
+      * Clears the value of the 'dataKey' field.
+      * @return This builder.
+      */
+    public org.integratedmodelling.klab.common.data.Instance.Builder clearDataKey() {
+      dataKey = null;
+      fieldSetFlags()[12] = false;
+      return this;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public Instance build() {
@@ -1042,6 +1113,7 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
         record.longData = fieldSetFlags()[9] ? this.longData : (java.util.List<java.lang.Long>) defaultValue(fields()[9]);
         record.intData = fieldSetFlags()[10] ? this.intData : (java.util.List<java.lang.Integer>) defaultValue(fields()[10]);
         record.floatData = fieldSetFlags()[11] ? this.floatData : (java.util.List<java.lang.Float>) defaultValue(fields()[11]);
+        record.dataKey = fieldSetFlags()[12] ? this.dataKey : (java.util.Map<java.lang.CharSequence,java.lang.CharSequence>) defaultValue(fields()[12]);
         return record;
       } catch (org.apache.avro.AvroMissingFieldException e) {
         throw e;
@@ -1213,6 +1285,27 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
         throw new java.util.ConcurrentModificationException("Array-size written was " + size6 + ", but element count was " + actualSize6 + ".");
     }
 
+    if (this.dataKey == null) {
+      out.writeIndex(0);
+      out.writeNull();
+    } else {
+      out.writeIndex(1);
+      long size7 = this.dataKey.size();
+      out.writeMapStart();
+      out.setItemCount(size7);
+      long actualSize7 = 0;
+      for (java.util.Map.Entry<java.lang.CharSequence, java.lang.CharSequence> e7: this.dataKey.entrySet()) {
+        actualSize7++;
+        out.startItem();
+        out.writeString(e7.getKey());
+        java.lang.CharSequence v7 = e7.getValue();
+        out.writeString(v7);
+      }
+      out.writeMapEnd();
+      if (actualSize7 != size7)
+      throw new java.util.ConcurrentModificationException("Map-size written was " + size7 + ", but element count was " + actualSize7 + ".");
+    }
+
   }
 
   @Override public void customDecode(org.apache.avro.io.ResolvingDecoder in)
@@ -1372,8 +1465,29 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
         }
       }
 
+      if (in.readIndex() != 1) {
+        in.readNull();
+        this.dataKey = null;
+      } else {
+        long size7 = in.readMapStart();
+        java.util.Map<java.lang.CharSequence,java.lang.CharSequence> m7 = this.dataKey; // Need fresh name due to limitation of macro system
+        if (m7 == null) {
+          m7 = new java.util.HashMap<java.lang.CharSequence,java.lang.CharSequence>((int)(size7 * 4)/3 + 1);
+          this.dataKey = m7;
+        } else m7.clear();
+        for ( ; 0 < size7; size7 = in.mapNext()) {
+          for ( ; size7 != 0; size7--) {
+            java.lang.CharSequence k7 = null;
+            k7 = in.readString(k7 instanceof Utf8 ? (Utf8)k7 : null);
+            java.lang.CharSequence v7 = null;
+            v7 = in.readString(v7 instanceof Utf8 ? (Utf8)v7 : null);
+            m7.put(k7, v7);
+          }
+        }
+      }
+
     } else {
-      for (int i = 0; i < 12; i++) {
+      for (int i = 0; i < 13; i++) {
         switch (fieldOrder[i].pos()) {
         case 0:
           this.name = in.readString(this.name instanceof Utf8 ? (Utf8)this.name : null);
@@ -1546,6 +1660,29 @@ public class Instance extends org.apache.avro.specific.SpecificRecordBase implem
                 java.lang.Float e6 = (ga6 != null ? ga6.peek() : null);
                 e6 = in.readFloat();
                 a6.add(e6);
+              }
+            }
+          }
+          break;
+
+        case 12:
+          if (in.readIndex() != 1) {
+            in.readNull();
+            this.dataKey = null;
+          } else {
+            long size7 = in.readMapStart();
+            java.util.Map<java.lang.CharSequence,java.lang.CharSequence> m7 = this.dataKey; // Need fresh name due to limitation of macro system
+            if (m7 == null) {
+              m7 = new java.util.HashMap<java.lang.CharSequence,java.lang.CharSequence>((int)(size7 * 4)/3 + 1);
+              this.dataKey = m7;
+            } else m7.clear();
+            for ( ; 0 < size7; size7 = in.mapNext()) {
+              for ( ; size7 != 0; size7--) {
+                java.lang.CharSequence k7 = null;
+                k7 = in.readString(k7 instanceof Utf8 ? (Utf8)k7 : null);
+                java.lang.CharSequence v7 = null;
+                v7 = in.readString(v7 instanceof Utf8 ? (Utf8)v7 : null);
+                m7.put(k7, v7);
               }
             }
           }

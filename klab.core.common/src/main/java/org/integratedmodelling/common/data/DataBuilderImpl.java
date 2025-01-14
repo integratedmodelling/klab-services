@@ -1,22 +1,26 @@
 package org.integratedmodelling.common.data;
 
+import java.util.*;
+import java.util.stream.Collectors;
+
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.common.data.Instance;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
 public class DataBuilderImpl implements Data.Builder {
 
-  Instance.Builder builder;
-  Instance.Builder parentBuilder;
-  Geometry geometry;
-  Observable observable;
+  private final Instance.Builder builder;
+  private Instance.Builder parentBuilder;
+  private final Geometry geometry;
+//  private Observable observable;
+  private Data.Filler filler;
+  private Data.FillCurve fillCurve;
+  private Map<Object, Integer> objectKey;
+  private int objectCounter = 1;
 
   public DataBuilderImpl(String name, Observable observable, Geometry geometry) {
     this.builder = Instance.newBuilder();
@@ -30,8 +34,9 @@ public class DataBuilderImpl implements Data.Builder {
     this.builder.setFloatData(null);
     this.builder.setIntData(null);
     this.builder.setLongData(null);
+    this.builder.setDataKey(null);
     this.geometry = geometry;
-    this.observable = observable;
+//    this.observable = observable;
   }
 
   private DataBuilderImpl(
@@ -69,15 +74,35 @@ public class DataBuilderImpl implements Data.Builder {
   }
 
   @Override
-  public <T extends Data.Filler> T filler(Class<T> fillerClass) {
-    //    switch (observable.getDescriptionType()) {
-    //        // VALIDATE and RETURN REQUESTED FILLER
-    //    }
-    return null;
+  public <T extends Data.Filler> T filler(Class<T> fillerClass, Data.FillCurve curve) {
+
+    if (filler != null) {
+      throw new KlabIllegalStateException("A data instance can only have one filler");
+    }
+
+    if (fillerClass == Data.DoubleFiller.class) {
+      return (T) new DoubleInstanceFiller(curve);
+    } else if (fillerClass == Data.FloatFiller.class) {
+      return (T) new FloatInstanceFiller(curve);
+    } else if (fillerClass == Data.IntFiller.class) {
+      return (T) new IntInstanceFiller(curve);
+    } else if (fillerClass == Data.LongFiller.class) {
+      return (T) new LongInstanceFiller(curve);
+    } else if (fillerClass == Data.ObjectFiller.class) {
+      return (T) new ObjectInstanceFiller(curve);
+    }
+    throw new KlabIllegalStateException(
+        "Unexpected filler class " + fillerClass.getCanonicalName());
   }
 
   @Override
   public Data build() {
+    if (objectKey != null) {
+      builder.setDataKey(
+          objectKey.entrySet().stream()
+              .map(e -> Map.entry(e.getKey().toString(), e.getValue().toString()))
+              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+    }
     var instance = builder.build();
     if (parentBuilder != null) {
       if (parentBuilder.getInstances() == null) {
@@ -86,5 +111,71 @@ public class DataBuilderImpl implements Data.Builder {
       parentBuilder.getInstances().add(instance);
     }
     return BaseDataImpl.create(instance);
+  }
+
+  private class DoubleInstanceFiller implements Data.DoubleFiller {
+
+    DoubleInstanceFiller(Data.FillCurve fillCurve) {
+      builder.setFillingCurve(fillCurve.name());
+      builder.setDoubleData(new ArrayList<>());
+    }
+
+    @Override
+    public void add(double value) {
+      builder.getDoubleData().add(value);
+    }
+  }
+
+  private class FloatInstanceFiller implements Data.FloatFiller {
+
+    FloatInstanceFiller(Data.FillCurve fillCurve) {
+      builder.setFillingCurve(fillCurve.name());
+      builder.setFloatData(new ArrayList<>());
+    }
+
+    @Override
+    public void add(float value) {
+      builder.getFloatData().add(value);
+    }
+  }
+
+  private class LongInstanceFiller implements Data.LongFiller {
+
+    LongInstanceFiller(Data.FillCurve fillCurve) {
+      builder.setFillingCurve(fillCurve.name());
+      builder.setLongData(new ArrayList<>());
+    }
+
+    @Override
+    public void add(long value) {
+      builder.getLongData().add(value);
+    }
+  }
+
+  private class IntInstanceFiller implements Data.IntFiller {
+
+    IntInstanceFiller(Data.FillCurve fillCurve) {
+      builder.setFillingCurve(fillCurve.name());
+      builder.setIntData(new ArrayList<>());
+    }
+
+    @Override
+    public void add(int value) {
+      builder.getIntData().add(value);
+    }
+  }
+
+  private class ObjectInstanceFiller implements Data.ObjectFiller {
+
+    ObjectInstanceFiller(Data.FillCurve fillCurve) {
+      builder.setFillingCurve(fillCurve.name());
+      builder.setIntData(new ArrayList<>());
+      objectKey = new HashMap<>();
+    }
+
+    @Override
+    public void add(Object value) {
+      builder.getIntData().add(objectKey.computeIfAbsent(value, v -> objectCounter++));
+    }
   }
 }

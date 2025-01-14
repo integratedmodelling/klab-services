@@ -473,6 +473,16 @@ public class ScaleImpl implements Scale {
     }
 
     @Override
+    public long[] getExtentOffsets() {
+        return new long[extents.length];
+    }
+
+    @Override
+    public List<Geometry> split() {
+        return as(Geometry.class).split();
+    }
+
+    @Override
     public Scale collapse(Type... dimensions) {
         // TODO Auto-generated method stub
         return null;
@@ -628,6 +638,16 @@ public class ScaleImpl implements Scale {
         @Override
         public Scale at(Locator dimension) {
             return ScaleImpl.this.at(dimension);
+        }
+
+        @Override
+        public long[] getExtentOffsets() {
+            return ScaleImpl.this.getExtentOffsets();
+        }
+
+        @Override
+        public List<Geometry> split() {
+            return ScaleImpl.this.split();
         }
 
         @Override

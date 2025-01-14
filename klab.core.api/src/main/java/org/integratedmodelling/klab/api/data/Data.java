@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.List;
 import java.util.Map;
+import java.util.PrimitiveIterator;
 
 /**
  * The <code>Data</code> object encapsulates the network-transmissible data package specified
@@ -36,7 +37,7 @@ public interface Data {
    * value is -1.
    */
   enum FillCurve {
-    S1_LINEAR(-1),
+    SN_LINEAR(-1),
     S2_XY(2),
     S2_YX(2),
     S2_SIERPINSKI_3(2),
@@ -46,12 +47,22 @@ public interface Data {
 
     public final int dimensions;
 
+    public PrimitiveIterator.OfLong iterate(Geometry geometry) {
+      Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+      if (configuration == null) {
+        throw new KlabIllegalStateException("k.LAB environment not configured");
+      }
+      return configuration.getGeometryIterator(geometry, this);
+    }
+
     FillCurve(int dimensions) {
       this.dimensions = dimensions;
     }
   }
 
-  interface Filler {}
+  interface Filler {
+
+  }
 
   @FunctionalInterface
   interface IntFiller extends Filler {
@@ -135,10 +146,11 @@ public interface Data {
      * org.integratedmodelling.klab.api.knowledge.DescriptionType}.
      *
      * @param fillerClass
+     * @param fillCurve
      * @return
      * @param <T>
      */
-    <T extends Filler> T filler(Class<T> fillerClass);
+    <T extends Filler> T filler(Class<T> fillerClass, FillCurve fillCurve);
 
     /**
      * Must be called on any secondary builders. Should NOT be called on the root builder, passed to

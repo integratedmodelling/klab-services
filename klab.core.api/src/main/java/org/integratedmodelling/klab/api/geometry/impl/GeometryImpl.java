@@ -1396,6 +1396,16 @@ public class GeometryImpl implements Geometry {
         //            return new OffsetImpl(this, pos);
     }
 
+    @Override
+    public long[] getExtentOffsets() {
+        return new long[dimensions.size()];
+    }
+
+    @Override
+    public List<Geometry> split() {
+        throw new KlabUnimplementedException("Geometry::split");
+    }
+
     /**
      * Return the located offsets corresponding to the passed locator.
      * TODO turn this into a subsetting operation so that the locator may select multiple offsets in one or

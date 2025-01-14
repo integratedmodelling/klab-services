@@ -21,7 +21,7 @@ protocol KlabData {
 		string name;
 		string geometry;
 		string observable;
-		string? fillingCurve = "S1_LINEAR";
+		string? fillingCurve = "SN_LINEAR";
 		boolean empty = false;
 		array<Notification> notifications;
 		map<string> metadata;
@@ -32,6 +32,9 @@ protocol KlabData {
 		union{null, array<long>} longData;
 		union{null, array<int>} intData;
 		union{null, array<float>} floatData;
+		// this links the string representation of int values in intData to the string rep of their
+		// value in case of key-value data pairs.
+		union{null, map<string>} dataKey;
 	}
 
 	/**

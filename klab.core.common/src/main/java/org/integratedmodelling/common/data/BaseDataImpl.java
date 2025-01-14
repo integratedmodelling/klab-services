@@ -10,6 +10,7 @@ import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -21,16 +22,18 @@ import org.integratedmodelling.klab.common.data.Instance;
  */
 public class BaseDataImpl implements Data {
 
-  private final Instance instance;
+  protected final Instance instance;
   private final String semantics;
   private final Geometry geometry;
   private final String name;
   private boolean empty = false;
   private Map<Integer, String> dataKey;
   private Metadata metadata = Metadata.create();
+  private FillCurve fillCurve;
 
-  private BaseDataImpl(Instance instance) {
+  public BaseDataImpl(Instance instance) {
     this.instance = instance;
+    this.fillCurve = FillCurve.valueOf(instance.getFillingCurve().toString());
     this.semantics = instance.getObservable().toString();
     this.geometry =
         GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class);
@@ -42,6 +45,7 @@ public class BaseDataImpl implements Data {
     this.geometry = geometry;
     this.name = name;
     this.instance = instance;
+    this.fillCurve = FillCurve.SN_LINEAR;
   }
 
   @Override
@@ -84,7 +88,7 @@ public class BaseDataImpl implements Data {
 
   @Override
   public FillCurve fillCurve() {
-    return null;
+    return fillCurve;
   }
 
   @Override
@@ -144,16 +148,18 @@ public class BaseDataImpl implements Data {
 
   public static Data create(Instance instance) {
 
-    //        var Observable = scope.getService(Reasoner.class).resolveObservable(instance.)
-
     if (instance.getDoubleData() != null) {
-
+        return new DoubleDataImpl(instance);
     } else if (instance.getFloatData() != null) {
-
+      throw new KlabUnimplementedException("GAAAH");
+//      return new FloatDataImpl(instance);
     } else if (instance.getIntData() != null) {
-
+      if (instance.getDataKey() != null) {
+        throw new KlabUnimplementedException("GEEEEH");
+      }
+      return new IntDataImpl(instance);
     } else if (instance.getLongData() != null) {
-
+      return new LongDataImpl(instance);
     }
 
     return new BaseDataImpl(instance);

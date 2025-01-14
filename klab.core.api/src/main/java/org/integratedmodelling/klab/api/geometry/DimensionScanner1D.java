@@ -11,6 +11,7 @@ package org.integratedmodelling.klab.api.geometry;
  * Implementations can be derived to implement e.g. space-filling curves, prioritized lists or other
  * iteration strategies.
  * </p>
+ * @deprecated use fillers in the {@link org.integratedmodelling.klab.api.data.Data} interface
  */
 public interface DimensionScanner1D extends Geometry, Iterable<Offset> {
 

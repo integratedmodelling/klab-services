@@ -160,6 +160,16 @@ public class DimensionScanner1DImpl implements DimensionScanner1D {
     }
 
     @Override
+    public long[] getExtentOffsets() {
+        return new long[]{0};
+    }
+
+    @Override
+    public List<Geometry> split() {
+        return List.of(this);
+    }
+
+    @Override
     public boolean infiniteTime() {
         return false;
     }
