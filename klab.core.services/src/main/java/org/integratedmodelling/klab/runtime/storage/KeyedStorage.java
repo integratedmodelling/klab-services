@@ -7,48 +7,27 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Offset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 
-/**
- * Base storage providing the general methods. Children enable either boxed I/O or faster native
- * operation (recommended). The runtime makes the choice.
- *
- * @author Ferd
- */
-public class KeyedStorage implements Storage {
+public class KeyedStorage extends AbstractStorage<KeyedStorage.KeyedBuffer> {
 
-  private final IntStorage delegate;
-
-  public KeyedStorage(Scale scale, StateStorageImpl scope) {
-    this.delegate = new IntStorage(scale, scope);
+  public KeyedStorage(Geometry geometry, StateStorageImpl scope) {
+    super(Type.KEYED, geometry, scope);
   }
 
-  /**
-   * This should become the default way to set storage. Pass a geometry (equal to the native one or
-   * partially covering it, but always in phase) and the desired fill curve, then call add(double)
-   * on it.
-   *
-   * @param bufferGeometry
-   * @param fillCurve
-   * @return
-   */
-  public Data.KeyedFiller buffer(Geometry bufferGeometry, Data.FillCurve fillCurve) {
+  @Override
+  public KeyedBuffer buffer(Geometry geometry, Data.FillCurve fillCurve) {
     return null;
   }
 
-  @Override
-  public Type getType() {
-    return Type.KEYED;
+  public class KeyedBuffer extends AbstractStorage.AbstractBuffer {
+
+    protected KeyedBuffer(Geometry geometry, Data.FillCurve fillCurve) {
+      super(geometry, fillCurve);
+    }
+
+    @Override
+    public <T extends Data.Filler> T filler(Class<T> fillerClass) {
+      return null;
+    }
   }
 
-  @Override
-  public Histogram getHistogram() {
-    return delegate.getHistogram();
-  }
-
-  @Deprecated
-  public void set(Object value, Offset locator) {}
-
-  @Override
-  public long getId() {
-    return delegate.getId();
-  }
 }

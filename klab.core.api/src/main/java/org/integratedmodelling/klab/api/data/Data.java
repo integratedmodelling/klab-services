@@ -1,14 +1,13 @@
 package org.integratedmodelling.klab.api.data;
 
+import java.util.List;
+import java.util.Map;
+import java.util.PrimitiveIterator;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-
-import java.util.List;
-import java.util.Map;
-import java.util.PrimitiveIterator;
 
 /**
  * The <code>Data</code> object encapsulates the network-transmissible data package specified
@@ -28,6 +27,51 @@ import java.util.PrimitiveIterator;
 public interface Data {
 
   /**
+   * A Cursor iterates one or more geometry dimensions using a long offset. If the geometry it
+   * refers to results from splitting an original larger geometry, it can also locate the current
+   * offset in it.
+   */
+  interface Cursor extends PrimitiveIterator.OfLong {
+
+    /**
+     * The current offset in the geometry being handled. If this is called during iteration, it will
+     * refer to the offset AFTER the one just produced using nextLong().
+     *
+     * @return
+     */
+    long currentOffset();
+
+    /**
+     * The linear offset corresponding to the dimension offsets passed, which must be in the number
+     * and range expected by the passed geometry and include 0 for any scalar dimension.
+     *
+     * @param dimensionOffsets
+     * @return
+     */
+    long offset(long... dimensionOffsets);
+
+    /**
+     * The current original offset for the original geometry. If the cursor is iterating a geometry
+     * that does not result from splitting another, this should return the same result as {@link
+     * #currentOffset()}.
+     *
+     * @return
+     */
+    long currentOriginalOffset();
+
+    /**
+     * The linear offset in the original geometry corresponding to the dimension offsets passed, the
+     * latter relative to the geometry being handled. If the cursor is iterating a geometry that
+     * does not result from splitting another, this should return the same result as {@link
+     * #offset(long...)}}.
+     *
+     * @param dimensionOffsets
+     * @return
+     */
+    long originalOffset(long... dimensionOffsets);
+  }
+
+  /**
    * Any of the space-filling curves are used in the data encoding. The {@link Data} object contains
    * a filling curve, which must be applied to the observation {@link Storage} for proper
    * arrangement. Each state with multiple values must define the curve it uses. Normally these are
@@ -37,17 +81,46 @@ public interface Data {
    * value is -1.
    */
   enum FillCurve {
-    SN_LINEAR(-1),
-    S2_XY(2),
-    S2_YX(2),
-    S2_SIERPINSKI_3(2),
-    S2_HILBERT(2);
-    // ... TODO more as needed. Sierpinski can have different orders; the arrowhead can be extended
-    // to 3D
+    /**
+     * Iterates along a single dimension interpreting any number of geometry dimensions, index
+     * interpreted according to local context.
+     */
+    DN_LINEAR(-1),
+
+    /** Expects a single dimension changing. */
+    D1_LINEAR(1),
+
+    /** Iterates along one two-dimensional extent with the first index varying slower (row-first) */
+    D2_XY(2),
+    /**
+     * Iterates along one two-dimensional extent with the first index varying faster (column-first)
+     */
+    D2_YX(2),
+
+    /**
+     * Iterates along one 2-dimensional extent with the first index varying slower (row-first) going
+     * last to first on the Y index
+     */
+    D2_XInvY(2),
+
+    D3_XYZ(3),
+
+    D3_ZYX(3),
+
+    // TODO
+    D2_SIERPINSKI_3(2),
+    // TODO also hilbert n-dim
+    D2_HILBERT(2),
+    // ... TODO Z2, Z3 and others as needed. Sierpinski can have different orders; the arrowhead can
+    //  be extended  to 3D
+    /**
+     * N-dimensional Hilbert curve
+     */
+    DN_HILBERT(-1);
 
     public final int dimensions;
 
-    public PrimitiveIterator.OfLong iterate(Geometry geometry) {
+    public Cursor iterate(Geometry geometry) {
       Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
       if (configuration == null) {
         throw new KlabIllegalStateException("k.LAB environment not configured");
@@ -60,9 +133,7 @@ public interface Data {
     }
   }
 
-  interface Filler {
-
-  }
+  interface Filler {}
 
   @FunctionalInterface
   interface IntFiller extends Filler {

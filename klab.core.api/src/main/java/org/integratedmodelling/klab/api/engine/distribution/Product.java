@@ -129,6 +129,11 @@ public interface Product {
 
             @Override
             public int getDebugPort() {return 5005; }
+
+            @Override
+            public int defaultMaxMemoryLimitMB() {
+                return 1024;
+            }
         },
         RESOURCES_SERVICE {
             @Override
@@ -148,6 +153,11 @@ public interface Product {
 
             @Override
             public int getDebugPort() {return 5006; }
+
+            @Override
+            public int defaultMaxMemoryLimitMB() {
+                return 2048;
+            }
 
         },
         REASONER_SERVICE {
@@ -169,6 +179,11 @@ public interface Product {
             @Override
             public int getDebugPort() {return 5007; }
 
+            @Override
+            public int defaultMaxMemoryLimitMB() {
+                return 2048;
+            }
+
         },
         RESOLVER_SERVICE {
             @Override
@@ -188,6 +203,11 @@ public interface Product {
 
             @Override
             public int getDebugPort() {return 5008; }
+
+            @Override
+            public int defaultMaxMemoryLimitMB() {
+                return 2048;
+            }
 
         },
         RUNTIME_SERVICE {
@@ -209,6 +229,11 @@ public interface Product {
             @Override
             public int getDebugPort() {return 5009; }
 
+            @Override
+            public int defaultMaxMemoryLimitMB() {
+                return 4096;
+            }
+
         },
         COMMUNITY_SERVICE {
             @Override
@@ -229,6 +254,11 @@ public interface Product {
             @Override
             public int getDebugPort() {return 5010; }
 
+            @Override
+            public int defaultMaxMemoryLimitMB() {
+                return 2048;
+            }
+
         },
         MODELER {
             @Override
@@ -248,6 +278,11 @@ public interface Product {
 
             @Override
             public int getDebugPort() {return 5011; }
+
+            @Override
+            public int defaultMaxMemoryLimitMB() {
+                return 2048;
+            }
         };
 
         public static ProductType forService(KlabService.Type serviceType) {
@@ -282,6 +317,8 @@ public interface Product {
         }
 
         public abstract int getDebugPort();
+
+        public abstract int defaultMaxMemoryLimitMB();
     }
 
     /**

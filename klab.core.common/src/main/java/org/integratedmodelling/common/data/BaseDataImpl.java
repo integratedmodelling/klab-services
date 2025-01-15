@@ -45,7 +45,7 @@ public class BaseDataImpl implements Data {
     this.geometry = geometry;
     this.name = name;
     this.instance = instance;
-    this.fillCurve = FillCurve.SN_LINEAR;
+    this.fillCurve = FillCurve.DN_LINEAR;
   }
 
   @Override

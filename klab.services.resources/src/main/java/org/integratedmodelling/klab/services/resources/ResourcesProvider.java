@@ -508,7 +508,7 @@ public class ResourcesProvider extends BaseService
 
   @Override
   public Data contextualize(
-          Resource resource, Observation observation, @Nullable Data input, Scope scope) {
+      Resource resource, Observation observation, @Nullable Data input, Scope scope) {
     var adapter =
         getComponentRegistry().getAdapter(resource.getAdapterType(), resource.getVersion(), scope);
     if (adapter == null) {
@@ -1312,7 +1312,7 @@ public class ResourcesProvider extends BaseService
                 ret.getResults()
                     .add(
                         new ResourceSet.Resource(
-                            getUrl().toString(),
+                            serviceId(),
                             urn,
                             namespace.getProjectName(),
                             namespace.getVersion(),
@@ -1323,9 +1323,23 @@ public class ResourcesProvider extends BaseService
           }
         }
       }
-      case OBSERVABLE -> {}
-      case REMOTE_URL -> {}
-      case UNKNOWN -> {}
+      case OBSERVABLE -> {
+        var observable = retrieveObservable(urn);
+        if (observable != null) {
+          ret.getResults()
+              .add(
+                  new ResourceSet.Resource(
+                      serviceId(), urn, null, null, KnowledgeClass.OBSERVABLE));
+        }
+      }
+      case REMOTE_URL -> {
+        // TODO
+      }
+      case UNKNOWN -> {
+        ret.setEmpty(true);
+        ret.getNotifications()
+            .add(Notification.error("Resource service cannot resolve URN " + urn));
+      }
     }
 
     return addDependencies(ret, scope);

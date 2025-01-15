@@ -6,13 +6,8 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
-import org.integratedmodelling.klab.components.ComponentRegistry;
-import org.integratedmodelling.klab.runtime.storage.BooleanStorage;
-import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
-import org.integratedmodelling.klab.runtime.storage.FloatStorage;
-import org.integratedmodelling.klab.runtime.storage.KeyedStorage;
+import org.integratedmodelling.klab.runtime.storage.*;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 /**
@@ -65,7 +60,7 @@ public class ScalarMapper {
     // TODO masking
     switch (storage) {
       case DoubleStorage doubleStorage -> {
-        doubleStorage.map(getDoubleMapper());
+//        doubleStorage.map(getDoubleMapper());
       }
       case FloatStorage doubleStorage -> {}
       case BooleanStorage booleanStorage -> {}
@@ -77,8 +72,8 @@ public class ScalarMapper {
     return true;
   }
 
-  private DoubleStorage.OffsetToDoubleFunction getDoubleMapper() {
-    // TODO
-    return null;
-  }
+//  private LongStorage.OffsetToDoubleFunction getDoubleMapper() {
+//    // TODO
+//    return null;
+//  }
 }

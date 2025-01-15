@@ -7,6 +7,8 @@ import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Resolvable;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -102,24 +104,44 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
     }
 
     var resources = KlabCLI.INSTANCE.user().getService(ResourcesService.class);
-    var resolvable = resources.resolve(urn, KlabCLI.INSTANCE.user());
-    var results =
-        KnowledgeRepository.INSTANCE.ingest(resolvable, KlabCLI.INSTANCE.user(), KlabAsset.class);
 
-    // TODO this is only for root observations
-    if (!results.isEmpty()) {
-      out.println(
-          CommandLine.Help.Ansi.AUTO.string(
-              "Observation of @|yellow "
-                  + urn
-                  + "|@ "
-                  + "started in "
-                  + results.getFirst().getUrn()));
-      KlabCLI.INSTANCE.modeler().observe(results.getFirst(), addToContext);
+    var type = Urn.classify(urn);
+    if (type == Urn.Type.OBSERVABLE) {
+
+      var resolved = resources.retrieveObservable(urn);
+      if (resolved != null) {
+        out.println(
+            CommandLine.Help.Ansi.AUTO.string(
+                "Observation of @|yellow " + urn + "|@ " + " started"));
+        KlabCLI.INSTANCE.modeler().observe(resolved, addToContext);
+      } else {
+        err.println(
+            CommandLine.Help.Ansi.AUTO.string(
+                "Can't resolve URN @|yellow " + urn + "|@ to an observable"));
+      }
+
+    } else if (type == Urn.Type.KIM_OBJECT || type == Urn.Type.RESOURCE) {
+
+      var resolvable = resources.resolve(urn, KlabCLI.INSTANCE.user());
+      var results =
+          KnowledgeRepository.INSTANCE.ingest(resolvable, KlabCLI.INSTANCE.user(), KlabAsset.class);
+
+      // TODO this is only for root observations
+      if (!results.isEmpty()) {
+        out.println(
+            CommandLine.Help.Ansi.AUTO.string(
+                "Observation of @|yellow "
+                    + urn
+                    + "|@ "
+                    + "started in "
+                    + results.getFirst().getUrn()));
+        KlabCLI.INSTANCE.modeler().observe(results.getFirst(), addToContext);
+      }
+
     } else {
       err.println(
           CommandLine.Help.Ansi.AUTO.string(
-              "Can't resolve URN @|yellow " + urn + "|@ to " + "observable knowledge"));
+              "Can't resolve URN @|yellow " + urn + "|@ to observable knowledge"));
     }
   }
 

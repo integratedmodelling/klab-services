@@ -1,90 +1,98 @@
 package org.integratedmodelling.klab.runtime.storage;
 
-import java.util.function.LongToIntFunction;
+import java.util.PrimitiveIterator;
+
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.Histogram;
-import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.geometry.Locator;
-import org.integratedmodelling.klab.api.geometry.Offset;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.ojalgo.array.BufferArray;
 
 /**
- * Base storage providing the general methods. Children enable either boxed I/O or faster native operation
- * (recommended). The runtime makes the choice.
+ * Base storage providing the general methods. Children enable either boxed I/O or faster native
+ * operation (recommended). The runtime makes the choice.
  *
  * @author Ferd
  */
-public class LongStorage implements Storage {
+public class LongStorage extends AbstractStorage<LongStorage.LongBuffer> {
 
-    public LongStorage(Scale scale, StateStorageImpl scope) {
+    public class LongBuffer extends AbstractBuffer {
+
+        private final BufferArray data;
+
+        protected LongBuffer(Geometry geometry, Data.FillCurve fillCurve) {
+            super(geometry, fillCurve);
+            this.data = scope.getLongBuffer(geometry.size());
+        }
+
+        @Override
+        public <T extends Data.Filler> T filler(Class<T> fillerClass) {
+
+            final PrimitiveIterator.OfLong iterator = fillCurve().iterate(geometry);
+
+            if (fillerClass == Data.DoubleFiller.class) {
+                return (T)
+                        new Data.DoubleFiller() {
+
+                            @Override
+                            public void add(double value) {
+                                data.add(iterator.nextLong(), value);
+                                if (histogram != null) {
+                                    histogram.insert(value);
+                                }
+                            }
+                        };
+            } else if (fillerClass == Data.IntFiller.class) {
+                return (T)
+                        new Data.IntFiller() {
+
+                            @Override
+                            public void add(int value) {
+                                data.add(iterator.nextLong(), (double) value);
+                                if (histogram != null) {
+                                    histogram.insert((double) value);
+                                }
+                            }
+                        };
+            } else if (fillerClass == Data.LongFiller.class) {
+                return (T)
+                        new Data.LongFiller() {
+
+                            @Override
+                            public void add(long value) {
+                                data.add(iterator.nextLong(), (double) value);
+                                if (histogram != null) {
+                                    histogram.insert((double) value);
+                                }
+                            }
+                        };
+            } else if (fillerClass == Data.FloatFiller.class) {
+                return (T)
+                        new Data.FloatFiller() {
+
+                            @Override
+                            public void add(float value) {
+                                data.add(iterator.nextLong(), value);
+                                if (histogram != null) {
+                                    histogram.insert((double) value);
+                                }
+                            }
+                        };
+            }
+
+            throw new KlabIllegalStateException("Unexpected filler type requested for buffer");
+        }
+    }
+
+    public LongStorage(Geometry geometry, StateStorageImpl scope) {
+        super(Type.LONG, geometry, scope);
     }
 
     @Override
-    public Type getType() {
-        return Type.INTEGER;
+    public LongBuffer buffer(Geometry geometry, Data.FillCurve fillCurve) {
+        var ret = new LongBuffer(geometry, fillCurve);
+        registerBuffer(ret);
+        return ret;
     }
 
-    @Deprecated
-    public void set(int value, Offset locator) {
-
-    }
-
-    @Override
-    public long getId() {
-        return 0;
-    }
-
-    /**
-     * A quick-access buffer that simply addresses a dimension using a long. Obtained through
-     * {@link #getSliceBuffer(Locator)}.
-     * @deprecated use buffer below
-     */
-    interface DirectSliceBuffer {
-        public void set(int value, long position);
-
-        public int get(long position);
-    }
-
-    /**
-     * This should become the default way to set storage. Pass a geometry (equal to the native one or
-     * partially covering it, but always in phase) and the desired fill curve, then call add(double)
-     * on it.
-     *
-     * @param bufferGeometry
-     * @param fillCurve
-     * @return
-     */
-    public Data.LongFiller buffer(Geometry bufferGeometry, Data.FillCurve fillCurve) {
-        return null;
-    }
-
-
-    /**
-     * Using the slice buffer provides the quickest access with little code impact. Using the buffer is alternative to
-     * the standard get/set and should be done only when one dimension is scanned at the time and the dimension size is
-     * high.
-     *
-     * @param locator
-     * @return
-     */
-    public DirectSliceBuffer getSliceBuffer(Locator locator) {
-        return null;
-    };
-
-    /**
-     * Map the passed operator within as many threads as specified by the level of parallelism defined in the
-     * constructor. The operator returns the value for the passed offset, which translates the {@link Locator} produced
-     * by iterating a {@link Scale}.
-     *
-     * @param operator a non-boxing long -> int operator producing the value at the passed offset
-     */
-    public void map(LongToIntFunction operator) {
-
-    }
-
-    @Override
-    public Histogram getHistogram() {
-        return null;
-    }
 }
+

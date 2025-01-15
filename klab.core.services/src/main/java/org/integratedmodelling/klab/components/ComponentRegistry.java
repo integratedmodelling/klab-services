@@ -56,10 +56,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.*;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.extension.KlabComponent;
-import org.integratedmodelling.klab.runtime.storage.BooleanStorage;
-import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
-import org.integratedmodelling.klab.runtime.storage.FloatStorage;
-import org.integratedmodelling.klab.runtime.storage.KeyedStorage;
+import org.integratedmodelling.klab.runtime.storage.*;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -1487,11 +1484,19 @@ public class ComponentRegistry {
           runArguments.add(urnParameters);
         } else if (DoubleStorage.class.isAssignableFrom(argument)) {
           storage =
+                  digitalTwin == null
+                  ? null
+                  : digitalTwin
+                          .stateStorage()
+                          .promoteStorage(observation, storage, DoubleStorage.class);
+          runArguments.add(storage);
+        } else if (LongStorage.class.isAssignableFrom(argument)) {
+          storage =
               digitalTwin == null
                   ? null
                   : digitalTwin
                       .stateStorage()
-                      .promoteStorage(observation, storage, DoubleStorage.class);
+                      .promoteStorage(observation, storage, LongStorage.class);
           runArguments.add(storage);
         } else if (FloatStorage.class.isAssignableFrom(argument)) {
           storage =
@@ -1499,7 +1504,7 @@ public class ComponentRegistry {
                   ? null
                   : digitalTwin
                       .stateStorage()
-                      .promoteStorage(observation, storage, DoubleStorage.class);
+                      .promoteStorage(observation, storage, FloatStorage.class);
           runArguments.add(storage);
         } else if (BooleanStorage.class.isAssignableFrom(argument)) {
           storage =
@@ -1507,7 +1512,7 @@ public class ComponentRegistry {
                   ? null
                   : digitalTwin
                       .stateStorage()
-                      .promoteStorage(observation, storage, DoubleStorage.class);
+                      .promoteStorage(observation, storage, BooleanStorage.class);
           runArguments.add(storage);
         } else if (KeyedStorage.class.isAssignableFrom(argument)) {
           storage =
@@ -1515,7 +1520,7 @@ public class ComponentRegistry {
                   ? null
                   : digitalTwin
                       .stateStorage()
-                      .promoteStorage(observation, storage, DoubleStorage.class);
+                      .promoteStorage(observation, storage, KeyedStorage.class);
           runArguments.add(storage);
         } else if (Scale.class.isAssignableFrom(argument)) {
           if (scale == null && geometry != null) {

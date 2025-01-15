@@ -21,7 +21,7 @@ protocol KlabData {
 		string name;
 		string geometry;
 		string observable;
-		string? fillingCurve = "SN_LINEAR";
+		string? fillingCurve = "DN_LINEAR";
 		boolean empty = false;
 		array<Notification> notifications;
 		map<string> metadata;

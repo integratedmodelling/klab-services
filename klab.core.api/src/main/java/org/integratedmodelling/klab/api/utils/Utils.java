@@ -3683,6 +3683,7 @@ public class Utils {
         case Concept observable -> observable.getUrn();
         case Geometry geometry -> geometry.encode();
         // TODO improve ensuring that format is optimal for transport and reparsing
+        // TABLES and DISTRIBUTIONS come to mind for extended literals
         default -> o.toString();
       };
     }

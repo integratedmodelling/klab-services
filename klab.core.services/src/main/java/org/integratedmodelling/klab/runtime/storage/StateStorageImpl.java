@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.runtime.storage;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -30,6 +29,7 @@ public class StateStorageImpl implements StateStorage {
     private File floatBackupFile;
     private File doubleBackupFile;
     private File intBackupFile;
+    private File longBackupFile;
     private File booleanBackupFile;
     private int histogramBinSize = 20;
     private Map<String, Storage> storage = new HashMap<>();
@@ -47,6 +47,7 @@ public class StateStorageImpl implements StateStorage {
         this.workspace = ServiceConfiguration.INSTANCE.getScratchDataDirectory("ktmp");
         this.floatBackupFile = new File(this.workspace + File.separator + "fstorage.bin");
         this.doubleBackupFile = new File(this.workspace + File.separator + "dstorage.bin");
+        this.longBackupFile = new File(this.workspace + File.separator + "lstorage.bin");
         this.intBackupFile = new File(this.workspace + File.separator + "istorage.bin");
         this.booleanBackupFile = new File(this.workspace + File.separator + "bstorage.bin");
 
@@ -60,6 +61,7 @@ public class StateStorageImpl implements StateStorage {
     BufferArray.MappedFileFactory floatMappedArrayFactory = null;
     BufferArray.MappedFileFactory doubleMappedArrayFactory = null;
     BufferArray.MappedFileFactory intMappedArrayFactory = null;
+    BufferArray.MappedFileFactory longMappedArrayFactory = null;
     BufferArray.MappedFileFactory booleanMappedArrayFactory = null;
 
     static public void main(String[] args) throws InterruptedException {
@@ -103,6 +105,13 @@ public class StateStorageImpl implements StateStorage {
             this.floatMappedArrayFactory = BufferArray.R032.newMapped(this.floatBackupFile);
         }
         return this.floatMappedArrayFactory;
+    }
+
+    private BufferArray.MappedFileFactory getLongFactory() {
+        if (this.longMappedArrayFactory == null) {
+            this.longMappedArrayFactory = BufferArray.Z032.newMapped(this.longBackupFile);
+        }
+        return this.longMappedArrayFactory;
     }
 
     private BufferArray.MappedFileFactory getDoubleFactory() {
@@ -156,10 +165,18 @@ public class StateStorageImpl implements StateStorage {
             booleanMappedArrayFactory = null;
             Utils.Files.deleteQuietly(booleanBackupFile);
         }
+        if (longMappedArrayFactory != null) {
+            longMappedArrayFactory = null;
+            Utils.Files.deleteQuietly(longBackupFile);
+        }
     }
 
     public BufferArray getIntBuffer(long sliceSize) {
         return getIntFactory().make(sliceSize);
+    }
+
+    public BufferArray getLongBuffer(long sliceSize) {
+        return getLongFactory().make(sliceSize);
     }
 
     public BufferArray getFloatBuffer(long sliceSize) {
@@ -206,15 +223,17 @@ public class StateStorageImpl implements StateStorage {
 
         if (ret == null) {
             if (DoubleStorage.class.isAssignableFrom(sClass)) {
-                ret = (T) new DoubleStorage(Scale.create(observation.getGeometry()), this);
+                ret = (T) new DoubleStorage(observation.getGeometry(), this);
+            } else if (LongStorage.class.isAssignableFrom(sClass)) {
+                ret = (T) new LongStorage(observation.getGeometry(), this);
             } else if (FloatStorage.class.isAssignableFrom(sClass)) {
-                ret = (T) new FloatStorage(Scale.create(observation.getGeometry()), this);
+                ret = (T) new FloatStorage(observation.getGeometry(), this);
             } else if (IntStorage.class.isAssignableFrom(sClass)) {
-                ret = (T) new IntStorage(Scale.create(observation.getGeometry()), this);
+                ret = (T) new IntStorage(observation.getGeometry(), this);
             } else if (BooleanStorage.class.isAssignableFrom(sClass)) {
-                ret = (T) new BooleanStorage(Scale.create(observation.getGeometry()), this);
+                ret = (T) new BooleanStorage(observation.getGeometry(), this);
             } else if (KeyedStorage.class.isAssignableFrom(sClass)) {
-                ret = (T) new KeyedStorage(Scale.create(observation.getGeometry()), this);
+                ret = (T) new KeyedStorage(observation.getGeometry(), this);
             }
         }
 

@@ -152,7 +152,7 @@ public enum Klab {
          * @param fillCurve
          * @return
          */
-        PrimitiveIterator.OfLong getGeometryIterator(Geometry geometry, Data.FillCurve fillCurve);
+        Data.Cursor getGeometryIterator(Geometry geometry, Data.FillCurve fillCurve);
     }
 
     private Configuration configuration;

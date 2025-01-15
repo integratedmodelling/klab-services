@@ -33,6 +33,7 @@ import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Cursors;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -283,24 +284,11 @@ public enum ServiceConfiguration {
           }
 
           @Override
-          public PrimitiveIterator.OfLong getGeometryIterator(
-              Geometry geometry, Data.FillCurve fillCurve) {
+          public Data.Cursor getGeometryIterator(Geometry geometry, Data.FillCurve fillCurve) {
             return switch (fillCurve) {
-              case SN_LINEAR -> new PrimitiveIterator.OfLong() {
-
-                long size = geometry.size();
-                long current = 0;
-
-                @Override
-                public long nextLong() {
-                  return current++;
-                }
-
-                @Override
-                public boolean hasNext() {
-                  return current < size;
-                }
-              };
+              case D1_LINEAR -> new Cursors.Linear1D(geometry);
+              case DN_LINEAR -> new Cursors.LinearND(geometry);
+              case D2_XY -> new Cursors.Matrix2DXY(geometry);
               // TODO the rest
               default ->
                   throw new KlabUnimplementedException(

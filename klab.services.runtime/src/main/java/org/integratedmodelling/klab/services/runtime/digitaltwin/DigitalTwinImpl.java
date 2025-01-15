@@ -16,9 +16,8 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
 import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
-import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
-import org.integratedmodelling.klab.runtime.storage.IntStorage;
 import org.integratedmodelling.klab.runtime.storage.LongStorage;
+import org.integratedmodelling.klab.runtime.storage.IntStorage;
 import org.integratedmodelling.klab.runtime.storage.StateStorageImpl;
 
 import java.util.ArrayList;
@@ -96,10 +95,11 @@ public class DigitalTwinImpl implements DigitalTwin {
             scope
                 .getDigitalTwin()
                 .stateStorage()
-                .promoteStorage(target, storage, DoubleStorage.class);
+                .promoteStorage(target, storage, LongStorage.class);
         var buffer = doubleStorage.buffer(data.geometry(), data.fillCurve());
+        var filler = buffer.filler(Data.DoubleFiller.class);
         while (doubleData.hasNext()) {
-          buffer.add(doubleData.nextDouble());
+          filler.add(doubleData.nextDouble());
         }
       } else if (data instanceof LongDataImpl longData) {
         var longStorage =
@@ -108,8 +108,9 @@ public class DigitalTwinImpl implements DigitalTwin {
                 .stateStorage()
                 .promoteStorage(target, storage, LongStorage.class);
         var buffer = longStorage.buffer(data.geometry(), data.fillCurve());
+        var filler = buffer.filler(Data.LongFiller.class);
         while (longData.hasNext()) {
-          buffer.add(longData.nextLong());
+          filler.add(longData.nextLong());
         }
       } else if (data instanceof IntDataImpl intData) {
         var key = intData.getDataKey();
@@ -120,8 +121,9 @@ public class DigitalTwinImpl implements DigitalTwin {
                           .stateStorage()
                           .promoteStorage(target, storage, IntStorage.class);
           var buffer = intStorage.buffer(data.geometry(), data.fillCurve());
+          var filler = buffer.filler(Data.IntFiller.class);
           while (intData.hasNext()) {
-            buffer.add(intData.nextInt());
+            filler.add(intData.nextInt());
           }
         } else {
           // TODO have the data object adapt the key to the observable before use
