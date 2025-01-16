@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
 import org.integratedmodelling.klab.runtime.storage.LongStorage;
 import org.integratedmodelling.klab.runtime.storage.IntStorage;
 import org.integratedmodelling.klab.runtime.storage.StateStorageImpl;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,7 +33,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   StateStorage stateStorage;
   ContextScope rootScope;
 
-  public DigitalTwinImpl(RuntimeService service, ContextScope scope, KnowledgeGraph database) {
+  public DigitalTwinImpl(RuntimeService service, ServiceContextScope scope, KnowledgeGraph database) {
     this.rootScope = scope;
     this.knowledgeGraph = database.contextualize(scope);
     this.stateStorage = new StateStorageImpl(service, scope);

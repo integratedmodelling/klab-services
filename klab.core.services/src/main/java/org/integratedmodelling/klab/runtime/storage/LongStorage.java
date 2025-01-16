@@ -5,6 +5,8 @@ import java.util.PrimitiveIterator;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.ojalgo.array.BufferArray;
 
 /**
@@ -15,84 +17,94 @@ import org.ojalgo.array.BufferArray;
  */
 public class LongStorage extends AbstractStorage<LongStorage.LongBuffer> {
 
-    public class LongBuffer extends AbstractBuffer {
+  public class LongBuffer extends AbstractBuffer {
 
-        private final BufferArray data;
+    private final BufferArray data;
 
-        protected LongBuffer(Geometry geometry, Data.FillCurve fillCurve) {
-            super(geometry, fillCurve);
-            this.data = scope.getLongBuffer(geometry.size());
-        }
-
-        @Override
-        public <T extends Data.Filler> T filler(Class<T> fillerClass) {
-
-            final PrimitiveIterator.OfLong iterator = fillCurve().cursor(geometry);
-
-            if (fillerClass == Data.DoubleFiller.class) {
-                return (T)
-                        new Data.DoubleFiller() {
-
-                            @Override
-                            public void add(double value) {
-                                data.add(iterator.nextLong(), value);
-                                if (histogram != null) {
-                                    histogram.insert(value);
-                                }
-                            }
-                        };
-            } else if (fillerClass == Data.IntFiller.class) {
-                return (T)
-                        new Data.IntFiller() {
-
-                            @Override
-                            public void add(int value) {
-                                data.add(iterator.nextLong(), (double) value);
-                                if (histogram != null) {
-                                    histogram.insert((double) value);
-                                }
-                            }
-                        };
-            } else if (fillerClass == Data.LongFiller.class) {
-                return (T)
-                        new Data.LongFiller() {
-
-                            @Override
-                            public void add(long value) {
-                                data.add(iterator.nextLong(), (double) value);
-                                if (histogram != null) {
-                                    histogram.insert((double) value);
-                                }
-                            }
-                        };
-            } else if (fillerClass == Data.FloatFiller.class) {
-                return (T)
-                        new Data.FloatFiller() {
-
-                            @Override
-                            public void add(float value) {
-                                data.add(iterator.nextLong(), value);
-                                if (histogram != null) {
-                                    histogram.insert((double) value);
-                                }
-                            }
-                        };
-            }
-
-            throw new KlabIllegalStateException("Unexpected filler type requested for buffer");
-        }
-    }
-
-    public LongStorage(Geometry geometry, StateStorageImpl scope) {
-        super(Type.LONG, geometry, scope);
+    protected LongBuffer(Geometry geometry, Data.FillCurve fillCurve) {
+      super(geometry, fillCurve);
+      this.data = stateStorage.getLongBuffer(geometry.size());
     }
 
     @Override
-    public LongBuffer buffer(Geometry geometry, Data.FillCurve fillCurve) {
-        var ret = new LongBuffer(geometry, fillCurve);
-        registerBuffer(ret);
-        return ret;
+    public <T extends Data.Filler> T filler(Class<T> fillerClass) {
+
+      final PrimitiveIterator.OfLong iterator = fillCurve().cursor(geometry);
+
+      if (fillerClass == Data.DoubleFiller.class) {
+        return (T)
+            new Data.DoubleFiller() {
+
+              @Override
+              public void add(double value) {
+                data.add(iterator.nextLong(), value);
+                if (histogram != null) {
+                  histogram.insert(value);
+                }
+                if (!iterator.hasNext()) {
+                  finalizeStorage();
+                }
+              }
+            };
+      } else if (fillerClass == Data.IntFiller.class) {
+        return (T)
+            new Data.IntFiller() {
+
+              @Override
+              public void add(int value) {
+                data.add(iterator.nextLong(), (double) value);
+                if (histogram != null) {
+                  histogram.insert((double) value);
+                }
+                if (!iterator.hasNext()) {
+                  finalizeStorage();
+                }
+              }
+            };
+      } else if (fillerClass == Data.LongFiller.class) {
+        return (T)
+            new Data.LongFiller() {
+
+              @Override
+              public void add(long value) {
+                data.add(iterator.nextLong(), (double) value);
+                if (histogram != null) {
+                  histogram.insert((double) value);
+                }
+                if (!iterator.hasNext()) {
+                  finalizeStorage();
+                }
+              }
+            };
+      } else if (fillerClass == Data.FloatFiller.class) {
+        return (T)
+            new Data.FloatFiller() {
+
+              @Override
+              public void add(float value) {
+                data.add(iterator.nextLong(), value);
+                if (histogram != null) {
+                  histogram.insert((double) value);
+                }
+                if (!iterator.hasNext()) {
+                  finalizeStorage();
+                }
+              }
+            };
+      }
+
+      throw new KlabIllegalStateException("Unexpected filler type requested for buffer");
     }
+  }
 
+  public LongStorage(Observation observation, StateStorageImpl scope, ServiceContextScope contextScope) {
+    super(Type.LONG, observation, scope, contextScope);
+  }
+
+  @Override
+  public LongBuffer buffer(Geometry geometry, Data.FillCurve fillCurve) {
+    var ret = new LongBuffer(geometry, fillCurve);
+    registerBuffer(ret);
+    return ret;
+  }
 }
-

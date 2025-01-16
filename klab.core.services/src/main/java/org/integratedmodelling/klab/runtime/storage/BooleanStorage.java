@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.runtime.storage;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.ojalgo.array.BufferArray;
 
 import java.util.PrimitiveIterator;
@@ -21,7 +23,7 @@ public class BooleanStorage extends AbstractStorage<BooleanStorage.BooleanBuffer
 
     protected BooleanBuffer(Geometry geometry, Data.FillCurve fillCurve) {
       super(geometry, fillCurve);
-      this.data = scope.getBooleanBuffer(geometry.size());
+      this.data = stateStorage.getBooleanBuffer(geometry.size());
     }
 
     @Override
@@ -31,60 +33,72 @@ public class BooleanStorage extends AbstractStorage<BooleanStorage.BooleanBuffer
 
       if (fillerClass == Data.DoubleFiller.class) {
         return (T)
-                new Data.DoubleFiller() {
+            new Data.DoubleFiller() {
 
-                  @Override
-                  public void add(double value) {
-                    data.add(iterator.nextLong(), value);
-                    if (histogram != null) {
-                      histogram.insert(value);
-                    }
+              @Override
+              public void add(double value) {
+                data.add(iterator.nextLong(), value);
+                if (histogram != null) {
+                  histogram.insert(value);
+                }
+                  if (!iterator.hasNext()) {
+                      finalizeStorage();
                   }
-                };
+              }
+            };
       } else if (fillerClass == Data.IntFiller.class) {
         return (T)
-                new Data.IntFiller() {
+            new Data.IntFiller() {
 
-                  @Override
-                  public void add(int value) {
-                    data.add(iterator.nextLong(), (double) value);
-                    if (histogram != null) {
-                      histogram.insert((double) value);
-                    }
+              @Override
+              public void add(int value) {
+                data.add(iterator.nextLong(), (double) value);
+                if (histogram != null) {
+                  histogram.insert((double) value);
+                }
+                  if (!iterator.hasNext()) {
+                      finalizeStorage();
                   }
-                };
+              }
+            };
       } else if (fillerClass == Data.LongFiller.class) {
         return (T)
-                new Data.LongFiller() {
+            new Data.LongFiller() {
 
-                  @Override
-                  public void add(long value) {
-                    data.add(iterator.nextLong(), (double) value);
-                    if (histogram != null) {
-                      histogram.insert((double) value);
-                    }
-                  }
-                };
+              @Override
+              public void add(long value) {
+                data.add(iterator.nextLong(), (double) value);
+                if (histogram != null) {
+                  histogram.insert((double) value);
+                }
+                if (!iterator.hasNext()) {
+                  finalizeStorage();
+                }
+              }
+            };
       } else if (fillerClass == Data.FloatFiller.class) {
         return (T)
-                new Data.FloatFiller() {
+            new Data.FloatFiller() {
 
-                  @Override
-                  public void add(float value) {
-                    data.add(iterator.nextLong(), value);
-                    if (histogram != null) {
-                      histogram.insert((double) value);
-                    }
-                  }
-                };
+              @Override
+              public void add(float value) {
+                data.add(iterator.nextLong(), value);
+                if (histogram != null) {
+                  histogram.insert((double) value);
+                }
+                if (!iterator.hasNext()) {
+                  finalizeStorage();
+                }
+              }
+            };
       }
 
       throw new KlabIllegalStateException("Unexpected filler type requested for buffer");
     }
   }
 
-  public BooleanStorage(Geometry geometry, StateStorageImpl scope) {
-    super(Type.BOOLEAN, geometry, scope);
+  public BooleanStorage(Observation observation, StateStorageImpl scope, ServiceContextScope contextScope) {
+    super(Type.BOOLEAN, observation, scope, contextScope);
   }
 
   @Override
@@ -93,6 +107,4 @@ public class BooleanStorage extends AbstractStorage<BooleanStorage.BooleanBuffer
     registerBuffer(ret);
     return ret;
   }
-
 }
-

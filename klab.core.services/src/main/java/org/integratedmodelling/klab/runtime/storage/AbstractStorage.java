@@ -6,9 +6,11 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.Persistence;
-import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.integratedmodelling.klab.utilities.Utils;
 
 /**
  * Abstract storage class providing geometry and buffer indexing, histograms, merging and splitting.
@@ -16,14 +18,22 @@ import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
 abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer> implements Storage<B> {
 
   protected final Type type;
-  protected final StateStorageImpl scope;
+  protected final StateStorageImpl stateStorage;
+  protected final Observation observation;
   protected final Geometry geometry;
+  protected final ServiceContextScope contextScope;
   List<AbstractBuffer> buffers = new ArrayList<>();
 
-  protected AbstractStorage(Type type, Geometry geometry, StateStorageImpl scope) {
+  protected AbstractStorage(
+      Type type,
+      Observation observation,
+      StateStorageImpl stateStorage,
+      ServiceContextScope contextScope) {
     this.type = type;
-    this.scope = scope;
-    this.geometry = geometry;
+    this.stateStorage = stateStorage;
+    this.observation = observation;
+    this.geometry = observation.getGeometry();
+    this.contextScope = contextScope;
   }
 
   /**
@@ -61,8 +71,8 @@ abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer> impleme
       this.persistence = Persistence.SERVICE_SHUTDOWN;
       this.geometry = geometry;
       this.fillCurve = fillCurve;
-      if (scope.isRecordHistogram()) {
-        this.histogram = new SPDTHistogram<>(scope.getHistogramBinSize());
+      if (stateStorage.isRecordHistogram()) {
+        this.histogram = new SPDTHistogram<>(stateStorage.getHistogramBinSize());
       }
     }
 
@@ -79,6 +89,25 @@ abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer> impleme
     @Override
     public Persistence persistence() {
       return persistence;
+    }
+
+    protected void finalizeStorage() {
+      contextScope.registerDataBuffer(observation, this);
+    }
+
+    @Override
+    public String toString() {
+      return "AbstractBuffer{"
+          + "geometry="
+          + geometry
+          + ", fillCurve="
+          + fillCurve
+          + ", id='"
+          + id
+          + '\''
+          + ", histogram="
+          + Utils.Json.printAsJson(histogram.asHistogram())
+          + '}';
     }
   }
 

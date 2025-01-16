@@ -264,7 +264,7 @@ public class RuntimeService extends BaseService
       getScopeManager()
           .registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
       serviceContextScope.setDigitalTwin(
-          new DigitalTwinImpl(this, contextScope, getMainKnowledgeGraph()));
+          new DigitalTwinImpl(this, serviceContextScope, getMainKnowledgeGraph()));
 
       if (serviceContextScope.getServices(RuntimeService.class).isEmpty()) {
         // add self as the runtime service, which is needed by the slave scopes

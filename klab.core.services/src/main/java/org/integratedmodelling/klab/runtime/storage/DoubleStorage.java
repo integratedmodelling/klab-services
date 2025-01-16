@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.runtime.storage;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.ojalgo.array.BufferArray;
 
 import java.util.PrimitiveIterator;
@@ -21,7 +23,7 @@ public class DoubleStorage extends AbstractStorage<DoubleStorage.DoubleBuffer> {
 
     protected DoubleBuffer(Geometry geometry, Data.FillCurve fillCurve) {
       super(geometry, fillCurve);
-      this.data = scope.getDoubleBuffer(geometry.size());
+      this.data = stateStorage.getDoubleBuffer(geometry.size());
     }
 
     @Override
@@ -39,6 +41,9 @@ public class DoubleStorage extends AbstractStorage<DoubleStorage.DoubleBuffer> {
                   if (histogram != null) {
                       histogram.insert(value);
                   }
+                  if (!iterator.hasNext()) {
+                      finalizeStorage();
+                  }
               }
             };
       } else if (fillerClass == Data.IntFiller.class) {
@@ -50,6 +55,9 @@ public class DoubleStorage extends AbstractStorage<DoubleStorage.DoubleBuffer> {
                 data.add(iterator.nextLong(), (double) value);
                   if (histogram != null) {
                       histogram.insert((double) value);
+                  }
+                  if (!iterator.hasNext()) {
+                      finalizeStorage();
                   }
               }
             };
@@ -63,6 +71,9 @@ public class DoubleStorage extends AbstractStorage<DoubleStorage.DoubleBuffer> {
                   if (histogram != null) {
                       histogram.insert((double) value);
                   }
+                  if (!iterator.hasNext()) {
+                      finalizeStorage();
+                  }
               }
             };
       } else if (fillerClass == Data.FloatFiller.class) {
@@ -75,6 +86,9 @@ public class DoubleStorage extends AbstractStorage<DoubleStorage.DoubleBuffer> {
                 if (histogram != null) {
                   histogram.insert((double) value);
                 }
+                  if (!iterator.hasNext()) {
+                      finalizeStorage();
+                  }
               }
             };
       }
@@ -83,8 +97,8 @@ public class DoubleStorage extends AbstractStorage<DoubleStorage.DoubleBuffer> {
     }
   }
 
-  public DoubleStorage(Geometry geometry, StateStorageImpl scope) {
-    super(Type.DOUBLE, geometry, scope);
+  public DoubleStorage(Observation observation, StateStorageImpl scope, ServiceContextScope contextScope) {
+    super(Type.DOUBLE, observation, scope, contextScope);
   }
 
   @Override

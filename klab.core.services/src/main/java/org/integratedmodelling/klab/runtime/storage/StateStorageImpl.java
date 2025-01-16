@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.ojalgo.array.BufferArray;
@@ -25,6 +26,7 @@ import java.util.Map;
  */
 public class StateStorageImpl implements StateStorage {
 
+    private final ServiceContextScope contextScope;
     private File workspace;
     private File floatBackupFile;
     private File doubleBackupFile;
@@ -32,7 +34,7 @@ public class StateStorageImpl implements StateStorage {
     private File longBackupFile;
     private File booleanBackupFile;
     private int histogramBinSize = 20;
-    private Map<String, Storage> storage = new HashMap<>();
+    private final Map<String, Storage<?>> storage = new HashMap<>();
 
     public boolean isRecordHistogram() {
         return recordHistogram;
@@ -42,7 +44,7 @@ public class StateStorageImpl implements StateStorage {
 
     private Parallelism parallelism = Parallelism.ONE;
 
-    public StateStorageImpl(KlabService service, ContextScope scope) {
+    public StateStorageImpl(KlabService service, ServiceContextScope scope) {
         // choose the mm files, parallelism level and the floating point representation
         this.workspace = ServiceConfiguration.INSTANCE.getScratchDataDirectory("ktmp");
         this.floatBackupFile = new File(this.workspace + File.separator + "fstorage.bin");
@@ -50,7 +52,7 @@ public class StateStorageImpl implements StateStorage {
         this.longBackupFile = new File(this.workspace + File.separator + "lstorage.bin");
         this.intBackupFile = new File(this.workspace + File.separator + "istorage.bin");
         this.booleanBackupFile = new File(this.workspace + File.separator + "bstorage.bin");
-
+        this.contextScope = scope;
         // TODO should have a cache of existing storages and create the storage lazy proxies for the
         //  existing ones.
     }
@@ -223,17 +225,17 @@ public class StateStorageImpl implements StateStorage {
 
         if (ret == null) {
             if (DoubleStorage.class.isAssignableFrom(sClass)) {
-                ret = (T) new DoubleStorage(observation.getGeometry(), this);
+                ret = (T) new DoubleStorage(observation,this, contextScope);
             } else if (LongStorage.class.isAssignableFrom(sClass)) {
-                ret = (T) new LongStorage(observation.getGeometry(), this);
+                ret = (T) new LongStorage(observation, this, contextScope);
             } else if (FloatStorage.class.isAssignableFrom(sClass)) {
-                ret = (T) new FloatStorage(observation.getGeometry(), this);
+                ret = (T) new FloatStorage(observation, this, contextScope);
             } else if (IntStorage.class.isAssignableFrom(sClass)) {
-                ret = (T) new IntStorage(observation.getGeometry(), this);
+                ret = (T) new IntStorage(observation, this, contextScope);
             } else if (BooleanStorage.class.isAssignableFrom(sClass)) {
-                ret = (T) new BooleanStorage(observation.getGeometry(), this);
+                ret = (T) new BooleanStorage(observation, this, contextScope);
             } else if (KeyedStorage.class.isAssignableFrom(sClass)) {
-                ret = (T) new KeyedStorage(observation.getGeometry(), this);
+                ret = (T) new KeyedStorage(observation, this, contextScope);
             }
         }
 
