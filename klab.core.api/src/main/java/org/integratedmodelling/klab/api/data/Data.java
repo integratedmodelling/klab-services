@@ -82,13 +82,14 @@ public interface Data {
    */
   enum FillCurve {
     /**
-     * Iterates along a single dimension using slower dimension first order, interpreting any number
-     * of geometry dimensions, index interpreted according to local context.
+     * Iterates along all varying dimensions using slower dimension-first order, interpreting any
+     * number of geometry dimensions, index interpreted according to local context. Use when the
+     * data ordering is not important in the output.
      */
     DN_LINEAR(-1),
 
     /**
-     * Iterates along a single dimension using fastest-first order interpreting any number of
+     * Iterates along all varying dimensions using fastest-first order interpreting any number of
      * geometry dimensions, index interpreted according to local context.
      */
     DN_InvLINEAR(-1),
@@ -124,7 +125,7 @@ public interface Data {
 
     public final int dimensions;
 
-    public Cursor iterate(Geometry geometry) {
+    public Cursor cursor(Geometry geometry) {
       Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
       if (configuration == null) {
         throw new KlabIllegalStateException("k.LAB environment not configured");

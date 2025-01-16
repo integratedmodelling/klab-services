@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
 import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
+import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
 import org.integratedmodelling.klab.runtime.storage.LongStorage;
 import org.integratedmodelling.klab.runtime.storage.IntStorage;
 import org.integratedmodelling.klab.runtime.storage.StateStorageImpl;
@@ -95,12 +96,13 @@ public class DigitalTwinImpl implements DigitalTwin {
             scope
                 .getDigitalTwin()
                 .stateStorage()
-                .promoteStorage(target, storage, LongStorage.class);
+                .promoteStorage(target, storage, DoubleStorage.class);
         var buffer = doubleStorage.buffer(data.geometry(), data.fillCurve());
         var filler = buffer.filler(Data.DoubleFiller.class);
         while (doubleData.hasNext()) {
           filler.add(doubleData.nextDouble());
         }
+        return true;
       } else if (data instanceof LongDataImpl longData) {
         var longStorage =
             scope
@@ -125,6 +127,7 @@ public class DigitalTwinImpl implements DigitalTwin {
           while (intData.hasNext()) {
             filler.add(intData.nextInt());
           }
+          return true;
         } else {
           // TODO have the data object adapt the key to the observable before use
           var table = new HashMap<Integer, Object>();

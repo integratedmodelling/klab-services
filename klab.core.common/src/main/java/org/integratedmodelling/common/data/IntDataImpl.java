@@ -15,13 +15,13 @@ public class IntDataImpl extends BaseDataImpl implements PrimitiveIterator.OfInt
     super(instance);
     this.iterator =
             fillCurve()
-                    .iterate(
+                    .cursor(
                             GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class));
   }
 
   public IntDataImpl(Observable observable, Geometry geometry, String name, Instance instance) {
     super(observable, geometry, name, instance);
-    this.iterator = fillCurve().iterate(geometry);
+    this.iterator = fillCurve().cursor(geometry);
   }
 
   @Override

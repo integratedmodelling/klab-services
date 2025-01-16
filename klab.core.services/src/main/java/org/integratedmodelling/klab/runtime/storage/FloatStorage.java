@@ -1,14 +1,8 @@
 package org.integratedmodelling.klab.runtime.storage;
 
-import org.eclipse.collections.api.block.function.primitive.LongToFloatFunction;
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.Histogram;
-import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.geometry.Locator;
-import org.integratedmodelling.klab.api.geometry.Offset;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.ojalgo.array.BufferArray;
 
 import java.util.PrimitiveIterator;
@@ -33,7 +27,7 @@ public class FloatStorage extends AbstractStorage<FloatStorage.FloatBuffer> {
 		@Override
 		public <T extends Data.Filler> T filler(Class<T> fillerClass) {
 
-			final PrimitiveIterator.OfLong iterator = fillCurve().iterate(geometry);
+			final PrimitiveIterator.OfLong iterator = fillCurve().cursor(geometry);
 
 			if (fillerClass == Data.DoubleFiller.class) {
 				return (T)

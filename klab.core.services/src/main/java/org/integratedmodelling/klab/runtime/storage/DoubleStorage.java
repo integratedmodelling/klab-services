@@ -27,7 +27,7 @@ public class DoubleStorage extends AbstractStorage<DoubleStorage.DoubleBuffer> {
     @Override
     public <T extends Data.Filler> T filler(Class<T> fillerClass) {
 
-      final PrimitiveIterator.OfLong iterator = fillCurve().iterate(geometry);
+      final PrimitiveIterator.OfLong iterator = fillCurve().cursor(geometry);
 
       if (fillerClass == Data.DoubleFiller.class) {
         return (T)

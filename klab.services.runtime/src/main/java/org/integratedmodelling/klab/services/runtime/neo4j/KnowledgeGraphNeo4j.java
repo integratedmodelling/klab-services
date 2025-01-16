@@ -410,7 +410,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return ret;
   }
 
-  protected EagerResult query(String query, Map<String, Object> parameters, Scope scope) {
+  protected synchronized EagerResult query(String query, Map<String, Object> parameters, Scope scope) {
     if (isOnline()) {
       try {
         //                System.out.printf("\nQUERY " + query + "\n     WITH " + parameters);
@@ -426,7 +426,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return null;
   }
 
-  protected Result query(
+  protected synchronized Result query(
       Transaction transaction, String query, Map<String, Object> parameters, Scope scope) {
     if (isOnline()) {
       try {

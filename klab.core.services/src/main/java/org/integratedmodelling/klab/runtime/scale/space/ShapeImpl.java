@@ -285,7 +285,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
   @Override
   public boolean isEmpty() {
-    return geometry == null || geometry.isEmpty();
+    return geometry == null || geometry.isEmpty() || !geometry.isValid();
   }
 
   public Geometry getJTSGeometry() {

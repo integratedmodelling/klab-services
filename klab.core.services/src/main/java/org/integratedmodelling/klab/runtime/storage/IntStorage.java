@@ -1,17 +1,12 @@
 package org.integratedmodelling.klab.runtime.storage;
 
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.Histogram;
-import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.geometry.Locator;
-import org.integratedmodelling.klab.api.geometry.Offset;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.ojalgo.array.BufferArray;
 
 import java.util.PrimitiveIterator;
-import java.util.function.LongToIntFunction;
+
 /**
  * Base storage providing the general methods. Children enable either boxed I/O or faster native
  * operation (recommended). The runtime makes the choice.
@@ -32,7 +27,7 @@ public class IntStorage extends AbstractStorage<IntStorage.IntBuffer> {
         @Override
         public <T extends Data.Filler> T filler(Class<T> fillerClass) {
 
-            final PrimitiveIterator.OfLong iterator = fillCurve().iterate(geometry);
+            final PrimitiveIterator.OfLong iterator = fillCurve().cursor(geometry);
 
             if (fillerClass == Data.DoubleFiller.class) {
                 return (T)

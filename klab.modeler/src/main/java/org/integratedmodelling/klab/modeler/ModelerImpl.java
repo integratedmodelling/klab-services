@@ -259,12 +259,14 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     if (asset instanceof KlabStatement statement) {
 
-      constraints.add(
-          ResolutionConstraint.of(
-              ResolutionConstraint.Type.ResolutionNamespace, statement.getNamespace()));
-      constraints.add(
-          ResolutionConstraint.of(
-              ResolutionConstraint.Type.ResolutionProject, statement.getProjectName()));
+      if (asset instanceof KimModel || asset instanceof KimSymbolDefinition) {
+        constraints.add(
+            ResolutionConstraint.of(
+                ResolutionConstraint.Type.ResolutionNamespace, statement.getNamespace()));
+        constraints.add(
+            ResolutionConstraint.of(
+                ResolutionConstraint.Type.ResolutionProject, statement.getProjectName()));
+      }
 
       if (statement instanceof KimModel model) {
         resolvables.add(model.getObservables().getFirst());
