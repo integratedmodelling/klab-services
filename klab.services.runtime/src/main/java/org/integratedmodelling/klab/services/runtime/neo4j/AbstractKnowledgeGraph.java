@@ -33,16 +33,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
   protected ContextScope scope;
 
-  //    protected LoadingCache<Long, RuntimeAsset> assetCache =
-  //            CacheBuilder.newBuilder().maximumSize(MAX_CACHED_OBSERVATIONS).build(new
-  // CacheLoader<Long,
-  //                    RuntimeAsset>() {
-  //                @Override
-  //                public RuntimeAsset load(Long key) throws Exception {
-  //                    return retrieve(key, RuntimeAsset.class, scope);
-  //                }
-  //            });
-
   /**
    * Return a RuntimeAsset representing the overall dataflow related to the scope, so that it can be
    * used for linking using the other CRUD methods.

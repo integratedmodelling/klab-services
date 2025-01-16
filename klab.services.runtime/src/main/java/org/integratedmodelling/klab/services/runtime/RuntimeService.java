@@ -14,6 +14,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.*;
@@ -308,7 +309,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public long submit(Observation observation, ContextScope scope) {
+  public long submit( Observation observation, ContextScope scope) {
 
     if (observation.isResolved()) {
       // TODO there may be a context for this at some point.
@@ -354,6 +355,7 @@ public class RuntimeService extends BaseService
                   observation,
                   this);
 
+      // if root, closing the operation will commit all transactions, or rollback if unsuccessful.
       try (instantiation) {
 
         var ret = instantiation.store(observation);
@@ -370,6 +372,16 @@ public class RuntimeService extends BaseService
           instantiation.link(
               observation, scope.getObserver(), DigitalTwin.Relationship.HAS_OBSERVER);
         }
+
+        /*
+         * TODO start computing the set of consequences that this operation engenders if successful and
+         * link them to the observation for deferred execution after contextualization (failure of
+         * one of those shouldn't jeopardize the success of the contextualization). This includes computing
+         * configurations that may emerge and must consider any linked DTs. If the observation is a time
+         * event, the consequences are the only thing that matters and the storage of the event is conditional
+         * to being consequential. These can be computed in a thread to avoid interrupting the execution of
+         * this submission.
+         */
 
         instantiation.success(scope, observation);
 
@@ -541,7 +553,7 @@ public class RuntimeService extends BaseService
     }
 
     throw new KlabInternalErrorException(
-        "Digital twin is inaccessible because of unexpected scope " + "implementation");
+        "Digital twin is inaccessible because of unexpected scope implementation");
   }
 
   @Override

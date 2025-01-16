@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
@@ -110,7 +111,7 @@ public interface RuntimeService extends KlabService {
    * @param scope
    * @return
    */
-  long submit(Observation observation, ContextScope scope);
+  long submit(@Mutable Observation observation, ContextScope scope);
 
   /**
    * The main function of the runtime. It will be invoked externally only when the dataflow is

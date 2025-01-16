@@ -6,12 +6,14 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -329,6 +331,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         if (this.activity.getType() == Activity.Type.CONTEXTUALIZATION) {
           observation.setResolved(true);
           observation.setResolvedCoverage(coverage);
+          if (observation.getObservable().is(SemanticType.QUALITY)) {
+            var storage =
+                scope
+                    .getDigitalTwin()
+                    .stateStorage()
+                    .getExistingStorage(observation, Storage.class);
+            if (storage != null) {
+              for (var buffer : storage.getBuffers()) {
+                // TODO if geometry is scalar, save state as property
+                // TODO else create buffer node and link it
+              }
+            }
+          }
         }
         update(observation, scope);
         if (observation.getGeometry() != null) {
@@ -410,7 +425,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return ret;
   }
 
-  protected synchronized EagerResult query(String query, Map<String, Object> parameters, Scope scope) {
+  protected synchronized EagerResult query(
+      String query, Map<String, Object> parameters, Scope scope) {
     if (isOnline()) {
       try {
         //                System.out.printf("\nQUERY " + query + "\n     WITH " + parameters);

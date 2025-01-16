@@ -186,11 +186,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return runtime.resolve(taskId, this);
   }
 
-  private void finalizeObservation(
-      Observation observation, Dataflow<Observation> dataflow, Provenance provenance) {
-    // TODO do stuff in the knowledge graph
-  }
-
   @Override
   public Provenance getProvenance() {
     return digitalTwin.getProvenanceGraph(this);
@@ -422,7 +417,4 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return Parallelism.CORES;
   }
 
-  public void registerDataBuffer(Observation observation, Storage.Buffer buffer) {
-    System.out.println("ZORBA ADD BUFFER " + buffer);
-  }
 }

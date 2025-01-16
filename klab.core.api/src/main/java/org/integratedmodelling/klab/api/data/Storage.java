@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.api.data;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.scope.Persistence;
 
+import java.util.List;
+
 /**
  * Base storage providing only general methods. Children enable either boxed I/O or faster native
  * operation (recommended). The runtime makes the choice based on the API of the contextualizers.
@@ -78,6 +80,15 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
   B buffer(Geometry geometry, Data.FillCurve fillCurve);
 
   Type getType();
+
+  /**
+   * After the contextualization is finished, the storage will contain one or more buffers with the
+   * data content, geometry and data fill curve. The set of buffers will cover the geometry of the
+   * observation.
+   *
+   * @return
+   */
+  List<Buffer> getBuffers();
 
   /**
    * The overall geometry of the storage. Will change during contextualization to reflect dynamic

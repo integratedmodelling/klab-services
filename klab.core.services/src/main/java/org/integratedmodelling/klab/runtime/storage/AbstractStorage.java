@@ -92,7 +92,7 @@ abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer> impleme
     }
 
     protected void finalizeStorage() {
-      contextScope.registerDataBuffer(observation, this);
+      // TODO doing nothing at the moment. Could create images, statistics etc.
     }
 
     @Override
@@ -114,6 +114,12 @@ abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer> impleme
   protected void registerBuffer(AbstractBuffer buffer) {
     // TODO index geometries, validate
     buffers.add(buffer);
+  }
+
+  @Override
+  public List<Buffer> getBuffers() {
+    // hope this gets optimized
+    return buffers.stream().map(b -> (Buffer) b).toList();
   }
 
   @Override
