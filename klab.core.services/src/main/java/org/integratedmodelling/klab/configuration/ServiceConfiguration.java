@@ -286,9 +286,22 @@ public enum ServiceConfiguration {
           @Override
           public Data.Cursor getGeometryIterator(Geometry geometry, Data.FillCurve fillCurve) {
             return switch (fillCurve) {
-              case D1_LINEAR -> new Cursors.Linear1D(geometry);
-              case DN_LINEAR -> new Cursors.LinearND(geometry);
-              case D2_XY -> new Cursors.Matrix2DXY(geometry);
+              case D1_LINEAR ->
+                  geometry.size() == 1
+                      ? new Cursors.ScalarCursor(geometry)
+                      : new Cursors.Linear1D(geometry);
+              case DN_LINEAR ->
+                  geometry.size() == 1
+                      ? new Cursors.ScalarCursor(geometry)
+                      : new Cursors.LinearND(geometry);
+              case DN_InvLINEAR ->
+                  geometry.size() == 1
+                      ? new Cursors.ScalarCursor(geometry)
+                      : new Cursors.LinearNDInverted(geometry);
+              case D2_XY ->
+                  geometry.size() == 1
+                      ? new Cursors.ScalarCursor(geometry)
+                      : new Cursors.Matrix2DXY(geometry);
               // TODO the rest
               default ->
                   throw new KlabUnimplementedException(

@@ -4,34 +4,33 @@ import java.util.Locale;
 
 /**
  * Class representing UTM-coordinates. Based on code from stack overflow.
- * 
- * <p>
- * Example usage:
- * 
+ *
+ * <p>Example usage:
+ *
  * <pre>
  * WGS84 wgs_a = new WGS84(56,-5);
  * UTM utm_a = new UTM(31, 'V', 375273.85, 6207884.59);
  * WGS84 wgs_b = new WGS84(utm_a);
  * UTM utm_b = new UTM(wgs_a);
  * </pre>
- * 
- * EPSG code for WGS84 datum seems to be EPSG:32[6/7]xx with xx = UTM zone number (0-padded) and 6 = N, 7 = S.
- * 
- * Use Universal Polar Stereographic projection for areas above 84N / below 80S.
- * 
- * @see <a href="https://stackoverflow.com/questions/176137/java-convert-lat-lon-to-utm">Stack
- *      Overflow</a>
- * @see <a href=
- *      "https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system">Wikipedia-entry
- *      on UTM</a>
- * @author Rolf Rander N�ss
  *
+ * EPSG code for WGS84 datum seems to be EPSG:32[6/7]xx with xx = UTM zone number (0-padded) and 6 =
+ * N, 7 = S.
+ *
+ * <p>Use Universal Polar Stereographic projection for areas above 84N / below 80S.
+ *
+ * @see <a href="https://stackoverflow.com/questions/176137/java-convert-lat-lon-to-utm">Stack
+ *     Overflow</a>
+ * @see <a href=
+ *     "https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system">Wikipedia-entry
+ *     on UTM</a>
+ * @author Rolf Rander N�ss
  */
 public class UTM {
   private double easting;
   private double northing;
-  private int    zone;
-  private char   letter;
+  private int zone;
+  private char letter;
 
   public double getEasting() {
     return easting;
@@ -60,7 +59,9 @@ public class UTM {
   public boolean equals(Object o) {
     if (o instanceof UTM) {
       UTM other = (UTM) o;
-      return (zone == other.zone) && (letter == other.letter) && (easting == other.easting)
+      return (zone == other.zone)
+          && (letter == other.letter)
+          && (easting == other.easting)
           && (northing == other.northing);
     }
     return false;
@@ -95,97 +96,117 @@ public class UTM {
 
   private void fromWGS84(double latitude, double longitude) {
     zone = (int) Math.floor(longitude / 6 + 31);
-    if (latitude < -72)
-      letter = 'C';
-    else if (latitude < -64)
-      letter = 'D';
-    else if (latitude < -56)
-      letter = 'E';
-    else if (latitude < -48)
-      letter = 'F';
-    else if (latitude < -40)
-      letter = 'G';
-    else if (latitude < -32)
-      letter = 'H';
-    else if (latitude < -24)
-      letter = 'J';
-    else if (latitude < -16)
-      letter = 'K';
-    else if (latitude < -8)
-      letter = 'L';
-    else if (latitude < 0)
-      letter = 'M';
-    else if (latitude < 8)
-      letter = 'N';
-    else if (latitude < 16)
-      letter = 'P';
-    else if (latitude < 24)
-      letter = 'Q';
-    else if (latitude < 32)
-      letter = 'R';
-    else if (latitude < 40)
-      letter = 'S';
-    else if (latitude < 48)
-      letter = 'T';
-    else if (latitude < 56)
-      letter = 'U';
-    else if (latitude < 64)
-      letter = 'V';
-    else if (latitude < 72)
-      letter = 'W';
-    else
-      letter = 'X';
-    easting = 0.5
-        * Math.log((1 + Math.cos(latitude * Math.PI / 180)
-            * Math.sin(longitude * Math.PI / 180 - (6 * zone - 183) * Math.PI / 180))
-            / (1 - Math.cos(latitude * Math.PI / 180)
-                * Math.sin(longitude * Math.PI / 180 - (6 * zone - 183) * Math.PI / 180)))
-        * 0.9996 * 6399593.62
-        / Math.pow(
-            (1 + Math.pow(0.0820944379, 2) * Math.pow(Math.cos(latitude * Math.PI / 180), 2)), 0.5)
-        * (1 + Math.pow(0.0820944379, 2) / 2
-            * Math.pow((0.5 * Math.log((1 + Math.cos(latitude * Math.PI / 180)
-                * Math.sin(longitude * Math.PI / 180 - (6 * zone - 183) * Math.PI / 180))
-                / (1 - Math.cos(latitude * Math.PI / 180)
-                    * Math.sin(longitude * Math.PI / 180 - (6 * zone - 183) * Math.PI / 180)))),
-                2)
-            * Math.pow(Math.cos(latitude * Math.PI / 180), 2) / 3)
-        + 500000;
+    if (latitude < -72) letter = 'C';
+    else if (latitude < -64) letter = 'D';
+    else if (latitude < -56) letter = 'E';
+    else if (latitude < -48) letter = 'F';
+    else if (latitude < -40) letter = 'G';
+    else if (latitude < -32) letter = 'H';
+    else if (latitude < -24) letter = 'J';
+    else if (latitude < -16) letter = 'K';
+    else if (latitude < -8) letter = 'L';
+    else if (latitude < 0) letter = 'M';
+    else if (latitude < 8) letter = 'N';
+    else if (latitude < 16) letter = 'P';
+    else if (latitude < 24) letter = 'Q';
+    else if (latitude < 32) letter = 'R';
+    else if (latitude < 40) letter = 'S';
+    else if (latitude < 48) letter = 'T';
+    else if (latitude < 56) letter = 'U';
+    else if (latitude < 64) letter = 'V';
+    else if (latitude < 72) letter = 'W';
+    else letter = 'X';
+    easting =
+        0.5
+                * Math.log(
+                    (1
+                            + Math.cos(latitude * Math.PI / 180)
+                                * Math.sin(
+                                    longitude * Math.PI / 180 - (6 * zone - 183) * Math.PI / 180))
+                        / (1
+                            - Math.cos(latitude * Math.PI / 180)
+                                * Math.sin(
+                                    longitude * Math.PI / 180 - (6 * zone - 183) * Math.PI / 180)))
+                * 0.9996
+                * 6399593.62
+                / Math.pow(
+                    (1
+                        + Math.pow(0.0820944379, 2)
+                            * Math.pow(Math.cos(latitude * Math.PI / 180), 2)),
+                    0.5)
+                * (1
+                    + Math.pow(0.0820944379, 2)
+                        / 2
+                        * Math.pow(
+                            (0.5
+                                * Math.log(
+                                    (1
+                                            + Math.cos(latitude * Math.PI / 180)
+                                                * Math.sin(
+                                                    longitude * Math.PI / 180
+                                                        - (6 * zone - 183) * Math.PI / 180))
+                                        / (1
+                                            - Math.cos(latitude * Math.PI / 180)
+                                                * Math.sin(
+                                                    longitude * Math.PI / 180
+                                                        - (6 * zone - 183) * Math.PI / 180)))),
+                            2)
+                        * Math.pow(Math.cos(latitude * Math.PI / 180), 2)
+                        / 3)
+            + 500000;
     easting = Math.round(easting * 100) * 0.01;
     northing =
-        (Math
-            .atan(
-                Math.tan(latitude * Math.PI / 180) / Math
-                    .cos((longitude * Math.PI / 180 - (6 * zone - 183) * Math.PI / 180)))
-            - latitude * Math.PI / 180) * 0.9996 * 6399593.625
-            / Math.sqrt(1 + 0.006739496742 * Math.pow(Math.cos(latitude * Math.PI / 180), 2))
-            * (1 + 0.006739496742 / 2 * Math.pow(0.5 * Math.log((1
-                + Math.cos(latitude * Math.PI / 180)
-                    * Math.sin((longitude * Math.PI / 180 - (6 * zone - 183) * Math.PI / 180)))
-                / (1 - Math.cos(latitude * Math.PI / 180)
-                    * Math.sin((longitude * Math.PI / 180 - (6 * zone - 183) * Math.PI / 180)))),
-                2) * Math.pow(Math.cos(latitude * Math.PI / 180), 2))
-            + 0.9996 * 6399593.625 * (latitude * Math.PI / 180
-                - 0.005054622556
-                    * (latitude * Math.PI / 180 + Math.sin(2 * latitude * Math.PI / 180) / 2)
-                + 4.258201531e-05
-                    * (3 * (latitude * Math.PI / 180 + Math.sin(2 * latitude * Math.PI / 180) / 2)
-                        + Math.sin(2 * latitude * Math.PI / 180)
-                            * Math.pow(Math.cos(latitude * Math.PI / 180), 2))
-                    / 4
-                - 1.674057895e-07 * (5
-                    * (3 * (latitude * Math.PI / 180 + Math.sin(2 * latitude * Math.PI / 180) / 2)
-                        + Math.sin(2 * latitude * Math.PI / 180)
-                            * Math.pow(Math.cos(latitude * Math.PI / 180), 2))
-                    / 4
-                    + Math.sin(2 * latitude * Math.PI / 180)
-                        * Math.pow(Math.cos(latitude * Math.PI / 180), 2)
+        (Math.atan(
+                        Math.tan(latitude * Math.PI / 180)
+                            / Math.cos(
+                                (longitude * Math.PI / 180 - (6 * zone - 183) * Math.PI / 180)))
+                    - latitude * Math.PI / 180)
+                * 0.9996
+                * 6399593.625
+                / Math.sqrt(1 + 0.006739496742 * Math.pow(Math.cos(latitude * Math.PI / 180), 2))
+                * (1
+                    + 0.006739496742
+                        / 2
+                        * Math.pow(
+                            0.5
+                                * Math.log(
+                                    (1
+                                            + Math.cos(latitude * Math.PI / 180)
+                                                * Math.sin(
+                                                    (longitude * Math.PI / 180
+                                                        - (6 * zone - 183) * Math.PI / 180)))
+                                        / (1
+                                            - Math.cos(latitude * Math.PI / 180)
+                                                * Math.sin(
+                                                    (longitude * Math.PI / 180
+                                                        - (6 * zone - 183) * Math.PI / 180)))),
+                            2)
                         * Math.pow(Math.cos(latitude * Math.PI / 180), 2))
-                    / 3);
-    if (letter < 'M')
-      northing = northing + 10000000;
+            + 0.9996
+                * 6399593.625
+                * (latitude * Math.PI / 180
+                    - 0.005054622556
+                        * (latitude * Math.PI / 180 + Math.sin(2 * latitude * Math.PI / 180) / 2)
+                    + 4.258201531e-05
+                        * (3
+                                * (latitude * Math.PI / 180
+                                    + Math.sin(2 * latitude * Math.PI / 180) / 2)
+                            + Math.sin(2 * latitude * Math.PI / 180)
+                                * Math.pow(Math.cos(latitude * Math.PI / 180), 2))
+                        / 4
+                    - 1.674057895e-07
+                        * (5
+                                * (3
+                                        * (latitude * Math.PI / 180
+                                            + Math.sin(2 * latitude * Math.PI / 180) / 2)
+                                    + Math.sin(2 * latitude * Math.PI / 180)
+                                        * Math.pow(Math.cos(latitude * Math.PI / 180), 2))
+                                / 4
+                            + Math.sin(2 * latitude * Math.PI / 180)
+                                * Math.pow(Math.cos(latitude * Math.PI / 180), 2)
+                                * Math.pow(Math.cos(latitude * Math.PI / 180), 2))
+                        / 3);
+    if (letter < 'M') northing = northing + 10000000;
     northing = Math.round(northing * 100) * 0.01;
   }
-
 }
-

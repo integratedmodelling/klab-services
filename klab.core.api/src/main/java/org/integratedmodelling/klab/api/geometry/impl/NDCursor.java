@@ -140,9 +140,13 @@ public class NDCursor {
     }
 
     public NDCursor(Geometry geometry) {
+        this(geometry, Order.FIRST_SLOWEST);
+    }
+
+    public NDCursor(Geometry geometry, Order storageOrder) {
         multiplicity = 0;
         dimensions = 0;
-        storageOrderType = Order.FIRST_SLOWEST;
+        storageOrderType = storageOrder;
         long[] dims = new long[geometry.getDimensions().size()];
         int i = 0;
         for (Dimension dimension : geometry.getDimensions()) {

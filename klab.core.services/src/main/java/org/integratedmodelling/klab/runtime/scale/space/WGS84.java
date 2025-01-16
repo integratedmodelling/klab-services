@@ -2,24 +2,22 @@ package org.integratedmodelling.klab.runtime.scale.space;
 
 /**
  * Class representing WGS84-coordinates. Based on code from stack overflow.
- * 
- * <p>
- * Example usage:
- * 
+ *
+ * <p>Example usage:
+ *
  * <pre>
  * WGS84 wgs_a = new WGS84(56,-5);
  * UTM utm_a = new UTM(31, 'V', 375273.85, 6207884.59);
  * WGS84 wgs_b = new WGS84(utm_a);
  * UTM utm_b = new UTM(wgs_a);
  * </pre>
- * 
+ *
  * Use Universal Polar Stereographic projection for areas above 84N / below 80S.
- * 
+ *
  * @see <a href="https://stackoverflow.com/questions/176137/java-convert-lat-lon-to-utm">Stack
- *      Overflow</a>
+ *     Overflow</a>
  * @see <a href="https://en.wikipedia.org/wiki/World_Geodetic_System">Wikipedia-entry on WGS-84</a>
  * @author Rolf Rander Noess
- *
  */
 public class WGS84 {
   private double latitude;
@@ -45,7 +43,7 @@ public class WGS84 {
   public char getHemisphere() {
     return latitude < 0 ? 'S' : 'N';
   }
-  
+
   public String toString() {
     char ns = (latitude < 0) ? 'S' : 'N';
     char ew = (longitude < 0) ? 'W' : 'E';
@@ -70,7 +68,7 @@ public class WGS84 {
   }
 
   private void fromUTM(int zone, char letter, double easting, double northing) {
-      
+
     double north;
     if (letter > 'M') {
       north = northing;
@@ -80,284 +78,835 @@ public class WGS84 {
 
     latitude =
         (north / 6366197.724 / 0.9996
-            + (1 + 0.006739496742 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)
-                - 0.006739496742 * Math.sin(north / 6366197.724 / 0.9996)
-                    * Math.cos(north / 6366197.724 / 0.9996)
-                    * (Math
-                        .atan(Math.cos(Math.atan(
-                            (Math
-                                .exp((easting - 500000)
-                                    / (0.9996 * 6399593.625
-                                        / Math.sqrt((1 + 0.006739496742
-                                            * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))))
-                                    * (1 - 0.006739496742
-                                        * Math.pow(
-                                            (easting - 500000) / (0.9996 * 6399593.625
-                                                / Math.sqrt((1 + 0.006739496742 * Math.pow(
-                                                    Math.cos(north / 6366197.724 / 0.9996), 2)))),
-                                            2)
-                                        / 2 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)
-                                        / 3))
-                                - Math.exp(-(easting - 500000) / (0.9996 * 6399593.625 / Math
-                                    .sqrt((1 + 0.006739496742
-                                        * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))))
-                                    * (1 - 0.006739496742
-                                        * Math.pow(
-                                            (easting - 500000) / (0.9996 * 6399593.625
-                                                / Math.sqrt((1 + 0.006739496742 * Math.pow(
-                                                    Math.cos(north / 6366197.724 / 0.9996), 2)))),
-                                            2)
-                                        / 2 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)
-                                        / 3)))
-                                / 2
-                                / Math
-                                    .cos((north - 0.9996 * 6399593.625
-                                        * (north / 6366197.724 / 0.9996
-                                            - 0.006739496742 * 3 / 4
-                                                * (north / 6366197.724 / 0.9996 + Math
-                                                    .sin(2 * north / 6366197.724 / 0.9996)
-                                                    / 2)
-                                            + Math.pow(0.006739496742 * 3
-                                                / 4, 2) * 5 / 3 * (3
-                                                    * (north / 6366197.724 / 0.9996
-                                                        + Math.sin(2 * north / 6366197.724 / 0.9996)
-                                                            / 2)
-                                                    + Math.sin(2 * north / 6366197.724 / 0.9996)
-                                                        * Math
-                                                            .pow(Math
-                                                                .cos(north / 6366197.724 / 0.9996),
+                + (1
+                        + 0.006739496742 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)
+                        - 0.006739496742
+                            * Math.sin(north / 6366197.724 / 0.9996)
+                            * Math.cos(north / 6366197.724 / 0.9996)
+                            * (Math.atan(
+                                    Math.cos(
+                                            Math.atan(
+                                                (Math.exp(
+                                                            (easting - 500000)
+                                                                / (0.9996
+                                                                    * 6399593.625
+                                                                    / Math.sqrt(
+                                                                        (1
+                                                                            + 0.006739496742
+                                                                                * Math.pow(
+                                                                                    Math.cos(
+                                                                                        north
+                                                                                            / 6366197.724
+                                                                                            / 0.9996),
+                                                                                    2))))
+                                                                * (1
+                                                                    - 0.006739496742
+                                                                        * Math.pow(
+                                                                            (easting - 500000)
+                                                                                / (0.9996
+                                                                                    * 6399593.625
+                                                                                    / Math.sqrt(
+                                                                                        (1
+                                                                                            + 0.006739496742
+                                                                                                * Math
+                                                                                                    .pow(
+                                                                                                        Math
+                                                                                                            .cos(
+                                                                                                                north
+                                                                                                                    / 6366197.724
+                                                                                                                    / 0.9996),
+                                                                                                        2)))),
+                                                                            2)
+                                                                        / 2
+                                                                        * Math.pow(
+                                                                            Math.cos(
+                                                                                north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996),
+                                                                            2)
+                                                                        / 3))
+                                                        - Math.exp(
+                                                            -(easting - 500000)
+                                                                / (0.9996
+                                                                    * 6399593.625
+                                                                    / Math.sqrt(
+                                                                        (1
+                                                                            + 0.006739496742
+                                                                                * Math.pow(
+                                                                                    Math.cos(
+                                                                                        north
+                                                                                            / 6366197.724
+                                                                                            / 0.9996),
+                                                                                    2))))
+                                                                * (1
+                                                                    - 0.006739496742
+                                                                        * Math.pow(
+                                                                            (easting - 500000)
+                                                                                / (0.9996
+                                                                                    * 6399593.625
+                                                                                    / Math.sqrt(
+                                                                                        (1
+                                                                                            + 0.006739496742
+                                                                                                * Math
+                                                                                                    .pow(
+                                                                                                        Math
+                                                                                                            .cos(
+                                                                                                                north
+                                                                                                                    / 6366197.724
+                                                                                                                    / 0.9996),
+                                                                                                        2)))),
+                                                                            2)
+                                                                        / 2
+                                                                        * Math.pow(
+                                                                            Math.cos(
+                                                                                north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996),
+                                                                            2)
+                                                                        / 3)))
+                                                    / 2
+                                                    / Math.cos(
+                                                        (north
+                                                                    - 0.9996
+                                                                        * 6399593.625
+                                                                        * (north
+                                                                                / 6366197.724
+                                                                                / 0.9996
+                                                                            - 0.006739496742
+                                                                                * 3
+                                                                                / 4
+                                                                                * (north
+                                                                                        / 6366197.724
+                                                                                        / 0.9996
+                                                                                    + Math.sin(
+                                                                                            2
+                                                                                                * north
+                                                                                                / 6366197.724
+                                                                                                / 0.9996)
+                                                                                        / 2)
+                                                                            + Math.pow(
+                                                                                    0.006739496742
+                                                                                        * 3
+                                                                                        / 4,
+                                                                                    2)
+                                                                                * 5
+                                                                                / 3
+                                                                                * (3
+                                                                                        * (north
+                                                                                                / 6366197.724
+                                                                                                / 0.9996
+                                                                                            + Math
+                                                                                                    .sin(
+                                                                                                        2
+                                                                                                            * north
+                                                                                                            / 6366197.724
+                                                                                                            / 0.9996)
+                                                                                                / 2)
+                                                                                    + Math.sin(
+                                                                                            2
+                                                                                                * north
+                                                                                                / 6366197.724
+                                                                                                / 0.9996)
+                                                                                        * Math.pow(
+                                                                                            Math
+                                                                                                .cos(
+                                                                                                    north
+                                                                                                        / 6366197.724
+                                                                                                        / 0.9996),
+                                                                                            2))
+                                                                                / 4
+                                                                            - Math.pow(
+                                                                                    0.006739496742
+                                                                                        * 3
+                                                                                        / 4,
+                                                                                    3)
+                                                                                * 35
+                                                                                / 27
+                                                                                * (5
+                                                                                        * (3
+                                                                                                * (north
+                                                                                                        / 6366197.724
+                                                                                                        / 0.9996
+                                                                                                    + Math
+                                                                                                            .sin(
+                                                                                                                2
+                                                                                                                    * north
+                                                                                                                    / 6366197.724
+                                                                                                                    / 0.9996)
+                                                                                                        / 2)
+                                                                                            + Math
+                                                                                                    .sin(
+                                                                                                        2
+                                                                                                            * north
+                                                                                                            / 6366197.724
+                                                                                                            / 0.9996)
+                                                                                                * Math
+                                                                                                    .pow(
+                                                                                                        Math
+                                                                                                            .cos(
+                                                                                                                north
+                                                                                                                    / 6366197.724
+                                                                                                                    / 0.9996),
+                                                                                                        2))
+                                                                                        / 4
+                                                                                    + Math.sin(
+                                                                                            2
+                                                                                                * north
+                                                                                                / 6366197.724
+                                                                                                / 0.9996)
+                                                                                        * Math.pow(
+                                                                                            Math
+                                                                                                .cos(
+                                                                                                    north
+                                                                                                        / 6366197.724
+                                                                                                        / 0.9996),
+                                                                                            2)
+                                                                                        * Math.pow(
+                                                                                            Math
+                                                                                                .cos(
+                                                                                                    north
+                                                                                                        / 6366197.724
+                                                                                                        / 0.9996),
+                                                                                            2))
+                                                                                / 3))
+                                                                / (0.9996
+                                                                    * 6399593.625
+                                                                    / Math.sqrt(
+                                                                        (1
+                                                                            + 0.006739496742
+                                                                                * Math.pow(
+                                                                                    Math.cos(
+                                                                                        north
+                                                                                            / 6366197.724
+                                                                                            / 0.9996),
+                                                                                    2))))
+                                                                * (1
+                                                                    - 0.006739496742
+                                                                        * Math.pow(
+                                                                            (easting - 500000)
+                                                                                / (0.9996
+                                                                                    * 6399593.625
+                                                                                    / Math.sqrt(
+                                                                                        (1
+                                                                                            + 0.006739496742
+                                                                                                * Math
+                                                                                                    .pow(
+                                                                                                        Math
+                                                                                                            .cos(
+                                                                                                                north
+                                                                                                                    / 6366197.724
+                                                                                                                    / 0.9996),
+                                                                                                        2)))),
+                                                                            2)
+                                                                        / 2
+                                                                        * Math.pow(
+                                                                            Math.cos(
+                                                                                north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996),
+                                                                            2))
+                                                            + north / 6366197.724 / 0.9996)))
+                                        * Math.tan(
+                                            (north
+                                                        - 0.9996
+                                                            * 6399593.625
+                                                            * (north / 6366197.724 / 0.9996
+                                                                - 0.006739496742
+                                                                    * 3
+                                                                    / 4
+                                                                    * (north / 6366197.724 / 0.9996
+                                                                        + Math.sin(
+                                                                                2
+                                                                                    * north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996)
+                                                                            / 2)
+                                                                + Math.pow(
+                                                                        0.006739496742 * 3 / 4, 2)
+                                                                    * 5
+                                                                    / 3
+                                                                    * (3
+                                                                            * (north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996
+                                                                                + Math.sin(
+                                                                                        2
+                                                                                            * north
+                                                                                            / 6366197.724
+                                                                                            / 0.9996)
+                                                                                    / 2)
+                                                                        + Math.sin(
+                                                                                2
+                                                                                    * north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996)
+                                                                            * Math.pow(
+                                                                                Math.cos(
+                                                                                    north
+                                                                                        / 6366197.724
+                                                                                        / 0.9996),
+                                                                                2))
+                                                                    / 4
+                                                                - Math.pow(
+                                                                        0.006739496742 * 3 / 4, 3)
+                                                                    * 35
+                                                                    / 27
+                                                                    * (5
+                                                                            * (3
+                                                                                    * (north
+                                                                                            / 6366197.724
+                                                                                            / 0.9996
+                                                                                        + Math.sin(
+                                                                                                2
+                                                                                                    * north
+                                                                                                    / 6366197.724
+                                                                                                    / 0.9996)
+                                                                                            / 2)
+                                                                                + Math.sin(
+                                                                                        2
+                                                                                            * north
+                                                                                            / 6366197.724
+                                                                                            / 0.9996)
+                                                                                    * Math.pow(
+                                                                                        Math.cos(
+                                                                                            north
+                                                                                                / 6366197.724
+                                                                                                / 0.9996),
+                                                                                        2))
+                                                                            / 4
+                                                                        + Math.sin(
+                                                                                2
+                                                                                    * north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996)
+                                                                            * Math.pow(
+                                                                                Math.cos(
+                                                                                    north
+                                                                                        / 6366197.724
+                                                                                        / 0.9996),
+                                                                                2)
+                                                                            * Math.pow(
+                                                                                Math.cos(
+                                                                                    north
+                                                                                        / 6366197.724
+                                                                                        / 0.9996),
+                                                                                2))
+                                                                    / 3))
+                                                    / (0.9996
+                                                        * 6399593.625
+                                                        / Math.sqrt(
+                                                            (1
+                                                                + 0.006739496742
+                                                                    * Math.pow(
+                                                                        Math.cos(
+                                                                            north
+                                                                                / 6366197.724
+                                                                                / 0.9996),
+                                                                        2))))
+                                                    * (1
+                                                        - 0.006739496742
+                                                            * Math.pow(
+                                                                (easting - 500000)
+                                                                    / (0.9996
+                                                                        * 6399593.625
+                                                                        / Math.sqrt(
+                                                                            (1
+                                                                                + 0.006739496742
+                                                                                    * Math.pow(
+                                                                                        Math.cos(
+                                                                                            north
+                                                                                                / 6366197.724
+                                                                                                / 0.9996),
+                                                                                        2)))),
+                                                                2)
+                                                            / 2
+                                                            * Math.pow(
+                                                                Math.cos(
+                                                                    north / 6366197.724 / 0.9996),
                                                                 2))
-                                                / 4
-                                            - Math.pow(0.006739496742 * 3 / 4, 3) * 35 / 27 * (5
-                                                * (3 * (north / 6366197.724 / 0.9996
-                                                    + Math.sin(2 * north / 6366197.724 / 0.9996)
-                                                        / 2)
-                                                    + Math.sin(2 * north / 6366197.724 / 0.9996)
-                                                        * Math.pow(
-                                                            Math.cos(north / 6366197.724 / 0.9996),
-                                                            2))
-                                                / 4
-                                                + Math.sin(2 * north / 6366197.724 / 0.9996)
+                                                + north / 6366197.724 / 0.9996))
+                                - north / 6366197.724 / 0.9996)
+                            * 3
+                            / 2)
+                    * (Math.atan(
+                            Math.cos(
+                                    Math.atan(
+                                        (Math.exp(
+                                                    (easting - 500000)
+                                                        / (0.9996
+                                                            * 6399593.625
+                                                            / Math.sqrt(
+                                                                (1
+                                                                    + 0.006739496742
+                                                                        * Math.pow(
+                                                                            Math.cos(
+                                                                                north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996),
+                                                                            2))))
+                                                        * (1
+                                                            - 0.006739496742
+                                                                * Math.pow(
+                                                                    (easting - 500000)
+                                                                        / (0.9996
+                                                                            * 6399593.625
+                                                                            / Math.sqrt(
+                                                                                (1
+                                                                                    + 0.006739496742
+                                                                                        * Math.pow(
+                                                                                            Math
+                                                                                                .cos(
+                                                                                                    north
+                                                                                                        / 6366197.724
+                                                                                                        / 0.9996),
+                                                                                            2)))),
+                                                                    2)
+                                                                / 2
+                                                                * Math.pow(
+                                                                    Math.cos(
+                                                                        north
+                                                                            / 6366197.724
+                                                                            / 0.9996),
+                                                                    2)
+                                                                / 3))
+                                                - Math.exp(
+                                                    -(easting - 500000)
+                                                        / (0.9996
+                                                            * 6399593.625
+                                                            / Math.sqrt(
+                                                                (1
+                                                                    + 0.006739496742
+                                                                        * Math.pow(
+                                                                            Math.cos(
+                                                                                north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996),
+                                                                            2))))
+                                                        * (1
+                                                            - 0.006739496742
+                                                                * Math.pow(
+                                                                    (easting - 500000)
+                                                                        / (0.9996
+                                                                            * 6399593.625
+                                                                            / Math.sqrt(
+                                                                                (1
+                                                                                    + 0.006739496742
+                                                                                        * Math.pow(
+                                                                                            Math
+                                                                                                .cos(
+                                                                                                    north
+                                                                                                        / 6366197.724
+                                                                                                        / 0.9996),
+                                                                                            2)))),
+                                                                    2)
+                                                                / 2
+                                                                * Math.pow(
+                                                                    Math.cos(
+                                                                        north
+                                                                            / 6366197.724
+                                                                            / 0.9996),
+                                                                    2)
+                                                                / 3)))
+                                            / 2
+                                            / Math.cos(
+                                                (north
+                                                            - 0.9996
+                                                                * 6399593.625
+                                                                * (north / 6366197.724 / 0.9996
+                                                                    - 0.006739496742
+                                                                        * 3
+                                                                        / 4
+                                                                        * (north
+                                                                                / 6366197.724
+                                                                                / 0.9996
+                                                                            + Math.sin(
+                                                                                    2
+                                                                                        * north
+                                                                                        / 6366197.724
+                                                                                        / 0.9996)
+                                                                                / 2)
+                                                                    + Math.pow(
+                                                                            0.006739496742 * 3 / 4,
+                                                                            2)
+                                                                        * 5
+                                                                        / 3
+                                                                        * (3
+                                                                                * (north
+                                                                                        / 6366197.724
+                                                                                        / 0.9996
+                                                                                    + Math.sin(
+                                                                                            2
+                                                                                                * north
+                                                                                                / 6366197.724
+                                                                                                / 0.9996)
+                                                                                        / 2)
+                                                                            + Math.sin(
+                                                                                    2
+                                                                                        * north
+                                                                                        / 6366197.724
+                                                                                        / 0.9996)
+                                                                                * Math.pow(
+                                                                                    Math.cos(
+                                                                                        north
+                                                                                            / 6366197.724
+                                                                                            / 0.9996),
+                                                                                    2))
+                                                                        / 4
+                                                                    - Math.pow(
+                                                                            0.006739496742 * 3 / 4,
+                                                                            3)
+                                                                        * 35
+                                                                        / 27
+                                                                        * (5
+                                                                                * (3
+                                                                                        * (north
+                                                                                                / 6366197.724
+                                                                                                / 0.9996
+                                                                                            + Math
+                                                                                                    .sin(
+                                                                                                        2
+                                                                                                            * north
+                                                                                                            / 6366197.724
+                                                                                                            / 0.9996)
+                                                                                                / 2)
+                                                                                    + Math.sin(
+                                                                                            2
+                                                                                                * north
+                                                                                                / 6366197.724
+                                                                                                / 0.9996)
+                                                                                        * Math.pow(
+                                                                                            Math
+                                                                                                .cos(
+                                                                                                    north
+                                                                                                        / 6366197.724
+                                                                                                        / 0.9996),
+                                                                                            2))
+                                                                                / 4
+                                                                            + Math.sin(
+                                                                                    2
+                                                                                        * north
+                                                                                        / 6366197.724
+                                                                                        / 0.9996)
+                                                                                * Math.pow(
+                                                                                    Math.cos(
+                                                                                        north
+                                                                                            / 6366197.724
+                                                                                            / 0.9996),
+                                                                                    2)
+                                                                                * Math.pow(
+                                                                                    Math.cos(
+                                                                                        north
+                                                                                            / 6366197.724
+                                                                                            / 0.9996),
+                                                                                    2))
+                                                                        / 3))
+                                                        / (0.9996
+                                                            * 6399593.625
+                                                            / Math.sqrt(
+                                                                (1
+                                                                    + 0.006739496742
+                                                                        * Math.pow(
+                                                                            Math.cos(
+                                                                                north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996),
+                                                                            2))))
+                                                        * (1
+                                                            - 0.006739496742
+                                                                * Math.pow(
+                                                                    (easting - 500000)
+                                                                        / (0.9996
+                                                                            * 6399593.625
+                                                                            / Math.sqrt(
+                                                                                (1
+                                                                                    + 0.006739496742
+                                                                                        * Math.pow(
+                                                                                            Math
+                                                                                                .cos(
+                                                                                                    north
+                                                                                                        / 6366197.724
+                                                                                                        / 0.9996),
+                                                                                            2)))),
+                                                                    2)
+                                                                / 2
+                                                                * Math.pow(
+                                                                    Math.cos(
+                                                                        north
+                                                                            / 6366197.724
+                                                                            / 0.9996),
+                                                                    2))
+                                                    + north / 6366197.724 / 0.9996)))
+                                * Math.tan(
+                                    (north
+                                                - 0.9996
+                                                    * 6399593.625
+                                                    * (north / 6366197.724 / 0.9996
+                                                        - 0.006739496742
+                                                            * 3
+                                                            / 4
+                                                            * (north / 6366197.724 / 0.9996
+                                                                + Math.sin(
+                                                                        2
+                                                                            * north
+                                                                            / 6366197.724
+                                                                            / 0.9996)
+                                                                    / 2)
+                                                        + Math.pow(0.006739496742 * 3 / 4, 2)
+                                                            * 5
+                                                            / 3
+                                                            * (3
+                                                                    * (north / 6366197.724 / 0.9996
+                                                                        + Math.sin(
+                                                                                2
+                                                                                    * north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996)
+                                                                            / 2)
+                                                                + Math.sin(
+                                                                        2
+                                                                            * north
+                                                                            / 6366197.724
+                                                                            / 0.9996)
+                                                                    * Math.pow(
+                                                                        Math.cos(
+                                                                            north
+                                                                                / 6366197.724
+                                                                                / 0.9996),
+                                                                        2))
+                                                            / 4
+                                                        - Math.pow(0.006739496742 * 3 / 4, 3)
+                                                            * 35
+                                                            / 27
+                                                            * (5
+                                                                    * (3
+                                                                            * (north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996
+                                                                                + Math.sin(
+                                                                                        2
+                                                                                            * north
+                                                                                            / 6366197.724
+                                                                                            / 0.9996)
+                                                                                    / 2)
+                                                                        + Math.sin(
+                                                                                2
+                                                                                    * north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996)
+                                                                            * Math.pow(
+                                                                                Math.cos(
+                                                                                    north
+                                                                                        / 6366197.724
+                                                                                        / 0.9996),
+                                                                                2))
+                                                                    / 4
+                                                                + Math.sin(
+                                                                        2
+                                                                            * north
+                                                                            / 6366197.724
+                                                                            / 0.9996)
+                                                                    * Math.pow(
+                                                                        Math.cos(
+                                                                            north
+                                                                                / 6366197.724
+                                                                                / 0.9996),
+                                                                        2)
+                                                                    * Math.pow(
+                                                                        Math.cos(
+                                                                            north
+                                                                                / 6366197.724
+                                                                                / 0.9996),
+                                                                        2))
+                                                            / 3))
+                                            / (0.9996
+                                                * 6399593.625
+                                                / Math.sqrt(
+                                                    (1
+                                                        + 0.006739496742
+                                                            * Math.pow(
+                                                                Math.cos(
+                                                                    north / 6366197.724 / 0.9996),
+                                                                2))))
+                                            * (1
+                                                - 0.006739496742
                                                     * Math.pow(
-                                                        Math.cos(north / 6366197.724 / 0.9996), 2)
-                                                    * Math
-                                                        .pow(
-                                                            Math.cos(north / 6366197.724 / 0.9996),
-                                                            2))
-                                                / 3))
-                                        / (0.9996 * 6399593.625 / Math.sqrt((1 + 0.006739496742
-                                            * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))))
-                                        * (1 - 0.006739496742 * Math.pow(
-                                            (easting - 500000) / (0.9996 * 6399593.625
-                                                / Math.sqrt((1 + 0.006739496742 * Math.pow(
-                                                    Math.cos(north / 6366197.724 / 0.9996), 2)))),
-                                            2) / 2 * Math.pow(Math
-                                                .cos(north / 6366197.724 / 0.9996),
-                                                2))
-                                        + north / 6366197.724 / 0.9996)))
-                            * Math.tan((north - 0.9996 * 6399593.625
-                                * (north / 6366197.724 / 0.9996
-                                    - 0.006739496742 * 3 / 4 * (north / 6366197.724 / 0.9996
-                                        + Math.sin(2 * north / 6366197.724 / 0.9996) / 2)
-                                    + Math.pow(0.006739496742 * 3 / 4, 2) * 5 / 3 * (3
-                                        * (north / 6366197.724 / 0.9996
-                                            + Math.sin(2 * north / 6366197.724 / 0.9996) / 2)
-                                        + Math.sin(2 * north / 6366197.724 / 0.9996)
-                                            * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))
-                                        / 4
-                                    - Math.pow(0.006739496742 * 3 / 4, 3)
-                                        * 35 / 27 * (5
-                                            * (3 * (north / 6366197.724 / 0.9996
-                                                + Math.sin(2 * north / 6366197.724 / 0.9996) / 2)
-                                                + Math.sin(2 * north / 6366197.724 / 0.9996) * Math
-                                                    .pow(Math.cos(north / 6366197.724 / 0.9996), 2))
-                                            / 4
-                                            + Math.sin(2 * north / 6366197.724 / 0.9996)
-                                                * Math.pow(Math.cos(north / 6366197.724 / 0.9996),
-                                                    2)
-                                                * Math.pow(Math.cos(north / 6366197.724 / 0.9996),
-                                                    2))
-                                        / 3))
-                                / (0.9996 * 6399593.625 / Math.sqrt((1 + 0.006739496742
-                                    * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))))
-                                * (1 - 0.006739496742
-                                    * Math
-                                        .pow(
-                                            (easting - 500000) / (0.9996 * 6399593.625
-                                                / Math.sqrt((1 + 0.006739496742 * Math.pow(
-                                                    Math.cos(north / 6366197.724 / 0.9996), 2)))),
-                                            2)
-                                    / 2 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))
-                                + north / 6366197.724 / 0.9996))
-                        - north / 6366197.724 / 0.9996)
-                    * 3 / 2)
-                * (Math.atan(Math.cos(Math.atan((Math.exp((easting - 500000) / (0.9996 * 6399593.625
-                    / Math
-                        .sqrt((1 + 0.006739496742 * Math.pow(Math.cos(north / 6366197.724 / 0.9996),
-                            2))))
-                    * (1 - 0.006739496742
-                        * Math
-                            .pow(
-                                (easting - 500000)
-                                    / (0.9996 * 6399593.625
-                                        / Math.sqrt((1 + 0.006739496742 * Math
-                                            .pow(Math.cos(north / 6366197.724 / 0.9996), 2)))),
-                                2)
-                        / 2 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2) / 3))
-                    - Math
-                        .exp(
-                            -(easting - 500000)
-                                / (0.9996 * 6399593.625
-                                    / Math.sqrt((1 + 0.006739496742
-                                        * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))))
-                                * (1 - 0.006739496742 * Math.pow(
-                                    (easting - 500000) / (0.9996 * 6399593.625
-                                        / Math.sqrt((1 + 0.006739496742 * Math
-                                            .pow(Math.cos(north / 6366197.724 / 0.9996), 2)))),
-                                    2) / 2 * Math.pow(Math.cos(north / 6366197.724 / 0.9996),
-                                        2)
-                                    / 3)))
-                    / 2
-                    / Math
-                        .cos(
-                            (north
-                                - 0.9996 * 6399593.625
-                                    * (north / 6366197.724 / 0.9996
-                                        - 0.006739496742 * 3 / 4
-                                            * (north / 6366197.724 / 0.9996 + Math
-                                                .sin(2 * north / 6366197.724 / 0.9996)
-                                                / 2)
-                                        + Math.pow(0.006739496742 * 3 / 4, 2) * 5 / 3
-                                            * (3 * (north / 6366197.724 / 0.9996
-                                                + Math.sin(2 * north / 6366197.724 / 0.9996) / 2)
-                                                + Math.sin(2 * north / 6366197.724 / 0.9996)
-                                                    * Math
-                                                        .pow(Math.cos(north / 6366197.724 / 0.9996),
-                                                            2))
-                                            / 4
-                                        - Math.pow(0.006739496742 * 3 / 4, 3) * 35 / 27
-                                            * (5 * (3 * (north / 6366197.724 / 0.9996
-                                                + Math.sin(2 * north / 6366197.724 / 0.9996) / 2)
-                                                + Math.sin(2 * north / 6366197.724 / 0.9996) * Math
-                                                    .pow(Math.cos(north / 6366197.724 / 0.9996), 2))
-                                                / 4
-                                                + Math.sin(2 * north / 6366197.724 / 0.9996) * Math
-                                                    .pow(Math.cos(north / 6366197.724 / 0.9996), 2)
-                                                    * Math
-                                                        .pow(Math
-                                                            .cos(north / 6366197.724 / 0.9996),
-                                                            2))
-                                            / 3))
-                                / (0.9996 * 6399593.625
-                                    / Math
-                                        .sqrt((1 + 0.006739496742 * Math
-                                            .pow(Math.cos(north / 6366197.724 / 0.9996), 2))))
-                                * (1 - 0.006739496742
-                                    * Math
-                                        .pow(
-                                            (easting - 500000) / (0.9996 * 6399593.625
-                                                / Math.sqrt((1 + 0.006739496742 * Math.pow(
-                                                    Math.cos(north / 6366197.724 / 0.9996), 2)))),
-                                            2)
-                                    / 2 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))
-                                + north / 6366197.724 / 0.9996)))
-                    * Math
-                        .tan(
-                            (north
-                                - 0.9996 * 6399593.625 * (north / 6366197.724 / 0.9996
-                                    - 0.006739496742 * 3 / 4
-                                        * (north / 6366197.724 / 0.9996 + Math.sin(2 * north
-                                            / 6366197.724 / 0.9996) / 2)
-                                    + Math.pow(0.006739496742 * 3 / 4, 2) * 5 / 3 * (3
-                                        * (north / 6366197.724 / 0.9996
-                                            + Math.sin(2 * north / 6366197.724 / 0.9996) / 2)
-                                        + Math
-                                            .sin(2 * north / 6366197.724 / 0.9996)
-                                            * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))
-                                        / 4
-                                    - Math.pow(0.006739496742 * 3 / 4, 3)
-                                        * 35 / 27 * (5
-                                            * (3 * (north / 6366197.724 / 0.9996
-                                                + Math.sin(2 * north / 6366197.724 / 0.9996) / 2)
-                                                + Math.sin(2 * north / 6366197.724 / 0.9996) * Math
-                                                    .pow(Math.cos(north / 6366197.724 / 0.9996), 2))
-                                            / 4
-                                            + Math.sin(2 * north / 6366197.724 / 0.9996)
-                                                * Math.pow(Math.cos(north / 6366197.724 / 0.9996),
-                                                    2)
-                                                * Math.pow(Math.cos(north / 6366197.724 / 0.9996),
-                                                    2))
-                                        / 3))
-                                / (0.9996 * 6399593.625 / Math.sqrt((1
-                                    + 0.006739496742
-                                        * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))))
-                                * (1 - 0.006739496742
-                                    * Math
-                                        .pow(
-                                            (easting - 500000) / (0.9996 * 6399593.625
-                                                / Math.sqrt((1 + 0.006739496742 * Math.pow(
-                                                    Math.cos(north / 6366197.724 / 0.9996), 2)))),
-                                            2)
-                                    / 2 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))
-                                + north / 6366197.724 / 0.9996))
-                    - north / 6366197.724 / 0.9996))
-            * 180 / Math.PI;
+                                                        (easting - 500000)
+                                                            / (0.9996
+                                                                * 6399593.625
+                                                                / Math.sqrt(
+                                                                    (1
+                                                                        + 0.006739496742
+                                                                            * Math.pow(
+                                                                                Math.cos(
+                                                                                    north
+                                                                                        / 6366197.724
+                                                                                        / 0.9996),
+                                                                                2)))),
+                                                        2)
+                                                    / 2
+                                                    * Math.pow(
+                                                        Math.cos(north / 6366197.724 / 0.9996), 2))
+                                        + north / 6366197.724 / 0.9996))
+                        - north / 6366197.724 / 0.9996))
+            * 180
+            / Math.PI;
     latitude = Math.round(latitude * 10000000);
     latitude = latitude / 10000000;
 
     longitude =
-        Math.atan((Math
-            .exp(
-                (easting - 500000) / (0.9996 * 6399593.625
-                    / Math
-                        .sqrt((1 + 0.006739496742 * Math.pow(Math.cos(north / 6366197.724 / 0.9996),
-                            2))))
-                    * (1 - 0.006739496742
-                        * Math.pow(
-                            (easting - 500000)
-                                / (0.9996 * 6399593.625 / Math.sqrt((1 + 0.006739496742
-                                    * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)))),
-                            2)
-                        / 2 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2) / 3))
-            - Math.exp(-(easting - 500000) / (0.9996 * 6399593.625 / Math.sqrt((1 + 0.006739496742
-                * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)))) * (1 - 0.006739496742
-                    * Math.pow((easting - 500000) / (0.9996 * 6399593.625 / Math.sqrt((1
-                        + 0.006739496742 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)))),
-                        2)
-                    / 2 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2) / 3)))
-            / 2
-            / Math.cos((north - 0.9996 * 6399593.625 * (north / 6366197.724 / 0.9996
-                - 0.006739496742 * 3 / 4
-                    * (north / 6366197.724 / 0.9996 + Math.sin(2 * north / 6366197.724 / 0.9996)
-                        / 2)
-                + Math.pow(0.006739496742 * 3 / 4, 2) * 5 / 3 * (3 * (north / 6366197.724 / 0.9996
-                    + Math.sin(2 * north / 6366197.724 / 0.9996) / 2) + Math.sin(
-                        2 * north / 6366197.724 / 0.9996)
-                        * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))
-                    / 4
-                - Math.pow(0.006739496742 * 3 / 4, 3) * 35 / 27 * (5
-                    * (3 * (north / 6366197.724 / 0.9996
-                        + Math.sin(2 * north / 6366197.724 / 0.9996) / 2)
-                        + Math.sin(2 * north / 6366197.724 / 0.9996)
-                            * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))
-                    / 4
-                    + Math.sin(2 * north / 6366197.724 / 0.9996)
-                        * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)
-                        * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))
-                    / 3))
-                / (0.9996 * 6399593.625
-                    / Math
-                        .sqrt(
-                            (1 + 0.006739496742
-                                * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))))
-                * (1 - 0.006739496742
-                    * Math.pow((easting - 500000) / (0.9996 * 6399593.625
-                        / Math.sqrt((1 + 0.006739496742
-                            * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)))),
-                        2)
-                    / 2 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))
-                + north / 6366197.724 / 0.9996))
-            * 180 / Math.PI + zone * 6 - 183;
+        Math.atan(
+                    (Math.exp(
+                                (easting - 500000)
+                                    / (0.9996
+                                        * 6399593.625
+                                        / Math.sqrt(
+                                            (1
+                                                + 0.006739496742
+                                                    * Math.pow(
+                                                        Math.cos(north / 6366197.724 / 0.9996),
+                                                        2))))
+                                    * (1
+                                        - 0.006739496742
+                                            * Math.pow(
+                                                (easting - 500000)
+                                                    / (0.9996
+                                                        * 6399593.625
+                                                        / Math.sqrt(
+                                                            (1
+                                                                + 0.006739496742
+                                                                    * Math.pow(
+                                                                        Math.cos(
+                                                                            north
+                                                                                / 6366197.724
+                                                                                / 0.9996),
+                                                                        2)))),
+                                                2)
+                                            / 2
+                                            * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)
+                                            / 3))
+                            - Math.exp(
+                                -(easting - 500000)
+                                    / (0.9996
+                                        * 6399593.625
+                                        / Math.sqrt(
+                                            (1
+                                                + 0.006739496742
+                                                    * Math.pow(
+                                                        Math.cos(north / 6366197.724 / 0.9996),
+                                                        2))))
+                                    * (1
+                                        - 0.006739496742
+                                            * Math.pow(
+                                                (easting - 500000)
+                                                    / (0.9996
+                                                        * 6399593.625
+                                                        / Math.sqrt(
+                                                            (1
+                                                                + 0.006739496742
+                                                                    * Math.pow(
+                                                                        Math.cos(
+                                                                            north
+                                                                                / 6366197.724
+                                                                                / 0.9996),
+                                                                        2)))),
+                                                2)
+                                            / 2
+                                            * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)
+                                            / 3)))
+                        / 2
+                        / Math.cos(
+                            (north
+                                        - 0.9996
+                                            * 6399593.625
+                                            * (north / 6366197.724 / 0.9996
+                                                - 0.006739496742
+                                                    * 3
+                                                    / 4
+                                                    * (north / 6366197.724 / 0.9996
+                                                        + Math.sin(2 * north / 6366197.724 / 0.9996)
+                                                            / 2)
+                                                + Math.pow(0.006739496742 * 3 / 4, 2)
+                                                    * 5
+                                                    / 3
+                                                    * (3
+                                                            * (north / 6366197.724 / 0.9996
+                                                                + Math.sin(
+                                                                        2
+                                                                            * north
+                                                                            / 6366197.724
+                                                                            / 0.9996)
+                                                                    / 2)
+                                                        + Math.sin(2 * north / 6366197.724 / 0.9996)
+                                                            * Math.pow(
+                                                                Math.cos(
+                                                                    north / 6366197.724 / 0.9996),
+                                                                2))
+                                                    / 4
+                                                - Math.pow(0.006739496742 * 3 / 4, 3)
+                                                    * 35
+                                                    / 27
+                                                    * (5
+                                                            * (3
+                                                                    * (north / 6366197.724 / 0.9996
+                                                                        + Math.sin(
+                                                                                2
+                                                                                    * north
+                                                                                    / 6366197.724
+                                                                                    / 0.9996)
+                                                                            / 2)
+                                                                + Math.sin(
+                                                                        2
+                                                                            * north
+                                                                            / 6366197.724
+                                                                            / 0.9996)
+                                                                    * Math.pow(
+                                                                        Math.cos(
+                                                                            north
+                                                                                / 6366197.724
+                                                                                / 0.9996),
+                                                                        2))
+                                                            / 4
+                                                        + Math.sin(2 * north / 6366197.724 / 0.9996)
+                                                            * Math.pow(
+                                                                Math.cos(
+                                                                    north / 6366197.724 / 0.9996),
+                                                                2)
+                                                            * Math.pow(
+                                                                Math.cos(
+                                                                    north / 6366197.724 / 0.9996),
+                                                                2))
+                                                    / 3))
+                                    / (0.9996
+                                        * 6399593.625
+                                        / Math.sqrt(
+                                            (1
+                                                + 0.006739496742
+                                                    * Math.pow(
+                                                        Math.cos(north / 6366197.724 / 0.9996),
+                                                        2))))
+                                    * (1
+                                        - 0.006739496742
+                                            * Math.pow(
+                                                (easting - 500000)
+                                                    / (0.9996
+                                                        * 6399593.625
+                                                        / Math.sqrt(
+                                                            (1
+                                                                + 0.006739496742
+                                                                    * Math.pow(
+                                                                        Math.cos(
+                                                                            north
+                                                                                / 6366197.724
+                                                                                / 0.9996),
+                                                                        2)))),
+                                                2)
+                                            / 2
+                                            * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2))
+                                + north / 6366197.724 / 0.9996))
+                * 180
+                / Math.PI
+            + zone * 6
+            - 183;
     longitude = Math.round(longitude * 10000000);
     longitude = longitude / 10000000;
   }

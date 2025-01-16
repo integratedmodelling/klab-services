@@ -82,10 +82,16 @@ public interface Data {
    */
   enum FillCurve {
     /**
-     * Iterates along a single dimension interpreting any number of geometry dimensions, index
-     * interpreted according to local context.
+     * Iterates along a single dimension using slower dimension first order, interpreting any number
+     * of geometry dimensions, index interpreted according to local context.
      */
     DN_LINEAR(-1),
+
+    /**
+     * Iterates along a single dimension using fastest-first order interpreting any number of
+     * geometry dimensions, index interpreted according to local context.
+     */
+    DN_InvLINEAR(-1),
 
     /** Expects a single dimension changing. */
     D1_LINEAR(1),
@@ -113,9 +119,7 @@ public interface Data {
     D2_HILBERT(2),
     // ... TODO Z2, Z3 and others as needed. Sierpinski can have different orders; the arrowhead can
     //  be extended  to 3D
-    /**
-     * N-dimensional Hilbert curve
-     */
+    /** N-dimensional Hilbert curve */
     DN_HILBERT(-1);
 
     public final int dimensions;
