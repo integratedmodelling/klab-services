@@ -4,6 +4,7 @@ import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -41,7 +42,7 @@ public class ClientDigitalTwin implements DigitalTwin {
   }
 
   @Override
-  public KnowledgeGraph knowledgeGraph() {
+  public KnowledgeGraph getKnowledgeGraph() {
     // TODO (maybe not needed if we do everything through GraphQL)
     return null;
   }
@@ -57,9 +58,16 @@ public class ClientDigitalTwin implements DigitalTwin {
   }
 
   @Override
-  public StateStorage stateStorage() {
+  public StateStorage getStateStorage() {
     // TODO should throw an exception I guess - images and stats should come from the KG
     return null;
+  }
+
+  @Override
+  public Scheduler getScheduler() {
+    // should never be called on the client, at least with the current logic. Technically it is
+    // possible for this to operate in client mode.
+    throw new KlabIllegalStateException("getScheduler() called on a client-side digital twin");
   }
 
   @Override

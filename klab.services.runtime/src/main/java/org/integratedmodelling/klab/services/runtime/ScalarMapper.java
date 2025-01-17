@@ -54,7 +54,7 @@ public class ScalarMapper {
   public boolean run() {
 
     // determine storage
-    var storage = digitalTwin.stateStorage().getOrCreateStorage(targetObservation, storageClass);
+    var storage = digitalTwin.getStateStorage().getOrCreateStorage(targetObservation, storageClass);
 
     // call storage.map() with the correct executor and configuration
     // TODO masking

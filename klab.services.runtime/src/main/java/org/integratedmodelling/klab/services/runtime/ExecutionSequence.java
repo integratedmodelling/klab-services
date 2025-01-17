@@ -308,7 +308,7 @@ public class ExecutionSequence {
           // if we're a quality, we need storage at the discretion of the StorageManager.
           Storage storage =
               observation.getObservable().is(SemanticType.QUALITY)
-                  ? digitalTwin.stateStorage().getOrCreateStorage(observation, Storage.class)
+                  ? digitalTwin.getStateStorage().getOrCreateStorage(observation, Storage.class)
                   : null;
           /*
            * Create a runnable with matched parameters and have it set the context observation
@@ -410,7 +410,7 @@ public class ExecutionSequence {
 
       if (operation != null) {
         operation.success(scope, observation, resolvedCoverage);
-        if (scope.getDigitalTwin().knowledgeGraph()
+        if (scope.getDigitalTwin().getKnowledgeGraph()
             instanceof AbstractKnowledgeGraph knowledgeGraph) {
           knowledgeGraph.indexObservation(observation);
         }

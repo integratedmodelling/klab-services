@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
@@ -14,12 +13,10 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -346,7 +343,7 @@ public class RuntimeService extends BaseService
        */
       var instantiation =
           digitalTwin
-              .knowledgeGraph()
+              .getKnowledgeGraph()
               .operation(
                   agent,
                   parentActivity,
@@ -403,7 +400,7 @@ public class RuntimeService extends BaseService
     }
     if (scope instanceof ServiceContextScope serviceContextScope) {
       // assume the user is the agent
-      return serviceContextScope.getDigitalTwin().knowledgeGraph().user();
+      return serviceContextScope.getDigitalTwin().getKnowledgeGraph().user();
     }
     throw new KlabIllegalStateException("Cannot determine the requesting agent from scope");
   }
@@ -415,7 +412,7 @@ public class RuntimeService extends BaseService
     }
     var activities =
         getDigitalTwin(scope)
-            .knowledgeGraph()
+            .getKnowledgeGraph()
             .get(scope, Activity.class, Activity.Type.INITIALIZATION);
     if (activities.size() == 1) {
       return activities.getFirst();
@@ -440,7 +437,7 @@ public class RuntimeService extends BaseService
       var digitalTwin = getDigitalTwin(scope);
       var parentActivities =
           digitalTwin
-              .knowledgeGraph()
+              .getKnowledgeGraph()
               .get(scope, Activity.class, Activity.Type.INSTANTIATION, observation);
 
       // TODO check
@@ -459,9 +456,9 @@ public class RuntimeService extends BaseService
                  */
                 var resolution =
                     digitalTwin
-                        .knowledgeGraph()
+                        .getKnowledgeGraph()
                         .operation(
-                            digitalTwin.knowledgeGraph().klab(),
+                            digitalTwin.getKnowledgeGraph().klab(),
                             parentActivity,
                             Activity.Type.RESOLUTION,
                             "Resolution of " + observation,
@@ -526,9 +523,9 @@ public class RuntimeService extends BaseService
                    */
                   var contextualization =
                       digitalTwin
-                          .knowledgeGraph()
+                          .getKnowledgeGraph()
                           .operation(
-                              digitalTwin.knowledgeGraph().klab(),
+                              digitalTwin.getKnowledgeGraph().klab(),
                               resolutionActivity,
                               Activity.Type.EXECUTION,
                               "Execution of resolved dataflow to contextualize " + observation,

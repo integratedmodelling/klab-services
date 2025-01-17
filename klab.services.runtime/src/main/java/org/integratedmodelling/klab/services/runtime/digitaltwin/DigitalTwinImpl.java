@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -20,6 +21,7 @@ import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
 import org.integratedmodelling.klab.runtime.storage.LongStorage;
 import org.integratedmodelling.klab.runtime.storage.IntStorage;
 import org.integratedmodelling.klab.runtime.storage.StateStorageImpl;
+import org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.SchedulerImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.util.ArrayList;
@@ -29,24 +31,32 @@ import java.util.concurrent.*;
 
 public class DigitalTwinImpl implements DigitalTwin {
 
-  KnowledgeGraph knowledgeGraph;
-  StateStorage stateStorage;
-  ContextScope rootScope;
+  private final KnowledgeGraph knowledgeGraph;
+  private final StateStorage stateStorage;
+  private final ContextScope rootScope;
+  private final Scheduler scheduler;
 
-  public DigitalTwinImpl(RuntimeService service, ServiceContextScope scope, KnowledgeGraph database) {
+  public DigitalTwinImpl(
+      RuntimeService service, ServiceContextScope scope, KnowledgeGraph database) {
     this.rootScope = scope;
     this.knowledgeGraph = database.contextualize(scope);
     this.stateStorage = new StateStorageImpl(service, scope);
+    this.scheduler = new SchedulerImpl();
   }
 
   @Override
-  public KnowledgeGraph knowledgeGraph() {
+  public KnowledgeGraph getKnowledgeGraph() {
     return this.knowledgeGraph;
   }
 
   @Override
-  public StateStorage stateStorage() {
+  public StateStorage getStateStorage() {
     return this.stateStorage;
+  }
+
+  @Override
+  public Scheduler getScheduler() {
+    return this.scheduler;
   }
 
   @Override
@@ -89,14 +99,15 @@ public class DigitalTwinImpl implements DigitalTwin {
     if (data.hasStates()) {
 
       // TODO negotiate any partial fill strategy from parallelized access to the storage
-      var storage = scope.getDigitalTwin().stateStorage().getOrCreateStorage(target, Storage.class);
+      var storage =
+          scope.getDigitalTwin().getStateStorage().getOrCreateStorage(target, Storage.class);
 
       if (data instanceof DoubleDataImpl doubleData) {
         // TODO handle floats
         var doubleStorage =
             scope
                 .getDigitalTwin()
-                .stateStorage()
+                .getStateStorage()
                 .promoteStorage(target, storage, DoubleStorage.class);
         var buffer = doubleStorage.buffer(data.geometry(), data.fillCurve());
         var filler = buffer.filler(Data.DoubleFiller.class);
@@ -108,7 +119,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         var longStorage =
             scope
                 .getDigitalTwin()
-                .stateStorage()
+                .getStateStorage()
                 .promoteStorage(target, storage, LongStorage.class);
         var buffer = longStorage.buffer(data.geometry(), data.fillCurve());
         var filler = buffer.filler(Data.LongFiller.class);
@@ -119,10 +130,10 @@ public class DigitalTwinImpl implements DigitalTwin {
         var key = intData.getDataKey();
         if (key == null) {
           var intStorage =
-                  scope
-                          .getDigitalTwin()
-                          .stateStorage()
-                          .promoteStorage(target, storage, IntStorage.class);
+              scope
+                  .getDigitalTwin()
+                  .getStateStorage()
+                  .promoteStorage(target, storage, IntStorage.class);
           var buffer = intStorage.buffer(data.geometry(), data.fillCurve());
           var filler = buffer.filler(Data.IntFiller.class);
           while (intData.hasNext()) {
@@ -132,7 +143,6 @@ public class DigitalTwinImpl implements DigitalTwin {
         } else {
           // TODO have the data object adapt the key to the observable before use
           var table = new HashMap<Integer, Object>();
-
         }
       }
     }

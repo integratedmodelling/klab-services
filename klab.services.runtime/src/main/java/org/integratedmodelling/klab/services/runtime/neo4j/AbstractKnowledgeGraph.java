@@ -6,6 +6,7 @@ import com.google.common.cache.LoadingCache;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -161,6 +162,13 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("dataflow", activity.getDataflow());
           ret.put("outcome", activity.getOutcome() == null ? null : activity.getOutcome().name());
           ret.put("stackTrace", activity.getStackTrace());
+        }
+        case Storage.Buffer buffer -> {
+          ret.put("id", buffer.getId());
+          ret.put("persistence", buffer.persistence().name());
+          ret.put("type",buffer.dataType().name());
+          ret.put("fillCurve", buffer.fillCurve().name());
+          ret.put("size", buffer.geometry().size());
         }
         default ->
             throw new KlabInternalErrorException(

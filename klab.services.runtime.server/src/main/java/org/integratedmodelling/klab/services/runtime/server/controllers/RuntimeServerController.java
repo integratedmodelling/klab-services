@@ -51,7 +51,7 @@ public class RuntimeServerController {
         var agent =
             serviceContextScope
                 .getDigitalTwin()
-                .knowledgeGraph()
+                .getKnowledgeGraph()
                 .requireAgent(resolutionRequest.getAgentName());
         var scope =
             serviceContextScope.withResolutionConstraints(

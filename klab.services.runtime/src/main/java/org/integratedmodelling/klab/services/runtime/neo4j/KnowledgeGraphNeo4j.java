@@ -338,7 +338,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             var storage =
                 scope
                     .getDigitalTwin()
-                    .stateStorage()
+                    .getStateStorage()
                     .getExistingStorage(observation, Storage.class);
             if (storage != null) {
               for (var buffer : storage.getBuffers()) {

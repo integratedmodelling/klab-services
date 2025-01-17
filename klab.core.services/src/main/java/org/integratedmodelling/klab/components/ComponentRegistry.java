@@ -1487,7 +1487,7 @@ public class ComponentRegistry {
                   digitalTwin == null
                   ? null
                   : digitalTwin
-                          .stateStorage()
+                          .getStateStorage()
                           .promoteStorage(observation, storage, DoubleStorage.class);
           runArguments.add(storage);
         } else if (LongStorage.class.isAssignableFrom(argument)) {
@@ -1495,7 +1495,7 @@ public class ComponentRegistry {
               digitalTwin == null
                   ? null
                   : digitalTwin
-                      .stateStorage()
+                      .getStateStorage()
                       .promoteStorage(observation, storage, LongStorage.class);
           runArguments.add(storage);
         } else if (FloatStorage.class.isAssignableFrom(argument)) {
@@ -1503,7 +1503,7 @@ public class ComponentRegistry {
               digitalTwin == null
                   ? null
                   : digitalTwin
-                      .stateStorage()
+                      .getStateStorage()
                       .promoteStorage(observation, storage, FloatStorage.class);
           runArguments.add(storage);
         } else if (BooleanStorage.class.isAssignableFrom(argument)) {
@@ -1511,7 +1511,7 @@ public class ComponentRegistry {
               digitalTwin == null
                   ? null
                   : digitalTwin
-                      .stateStorage()
+                      .getStateStorage()
                       .promoteStorage(observation, storage, BooleanStorage.class);
           runArguments.add(storage);
         } else if (KeyedStorage.class.isAssignableFrom(argument)) {
@@ -1519,7 +1519,7 @@ public class ComponentRegistry {
               digitalTwin == null
                   ? null
                   : digitalTwin
-                      .stateStorage()
+                      .getStateStorage()
                       .promoteStorage(observation, storage, KeyedStorage.class);
           runArguments.add(storage);
         } else if (Scale.class.isAssignableFrom(argument)) {

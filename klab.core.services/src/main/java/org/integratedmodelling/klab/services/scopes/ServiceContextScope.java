@@ -7,12 +7,11 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
@@ -111,7 +110,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                 new CacheLoader<Long, Observation>() {
                   @Override
                   public Observation load(Long key) throws Exception {
-                    return digitalTwin.knowledgeGraph().get(key, Observation.class);
+                    return digitalTwin.getKnowledgeGraph().get(key, Observation.class);
                   }
                 });
     /*

@@ -57,7 +57,22 @@ public interface DigitalTwin {
    *
    * @return
    */
-  KnowledgeGraph knowledgeGraph();
+  KnowledgeGraph getKnowledgeGraph();
+
+  /**
+   * Return the storage for all "datacube" content.
+   *
+   * @return
+   */
+  StateStorage getStateStorage();
+
+  /**
+   * The scheduler manages everything having to do with time, and coordinates with the {@link
+   * KnowledgeGraph} for the management of events and occurrent observers and observations.
+   *
+   * @return
+   */
+  Scheduler getScheduler();
 
   /**
    * The provenance graph contextualized to the passed context.
@@ -77,13 +92,6 @@ public interface DigitalTwin {
    * @return the dataflow starting at the passed contextualization
    */
   Dataflow<Observation> getDataflowGraph(ContextScope context);
-
-  /**
-   * Return the storage for all "datacube" content.
-   *
-   * @return
-   */
-  StateStorage stateStorage();
 
   /**
    * Ingest the contextualized data coming from a resource contextualization into the passed
