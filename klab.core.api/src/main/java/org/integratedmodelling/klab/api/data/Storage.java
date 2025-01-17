@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.data;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.scope.Persistence;
 
 import java.util.List;
@@ -25,27 +26,50 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
 
   /**
    * Tag interface for a buffer that can produce a filler using a particular filling curve for a
-   * geometry that can be the full storage geometry or a sub-geometry for parallel, distributed
-   * implementations. The Buffer subclass obtained with Buffer is a value iterator using a specified
-   * fill curve and geometry.
+   * geometry. The latter can be the full storage geometry or a sub-geometry for parallel,
+   * distributed implementations. Temporal events may produce modified buffers that share the same
+   * geometry except for the temporal location. The Buffer subclass obtained with Buffer is a value
+   * iterator using a specified fill curve and geometry.
    *
    * <p>Buffers have a unique ID and a geometry, plus a persistence status so that the {@link
    * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin} can set up copies, backups or other
    * operations to be done to guarantee persistence across invocations.
    *
+   * <p>Buffers are {@link RuntimeAsset}s because they end up in the {@link KnowledgeGraph} exposed
+   * by the {@link org.integratedmodelling.klab.api.digitaltwin.DigitalTwin}.
+   *
    * <p>Specific buffer types should also implement a mapping function for map/reduce operations.
    */
-  interface Buffer {
+  interface Buffer extends RuntimeAsset {
 
-    String id();
+    default RuntimeAsset.Type classify() {
+      return Type.DATA;
+    }
 
+    Storage.Type dataType();
+
+    /**
+     * The geometry in a buffer may be the full geometry from the owning storage or a sub-geometry
+     * of it. Whatever use is made of the buffer must take into account the need for stitching
+     * multiple buffers.
+     *
+     * @return
+     */
+    Geometry geometry();
+
+    /**
+     * The persistence tells us whether we need to periodically offload the buffer to disk in order
+     * to keep the digital twin consistent across server boots.
+     *
+     * @return
+     */
     Persistence persistence();
 
     /**
-     * Obtain a Data.Filler whose add method will use the same fill curve that the buffer
-     * implements. When the last add() is called on the filler, the buffer is expected to be
-     * finalized and immutable. Storage managers may decide to queue in operations such as building
-     * statistics, images or the like on a low-priority queue.
+     * Obtain a Data.Filler whose <code>add(value)</code> method will use the same fill curve that
+     * the buffer implements. When the last add() is called on the filler, the buffer is expected to
+     * be finalized and immutable. Storage managers may decide to queue in operations such as
+     * building statistics, images or the like on a low-priority queue.
      *
      * @param fillerClass
      * @return

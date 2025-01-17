@@ -130,7 +130,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       var activity = new ActivityImpl();
       activity.setStart(System.currentTimeMillis());
-
+      activity.setUrn(this.activity + "." + Utils.Names.shortUUID());
       var ret = new OperationImpl();
 
       ret.agent = agent;
@@ -311,6 +311,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         child.updateAssets();
       }
 
+      Dataflow<?> dataflow = null;
       ObservationImpl observation = null;
       double coverage = 1.0;
       if (assets != null) {
@@ -323,6 +324,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             this.activity.setCredits(l);
           } else if (asset instanceof Throwable throwable) {
             this.activity.setStackTrace(ExceptionUtils.getStackTrace(throwable));
+          } else if (asset instanceof Dataflow<?> df) {
+            dataflow = df;
           }
         }
       }
@@ -341,7 +344,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               for (var buffer : storage.getBuffers()) {
                 // TODO if geometry is scalar, save state as property
                 // TODO else create buffer node and link it
+                // The HAS_GEOMETRY link should contain the offsets w.r.t. the observation geometry
+                // if the geometry is partial
+                System.out.println("STORE BUFFER " + buffer);
               }
+            }
+            if (dataflow != null) {
+              // TODO record causal links
             }
           }
         }
@@ -373,6 +382,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     activity.setType(activityType);
     activity.setStart(System.currentTimeMillis());
     activity.setName(activityType.name());
+    activity.setUrn(
+        (parentActivity == null ? "" : (parentActivity.getUrn() + ".")) + Utils.Names.shortUUID());
 
     var ret = new OperationImpl();
 

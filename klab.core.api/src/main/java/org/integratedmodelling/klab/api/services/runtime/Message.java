@@ -417,7 +417,7 @@ public interface Message extends Serializable {
             });
         ret.setPayload(ob);
       } else if (ob instanceof ActivityImpl activity) {
-        ret.setTaskId(activity.getTaskId());
+        ret.setTaskId(activity.getUrn());
         payloadIfAbsent = activity;
       } else if (ob != null) {
         if (ret.getPayload() == null) {

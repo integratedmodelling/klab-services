@@ -63,11 +63,11 @@ abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer> impleme
     final Data.FillCurve fillCurve;
     final Geometry geometry;
     final Persistence persistence;
-    final String id;
+    final long id;
     SPDTHistogram<?> histogram;
 
     protected AbstractBuffer(Geometry geometry, Data.FillCurve fillCurve) {
-      this.id = Utils.Names.shortUUID();
+      this.id = stateStorage.nextBufferId();
       this.persistence = Persistence.SERVICE_SHUTDOWN;
       this.geometry = geometry;
       this.fillCurve = fillCurve;
@@ -77,13 +77,23 @@ abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer> impleme
     }
 
     @Override
+    public long getId() {
+      return id;
+    }
+
+    @Override
     public Data.FillCurve fillCurve() {
       return fillCurve;
     }
 
     @Override
-    public String id() {
-      return id;
+    public Geometry geometry() {
+      return geometry;
+    }
+
+    @Override
+    public Storage.Type dataType() {
+      return type;
     }
 
     @Override
@@ -92,21 +102,24 @@ abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer> impleme
     }
 
     protected void finalizeStorage() {
-      // TODO doing nothing at the moment. Could create images, statistics etc.
+      // TODO doing nothing at the moment. Should create images, statistics etc. within the storage
+      //  manager based on the fill curve.
     }
 
     @Override
     public String toString() {
-      return "AbstractBuffer{"
-          + "geometry="
-          + geometry
+      return "Buffer{"
+          + "type="
+          + type
           + ", fillCurve="
           + fillCurve
+          + ", geometry="
+          + geometry
           + ", id='"
           + id
           + '\''
           + ", histogram="
-          + Utils.Json.printAsJson(histogram.asHistogram())
+          + Utils.Json.asString(histogram.asHistogram())
           + '}';
     }
   }

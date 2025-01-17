@@ -33,7 +33,8 @@ public interface RuntimeAsset {
         ACTIVITY(Activity.class),
         PLAN(Plan.class),
         AGENT(Agent.class),
-        ARTIFACT(Storage.class);
+        ARTIFACT(Storage.class),
+        DATA(Storage.Buffer.class);
 
         public final Class<? extends RuntimeAsset> assetClass;
 

@@ -138,6 +138,11 @@ public interface Data {
     }
   }
 
+  /**
+   * A filler is a tag interface for an object that can be used to add data to a buffer along a
+   * given geometry and filling curve. All subclasses of Filler expose an add() method using
+   * primitive data types to avoid boxing.
+   */
   interface Filler {}
 
   @FunctionalInterface

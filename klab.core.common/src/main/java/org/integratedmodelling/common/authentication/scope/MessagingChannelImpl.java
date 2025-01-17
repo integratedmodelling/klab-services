@@ -242,7 +242,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
                       Utils.Json.parseObject(
                           new String(delivery.getBody(), StandardCharsets.UTF_8), Message.class);
 
-                  System.out.println("ZIO PERA " + message);
+//                  System.out.println("ZIO PERA " + message);
 
                   // if there is a consumer installed for this queue, run it
                   var consumers = queueConsumers.get(scopeId);

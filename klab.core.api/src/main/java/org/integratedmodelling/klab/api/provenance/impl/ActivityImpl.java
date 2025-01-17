@@ -16,7 +16,6 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     private Activity.Type type;
     private String description;
     private long id;
-    private String taskId;
     private Outcome outcome;
     private String stackTrace;
     private String serviceId;
@@ -104,20 +103,6 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
         this.observationUrn = observationUrn;
     }
 
-    /**
-     * Non-API: the ID path through which the activity hierarchy can be reconstructed. When an activity is
-     * included in a message, the taskId gets in there.
-     *
-     * @return
-     */
-    public String getTaskId() {
-        return taskId;
-    }
-
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
-    }
-
     @Override
     public Outcome getOutcome() {
         return outcome;
@@ -185,9 +170,9 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     public String toString() {
         return "ActivityImpl{" +
                 "type=" + type +
-                ", description='" + description + '\'' +
-                ", taskId='" + taskId + '\'' +
+                ", urn='" + urn + '\'' +
                 ", outcome=" + outcome +
+                ", description='" + description + '\'' +
                 '}';
     }
 }

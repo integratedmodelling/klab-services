@@ -37,7 +37,7 @@ public class ClientDigitalTwin implements DigitalTwin {
    */
   public void ingest(Message event) {
     // TODO
-    System.out.println("CLIENT-SIDE DT INGESTING " + event);
+    System.out.println("ACTIVITY " + event);
   }
 
   @Override
