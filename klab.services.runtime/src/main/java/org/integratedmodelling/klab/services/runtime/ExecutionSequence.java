@@ -111,6 +111,7 @@ public class ExecutionSequence {
         if (!operationGroup.getFirst().run()) {
           return false;
         }
+        continue;
       }
 
       /*

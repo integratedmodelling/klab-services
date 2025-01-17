@@ -36,12 +36,13 @@ public class ClientDigitalTwin implements DigitalTwin {
    * @param event
    */
   public void ingest(Message event) {
-    // TODO
-    System.out.println("ACTIVITY " + event);
+    // TODO build activity tree and inform any UI listeners in the scope
+//    System.out.println("ACTIVITY " + event);
   }
 
   @Override
   public KnowledgeGraph knowledgeGraph() {
+    // TODO (maybe not needed if we do everything through GraphQL)
     return null;
   }
 
@@ -57,6 +58,7 @@ public class ClientDigitalTwin implements DigitalTwin {
 
   @Override
   public StateStorage stateStorage() {
+    // TODO should throw an exception I guess - images and stats should come from the KG
     return null;
   }
 
