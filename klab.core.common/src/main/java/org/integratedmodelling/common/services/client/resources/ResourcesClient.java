@@ -93,7 +93,11 @@ public class ResourcesClient extends ServiceClient
 
   @Override
   public Capabilities capabilities(Scope scope) {
-    return client.get(ServicesAPI.CAPABILITIES, ResourcesCapabilitiesImpl.class);
+    if (this.capabilities == null) {
+      this.capabilities =
+          client.withScope(scope).get(ServicesAPI.CAPABILITIES, ResourcesCapabilitiesImpl.class);
+    }
+    return (Capabilities) this.capabilities;
   }
 
   /**
@@ -314,7 +318,9 @@ public class ResourcesClient extends ServiceClient
 
   @Override
   public Resource retrieveResource(List<String> urns, Scope scope) {
-    return client.withScope(scope).post(ServicesAPI.RESOURCES.RETRIEVE_RESOURCE, urns, Resource.class);
+    return client
+        .withScope(scope)
+        .post(ServicesAPI.RESOURCES.RETRIEVE_RESOURCE, urns, Resource.class);
   }
 
   @Override
@@ -340,11 +346,8 @@ public class ResourcesClient extends ServiceClient
   @Override
   public ResourceSet resolveResource(List<String> urns, Scope scope) {
     return client
-            .withScope(scope)
-            .post(
-                    ServicesAPI.RESOURCES.RESOLVE_RESOURCE,
-                    urns,
-                    ResourceSet.class);
+        .withScope(scope)
+        .post(ServicesAPI.RESOURCES.RESOLVE_RESOURCE, urns, ResourceSet.class);
   }
 
   @Override
@@ -356,18 +359,15 @@ public class ResourcesClient extends ServiceClient
     request.setGeometry(geometry.encode());
 
     return client
-            .withScope(scope)
-            .post(
-                    ServicesAPI.RESOURCES.CONTEXTUALIZE_RESOURCE,
-                    resource,
-                    ResourceImpl.class);
+        .withScope(scope)
+        .post(ServicesAPI.RESOURCES.CONTEXTUALIZE_RESOURCE, resource, ResourceImpl.class);
   }
 
   @Override
   public KimConcept retrieveConcept(String definition) {
     if (!useCaches) {
       return resolveConceptInternal(removeExcessParentheses(definition));
-      }
+    }
     try {
       return concepts.get(removeExcessParentheses(definition));
     } catch (ExecutionException e) {
@@ -400,7 +400,7 @@ public class ResourcesClient extends ServiceClient
   // TODO CACHE
   public KimObservable resolveObservableInternal(String definition) {
     return client.get(
-            ServicesAPI.RESOURCES.RETRIEVE_OBSERVABLE, KimObservable.class, "definition", definition);
+        ServicesAPI.RESOURCES.RETRIEVE_OBSERVABLE, KimObservable.class, "definition", definition);
   }
 
   @Override
@@ -410,17 +410,17 @@ public class ResourcesClient extends ServiceClient
 
   public KimConcept resolveConceptInternal(String definition) {
     return client.get(
-            ServicesAPI.RESOURCES.RETRIEVE_CONCEPT, KimConcept.class, "definition", definition);
+        ServicesAPI.RESOURCES.RETRIEVE_CONCEPT, KimConcept.class, "definition", definition);
   }
 
   @Override
   public Data contextualize(
-          Resource contextualizedResource, Observation observation, @Nullable Data data, Scope scope) {
+      Resource contextualizedResource, Observation observation, @Nullable Data data, Scope scope) {
 
     DataRequest request =
         DataRequest.newBuilder()
             .setInputData(data instanceof BaseDataImpl data1 ? data1.asInstance() : null)
-                   // .setObservable(observation.getObservable().getUrn())
+            // .setObservable(observation.getObservable().getUrn())
             .setGeometry(observation.getGeometry().encode())
             .setResourceUrns(List.of(contextualizedResource.getUrn()))
             .build();

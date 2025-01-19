@@ -28,7 +28,7 @@ import java.io.InputStream;
 public class ComponentIOLibrary {
 
   @Importer(
-      schema = "jar",
+      schema = "jar.import",
       knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,
       description = "Import a component by directly uploading a jar file",
       mediaType = "application/java-archive",
@@ -52,7 +52,7 @@ public class ComponentIOLibrary {
    * @return
    */
   @Importer(
-      schema = "maven",
+      schema = "maven.import",
       knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,
       description = "Register a component using the archive's Maven coordinates",
       properties = {
@@ -113,7 +113,7 @@ public class ComponentIOLibrary {
   }
 
   @Exporter(
-      schema = "jar",
+      schema = "jar.export",
       description = "Export a component as a jar archive",
       mediaType = "application" + "/java-archive",
       knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT)

@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import java.io.IOException;
+import java.time.Duration;
+import java.util.*;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
@@ -13,7 +16,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -38,12 +40,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.runtime.storage.AbstractStorage;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.neo4j.driver.*;
-
-import java.io.IOException;
-import java.time.Duration;
-import java.util.*;
 
 /**
  * TODO check spatial queries:

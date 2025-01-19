@@ -726,7 +726,7 @@ public class ComponentRegistry {
    * @param resourceSet
    * @return
    */
-  public boolean loadComponents(ResourceSet resourceSet, Scope scope) {
+  public synchronized boolean loadComponents(ResourceSet resourceSet, Scope scope) {
 
     Set<String> available = new HashSet<>();
     for (var result : resourceSet.getResults()) {

@@ -398,6 +398,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
        * @return
        */
       public Client withScope(Scope scope) {
+        if (scope == null) {
+          return this;
+        }
         var ret = new Client(this);
         ret.scope = scope;
         if (scope instanceof ContextScope contextScope) {
