@@ -109,7 +109,9 @@ public class DigitalTwinImpl implements DigitalTwin {
                 .getDigitalTwin()
                 .getStateStorage()
                 .promoteStorage(target, storage, DoubleStorage.class);
-        var buffer = doubleStorage.buffer(data.geometry(), data.fillCurve());
+        var buffer =
+            doubleStorage.buffer(
+                data.geometry().size(), data.fillCurve(), data.geometry().getExtentOffsets());
         var filler = buffer.filler(Data.DoubleFiller.class);
         while (doubleData.hasNext()) {
           filler.add(doubleData.nextDouble());
@@ -121,7 +123,9 @@ public class DigitalTwinImpl implements DigitalTwin {
                 .getDigitalTwin()
                 .getStateStorage()
                 .promoteStorage(target, storage, LongStorage.class);
-        var buffer = longStorage.buffer(data.geometry(), data.fillCurve());
+        var buffer =
+            longStorage.buffer(
+                data.geometry().size(), data.fillCurve(), data.geometry().getExtentOffsets());
         var filler = buffer.filler(Data.LongFiller.class);
         while (longData.hasNext()) {
           filler.add(longData.nextLong());
@@ -134,7 +138,9 @@ public class DigitalTwinImpl implements DigitalTwin {
                   .getDigitalTwin()
                   .getStateStorage()
                   .promoteStorage(target, storage, IntStorage.class);
-          var buffer = intStorage.buffer(data.geometry(), data.fillCurve());
+          var buffer =
+              intStorage.buffer(
+                  data.geometry().size(), data.fillCurve(), data.geometry().getExtentOffsets());
           var filler = buffer.filler(Data.IntFiller.class);
           while (intData.hasNext()) {
             filler.add(intData.nextInt());

@@ -21,8 +21,8 @@ public class LongStorage extends AbstractStorage<LongStorage.LongBuffer> {
 
     private final BufferArray data;
 
-    protected LongBuffer(Geometry geometry, Data.FillCurve fillCurve) {
-      super(geometry, fillCurve);
+    protected LongBuffer(long size, Data.FillCurve fillCurve, long[] offsets) {
+        super(size, fillCurve, offsets);
       this.data = stateStorage.getLongBuffer(geometry.size());
     }
 
@@ -38,9 +38,9 @@ public class LongStorage extends AbstractStorage<LongStorage.LongBuffer> {
               @Override
               public void add(double value) {
                 data.add(iterator.nextLong(), value);
-                if (histogram != null) {
-                  histogram.insert(value);
-                }
+                  if (getHistogram() != null) {
+                      getHistogram().insert((double)value);
+                  }
                 if (!iterator.hasNext()) {
                   finalizeStorage();
                 }
@@ -53,9 +53,9 @@ public class LongStorage extends AbstractStorage<LongStorage.LongBuffer> {
               @Override
               public void add(int value) {
                 data.add(iterator.nextLong(), (double) value);
-                if (histogram != null) {
-                  histogram.insert((double) value);
-                }
+                  if (getHistogram() != null) {
+                      getHistogram().insert((double)value);
+                  }
                 if (!iterator.hasNext()) {
                   finalizeStorage();
                 }
@@ -68,9 +68,9 @@ public class LongStorage extends AbstractStorage<LongStorage.LongBuffer> {
               @Override
               public void add(long value) {
                 data.add(iterator.nextLong(), (double) value);
-                if (histogram != null) {
-                  histogram.insert((double) value);
-                }
+                  if (getHistogram() != null) {
+                      getHistogram().insert((double)value);
+                  }
                 if (!iterator.hasNext()) {
                   finalizeStorage();
                 }
@@ -83,9 +83,9 @@ public class LongStorage extends AbstractStorage<LongStorage.LongBuffer> {
               @Override
               public void add(float value) {
                 data.add(iterator.nextLong(), value);
-                if (histogram != null) {
-                  histogram.insert((double) value);
-                }
+                  if (getHistogram() != null) {
+                      getHistogram().insert((double)value);
+                  }
                 if (!iterator.hasNext()) {
                   finalizeStorage();
                 }
@@ -102,8 +102,8 @@ public class LongStorage extends AbstractStorage<LongStorage.LongBuffer> {
   }
 
   @Override
-  public LongBuffer buffer(Geometry geometry, Data.FillCurve fillCurve) {
-    var ret = new LongBuffer(geometry, fillCurve);
+  public LongBuffer buffer(long size, Data.FillCurve fillCurve, long[] offsets) {
+    var ret = new LongBuffer(size, fillCurve, offsets);
     registerBuffer(ret);
     return ret;
   }

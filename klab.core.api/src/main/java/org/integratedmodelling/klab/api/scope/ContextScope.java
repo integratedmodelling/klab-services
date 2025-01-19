@@ -12,8 +12,10 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
@@ -84,6 +86,21 @@ public interface ContextScope extends SessionScope {
    * @return
    */
   boolean isConsistent();
+
+  /**
+   * Retrieve the observation with the passed observable in this scope from the knowledge graph.
+   * This will only retrieve one observation. Calling this one with a countable observable may
+   * produce a singular observation or a collective whose children are the requested observation in
+   * case there are multiple observations in this scope. To retrieve all the instances of the
+   * collective, retrieve the collective and then call {@link #getChildrenOf(Observation)} on it.
+   * The API user is responsible for checking the collective status of the result.
+   *
+   * @param observable can pass an observable, but the result will be insensitive to units, name or
+   *     anything not related to semantics.
+   * @return the observation (possibly a collective) or null. The resulting observation may be
+   *     unresolved; the implementation decides what to do with it and is responsible for checking.
+   */
+  Observation getObservation(Concept observable);
 
   /**
    * Return all observations in this scope for which resolution has failed. Optionally only return

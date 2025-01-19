@@ -17,14 +17,14 @@ public class KeyedStorage extends AbstractStorage<KeyedStorage.KeyedBuffer> {
   }
 
   @Override
-  public KeyedBuffer buffer(Geometry geometry, Data.FillCurve fillCurve) {
+  public KeyedBuffer buffer(long size, Data.FillCurve fillCurve, long[] offsets) {
     return null;
   }
 
   public class KeyedBuffer extends AbstractStorage.AbstractBuffer {
 
-    protected KeyedBuffer(Geometry geometry, Data.FillCurve fillCurve) {
-      super(geometry, fillCurve);
+    protected KeyedBuffer(long size, Data.FillCurve fillCurve, long[] offsets) {
+      super(size, fillCurve, offsets);
     }
 
     @Override

@@ -408,7 +408,7 @@ public class ExecutionSequence {
 
       if (operation != null) {
         operation.success(scope, observation, resolvedCoverage);
-        scope.finalizeObservation(observation, true);
+        scope.finalizeObservation(observation, operation, true);
       }
 
       return true;

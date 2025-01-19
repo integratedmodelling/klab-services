@@ -37,6 +37,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
+import org.integratedmodelling.klab.runtime.storage.AbstractStorage;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.neo4j.driver.*;
 
@@ -240,7 +241,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       ObservationImpl observation = null;
       double coverage = 1.0;
       var resolutionEmpty = false;
-
+      Dataflow<?> dataflow = null;
       if (assets != null) {
         for (var asset : assets) {
           if (asset instanceof ObservationImpl obs) {
@@ -248,8 +249,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             activity.setObservationUrn(obs.getUrn());
           } else if (asset instanceof Throwable t) {
             activity.setStackTrace(ExceptionUtils.getStackTrace(t));
-          } else if (asset instanceof Dataflow<?> dataflow) {
-            resolutionEmpty = dataflow.isEmpty();
+          } else if (asset instanceof Dataflow<?> df) {
+            resolutionEmpty = df.isEmpty();
+            dataflow = df;
           }
         }
       }
@@ -291,11 +293,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               Message.MessageClass.ObservationLifecycle,
               Message.MessageType.ActivityFinished,
               activity);
-          transaction.commit();
-          if (scope instanceof ServiceContextScope serviceContextScope
-              && activity.getType() == Activity.Type.RESOLUTION) {
-            serviceContextScope.finalizeObservation(observation, true);
+          if (dataflow != null) {
+            // TODO record causal links
+            storeCausalLinks(dataflow);
           }
+          transaction.commit();
         } else if (outcome == Scope.Status.ABORTED) {
           scope.send(
               Message.MessageClass.ObservationLifecycle,
@@ -339,25 +341,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         if (this.activity.getType() == Activity.Type.CONTEXTUALIZATION) {
           observation.setResolved(true);
           observation.setResolvedCoverage(coverage);
-          if (observation.getObservable().is(SemanticType.QUALITY)) {
-            var storage =
-                scope
-                    .getDigitalTwin()
-                    .getStateStorage()
-                    .getExistingStorage(observation, Storage.class);
-            if (storage != null) {
-              for (var buffer : storage.getBuffers()) {
-                // TODO if geometry is scalar, save state as property
-                // TODO else create buffer node and link it
-                // The HAS_GEOMETRY link should contain the offsets w.r.t. the observation geometry
-                // if the geometry is partial
-                System.out.println("STORE BUFFER " + buffer);
-              }
-            }
-            if (dataflow != null) {
-              // TODO record causal links
-            }
-          }
         }
         update(observation, scope);
         if (observation.getGeometry() != null) {
@@ -367,6 +350,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       update(this.activity, scope);
     }
+  }
+
+  private void storeCausalLinks(Dataflow<?> dataflow) {
+    /*
+     * Any dependency could be seen as an "affects" link OR we can check the actual causality, meaning that
+     * all contextualizables must be able to tell us if they physically depend on each observable. Keep it
+     * simple and potentially wasteful for now.
+     */
   }
 
   @Override
@@ -898,6 +889,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           case Activity activity -> name + ".id = $" + queryVariable;
           case Observation observation -> name + ".id = $" + queryVariable;
           case Actuator actuator -> name + ".id = $" + queryVariable;
+          case Storage.Buffer actuator -> name + ".id = $" + queryVariable;
           case Agent agent -> name + ".name = $" + queryVariable;
           default -> null;
         };
@@ -905,7 +897,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     if (ret == null) {
       ret =
           switch (asset.classify()) {
-            case ARTIFACT, DATAFLOW, PROVENANCE -> name + ".id = $" + queryVariable;
+            case ARTIFACT, DATAFLOW, PROVENANCE, DATA -> name + ".id = $" + queryVariable;
             default -> throw new KlabIllegalStateException("Unexpected value: " + asset.classify());
           };
     }
@@ -921,6 +913,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           case ActivityImpl activity -> activity.getId();
           case ObservationImpl observation -> observation.getId();
           case Agent agent -> agent.getName();
+          case AbstractStorage.AbstractBuffer buffer -> buffer.getInternalId();
           default -> null;
         };
 
@@ -944,6 +937,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         observation.setUrn(scope.getId() + "." + id);
       }
       case ActuatorImpl actuator -> actuator.setInternalId(id);
+      case AbstractStorage.AbstractBuffer buffer -> buffer.setInternalId(id);
       case ActivityImpl activity -> activity.setId(id);
       case AgentImpl agent -> agent.setId(id);
       default -> {}
@@ -992,6 +986,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return "Agent";
       } else if (Plan.class.isAssignableFrom(cls)) {
         return "Plan";
+      } else if (Storage.Buffer.class.isAssignableFrom(cls)) {
+        return "Data";
       }
     }
 
@@ -1001,6 +997,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           case Activity x -> "Activity";
           case Actuator x -> "Actuator";
           case Agent x -> "Agent";
+          case Storage.Buffer x -> "Data";
           case Plan x -> "Plan";
           default -> null;
         };

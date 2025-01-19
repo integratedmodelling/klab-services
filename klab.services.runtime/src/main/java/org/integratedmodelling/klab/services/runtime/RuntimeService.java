@@ -519,9 +519,10 @@ public class RuntimeService extends BaseService
 
                 if (!ret.isCompletedExceptionally() && dataflow != null) {
 
-                  if (dataflow.isEmpty() && observation.getObservable().is(SemanticType.COUNTABLE)) {
+                  if (dataflow.isEmpty()
+                      && observation.getObservable().is(SemanticType.COUNTABLE)) {
                     // if there is a dataflow, this step will be done in execution
-                    ((ServiceContextScope) scope).finalizeObservation(observation, false);
+                    serviceContextScope.finalizeObservation(observation, resolution, false);
                   } else {
                     /*
                     this will commit all resources at close()

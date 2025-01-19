@@ -46,6 +46,7 @@ public interface DigitalTwin {
     HAS_DATAFLOW,
     HAS_PROVENANCE,
     HAS_ACTIVITY,
+    HAS_DATA,
     HAS_CHILD,
     TRIGGERED,
     CONTEXTUALIZED;

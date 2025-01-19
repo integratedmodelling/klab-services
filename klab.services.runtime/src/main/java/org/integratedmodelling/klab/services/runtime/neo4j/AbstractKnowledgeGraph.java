@@ -166,9 +166,12 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         case Storage.Buffer buffer -> {
           ret.put("id", buffer.getId());
           ret.put("persistence", buffer.persistence().name());
-          ret.put("type",buffer.dataType().name());
+          ret.put("type", buffer.dataType().name());
           ret.put("fillCurve", buffer.fillCurve().name());
-          ret.put("size", buffer.geometry().size());
+          ret.put("size", buffer.size());
+          ret.put(
+              "histogram",
+              org.integratedmodelling.common.utils.Utils.Json.asString(buffer.histogram()));
         }
         default ->
             throw new KlabInternalErrorException(

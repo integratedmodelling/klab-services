@@ -11,14 +11,19 @@ import java.util.concurrent.ExecutionException;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -185,10 +190,32 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return runtime.resolve(taskId, this);
   }
 
-  public void finalizeObservation(Observation observation, boolean successful) {
+  public void finalizeObservation(
+      Observation observation, KnowledgeGraph.Operation operation, boolean successful) {
     if (successful) {
       // TODO behaviors: assign if any, create actor and start the VM
       digitalTwin.getScheduler().submit(observation);
+      if (observation.getObservable().is(SemanticType.QUALITY)) {
+        var storage = digitalTwin.getStateStorage().getExistingStorage(observation, Storage.class);
+        if (storage != null) {
+          for (var buf : storage.buffers()) {
+
+            // WHY do I have to cast?
+            var buffer = (Storage.Buffer) buf;
+
+            // TODO if geometry is scalar, save state as property instead
+
+            operation.store(buffer);
+            // The HAS_DATA link contains the offsets for the geometry, if any.
+            operation.link(
+                observation,
+                (RuntimeAsset) buffer,
+                DigitalTwin.Relationship.HAS_DATA,
+                "offsets",
+                buffer.offsets());
+          }
+        }
+      }
     }
   }
 
@@ -410,6 +437,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (runtime instanceof BaseService baseService) {
       baseService.getScopeManager().releaseScope(this.getId());
     }
+  }
+
+  @Override
+  public Observation getObservation(Concept observable) {
+    // DIO PERA qua ci vorrebbe GraphQL
+    return null;
   }
 
   @Override

@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -295,6 +296,11 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             return List.of();
         }
         return constraint.payload(resultClass);
+    }
+
+    @Override
+    public Observation getObservation(Concept observable) {
+        return null;
     }
 
     @Override

@@ -21,8 +21,8 @@ public class BooleanStorage extends AbstractStorage<BooleanStorage.BooleanBuffer
 
     private final BufferArray data;
 
-    protected BooleanBuffer(Geometry geometry, Data.FillCurve fillCurve) {
-      super(geometry, fillCurve);
+    protected BooleanBuffer(long size, Data.FillCurve fillCurve, long[] offsets) {
+        super(size, fillCurve, offsets);
       this.data = stateStorage.getBooleanBuffer(geometry.size());
     }
 
@@ -38,12 +38,12 @@ public class BooleanStorage extends AbstractStorage<BooleanStorage.BooleanBuffer
               @Override
               public void add(double value) {
                 data.add(iterator.nextLong(), value);
-                if (histogram != null) {
-                  histogram.insert(value);
+                if (getHistogram() != null) {
+                  getHistogram().insert((double) value);
                 }
-                  if (!iterator.hasNext()) {
-                      finalizeStorage();
-                  }
+                if (!iterator.hasNext()) {
+                  finalizeStorage();
+                }
               }
             };
       } else if (fillerClass == Data.IntFiller.class) {
@@ -53,12 +53,12 @@ public class BooleanStorage extends AbstractStorage<BooleanStorage.BooleanBuffer
               @Override
               public void add(int value) {
                 data.add(iterator.nextLong(), (double) value);
-                if (histogram != null) {
-                  histogram.insert((double) value);
+                if (getHistogram() != null) {
+                  getHistogram().insert((double) value);
                 }
-                  if (!iterator.hasNext()) {
-                      finalizeStorage();
-                  }
+                if (!iterator.hasNext()) {
+                  finalizeStorage();
+                }
               }
             };
       } else if (fillerClass == Data.LongFiller.class) {
@@ -68,8 +68,8 @@ public class BooleanStorage extends AbstractStorage<BooleanStorage.BooleanBuffer
               @Override
               public void add(long value) {
                 data.add(iterator.nextLong(), (double) value);
-                if (histogram != null) {
-                  histogram.insert((double) value);
+                if (getHistogram() != null) {
+                  getHistogram().insert((double) value);
                 }
                 if (!iterator.hasNext()) {
                   finalizeStorage();
@@ -83,8 +83,8 @@ public class BooleanStorage extends AbstractStorage<BooleanStorage.BooleanBuffer
               @Override
               public void add(float value) {
                 data.add(iterator.nextLong(), value);
-                if (histogram != null) {
-                  histogram.insert((double) value);
+                if (getHistogram() != null) {
+                  getHistogram().insert((double) value);
                 }
                 if (!iterator.hasNext()) {
                   finalizeStorage();
@@ -97,13 +97,14 @@ public class BooleanStorage extends AbstractStorage<BooleanStorage.BooleanBuffer
     }
   }
 
-  public BooleanStorage(Observation observation, StateStorageImpl scope, ServiceContextScope contextScope) {
+  public BooleanStorage(
+      Observation observation, StateStorageImpl scope, ServiceContextScope contextScope) {
     super(Type.BOOLEAN, observation, scope, contextScope);
   }
 
   @Override
-  public BooleanBuffer buffer(Geometry geometry, Data.FillCurve fillCurve) {
-    var ret = new BooleanBuffer(geometry, fillCurve);
+  public BooleanBuffer buffer(long size, Data.FillCurve fillCurve, long[] offsets) {
+    var ret = new BooleanBuffer(size, fillCurve, offsets);
     registerBuffer(ret);
     return ret;
   }

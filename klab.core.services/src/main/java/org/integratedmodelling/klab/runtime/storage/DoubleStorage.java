@@ -21,8 +21,8 @@ public class DoubleStorage extends AbstractStorage<DoubleStorage.DoubleBuffer> {
 
     private final BufferArray data;
 
-    protected DoubleBuffer(Geometry geometry, Data.FillCurve fillCurve) {
-      super(geometry, fillCurve);
+    protected DoubleBuffer(long size, Data.FillCurve fillCurve, long[] offsets) {
+        super(size, fillCurve, offsets);
       this.data = stateStorage.getDoubleBuffer(geometry.size());
     }
 
@@ -38,12 +38,12 @@ public class DoubleStorage extends AbstractStorage<DoubleStorage.DoubleBuffer> {
               @Override
               public void add(double value) {
                 data.add(iterator.nextLong(), value);
-                  if (histogram != null) {
-                      histogram.insert(value);
-                  }
-                  if (!iterator.hasNext()) {
-                      finalizeStorage();
-                  }
+                if (getHistogram() != null) {
+                  getHistogram().insert((double) value);
+                }
+                if (!iterator.hasNext()) {
+                  finalizeStorage();
+                }
               }
             };
       } else if (fillerClass == Data.IntFiller.class) {
@@ -53,12 +53,12 @@ public class DoubleStorage extends AbstractStorage<DoubleStorage.DoubleBuffer> {
               @Override
               public void add(int value) {
                 data.add(iterator.nextLong(), (double) value);
-                  if (histogram != null) {
-                      histogram.insert((double) value);
-                  }
-                  if (!iterator.hasNext()) {
-                      finalizeStorage();
-                  }
+                if (getHistogram() != null) {
+                  getHistogram().insert((double) value);
+                }
+                if (!iterator.hasNext()) {
+                  finalizeStorage();
+                }
               }
             };
       } else if (fillerClass == Data.LongFiller.class) {
@@ -68,12 +68,12 @@ public class DoubleStorage extends AbstractStorage<DoubleStorage.DoubleBuffer> {
               @Override
               public void add(long value) {
                 data.add(iterator.nextLong(), (double) value);
-                  if (histogram != null) {
-                      histogram.insert((double) value);
-                  }
-                  if (!iterator.hasNext()) {
-                      finalizeStorage();
-                  }
+                if (getHistogram() != null) {
+                  getHistogram().insert((double) value);
+                }
+                if (!iterator.hasNext()) {
+                  finalizeStorage();
+                }
               }
             };
       } else if (fillerClass == Data.FloatFiller.class) {
@@ -83,12 +83,12 @@ public class DoubleStorage extends AbstractStorage<DoubleStorage.DoubleBuffer> {
               @Override
               public void add(float value) {
                 data.add(iterator.nextLong(), value);
-                if (histogram != null) {
-                  histogram.insert((double) value);
+                if (getHistogram() != null) {
+                  getHistogram().insert((double) value);
                 }
-                  if (!iterator.hasNext()) {
-                      finalizeStorage();
-                  }
+                if (!iterator.hasNext()) {
+                  finalizeStorage();
+                }
               }
             };
       }
@@ -97,15 +97,15 @@ public class DoubleStorage extends AbstractStorage<DoubleStorage.DoubleBuffer> {
     }
   }
 
-  public DoubleStorage(Observation observation, StateStorageImpl scope, ServiceContextScope contextScope) {
+  public DoubleStorage(
+      Observation observation, StateStorageImpl scope, ServiceContextScope contextScope) {
     super(Type.DOUBLE, observation, scope, contextScope);
   }
 
   @Override
-  public DoubleBuffer buffer(Geometry geometry, Data.FillCurve fillCurve) {
-    var ret = new DoubleBuffer(geometry, fillCurve);
+  public DoubleBuffer buffer(long size, Data.FillCurve fillCurve, long[] offsets) {
+    var ret = new DoubleBuffer(size, fillCurve, offsets);
     registerBuffer(ret);
     return ret;
   }
-
 }

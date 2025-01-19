@@ -48,14 +48,16 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
 
     Storage.Type dataType();
 
+    long size();
+
+    long[] offsets();
+
     /**
-     * The geometry in a buffer may be the full geometry from the owning storage or a sub-geometry
-     * of it. Whatever use is made of the buffer must take into account the need for stitching
-     * multiple buffers.
+     * The portable histogram. Should never be null.
      *
      * @return
      */
-    Geometry geometry();
+    Histogram histogram();
 
     /**
      * The persistence tells us whether we need to periodically offload the buffer to disk in order
@@ -93,15 +95,16 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
   /**
    * Obtain a buffer to access and/or fill the storage or a part of it.
    *
-   * @param geometry the geometry for the buffer. Must be in phase and contained within the storage
-   *     overall geometry returned by {@link #getGeometry()}. Implementations may impose
-   *     restrictions.
+   * @param size the size of the buffer - either from the full geometry or for a part using the
+   *     passed fill curve and offsets.
    * @param fillCurve the fill curve along which the buffer is iterable. Only the subclasses
    *     implement primitive or boxing iterators. The filler returned by the buffer implements the
    *     same fill curve.
+   * @param offsets the offset for the storage within the geometry, so that the data can be
+   *     navigated according to the fill curve.
    * @return a suitable buffer
    */
-  B buffer(Geometry geometry, Data.FillCurve fillCurve);
+  B buffer(long size, Data.FillCurve fillCurve, long[] offsets);
 
   Type getType();
 
@@ -112,7 +115,7 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
    *
    * @return
    */
-  List<Buffer> getBuffers();
+  List<Storage.Buffer> buffers();
 
   /**
    * The overall geometry of the storage. Will change during contextualization to reflect dynamic

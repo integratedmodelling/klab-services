@@ -15,7 +15,8 @@ import org.integratedmodelling.klab.utilities.Utils;
 /**
  * Abstract storage class providing geometry and buffer indexing, histograms, merging and splitting.
  */
-abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer> implements Storage<B> {
+public abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer>
+    implements Storage<B> {
 
   protected final Type type;
   protected final StateStorageImpl stateStorage;
@@ -58,18 +59,21 @@ abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer> impleme
   }
 
   /** Base buffer provides the histogram and the geometry indexing/merging */
-  protected abstract class AbstractBuffer implements Buffer {
+  public abstract class AbstractBuffer implements Buffer {
 
-    final Data.FillCurve fillCurve;
-    final Geometry geometry;
-    final Persistence persistence;
-    final long id;
-    SPDTHistogram<?> histogram;
+    private final Data.FillCurve fillCurve;
+    private final Persistence persistence;
+    private final long size;
+    private final long[] offsets;
+    private final long id;
+    private long internalId;
+    private SPDTHistogram<?> histogram;
 
-    protected AbstractBuffer(Geometry geometry, Data.FillCurve fillCurve) {
+    protected AbstractBuffer(long size, Data.FillCurve fillCurve, long[] offsets) {
       this.id = stateStorage.nextBufferId();
       this.persistence = Persistence.SERVICE_SHUTDOWN;
-      this.geometry = geometry;
+      this.size = size;
+      this.offsets = offsets;
       this.fillCurve = fillCurve;
       if (stateStorage.isRecordHistogram()) {
         this.histogram = new SPDTHistogram<>(stateStorage.getHistogramBinSize());
@@ -87,18 +91,47 @@ abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer> impleme
     }
 
     @Override
-    public Geometry geometry() {
-      return geometry;
-    }
-
-    @Override
     public Storage.Type dataType() {
       return type;
     }
 
     @Override
+    public long size() {
+      return size;
+    }
+
+    @Override
+    public long[] offsets() {
+      return offsets;
+    }
+
+    public Persistence getPersistence() {
+      return persistence;
+    }
+
+    public long getInternalId() {
+      return internalId;
+    }
+
+    public void setInternalId(long internalId) {
+      this.internalId = internalId;
+    }
+
+    public SPDTHistogram<?> getHistogram() {
+      return histogram;
+    }
+
+    public void setHistogram(SPDTHistogram<?> histogram) {
+      this.histogram = histogram;
+    }
+
+    @Override
     public Persistence persistence() {
       return persistence;
+    }
+
+    public Histogram histogram() {
+      return this.histogram.asHistogram();
     }
 
     protected void finalizeStorage() {
@@ -113,8 +146,10 @@ abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer> impleme
           + type
           + ", fillCurve="
           + fillCurve
-          + ", geometry="
-          + geometry
+          + ", size="
+          + size
+          + ", offsets="
+          + offsets
           + ", id='"
           + id
           + '\''
@@ -130,9 +165,9 @@ abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer> impleme
   }
 
   @Override
-  public List<Buffer> getBuffers() {
+  public List<Storage.Buffer> buffers() {
     // hope this gets optimized
-    return buffers.stream().map(b -> (Buffer) b).toList();
+    return buffers.stream().map(b -> (Storage.Buffer) b).toList();
   }
 
   @Override
