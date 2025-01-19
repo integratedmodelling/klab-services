@@ -37,6 +37,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.neo4j.driver.*;
 
 import java.io.IOException;
@@ -291,6 +292,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               Message.MessageType.ActivityFinished,
               activity);
           transaction.commit();
+          if (scope instanceof ServiceContextScope serviceContextScope
+              && activity.getType() == Activity.Type.RESOLUTION) {
+            serviceContextScope.finalizeObservation(observation, true);
+          }
         } else if (outcome == Scope.Status.ABORTED) {
           scope.send(
               Message.MessageClass.ObservationLifecycle,

@@ -1,6 +1,4 @@
-package org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler;
-
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+package org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.timer;
 
 public interface WaitStrategy {
 
@@ -9,7 +7,7 @@ public interface WaitStrategy {
    *
    * @param deadlineNanoseconds deadline to wait for, in milliseconds
    */
-  public void waitUntil(long deadlineNanoseconds);
+  public void waitUntil(long deadlineNanoseconds) throws InterruptedException;
 
   /**
    * Yielding wait strategy.
@@ -21,11 +19,11 @@ public interface WaitStrategy {
   public static class YieldingWait implements WaitStrategy {
 
     @Override
-    public void waitUntil(long deadline) {
+    public void waitUntil(long deadline) throws InterruptedException {
       while (deadline >= System.nanoTime()) {
         Thread.yield();
         if (Thread.currentThread().isInterrupted()) {
-          throw new KlabIllegalStateException("real-time scheduling interrupted");
+          throw new InterruptedException();
         }
       }
     }
@@ -40,10 +38,10 @@ public interface WaitStrategy {
   public static class BusySpinWait implements WaitStrategy {
 
     @Override
-    public void waitUntil(long deadline) {
+    public void waitUntil(long deadline) throws InterruptedException {
       while (deadline >= System.nanoTime()) {
         if (Thread.currentThread().isInterrupted()) {
-          throw new KlabIllegalStateException("real-time scheduling interrupted");
+          throw new InterruptedException();
         }
       }
     }
@@ -58,16 +56,12 @@ public interface WaitStrategy {
   public static class SleepWait implements WaitStrategy {
 
     @Override
-    public void waitUntil(long deadline) {
+    public void waitUntil(long deadline) throws InterruptedException {
       long sleepTimeNanos = deadline - System.nanoTime();
       if (sleepTimeNanos > 0) {
         long sleepTimeMillis = sleepTimeNanos / 1000000;
         int sleepTimeNano = (int) (sleepTimeNanos - (sleepTimeMillis * 1000000));
-        try {
-          Thread.sleep(sleepTimeMillis, sleepTimeNano);
-        } catch (InterruptedException e) {
-          throw new KlabIllegalStateException("real-time scheduling interrupted");
-        }
+        Thread.sleep(sleepTimeMillis, sleepTimeNano);
       }
     }
   }

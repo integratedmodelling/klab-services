@@ -303,8 +303,6 @@ public class ExecutionSequence {
             scalarMapper = null;
           }
 
-          var scale = Scale.create(observation.getGeometry());
-
           // if we're a quality, we need storage at the discretion of the StorageManager.
           Storage storage =
               observation.getObservable().is(SemanticType.QUALITY)
@@ -410,10 +408,7 @@ public class ExecutionSequence {
 
       if (operation != null) {
         operation.success(scope, observation, resolvedCoverage);
-        if (scope.getDigitalTwin().getKnowledgeGraph()
-            instanceof AbstractKnowledgeGraph knowledgeGraph) {
-          knowledgeGraph.indexObservation(observation);
-        }
+        scope.finalizeObservation(observation, true);
       }
 
       return true;
@@ -452,10 +447,6 @@ public class ExecutionSequence {
 
   public boolean isEmpty() {
     return this.empty;
-  }
-
-  public ExecutionSequence runActuator(Actuator actuator) {
-    return this;
   }
 
   /**

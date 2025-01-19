@@ -185,6 +185,13 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return runtime.resolve(taskId, this);
   }
 
+  public void finalizeObservation(Observation observation, boolean successful) {
+    if (successful) {
+      // TODO behaviors: assign if any, create actor and start the VM
+      digitalTwin.getScheduler().submit(observation);
+    }
+  }
+
   @Override
   public Provenance getProvenance() {
     return digitalTwin.getProvenanceGraph(this);
@@ -415,5 +422,4 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     // TODO
     return Parallelism.CORES;
   }
-
 }

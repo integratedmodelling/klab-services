@@ -42,6 +42,7 @@ import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
+import org.integratedmodelling.klab.services.runtime.neo4j.AbstractKnowledgeGraph;
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JEmbedded;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
@@ -306,7 +307,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public long submit( Observation observation, ContextScope scope) {
+  public long submit(Observation observation, ContextScope scope) {
 
     if (observation.isResolved()) {
       // TODO there may be a context for this at some point.
@@ -516,32 +517,37 @@ public class RuntimeService extends BaseService
                   ret.completeExceptionally(t);
                 }
 
-                if (!ret.isCompletedExceptionally() && dataflow != null && !dataflow.isEmpty()) {
+                if (!ret.isCompletedExceptionally() && dataflow != null) {
 
-                  /*
-                  this will commit all resources at close()
-                   */
-                  var contextualization =
-                      digitalTwin
-                          .getKnowledgeGraph()
-                          .operation(
-                              digitalTwin.getKnowledgeGraph().klab(),
-                              resolutionActivity,
-                              Activity.Type.EXECUTION,
-                              "Execution of resolved dataflow to contextualize " + observation,
-                              dataflow,
-                              this);
+                  if (dataflow.isEmpty() && observation.getObservable().is(SemanticType.COUNTABLE)) {
+                    // if there is a dataflow, this step will be done in execution
+                    ((ServiceContextScope) scope).finalizeObservation(observation, false);
+                  } else {
+                    /*
+                    this will commit all resources at close()
+                     */
+                    var contextualization =
+                        digitalTwin
+                            .getKnowledgeGraph()
+                            .operation(
+                                digitalTwin.getKnowledgeGraph().klab(),
+                                resolutionActivity,
+                                Activity.Type.EXECUTION,
+                                "Execution of resolved dataflow to contextualize " + observation,
+                                dataflow,
+                                this);
 
-                  try (contextualization) {
-                    // TODO contextualization gets its own activities to use in operations
-                    //  (dependent on resolution) linked to actuators by runDataflow
-                    result = runDataflow(dataflow, scope, contextualization);
-                    ret.complete(result);
-                    contextualization.success(scope, dataflow, result);
-                  } catch (Throwable t) {
-                    Logging.INSTANCE.error(t);
-                    contextualization.fail(scope, dataflow, result, t);
-                    ret.completeExceptionally(t);
+                    try (contextualization) {
+                      // TODO contextualization gets its own activities to use in operations
+                      //  (dependent on resolution) linked to actuators by runDataflow
+                      result = runDataflow(dataflow, scope, contextualization);
+                      ret.complete(result);
+                      contextualization.success(scope, dataflow, result);
+                    } catch (Throwable t) {
+                      Logging.INSTANCE.error(t);
+                      contextualization.fail(scope, dataflow, result, t);
+                      ret.completeExceptionally(t);
+                    }
                   }
                 }
               });

@@ -184,10 +184,4 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
     return Utils.Maps.removeNullValues(ret);
   }
-
-  public void indexObservation(Observation observation) {
-    // TODO spawn a thread to finalize the storage for a successful contextualization without
-    //  interrupting a running dataflow.
-    System.out.println("FINALIZING " + observation);
-  }
 }

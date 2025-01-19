@@ -1,6 +1,10 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler;
 
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -60,8 +64,34 @@ public class SchedulerImpl implements Scheduler {
   private Synchronicity synchronicity = Synchronicity.SYNCHRONOUS;
   private AtomicBoolean stopped = new AtomicBoolean(false);
   private int cursor = 0;
-  private WaitStrategy waitStrategy;
+//  private WaitStrategy waitStrategy;
   private boolean finished = false;
+  private final ContextScope scope;
+
+  public SchedulerImpl(ContextScope scope) {
+    this.scope = scope;
+  }
+
+  @Override
+  public synchronized void submit(Observation observation) {
+    // ALL observations pass through here except those made by the scheduler.
+    // Check geometries and T, set up
+  }
+
+  @Override
+  public TimeInstant epochStart() {
+    return null;
+  }
+
+  @Override
+  public TimeInstant epochEnd() {
+    return null;
+  }
+
+  @Override
+  public Time.Resolution resolution() {
+    return null;
+  }
 
   //    /*
   //     * keep changed observations here so we can replay the change at each replay of
