@@ -43,6 +43,7 @@ import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
@@ -94,8 +95,18 @@ public class ResourcesClient extends ServiceClient
   @Override
   public Capabilities capabilities(Scope scope) {
     if (this.capabilities == null) {
-      this.capabilities =
-          client.withScope(scope).get(ServicesAPI.CAPABILITIES, ResourcesCapabilitiesImpl.class);
+      try {
+        this.capabilities =
+            client
+                .withScope(scope)
+                .get(
+                    ServicesAPI.CAPABILITIES,
+                    ResourcesCapabilitiesImpl.class,
+                    Notification.Mode.Silent);
+      } catch (Throwable t) {
+        // not ready yet
+        return null;
+      }
     }
     return (Capabilities) this.capabilities;
   }

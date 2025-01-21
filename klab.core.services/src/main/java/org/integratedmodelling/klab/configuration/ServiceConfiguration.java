@@ -274,7 +274,12 @@ public enum ServiceConfiguration {
                     EnumSet.of(
                         SemanticType.QUALITY, SemanticType.PRESENCE, SemanticType.OBSERVABLE));
                 ret.setId(ConceptImpl.NONSEMANTIC_BOOLEAN_ID);
-                ret.setCollective(true);
+              }
+              case NOTHING -> {
+                ret.setUrn("owl:Nothing");
+                ret.setReferenceName("owl:Nothing");
+                ret.setType(EnumSet.of(SemanticType.NOTHING));
+                ret.setId(ConceptImpl.NOTHING_ID);
               }
               default ->
                   throw new KlabInternalErrorException(

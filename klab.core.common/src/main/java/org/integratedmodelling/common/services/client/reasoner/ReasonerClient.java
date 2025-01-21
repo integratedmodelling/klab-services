@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
+import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -30,6 +31,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -61,7 +63,8 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
           .build(
               new CacheLoader<String, Concept>() {
                 public Concept load(String key) {
-                  return resolveConceptInternal(key);
+                  var ret = resolveConceptInternal(key);
+                  return ret == null ? resolveConcept("owl:Nothing") : ret;
                 }
               });
 
@@ -72,7 +75,8 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
           .build(
               new CacheLoader<String, Observable>() {
                 public Observable load(String key) { // no checked exception
-                  return resolveObservableInternal(key);
+                  var ret =  resolveObservableInternal(key);
+                  return ret == null ? resolveObservable("owl:Nothing") : ret;
                 }
               });
 
@@ -93,7 +97,21 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
   @Override
   public Capabilities capabilities(Scope scope) {
-    return client.get(ServicesAPI.CAPABILITIES, ReasonerCapabilitiesImpl.class);
+    if (this.capabilities == null) {
+      try {
+        this.capabilities =
+            client
+                .withScope(scope)
+                .get(
+                    ServicesAPI.CAPABILITIES,
+                    ReasonerCapabilitiesImpl.class,
+                    Notification.Mode.Silent);
+      } catch (Throwable t) {
+        // not ready yet
+        return null;
+      }
+    }
+    return (Capabilities) this.capabilities;
   }
 
   @Override

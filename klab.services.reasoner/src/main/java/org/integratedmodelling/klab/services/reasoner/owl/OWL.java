@@ -871,6 +871,7 @@ public class OWL {
     if (this.nothing == null) {
       this.nothing = new ConceptImpl();
       this.nothing.getType().add(SemanticType.NOTHING);
+      ((ConceptImpl) this.nothing).setId(0);
       ((ConceptImpl) this.nothing)
           .setId(registerOwlClass(manager.getOWLDataFactory().getOWLNothing()));
       ((ConceptImpl) this.nothing).setUrn("owl:Nothing");
@@ -1653,10 +1654,9 @@ public class OWL {
   public synchronized void finalizeConcept(ConceptImpl concept) {
     if (reasoner != null) {
       if (!reasoner.isSatisfiable(getOWLClass(concept))) {
-          concept.error("concept definition is semantically inconsistent");
+        concept.error("concept definition is semantically inconsistent");
       }
     }
-
   }
 
   /**

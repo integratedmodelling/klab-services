@@ -633,4 +633,20 @@ public interface Observable extends Semantics, Resolvable {
     return configuration.promoteConceptToObservable(
         configuration.getNonSemanticConcept(SemanticType.PRESENCE), named);
   }
+
+  /**
+   * Return a unique non-semantic observable for textual categories. Non-semantic observables must
+   * be explicitly named.
+   *
+   * @return
+   */
+  static Observable nothing(String named) {
+    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+    if (configuration == null) {
+      throw new KlabIllegalStateException("k.LAB environment not configured");
+    }
+    return configuration.promoteConceptToObservable(
+            configuration.getNonSemanticConcept(SemanticType.NOTHING), named);
+  }
+
 }

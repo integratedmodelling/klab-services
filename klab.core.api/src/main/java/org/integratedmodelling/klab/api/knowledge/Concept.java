@@ -142,4 +142,18 @@ public interface Concept extends Semantics {
     }
     return configuration.getNonSemanticConcept(SemanticType.PRESENCE);
   }
+
+  /**
+   * Return a unique non-semantic observable for booleans.
+   *
+   * @return
+   */
+  static Concept nothing() {
+    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+    if (configuration == null) {
+      throw new KlabIllegalStateException(
+              "k.LAB environment not configured");
+    }
+    return configuration.getNonSemanticConcept(SemanticType.NOTHING);
+  }
 }

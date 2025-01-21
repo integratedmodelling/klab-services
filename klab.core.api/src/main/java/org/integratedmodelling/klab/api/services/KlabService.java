@@ -451,7 +451,6 @@ public interface KlabService extends Service {
      * @param urn
      * @param mediaType
      * @param scope
-     * @param options
      * @return
      */
     InputStream exportAsset(String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope);

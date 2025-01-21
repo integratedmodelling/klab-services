@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.services.client.runtime;
 
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.GraphQLClient;
 import org.integratedmodelling.common.services.client.ServiceClient;
@@ -245,9 +246,21 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
   @Override
   public Capabilities capabilities(Scope scope) {
-    return client
-        .withScope(scope)
-        .get(ServicesAPI.CAPABILITIES, RuntimeCapabilitiesImpl.class, Notification.Mode.Silent);
+    if (this.capabilities == null) {
+      try {
+        this.capabilities =
+            client
+                .withScope(scope)
+                .get(
+                    ServicesAPI.CAPABILITIES,
+                    RuntimeCapabilitiesImpl.class,
+                    Notification.Mode.Silent);
+      } catch (Throwable t) {
+        // not ready yet
+        return null;
+      }
+    }
+    return (Capabilities) this.capabilities;
   }
 
   @Override

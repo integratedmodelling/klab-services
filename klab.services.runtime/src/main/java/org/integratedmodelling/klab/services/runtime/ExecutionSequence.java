@@ -52,8 +52,8 @@ public class ExecutionSequence {
   // the context for the next operation. Starts at the observation and doesn't normally change but
   // implementations
   // may change it when they return a non-null, non-POD object.
-  // TODO check if this should be a RuntimeAsset or even an Observation.
-  private Object currentExecutionContext;
+//  // TODO check if this should be a RuntimeAsset or even an Observation.
+//  private Object currentExecutionContext;
   private Map<Actuator, KnowledgeGraph.Operation> operations = new HashMap<>();
   private Throwable cause;
 
@@ -349,7 +349,7 @@ public class ExecutionSequence {
                               .implementation(finalDescriptor1)
                               .method
                               .invoke(null, runArguments.toArray());
-                      setExecutionContext(context == null ? observation : context);
+//                      setExecutionContext(context == null ? observation : context);
                       return true;
                     } catch (Exception e) {
                       cause = e;
@@ -371,7 +371,7 @@ public class ExecutionSequence {
                                   componentRegistry.implementation(finalDescriptor)
                                       .mainClassInstance,
                                   runArguments.toArray());
-                      setExecutionContext(context == null ? observation : context);
+//                      setExecutionContext(context == null ? observation : context);
                       return true;
                     } catch (Exception e) {
                       cause = e;
@@ -419,9 +419,9 @@ public class ExecutionSequence {
     }
   }
 
-  private void setExecutionContext(Object returnedValue) {
-    this.currentExecutionContext = returnedValue;
-  }
+//  private void setExecutionContext(Object returnedValue) {
+//    this.currentExecutionContext = returnedValue;
+//  }
 
   public String statusLine() {
     return "Execution terminated";
