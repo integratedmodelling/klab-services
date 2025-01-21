@@ -88,6 +88,13 @@ public interface ContextScope extends SessionScope {
   boolean isConsistent();
 
   /**
+   * Return all the observations visible in this context, ordered by submission timestamp.
+   *
+   * @return
+   */
+  List<Observation> getObservations();
+
+  /**
    * Retrieve the observation with the passed observable in this scope from the knowledge graph.
    * This will only retrieve one observation. Calling this one with a countable observable may
    * produce a singular observation or a collective whose children are the requested observation in

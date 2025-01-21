@@ -304,6 +304,11 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
+    public List<Observation> getObservations() {
+        return List.of();
+    }
+
+    @Override
     public Data getData(Observation... observations) {
         return null;
     }

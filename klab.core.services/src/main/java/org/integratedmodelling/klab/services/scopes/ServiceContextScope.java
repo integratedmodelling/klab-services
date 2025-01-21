@@ -23,7 +23,6 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -107,7 +106,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.observer = null;
     this.data = Parameters.create();
     this.data.putAll(parent.data);
-    // TODO do the same for scales, from the geometries in the knowledge graph
     this.observationCache =
         CacheBuilder.newBuilder()
             .maximumSize(MAX_CACHED_OBSERVATIONS)
@@ -437,6 +435,16 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (runtime instanceof BaseService baseService) {
       baseService.getScopeManager().releaseScope(this.getId());
     }
+  }
+
+  /**
+   * Return all the observations visible in this context, ordered by submission timestamp.
+   *
+   * @return
+   */
+  @Override
+  public List<Observation> getObservations() {
+    return List.of();
   }
 
   @Override

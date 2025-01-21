@@ -20,7 +20,7 @@ import java.io.InputStream;
 public class ProjectLibrary {
 
   @Importer(
-      schema = "git",
+      schema = "git.import",
       knowledgeClass = KlabAsset.KnowledgeClass.PROJECT,
       description = "Register a project using its Git coordinates",
       properties = {
@@ -50,7 +50,7 @@ public class ProjectLibrary {
   }
 
   @Importer(
-      schema = "zip",
+      schema = "zip.import",
       knowledgeClass = KlabAsset.KnowledgeClass.PROJECT,
       description = "Register a project using a zip archive",
       mediaType = "application/zip",

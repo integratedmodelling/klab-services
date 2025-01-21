@@ -689,11 +689,15 @@ public class ComponentRegistry {
 
     try {
       var adapter = new AdapterImpl(cls, annotation);
-      this.adapters.put(adapter.getName(), adapter);
-      this.adapterDescriptorFinder.put(adapter.getName(), adapter.getAdapterInfo());
-      adapters.add(adapter.getAdapterInfo());
+      if (adapter.initialize()) {
+        this.adapters.put(adapter.getName(), adapter);
+        this.adapterDescriptorFinder.put(adapter.getName(), adapter.getAdapterInfo());
+        adapters.add(adapter.getAdapterInfo());
+      } else {
+        Logging.INSTANCE.info("Skipping adapter " + adapter.getName() + ": initialization failed");
+      }
     } catch (Throwable t) {
-      Logging.INSTANCE.error(t);
+      Logging.INSTANCE.error("Adapter loading threw an exception", t);
     }
   }
 
@@ -1066,6 +1070,7 @@ public class ComponentRegistry {
     private Extensions.FunctionDescriptor contextualizer;
     private Extensions.FunctionDescriptor validator;
     private Extensions.FunctionDescriptor inspector;
+    private Extensions.FunctionDescriptor initializer;
     private Extensions.FunctionDescriptor sanitizer;
     private Extensions.FunctionDescriptor publisher;
     private final Extensions.AdapterDescriptor adapterInfo;
@@ -1158,6 +1163,15 @@ public class ComponentRegistry {
     @Override
     public Extensions.FunctionDescriptor getValidator() {
       return this.validator;
+    }
+
+    public boolean initialize() {
+      if (initializer != null) {
+        // TODO return false iif: 1) no suitable parameters for the method; 2) calling a method
+        // throws
+        // an exception; 3) the method returns Boolean.FALSE
+      }
+      return true;
     }
 
     @Override
@@ -1261,6 +1275,13 @@ public class ComponentRegistry {
           serviceImplementations.put(
               funcData.getFirst().serviceInfo.getName(), funcData.getSecond());
           this.inspector = funcData.getFirst();
+        } else if (method.isAnnotationPresent(ResourceAdapter.Initializer.class)) {
+          var funcData =
+              createServiceImplementation(
+                  method, method.getAnnotation(ResourceAdapter.Initializer.class));
+          serviceImplementations.put(
+              funcData.getFirst().serviceInfo.getName(), funcData.getSecond());
+          this.initializer = funcData.getFirst();
         } else if (method.isAnnotationPresent(ResourceAdapter.Publisher.class)) {
           var funcData =
               createServiceImplementation(
@@ -1484,11 +1505,11 @@ public class ComponentRegistry {
           runArguments.add(urnParameters);
         } else if (DoubleStorage.class.isAssignableFrom(argument)) {
           storage =
-                  digitalTwin == null
+              digitalTwin == null
                   ? null
                   : digitalTwin
-                          .getStateStorage()
-                          .promoteStorage(observation, storage, DoubleStorage.class);
+                      .getStateStorage()
+                      .promoteStorage(observation, storage, DoubleStorage.class);
           runArguments.add(storage);
         } else if (LongStorage.class.isAssignableFrom(argument)) {
           storage =
