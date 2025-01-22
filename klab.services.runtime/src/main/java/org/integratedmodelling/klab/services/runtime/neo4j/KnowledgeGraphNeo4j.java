@@ -106,37 +106,61 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       NOT
     }
 
+    private final Class<T> resultClass;
+    private RuntimeAsset startingPoint;
     private Type type = Type.QUERY;
     private List<QueryImpl<T>> children = new ArrayList<>();
+    private DigitalTwin.Relationship relationship;
+    private int depth = 1;
+
+    QueryImpl(Class<T> resultClass) {
+      this.resultClass = resultClass;
+    }
 
     @Override
     public Query<T> from(RuntimeAsset startingPoint) {
+      this.startingPoint = startingPoint;
       return this;
     }
 
     @Override
     public Query<T> along(DigitalTwin.Relationship relationship, Object... parameters) {
+      this.relationship = relationship;
       return this;
     }
 
     @Override
     public Query<T> depth(int depth) {
+      this.depth = depth;
       return this;
     }
 
     @Override
     public List<T> run() {
+      // -1. Match operators
+      // 0. Handle special cases (dataflow w/o starting point, provenance w/o starting point)
+      // 1. match the starting point (in context) including geometry if requested
+      // 2. match the relationship at the given depth
+      // 3. match the target
       return List.of();
     }
 
     @Override
     public Query<T> or(Query<T> query) {
-      return this;
+      var ret = new QueryImpl<>(this.resultClass);
+      ret.type = Type.AND;
+      ret.children.add(this);
+      ret.children.add((QueryImpl<T>) query);
+      return ret;
     }
 
     @Override
     public Query<T> and(Query<T> query) {
-      return this;
+      var ret = new QueryImpl<>(this.resultClass);
+      ret.type = Type.OR;
+      ret.children.add(this);
+      ret.children.add((QueryImpl<T>) query);
+      return ret;
     }
 
     @Override
@@ -162,7 +186,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   @Override
   public <T extends RuntimeAsset> Query<T> query(Class<T> resultClass) {
-    return new QueryImpl<>();
+    return new QueryImpl<>(resultClass);
   }
 
   /**
