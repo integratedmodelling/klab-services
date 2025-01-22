@@ -97,6 +97,74 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             + "(a:Agent {name: $agentName}) RETURN a";
   }
 
+  public class QueryImpl<T extends RuntimeAsset> implements Query<T> {
+
+    enum Type {
+      QUERY,
+      AND,
+      OR,
+      NOT
+    }
+
+    private Type type = Type.QUERY;
+    private List<QueryImpl<T>> children = new ArrayList<>();
+
+    @Override
+    public Query<T> from(RuntimeAsset startingPoint) {
+      return this;
+    }
+
+    @Override
+    public Query<T> along(DigitalTwin.Relationship relationship, Object... parameters) {
+      return this;
+    }
+
+    @Override
+    public Query<T> depth(int depth) {
+      return this;
+    }
+
+    @Override
+    public List<T> run() {
+      return List.of();
+    }
+
+    @Override
+    public Query<T> or(Query<T> query) {
+      return this;
+    }
+
+    @Override
+    public Query<T> and(Query<T> query) {
+      return this;
+    }
+
+    @Override
+    public Query<T> limit(long n) {
+      return this;
+    }
+
+    @Override
+    public Query<T> offset(long n) {
+      return this;
+    }
+
+    @Override
+    public Query<T> where(Object... queryParameters) {
+      return this;
+    }
+
+    @Override
+    public Query<T> order(Object... criteria) {
+      return this;
+    }
+  }
+
+  @Override
+  public <T extends RuntimeAsset> Query<T> query(Class<T> resultClass) {
+    return new QueryImpl<>();
+  }
+
   /**
    * A provenance-linked "transaction" that can be committed or rolled back by reporting failure or
    * success. The related activity becomes part of the graph in any case and success/failure is
