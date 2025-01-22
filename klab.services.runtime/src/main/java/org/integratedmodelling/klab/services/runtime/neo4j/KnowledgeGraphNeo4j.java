@@ -107,7 +107,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     private final Class<T> resultClass;
-    private RuntimeAsset startingPoint;
+    private Object source;
+    private Object target;
     private Type type = Type.QUERY;
     private List<QueryImpl<T>> children = new ArrayList<>();
     private DigitalTwin.Relationship relationship;
@@ -118,8 +119,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     @Override
-    public Query<T> from(RuntimeAsset startingPoint) {
-      this.startingPoint = startingPoint;
+    public Query<T> source(Object startingPoint) {
+      this.source = startingPoint;
+      return this;
+    }
+
+    @Override
+    public Query<T> target(Object startingPoint) {
+      this.target = startingPoint;
       return this;
     }
 

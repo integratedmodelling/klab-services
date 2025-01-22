@@ -38,7 +38,23 @@ public interface KnowledgeGraph {
    */
   interface Query<T extends RuntimeAsset> {
 
-    Query<T> from(RuntimeAsset startingPoint);
+    enum Operator {
+      EQUALS,
+      LT,
+      GT,
+      LE,
+      GE,
+      LIKE,
+      INTERSECT,
+      COVERS,
+      NEAREST,
+      BEFORE,
+      AFTER
+    }
+
+    Query<T> source(Object startingPoint);
+
+    Query<T> target(Object startingPoint);
 
     Query<T> along(DigitalTwin.Relationship relationship, Object... parameters);
 

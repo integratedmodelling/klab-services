@@ -304,7 +304,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public ContextScope within(Observation contextObservation) {
     ServiceContextScope ret = new ServiceContextScope(this);
     ret.contextObservation = contextObservation;
-    //        ret.catalog = new HashMap<>(this.catalog);
     return ret;
   }
 
@@ -444,13 +443,25 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
    */
   @Override
   public List<Observation> getObservations() {
-    return List.of();
+    return digitalTwin
+        .getKnowledgeGraph()
+        .query(Observation.class)
+        .source(this)
+        .along(DigitalTwin.Relationship.HAS_CHILD)
+        .run();
   }
 
   @Override
   public Observation getObservation(Concept observable) {
-    // DIO PERA qua ci vorrebbe GraphQL
-    return null;
+    var ret =
+        digitalTwin
+            .getKnowledgeGraph()
+            .query(Observation.class)
+            .source(this)
+            .along(DigitalTwin.Relationship.HAS_CHILD)
+            .where("semantics", KnowledgeGraph.Query.Operator.EQUALS, observable.getUrn())
+            .run();
+    return ret.isEmpty() ? null : ret.getFirst();
   }
 
   @Override
