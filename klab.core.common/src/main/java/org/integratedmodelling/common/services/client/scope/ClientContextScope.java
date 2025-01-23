@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
+import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -180,8 +181,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     @Override
     public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
-//        return getService(RuntimeService.class).retrieveAssets(this, resultClass, queryData);
-        return null;
+        return List.of();
     }
 
     /**
@@ -321,4 +321,9 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     public void createDigitalTwin(String id) {
         this.digitalTwin = new ClientDigitalTwin(this, id);
     }
+
+  public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
+      KnowledgeGraphQuery<T> knowledgeGraphQuery) {
+        return runtimeService.queryKnowledgeGraph(knowledgeGraphQuery, this);
+  }
 }

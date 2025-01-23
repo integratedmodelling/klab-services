@@ -8,6 +8,7 @@ import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -288,6 +289,19 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
       // just return false
     }
     return false;
+  }
+
+  @Override
+  public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
+      KnowledgeGraph.Query<T> knowledgeGraphQuery, ContextScope scope) {
+    if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> knowledgeGraphQuery1) {
+      return (List<T>)
+          client.postCollection(
+              ServicesAPI.RUNTIME.QUERY,
+              knowledgeGraphQuery,
+              knowledgeGraphQuery1.getResultType().getAssetClass());
+    }
+    throw new KlabIllegalStateException("Knowledge graph query using unexpected implementation");
   }
 
   @Override

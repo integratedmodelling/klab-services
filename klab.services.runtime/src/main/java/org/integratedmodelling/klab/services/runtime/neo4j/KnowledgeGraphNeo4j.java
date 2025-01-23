@@ -144,6 +144,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     @Override
     public List<T> run() {
+      // largely TODO
       // -1. Match operators
       // 0. Handle special cases (dataflow w/o starting point, provenance w/o starting point)
       // 1. match the starting point (in context) including geometry if requested

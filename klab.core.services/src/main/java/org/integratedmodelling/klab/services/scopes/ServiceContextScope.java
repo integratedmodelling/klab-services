@@ -161,7 +161,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Observation getObserverOf(Observation observation) {
-    return null;
+    var ret =
+        digitalTwin
+            .getKnowledgeGraph()
+            .query(Observation.class)
+            .target(observation)
+            .along(DigitalTwin.Relationship.HAS_OBSERVER)
+            .run();
+    return ret.isEmpty() ? null : ret.getFirst();
   }
 
   @Override
@@ -240,25 +247,47 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Observation getParentOf(Observation observation) {
-    return null;
+
+    var ret =
+        digitalTwin
+            .getKnowledgeGraph()
+            .query(Observation.class)
+            .target(observation)
+            .along(DigitalTwin.Relationship.HAS_CHILD)
+            .run();
+
+    ;
+    return ret.isEmpty() ? null : ret.getFirst();
   }
 
   @Override
   public Collection<Observation> getChildrenOf(Observation observation) {
-    // TODO Auto-generated method stub
-    return null;
+    return digitalTwin
+        .getKnowledgeGraph()
+        .query(Observation.class)
+        .source(observation)
+        .along(DigitalTwin.Relationship.HAS_CHILD)
+        .run();
   }
 
   @Override
   public Collection<Observation> getOutgoingRelationshipsOf(Observation observation) {
-    // TODO Auto-generated method stub
-    return null;
+    return digitalTwin
+        .getKnowledgeGraph()
+        .query(Observation.class)
+        .source(observation)
+        .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
+        .run();
   }
 
   @Override
   public Collection<Observation> getIncomingRelationshipsOf(Observation observation) {
-    // TODO Auto-generated method stub
-    return null;
+    return digitalTwin
+        .getKnowledgeGraph()
+        .query(Observation.class)
+        .target(observation)
+        .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
+        .run();
   }
 
   @Override

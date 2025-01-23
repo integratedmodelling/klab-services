@@ -40,6 +40,7 @@ public interface DigitalTwin {
     AFFECTED,
     EMERGED_FROM,
     HAS_OBSERVER,
+    HAS_RELATIONSHIP_TARGET,
     HAS_PLAN,
     BY_AGENT,
     CREATED,

@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.services.runtime.server.controllers;
 
+import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -87,6 +89,15 @@ public class RuntimeServerController {
       return runtimeService.klabService().getSessionInfo(authorization.getScope());
     }
     return List.of();
+  }
+
+  public @ResponseBody List<? extends RuntimeAsset> queryKnowledgeGraph(
+      @RequestBody KnowledgeGraphQuery<?> query, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var contextScope = authorization.getScope(ContextScope.class);
+      return runtimeService.klabService().queryKnowledgeGraph(query, contextScope);
+    }
+    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
   @PostMapping(ServicesAPI.RUNTIME.RETRIEVE_ASSET)

@@ -144,7 +144,7 @@ public interface ContextScope extends SessionScope {
    * Produce a {@link Data} package that contains the data content of the passed observations. The
    * object should be lazy and only fill in its contents when the actual data are requested. It can
    * be sent to services such as {@link
-   * org.integratedmodelling.klab.api.services.ResourcesService#contextualize(Resource, Geometry,
+   * org.integratedmodelling.klab.api.services.ResourcesService#contextualize(Resource, Observation,
    * Data, Scope)} to pass around data content for distributed computation workflows.
    *
    * @param observations

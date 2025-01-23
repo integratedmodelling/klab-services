@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -150,6 +151,7 @@ public interface RuntimeService extends KlabService {
    *     objects will restrict the search.
    * @param <T>
    * @return
+   * @deprecated use the query system on the KG
    */
   <T extends RuntimeAsset> List<T> retrieveAssets(
       ContextScope contextScope, Class<T> assetClass, Object... queryParameters);
@@ -212,6 +214,17 @@ public interface RuntimeService extends KlabService {
    * @return
    */
   boolean releaseContext(ContextScope scope);
+
+  /**
+   * Send a query to the knowledge graph identified by the passed scope and return the result.
+   *
+   * @param knowledgeGraphQuery
+   * @param scope
+   * @return
+   * @param <T>
+   */
+  <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
+      KnowledgeGraph.Query<T> knowledgeGraphQuery, ContextScope scope);
 
   interface Admin {
 

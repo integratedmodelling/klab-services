@@ -274,6 +274,7 @@ public interface KnowledgeGraph {
    * @param observation
    * @param scope
    * @param arguments additional parameters to add to the observation or to override existing ones
+   * @deprecated remove from API
    */
   void update(RuntimeAsset observation, ContextScope scope, Object... arguments);
 

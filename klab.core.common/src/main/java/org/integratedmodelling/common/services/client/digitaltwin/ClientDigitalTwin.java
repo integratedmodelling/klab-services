@@ -24,9 +24,11 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 public class ClientDigitalTwin implements DigitalTwin {
 
   private final ClientContextScope scope;
+  private final ClientKnowledgeGraph knowledgeGraph;
 
   public ClientDigitalTwin(ClientContextScope scope, String id) {
     this.scope = scope;
+    this.knowledgeGraph = new ClientKnowledgeGraph(scope);
     scope.installQueueConsumer(id, Message.Queue.Events, this::ingest);
   }
 
@@ -38,13 +40,12 @@ public class ClientDigitalTwin implements DigitalTwin {
    */
   public void ingest(Message event) {
     // TODO build activity tree and inform any UI listeners in the scope
-//    System.out.println("ACTIVITY " + event);
+    //    System.out.println("ACTIVITY " + event);
   }
 
   @Override
   public KnowledgeGraph getKnowledgeGraph() {
-    // TODO (maybe not needed if we do everything through GraphQL)
-    return null;
+    return knowledgeGraph;
   }
 
   @Override

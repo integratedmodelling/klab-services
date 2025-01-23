@@ -703,4 +703,13 @@ public class RuntimeService extends BaseService
     }
     return false;
   }
+
+  @Override
+  public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(KnowledgeGraph.Query<T> knowledgeGraphQuery,
+                                                              ContextScope scope) {
+    // TODO translate the query and run it to return results
+    var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
+
+    return List.of();
+  }
 }
