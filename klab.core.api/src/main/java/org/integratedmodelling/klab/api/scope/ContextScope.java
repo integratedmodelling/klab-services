@@ -310,6 +310,7 @@ public interface ContextScope extends SessionScope {
    * @param queryData
    * @param <T>
    * @return
+   * @deprecated use query on KG
    */
   <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData);
 

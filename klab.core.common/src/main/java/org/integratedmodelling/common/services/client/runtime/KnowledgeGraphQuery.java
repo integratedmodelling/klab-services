@@ -115,8 +115,25 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   }
 
   public static class Asset {
+
     private AssetType type;
     private String urn;
+
+    public AssetType getType() {
+      return type;
+    }
+
+    public void setType(AssetType type) {
+      this.type = type;
+    }
+
+    public String getUrn() {
+      return urn;
+    }
+
+    public void setUrn(String urn) {
+      this.urn = urn;
+    }
   }
 
   private AssetType resultType;

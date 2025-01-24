@@ -173,7 +173,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Collection<Observation> getRootObservations() {
-    return List.of();
+    return getRootContextScope().getObservations();
   }
 
   @Override
@@ -242,12 +242,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public ContextScope getRootContextScope() {
-    return null;
+    var ret = this;
+    while (ret.parent != null) {
+      ret = ret.parent;
+    }
+    return ret;
   }
 
   @Override
   public Observation getParentOf(Observation observation) {
-
     var ret =
         digitalTwin
             .getKnowledgeGraph()
@@ -255,8 +258,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             .target(observation)
             .along(DigitalTwin.Relationship.HAS_CHILD)
             .run();
-
-    ;
     return ret.isEmpty() ? null : ret.getFirst();
   }
 

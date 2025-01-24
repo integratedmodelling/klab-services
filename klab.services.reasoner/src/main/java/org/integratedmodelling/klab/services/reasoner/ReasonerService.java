@@ -429,7 +429,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       KimConcept parsed = scope.getService(ResourcesService.class).retrieveConcept(definition);
       if (parsed != null) {
         ret = declareConcept(parsed);
-//        concepts.put(definition, ret);
+        //        concepts.put(definition, ret);
       }
     }
     return ret == null ? owl.nothing(definition) : ret;
@@ -440,20 +440,22 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     KimObservable parsed = scope.getService(ResourcesService.class).retrieveObservable(definition);
     if (parsed != null) {
       ret = declareObservable(parsed);
-      observables.put(definition, ret);
+      if (ret != null) {
+        observables.put(definition, ret);
+      }
     }
-    return ret == null ? ObservableImpl.promote(owl.nothing(definition), null) : ret;
+    return ret == null ? Observable.nothing("owl:Nothing") : ret;
   }
 
-  private Observable errorObservable(String definition) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  private Concept errorConcept(String definition) {
-    // TODO Auto-generated method stub
-    return null;
-  }
+//  private Observable errorObservable(String definition) {
+//    // TODO Auto-generated method stub
+//    return null;
+//  }
+//
+//  private Concept errorConcept(String definition) {
+//    // TODO Auto-generated method stub
+//    return null;
+//  }
 
   @Override
   public Collection<Concept> operands(Semantics target) {
@@ -2009,7 +2011,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   public Concept build(
-          KimConceptStatement concept,
+      KimConceptStatement concept,
       Ontology ontology,
       KimConceptStatement kimObject,
       Scope monitor) {
@@ -2213,8 +2215,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       Concept trait = declare(inherited, ontology, monitor);
       if (trait == null || trait.is(SemanticType.NOTHING)) {
         monitor.error(
-            "inherited " + inherited.getName() + " does not identify known concepts",
-            inherited);
+            "inherited " + inherited.getName() + " does not identify known concepts", inherited);
         // return null;
       } else {
         this.owl.addTrait(main, trait, ontology);
@@ -2670,9 +2671,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return (Observable) builder.buildObservable();
   }
 
-//  public void registerConcept(Concept thing) {
-//    this.concepts.put(thing.getUrn(), thing);
-//  }
+  //  public void registerConcept(Concept thing) {
+  //    this.concepts.put(thing.getUrn(), thing);
+  //  }
 
   @Override
   public Collection<Concept> rolesFor(Concept observable, Concept context) {
@@ -2958,9 +2959,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         //                case WITH_DEREIFIED_ATTRIBUTE -> {
         //                    ret = ret.withDereifiedAttribute(op.getPod().get(String.class));
         //                }
-//        case REFERENCE_NAMED -> {
-//          ret = ret.withReferenceName((String) op.getPod());
-//        }
+        //        case REFERENCE_NAMED -> {
+        //          ret = ret.withReferenceName((String) op.getPod());
+        //        }
         //        case WITH_INLINE_VALUE -> {
         //          ret = ret.withInlineValue(op.getPod());
         //        }

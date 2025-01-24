@@ -133,6 +133,7 @@ public class OWL {
 
   private long registerOwlClass(OWLClass cls) {
     long ret = classId.getAndIncrement();
+
     owlClasses.put(ret, cls);
     return ret;
   }
@@ -401,6 +402,10 @@ public class OWL {
   public Concept getConcept(String concept) {
 
     Concept result = null;
+
+    if (concept.equals("owl:Nothing")) {
+      return nothing;
+    }
 
     if (QualifiedName.validate(concept)) {
 

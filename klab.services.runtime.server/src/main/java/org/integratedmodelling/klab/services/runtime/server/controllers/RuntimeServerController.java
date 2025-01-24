@@ -91,6 +91,7 @@ public class RuntimeServerController {
     return List.of();
   }
 
+  @PostMapping(ServicesAPI.RUNTIME.QUERY)
   public @ResponseBody List<? extends RuntimeAsset> queryKnowledgeGraph(
       @RequestBody KnowledgeGraphQuery<?> query, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {

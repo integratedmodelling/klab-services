@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
@@ -784,10 +785,23 @@ public enum KlabCLI {
    * @param line
    */
   private void setFocalScope(String line) {
+    if (line.trim().equals(".") || line.trim().startsWith(".?")) {
 
-    if (line.trim().equals(".")) {
-
-      printContextInfo();
+      int depth = 0;
+      if (line.trim().startsWith(".?")) {
+        depth = 1;
+        for (int i = 2; i < line.trim().length(); i++) {
+          if (line.trim().charAt(i) == '?') {
+            depth++;
+          } else {
+            if (line.trim().charAt(i) == '*') {
+              depth = -1;
+            }
+            break;
+          }
+        }
+      }
+      printContextInfo(depth);
 
     } else if (line.trim().equals("..") || line.trim().equals("<")) {
 
@@ -810,12 +824,12 @@ public enum KlabCLI {
         } else if (parent != null && parent.getType() == Scope.Type.SESSION) {
           modeler.setCurrentContext(null);
         }
-        printContextInfo();
+        printContextInfo(1);
 
       } else if (scope.getType() == Scope.Type.SESSION) {
         modeler.setCurrentContext(null);
         modeler.setCurrentSession(null);
-        printContextInfo();
+        printContextInfo(1);
       }
 
     } else if (line.startsWith("<<")) {
@@ -872,7 +886,34 @@ public enum KlabCLI {
     }
   }
 
-  private void printContextInfo() {
+  private void printObservationTree(int depth, boolean verbose) {
+    var scope = modeler.getCurrentScope();
+    if (scope instanceof ContextScope contextScope) {
+      if (contextScope.getContextObservation() == null) {
+        for (var observation : contextScope.getObservations()) {
+          printObservation(observation, 0, depth, verbose, contextScope);
+        }
+      } else {
+        printObservation(contextScope.getContextObservation(), 0, depth, verbose, contextScope);
+      }
+    }
+  }
+
+  private void printObservation(
+      Observation observation, int indent, int depth, boolean verbose, ContextScope scope) {
+    var spacer = Utils.Strings.spaces(indent * 2);
+    INSTANCE
+        .commandLine
+        .getOut()
+        .println(Ansi.AUTO.string(spacer + "@|blue " + observation + "|@"));
+    if (depth < 0 || depth > 1) {
+      for (var obs : scope.getChildrenOf(observation)) {
+        printObservation(obs, indent + 1, depth < 0 ? depth : depth - 1, verbose, scope);
+      }
+    }
+  }
+
+  private void printContextInfo(int depth) {
     if (modeler != null && modeler.getCurrentSession() != null) {
       INSTANCE
           .commandLine
@@ -905,6 +946,10 @@ public enum KlabCLI {
                       "      Within: @|green "
                           + modeler.getCurrentContext().getContextObservation()
                           + "|@"));
+        }
+        if (depth != 0) {
+          INSTANCE.commandLine.getOut().println(Ansi.AUTO.string("\nObservation structure:"));
+          printObservationTree(depth, true);
         }
       }
     }
@@ -943,110 +988,6 @@ public enum KlabCLI {
       if (verbose) {}
     }
   }
-
-  //    private void onEvent(Scope scope, Message message) {
-  //
-  //        switch (message.getMessageClass()) {
-  //            case UserInterface -> {
-  //            }
-  //            case UserContextChange -> {
-  //            }
-  //            case UserContextDefinition -> {
-  //            }
-  //            case ServiceLifecycle -> {
-  //                switch (message.getMessageType()) {
-  //                    case ServiceAvailable -> {
-  //                        var capabilities = message.getPayload(KlabService.ServiceCapabilities
-  //                        .class);
-  //                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities
-  //                        .getType() +
-  //                                " service available: " + capabilities.getServiceName()
-  //                                + "|@"));
-  //
-  //                    }
-  //                    case ServiceInitializing -> {
-  //                        var description =
-  // message.getPayload(KlabService.ServiceCapabilities.class);
-  //                        commandLine.getOut().println(Ansi.AUTO.string("@|blue "
-  //                                + "service initializing: " + description
-  //                                + "|@"));
-  //
-  //                    }
-  //                    case ServiceUnavailable -> {
-  //                        var capabilities = message.getPayload(KlabService.ServiceCapabilities
-  //                        .class);
-  //                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities
-  //                        .getType() +
-  //                                " service unavailable: " + capabilities.getServiceName()
-  //                                + "|@"));
-  //                    }
-  //                }
-  //            }
-  //            case EngineLifecycle -> {
-  //            }
-  //            case KimLifecycle -> {
-  //            }
-  //            case ResourceLifecycle -> {
-  //            }
-  //            case ProjectLifecycle -> {
-  //            }
-  //            case Authorization -> {
-  //            }
-  //            case TaskLifecycle -> {
-  //            }
-  //            case ObservationLifecycle -> {
-  //            }
-  //            case SessionLifecycle -> {
-  //            }
-  //            case UnitTests -> {
-  //            }
-  //            case Notification -> {
-  //                switch (message.getMessageType()) {
-  //                    case Info -> {
-  //                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " +
-  // message.getPayload
-  //                        (Notification.class).getMessage()
-  //                                + "|@"));
-  //                    }
-  //                    case Error -> {
-  //                        commandLine.getOut().println(Ansi.AUTO.string("@|red " +
-  // message.getPayload
-  //                        (Notification.class).getMessage()
-  //                                + "|@"));
-  //                    }
-  //                    case Debug -> {
-  //                        commandLine.getOut().println(Ansi.AUTO.string("@|gray " +
-  // message.getPayload
-  //                        (Notification.class).getMessage()
-  //                                + "|@"));
-  //                    }
-  //                    case Warning -> {
-  //                        commandLine.getOut().println(Ansi.AUTO.string("@|yellow " + message
-  //                        .getPayload(Notification.class).getMessage()
-  //                                + "|@"));
-  //                    }
-  //                    default -> {
-  //                    }
-  //                }
-  //            }
-  //            case Search -> {
-  //            }
-  //            case Query -> {
-  //            }
-  //            case Run -> {
-  //            }
-  //            case ViewActor -> {
-  //            }
-  //            case ActorCommunication -> {
-  //            }
-  //            default -> {
-  //            }
-  //        }
-  //
-  //        if (message.getMessageClass() == Message.MessageClass.Notification) {
-  //
-  //        }
-  //    }
 
   public static void printResourceSet(ResourceSet resourceSet, PrintStream out, int indent) {
 

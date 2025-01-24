@@ -64,7 +64,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
               new CacheLoader<String, Concept>() {
                 public Concept load(String key) {
                   var ret = resolveConceptInternal(key);
-                  return ret == null ? resolveConcept("owl:Nothing") : ret;
+                  return ret == null ? Concept.nothing() : ret;
                 }
               });
 
@@ -76,7 +76,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
               new CacheLoader<String, Observable>() {
                 public Observable load(String key) { // no checked exception
                   var ret =  resolveObservableInternal(key);
-                  return ret == null ? resolveObservable("owl:Nothing") : ret;
+                  return ret == null ? Observable.nothing(null) : ret;
                 }
               });
 

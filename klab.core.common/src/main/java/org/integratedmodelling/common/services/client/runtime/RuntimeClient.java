@@ -296,7 +296,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
       KnowledgeGraph.Query<T> knowledgeGraphQuery, ContextScope scope) {
     if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> knowledgeGraphQuery1) {
       return (List<T>)
-          client.postCollection(
+          client.withScope(scope).postCollection(
               ServicesAPI.RUNTIME.QUERY,
               knowledgeGraphQuery,
               knowledgeGraphQuery1.getResultType().getAssetClass());
