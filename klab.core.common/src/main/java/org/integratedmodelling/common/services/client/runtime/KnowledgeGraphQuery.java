@@ -15,6 +15,8 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
@@ -108,7 +110,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
         case ACTIVITY -> Activity.class;
         case OBSERVATION -> Observation.class;
         case SEMANTICS -> Concept.class;
-        case OBSERVABLE -> Observation.class;
+        case OBSERVABLE -> Observable.class;
         case DATA -> Storage.Buffer.class;
       };
     }
@@ -172,6 +174,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
           case KimObservable ignored -> ignored.getUrn();
           case Concept ignored -> ignored.getUrn();
           case KimConcept ignored -> ignored.getUrn();
+          case ServiceSideScope ignored -> ignored.getId();
           case Storage.Buffer ignored -> ignored.getId() + "";
           default -> null;
         };

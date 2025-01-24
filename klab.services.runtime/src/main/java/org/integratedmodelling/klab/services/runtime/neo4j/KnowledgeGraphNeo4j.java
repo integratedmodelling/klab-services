@@ -8,6 +8,7 @@ import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
+import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -95,106 +96,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     String GET_AGENT_BY_NAME =
         "match (ctx:Context {id: $contextId})-->(prov:Provenance)-[:HAS_AGENT]->"
             + "(a:Agent {name: $agentName}) RETURN a";
-  }
-
-  public class QueryImpl<T extends RuntimeAsset> implements Query<T> {
-
-    enum Type {
-      QUERY,
-      AND,
-      OR,
-      NOT
-    }
-
-    private final Class<T> resultClass;
-    private Object source;
-    private Object target;
-    private Type type = Type.QUERY;
-    private List<QueryImpl<T>> children = new ArrayList<>();
-    private DigitalTwin.Relationship relationship;
-    private int depth = 1;
-
-    QueryImpl(Class<T> resultClass) {
-      this.resultClass = resultClass;
-    }
-
-    @Override
-    public Query<T> source(Object startingPoint) {
-      this.source = startingPoint;
-      return this;
-    }
-
-    @Override
-    public Query<T> target(Object startingPoint) {
-      this.target = startingPoint;
-      return this;
-    }
-
-    @Override
-    public Query<T> along(DigitalTwin.Relationship relationship, Object... parameters) {
-      this.relationship = relationship;
-      return this;
-    }
-
-    @Override
-    public Query<T> depth(int depth) {
-      this.depth = depth;
-      return this;
-    }
-
-    @Override
-    public List<T> run() {
-      // largely TODO
-      // -1. Match operators
-      // 0. Handle special cases (dataflow w/o starting point, provenance w/o starting point)
-      // 1. match the starting point (in context) including geometry if requested
-      // 2. match the relationship at the given depth
-      // 3. match the target
-      return List.of();
-    }
-
-    @Override
-    public Query<T> or(Query<T> query) {
-      var ret = new QueryImpl<>(this.resultClass);
-      ret.type = Type.AND;
-      ret.children.add(this);
-      ret.children.add((QueryImpl<T>) query);
-      return ret;
-    }
-
-    @Override
-    public Query<T> and(Query<T> query) {
-      var ret = new QueryImpl<>(this.resultClass);
-      ret.type = Type.OR;
-      ret.children.add(this);
-      ret.children.add((QueryImpl<T>) query);
-      return ret;
-    }
-
-    @Override
-    public Query<T> limit(long n) {
-      return this;
-    }
-
-    @Override
-    public Query<T> offset(long n) {
-      return this;
-    }
-
-    @Override
-    public Query<T> where(Object... queryParameters) {
-      return this;
-    }
-
-    @Override
-    public Query<T> order(Object... criteria) {
-      return this;
-    }
-  }
-
-  @Override
-  public <T extends RuntimeAsset> Query<T> query(Class<T> resultClass) {
-    return new QueryImpl<>(resultClass);
   }
 
   /**
@@ -1452,5 +1353,29 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     return new ArrayList<>(sessionIds.values());
+  }
+
+  @Override
+  public <T extends RuntimeAsset> Query<T> query(Class<T> resultClass) {
+    return new KnowledgeGraphQuery<>(KnowledgeGraphQuery.AssetType.classify(resultClass)) {
+      @Override
+      public List<T> run() {
+        return executeQuery(this);
+      }
+    };
+  }
+
+  protected <T extends RuntimeAsset> List<T> executeQuery(KnowledgeGraphQuery<T> knowledgeGraphQuery) {
+    // TODO build a query  and return the resulting objects
+
+    /**
+     * Must have either a source or a target, which determines the direction of the relationship
+     * Depth determines the relationship arity
+     * If relationship type is null, use any relationship
+     * Match parameters in either source or target
+     * Match any parameters in the relationship
+     * Add limit, order and offset as specified
+     */
+    return List.of();
   }
 }
