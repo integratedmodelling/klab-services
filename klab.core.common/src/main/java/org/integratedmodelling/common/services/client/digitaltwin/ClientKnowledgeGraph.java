@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -40,6 +41,14 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         return scope.queryKnowledgeGraph(this);
       }
     };
+  }
+
+  @Override
+  public <T extends RuntimeAsset> List<T> query(Query<T> knowledgeGraphQuery, Class<T> resultClass) {
+    if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> kc) {
+      return scope.queryKnowledgeGraph(kc);
+    }
+    throw new KlabUnimplementedException("Not ready to compile arbitrary KG query implementations");
   }
 
   @Override

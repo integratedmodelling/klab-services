@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -41,6 +42,10 @@ import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.runtime.storage.AbstractStorage;
+import org.neo4j.cypherdsl.core.Cypher;
+import org.neo4j.cypherdsl.core.Node;
+import org.neo4j.cypherdsl.core.ResultStatement;
+import org.neo4j.cypherdsl.core.StatementBuilder;
 import org.neo4j.driver.*;
 
 /**
@@ -435,7 +440,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     if (isOnline()) {
       try {
         //                System.out.printf("\nQUERY " + query + "\n     WITH " + parameters);
-        return driver.executableQuery(query).withParameters(parameters).execute();
+        return parameters == null || parameters.isEmpty()
+            ? driver.executableQuery(query).execute()
+            : driver.executableQuery(query).withParameters(parameters).execute();
       } catch (Throwable t) {
         if (scope != null) {
           scope.error(t.getMessage(), t);
@@ -973,6 +980,24 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   private String getLabel(Object target) {
 
+    if (target instanceof KnowledgeGraphQuery.AssetType assetType) {
+      return switch (assetType) {
+        case SCOPE -> "Context";
+        case DATAFLOW -> "Dataflow";
+        case PROVENANCE -> "Provenance";
+        case ACTUATOR -> "Actuator";
+        case ACTIVITY -> "Activity";
+        case OBSERVATION -> "Observation";
+        case DATA -> "Data";
+        default ->
+            throw new KlabInternalErrorException("Cannot find a KG node label for " + assetType);
+      };
+    }
+
+    if (target instanceof DigitalTwin.Relationship relationship) {
+      return relationship.name();
+    }
+
     if (target instanceof Class<?> cls) {
       if (Observation.class.isAssignableFrom(cls)) {
         return "Observation";
@@ -1360,22 +1385,76 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return new KnowledgeGraphQuery<>(KnowledgeGraphQuery.AssetType.classify(resultClass)) {
       @Override
       public List<T> run() {
-        return executeQuery(this);
+        return query(this, resultClass);
       }
     };
   }
 
-  protected <T extends RuntimeAsset> List<T> executeQuery(KnowledgeGraphQuery<T> knowledgeGraphQuery) {
-    // TODO build a query  and return the resulting objects
+  @Override
+  public <T extends RuntimeAsset> List<T> query(Query<T> graphQuery, Class<T> resultClass) {
+    if (graphQuery instanceof KnowledgeGraphQuery<T> knowledgeGraphQuery) {
+      var statement = compileQuery(knowledgeGraphQuery, resultClass);
+      if (statement == null) {
+        return List.of();
+      }
+      var queryCode = statement.build().getCypher();
+      return adapt(query(queryCode, null, scope), resultClass, scope);
+    }
+    throw new KlabUnimplementedException("Not ready to compile arbitrary query implementations");
+  }
 
-    /**
+  private <T extends RuntimeAsset>
+      StatementBuilder.BuildableStatement<ResultStatement> compileQuery(
+          KnowledgeGraphQuery<T> query, Class<T> resultClass) {
+
+    /*
      * Must have either a source or a target, which determines the direction of the relationship
-     * Depth determines the relationship arity
-     * If relationship type is null, use any relationship
-     * Match parameters in either source or target
-     * Match any parameters in the relationship
-     * Add limit, order and offset as specified
+     * Depth determines the relationship arity If relationship type is null, use any relationship
+     * Match parameters in either source or target Match any parameters in the relationship Add
+     * limit, order and offset as specified
      */
-    return List.of();
+    StatementBuilder.BuildableStatement<ResultStatement> ret = null;
+
+    switch (query.getType()) {
+      case QUERY -> {
+        var asset = query.getSource() == null ? query.getTarget() : query.getSource();
+        if (asset == null) {
+          scope.error(new KlabInternalErrorException("Cannot compile KnowledgeGraph query", query));
+          return null;
+        }
+        var known = getQueryNode(asset);
+        var unknown = Cypher.node(getLabel(KnowledgeGraphQuery.AssetType.classify(resultClass)));
+        if (!query.getAssetQueryCriteria().isEmpty()) {
+          // TODO add query criteria for the unknown node (where() in search)
+        }
+
+        var source = query.getSource() == null ? unknown : known;
+        var target = query.getSource() == null ? known : unknown;
+        // TODO properties for the relationship
+        return Cypher.match(source.relationshipTo(target, getLabel(query.getRelationship())))
+            .returning(target);
+      }
+      case AND -> {
+        var queries = query.getChildren().stream().map(q -> compileQuery(q, resultClass)).toList();
+      }
+      case OR -> {
+        var queries = query.getChildren().stream().map(q -> compileQuery(q, resultClass)).toList();
+      }
+      case NOT -> {
+        // naaah
+      }
+    }
+
+    return ret;
+  }
+
+  private Node getQueryNode(KnowledgeGraphQuery.Asset asset) {
+
+    var searchField = "urn";
+    var searchValue = asset.getUrn();
+
+    return Cypher.node(getLabel(asset.getType()))
+        // TODO any conditions
+        .withProperties(Map.of(searchField, searchValue));
   }
 }

@@ -181,13 +181,24 @@ public interface KnowledgeGraph {
       Agent agent, Activity parentActivity, Activity.Type activityType, Object... data);
 
   /**
-   * Obtain a query for an object of a specific type.
+   * Obtain a query for an object of a specific type, to be specified and then run to obtain the
+   * results.
    *
    * @param resultClass
    * @return
    * @param <T>
    */
   <T extends RuntimeAsset> Query<T> query(Class<T> resultClass);
+
+  /**
+   * Execute a previously built query. Equivalent to calling run() on the query itself.
+   *
+   * @param knowledgeGraphQuery
+   * @param resultClass
+   * @return
+   * @param <T>
+   */
+  <T extends RuntimeAsset> List<T> query(Query<T> knowledgeGraphQuery, Class<T> resultClass);
 
   /**
    * Remove all data relative to the currently contextualized scope. Graph becomes unusable after

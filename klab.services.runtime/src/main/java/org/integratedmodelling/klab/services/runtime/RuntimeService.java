@@ -12,6 +12,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
+import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -705,11 +706,13 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(KnowledgeGraph.Query<T> knowledgeGraphQuery,
-                                                              ContextScope scope) {
-    // TODO translate the query and run it to return results
+  public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
+      KnowledgeGraph.Query<T> knowledgeGraphQuery, ContextScope scope) {
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
-
-    return List.of();
+    if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> qc) {
+      return knowledgeGraph.query(
+          knowledgeGraphQuery, (Class<T>) qc.getResultType().getAssetClass());
+    }
+    throw new KlabUnimplementedException("Not ready to compile arbitrary KG query implementations");
   }
 }
