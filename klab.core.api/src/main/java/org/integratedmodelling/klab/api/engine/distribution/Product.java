@@ -156,7 +156,7 @@ public interface Product {
 
             @Override
             public int defaultMaxMemoryLimitMB() {
-                return 2048;
+                return 4096;
             }
 
         },

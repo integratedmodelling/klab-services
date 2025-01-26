@@ -1,5 +1,7 @@
 package org.integratedmodelling.common.services.client.runtime;
 
+import org.integratedmodelling.common.services.client.scope.ClientContextScope;
+import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -175,6 +177,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
           case Concept ignored -> ignored.getUrn();
           case KimConcept ignored -> ignored.getUrn();
           case ServiceSideScope ignored -> ignored.getId();
+          case ClientContextScope ignored -> ignored.getId();
           case Storage.Buffer ignored -> ignored.getId() + "";
           default -> null;
         };

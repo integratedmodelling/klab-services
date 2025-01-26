@@ -1435,7 +1435,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             .returning(target);
       }
       case AND -> {
-        var queries = query.getChildren().stream().map(q -> compileQuery(q, resultClass)).toList();
+        // bring this upstream, returns a UnionQuery
+        var queries = query.getChildren().stream().map(q -> compileQuery(q, resultClass).build()).toList();
+//        return Cypher.union(queries);
       }
       case OR -> {
         var queries = query.getChildren().stream().map(q -> compileQuery(q, resultClass)).toList();
@@ -1450,7 +1452,17 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   private Node getQueryNode(KnowledgeGraphQuery.Asset asset) {
 
-    var searchField = "urn";
+    var searchField = switch (asset.getType()) {
+        case SCOPE -> "id";
+        case DATAFLOW -> "id";
+        case PROVENANCE -> null;
+        case ACTUATOR -> "id";
+        case ACTIVITY -> "urn";
+        case OBSERVATION -> "urn";
+        case SEMANTICS -> "urn";
+        case OBSERVABLE -> "urn";
+        case DATA -> "id";
+    };
     var searchValue = asset.getUrn();
 
     return Cypher.node(getLabel(asset.getType()))

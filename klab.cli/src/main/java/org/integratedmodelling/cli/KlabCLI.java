@@ -905,7 +905,7 @@ public enum KlabCLI {
     INSTANCE
         .commandLine
         .getOut()
-        .println(Ansi.AUTO.string(spacer + "@|blue " + observation + "|@"));
+        .println(Ansi.AUTO.string(spacer + "@|green " + observation + "|@"));
     if (depth < 0 || depth > 1) {
       for (var obs : scope.getChildrenOf(observation)) {
         printObservation(obs, indent + 1, depth < 0 ? depth : depth - 1, verbose, scope);
