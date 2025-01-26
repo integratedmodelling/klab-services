@@ -14,6 +14,8 @@ import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -135,8 +137,12 @@ public class SyntacticMatcher {
     }
 
     if (pattern.is(SemanticType.UNION) || pattern.is(SemanticType.INTERSECTION)) {
+
+      var patternOperands = getOperands(pattern);
+      var candidateOperands = getOperands(candidate);
+
       // pattern should have at most two arguments; we operate on a <tail, rest> basis.
-      if (pattern.getOperands().size() != 2) {
+      if (patternOperands.size() != 2) {
         throw new KlabIllegalStateException(
             "Patterns in AND or OR should have at most two operands");
       }
@@ -151,8 +157,8 @@ public class SyntacticMatcher {
       }
 
       StringBuffer buffer = new StringBuffer();
-      var headSyntax = candidate.getOperands().getFirst();
-      candidate.getOperands().stream()
+      var headSyntax = candidateOperands.getFirst();
+      candidateOperands.stream()
           .skip(1)
           .map(c -> buffer.append(buffer.isEmpty() ? "" : " ").append(c.getUrn()));
 
@@ -165,8 +171,8 @@ public class SyntacticMatcher {
       var head = reasonerService.declareConcept(headSyntax);
       var tail = reasonerService.resolveConcept(buffer.toString());
 
-      return match(head, reasonerService.declareConcept(pattern.getOperands().getFirst()))
-          && match(tail, reasonerService.declareConcept(pattern.getOperands().get(1)));
+      return match(head, reasonerService.declareConcept(patternOperands.getFirst()))
+          && match(tail, reasonerService.declareConcept(patternOperands.get(1)));
     }
 
     if (pattern.getSemanticModifier() != null) {
@@ -253,6 +259,13 @@ public class SyntacticMatcher {
     // all checks passed
 
     return true;
+  }
+
+  private List<KimConcept> getOperands(KimConcept pattern) {
+    var ret = new ArrayList<KimConcept>();
+    ret.add(pattern.getObservable());
+    ret.addAll(pattern.getOperands());
+    return ret;
   }
 
   private boolean isAtomic(String urn) {

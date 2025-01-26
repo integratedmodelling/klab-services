@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
+import java.util.*;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.lang.ExpressionCodeImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
@@ -12,7 +13,6 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.*;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -21,8 +21,6 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.languages.RangeLiteral;
 import org.integratedmodelling.languages.api.*;
-
-import java.util.*;
 
 /** Adapter to substitute the current ones, based on older k.IM grammars. */
 public enum LanguageAdapter {
@@ -222,6 +220,9 @@ public enum LanguageAdapter {
       }
     }
 
+    List<KimConceptImpl> logicalOperands = new ArrayList<>();
+    SemanticSyntax.BinaryOperator logicalOperator = null;
+
     for (var restriction : semantics.getRestrictions()) {
 
       boolean collective = restriction.getThird();
@@ -239,8 +240,10 @@ public enum LanguageAdapter {
           case FOR -> ret.setGoal(operand);
           case WITH -> ret.setCompresent(operand);
           case ADJACENT -> ret.setAdjacent(operand);
-          case OR -> {}
-          case AND -> {}
+          case OR, AND -> {
+            logicalOperator = restriction.getFirst();
+            logicalOperands.add(operand);
+          }
           case CAUSING -> ret.setCaused(operand);
           case CAUSED_BY -> ret.setCausant(operand);
           case LINKING -> {
@@ -265,6 +268,11 @@ public enum LanguageAdapter {
           case DURING -> ret.setCooccurrent(operand);
         }
       }
+    }
+
+    if (logicalOperator != null) {
+      ret.getType().add(logicalOperator == SemanticSyntax.BinaryOperator.OR ? SemanticType.UNION : SemanticType.INTERSECTION);
+      ret.getOperands().addAll(logicalOperands);
     }
 
     // TODO establish abstract and generic nature
@@ -374,9 +382,8 @@ public enum LanguageAdapter {
         }
         yield ret;
       }
-      case ObservableSyntax observableSyntax -> {
-        yield adaptObservable(observableSyntax, namespace, projectName, documentClass);
-      }
+      case ObservableSyntax observableSyntax ->
+          adaptObservable(observableSyntax, namespace, projectName, documentClass);
       case RangeLiteral rangeLiteral -> {
         var range = new NumericRangeImpl();
         range.setLowerBound(rangeLiteral.getFrom().doubleValue());
@@ -385,9 +392,7 @@ public enum LanguageAdapter {
         range.setUpperOpen(!rangeLiteral.isRightInclusive());
         yield range;
       }
-      default -> {
-        yield object;
-      }
+      default -> object;
     };
   }
 
@@ -416,23 +421,18 @@ public enum LanguageAdapter {
     boolean inactive = false;
 
     if (model.getDataType() != null) {
-        switch (model.getDataType()) {
-            case NUMBER -> {
-              // MIERDA TODO needs a syntactic counterpart, too
-              //              ret.getObservables().add(Observable.number(model.getName()));
-            }
-            case TEXT -> {
-            }
-            case BOOLEAN -> {
-            }
-            case SUBJECTS -> {
-            }
-            case EVENTS -> {
-            }
-            case RELATIONSHIPS -> {
-            }
+      switch (model.getDataType()) {
+        case NUMBER -> {
+          // MIERDA TODO needs a syntactic counterpart, too
+          //              ret.getObservables().add(Observable.number(model.getName()));
         }
-        throw new KlabUnimplementedException("non-semantic model support");
+        case TEXT -> {}
+        case BOOLEAN -> {}
+        case SUBJECTS -> {}
+        case EVENTS -> {}
+        case RELATIONSHIPS -> {}
+      }
+      throw new KlabUnimplementedException("non-semantic model support");
     }
 
     for (var observable : model.getObservables()) {

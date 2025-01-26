@@ -447,15 +447,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return ret == null ? Observable.nothing("owl:Nothing") : ret;
   }
 
-//  private Observable errorObservable(String definition) {
-//    // TODO Auto-generated method stub
-//    return null;
-//  }
-//
-//  private Concept errorConcept(String definition) {
-//    // TODO Auto-generated method stub
-//    return null;
-//  }
+  //  private Observable errorObservable(String definition) {
+  //    // TODO Auto-generated method stub
+  //    return null;
+  //  }
+  //
+  //  private Concept errorConcept(String definition) {
+  //    // TODO Auto-generated method stub
+  //    return null;
+  //  }
 
   @Override
   public Collection<Concept> operands(Semantics target) {
@@ -2541,10 +2541,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           concepts.add(declareInternal(op, ontology, monitor));
         }
         ret =
-            concept.getExpressionType() == KimConcept.Expression.INTERSECTION
+            concept.is(SemanticType.INTERSECTION)
                 ? this.owl.getIntersection(
                     concepts, ontology, concept.getOperands().get(0).getType())
                 : this.owl.getUnion(concepts, ontology, concept.getOperands().get(0).getType());
+
+        ((ConceptImpl) ret).setUrn(concept.getUrn());
+        ret.getType()
+            .add(
+                concept.is(SemanticType.INTERSECTION)
+                    ? SemanticType.INTERSECTION
+                    : SemanticType.UNION);
       }
 
       //      // set the k.IM definition in the concept.This must only happen if the
