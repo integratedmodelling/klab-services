@@ -288,7 +288,7 @@ public interface ServicesAPI {
 
         String REALMS = REASONER_BASE + "/realms";
 
-        String BASE_PARENT_TRAIT = REASONER_BASE + "/baseParentTrait";
+        String LEXICAL_ROOT = REASONER_BASE + "/lexicalRoot";
 
         String BASE_OBSERVABLE = REASONER_BASE + "/baseObservable";
 

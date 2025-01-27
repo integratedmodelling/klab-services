@@ -1287,7 +1287,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
-  public Concept baseParentTrait(Semantics trait) {
+  public Concept lexicalRoot(Semantics trait) {
 
     if (CoreOntology.isCore(trait.asConcept())) {
       return trait.asConcept();
@@ -1306,7 +1306,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     for (Concept c : parents(trait)) {
-      Concept r = baseParentTrait(c);
+      Concept r = lexicalRoot(c);
       if (r != null) {
         return r;
       }

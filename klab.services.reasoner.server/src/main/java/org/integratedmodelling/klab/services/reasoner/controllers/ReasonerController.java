@@ -351,9 +351,9 @@ public class ReasonerController {
         : reasoner.klabService().realms(concept);
   }
 
-  @PostMapping(ServicesAPI.REASONER.BASE_PARENT_TRAIT)
+  @PostMapping(ServicesAPI.REASONER.LEXICAL_ROOT)
   public Concept baseParentTrait(@RequestBody Concept trait) {
-    return reasoner.klabService().baseParentTrait(trait);
+    return reasoner.klabService().lexicalRoot(trait);
   }
 
   @PostMapping(ServicesAPI.REASONER.BASE_OBSERVABLE)

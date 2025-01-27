@@ -1429,7 +1429,7 @@ public class OWL {
       Concept base =
           scope
               .getService(org.integratedmodelling.klab.api.services.Reasoner.class)
-              .baseParentTrait(t);
+              .lexicalRoot(t);
       if (base == null) {
         if (CoreOntology.isCore(t)) {
           base = t;

@@ -46,12 +46,28 @@ public class TypeFunctors {
   }
 
   @KlabFunction(
+          name = "predicates.count",
+          description = "Return the number of predicates in the expression",
+          type = {Artifact.Type.BOOLEAN})
+  public int countPredicates(Semantics semantics) {
+    return reasoner.traits(semantics).size() + reasoner.roles(semantics).size();
+  }
+
+  @KlabFunction(
       name = "operator.splitfirst",
-      description = "Remove the first attribute from an observable and return the two parts",
+      description = "Remove the first predicate from an observable and return the two parts",
       type = {Artifact.Type.CONCEPT})
   public List<Concept> splitFirst(Semantics semantics) {
     /** TODO TODO TODO */
     return List.of(semantics.asConcept(), semantics.asConcept());
+  }
+
+  @KlabFunction(
+          name = "lexicalroot",
+          description = "Return the lexical root of a predicate",
+          type = {Artifact.Type.CONCEPT})
+  public Concept lexicalRoot(Semantics semantics) {
+    return reasoner.lexicalRoot(semantics);
   }
 
   @KlabFunction(

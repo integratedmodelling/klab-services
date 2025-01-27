@@ -13,6 +13,9 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 /**
  * Scalar executor providing handling and caching for LUTs, classifications and expression and
  * implementing the mapping strategy configured in the runtime.
+ *
+ * TODO make this an implementation returned by each specific language processor using a builder, which
+ *  should simply return a Runnable after being contextualized to a scope and target(s).
  */
 public class ScalarMapper {
 

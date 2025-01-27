@@ -444,7 +444,7 @@ public interface Reasoner extends KlabService {
    * @param trait
    * @return
    */
-  Concept baseParentTrait(Semantics trait);
+  Concept lexicalRoot(Semantics trait);
 
   /**
    * The base observable is the one that was specified in k.IM as the main concept for the

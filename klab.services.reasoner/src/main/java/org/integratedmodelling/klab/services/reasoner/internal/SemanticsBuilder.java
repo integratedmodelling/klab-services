@@ -149,8 +149,8 @@ public class SemanticsBuilder implements Observable.Builder {
     syntax.addTraits(
         concepts.stream().map(c -> resourcesService.retrieveConcept(c.getUrn())).toList(),
         (added, original)-> {
-          var baseTraitAdded = reasoner.baseParentTrait(reasoner.resolveConcept(added.getUrn()));
-          var baseTraitOriginal = reasoner.baseParentTrait(reasoner.resolveConcept(added.getUrn()));
+          var baseTraitAdded = reasoner.lexicalRoot(reasoner.resolveConcept(added.getUrn()));
+          var baseTraitOriginal = reasoner.lexicalRoot(reasoner.resolveConcept(added.getUrn()));
           return baseTraitAdded.equals(baseTraitOriginal);
         });
 
@@ -416,7 +416,7 @@ public class SemanticsBuilder implements Observable.Builder {
           continue;
         }
 
-        var baseTrait = reasoner.baseParentTrait(traitConcept);
+        var baseTrait = reasoner.lexicalRoot(traitConcept);
         if (baseTrait == null) {
           ret.error(
               "cannot add predicate "

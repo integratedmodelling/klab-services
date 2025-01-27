@@ -1,18 +1,15 @@
 package org.integratedmodelling.cli.views;
 
 import org.integratedmodelling.cli.KlabCLI;
-import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
@@ -22,7 +19,6 @@ import picocli.CommandLine.Spec;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
@@ -423,13 +419,13 @@ public class CLIReasonerView {
         if (concept.is(SemanticType.TRAIT)) {
           out.println(
               AUTO.string(
-                  "Base parent trait: @|green "
-                      + reasoner.baseParentTrait(concept).getUrn()
+                  "Lexical root: @|green "
+                      + reasoner.lexicalRoot(concept).getUrn()
                       + "|@"));
         } else {
           out.println(
               AUTO.string(
-                  "Base observable: @|green " + reasoner.baseParentTrait(concept).getUrn() + "|@"));
+                  "Base observable: @|green " + reasoner.lexicalRoot(concept).getUrn() + "|@"));
         }
       }
     }

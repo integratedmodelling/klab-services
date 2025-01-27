@@ -411,7 +411,7 @@ public class SearchContext {
             ret.allowAbstract = true;
             ret.baseTraitBlacklist = new HashSet<>();
             for (Concept trait : traits) {
-                Concept base = scope.getService(Reasoner.class).baseParentTrait(trait);
+                Concept base = scope.getService(Reasoner.class).lexicalRoot(trait);
                 if (base != null) {
                     ret.baseTraitBlacklist.add(base);
                 }

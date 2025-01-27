@@ -7,7 +7,6 @@ import com.google.common.collect.Lists;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
-import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -15,15 +14,11 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.reasoner.objects.DeclarationRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
@@ -424,8 +419,8 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
   }
 
   @Override
-  public Concept baseParentTrait(Semantics trait) {
-    return client.post(ServicesAPI.REASONER.BASE_PARENT_TRAIT, trait.asConcept(), Concept.class);
+  public Concept lexicalRoot(Semantics trait) {
+    return client.post(ServicesAPI.REASONER.LEXICAL_ROOT, trait.asConcept(), Concept.class);
   }
 
   @Override

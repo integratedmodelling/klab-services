@@ -24,6 +24,7 @@ import java.util.List;
  */
 public interface Language extends Service {
 
+
     public final static String DEFAULT_EXPRESSION_LANGUAGE = "K.LAB.GROOVY";
 
     public final static String KWV = "k.IM worldview definition";

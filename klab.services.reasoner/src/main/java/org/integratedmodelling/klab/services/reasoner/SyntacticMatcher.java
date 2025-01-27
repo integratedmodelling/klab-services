@@ -4,9 +4,11 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.SemanticClause;
@@ -156,20 +158,19 @@ public class SyntacticMatcher {
         return false;
       }
 
-      StringBuffer buffer = new StringBuffer();
       var headSyntax = candidateOperands.getFirst();
-      candidateOperands.stream()
-          .skip(1)
-          .map(c -> buffer.append(buffer.isEmpty() ? "" : " ").append(c.getUrn()));
+      var tailSyntax = Utils.Strings.join(
+          candidateOperands.stream().skip(1).map(KlabAsset::getUrn).toList(),
+          type == SemanticType.INTERSECTION ? " and " : " or ");
 
-      if (buffer.isEmpty()) {
+      if (tailSyntax.isEmpty()) {
         return false;
       }
 
       /* Match the FIRST operand and connect the remaining, then match the two pieces */
 
       var head = reasonerService.declareConcept(headSyntax);
-      var tail = reasonerService.resolveConcept(buffer.toString());
+      var tail = reasonerService.resolveConcept(tailSyntax);
 
       return match(head, reasonerService.declareConcept(patternOperands.getFirst()))
           && match(tail, reasonerService.declareConcept(patternOperands.get(1)));

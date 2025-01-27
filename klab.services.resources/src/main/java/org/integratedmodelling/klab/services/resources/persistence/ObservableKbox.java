@@ -421,7 +421,7 @@ public abstract class ObservableKbox extends H2Kbox {
     List<Concept> ret = new ArrayList<>();
     ret.add(concept);
     if (concept.is(SemanticType.TRAIT) || concept.is(SemanticType.ROLE)) {
-      Concept base = scope.getService(Reasoner.class).baseParentTrait(concept);
+      Concept base = scope.getService(Reasoner.class).lexicalRoot(concept);
       if (base == null) {
         return ret;
       }
