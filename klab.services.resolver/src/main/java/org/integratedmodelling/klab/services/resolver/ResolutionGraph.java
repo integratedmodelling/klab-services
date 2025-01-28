@@ -132,8 +132,8 @@ public class ResolutionGraph {
     if (resolution.isEmpty()) {
       return Coverage.empty();
     }
-    return resolution.targetCoverage.merge(
-        this.targetCoverage,
+    return this.targetCoverage.merge(
+        resolution.targetCoverage,
         target instanceof Model ? LogicalConnector.INTERSECTION : LogicalConnector.UNION);
   }
 
