@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resolver;
 
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -42,10 +43,28 @@ public class ResolutionCompiler {
     return resolve(observation, scope, ResolverService.getResolutionGraph(scope));
   }
 
+  private Geometry getObservationGeometry(Observation observation, ContextScope scope) {
+
+    var geometry = observation.getGeometry();
+    if (geometry == null) {
+      if (observation.getType().isDependent() && scope.getContextObservation() != null) {
+        geometry = scope.getContextObservation().getGeometry();
+      }
+    }
+
+    if (observation.getObservable().getSemantics().isCollective()) {
+      if (scope.getObserver() != null && scope.getObserver().getGeometry() != null) {
+        geometry =
+            GeometryRepository.INSTANCE.getUnion(geometry, scope.getObserver().getGeometry());
+      }
+    }
+    return geometry;
+  }
+
   private ResolutionGraph resolve(
       Observation observation, ContextScope scope, ResolutionGraph parentGraph) {
 
-    var resolutionGeometry = scope.getObservationGeometry(observation);
+    var resolutionGeometry = getObservationGeometry(observation, scope);
     if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
       return ResolutionGraph.empty();
     }
@@ -229,6 +248,9 @@ public class ResolutionCompiler {
     for (var dependency : model.getDependencies()) {
 
       var dependencyResolution = resolve(dependency, scaleToCover, ret, scope);
+
+      // FIXME if the dep is on a collective, the geom of the obs will be the observer's and this
+      //  will be irrelevant
       var cov = ret.checkCoverage(dependencyResolution);
       if (!cov.isRelevant()) {
         if (dependency.isOptional()) {

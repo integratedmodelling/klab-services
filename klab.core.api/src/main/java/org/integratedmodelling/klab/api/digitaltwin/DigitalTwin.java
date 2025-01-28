@@ -115,20 +115,12 @@ public interface DigitalTwin {
    * Assemble the passed parameters into an unresolved Observation, to be inserted into the
    * knowledge graph and resolved.
    *
-   * <p>Accepts all the needed elements for the observation, including geometry, observable and the
-   * like. If two geometries are passed, the second is the observer's (FIXME that should be
-   * deprecated). In dependent observations, the geometry may be omitted and the geometry of the
-   * owning substantial will be used.
+   * @param scope a scope used to resolve semantics.
    *
-   * <p>If the observation is an observer definition, the geometry ends up as a constraint in the
-   * scope. If an observer's own geometry is unspecified, a default scalar one is attributed.
-   *
-   * @param scope a scope. If a context scope and we use an observer definition, the scope's
-   *     resolution constraints will include an observer geometry after the call.
    * @param resolvables
    * @return
    */
-  static ObservationImpl createObservation(@Mutable Scope scope, Object... resolvables) {
+  static ObservationImpl createObservation(Scope scope, Object... resolvables) {
 
     final Set<String> knownKeys = Set.of("observation", "semantics", "space", "time");
 
@@ -192,10 +184,10 @@ public interface DigitalTwin {
               ogeom = defineGeometry((Map<?, ?>) definition.get("geometry"));
             }
 
-            if (isObserver) {
+            /*            if (isObserver) {
               observerGeometry = geometry;
               geometry = ogeom == null ? Geometry.builder().build() : ogeom;
-            } else if (geometry == null && ogeom != null) {
+            } else */ if (geometry == null && ogeom != null) {
               geometry = ogeom;
             }
 
@@ -236,13 +228,13 @@ public interface DigitalTwin {
       ret.setValue(defaultValue);
       ret.setName(name);
 
-      if (observerGeometry != null && scope instanceof ContextScope contextScope) {
-        contextScope
-            .getResolutionConstraints()
-            .add(
-                ResolutionConstraint.of(
-                    ResolutionConstraint.Type.ObserverGeometry, observerGeometry));
-      }
+      //      if (observerGeometry != null && scope instanceof ContextScope contextScope) {
+      //        contextScope
+      //            .getResolutionConstraints()
+      //            .add(
+      //                ResolutionConstraint.of(
+      //                    ResolutionConstraint.Type.ObserverGeometry, observerGeometry));
+      //      }
 
       return ret;
     }

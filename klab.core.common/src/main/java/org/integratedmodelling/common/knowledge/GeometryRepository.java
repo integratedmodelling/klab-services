@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -65,4 +66,17 @@ public enum GeometryRepository {
         return "KG[" + Utils.Names.shortUUID() + "]";
     }
 
+    public Geometry getUnion(Geometry geometry, Geometry geometry1) {
+        // TODO optimize as much as possible
+        var scale1 = Scale.create(geometry);
+        var scale2 = Scale.create(geometry1);
+        return scale1.merge(scale2, LogicalConnector.UNION);
+    }
+
+    public Geometry getIntersection(Geometry geometry, Geometry geometry1) {
+        // TODO optimize as much as possible
+        var scale1 = Scale.create(geometry);
+        var scale2 = Scale.create(geometry1);
+        return scale1.merge(scale2, LogicalConnector.INTERSECTION);
+    }
 }

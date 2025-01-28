@@ -329,7 +329,7 @@ public class RuntimeService extends BaseService
       } else if (observation.getObservable().is(SemanticType.COUNTABLE)
           && observation.getObservable().getSemantics().isCollective()
           && scope.getObserver() != null) {
-        observation1.setGeometry(scope.getObservedGeometry());
+        observation1.setGeometry(scope.getObserver().getGeometry());
       }
     }
 

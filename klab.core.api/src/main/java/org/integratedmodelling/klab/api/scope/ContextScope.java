@@ -475,43 +475,43 @@ public interface ContextScope extends SessionScope {
     return resolutionGeometry;
   }
 
-  default Geometry getObservationGeometry(Observation observation) {
+  //  default Geometry getObservationGeometry(Observation observation) {
+  //
+  //    var geometry = observation.getGeometry();
+  //    if (geometry == null) {
+  //      if (observation.getType().isDependent() && getContextObservation() != null) {
+  //        geometry = getContextObservation().getGeometry();
+  //      }
+  //      // override if collective and substantial, ensuring that the new observation's geometry is
+  //      // covered
+  //      if (observation.getObservable().getSemantics().isCollective()) {
+  //        if (getObserver() != null && getObserver().getGeometry() != null) {
+  //          geometry = geometry.merge()
+  //        }
+  //      }
+  //    }
+  //
+  //    if (geometry == null) {
+  //      throw new KlabIllegalStateException(
+  //          "Geometry cannot be attributed for observation " + observation + " based on scope");
+  //    }
+  //
+  //    return geometry;
+  //  }
 
-    var geometry = observation.getGeometry();
-    if (geometry == null) {
-      if (observation.getType().isDependent() && getContextObservation() != null) {
-        geometry = getContextObservation().getGeometry();
-      }
-      // override if collective and substantial
-      if (observation.getObservable().getSemantics().isCollective()
-          && getObserver() != null
-          && getObserver().getGeometry() != null) {
-        geometry = getObservedGeometry();
-      }
-    }
-
-    if (geometry == null) {
-      throw new KlabIllegalStateException(
-          "Geometry cannot be attributed for observation " + observation + " based on scope");
-    }
-
-    return geometry;
-  }
-
-  /**
-   * The geometry currently observed by the current observer, which may be null if the observer is
-   * null, and may NOT otherwise. This is set when an observer is defined, but is independent of the
-   * observer's own geometry, and may change through calls independent of the observer as long as an
-   * observer is there.
+  /*
+   * // * The geometry currently observed by the current observer, which may be null if the observer
+   * is // * null, and may NOT otherwise. This is set when an observer is defined, but is
+   * independent of the // * observer's own geometry, and may change through calls independent of
+   * the observer as long as an // * observer is there. // * // *
    *
-   * <p>Observer geometry is set by adding a {@link ResolutionConstraint} to the scope.
-   *
-   * @return
+   * <p>Observer geometry is set by adding a {@link ResolutionConstraint} to the scope. // * //
+   * * @return //
    */
-  default Geometry getObservedGeometry() {
-    var ret = getConstraint(ResolutionConstraint.Type.ObserverGeometry, Geometry.class);
-    return ret == null ? Geometry.EMPTY : ret;
-  }
+  //  default Geometry getObservedGeometry(Observation observation) {
+  //    var ret = getConstraint(ResolutionConstraint.Type.ObserverGeometry, Geometry.class);
+  //    return ret == null ? Geometry.EMPTY : ret;
+  //  }
 
   /**
    * Parse a scope token into the corresponding data structure

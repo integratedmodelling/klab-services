@@ -363,18 +363,22 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         }
       }
 
-      var observedGeometry =
-          getConstraint(ResolutionConstraint.Type.ObserverGeometry, Geometry.class);
-      if (observedGeometry != null && observer != null) {
-        this.currentlyObservedGeometries.put(observer, observedGeometry);
-      }
+//      var observedGeometry =
+//          getConstraint(ResolutionConstraint.Type.ObserverGeometry, Geometry.class);
+//      if (observedGeometry != null && observer != null) {
+//        this.currentlyObservedGeometries.put(observer, observedGeometry);
+//      }
     }
     return ret;
   }
 
   @Override
   public List<ResolutionConstraint> getResolutionConstraints() {
-    return Utils.Collections.promoteToList(this.resolutionConstraints.values());
+    var ret = Utils.Collections.promoteToList(this.resolutionConstraints.values());
+//    if (observer != null && !this.resolutionConstraints.containsKey(ResolutionConstraint.Type.ObserverGeometry)) {
+//      ret.add(ResolutionConstraint.of(ResolutionConstraint.Type.ObserverGeometry, observer.getGeometry()));
+//    }
+    return ret;
   }
 
   @Override
