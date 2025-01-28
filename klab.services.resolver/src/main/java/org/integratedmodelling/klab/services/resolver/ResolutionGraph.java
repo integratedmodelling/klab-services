@@ -61,7 +61,7 @@ public class ResolutionGraph {
    * with any resolving candidate before new strategies are attempted. Includes resolved
    * observations, resolved models and (eventually) resolved external dataflows.
    */
-  private Map<Observable, Set<Resolvable>> resolutionCatalog = new HashMap<>();
+  private final Map<Observable, Set<Resolvable>> resolutionCatalog = new HashMap<>();
 
   private boolean empty;
 
