@@ -156,6 +156,14 @@
             </exclusions>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.apache.groovy/groovy-all -->
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>4.0.25</version>
+            <type>pom</type>
+        </dependency>
+
         <!-- spatial H2 database for kboxes -->
         <dependency>
             <groupId>org.orbisgis</groupId>

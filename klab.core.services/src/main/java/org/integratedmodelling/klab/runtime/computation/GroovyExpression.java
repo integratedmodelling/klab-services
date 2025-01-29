@@ -30,40 +30,26 @@
 //import java.util.Map;
 //import java.util.Set;
 //
-//import org.integratedmodelling.kim.api.IParameters;
-//import org.integratedmodelling.kim.api.IServiceCall;
-//import org.integratedmodelling.kim.validation.KimNotification;
-//import org.integratedmodelling.klab.Extensions;
-//import org.integratedmodelling.klab.api.data.IGeometry;
-//import org.integratedmodelling.klab.api.extensions.ILanguageExpression;
-//import org.integratedmodelling.klab.api.extensions.ILanguageProcessor;
-//import org.integratedmodelling.klab.api.extensions.ILanguageProcessor.Descriptor;
-//import org.integratedmodelling.klab.api.knowledge.IObservable;
-//import org.integratedmodelling.klab.api.model.IModel;
-//import org.integratedmodelling.klab.api.model.INamespace;
-//import org.integratedmodelling.klab.api.observations.INetwork;
-//import org.integratedmodelling.klab.api.observations.IPattern;
-//import org.integratedmodelling.klab.api.observations.IState;
-//import org.integratedmodelling.klab.api.observations.scale.IScale;
-//import org.integratedmodelling.klab.api.runtime.IContextualizationScope;
-//import org.integratedmodelling.klab.components.runtime.observations.DirectObservation;
-//import org.integratedmodelling.klab.engine.runtime.api.IRuntimeScope;
-//import org.integratedmodelling.klab.engine.runtime.code.Expression;
-//import org.integratedmodelling.klab.exceptions.KlabException;
-//import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
-//import org.integratedmodelling.klab.utils.Parameters;
 //
 //import groovy.lang.Binding;
 //import groovy.lang.MissingPropertyException;
 //import groovy.lang.Script;
+//import org.integratedmodelling.klab.api.geometry.Geometry;
+//import org.integratedmodelling.klab.api.knowledge.Expression;
+//import org.integratedmodelling.klab.api.knowledge.Model;
+//import org.integratedmodelling.klab.api.knowledge.Observable;
+//import org.integratedmodelling.klab.api.lang.ServiceCall;
+//import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+//import org.integratedmodelling.klab.api.scope.ContextScope;
+//import org.integratedmodelling.klab.api.services.runtime.Notification;
 //
-//public class GroovyExpression extends Expression implements ILanguageExpression {
+//public class GroovyExpression /*extends Expression*/ implements Expression {
 //
 //	protected String code;
 //	protected boolean negated = false;
 //	protected Object object;
-//	protected IServiceCall functionCall;
-//	protected IModel model;
+//	protected ServiceCall functionCall;
+//	protected Model model;
 //	protected boolean isNull = false;
 //	protected boolean isTrue = false;
 //	protected boolean fubar = false;
@@ -79,13 +65,13 @@
 //	 */
 //	private Class<?> sclass = null;
 //
-//	IGeometry domain;
-//	INamespace namespace;
+//	Geometry domain;
+//	KimNamespace namespace;
 //
-//	private List<KimNotification> errors = new ArrayList<>();
+//	private List<Notification> errors = new ArrayList<>();
 //	private KlabGroovyShell shell = new KlabGroovyShell();
 //	private String preprocessed = null;
-//	private IRuntimeScope runtimeContext;
+//	private ContextScope runtimeContext;
 //	private Descriptor descriptor;
 //	private Map<String, Object> variables;
 //	private Set<CompilerOption> options = EnumSet.noneOf(CompilerOption.class);
@@ -98,14 +84,14 @@
 //		return errors.size() > 0;
 //	}
 //
-//	public List<KimNotification> getErrors() {
+//	public List<Notification> getErrors() {
 //		return errors;
 //	}
 //
 //	/*
 //	 * MUST be called in all situations.
 //	 */
-//	public void initialize(Map<String, IObservable> inputs, Map<String, IObservable> outputs) {
+//	public void initialize(Map<String, Observable> inputs, Map<String, Observable> outputs) {
 //		compile(preprocess(code, inputs, outputs));
 //		initialized.set(Boolean.TRUE);
 //	}

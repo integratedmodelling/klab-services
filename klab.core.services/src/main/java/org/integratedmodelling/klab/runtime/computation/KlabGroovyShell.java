@@ -7,13 +7,12 @@
 //import org.codehaus.groovy.control.CompilationFailedException;
 //import org.codehaus.groovy.control.CompilerConfiguration;
 //import org.codehaus.groovy.control.customizers.ImportCustomizer;
-//import org.integratedmodelling.klab.Extensions;
-//import org.integratedmodelling.klab.utils.Path;
 //
 //import groovy.lang.Binding;
 //import groovy.lang.GroovyCodeSource;
 //import groovy.lang.GroovyShell;
 //import groovy.lang.Script;
+//import org.integratedmodelling.klab.api.utils.Utils;
 //
 //public class KlabGroovyShell extends GroovyShell {
 //
@@ -24,7 +23,7 @@
 //		compilerConfiguration.setScriptBaseClass(BASE_ACTION_CLASS);
 //		ImportCustomizer customizer = new ImportCustomizer();
 //		for (Class<?> cls : Extensions.INSTANCE.getKimImports()) {
-//			customizer.addImport(Path.getLast(cls.getCanonicalName(), '.'), cls.getCanonicalName());
+//			customizer.addImport(Utils.Paths.getLast(cls.getCanonicalName(), '.'), cls.getCanonicalName());
 //		}
 //		compilerConfiguration.addCompilationCustomizers(customizer);
 //		return compilerConfiguration;
@@ -35,11 +34,11 @@
 //    }
 //
 //    public Class<?> parseToClass(final String scriptText) throws CompilationFailedException {
-//        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>(){
+//        GroovyCodeSource gcs = /*AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>(){
 //            public GroovyCodeSource run() {
-//                return new GroovyCodeSource(scriptText, generateScriptName(), DEFAULT_CODE_BASE);
-//            }
-//        });
+//                return*/ new GroovyCodeSource(scriptText, generateScriptName(), DEFAULT_CODE_BASE);
+//            /*}
+//        });*/
 //        return getClassLoader().parseClass(gcs);
 //    }
 //

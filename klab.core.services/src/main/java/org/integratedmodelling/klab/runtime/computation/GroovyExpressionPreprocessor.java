@@ -35,23 +35,12 @@
 //import java.util.regex.Pattern;
 //
 //import org.codehaus.groovy.antlr.parser.GroovyLexer;
-//import org.integratedmodelling.kim.api.IKimConcept;
-//import org.integratedmodelling.kim.api.IKimConcept.Type;
-//import org.integratedmodelling.kim.validation.KimNotification;
-//import org.integratedmodelling.klab.Concepts;
-//import org.integratedmodelling.klab.Namespaces;
-//import org.integratedmodelling.klab.Observables;
-//import org.integratedmodelling.klab.Resources;
-//import org.integratedmodelling.klab.api.data.IGeometry;
-//import org.integratedmodelling.klab.api.data.general.IExpression;
-//import org.integratedmodelling.klab.api.data.general.IExpression.CompilerOption;
-//import org.integratedmodelling.klab.api.data.general.IExpression.CompilerScope;
-//import org.integratedmodelling.klab.api.knowledge.IConcept;
-//import org.integratedmodelling.klab.api.knowledge.IKnowledge;
-//import org.integratedmodelling.klab.api.model.IKimObject;
-//import org.integratedmodelling.klab.api.model.INamespace;
-//import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
-//import org.integratedmodelling.klab.owl.OWL;
+//import org.integratedmodelling.klab.api.knowledge.Concept;
+//import org.integratedmodelling.klab.api.knowledge.Expression;
+//import org.integratedmodelling.klab.api.knowledge.Knowledge;
+//import org.integratedmodelling.klab.api.knowledge.SemanticType;
+//import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+//import org.integratedmodelling.klab.api.services.runtime.Notification;
 //import org.springframework.util.StringUtils;
 //
 //import com.google.common.collect.BiMap;
@@ -84,7 +73,7 @@
 //public class GroovyExpressionPreprocessor {
 //
 //    // private IGeometry domains;
-//    private INamespace namespace;
+//    private KimNamespace namespace;
 //    // private Set<String> knownIdentifiers;
 //    // private Geometry inferredGeometry;
 //    Pattern extKnowledge = Pattern.compile("[a-z|\\.]+:[A-Za-z][A-Za-z0-9]*");
@@ -140,12 +129,12 @@
 //     * referenced IDs and knowledge resulting from preprocessing.
 //     */
 //    Set<String> identifiers = new HashSet<>();
-//    List<IKnowledge> knowledge = new ArrayList<>();
-//    List<KimNotification> errors = new ArrayList<>();
+//    List<Knowledge> knowledge = new ArrayList<>();
+//    List<Notification> errors = new ArrayList<>();
 //    private Set<String> objectIds = new HashSet<>();
 //    private Set<String> scalarIds = new HashSet<>();
 //    private Set<String> contextualizers = new HashSet<>();
-//    IExpression.Scope expressionScope;
+//    Expression.Scope expressionScope;
 //    private boolean expectDirectData;
 //    private boolean recontextualizeAsMap;
 //    /*
@@ -172,15 +161,15 @@
 //    public GroovyExpressionPreprocessor() {
 //    }
 //
-//    public GroovyExpressionPreprocessor(INamespace currentNamespace, IExpression.Scope expressionScope,
-//            Set<CompilerOption> options) {
+//    public GroovyExpressionPreprocessor(KimNamespace currentNamespace, Expression.Scope expressionScope,
+//                                        Set<Expression.CompilerOption> options) {
 //        this.namespace = currentNamespace;
 //        this.expressionScope = expressionScope;
-//        this.recontextualizeAsMap = options.contains(CompilerOption.RecontextualizeAsMap);
-//        this.ignoreContext = options.contains(CompilerOption.IgnoreContext);
-//        this.doNotProcess = options.contains(CompilerOption.DoNotPreprocess);
-//        this.ignoreRecontextualization = options.contains(CompilerOption.IgnoreRecontextualization);
-//        this.expectDirectData = options.contains(CompilerOption.DirectQualityAccess);
+//        this.recontextualizeAsMap = options.contains(Expression.CompilerOption.RecontextualizeAsMap);
+//        this.ignoreContext = options.contains(Expression.CompilerOption.IgnoreContext);
+//        this.doNotProcess = options.contains(Expression.CompilerOption.DoNotPreprocess);
+//        this.ignoreRecontextualization = options.contains(Expression.CompilerOption.IgnoreRecontextualization);
+//        this.expectDirectData = options.contains(Expression.CompilerOption.DirectQualityAccess);
 //    }
 //
 //    /**
@@ -257,8 +246,8 @@
 //                ret = translateDefine(ret);
 //                break;
 //            case KNOWN_ID:
-//                IKimConcept.Type type = getIdentifierType(token);
-//                if (expressionScope.getCompilerScope() == CompilerScope.Scalar && type == Type.QUALITY && !methodCall) {
+//                var type = getIdentifierType(token);
+//                if (expressionScope.getCompilerScope() == Expression.CompilerScope.Scalar && type == Type.QUALITY && !methodCall) {
 //                    if (nextToken != null && nextToken.type == TokenType.RECONTEXTUALIZATION) {
 //                        ret = token + ".getProxy(scale)";
 //                    } else {
@@ -451,10 +440,10 @@
 //        Matcher matcher = conceptPattern.matcher(code);
 //        return matcher.replaceAll((result) -> {
 //            String val = result.group();
-//            IConcept c = Concepts.INSTANCE.getConcept(val);
+//            Concept c = Concepts.INSTANCE.getConcept(val);
 //            if (c == null) {
-//                c = OWL.INSTANCE.getNothing();
-//                errors.add(new KimNotification("Concept " + val + " is not recognized", Level.SEVERE));
+//                c = Concept.nothing();
+//                errors.add(Notification.error("Concept " + val + " is not recognized"));
 //            }
 //
 //            return encodeValue(c);
@@ -462,20 +451,20 @@
 //
 //    }
 //
-//    public IKimConcept.Type getIdentifierType(String identifier) {
+//    public SemanticType getIdentifierType(String identifier) {
 //
 //        if (expressionScope == null) {
-//            return IKimConcept.Type.PRIORITY;
+//            return SemanticType.PRIORITY;
 //        }
 //
 //        if (identifier.equals("self")) {
 //            return expressionScope.getReturnType();
 //        }
-//        IKimConcept.Type ret = expressionScope.getIdentifierType(identifier);
+//        var ret = expressionScope.getIdentifierType(identifier);
 //        if (ret != null) {
 //            return ret;
 //        }
-//        return IKimConcept.Type.OBSERVABLE;
+//        return SemanticType.OBSERVABLE;
 //    }
 //
 //    private String reconstruct(List<TokenDescriptor> tokens) {

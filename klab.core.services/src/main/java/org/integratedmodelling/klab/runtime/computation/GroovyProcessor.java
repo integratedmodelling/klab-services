@@ -6,40 +6,44 @@
 //import java.util.Set;
 //
 //import org.integratedmodelling.kim.validation.KimNotification;
+//import org.integratedmodelling.klab.api.collections.Parameters;
 //import org.integratedmodelling.klab.api.data.general.IExpression;
 //import org.integratedmodelling.klab.api.data.general.IExpression.CompilerOption;
 //import org.integratedmodelling.klab.api.extensions.ILanguageExpression;
 //import org.integratedmodelling.klab.api.extensions.ILanguageProcessor;
+//import org.integratedmodelling.klab.api.knowledge.Expression;
+//import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 //import org.integratedmodelling.klab.api.model.INamespace;
 //import org.integratedmodelling.klab.api.observations.IObservation;
+//import org.integratedmodelling.klab.api.services.runtime.Notification;
 //import org.integratedmodelling.klab.engine.runtime.api.IRuntimeScope;
 //import org.integratedmodelling.klab.exceptions.KlabValidationException;
 //
 //import com.google.common.collect.Sets;
 //
-//public enum GroovyProcessor implements ILanguageProcessor {
+//public enum GroovyProcessor /*implements LanguageProcessor*/ {
 //
 //    INSTANCE;
 //
 //    public static final String ID = "groovy";
 //
-//    class GroovyDescriptor implements Descriptor {
+//    class GroovyDescriptor implements Expression.Descriptor {
 //
 //        String processedCode;
 //        Collection<String> identifiers;
 //        private Set<String> scalarIds;
 //        private Set<String> objectIds;
 //        private Set<String> contextualizers;
-//        private List<KimNotification> errors;
+//        private List<Notification> errors;
 //        private Map<String, Set<String>> mapIdentifiers;
-//        private Set<CompilerOption> options;
-//        private Map<String, Object> variables;
+//        private Set<Expression.CompilerOption> options;
+//        private Parameters<String> variables;
 //        private boolean forceScalar;
 //        // private IExpression.Scope context;
 //
-//        GroovyDescriptor(String expression, IExpression.Scope context, CompilerOption... options) {
+//        GroovyDescriptor(String expression, Expression.Scope context, Expression.CompilerOption... options) {
 //
-//            this.options = Sets.newHashSet(options == null ? new CompilerOption[]{} : options);
+//            this.options = Sets.newHashSet(options == null ? new Expression.CompilerOption[]{} : options);
 //
 //            /*
 //             * Context should most definitely be nullable
@@ -59,9 +63,9 @@
 //            this.forceScalar = context == null ? false : context.isForcedScalar();
 //
 //            if (context.getRuntimeScope() != null && !this.options.contains(CompilerOption.IgnoreContext)) {
-//                Map<String, IObservation> catalog = ((IRuntimeScope)context.getRuntimeScope()).getLocalCatalog(IObservation.class);
+//                Map<String, Observation> catalog = ((IRuntimeScope)context.getRuntimeScope()).getLocalCatalog(IObservation.class);
 //                for (String key : catalog.keySet()) {
-//                    IObservation obs = catalog.get(key);
+//                    Observation obs = catalog.get(key);
 //                    if (!this.variables.containsKey(key) && !this.variables.containsValue(obs)) {
 //                        variables.put(key, obs);
 //                    }
@@ -76,7 +80,7 @@
 //        }
 //
 //        @Override
-//        public Collection<CompilerOption> getOptions() {
+//        public Collection<Expression.CompilerOption> getOptions() {
 //            return options;
 //        }
 //
@@ -91,7 +95,7 @@
 //            return false;
 //        }
 //
-//        public List<KimNotification> getNotifications() {
+//        public List<Notification> getNotifications() {
 //            return errors;
 //        }
 //
@@ -110,7 +114,7 @@
 //        }
 //
 //        @Override
-//        public ILanguageExpression compile() {
+//        public Expression compile() {
 //            return new GroovyExpression(processedCode, true, this);
 //        }
 //
@@ -146,7 +150,7 @@
 //        }
 //
 //        @Override
-//        public Map<String, Object> getVariables() {
+//        public Parameters<String> getVariables() {
 //            return variables;
 //        }
 //
@@ -168,14 +172,12 @@
 //    }
 //
 //    @Override
-//    public IExpression compile(String expression, IExpression.Scope context, CompilerOption... options)
-//            throws KlabValidationException {
+//    public Expression compile(String expression, Expression.Scope context, Expression.CompilerOption... options) {
 //        return new GroovyDescriptor(expression, context, options).compile();
 //    }
 //
 //    @Override
-//    public Descriptor describe(String expression, IExpression.Scope context, CompilerOption... options)
-//            throws KlabValidationException {
+//    public Expression.Descriptor describe(String expression, Expression.Scope context, Expression.CompilerOption... options) {
 //        return new GroovyDescriptor(expression, context, options);
 //    }
 //
