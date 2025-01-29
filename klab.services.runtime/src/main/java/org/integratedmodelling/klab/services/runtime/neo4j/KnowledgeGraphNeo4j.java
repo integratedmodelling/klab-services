@@ -135,7 +135,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       var activity = new ActivityImpl();
       activity.setStart(System.currentTimeMillis());
-      activity.setUrn(this.activity + "." + Utils.Names.shortUUID());
+      activity.setUrn(this.activity.getUrn() + "." + Utils.Names.shortUUID());
       var ret = new OperationImpl();
 
       ret.agent = agent;

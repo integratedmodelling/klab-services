@@ -106,10 +106,4 @@ public interface Language extends Service {
      */
     <T> T execute(ServiceCall call, Scope scope, Class<T> resultClass);
 
-//    /**
-//     * Load all services in a component from the resource service
-//     *
-//     * @param resourceSet
-//     */
-//    void loadComponent(ResourceSet resourceSet, Scope scope);
 }

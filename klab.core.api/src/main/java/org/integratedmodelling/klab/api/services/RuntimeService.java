@@ -74,7 +74,7 @@ public interface RuntimeService extends KlabService {
      */
     DEFER_RESOLUTION("klab.core.resolution.defer");
 
-    private String serviceCallUrn;
+    private final String serviceCallUrn;
     private Map<String, Artifact.Type> arguments;
 
     CoreFunctor(String serviceCall) {
