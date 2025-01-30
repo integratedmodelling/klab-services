@@ -196,7 +196,7 @@ public enum KlabCLI {
       }
     }
 
-    if (result == null) {
+    if (result == null || result.isEmpty()) {
       commandLine.getErr().println("Import was rejected by service (URN is null)");
     } else {
       commandLine.getOut().println("Import to service succeeded: URN is " + result);

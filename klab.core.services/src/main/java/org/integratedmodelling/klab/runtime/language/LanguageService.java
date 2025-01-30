@@ -88,7 +88,7 @@ public class LanguageService implements Language {
                           : componentRegistry.implementation(descriptor).mainClassInstance,
                       getParameters(descriptor, call, scope, false));
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-          scope.error("runtime error when invoking function " + call.getUrn());
+          scope.error("runtime error when invoking function " + call.getUrn(), e);
           return null;
         }
       } else if (componentRegistry.implementation(descriptor).constructor != null) {
