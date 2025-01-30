@@ -48,13 +48,13 @@ public class RuntimeServerContextController {
     return List.of();
   }
 
-  @QueryMapping
-  public List<GraphModel.ResolutionTask> tasks() {
-    return List.of();
-  }
+//  @QueryMapping
+//  public List<GraphModel.ResolutionTask> tasks() {
+//    return List.of();
+//  }
 
-  @QueryMapping
-  public List<GraphModel.Notification> notifications(@Argument(name = "after") float after) {
-    return List.of();
-  }
+//  @QueryMapping
+//  public List<GraphModel.Notification> notifications(@Argument(name = "after") float after) {
+//    return List.of();
+//  }
 }

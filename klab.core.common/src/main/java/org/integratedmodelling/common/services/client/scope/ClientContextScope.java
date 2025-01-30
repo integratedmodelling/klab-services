@@ -108,6 +108,12 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   }
 
   @Override
+  public Provenance getProvenanceOf(Observation observation) {
+    // TODO
+    return null;
+  }
+
+  @Override
   public ContextScope connect(URL remoteContext) {
     return null;
   }

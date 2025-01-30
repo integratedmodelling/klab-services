@@ -41,26 +41,11 @@ public interface ScalarComputation {
   }
 
   /**
-   * This should be called before execution to assess the level of parallelism that the computation
-   * enables.
-   *
-   * <p>According to the return value, the buffer passed to {@link #run(Storage.Buffer)} may be a
-   * partial or full buffer and the strategy compiled may be executed in parallel with other
-   * instances of the same.
-   *
-   * <p>TODO use a Parallelism enum and process a suggested one to return the one that the
-   * computation supports.
-   *
-   * @return
-   */
-  boolean isParallelizable();
-
-  /**
    * Run sequentially or map over the buffer. This may be called on partial buffers or an entire
-   * state according to the result of {@link #isParallelizable()}.
+   * state.
    *
    * @param storage
    * @return
    */
-  boolean run(Storage.Buffer storage);
+  boolean run(Storage<?> storage);
 }

@@ -382,6 +382,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
+  public Provenance getProvenanceOf(Observation observation) {
+    // TODO
+    return null;
+  }
+
+  @Override
   public <T> T getConstraint(ResolutionConstraint.Type type, T defaultValue) {
     var constraint = resolutionConstraints.get(type);
     if (constraint == null || constraint.size() == 0) {

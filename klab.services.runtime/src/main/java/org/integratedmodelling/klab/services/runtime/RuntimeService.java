@@ -13,6 +13,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -36,9 +37,11 @@ import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
@@ -422,6 +425,17 @@ public class RuntimeService extends BaseService
     throw new KlabInternalErrorException("cannot locate the context initialization activity");
   }
 
+  /**
+   * Return the configured computation builder for the passed observation and scope. This may
+   * eventually analyze the scope and the dataflow to assess which kind of computation fits the
+   * problem best. Different runtimes may support Spark or other computational engines. The default
+   * for now is to use the Groovy builder.
+   */
+  public ScalarComputation.Builder getComputationBuilder(
+      Observation observation, ServiceContextScope scope, Dataflow<?> dataflow) {
+    return ScalarComputationGroovy.builder(observation, scope);
+  }
+
   @Override
   public CompletableFuture<Observation> resolve(long id, ContextScope scope) {
 
@@ -585,7 +599,7 @@ public class RuntimeService extends BaseService
       for (var rootActuator : dataflow.getComputation()) {
         var executionSequence =
             new ExecutionSequence(
-                contextualization, dataflow, getComponentRegistry(), serviceContextScope);
+                this, contextualization, dataflow, getComponentRegistry(), serviceContextScope);
         var compiled = executionSequence.compile(rootActuator);
         if (!compiled) {
           contextualization.fail(

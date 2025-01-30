@@ -1,12 +1,14 @@
 package org.integratedmodelling.klab.runtime.language;
 
-import com.jcraft.jsch.Session;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.knowledge.Expression;
-import org.integratedmodelling.klab.api.knowledge.Expression.CompilerOption;
-import org.integratedmodelling.klab.api.knowledge.Expression.Descriptor;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -20,27 +22,21 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
+import org.integratedmodelling.klab.runtime.computation.GroovyProcessor;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
-
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class LanguageService implements Language {
 
   private ComponentRegistry componentRegistry;
+  private Map<String, LanguageProcessor> languageProcessors = new HashMap<>();
 
-  @Override
-  public Descriptor describe(
-      String expression, String language, Scope scope, CompilerOption... options) {
-    // TODO Auto-generated method stub
-    return null;
+  public LanguageService() {
+    this.languageProcessors.put(DEFAULT_EXPRESSION_LANGUAGE, new GroovyProcessor());
   }
 
   @Override
-  public Expression compile(String expression, String language, CompilerOption... options) {
-    // TODO Auto-generated method stub
-    return null;
+  public LanguageProcessor getLanguageProcessor(String language) {
+    return languageProcessors.get(language);
   }
 
   @Override

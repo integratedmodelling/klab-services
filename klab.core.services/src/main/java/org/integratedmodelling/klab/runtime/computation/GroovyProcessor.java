@@ -1,50 +1,47 @@
-//package org.integratedmodelling.klab.runtime.computation;
-//
-//import java.util.Collection;
-//import java.util.List;
-//import java.util.Map;
-//import java.util.Set;
-//
-//import org.integratedmodelling.kim.validation.KimNotification;
-//import org.integratedmodelling.klab.api.collections.Parameters;
-//import org.integratedmodelling.klab.api.data.general.IExpression;
-//import org.integratedmodelling.klab.api.data.general.IExpression.CompilerOption;
-//import org.integratedmodelling.klab.api.extensions.ILanguageExpression;
-//import org.integratedmodelling.klab.api.extensions.ILanguageProcessor;
-//import org.integratedmodelling.klab.api.knowledge.Expression;
-//import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-//import org.integratedmodelling.klab.api.model.INamespace;
-//import org.integratedmodelling.klab.api.observations.IObservation;
-//import org.integratedmodelling.klab.api.services.runtime.Notification;
-//import org.integratedmodelling.klab.engine.runtime.api.IRuntimeScope;
-//import org.integratedmodelling.klab.exceptions.KlabValidationException;
-//
-//import com.google.common.collect.Sets;
-//
-//public enum GroovyProcessor /*implements LanguageProcessor*/ {
-//
-//    INSTANCE;
-//
-//    public static final String ID = "groovy";
-//
-//    class GroovyDescriptor implements Expression.Descriptor {
-//
-//        String processedCode;
-//        Collection<String> identifiers;
-//        private Set<String> scalarIds;
-//        private Set<String> objectIds;
-//        private Set<String> contextualizers;
-//        private List<Notification> errors;
-//        private Map<String, Set<String>> mapIdentifiers;
-//        private Set<Expression.CompilerOption> options;
-//        private Parameters<String> variables;
-//        private boolean forceScalar;
-//        // private IExpression.Scope context;
-//
-//        GroovyDescriptor(String expression, Expression.Scope context, Expression.CompilerOption... options) {
-//
-//            this.options = Sets.newHashSet(options == null ? new Expression.CompilerOption[]{} : options);
-//
+package org.integratedmodelling.klab.runtime.computation;
+
+
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.knowledge.Expression;
+import org.integratedmodelling.klab.api.lang.ExpressionCode;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.Language;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+
+import java.util.*;
+
+public class GroovyProcessor implements Language.LanguageProcessor {
+
+    @Override
+    public Expression.Descriptor analyze(ExpressionCode expression, Scope scope,
+                                         Expression.CompilerOption... options) {
+        return null;
+    }
+
+    @Override
+    public Expression compile(Expression.Descriptor descriptor, Expression.CompilerOption... options) {
+        return null;
+    }
+
+    class GroovyDescriptor implements Expression.Descriptor {
+
+        String processedCode;
+        Collection<String> identifiers;
+        private Set<String> scalarIds;
+        private Set<String> objectIds;
+        private Set<String> contextualizers;
+        private List<Notification> errors;
+        private Map<String, Set<String>> mapIdentifiers;
+        private Set<Expression.CompilerOption> options;
+        private Parameters<String> variables;
+        private boolean forceScalar;
+        // private IExpression.Scope context;
+
+        GroovyDescriptor(String expression, Expression.Scope context, Expression.CompilerOption... options) {
+
+            this.options = options == null ? EnumSet.noneOf(
+                    Expression.CompilerOption.class) : Set.of(options);
+
 //            /*
 //             * Context should most definitely be nullable
 //             */
@@ -71,106 +68,111 @@
 //                    }
 //                }
 //            }
-//
-//        }
-//
-//        @Override
-//        public Collection<String> getIdentifiers() {
-//            return identifiers;
-//        }
-//
-//        @Override
-//        public Collection<Expression.CompilerOption> getOptions() {
-//            return options;
-//        }
-//
-//        @Override
-//        public boolean isScalar(Collection<String> stateIdentifiers) {
-//
-//            for (String id : stateIdentifiers) {
-//                if (this.scalarIds.contains(id)) {
-//                    return true;
-//                }
-//            }
-//            return false;
-//        }
-//
-//        public List<Notification> getNotifications() {
-//            return errors;
-//        }
-//
-//        public boolean hasErrors() {
-//            return errors.size() > 0;
-//        }
-//
-//        @Override
-//        public Collection<String> getIdentifiersInScalarScope() {
-//            return this.scalarIds;
-//        }
-//
-//        @Override
-//        public Collection<String> getIdentifiersInNonscalarScope() {
-//            return this.objectIds;
-//        }
-//
-//        @Override
-//        public Expression compile() {
-//            return new GroovyExpression(processedCode, true, this);
-//        }
-//
-//        @Override
-//        public boolean isScalar(String identifier) {
-//            return scalarIds.contains(identifier);
-//        }
-//
-//        @Override
-//        public boolean isNonscalar(String identifier) {
-//            return objectIds.contains(identifier);
-//        }
-//
-//        @Override
-//        public boolean isNonscalar(Collection<String> stateIdentifiers) {
-//            for (String id : stateIdentifiers) {
-//                if (this.objectIds.contains(id)) {
-//                    return true;
-//                }
-//            }
-//            return false;
-//
-//        }
-//
-//        @Override
-//        public Collection<String> getContextualizers() {
-//            return contextualizers;
-//        }
-//
-//        @Override
-//        public Map<String, Set<String>> getMapIdentifiers() {
-//            return mapIdentifiers;
-//        }
-//
-//        @Override
-//        public Parameters<String> getVariables() {
-//            return variables;
-//        }
-//
-//        @Override
-//        public boolean isScalar() {
-//
-//            if (forceScalar) {
-//                return true;
-//            }
-//
-//            for (String id : scalarIds) {
-//                if (isScalar(id)) {
-//                    return true;
-//                }
-//            }
-//
-//            return false;
-//        }
-//    }
-//
+
+        }
+
+        @Override
+        public Collection<String> getIdentifiers() {
+            return identifiers;
+        }
+
+        @Override
+        public Collection<Expression.CompilerOption> getOptions() {
+            return options;
+        }
+
+        @Override
+        public boolean isScalar(Collection<String> stateIdentifiers) {
+
+            for (String id : stateIdentifiers) {
+                if (this.scalarIds.contains(id)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public List<Notification> getNotifications() {
+            return errors;
+        }
+
+        public boolean hasErrors() {
+            return errors.size() > 0;
+        }
+
+        @Override
+        public Collection<String> getIdentifiersInScalarScope() {
+            return this.scalarIds;
+        }
+
+        @Override
+        public Collection<String> getIdentifiersInNonscalarScope() {
+            return this.objectIds;
+        }
+
+        @Override
+        public Expression compile() {
+            return new GroovyExpression(processedCode, true, this);
+        }
+
+      @Override
+      public Expression.Descriptor scalar(Expression.Forcing forcing) {
+        return null;
+      }
+
+      @Override
+        public boolean isScalar(String identifier) {
+            return scalarIds.contains(identifier);
+        }
+
+        @Override
+        public boolean isNonscalar(String identifier) {
+            return objectIds.contains(identifier);
+        }
+
+        @Override
+        public boolean isNonscalar(Collection<String> stateIdentifiers) {
+            for (String id : stateIdentifiers) {
+                if (this.objectIds.contains(id)) {
+                    return true;
+                }
+            }
+            return false;
+
+        }
+
+        @Override
+        public Collection<String> getContextualizers() {
+            return contextualizers;
+        }
+
+        @Override
+        public Map<String, Set<String>> getMapIdentifiers() {
+            return mapIdentifiers;
+        }
+
+        @Override
+        public Parameters<String> getVariables() {
+            return variables;
+        }
+
+        @Override
+        public boolean isScalar() {
+
+            if (forceScalar) {
+                return true;
+            }
+
+            for (String id : scalarIds) {
+                if (isScalar(id)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
 //    @Override
 //    public Expression compile(String expression, Expression.Scope context, Expression.CompilerOption... options) {
 //        return new GroovyDescriptor(expression, context, options).compile();
@@ -185,5 +187,5 @@
 //    public String negate(String expression) {
 //        return "!(" + expression + ")";
 //    }
-//
-//}
+
+}

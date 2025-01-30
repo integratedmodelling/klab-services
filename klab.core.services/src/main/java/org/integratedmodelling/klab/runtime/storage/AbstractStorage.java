@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.runtime.storage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PrimitiveIterator;
+
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -17,6 +19,102 @@ import org.integratedmodelling.klab.utilities.Utils;
  */
 public abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer>
     implements Storage<B> {
+
+
+  public static class DoubleFillerImpl implements Data.DoubleFiller {
+
+    DoubleStorage storage;
+    DoubleBuffer buffer;
+    PrimitiveIterator.OfLong iterator;
+
+    @Override
+    public void add(double value) {
+      buffer.data().add(iterator.nextLong(), value);
+      if (storage.histogram() != null) {
+        storage.histogram().insert((double) value);
+      }
+      //                if (!iterator.hasNext()) {
+      //                  finalizeStorage();
+      //                }
+    }
+  }
+
+
+  public static class BooleanFillerImpl implements Data.BooleanFiller {
+
+    DoubleStorage storage;
+    DoubleBuffer buffer;
+    PrimitiveIterator.OfLong iterator;
+
+    @Override
+    public void add(boolean value) {
+      buffer.data().add(iterator.nextLong(), value);
+      if (storage.histogram() != null) {
+        storage.histogram().insert(value ? 1.0 : 0.0);
+      }
+      //                if (!iterator.hasNext()) {
+      //                  finalizeStorage();
+      //                }
+    }
+  }
+
+
+  public static class LongFillerImpl implements Data.LongFiller {
+
+    DoubleStorage storage;
+    DoubleBuffer buffer;
+    PrimitiveIterator.OfLong iterator;
+
+    @Override
+    public void add(long value) {
+      buffer.data().add(iterator.nextLong(), value);
+      if (storage.histogram() != null) {
+        storage.histogram().insert((double) value);
+      }
+      //                if (!iterator.hasNext()) {
+      //                  finalizeStorage();
+      //                }
+    }
+  }
+
+
+  public static class FloatFillerImpl implements Data.FloatFiller {
+
+    DoubleStorage storage;
+    DoubleBuffer buffer;
+    PrimitiveIterator.OfLong iterator;
+
+    @Override
+    public void add(float value) {
+      buffer.data().add(iterator.nextLong(), value);
+      if (storage.histogram() != null) {
+        storage.histogram().insert((double) value);
+      }
+      //                if (!iterator.hasNext()) {
+      //                  finalizeStorage();
+      //                }
+    }
+  }
+
+
+  public static class IntFillerImpl implements Data.IntFiller {
+
+    DoubleStorage storage;
+    DoubleBuffer buffer;
+    PrimitiveIterator.OfLong iterator;
+
+    @Override
+    public void add(int value) {
+      buffer.data().add(iterator.nextLong(), value);
+      if (storage.histogram() != null) {
+        storage.histogram().insert((double) value);
+      }
+      //                if (!iterator.hasNext()) {
+      //                  finalizeStorage();
+      //                }
+    }
+  }
+
 
   protected final Type type;
   protected final StateStorageImpl stateStorage;
@@ -36,6 +134,8 @@ public abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer>
     this.geometry = observation.getGeometry();
     this.contextScope = contextScope;
   }
+
+
 
   /**
    * Retrieve the merged histogram. TODO we should cache if the owning state is finalized.
@@ -59,24 +159,26 @@ public abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer>
   }
 
   /** Base buffer provides the histogram and the geometry indexing/merging */
-  public abstract class AbstractBuffer implements Buffer {
+  public abstract static class AbstractBuffer implements Buffer {
 
     private final Data.FillCurve fillCurve;
     private final Persistence persistence;
     private final long size;
     private final long[] offsets;
     private final long id;
+    private final AbstractStorage storage;
     private long internalId;
     private SPDTHistogram<?> histogram;
 
-    protected AbstractBuffer(long size, Data.FillCurve fillCurve, long[] offsets) {
-      this.id = stateStorage.nextBufferId();
+    protected AbstractBuffer(AbstractStorage stateStorage, long size, Data.FillCurve fillCurve, long[] offsets) {
+      this.storage = stateStorage;
+      this.id = stateStorage.stateStorage.nextBufferId();
       this.persistence = Persistence.SERVICE_SHUTDOWN;
       this.size = size;
       this.offsets = offsets;
       this.fillCurve = fillCurve;
-      if (stateStorage.isRecordHistogram()) {
-        this.histogram = new SPDTHistogram<>(stateStorage.getHistogramBinSize());
+      if (stateStorage.stateStorage.isRecordHistogram()) {
+        this.histogram = new SPDTHistogram<>(stateStorage.stateStorage.getHistogramBinSize());
       }
     }
 
@@ -92,7 +194,7 @@ public abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer>
 
     @Override
     public Storage.Type dataType() {
-      return type;
+      return storage.type;
     }
 
     @Override
@@ -134,17 +236,15 @@ public abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer>
       return this.histogram.asHistogram();
     }
 
-    protected void finalizeStorage() {
-      // TODO doing nothing at the moment. Should create images, statistics etc. within the storage
-      //  manager based on the fill curve.
-    }
+//    protected void finalizeStorage() {
+//      // TODO doing nothing at the moment. Should create images, statistics etc. within the storage
+//      //  manager based on the fill curve.
+//    }
 
     @Override
     public String toString() {
       return "Buffer{"
-          + "type="
-          + type
-          + ", fillCurve="
+          + "fillCurve="
           + fillCurve
           + ", size="
           + size

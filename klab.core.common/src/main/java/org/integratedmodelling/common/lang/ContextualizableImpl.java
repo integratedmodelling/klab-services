@@ -1,24 +1,23 @@
 package org.integratedmodelling.common.lang;
 
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.integratedmodelling.common.lang.kim.KimStatementImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimClassification;
 import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 
 public class ContextualizableImpl extends KimStatementImpl implements Contextualizable {
 
@@ -40,7 +39,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
   private Parameters<String> parameters = Parameters.create();
   private Collection<String> interactiveParameters = new ArrayList<>();
   private Contextualizable condition;
-//  private ObservationStrategy observationStrategy;
+  //  private ObservationStrategy observationStrategy;
   private Pair<ValueMediator, ValueMediator> conversion;
   private boolean negated;
   private boolean mediation;
@@ -57,6 +56,28 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
 
   public ContextualizableImpl(List<String> resourceUrns) {
     this.resourceUrns.addAll(resourceUrns);
+  }
+
+  /**
+   * Put back the actuator service call into a contextualizable so that it can be passed to the
+   * executor.
+   *
+   * @param call
+   * @return
+   */
+  public static Contextualizable of(ServiceCall call) {
+    // TODO
+    var preset = RuntimeService.CoreFunctor.classify(call);
+    if (preset != null) {
+      return switch (preset) {
+          case URN_RESOLVER -> null; // TODO
+          case EXPRESSION_RESOLVER ->  null; // TODO
+          case LUT_RESOLVER ->  null; // TODO
+          case CONSTANT_RESOLVER ->  null; // TODO
+          case DEFER_RESOLUTION ->  null; // TODO
+      };
+    }
+    return new ContextualizableImpl(call);
   }
 
   @Override
@@ -265,14 +286,14 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     this.empty = empty;
   }
 
-//  @Override
-//  public ObservationStrategy getObservationStrategy() {
-//    return observationStrategy;
-//  }
-//
-//  public void setObservationStrategy(ObservationStrategy observationStrategy) {
-//    this.observationStrategy = observationStrategy;
-//  }
+  //  @Override
+  //  public ObservationStrategy getObservationStrategy() {
+  //    return observationStrategy;
+  //  }
+  //
+  //  public void setObservationStrategy(ObservationStrategy observationStrategy) {
+  //    this.observationStrategy = observationStrategy;
+  //  }
 
   @Override
   public void visit(Visitor visitor) {}

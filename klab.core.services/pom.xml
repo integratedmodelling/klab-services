@@ -51,8 +51,47 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy-eclipse-compiler</artifactId>
+                <version>3.9.0</version>
+                <extensions>true</extensions>
+            </plugin>
         </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <!-- 2.8.0-01 and later require maven-compiler-plugin 3.1 or higher -->
+                    <version>${maven-compiler-plugin-version}</version>
+                    <configuration>
+                        <compilerId>groovy-eclipse-compiler</compilerId>
+                        <!-- <compilerArguments> <indy /> </compilerArguments> -->
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.codehaus.groovy</groupId>
+                            <artifactId>groovy-eclipse-compiler</artifactId>
+                            <version>3.9.0</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.codehaus.groovy</groupId>
+                            <artifactId>groovy-eclipse-batch</artifactId>
+                            <version>4.0.25-01</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
     </build>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>groovy-plugins-release</id>
+            <url>https://groovy.jfrog.io/artifactory/plugins-release</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <!-- wanted by jgrasstools and osm4j. Would be lovely to avoid these. -->
     <repositories>

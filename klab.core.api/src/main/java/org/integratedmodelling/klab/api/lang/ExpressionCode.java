@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.lang;
 
+import org.integratedmodelling.klab.api.services.runtime.impl.ExpressionCodeImpl;
+
 import java.io.Serializable;
 
 /**
@@ -30,4 +32,12 @@ public interface ExpressionCode extends Serializable, Encodeable {
 	 * @return
 	 */
 	String getSourceCode();
+
+
+	static ExpressionCodeImpl of(String code, String language) {
+		var ret = new ExpressionCodeImpl();
+		ret.setCode(code);
+		ret.setLanguage(language);
+		return ret;
+	}
 }

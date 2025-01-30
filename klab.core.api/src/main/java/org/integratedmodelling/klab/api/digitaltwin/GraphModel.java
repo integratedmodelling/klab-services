@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
+import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.lang.SemanticClause;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -9,104 +12,134 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import java.util.List;
 
 /**
- * Holds the types for the digital twin graph model and the GraphQL schema. Any changes in these must be
- * coordinated with the GraphQL schema adopted by the runtime.
+ * Holds the types and field constants for the digital twin graph model and the correspondent
+ * GraphQL schema. All enums are local and they correspond to those actually used in the models so
+ * that the schema is internally consistent and has no dependency.
  */
 public class GraphModel {
 
-    /**
-     * All textual queries needed to interrogate and modify the graph model.
-     */
-    public interface Queries {
+  // TODO queries may belong to a Queries interface here.
 
-        interface GraphQL {
+  public enum ServiceType {
+    REASONER,
+    RESOLVER,
+    RUNTIME,
+    RESOURCES
+  }
 
-            record Query(String queryPattern, String resultTarget, String[] variables) {
-            }
-            //
-            //            Query OBSERVE = new Query( """
-            //                    mutation Observe {
-            //                        observe(observation: $observation)
-            //                    }
-            //                    """, "observe", new String[] {"observation"});
+  public enum SemanticType {
+    QUALITY,
+    AGENT,
+    SUBJECT,
+    FUNCTIONAL_RELATIONSHIP,
+    STRUCTURAL_RELATIONSHIP,
+    BOND,
+    EVENT,
+    PROCESS,
+    CONFIGURATION
+  }
 
-        }
-    }
+  public enum LinkType {
+    CHILD,
+    PARENT,
+    OBSERVER
+  }
 
+  public enum ObservationType {
+    SUBJECT,
+    STATE,
+    PROCESS,
+    OBSERVER,
+    EVENT,
+    RELATIONSHIP
+  }
 
-    public enum Status {WAITING, STARTED, FINISHED, ABORTED}
+  public enum ActivityType {
+    INSTANTIATION,
+    CONTEXTUALIZATION,
+    RESOLUTION,
+    EXECUTION,
+    INITIALIZATION
+  }
 
-    public enum Level {DEBUG, INFO, WARNING, ERROR}
+  public enum ActivityOutcome {
+    SUCCESS,
+    FAILURE,
+    EXCEPTION
+  }
 
-    public enum SemanticType {
-        QUALITY, AGENT, SUBJECT, FUNCTIONAL_RELATIONSHIP, STRUCTURAL_RELATIONSHIP, BOND,
-        EVENT, PROCESS, CONFIGURATION
-    }
+  public enum AgentType {
+    AI,
+    USER,
+    MODELED
+  }
 
-    public enum LinkType {CHILD, PARENT, OBSERVER}
+  public enum DataType {
+    DOUBLE,
+    FLOAT,
+    INT,
+    CATEGORY,
+    LONG
+  }
 
-    public enum ObservationType {SUBJECT, STATE, PROCESS, OBSERVER, EVENT, RELATIONSHIP}
+  public enum ValueType {
+    SCALAR,
+    DISTRIBUTION,
+    TABLE
+  }
 
+  public enum Persistence {
+    SERVICE_SHUTDOWN
+  }
 
-    public record Link(String sourceId, String targetId, LinkType type) {
-    }
+  public record Link(long sourceId, long targetId, LinkType type) {}
 
-    public record Notification(Level level, String message, String mClass, String taskId) {
-    }
+  public record Context(long id, long created, String name, Persistence expiration, String user) {}
 
-    public record ResolutionTask(String id, Double start, Double end, Status status,
-                                 List<Notification> notifications, List<ResolutionTask> children) {
-    }
+  public record Data(
+      long id,
+      String fillCurve,
+      long size,
+      DataType type,
+      ValueType valueType,
+      long offset,
+      String histogramJson,
+      Persistence persistence) {}
 
-    public record Grid(int xCells, int yCells, double x1, double x2, double y1, double y2) {
-    }
+  public record Geometry(long id, String definition, long size) {}
 
-    public record Time(double start, double end) {
-    }
+  public record Agent(long id, AgentType type, String name) {}
 
-    public record Geometry(int multiplicity, String shape, Grid grid, String projection, Time time) {
-    }
+  public record Observation(
+      long id,
+      String name,
+      String urn,
+      SemanticType semanticType,
+      ObservationType type,
+      String semantics,
+      String observable,
+      long updated,
+      boolean resolved,
+      int nChildren) {}
 
-    public record Observable(String semantics, boolean collective, String referenceName,
-                             SemanticType baseType) {
-    }
+  public record Dataflow(long id) {}
 
-    public record Observation(String id, String name, ObservationType type, Geometry geometry,
-                              Observable semantics, Status resolution, Geometry observerGeometry,
-                              int nChildren) {
-    }
+  public record Actuator(
+      long id, long observationId, String semantics, String strategy, List<String> computation) {}
 
-    public record ObservationInput(String name, String observable, String geometry, String defaultValue,
-                                   String observerGeometry,
-                                   List<ResolutionConstraint> resolutionConstraints) {
-    }
+  public record ProvenanceNode(String id) {}
 
-    public record Dataflow(String id, List<Actuator> actuators) {
-    }
-
-    public record Actuator(String id, Observable observable, List<Actuator> children) {
-    }
-
-    public record ProvenanceNode(String id) {
-    }
-
-    public static org.integratedmodelling.klab.api.knowledge.observation.Observation adapt(ObservationInput observationInput, Scope scope) {
-        // TODO metadata
-        var observable = scope.getService(Reasoner.class).resolveObservable(observationInput.observable());
-        var geometry = org.integratedmodelling.klab.api.geometry.Geometry.create(observationInput.geometry());
-        var pod = observationInput.defaultValue() == null ? null :
-                  Utils.Data.asPOD(observationInput.defaultValue());
-        var observerGeometry = observationInput.observerGeometry() == null ? null :
-                               org.integratedmodelling.klab.api.geometry.Geometry.create(observationInput.observerGeometry());
-
-        return DigitalTwin.createObservation(scope, observable, geometry, pod, observerGeometry);
-    }
-
-    public static ObservationInput adapt(org.integratedmodelling.klab.api.knowledge.observation.Observation observation, ContextScope scope) {
-        // TODO needs model/resource URN and metadata
-        return new ObservationInput(observation.getName(), observation.getObservable().getUrn(),
-                observation.getGeometry().encode(), Utils.Data.asString(observation.getValue()), null,
-                scope.getResolutionConstraints());
-    }
-
+  public record Activity(
+      long id,
+      String urn,
+      long size,
+      long credits,
+      long start,
+      long end,
+      String description,
+      ServiceType serviceType,
+      String serviceName,
+      ActivityType type,
+      ActivityOutcome outcome,
+      String observationUrn) {}
 }

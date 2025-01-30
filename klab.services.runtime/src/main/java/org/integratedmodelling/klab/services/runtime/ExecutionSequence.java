@@ -6,6 +6,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+
+import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -17,17 +19,15 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.data.ClientResourceContextualizer;
 import org.integratedmodelling.klab.data.ServiceResourceContextualizer;
-import org.integratedmodelling.klab.services.runtime.neo4j.AbstractKnowledgeGraph;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -41,6 +41,7 @@ import org.ojalgo.concurrent.Parallelism;
  */
 public class ExecutionSequence {
 
+  private final RuntimeService runtimeService;
   private final ServiceContextScope scope;
   private final DigitalTwin digitalTwin;
   private final ComponentRegistry componentRegistry;
@@ -52,16 +53,18 @@ public class ExecutionSequence {
   // the context for the next operation. Starts at the observation and doesn't normally change but
   // implementations
   // may change it when they return a non-null, non-POD object.
-//  // TODO check if this should be a RuntimeAsset or even an Observation.
-//  private Object currentExecutionContext;
+  //  // TODO check if this should be a RuntimeAsset or even an Observation.
+  //  private Object currentExecutionContext;
   private Map<Actuator, KnowledgeGraph.Operation> operations = new HashMap<>();
   private Throwable cause;
 
   public ExecutionSequence(
+      RuntimeService runtimeService,
       KnowledgeGraph.Operation contextualization,
       Dataflow<Observation> dataflow,
       ComponentRegistry componentRegistry,
       ServiceContextScope contextScope) {
+    this.runtimeService = runtimeService;
     this.scope = contextScope;
     this.contextualization = contextualization;
     this.resolvedCoverage =
@@ -163,7 +166,7 @@ public class ExecutionSequence {
 
       // TODO compile info for provenance from actuator
 
-      ScalarMapper scalarMapper = null;
+      ScalarComputation.Builder scalarBuilder = null;
 
       // each service call may produce one or more function descriptors
       // separate scalar calls into groups and compile them into one assembled functor
@@ -283,8 +286,8 @@ public class ExecutionSequence {
 
         if (currentDescriptor.serviceInfo.getGeometry().isScalar()) {
 
-          if (scalarMapper == null) {
-            scalarMapper = new ScalarMapper(observation, digitalTwin, scope);
+          if (scalarBuilder == null) {
+            scalarBuilder = runtimeService.getComputationBuilder(observation, scope, dataflow);
           }
 
           /**
@@ -292,19 +295,26 @@ public class ExecutionSequence {
            * whatever mapping strategy is configured in the scope, using a different class per
            * strategy.
            */
-          scalarMapper.add(call, currentDescriptor);
+          scalarBuilder.add(ContextualizableImpl.of(call));
 
           System.out.println("SCALAR");
 
         } else {
-          if (scalarMapper != null) {
+          if (scalarBuilder != null) {
+            var scalarMapper = scalarBuilder.build();
             // offload the scalar mapping to the executors
-            executors.add(scalarMapper::run);
-            scalarMapper = null;
+            executors.add(
+                () ->
+                    scalarMapper.run(
+                        scope
+                            .getDigitalTwin()
+                            .getStateStorage()
+                            .getOrCreateStorage(observation, Storage.class)));
+            scalarBuilder = null;
           }
 
           // if we're a quality, we need storage at the discretion of the StorageManager.
-          Storage storage =
+          Storage<?> storage =
               observation.getObservable().is(SemanticType.QUALITY)
                   ? digitalTwin.getStateStorage().getOrCreateStorage(observation, Storage.class)
                   : null;
@@ -349,7 +359,8 @@ public class ExecutionSequence {
                               .implementation(finalDescriptor1)
                               .method
                               .invoke(null, runArguments.toArray());
-//                      setExecutionContext(context == null ? observation : context);
+                      //                      setExecutionContext(context == null ? observation :
+                      // context);
                       return true;
                     } catch (Exception e) {
                       cause = e;
@@ -371,7 +382,8 @@ public class ExecutionSequence {
                                   componentRegistry.implementation(finalDescriptor)
                                       .mainClassInstance,
                                   runArguments.toArray());
-//                      setExecutionContext(context == null ? observation : context);
+                      //                      setExecutionContext(context == null ? observation :
+                      // context);
                       return true;
                     } catch (Exception e) {
                       cause = e;
@@ -384,8 +396,15 @@ public class ExecutionSequence {
         }
       }
 
-      if (scalarMapper != null) {
-        executors.add(scalarMapper::run);
+      if (scalarBuilder != null) {
+        var scalarMapper = scalarBuilder.build();
+        executors.add(
+            () ->
+                scalarMapper.run(
+                    scope
+                        .getDigitalTwin()
+                        .getStateStorage()
+                        .getOrCreateStorage(observation, Storage.class)));
       }
 
       return true;
@@ -419,9 +438,9 @@ public class ExecutionSequence {
     }
   }
 
-//  private void setExecutionContext(Object returnedValue) {
-//    this.currentExecutionContext = returnedValue;
-//  }
+  //  private void setExecutionContext(Object returnedValue) {
+  //    this.currentExecutionContext = returnedValue;
+  //  }
 
   public String statusLine() {
     return "Execution terminated";

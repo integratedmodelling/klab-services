@@ -26,12 +26,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
   }
 
   @Override
-  public boolean isParallelizable() {
-    return false;
-  }
-
-  @Override
-  public boolean run(Storage.Buffer storage) {
+  public boolean run(Storage<?> storage) {
     return false;
   }
 

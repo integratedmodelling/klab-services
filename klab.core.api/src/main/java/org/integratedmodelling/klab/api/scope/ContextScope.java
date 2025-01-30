@@ -268,6 +268,15 @@ public interface ContextScope extends SessionScope {
   Provenance getProvenance();
 
   /**
+   * Get the portion of the provenance graph that pertains to the passed observation. Can be used by
+   * the reporting system to document each individual observation.
+   *
+   * @param observation
+   * @return
+   */
+  Provenance getProvenanceOf(Observation observation);
+
+  /**
    * Return the compiled report that pertains to this scope. The result may be a subgraph of the
    * root report available from the root context scope. There is one report per root context.
    * Actuators will add sections to it as models are computed, based on the documentation templates
