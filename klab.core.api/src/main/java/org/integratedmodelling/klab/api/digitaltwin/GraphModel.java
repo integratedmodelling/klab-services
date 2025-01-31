@@ -94,7 +94,12 @@ public class GraphModel {
 
   public record Link(long sourceId, long targetId, LinkType type) {}
 
-  public record Context(long id, long created, String name, Persistence expiration, String user) {}
+  public record Context(long id, long created, String name, Persistence expiration, String user) {
+    public static final String ID_FIELD = "id";
+    public static final String NAME_FIELD = "name";
+    public static final String EXPIRATION_FIELD = "expiration";
+    public static final String USER_FIELD = "user";
+  }
 
   public record Data(
       long id,
@@ -120,7 +125,18 @@ public class GraphModel {
       String observable,
       long updated,
       boolean resolved,
-      int nChildren) {}
+      int nChildren) {
+    public static final String ID_FIELD = "id";
+    public static final String NAME_FIELD = "name";
+    public static final String URN_FIELD = "urn";
+    public static final String OBSERVATION_TYPE_FIELD = "type";
+    public static final String SEMANTIC_TYPE_FIELD = "semanticType";
+    public static final String OBSERVABLE_FIELD = "observable";
+    public static final String SEMANTICS_FIELD = "semantics";
+    public static final String UPDATE_TIMESTAMP_FIELD = "updated";
+    public static final String RESOLVED_FIELD = "resolved";
+    public static final String N_CHILDREN_FIELD = "nChildren";
+  }
 
   public record Dataflow(long id) {}
 

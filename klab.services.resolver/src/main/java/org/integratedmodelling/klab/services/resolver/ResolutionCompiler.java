@@ -64,6 +64,10 @@ public class ResolutionCompiler {
   private ResolutionGraph resolve(
       Observation observation, ContextScope scope, ResolutionGraph parentGraph) {
 
+    if (observation.isResolved()) {
+      return parentGraph;
+    }
+
     var resolutionGeometry = getObservationGeometry(observation, scope);
     if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
       return ResolutionGraph.empty();
@@ -315,7 +319,7 @@ public class ResolutionCompiler {
             contextualizedScope.getFirst(),
             contextualizedScope.getSecond().as(Geometry.class));
 
-    if (observation == null) {
+    if (observation.isEmpty()) {
       return ResolutionGraph.empty();
     }
 
@@ -359,27 +363,29 @@ public class ResolutionCompiler {
    */
   private Observation requireObservation(
       Observable observable, ContextScope scope, Geometry geometry) {
-    var ret = scope.query(Observation.class, observable);
-    if (ret.isEmpty()) {
-
+    var ret = scope.getObservation(observable.getSemantics());
+    if (ret == null || ret.isEmpty()) {
       var newObs = DigitalTwin.createObservation(scope, observable, geometry);
       var id = scope.getService(RuntimeService.class).submit(newObs, scope);
       if (id >= 0) {
-        ret = scope.query(Observation.class, observable);
+        ret = scope.getObservation(observable.getSemantics());
       }
+    } else if (!ret.isResolved()) {
+      // unresolved and previously existing
+      return Observation.empty();
     }
 
     /* TODO this should also happen if the inherency is incompatible with the semantics for dependent
     observables */
-    if (ret.isEmpty()) {
+    if (ret == null || ret.isEmpty()) {
       scope.error(
           "Cannot instantiate observation of "
               + observable.getUrn()
               + " in context "
               + scope.getId());
-      return null;
+      return Observation.empty();
     }
 
-    return ret.getFirst();
+    return ret;
   }
 }
