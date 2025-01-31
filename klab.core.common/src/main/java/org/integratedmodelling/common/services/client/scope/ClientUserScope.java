@@ -46,6 +46,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
     private Map<Long, Pair<Message, BiConsumer<Message, Message>>> responseHandlers =
             Collections
                     .synchronizedMap(new HashMap<>());
+    private String hostServiceId;
 
     public BiConsumer<Scope, Message>[] getListeners() {
         return listeners.toArray(new BiConsumer[]{});
@@ -221,5 +222,15 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
     @Override
     public List<SessionScope> getActiveSessions() {
         return List.of();
+    }
+
+    @Override
+    public String getHostServiceId() {
+        return hostServiceId;
+    }
+
+    @Override
+    public void setHostServiceId(String hostServiceId) {
+        this.hostServiceId = hostServiceId;
     }
 }

@@ -24,6 +24,7 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl imp
 
     protected KActorsBehavior.Ref agent;
     protected Persistence persistence = Persistence.SERVICE_SHUTDOWN;
+    private String hostServiceId;
 
     public AbstractReactiveScopeImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity, isSender, isReceiver);
@@ -106,5 +107,14 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl imp
 
     public void setPersistence(Persistence expiration) {
         this.persistence = expiration;
+    }
+
+    @Override
+    public String getHostServiceId() {
+        return hostServiceId;
+    }
+
+    public void setHostServiceId(String hostServiceId) {
+        this.hostServiceId = hostServiceId;
     }
 }

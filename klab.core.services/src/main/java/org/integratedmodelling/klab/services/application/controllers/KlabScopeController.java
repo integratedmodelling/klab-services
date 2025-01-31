@@ -34,231 +34,265 @@ import java.util.List;
 @Tag(name = "Scope management")
 public class KlabScopeController {
 
-    @Autowired
-    ServiceNetworkedInstance<?> instance;
+  @Autowired ServiceNetworkedInstance<?> instance;
 
-    /**
-     * Create a session with the passed name. If a broker is available, also setup messaging and any messaging
-     * queues requested with the call, defaulting as per implementation.
-     * <p>
-     * If an ID is passed, the scope will mirror a remote one and the return value should be the same ID in
-     * case of success.
-     *
-     * @param request
-     * @param sessionId
-     * @param principal
-     * @param response
-     * @param queuesHeader
-     * @return
-     */
-    @PostMapping(ServicesAPI.CREATE_SESSION)
-    public String createSession(@RequestBody ScopeRequest request,
-                                @RequestParam(name = "id", required = false) String sessionId,
-                                Principal principal,
-                                HttpServletResponse response,
-                                @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required =
-                                        false) Collection<Message.Queue> queuesHeader) {
+  /**
+   * Create a session with the passed name. If a broker is available, also setup messaging and any
+   * messaging queues requested with the call, defaulting as per implementation.
+   *
+   * <p>If an ID is passed, the scope will mirror a remote one and the return value should be the
+   * same ID in case of success.
+   *
+   * @param request
+   * @param sessionId
+   * @param principal
+   * @param response
+   * @param queuesHeader
+   * @return
+   */
+  @PostMapping(ServicesAPI.CREATE_SESSION)
+  public String createSession(
+      @RequestBody ScopeRequest request,
+      @RequestParam(name = "id", required = false) String sessionId,
+      Principal principal,
+      HttpServletResponse response,
+      @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required = false)
+          Collection<Message.Queue> queuesHeader) {
 
-        if (principal instanceof EngineAuthorization authorization) {
+    if (principal instanceof EngineAuthorization authorization) {
 
-            var userScope = authorization.getScope(UserScope.class);
-            if (userScope != null) {
+      var userScope = authorization.getScope(UserScope.class);
+      if (userScope != null) {
 
-                var ret = userScope.createSession(request.getName());
-                var identity = userScope.getIdentity();
+        var ret = userScope.createSession(request.getName());
+        var identity = userScope.getIdentity();
 
-                List<Reasoner> reasoners =
-                        instance.klabService() instanceof Reasoner r
-                        ? new ArrayList<>(List.of(r))
-                        :
-                        new ArrayList<>(request.getReasonerServices().stream().map(url -> new ReasonerClient(url,
-                                identity, instance.klabService(), instance.settings())).toList());
-                List<RuntimeService> runtimes =
-                        instance.klabService() instanceof RuntimeService r
-                        ? new ArrayList<>(List.of(r))
-                        :
-                        new ArrayList<>(request.getRuntimeServices().stream().map(url -> new RuntimeClient(url,
-                                identity, instance.klabService(), instance.settings())).toList());
-                List<ResourcesService> resources =
-                        instance.klabService() instanceof ResourcesService r
-                        ? new ArrayList<>(List.of(r))
-                        :
-                        new ArrayList<>(request.getResourceServices().stream().map(url -> new ResourcesClient(url,
-                                identity, instance.klabService(), instance.settings())).toList());
-                List<Resolver> resolvers =
-                        instance.klabService() instanceof Resolver r
-                        ? new ArrayList<>(List.of(r))
-                        :
-                        new ArrayList<>(request.getResolverServices().stream().map(url -> new ResolverClient(url,
-                                identity, instance.klabService(), instance.settings())).toList());
+        List<Reasoner> reasoners =
+            instance.klabService() instanceof Reasoner r
+                ? new ArrayList<>(List.of(r))
+                : new ArrayList<>(
+                    request.getReasonerServices().stream()
+                        .map(
+                            url ->
+                                new ReasonerClient(
+                                    url, identity, instance.klabService(), instance.settings()))
+                        .toList());
+        List<RuntimeService> runtimes =
+            instance.klabService() instanceof RuntimeService r
+                ? new ArrayList<>(List.of(r))
+                : new ArrayList<>(
+                    request.getRuntimeServices().stream()
+                        .map(
+                            url ->
+                                new RuntimeClient(
+                                    url, identity, instance.klabService(), instance.settings()))
+                        .toList());
+        List<ResourcesService> resources =
+            instance.klabService() instanceof ResourcesService r
+                ? new ArrayList<>(List.of(r))
+                : new ArrayList<>(
+                    request.getResourceServices().stream()
+                        .map(
+                            url ->
+                                new ResourcesClient(
+                                    url, identity, instance.klabService(), instance.settings()))
+                        .toList());
+        List<Resolver> resolvers =
+            instance.klabService() instanceof Resolver r
+                ? new ArrayList<>(List.of(r))
+                : new ArrayList<>(
+                    request.getResolverServices().stream()
+                        .map(
+                            url ->
+                                new ResolverClient(
+                                    url, identity, instance.klabService(), instance.settings()))
+                        .toList());
 
-                if (request.getReasonerServices().isEmpty()) {
-                    reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));
-                }
-
-                // TODO check presence and availability of all services and fail if no response
-
-                if (ret instanceof ServiceSessionScope serviceSessionScope) {
-
-                    serviceSessionScope.setServices(resources, resolvers, reasoners, runtimes);
-                    if (sessionId != null) {
-                        // slave mode: session ID is provided by a calling service. The service's
-                        // registerSession should check that.
-                        serviceSessionScope.setId(sessionId);
-                    }
-                }
-
-                var brokerUrl = instance.klabService().capabilities(userScope).getBrokerURI();
-                var id = instance.klabService().registerSession(ret);
-                if (brokerUrl != null) {
-                    response.setHeader(ServicesAPI.MESSAGING_URN_HEADER, brokerUrl.toString());
-                }
-                if (brokerUrl != null && ret instanceof ServiceSessionScope serviceSessionScope) {
-
-                    if (queuesHeader == null) {
-                        queuesHeader = serviceSessionScope.defaultQueues();
-                    }
-
-                    var implementedQueues = serviceSessionScope.setupMessaging(brokerUrl.toString(), id,
-                            queuesHeader);
-
-                    if (instance.klabService().scopesAreReactive() && !serviceSessionScope.initializeAgents(id)) {
-                        Logging.INSTANCE.warn("agent initialization failed in session creation");
-                    }
-                    response.setHeader(ServicesAPI.MESSAGING_QUEUES_HEADER,
-                            Utils.Strings.join(implementedQueues, ", "));
-                }
-                return id;
-            } else {
-                Logging.INSTANCE.error("Session instantiation failed: no valid user scope for request");
-            }
+        if (request.getReasonerServices().isEmpty()) {
+          reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));
         }
-        return null;
-    }
 
-    /**
-     * Create a server-side context scope with an empty digital twin and the authorized services for the
-     * requesting user. Also setup any messaging queues requested with the call, defaulting as per
-     * implementation.
-     * <p>
-     * The call contains the URLs of the resolver and resource services, and must ensure they can be used with
-     * this runtime, creating the clients within the context scope. Any local service URL passed to a remote
-     * runtime should cause an error.
-     * <p>
-     * If an ID is passed, the scope will mirror a remote one and the return value should be the same ID in
-     * case of success.
-     *
-     * @param request
-     * @param contextId if passed, the context mirrors an existing one in the calling service
-     * @param principal
-     * @return the ID of the new context scope
-     */
-    @PostMapping(ServicesAPI.CREATE_CONTEXT)
-    public String createContext(@RequestBody ScopeRequest request,
-                                @RequestParam(name = "id", required = false) String contextId,
-                                Principal principal,
-                                @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required =
-                                        false) Collection<Message.Queue> queuesHeader,
-                                HttpServletResponse response) {
+        // TODO check presence and availability of all services and fail if no response
 
-        if (principal instanceof EngineAuthorization authorization) {
+        if (ret instanceof ServiceSessionScope serviceSessionScope) {
 
-            var sessionScope = authorization.getScope(SessionScope.class);
-
-            if (sessionScope != null) {
-
-                var identity = sessionScope.getIdentity();
-                List<Reasoner> reasoners =
-                        instance.klabService() instanceof Reasoner r
-                        ? new ArrayList<>(List.of(r))
-                        :
-                        new ArrayList<>(request.getReasonerServices().stream().map(url -> new ReasonerClient(url,
-                                identity, instance.klabService(), instance.settings())).toList());
-                List<RuntimeService> runtimes =
-                        instance.klabService() instanceof RuntimeService r
-                        ? new ArrayList<>(List.of(r))
-                        :
-                        new ArrayList<>(request.getRuntimeServices().stream().map(url -> new RuntimeClient(url,
-                                identity, instance.klabService(), instance.settings())).toList());
-                List<ResourcesService> resources =
-                        instance.klabService() instanceof ResourcesService r
-                        ? new ArrayList<>(List.of(r))
-                        :
-                        new ArrayList<>(request.getResourceServices().stream().map(url -> new ResourcesClient(url,
-                                identity, instance.klabService(), instance.settings())).toList());
-                List<Resolver> resolvers =
-                        instance.klabService() instanceof Resolver r
-                        ? new ArrayList<>(List.of(r))
-                        :
-                        new ArrayList<>(request.getResolverServices().stream().map(url -> new ResolverClient(url,
-                                identity, instance.klabService(), instance.settings())).toList());
-
-                if (request.getReasonerServices().isEmpty()) {
-                    reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));
-                }
-
-                var ret = sessionScope.createContext(request.getName());
-
-                if (ret instanceof ServiceContextScope serviceContextScope) {
-
-                    serviceContextScope.setServices(resources, resolvers, reasoners, runtimes);
-                    if (contextId != null) {
-                        // slave mode: session ID is provided by a calling service. The service's
-                        // registerSession should check that.
-                        serviceContextScope.setId(contextId);
-                    }
-
-
-                    // TODO check presence and availability of all services and fail if no response
-
-                    if (queuesHeader == null || queuesHeader.isEmpty()) {
-                        queuesHeader = serviceContextScope.defaultQueues();
-                    }
-
-                    var id = instance.klabService().registerContext(ret);
-
-                    var queuesAvailable = serviceContextScope.setupMessagingQueues(id, queuesHeader);
-
-                    if (instance.klabService().scopesAreReactive() && !serviceContextScope.initializeAgents(id)) {
-                        Logging.INSTANCE.warn("agent initialization failed in context creation");
-                    }
-                    response.setHeader(ServicesAPI.MESSAGING_QUEUES_HEADER,
-                            Utils.Strings.join(queuesAvailable, ", "));
-
-                    return id;
-                }
-            } else {
-                Logging.INSTANCE.error("Context instantiation failed: no valid session scope for request");
-            }
+          serviceSessionScope.setServices(resources, resolvers, reasoners, runtimes);
+          if (sessionId != null) {
+            // slave mode: session ID is provided by a calling service. The service's
+            // registerSession should check that.
+            serviceSessionScope.setId(sessionId);
+          }
         }
-        return null;
-    }
 
-    @GetMapping(ServicesAPI.RELEASE_SESSION)
-    public boolean closeSession(Principal principal) {
-
-        if (principal instanceof EngineAuthorization authorization) {
-            var sessionScope = authorization.getScope(SessionScope.class);
-            if (sessionScope != null) {
-                sessionScope.close();
-                return true;
-            }
+        var brokerUrl = instance.klabService().capabilities(userScope).getBrokerURI();
+        var id = instance.klabService().registerSession(ret);
+        if (brokerUrl != null) {
+          response.setHeader(ServicesAPI.MESSAGING_URN_HEADER, brokerUrl.toString());
         }
-        return false;
-    }
+        if (brokerUrl != null && ret instanceof ServiceSessionScope serviceSessionScope) {
 
-    @GetMapping(ServicesAPI.RELEASE_CONTEXT)
-    public boolean closeContext(Principal principal) {
+          if (queuesHeader == null) {
+            queuesHeader = serviceSessionScope.defaultQueues();
+          }
 
-        if (principal instanceof EngineAuthorization authorization) {
-            var contextScope = authorization.getScope(ContextScope.class);
-            if (contextScope != null) {
-                contextScope.close();
-                return true;
-            }
+          var implementedQueues =
+              serviceSessionScope.setupMessaging(brokerUrl.toString(), id, queuesHeader);
+
+          if (instance.klabService().scopesAreReactive()
+              && !serviceSessionScope.initializeAgents(id)) {
+            Logging.INSTANCE.warn("agent initialization failed in session creation");
+          }
+          response.setHeader(
+              ServicesAPI.MESSAGING_QUEUES_HEADER, Utils.Strings.join(implementedQueues, ", "));
         }
-        return false;
+        return id;
+      } else {
+        Logging.INSTANCE.error("Session instantiation failed: no valid user scope for request");
+      }
     }
+    return null;
+  }
 
+  /**
+   * Create a server-side context scope with an empty digital twin and the authorized services for
+   * the requesting user. Also setup any messaging queues requested with the call, defaulting as per
+   * implementation.
+   *
+   * <p>The call contains the URLs of the resolver and resource services, and must ensure they can
+   * be used with this runtime, creating the clients within the context scope. Any local service URL
+   * passed to a remote runtime should cause an error.
+   *
+   * <p>If an ID is passed, the scope will mirror a remote one and the return value should be the
+   * same ID in case of success.
+   *
+   * @param request
+   * @param contextId if passed, the context mirrors an existing one in the calling service
+   * @param principal
+   * @return the ID of the new context scope
+   */
+  @PostMapping(ServicesAPI.CREATE_CONTEXT)
+  public String createContext(
+      @RequestBody ScopeRequest request,
+      @RequestParam(name = "id", required = false) String contextId,
+      Principal principal,
+      @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required = false)
+          Collection<Message.Queue> queuesHeader,
+      @RequestHeader(value = ServicesAPI.SERVICE_ID_HEADER, required = false)
+          Collection<Message.Queue> serviceIdHeader,
+      HttpServletResponse response) {
 
+    if (principal instanceof EngineAuthorization authorization) {
+
+      var sessionScope = authorization.getScope(SessionScope.class);
+
+      if (sessionScope != null) {
+
+        var identity = sessionScope.getIdentity();
+        List<Reasoner> reasoners =
+            instance.klabService() instanceof Reasoner r
+                ? new ArrayList<>(List.of(r))
+                : new ArrayList<>(
+                    request.getReasonerServices().stream()
+                        .map(
+                            url ->
+                                new ReasonerClient(
+                                    url, identity, instance.klabService(), instance.settings()))
+                        .toList());
+        List<RuntimeService> runtimes =
+            instance.klabService() instanceof RuntimeService r
+                ? new ArrayList<>(List.of(r))
+                : new ArrayList<>(
+                    request.getRuntimeServices().stream()
+                        .map(
+                            url ->
+                                new RuntimeClient(
+                                    url, identity, instance.klabService(), instance.settings()))
+                        .toList());
+        List<ResourcesService> resources =
+            instance.klabService() instanceof ResourcesService r
+                ? new ArrayList<>(List.of(r))
+                : new ArrayList<>(
+                    request.getResourceServices().stream()
+                        .map(
+                            url ->
+                                new ResourcesClient(
+                                    url, identity, instance.klabService(), instance.settings()))
+                        .toList());
+        List<Resolver> resolvers =
+            instance.klabService() instanceof Resolver r
+                ? new ArrayList<>(List.of(r))
+                : new ArrayList<>(
+                    request.getResolverServices().stream()
+                        .map(
+                            url ->
+                                new ResolverClient(
+                                    url, identity, instance.klabService(), instance.settings()))
+                        .toList());
+
+        if (request.getReasonerServices().isEmpty()) {
+          reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));
+        }
+
+        var ret = sessionScope.createContext(request.getName());
+
+        if (ret instanceof ServiceContextScope serviceContextScope) {
+
+          serviceContextScope.setServices(resources, resolvers, reasoners, runtimes);
+          if (contextId != null) {
+            // slave mode: session ID is provided by a calling service. The service's
+            // registerSession should check that.
+            serviceContextScope.setId(contextId);
+          }
+
+          // TODO check presence and availability of all services and fail if no response
+
+          if (queuesHeader == null || queuesHeader.isEmpty()) {
+            queuesHeader = serviceContextScope.defaultQueues();
+          }
+
+          var id = instance.klabService().registerContext(ret);
+
+          var queuesAvailable = serviceContextScope.setupMessagingQueues(id, queuesHeader);
+
+          if (instance.klabService().scopesAreReactive()
+              && !serviceContextScope.initializeAgents(id)) {
+            Logging.INSTANCE.warn("agent initialization failed in context creation");
+          }
+          response.setHeader(
+              ServicesAPI.MESSAGING_QUEUES_HEADER, Utils.Strings.join(queuesAvailable, ", "));
+
+          return id;
+        }
+      } else {
+        Logging.INSTANCE.error("Context instantiation failed: no valid session scope for request");
+      }
+    }
+    return null;
+  }
+
+  @GetMapping(ServicesAPI.RELEASE_SESSION)
+  public boolean closeSession(Principal principal) {
+
+    if (principal instanceof EngineAuthorization authorization) {
+      var sessionScope = authorization.getScope(SessionScope.class);
+      if (sessionScope != null) {
+        sessionScope.close();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @GetMapping(ServicesAPI.RELEASE_CONTEXT)
+  public boolean closeContext(Principal principal) {
+
+    if (principal instanceof EngineAuthorization authorization) {
+      var contextScope = authorization.getScope(ContextScope.class);
+      if (contextScope != null) {
+        contextScope.close();
+        return true;
+      }
+    }
+    return false;
+  }
 }

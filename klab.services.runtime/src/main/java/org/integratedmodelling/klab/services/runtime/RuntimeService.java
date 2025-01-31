@@ -262,6 +262,8 @@ public class RuntimeService extends BaseService
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
+      serviceContextScope.setHostServiceId(serviceId());
+
       serviceContextScope.setId(
           serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
       getScopeManager()

@@ -51,6 +51,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -407,6 +408,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           ret.headers.put(ServicesAPI.SCOPE_HEADER, ContextScope.getScopeId(contextScope));
         } else if (scope instanceof SessionScope sessionScope) {
           ret.headers.put(ServicesAPI.SCOPE_HEADER, sessionScope.getId());
+        }
+        if (scope instanceof ReactiveScope reactiveScope && reactiveScope.getHostServiceId() != null) {
+          ret.headers.put(ServicesAPI.SERVICE_ID_HEADER, reactiveScope.getHostServiceId());
         }
         return ret;
       }
