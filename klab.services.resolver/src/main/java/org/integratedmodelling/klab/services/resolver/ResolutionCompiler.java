@@ -280,24 +280,29 @@ public class ResolutionCompiler {
       ResolutionGraph resolutionSoFar) {
     Scale scale = originalScale;
     ContextScope scope = originalScope;
+
     if (observable.getSemantics().isCollective()) {
       /*
-       * Use the observer's scale if there is an observer
+       * Use the observer's scale if there is an observer with a significant geometry
        */
-      if (scope.getObserver() != null) {
+      if (scope.getObserver() != null
+          && !(scope.getObserver().getGeometry().isScalar()
+              || !scope.getObserver().getGeometry().isEmpty())) {
         scale = Scale.create(scope.getObserver().getGeometry());
       }
-    } else if (!SemanticType.isSubstantial(observable.getSemantics().getType())) {
-      /*
-       * must have a context in the scope (and it must be compatible for the inherency)
-       */
-      Observation context = resolutionSoFar.getContextObservation();
-      if (context == null) {
-        scope.error(
-            "Cannot resolve a dependent without a context substantial observation: "
-                + observable.getUrn());
-        return null;
-      }
+    } /*else if (!SemanticType.isSubstantial(observable.getSemantics().getType())) {*/
+    /*
+     * must have a context in the scope (and it must be compatible for the inherency)
+     */
+    Observation context = resolutionSoFar.getContextObservation();
+    if (context == null && !SemanticType.isSubstantial(observable.getSemantics().getType())) {
+      scope.error(
+          "Cannot resolve a dependent without a context substantial observation: "
+              + observable.getUrn());
+      return null;
+    }
+
+    if (context != null) {
       scope = scope.within(context);
     }
 
@@ -369,6 +374,9 @@ public class ResolutionCompiler {
       var id = scope.getService(RuntimeService.class).submit(newObs, scope);
       if (id >= 0) {
         ret = scope.getObservation(observable.getSemantics());
+        if (ret == null) {
+          System.out.println("DIO CAPRO");
+        }
       }
     } else if (!ret.isResolved()) {
       // unresolved and previously existing

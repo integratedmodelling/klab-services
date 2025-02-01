@@ -1395,6 +1395,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return List.of();
       }
       var queryCode = statement.build().getCypher();
+      System.out.println("QUERY THIS: " + queryCode);
       return adapt(query(queryCode, null, scope), resultClass, scope);
     }
     throw new KlabUnimplementedException("Not ready to compile arbitrary query implementations");
