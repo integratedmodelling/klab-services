@@ -178,7 +178,7 @@ public class KlabScopeController {
       @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required = false)
           Collection<Message.Queue> queuesHeader,
       @RequestHeader(value = ServicesAPI.SERVICE_ID_HEADER, required = false)
-          Collection<Message.Queue> serviceIdHeader,
+          String serviceIdHeader,
       HttpServletResponse response) {
 
     if (principal instanceof EngineAuthorization authorization) {
@@ -237,6 +237,7 @@ public class KlabScopeController {
 
         if (ret instanceof ServiceContextScope serviceContextScope) {
 
+          serviceContextScope.setHostServiceId(serviceIdHeader);
           serviceContextScope.setServices(resources, resolvers, reasoners, runtimes);
           if (contextId != null) {
             // slave mode: session ID is provided by a calling service. The service's

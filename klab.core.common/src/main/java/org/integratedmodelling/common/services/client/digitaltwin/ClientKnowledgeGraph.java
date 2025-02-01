@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.services.client.digitaltwin;
 
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
+import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -21,16 +22,19 @@ import java.util.List;
 /** At the client side, the knowledge graph can only be queried and rejects any operation. */
 public class ClientKnowledgeGraph implements KnowledgeGraph {
 
-  private final ClientContextScope scope;
+  private final ContextScope scope;
+  private final RuntimeClient runtimeClient;
 
-  public ClientKnowledgeGraph(ClientContextScope scope) {
+  public ClientKnowledgeGraph(ContextScope scope, RuntimeClient runtimeClient) {
     this.scope = scope;
+    this.runtimeClient = runtimeClient;
   }
 
   @Override
   public Operation operation(
       Agent agent, Activity parentActivity, Activity.Type activityType, Object... data) {
-    throw new KlabIllegalStateException("Modifying operations not allowed on the client-side knowledge graph");
+    throw new KlabIllegalStateException(
+        "Modifying operations not allowed on the client-side knowledge graph");
   }
 
   @Override
@@ -38,17 +42,15 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     return new KnowledgeGraphQuery<>(KnowledgeGraphQuery.AssetType.classify(resultClass)) {
       @Override
       public List<T> run() {
-        return scope.queryKnowledgeGraph(this);
+        return runtimeClient.queryKnowledgeGraph(this, scope);
       }
     };
   }
 
   @Override
-  public <T extends RuntimeAsset> List<T> query(Query<T> knowledgeGraphQuery, Class<T> resultClass) {
-    if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> kc) {
-      return scope.queryKnowledgeGraph(kc);
-    }
-    throw new KlabUnimplementedException("Not ready to compile arbitrary KG query implementations");
+  public <T extends RuntimeAsset> List<T> query(
+      Query<T> knowledgeGraphQuery, Class<T> resultClass) {
+    return runtimeClient.queryKnowledgeGraph(knowledgeGraphQuery, scope);
   }
 
   @Override
@@ -90,7 +92,8 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
   @Override
   public void update(RuntimeAsset observation, ContextScope scope, Object... arguments) {
-    throw new KlabIllegalStateException("Modifying operations not allowed on the client-side knowledge graph");
+    throw new KlabIllegalStateException(
+        "Modifying operations not allowed on the client-side knowledge graph");
   }
 
   @Override

@@ -1,8 +1,8 @@
 package org.integratedmodelling.common.services.client.runtime;
 
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
-import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -17,15 +17,13 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Client-side knowledge graph query, serializable to be ingested by the runtime's REST digital twin
@@ -146,7 +144,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   private QueryType type = QueryType.QUERY;
   private List<KnowledgeGraphQuery<T>> children = new ArrayList<>();
   private DigitalTwin.Relationship relationship;
-  private Parameters<String> assetQueryCriteria = Parameters.create();
+  private List<Triple<String, String, String>> assetQueryCriteria = new ArrayList<>();
   private Parameters<String> relationshipQueryCriteria = Parameters.create();
   private int depth = 1;
   private long limit = -1;
@@ -217,8 +215,8 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   }
 
   @Override
-  public KnowledgeGraph.Query<T> where(Object... queryParameters) {
-    this.assetQueryCriteria = Parameters.create(queryParameters);
+  public KnowledgeGraph.Query<T> where(String field, Operator operator, Object argument) {
+    this.assetQueryCriteria.add(Triple.of(field, operator.name(), Utils.Data.asString(argument)));
     return this;
   }
 
@@ -298,11 +296,11 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
     this.relationship = relationship;
   }
 
-  public Parameters<String> getAssetQueryCriteria() {
+  public List<Triple<String, String, String>> getAssetQueryCriteria() {
     return assetQueryCriteria;
   }
 
-  public void setAssetQueryCriteria(Parameters<String> assetQueryCriteria) {
+  public void setAssetQueryCriteria(List<Triple<String, String, String>> assetQueryCriteria) {
     this.assetQueryCriteria = assetQueryCriteria;
   }
 

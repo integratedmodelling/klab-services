@@ -392,6 +392,21 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       }
 
       /**
+       * Quick call to add a header with no checks or options. Returns the SAME client after
+       * modifying it. Does nothing if value is null.
+       *
+       * @param header
+       * @param value
+       * @return
+       */
+      public Client withHeader(String header, String value) {
+        if (value != null) {
+          headers.put(header, value);
+        }
+        return this;
+      }
+
+      /**
        * Localize the scope to another. Headers passed with the request will reflect the scope
        * nesting.
        *
@@ -409,7 +424,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         } else if (scope instanceof SessionScope sessionScope) {
           ret.headers.put(ServicesAPI.SCOPE_HEADER, sessionScope.getId());
         }
-        if (scope instanceof ReactiveScope reactiveScope && reactiveScope.getHostServiceId() != null) {
+        if (scope instanceof ReactiveScope reactiveScope
+            && reactiveScope.getHostServiceId() != null) {
           ret.headers.put(ServicesAPI.SERVICE_ID_HEADER, reactiveScope.getHostServiceId());
         }
         return ret;

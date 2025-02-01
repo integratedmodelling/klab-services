@@ -42,10 +42,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.runtime.storage.AbstractStorage;
-import org.neo4j.cypherdsl.core.Cypher;
-import org.neo4j.cypherdsl.core.Node;
-import org.neo4j.cypherdsl.core.ResultStatement;
-import org.neo4j.cypherdsl.core.StatementBuilder;
+import org.neo4j.cypherdsl.core.*;
 import org.neo4j.driver.*;
 
 /**
@@ -1424,20 +1421,45 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
         var known = getQueryNode(asset);
         var unknown = Cypher.node(getLabel(KnowledgeGraphQuery.AssetType.classify(resultClass)));
-        if (!query.getAssetQueryCriteria().isEmpty()) {
+        List<PatternElement> restrictions = new ArrayList<>();
+        for (var restriction : query.getAssetQueryCriteria()) {
           // TODO add query criteria for the unknown node (where() in search)
+          var property = unknown.property(restriction.getFirst());
+          switch (Query.Operator.valueOf(restriction.getSecond())) {
+            case EQUALS -> {
+              restrictions.add(
+                  unknown.where(
+                      property.eq(fieldLiteral(restriction.getFirst(), restriction.getThird()))));
+            }
+            case LT -> {}
+            case GT -> {}
+            case LE -> {}
+            case GE -> {}
+            case LIKE -> {}
+            case INTERSECT -> {}
+            case COVERS -> {}
+            case NEAREST -> {}
+            case BEFORE -> {}
+            case AFTER -> {}
+          }
         }
 
         var source = query.getSource() == null ? unknown : known;
         var target = query.getSource() == null ? known : unknown;
         // TODO properties for the relationship
-        return Cypher.match(source.relationshipTo(target, getLabel(query.getRelationship())))
-            .returning(target);
+        var qret = Cypher.match(source.relationshipTo(target, getLabel(query.getRelationship())));
+
+        for (int i = 0; i < restrictions.size(); i++) {
+            qret = qret.match(restrictions.get(i));
+        }
+
+        return qret.returning(target);
       }
       case AND -> {
         // bring this upstream, returns a UnionQuery
-        var queries = query.getChildren().stream().map(q -> compileQuery(q, resultClass).build()).toList();
-//        return Cypher.union(queries);
+        var queries =
+            query.getChildren().stream().map(q -> compileQuery(q, resultClass).build()).toList();
+        //        return Cypher.union(queries);
       }
       case OR -> {
         var queries = query.getChildren().stream().map(q -> compileQuery(q, resultClass)).toList();
@@ -1450,19 +1472,30 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return ret;
   }
 
+  private Expression fieldLiteral(String field, String value) {
+
+    Object val = value;
+    if ("id".equals(field) && Utils.Numbers.encodesInteger(value)) {
+      // TODO check
+      val = Long.parseLong(value);
+    }
+    return Cypher.literalOf(val);
+  }
+
   private Node getQueryNode(KnowledgeGraphQuery.Asset asset) {
 
-    var searchField = switch (asset.getType()) {
-        case SCOPE -> "id";
-        case DATAFLOW -> "id";
-        case PROVENANCE -> null;
-        case ACTUATOR -> "id";
-        case ACTIVITY -> "urn";
-        case OBSERVATION -> "urn";
-        case SEMANTICS -> "urn";
-        case OBSERVABLE -> "urn";
-        case DATA -> "id";
-    };
+    var searchField =
+        switch (asset.getType()) {
+          case SCOPE -> "id";
+          case DATAFLOW -> "id";
+          case PROVENANCE -> null;
+          case ACTUATOR -> "id";
+          case ACTIVITY -> "urn";
+          case OBSERVATION -> "urn";
+          case SEMANTICS -> "urn";
+          case OBSERVABLE -> "urn";
+          case DATA -> "id";
+        };
     var searchValue = asset.getUrn();
 
     return Cypher.node(getLabel(asset.getType()))

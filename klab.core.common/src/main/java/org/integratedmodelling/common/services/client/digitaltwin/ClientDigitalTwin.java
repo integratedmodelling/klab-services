@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client.digitaltwin;
 
+import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -7,9 +8,11 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
@@ -23,13 +26,21 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
  */
 public class ClientDigitalTwin implements DigitalTwin {
 
-  private final ClientContextScope scope;
-  private final ClientKnowledgeGraph knowledgeGraph;
+  private final ContextScope scope;
+  private ClientKnowledgeGraph knowledgeGraph;
+  private RuntimeService runtimeClient;
 
-  public ClientDigitalTwin(ClientContextScope scope, String id) {
+  public ClientDigitalTwin(ContextScope scope, String id) {
     this.scope = scope;
-    this.knowledgeGraph = new ClientKnowledgeGraph(scope);
-    scope.installQueueConsumer(id, Message.Queue.Events, this::ingest);
+    this.runtimeClient = scope.getService(RuntimeService.class);
+    if (this.runtimeClient instanceof RuntimeClient rc) {
+      this.knowledgeGraph = new ClientKnowledgeGraph(scope, rc);
+      if (scope instanceof ClientContextScope clientContextScope) {
+        clientContextScope.installQueueConsumer(id, Message.Queue.Events, this::ingest);
+      }
+    } else {
+      throw new KlabInternalErrorException("Non-client runtime class in client digital twin");
+    }
   }
 
   /**

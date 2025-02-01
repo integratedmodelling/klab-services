@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
@@ -17,6 +18,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -297,6 +299,17 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
+  public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
+      KnowledgeGraph.Query<T> knowledgeGraphQuery) {
+    if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> qc) {
+      return digitalTwin
+          .getKnowledgeGraph()
+          .query(knowledgeGraphQuery, (Class<T>) qc.getResultType().getAssetClass());
+    }
+    throw new KlabUnimplementedException("Not ready to compile arbitrary KG query implementations");
+  }
+
+  @Override
   public void runTransitions() {
     // TODO Auto-generated method stub
 
@@ -363,11 +376,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         }
       }
 
-//      var observedGeometry =
-//          getConstraint(ResolutionConstraint.Type.ObserverGeometry, Geometry.class);
-//      if (observedGeometry != null && observer != null) {
-//        this.currentlyObservedGeometries.put(observer, observedGeometry);
-//      }
+      //      var observedGeometry =
+      //          getConstraint(ResolutionConstraint.Type.ObserverGeometry, Geometry.class);
+      //      if (observedGeometry != null && observer != null) {
+      //        this.currentlyObservedGeometries.put(observer, observedGeometry);
+      //      }
     }
     return ret;
   }
@@ -375,9 +388,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public List<ResolutionConstraint> getResolutionConstraints() {
     var ret = Utils.Collections.promoteToList(this.resolutionConstraints.values());
-//    if (observer != null && !this.resolutionConstraints.containsKey(ResolutionConstraint.Type.ObserverGeometry)) {
-//      ret.add(ResolutionConstraint.of(ResolutionConstraint.Type.ObserverGeometry, observer.getGeometry()));
-//    }
+    //    if (observer != null &&
+    // !this.resolutionConstraints.containsKey(ResolutionConstraint.Type.ObserverGeometry)) {
+    //      ret.add(ResolutionConstraint.of(ResolutionConstraint.Type.ObserverGeometry,
+    // observer.getGeometry()));
+    //    }
     return ret;
   }
 
@@ -514,6 +529,4 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     // TODO
     return Parallelism.CORES;
   }
-
-
 }

@@ -257,6 +257,7 @@ public class ResourcesClient extends ServiceClient
     var ret =
         client
             .withScope(scope.getParentScope())
+            .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
             .post(
                 ServicesAPI.CREATE_CONTEXT,
                 request,

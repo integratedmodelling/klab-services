@@ -168,6 +168,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     var ret =
         client
             .withScope(scope.getParentScope())
+            .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
             .post(
                 ServicesAPI.CREATE_CONTEXT,
                 request,
@@ -296,10 +297,12 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
       KnowledgeGraph.Query<T> knowledgeGraphQuery, ContextScope scope) {
     if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> knowledgeGraphQuery1) {
       return (List<T>)
-          client.withScope(scope).postCollection(
-              ServicesAPI.RUNTIME.QUERY,
-              knowledgeGraphQuery,
-              knowledgeGraphQuery1.getResultType().getAssetClass());
+          client
+              .withScope(scope)
+              .postCollection(
+                  ServicesAPI.RUNTIME.QUERY,
+                  knowledgeGraphQuery,
+                  knowledgeGraphQuery1.getResultType().getAssetClass());
     }
     throw new KlabIllegalStateException("Knowledge graph query using unexpected implementation");
   }

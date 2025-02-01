@@ -70,7 +70,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
           .build(
               new CacheLoader<String, Observable>() {
                 public Observable load(String key) { // no checked exception
-                  var ret =  resolveObservableInternal(key);
+                  var ret = resolveObservableInternal(key);
                   return ret == null ? Observable.nothing(null) : ret;
                 }
               });
@@ -860,6 +860,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     var ret =
         client
             .withScope(scope.getParentScope())
+            .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
             .post(
                 ServicesAPI.CREATE_CONTEXT,
                 request,

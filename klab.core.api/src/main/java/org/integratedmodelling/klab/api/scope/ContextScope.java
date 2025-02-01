@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -322,6 +323,9 @@ public interface ContextScope extends SessionScope {
    * @deprecated use query on KG
    */
   <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData);
+
+ <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
+      KnowledgeGraph.Query<T> knowledgeGraphQuery);
 
   /**
    * Return the parent observation of the passed observation. The runtime context maintains the

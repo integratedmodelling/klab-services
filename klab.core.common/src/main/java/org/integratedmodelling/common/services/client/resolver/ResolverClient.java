@@ -160,7 +160,8 @@ public class ResolverClient extends ServiceClient implements Resolver {
 
   /**
    * When called as a slave from a service, add the sessionId parameter to build a peer scope at the
-   * remote service side.
+   * remote service side. Send the calling service ID from the scope so that communication can be
+   * reconstructed if the call comes from a runtime service.
    *
    * @param scope a client scope that should record the ID for future communication. If the ID is
    *     null, the call has failed.
@@ -224,6 +225,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
     var ret =
         client
             .withScope(scope.getParentScope())
+            .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
             .post(
                 ServicesAPI.CREATE_CONTEXT,
                 request,

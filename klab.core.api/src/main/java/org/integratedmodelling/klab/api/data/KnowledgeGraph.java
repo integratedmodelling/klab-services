@@ -64,7 +64,7 @@ public interface KnowledgeGraph {
 
     Query<T> offset(long n);
 
-    Query<T> where(Object... queryParameters);
+    Query<T> where(String field, Operator operator, Object argument);
 
     Query<T> order(Object... criteria);
 
@@ -256,14 +256,14 @@ public interface KnowledgeGraph {
   KnowledgeGraph contextualize(ContextScope scope);
 
   /**
-   * Extract and return the asset with the specified ID from the graph, ensuring it is of the passed
-   * class.
+   * Extract and return the one asset that has the specified ID from the graph, ensuring it is of
+   * the passed class. Expected to be the fastest way to retrieve a node when the ID is known,
+   * therefore available besides the more general {@link #query(Query, Class)}.
    *
    * @param id
    * @param resultClass
    * @param <T>
    * @return
-   * @deprecated use query()
    */
   <T extends RuntimeAsset> T get(long id, Class<T> resultClass);
 

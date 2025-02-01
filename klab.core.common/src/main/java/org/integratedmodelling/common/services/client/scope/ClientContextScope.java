@@ -377,8 +377,9 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     this.digitalTwin = new ClientDigitalTwin(this, id);
   }
 
+  @Override
   public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
-      KnowledgeGraphQuery<T> knowledgeGraphQuery) {
+      KnowledgeGraph.Query<T> knowledgeGraphQuery) {
     return runtimeService.queryKnowledgeGraph(knowledgeGraphQuery, this);
   }
 }
