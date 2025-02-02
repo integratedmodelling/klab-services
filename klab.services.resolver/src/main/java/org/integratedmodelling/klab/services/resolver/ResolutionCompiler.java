@@ -374,9 +374,6 @@ public class ResolutionCompiler {
       var id = scope.getService(RuntimeService.class).submit(newObs, scope);
       if (id >= 0) {
         ret = scope.getObservation(observable.getSemantics());
-        if (ret == null) {
-          System.out.println("DIO CAPRO");
-        }
       }
     } else if (!ret.isResolved()) {
       // unresolved and previously existing
