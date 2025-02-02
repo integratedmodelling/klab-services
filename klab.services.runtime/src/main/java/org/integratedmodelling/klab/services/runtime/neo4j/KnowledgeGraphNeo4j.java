@@ -1378,7 +1378,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   @Override
-  public <T extends RuntimeAsset> Query<T> query(Class<T> resultClass) {
+  public <T extends RuntimeAsset> Query<T> query(Class<T> resultClass, Scope scope) {
     return new KnowledgeGraphQuery<>(KnowledgeGraphQuery.AssetType.classify(resultClass)) {
       @Override
       public List<T> run(Scope scope) {

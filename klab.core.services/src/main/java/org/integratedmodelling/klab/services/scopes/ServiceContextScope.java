@@ -166,7 +166,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     var ret =
         digitalTwin
             .getKnowledgeGraph()
-            .query(Observation.class)
+            .query(Observation.class, this)
             .target(observation)
             .along(DigitalTwin.Relationship.HAS_OBSERVER)
             .run(this);
@@ -256,7 +256,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     var ret =
         digitalTwin
             .getKnowledgeGraph()
-            .query(Observation.class)
+            .query(Observation.class, this)
             .target(observation)
             .along(DigitalTwin.Relationship.HAS_CHILD)
             .run(this);
@@ -267,7 +267,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public Collection<Observation> getChildrenOf(Observation observation) {
     return digitalTwin
         .getKnowledgeGraph()
-        .query(Observation.class)
+        .query(Observation.class, this)
         .source(observation)
         .along(DigitalTwin.Relationship.HAS_CHILD)
         .run(this);
@@ -277,7 +277,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public Collection<Observation> getOutgoingRelationshipsOf(Observation observation) {
     return digitalTwin
         .getKnowledgeGraph()
-        .query(Observation.class)
+        .query(Observation.class, this)
         .source(observation)
         .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);
@@ -287,7 +287,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public Collection<Observation> getIncomingRelationshipsOf(Observation observation) {
     return digitalTwin
         .getKnowledgeGraph()
-        .query(Observation.class)
+        .query(Observation.class, this)
         .target(observation)
         .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);
@@ -500,7 +500,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public List<Observation> getObservations() {
     return digitalTwin
         .getKnowledgeGraph()
-        .query(Observation.class)
+        .query(Observation.class, this)
         .source(this)
         .along(DigitalTwin.Relationship.HAS_CHILD)
         .run(this);
@@ -511,7 +511,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     var ret =
         digitalTwin
             .getKnowledgeGraph()
-            .query(Observation.class)
+            .query(Observation.class, this)
             .source(this)
             .along(DigitalTwin.Relationship.HAS_CHILD)
             .where("semantics", KnowledgeGraph.Query.Operator.EQUALS, observable.getUrn())

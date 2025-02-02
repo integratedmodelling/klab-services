@@ -188,7 +188,7 @@ public interface KnowledgeGraph {
    * @return
    * @param <T>
    */
-  <T extends RuntimeAsset> Query<T> query(Class<T> resultClass);
+  <T extends RuntimeAsset> Query<T> query(Class<T> resultClass, Scope scope);
 
   /**
    * Execute a previously built query. Equivalent to calling run() on the query itself.

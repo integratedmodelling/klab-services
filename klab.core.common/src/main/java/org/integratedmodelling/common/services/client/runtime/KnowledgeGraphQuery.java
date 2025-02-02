@@ -61,7 +61,8 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
         case Activity ignored -> AssetType.ACTIVITY;
         case Observable ignored -> AssetType.OBSERVABLE;
         case KimObservable ignored -> AssetType.OBSERVABLE;
-        case ContextScope ignored -> AssetType.SCOPE;
+        case ContextScope ignored ->
+            ignored.getContextObservation() == null ? AssetType.SCOPE : AssetType.OBSERVATION;
         case Concept ignored -> AssetType.SEMANTICS;
         case KimConcept ignored -> AssetType.SEMANTICS;
         case Storage.Buffer ignored -> AssetType.DATA;
@@ -175,8 +176,15 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
           case KimObservable ignored -> ignored.getUrn();
           case Concept ignored -> ignored.getUrn();
           case KimConcept ignored -> ignored.getUrn();
-          case ServiceSideScope ignored -> ignored.getId();
-          case ClientContextScope ignored -> ignored.getId();
+          case ServiceSideScope ignored ->
+              ignored instanceof ContextScope contextScope
+                      && contextScope.getContextObservation() != null
+                  ? contextScope.getContextObservation().getUrn()
+                  : ignored.getId();
+          case ClientContextScope ignored ->
+              ignored.getContextObservation() == null
+                  ? ignored.getId()
+                  : ignored.getContextObservation().getUrn();
           case Storage.Buffer ignored -> ignored.getId() + "";
           default -> null;
         };
