@@ -54,10 +54,10 @@ public class DataflowCompiler {
    *
    * @return
    */
-  public Dataflow<Observation> compile() {
+  public Dataflow compile() {
 
     if (resolutionGraph.isEmpty()) {
-      return Dataflow.empty(Observation.class);
+      return Dataflow.empty();
     }
 
     System.out.println(Utils.Graphs.dump(resolutionGraph.graph()));

@@ -28,7 +28,7 @@ public class ResolverController {
     private ServiceAuthorizationManager authenticationManager;
 
     @PostMapping(ServicesAPI.RESOLVER.RESOLVE_OBSERVATION)
-    public @ResponseBody Dataflow<Observation> resolveObservation(@RequestBody ResolutionRequest resolutionRequest,
+    public @ResponseBody Dataflow resolveObservation(@RequestBody ResolutionRequest resolutionRequest,
                                                                   Principal principal) {
         if (principal instanceof EngineAuthorization authorization) {
             var contextScope =

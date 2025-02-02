@@ -241,7 +241,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       ObservationImpl observation = null;
       double coverage = 1.0;
       var resolutionEmpty = false;
-      Dataflow<?> dataflow = null;
+      Dataflow dataflow = null;
       if (assets != null) {
         for (var asset : assets) {
           if (asset instanceof ObservationImpl obs) {
@@ -249,7 +249,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             activity.setObservationUrn(obs.getUrn());
           } else if (asset instanceof Throwable t) {
             activity.setStackTrace(ExceptionUtils.getStackTrace(t));
-          } else if (asset instanceof Dataflow<?> df) {
+          } else if (asset instanceof Dataflow df) {
             resolutionEmpty = df.isEmpty();
             dataflow = df;
           }
@@ -318,7 +318,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         child.updateAssets();
       }
 
-      Dataflow<?> dataflow = null;
+      Dataflow dataflow = null;
       ObservationImpl observation = null;
       double coverage = 1.0;
       if (assets != null) {
@@ -331,7 +331,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             this.activity.setCredits(l);
           } else if (asset instanceof Throwable throwable) {
             this.activity.setStackTrace(ExceptionUtils.getStackTrace(throwable));
-          } else if (asset instanceof Dataflow<?> df) {
+          } else if (asset instanceof Dataflow df) {
             dataflow = df;
           }
         }
@@ -352,7 +352,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
   }
 
-  private void storeCausalLinks(Dataflow<?> dataflow) {
+  private void storeCausalLinks(Dataflow dataflow) {
     /*
      * Any dependency could be seen as an "affects" link OR we can check the actual causality, meaning that
      * all contextualizables must be able to tell us if they physically depend on each observable. Keep it
@@ -397,7 +397,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           activity.setServiceId(service.serviceId());
           activity.setServiceName(service.getServiceName());
           activity.setServiceType(KlabService.Type.classify(service));
-        } else if (dat instanceof Dataflow<?> dataflow) {
+        } else if (dat instanceof Dataflow dataflow) {
           activity.setDataflow(new DataflowEncoder(dataflow, scope).toString());
         }
       }

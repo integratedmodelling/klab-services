@@ -238,7 +238,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
-  public Dataflow<Observation> getDataflow() {
+  public Dataflow getDataflow() {
     return digitalTwin.getDataflowGraph(this);
   }
 

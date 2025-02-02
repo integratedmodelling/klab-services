@@ -47,7 +47,7 @@ public class ExecutionSequence {
   private final ComponentRegistry componentRegistry;
   private final double resolvedCoverage;
   private final KnowledgeGraph.Operation contextualization;
-  private final Dataflow<Observation> dataflow;
+  private final Dataflow dataflow;
   private List<List<ExecutorOperation>> sequence = new ArrayList<>();
   private boolean empty;
   // the context for the next operation. Starts at the observation and doesn't normally change but
@@ -61,7 +61,7 @@ public class ExecutionSequence {
   public ExecutionSequence(
       RuntimeService runtimeService,
       KnowledgeGraph.Operation contextualization,
-      Dataflow<Observation> dataflow,
+      Dataflow dataflow,
       ComponentRegistry componentRegistry,
       ServiceContextScope contextScope) {
     this.runtimeService = runtimeService;
@@ -295,7 +295,9 @@ public class ExecutionSequence {
            * whatever mapping strategy is configured in the scope, using a different class per
            * strategy.
            */
-          scalarBuilder.add(ContextualizableImpl.of(call));
+          if (!scalarBuilder.add(ContextualizableImpl.of(call))) {
+            return false;
+          }
 
           System.out.println("SCALAR");
 

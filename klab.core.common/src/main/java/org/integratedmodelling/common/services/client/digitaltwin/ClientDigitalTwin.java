@@ -65,7 +65,7 @@ public class ClientDigitalTwin implements DigitalTwin {
   }
 
   @Override
-  public Dataflow<Observation> getDataflowGraph(ContextScope context) {
+  public Dataflow getDataflowGraph(ContextScope context) {
     return null;
   }
 

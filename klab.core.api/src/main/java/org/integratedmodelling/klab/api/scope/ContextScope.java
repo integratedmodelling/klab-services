@@ -304,7 +304,7 @@ public interface ContextScope extends SessionScope {
    *
    * @return
    */
-  Dataflow<Observation> getDataflow();
+  Dataflow getDataflow();
 
   /**
    * Return the root context scope with the overall observer and the full observation graph.

@@ -238,7 +238,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   }
 
   @Override
-  public Observation runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
+  public Observation runDataflow(Dataflow dataflow, ContextScope contextScope) {
     return null;
   }
 

@@ -12,7 +12,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
-public class DataflowImpl implements Dataflow<Observation> {
+public class DataflowImpl implements Dataflow {
 
     @Serial
     private static final long serialVersionUID = 873406284216826384L;
@@ -61,7 +61,7 @@ public class DataflowImpl implements Dataflow<Observation> {
         this.requirements = requirements;
     }
 
-    public void add(Dataflow<Observation> dataflow, ContextScope scope) {
+    public void add(Dataflow dataflow, ContextScope scope) {
 
         /*
          * Find the "hook point" using the observation ID

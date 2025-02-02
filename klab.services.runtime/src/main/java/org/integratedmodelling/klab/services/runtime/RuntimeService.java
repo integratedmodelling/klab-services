@@ -434,8 +434,8 @@ public class RuntimeService extends BaseService
    * for now is to use the Groovy builder.
    */
   public ScalarComputation.Builder getComputationBuilder(
-      Observation observation, ServiceContextScope scope, Dataflow<?> dataflow) {
-    return ScalarComputationGroovy.builder(observation, scope);
+      Observation observation, ServiceContextScope scope, Dataflow dataflow) {
+    return ScalarComputationGroovy.builder(observation, scope, dataflow);
   }
 
   @Override
@@ -465,7 +465,7 @@ public class RuntimeService extends BaseService
       Thread.ofVirtual()
           .start(
               () -> {
-                Dataflow<Observation> dataflow = null;
+                Dataflow dataflow = null;
                 Activity resolutionActivity = null;
                 Observation result = null;
 
@@ -578,13 +578,13 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public Observation runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
+  public Observation runDataflow(Dataflow dataflow, ContextScope contextScope) {
     // TODO fill in the operation representing an external dataflow run
     return runDataflow(dataflow, contextScope, null);
   }
 
   public Observation runDataflow(
-      Dataflow<Observation> dataflow,
+      Dataflow dataflow,
       ContextScope contextScope,
       KnowledgeGraph.Operation contextualization) {
 

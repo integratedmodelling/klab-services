@@ -63,7 +63,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
   }
 
   @Override
-  public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
+  public Dataflow resolve(Observation observation, ContextScope contextScope) {
     ResolutionRequest request = new ResolutionRequest();
     request.setObservation(observation);
     request.getResolutionConstraints().addAll(contextScope.getResolutionConstraints());
@@ -73,7 +73,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
   }
 
   @Override
-  public String encodeDataflow(Dataflow<Observation> dataflow) {
+  public String encodeDataflow(Dataflow dataflow) {
     // TODO Auto-generated method stub
     return null;
   }

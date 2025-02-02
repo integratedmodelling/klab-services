@@ -15,10 +15,10 @@ import java.io.StringWriter;
  */
 public class DataflowEncoder {
 
-    private final Dataflow<?> dataflow;
+    private final Dataflow dataflow;
     private final ContextScope scope;
 
-    public DataflowEncoder(Dataflow<?> dataflow, ContextScope scope) {
+    public DataflowEncoder(Dataflow dataflow, ContextScope scope) {
         this.dataflow = dataflow;
         this.scope = scope;
     }

@@ -162,7 +162,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   }
 
   @Override
-  public Dataflow<Observation> getDataflow() {
+  public Dataflow getDataflow() {
     return null;
   }
 

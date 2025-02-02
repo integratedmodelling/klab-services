@@ -16,7 +16,7 @@ import java.util.List;
  * A server side implementation of a dataflow that uses the knowledge graph and can be adapted to a
  * serializable form for clients.
  */
-public class DataflowGraph implements Dataflow<Observation> {
+public class DataflowGraph implements Dataflow {
 
     private final KnowledgeGraph database;
     private final ContextScope scope;

@@ -162,7 +162,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   }
 
   @Override
-  public Dataflow<Observation> getDataflowGraph(ContextScope context) {
+  public Dataflow getDataflowGraph(ContextScope context) {
     return new DataflowGraph(this.knowledgeGraph, this.rootScope);
   }
 

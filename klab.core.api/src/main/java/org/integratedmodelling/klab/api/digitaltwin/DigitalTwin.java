@@ -93,7 +93,7 @@ public interface DigitalTwin {
    *     context scope)
    * @return the dataflow starting at the passed contextualization
    */
-  Dataflow<Observation> getDataflowGraph(ContextScope context);
+  Dataflow getDataflowGraph(ContextScope context);
 
   /**
    * Ingest the contextualized data coming from a resource contextualization into the passed

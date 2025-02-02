@@ -36,7 +36,7 @@ public interface Resolver extends KlabService {
      * @param contextScope
      * @return a dataflow that will resolve the passed observation, or an empty dataflow if nothing is needed.
      */
-    Dataflow<Observation> resolve(Observation observation, ContextScope contextScope);
+    Dataflow resolve(Observation observation, ContextScope contextScope);
 
     //    /**
     //     * The main function of the resolver is to resolve knowledge to a dataflow in a context scope.
@@ -89,7 +89,7 @@ public interface Resolver extends KlabService {
      * @param dataflow
      * @return
      */
-    String encodeDataflow(Dataflow<Observation> dataflow);
+    String encodeDataflow(Dataflow dataflow);
 
 //    /**
 //     * Query all the resource servers available to find models that can observe the passed observable in the

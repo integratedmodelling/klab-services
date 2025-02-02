@@ -145,12 +145,12 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   @Override
-  public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
+  public Dataflow resolve(Observation observation, ContextScope contextScope) {
     var ret = resolutionCompiler.resolve(observation, contextScope);
     if (!ret.isEmpty()) {
       return new DataflowCompiler(observation, ret, contextScope).compile();
     }
-    return Dataflow.empty(Observation.class);
+    return Dataflow.empty();
   }
 
   @Override
@@ -248,7 +248,7 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   @Override
-  public String encodeDataflow(Dataflow<Observation> dataflow) {
+  public String encodeDataflow(Dataflow dataflow) {
 
     StringBuilder kdl = new StringBuilder(1024);
 
@@ -297,13 +297,13 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   private StringBuffer encodeResources(
-      Dataflow<Observation> dataflow, Map<String, String> resources) {
+      Dataflow dataflow, Map<String, String> resources) {
     StringBuffer ret = new StringBuffer(1024);
     // TODO
     return ret;
   }
 
-  private StringBuffer encodePreamble(Dataflow<Observation> dataflow) {
+  private StringBuffer encodePreamble(Dataflow dataflow) {
     StringBuffer ret = new StringBuffer(1024);
     ret.append("@klab " + Version.CURRENT + "\n");
     ret.append("@author 'k.LAB resolver " + TimeInstant.create().toRFC3339String() + "'" + "\n");

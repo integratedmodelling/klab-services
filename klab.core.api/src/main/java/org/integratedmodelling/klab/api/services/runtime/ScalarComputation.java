@@ -29,7 +29,7 @@ public interface ScalarComputation {
      * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
      *     contextualizable is not suited for scalar computation.
      */
-    void add(Contextualizable contextualizable);
+    boolean add(Contextualizable contextualizable);
 
     /**
      * Create the final computation, which must know its scales and context so that it can be run

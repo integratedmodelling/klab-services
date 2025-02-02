@@ -41,11 +41,10 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 /**
  * TODO rewrite the description
  *
- * @param <T> the most specific type of artifact this dataflow will build when run.
  * @author ferdinando.villa
  * @since 0.10.0
  */
-public interface Dataflow<T extends Artifact> extends Serializable, RuntimeAsset {
+public interface Dataflow extends Serializable, RuntimeAsset {
 
   default RuntimeAsset.Type classify() {
     return Type.DATAFLOW;
@@ -101,12 +100,10 @@ public interface Dataflow<T extends Artifact> extends Serializable, RuntimeAsset
   /**
    * Return a new empty dataflow.
    *
-   * @param <T>
-   * @param resultClass
    * @return
    */
-  public static <T extends Artifact> Dataflow<T> empty(Class<T> resultClass) {
-    return new Dataflow<T>() {
+  public static Dataflow empty() {
+    return new Dataflow() {
 
       @Override
       public long getId() {
