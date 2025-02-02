@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -233,7 +234,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
    * @return
    */
   @Override
-  public List<T> run() {
+  public List<T> run(Scope scope) {
     throw new KlabIllegalStateException(
         "The client-side knowledge graph query must be sent to a runtime service to be run");
   }

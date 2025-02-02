@@ -723,12 +723,16 @@ public class RuntimeService extends BaseService
 
   @Override
   public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
-      KnowledgeGraph.Query<T> knowledgeGraphQuery, ContextScope scope) {
-    var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
-    if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> qc) {
-      return knowledgeGraph.query(
-          knowledgeGraphQuery, (Class<T>) qc.getResultType().getAssetClass());
+      KnowledgeGraph.Query<T> knowledgeGraphQuery, Scope scope) {
+    if (scope instanceof ContextScope contextScope) {
+      var knowledgeGraph = contextScope.getDigitalTwin().getKnowledgeGraph();
+      if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> qc) {
+        return knowledgeGraph.query(
+            knowledgeGraphQuery, (Class<T>) qc.getResultType().getAssetClass(), scope);
+      }
+      throw new KlabUnimplementedException(
+          "Not ready to compile arbitrary KG query implementations");
     }
-    throw new KlabUnimplementedException("Not ready to compile arbitrary KG query implementations");
+    return List.of();
   }
 }

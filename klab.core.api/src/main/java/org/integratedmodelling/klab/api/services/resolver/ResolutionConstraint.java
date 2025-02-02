@@ -56,7 +56,6 @@ public interface ResolutionConstraint extends Serializable {
   enum Type {
     Scenarios(String.class, false /* debatable */),
     Geometry(Geometry.class, false),
-//    ObserverGeometry(Geometry.class, false),
     ResolutionNamespace(String.class, false),
     ResolutionProject(String.class, false),
     UsingModel(String.class, false),

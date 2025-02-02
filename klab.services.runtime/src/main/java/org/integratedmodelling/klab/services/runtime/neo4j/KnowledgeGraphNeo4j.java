@@ -1381,16 +1381,16 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   public <T extends RuntimeAsset> Query<T> query(Class<T> resultClass) {
     return new KnowledgeGraphQuery<>(KnowledgeGraphQuery.AssetType.classify(resultClass)) {
       @Override
-      public List<T> run() {
-        return query(this, resultClass);
+      public List<T> run(Scope scope) {
+        return query(this, resultClass, scope);
       }
     };
   }
 
   @Override
-  public <T extends RuntimeAsset> List<T> query(Query<T> graphQuery, Class<T> resultClass) {
+  public <T extends RuntimeAsset> List<T> query(Query<T> graphQuery, Class<T> resultClass, Scope scope) {
     if (graphQuery instanceof KnowledgeGraphQuery<T> knowledgeGraphQuery) {
-      var statement = compileQuery(knowledgeGraphQuery, resultClass);
+      var statement = compileQuery(knowledgeGraphQuery, resultClass, scope);
       if (statement == null) {
         return List.of();
       }
@@ -1403,7 +1403,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   private <T extends RuntimeAsset>
       StatementBuilder.BuildableStatement<ResultStatement> compileQuery(
-          KnowledgeGraphQuery<T> query, Class<T> resultClass) {
+          KnowledgeGraphQuery<T> query, Class<T> resultClass, Scope scope) {
 
     /*
      * Must have either a source or a target, which determines the direction of the relationship
@@ -1459,11 +1459,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       case AND -> {
         // bring this upstream, returns a UnionQuery
         var queries =
-            query.getChildren().stream().map(q -> compileQuery(q, resultClass).build()).toList();
+            query.getChildren().stream().map(q -> compileQuery(q, resultClass, scope).build()).toList();
         //        return Cypher.union(queries);
       }
       case OR -> {
-        var queries = query.getChildren().stream().map(q -> compileQuery(q, resultClass)).toList();
+        var queries = query.getChildren().stream().map(q -> compileQuery(q, resultClass, scope)).toList();
       }
       case NOT -> {
         // naaah

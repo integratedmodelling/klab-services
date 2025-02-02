@@ -324,8 +324,7 @@ public interface ContextScope extends SessionScope {
    */
   <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData);
 
- <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
-      KnowledgeGraph.Query<T> knowledgeGraphQuery);
+  <T extends RuntimeAsset> List<T> queryKnowledgeGraph(KnowledgeGraph.Query<T> knowledgeGraphQuery);
 
   /**
    * Return the parent observation of the passed observation. The runtime context maintains the
@@ -434,7 +433,7 @@ public interface ContextScope extends SessionScope {
    * Obtain the properly formatted scope token for the {@link
    * org.integratedmodelling.klab.api.ServicesAPI#SCOPE_HEADER} to use in a request. The root
    * context scope must have been registered by the runtime service, which is done automatically by
-   * client scopes..
+   * client scopes.
    *
    * @param scope
    * @return
@@ -487,44 +486,6 @@ public interface ContextScope extends SessionScope {
     }
     return resolutionGeometry;
   }
-
-  //  default Geometry getObservationGeometry(Observation observation) {
-  //
-  //    var geometry = observation.getGeometry();
-  //    if (geometry == null) {
-  //      if (observation.getType().isDependent() && getContextObservation() != null) {
-  //        geometry = getContextObservation().getGeometry();
-  //      }
-  //      // override if collective and substantial, ensuring that the new observation's geometry is
-  //      // covered
-  //      if (observation.getObservable().getSemantics().isCollective()) {
-  //        if (getObserver() != null && getObserver().getGeometry() != null) {
-  //          geometry = geometry.merge()
-  //        }
-  //      }
-  //    }
-  //
-  //    if (geometry == null) {
-  //      throw new KlabIllegalStateException(
-  //          "Geometry cannot be attributed for observation " + observation + " based on scope");
-  //    }
-  //
-  //    return geometry;
-  //  }
-
-  /*
-   * // * The geometry currently observed by the current observer, which may be null if the observer
-   * is // * null, and may NOT otherwise. This is set when an observer is defined, but is
-   * independent of the // * observer's own geometry, and may change through calls independent of
-   * the observer as long as an // * observer is there. // * // *
-   *
-   * <p>Observer geometry is set by adding a {@link ResolutionConstraint} to the scope. // * //
-   * * @return //
-   */
-  //  default Geometry getObservedGeometry(Observation observation) {
-  //    var ret = getConstraint(ResolutionConstraint.Type.ObserverGeometry, Geometry.class);
-  //    return ret == null ? Geometry.EMPTY : ret;
-  //  }
 
   /**
    * Parse a scope token into the corresponding data structure

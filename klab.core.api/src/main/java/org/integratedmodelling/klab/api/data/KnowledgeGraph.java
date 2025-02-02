@@ -68,7 +68,7 @@ public interface KnowledgeGraph {
 
     Query<T> order(Object... criteria);
 
-    List<T> run();
+    List<T> run(Scope scope);
 
     Query<T> or(Query<T> query);
 
@@ -195,10 +195,11 @@ public interface KnowledgeGraph {
    *
    * @param knowledgeGraphQuery
    * @param resultClass
+   * @param scope the scope for the query
    * @return
    * @param <T>
    */
-  <T extends RuntimeAsset> List<T> query(Query<T> knowledgeGraphQuery, Class<T> resultClass);
+  <T extends RuntimeAsset> List<T> query(Query<T> knowledgeGraphQuery, Class<T> resultClass, Scope scope);
 
   /**
    * Remove all data relative to the currently contextualized scope. Graph becomes unusable after

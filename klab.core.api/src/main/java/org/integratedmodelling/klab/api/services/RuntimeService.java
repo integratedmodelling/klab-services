@@ -224,7 +224,7 @@ public interface RuntimeService extends KlabService {
    * @param <T>
    */
   <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
-      KnowledgeGraph.Query<T> knowledgeGraphQuery, ContextScope scope);
+      KnowledgeGraph.Query<T> knowledgeGraphQuery, Scope scope);
 
   interface Admin {
 

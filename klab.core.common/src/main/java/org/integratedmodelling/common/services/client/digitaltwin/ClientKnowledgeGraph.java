@@ -41,7 +41,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   public <T extends RuntimeAsset> Query<T> query(Class<T> resultClass) {
     return new KnowledgeGraphQuery<>(KnowledgeGraphQuery.AssetType.classify(resultClass)) {
       @Override
-      public List<T> run() {
+      public List<T> run(Scope scope) {
         return runtimeClient.queryKnowledgeGraph(this, scope);
       }
     };
@@ -49,7 +49,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
   @Override
   public <T extends RuntimeAsset> List<T> query(
-      Query<T> knowledgeGraphQuery, Class<T> resultClass) {
+      Query<T> knowledgeGraphQuery, Class<T> resultClass, Scope scope) {
     return runtimeClient.queryKnowledgeGraph(knowledgeGraphQuery, scope);
   }
 

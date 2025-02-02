@@ -169,7 +169,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             .query(Observation.class)
             .target(observation)
             .along(DigitalTwin.Relationship.HAS_OBSERVER)
-            .run();
+            .run(this);
     return ret.isEmpty() ? null : ret.getFirst();
   }
 
@@ -259,7 +259,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             .query(Observation.class)
             .target(observation)
             .along(DigitalTwin.Relationship.HAS_CHILD)
-            .run();
+            .run(this);
     return ret.isEmpty() ? null : ret.getFirst();
   }
 
@@ -270,7 +270,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         .query(Observation.class)
         .source(observation)
         .along(DigitalTwin.Relationship.HAS_CHILD)
-        .run();
+        .run(this);
   }
 
   @Override
@@ -280,7 +280,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         .query(Observation.class)
         .source(observation)
         .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
-        .run();
+        .run(this);
   }
 
   @Override
@@ -290,7 +290,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         .query(Observation.class)
         .target(observation)
         .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
-        .run();
+        .run(this);
   }
 
   @Override
@@ -304,7 +304,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> qc) {
       return digitalTwin
           .getKnowledgeGraph()
-          .query(knowledgeGraphQuery, (Class<T>) qc.getResultType().getAssetClass());
+          .query(knowledgeGraphQuery, (Class<T>) qc.getResultType().getAssetClass(), this);
     }
     throw new KlabUnimplementedException("Not ready to compile arbitrary KG query implementations");
   }
@@ -503,7 +503,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         .query(Observation.class)
         .source(this)
         .along(DigitalTwin.Relationship.HAS_CHILD)
-        .run();
+        .run(this);
   }
 
   @Override
@@ -515,7 +515,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             .source(this)
             .along(DigitalTwin.Relationship.HAS_CHILD)
             .where("semantics", KnowledgeGraph.Query.Operator.EQUALS, observable.getUrn())
-            .run();
+            .run(this);
     return ret.isEmpty() ? null : ret.getFirst();
   }
 

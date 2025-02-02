@@ -1,7 +1,10 @@
 package org.integratedmodelling.common.services.client.runtime;
 
+import java.net.URL;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
-import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.GraphQLClient;
 import org.integratedmodelling.common.services.client.ServiceClient;
@@ -24,7 +27,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.*;
@@ -32,12 +34,6 @@ import org.integratedmodelling.klab.api.services.runtime.objects.AssetRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.rest.ServiceReference;
-
-import java.net.URL;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.function.BiConsumer;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
 
@@ -294,7 +290,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
   @Override
   public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
-      KnowledgeGraph.Query<T> knowledgeGraphQuery, ContextScope scope) {
+      KnowledgeGraph.Query<T> knowledgeGraphQuery, Scope scope) {
     if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> knowledgeGraphQuery1) {
       return (List<T>)
           client

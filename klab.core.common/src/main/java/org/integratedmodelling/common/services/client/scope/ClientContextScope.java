@@ -174,7 +174,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             .query(Observation.class)
             .target(observation)
             .along(DigitalTwin.Relationship.HAS_CHILD)
-            .run();
+            .run(this);
     return ret.isEmpty() ? null : ret.getFirst();
   }
 
@@ -185,7 +185,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .query(Observation.class)
         .source(observation)
         .along(DigitalTwin.Relationship.HAS_CHILD)
-        .run();
+        .run(this);
   }
 
   @Override
@@ -195,7 +195,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .query(Observation.class)
         .source(observation)
         .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
-        .run();
+        .run(this);
   }
 
   @Override
@@ -205,7 +205,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .query(Observation.class)
         .target(observation)
         .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
-        .run();
+        .run(this);
   }
 
   @Override
@@ -257,7 +257,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             .query(Observation.class)
             .target(observation)
             .along(DigitalTwin.Relationship.HAS_OBSERVER)
-            .run();
+            .run(this);
     return ret.isEmpty() ? null : ret.getFirst();
   }
 
@@ -349,7 +349,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             .source(this)
             .along(DigitalTwin.Relationship.HAS_CHILD)
             .where("semantics", KnowledgeGraph.Query.Operator.EQUALS, observable.getUrn())
-            .run();
+            .run(this);
     return ret.isEmpty() ? null : ret.getFirst();
   }
 
@@ -360,7 +360,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .query(Observation.class)
         .source(this)
         .along(DigitalTwin.Relationship.HAS_CHILD)
-        .run();
+        .run(this);
   }
 
   @Override
