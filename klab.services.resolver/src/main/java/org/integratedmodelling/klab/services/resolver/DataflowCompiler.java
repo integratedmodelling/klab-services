@@ -155,14 +155,6 @@ public class DataflowCompiler {
         compileModel(observationActuator, observation, coverage, observationStrategy, model);
       }
     }
-
-    //  children: model (the plan for the resolution), Strategy (deferred)
-    //            if model
-    //    determine model coverage, intersect if needed
-    //    pass to compileModel(actuator, obs, scale, strategy, model)
-    //		if strategy
-    //    compile into actuator for deferring at point of resolution (in computations)
-    //
   }
 
   /**
@@ -191,23 +183,19 @@ public class DataflowCompiler {
             .getChildren()
             .addAll(compileObservation(dependentObservation, coverage, observationStrategy));
       } else if (child instanceof Observable observable) {
-        observationActuator.getChildren().add(compileReference(observable, coverage));
+        observationActuator.getChildren().add(compileReference(observable, coverage, edge.observationId));
       }
     }
 
     for (var contextualizer : model.getComputation()) {
       observationActuator.getComputation().add(adaptContextualizer(contextualizer));
     }
-
-    //    compileModel(actuator, obs, scale, strategy, model)
-    //    finds Observation: call compileObservation(obs, strategy),
-    //    add all computations and any deferrals
   }
 
-  private Actuator compileReference(Observable observable,Coverage coverage) {
+  private Actuator compileReference(Observable observable,Coverage coverage, long observationId) {
     var ret = new ActuatorImpl();
     ret.setObservable(observable);
-    // ret.setId(observation.getId()); ID is 0 for references - could be OK because we don't index them
+    ret.setId(observationId);
     ret.setCoverage(coverage.as(Geometry.class));
     ret.setActuatorType(Actuator.Type.REFERENCE);
     return ret;

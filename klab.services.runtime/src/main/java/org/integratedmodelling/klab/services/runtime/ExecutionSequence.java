@@ -287,7 +287,7 @@ public class ExecutionSequence {
         if (currentDescriptor.serviceInfo.getGeometry().isScalar()) {
 
           if (scalarBuilder == null) {
-            scalarBuilder = runtimeService.getComputationBuilder(observation, scope, dataflow);
+            scalarBuilder = runtimeService.getComputationBuilder(observation, scope, actuator);
           }
 
           /**

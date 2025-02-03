@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 
@@ -15,7 +16,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
   static class BuilderImpl implements Builder {
 
-    public BuilderImpl(Observation target, ContextScope scope, Dataflow dataflow) {}
+    public BuilderImpl(Observation target, ContextScope scope, Actuator actuator) {}
 
     @Override
     public boolean add(Contextualizable contextualizable) {
@@ -34,7 +35,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
     return false;
   }
 
-  public static Builder builder(Observation target, ContextScope scope, Dataflow dataflow) {
-    return new BuilderImpl(target, scope, dataflow);
+  public static Builder builder(Observation target, ContextScope scope, Actuator actuator) {
+    return new BuilderImpl(target, scope, actuator);
   }
 }

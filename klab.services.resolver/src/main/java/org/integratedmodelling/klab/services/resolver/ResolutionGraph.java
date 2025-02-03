@@ -184,8 +184,11 @@ public class ResolutionGraph {
      */
     this.graph.addVertex(this.target);
     this.graph.addVertex(childGraph.target);
-    this.graph.addEdge(
-        this.target, childGraph.target, new ResolutionEdge(childGraph.targetCoverage, localName));
+    var edge = new ResolutionEdge(childGraph.targetCoverage, localName);
+    if (childGraph.getResolved() != null) {
+      edge.observationId = childGraph.getResolved().getId();
+    }
+    this.graph.addEdge(this.target, childGraph.target, edge);
 
     /*
     ...by the amount determined in its coverage, "painting" the incoming extents onto ours.
@@ -292,13 +295,12 @@ public class ResolutionGraph {
   /**
    * The RESOLVED_BY edge, only including the resolution coverage for now. Each resolvable may have
    * >1 resolving nodes, successively covering the extents up to "sufficient" coverage.
-   *
-   * <p>TODO must add the local "name" for the resolving object if one is needed
    */
   public static class ResolutionEdge extends DefaultEdge {
 
     public Coverage coverage;
     public String localName;
+    public long observationId;
 
     public ResolutionEdge() {}
 

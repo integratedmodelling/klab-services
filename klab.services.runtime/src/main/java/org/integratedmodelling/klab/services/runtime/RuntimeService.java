@@ -34,10 +34,7 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
+import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -434,8 +431,8 @@ public class RuntimeService extends BaseService
    * for now is to use the Groovy builder.
    */
   public ScalarComputation.Builder getComputationBuilder(
-      Observation observation, ServiceContextScope scope, Dataflow dataflow) {
-    return ScalarComputationGroovy.builder(observation, scope, dataflow);
+      Observation observation, ServiceContextScope scope, Actuator actuator) {
+    return ScalarComputationGroovy.builder(observation, scope, actuator);
   }
 
   @Override
