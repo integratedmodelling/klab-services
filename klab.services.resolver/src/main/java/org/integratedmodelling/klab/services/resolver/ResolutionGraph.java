@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resolvable;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -63,6 +64,12 @@ public class ResolutionGraph {
    */
   private final Map<Observable, Set<Resolvable>> resolutionCatalog = new HashMap<>();
 
+  /**
+   * Setting this one in an otherwise null graph means that the observation being resolved has been
+   * resolved successfully upstream and we only need to add a reference to it.
+   */
+  private Observation resolved;
+
   private boolean empty;
 
   private ResolutionGraph(ContextScope rootScope) {
@@ -90,12 +97,30 @@ public class ResolutionGraph {
      * else is resolved from zero up, uniting the coverages.
      */
     this.target = target;
-    this.targetCoverage = Coverage.create(scaleToCover, target instanceof Model ? 1.0 : 0.0);
+    this.targetCoverage =
+        scaleToCover instanceof Coverage cov
+            ? cov
+            : Coverage.create(scaleToCover, target instanceof Model ? 1.0 : 0.0);
     var tc = getCoverage(target);
     if (tc != null) {
       this.targetCoverage = targetCoverage.merge(tc, LogicalConnector.INTERSECTION);
     }
 
+    this.rootScope = parent.rootScope;
+    this.resolutionCatalog.putAll(parent.resolutionCatalog);
+  }
+
+  private ResolutionGraph(
+      Observable target, Observation resolvedObservation, ResolutionGraph parent) {
+
+    if (parent.empty) {
+      throw new KlabIllegalStateException("cannot use an empty resolution graph");
+    }
+
+    this.parent = parent;
+    this.resolved = resolvedObservation;
+    this.target = target;
+    this.targetCoverage = Coverage.create(Scale.create(resolvedObservation.getGeometry()), 1.0);
     this.rootScope = parent.rootScope;
     this.resolutionCatalog.putAll(parent.resolutionCatalog);
   }
@@ -132,6 +157,7 @@ public class ResolutionGraph {
     if (resolution.isEmpty()) {
       return Coverage.empty();
     }
+
     return this.targetCoverage.merge(
         resolution.targetCoverage,
         target instanceof Model ? LogicalConnector.INTERSECTION : LogicalConnector.UNION);
@@ -203,6 +229,10 @@ public class ResolutionGraph {
     return ret;
   }
 
+  public Observation getResolved() {
+    return resolved;
+  }
+
   public boolean isEmpty() {
     return empty;
   }
@@ -219,6 +249,10 @@ public class ResolutionGraph {
     return new ResolutionGraph(target, scaleToCover, this);
   }
 
+  public ResolutionGraph createReference(Observable observable, Observation resolving) {
+    return new ResolutionGraph(observable, resolving, this);
+  }
+
   /**
    * Return any known resolvable (already present in the graph) that can resolve the passed
    * observable, paired with the result of intersecting its native coverage with the passed scale.
@@ -230,13 +264,16 @@ public class ResolutionGraph {
     return List.of();
   }
 
-  public Observation getContextObservation() {
-    ResolutionGraph target = this;
-    while (target != null && !(target.target instanceof Observation)) {
-      target = target.parent;
-    }
-    return target == null ? null : (Observation) target.target;
-  }
+  //  public Observation getContextObservation() {
+  //    ResolutionGraph target = this;
+  //    // lookup the first substantial that is not collective up in the resolution chain
+  //    while (target != null && !(target.target instanceof Observation observation
+  //        && observation.getObservable().is(SemanticType.COUNTABLE)
+  //        && !observation.getObservable().getSemantics().isCollective())) {
+  //      target = target.parent;
+  //    }
+  //    return target == null ? null : (Observation) target.target;
+  //  }
 
   public void setDependencies(ResourceSet dependencies) {
     rootGraph().dependencies = dependencies;

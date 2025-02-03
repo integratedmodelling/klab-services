@@ -102,7 +102,13 @@ public class ResolutionCompiler {
     for (ObservationStrategy strategy :
         scope.getService(Reasoner.class).computeObservationStrategies(observation, scope)) {
 
-      var strategyResolution = resolve(strategy, scale, ret, scope);
+      var cScope = scope;
+      if (observation.getObservable().is(SemanticType.COUNTABLE)
+          && !observation.getObservable().getSemantics().isCollective()) {
+        cScope = cScope.within(observation);
+      }
+
+      var strategyResolution = resolve(strategy, scale, ret, cScope);
       var cov = strategyResolution.checkCoverage(strategyResolution);
       if (!cov.isRelevant()) {
         continue;
@@ -290,20 +296,12 @@ public class ResolutionCompiler {
               || !scope.getObserver().getGeometry().isEmpty())) {
         scale = Scale.create(scope.getObserver().getGeometry());
       }
-    } /*else if (!SemanticType.isSubstantial(observable.getSemantics().getType())) {*/
-    /*
-     * must have a context in the scope (and it must be compatible for the inherency)
-     */
-    Observation context = resolutionSoFar.getContextObservation();
+    }
+    Observation context = scope.getContextObservation();
     if (context == null && !SemanticType.isSubstantial(observable.getSemantics().getType())) {
       scope.error(
           "Cannot resolve a dependent without a context substantial observation: "
               + observable.getUrn());
-      return null;
-    }
-
-    if (context != null) {
-      scope = scope.within(context);
     }
 
     return Pair.of(
@@ -326,6 +324,8 @@ public class ResolutionCompiler {
 
     if (observation.isEmpty()) {
       return ResolutionGraph.empty();
+    } else if (observation.isResolved()) {
+      return graph.createReference(observable, observation);
     }
 
     // resolve the observation in the scope

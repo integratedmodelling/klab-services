@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
@@ -102,7 +103,6 @@ public class DataflowCompiler {
       var ret = new ActuatorImpl();
       ret.setObservable(observation.getObservable());
       ret.setId(observation.getId());
-      ret.setActuatorType(strategy == null ? Actuator.Type.RESOLVE : Actuator.Type.OBSERVE);
       ret.setCoverage(coverage.as(Geometry.class));
       ret.setActuatorType(Actuator.Type.REFERENCE);
       return List.of(ret);
@@ -190,6 +190,8 @@ public class DataflowCompiler {
         observationActuator
             .getChildren()
             .addAll(compileObservation(dependentObservation, coverage, observationStrategy));
+      } else if (child instanceof Observable observable) {
+        observationActuator.getChildren().add(compileReference(observable, coverage));
       }
     }
 
@@ -200,6 +202,15 @@ public class DataflowCompiler {
     //    compileModel(actuator, obs, scale, strategy, model)
     //    finds Observation: call compileObservation(obs, strategy),
     //    add all computations and any deferrals
+  }
+
+  private Actuator compileReference(Observable observable,Coverage coverage) {
+    var ret = new ActuatorImpl();
+    ret.setObservable(observable);
+    // ret.setId(observation.getId()); ID is 0 for references - could be OK because we don't index them
+    ret.setCoverage(coverage.as(Geometry.class));
+    ret.setActuatorType(Actuator.Type.REFERENCE);
+    return ret;
   }
 
   /**

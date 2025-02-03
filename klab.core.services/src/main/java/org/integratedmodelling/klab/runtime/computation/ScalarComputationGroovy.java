@@ -19,6 +19,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
     @Override
     public boolean add(Contextualizable contextualizable) {
+
       return false;
     }
 
