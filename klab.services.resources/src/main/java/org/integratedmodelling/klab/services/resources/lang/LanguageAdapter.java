@@ -487,8 +487,11 @@ public enum LanguageAdapter {
               KlabAsset.KnowledgeClass.MODEL));
     } else if (contextualizable.getContextualizable()
         instanceof ExpressionSyntax expressionSyntax) {
-      System.out.println("PORCODIO UN'ESPRESSIONE DEL PENE");
+      ret.setTargetId(contextualizable.getTarget());
       ret.setExpression(adaptExpression(expressionSyntax, namespace));
+      if (contextualizable.isIntegration()) {
+        ret.setAction(Contextualizable.Action.INTEGRATE);
+      } // TODO the rest - set to, do. May be unnecessary if validated properly
     } else {
       // TODO all others
       throw new KlabUnimplementedException("contextualizable " + contextualizable);

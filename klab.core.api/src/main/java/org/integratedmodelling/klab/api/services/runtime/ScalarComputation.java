@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services.runtime;
 
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 
 /**
  * During contextualization, any sequence of scalar operations is compiled into one of these. The
@@ -29,7 +30,7 @@ public interface ScalarComputation {
      * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
      *     contextualizable is not suited for scalar computation.
      */
-    boolean add(Contextualizable contextualizable);
+    boolean add(ServiceCall contextualizable);
 
     /**
      * Create the final computation, which must know its scales and context so that it can be run

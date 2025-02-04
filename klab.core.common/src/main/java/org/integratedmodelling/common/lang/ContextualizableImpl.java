@@ -23,10 +23,10 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
 
   @Serial private static final long serialVersionUID = -1700963983184974464L;
 
-  private Type type;
+  //  private Type type;
   private String targetId;
   private KimObservable target;
-  private String mediationTargetId;
+  //  private String mediationTargetId;
   private String language;
   private Object literal;
   private ServiceCall serviceCall;
@@ -36,17 +36,19 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
   private String accordingTo;
   private List<String> resourceUrns = new ArrayList<>();
   private Collection<Pair<String, Artifact.Type>> inputs;
-  private Parameters<String> parameters = Parameters.create();
+  //  private Parameters<String> parameters = Parameters.create();
   private Collection<String> interactiveParameters = new ArrayList<>();
   private Contextualizable condition;
   //  private ObservationStrategy observationStrategy;
-  private Pair<ValueMediator, ValueMediator> conversion;
+  //  private Pair<ValueMediator, ValueMediator> conversion;
   private boolean negated;
   private boolean mediation;
   private Geometry geometry;
   private boolean variable;
   private boolean empty;
   private String urn;
+  private Trigger trigger;
+  private Action action;
 
   public ContextualizableImpl() {}
 
@@ -70,20 +72,20 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     var preset = RuntimeService.CoreFunctor.classify(call);
     if (preset != null) {
       return switch (preset) {
-          case URN_RESOLVER -> null; // TODO
-          case EXPRESSION_RESOLVER ->  null; // TODO
-          case LUT_RESOLVER ->  null; // TODO
-          case CONSTANT_RESOLVER ->  null; // TODO
-          case DEFER_RESOLUTION ->  null; // TODO
+        case URN_RESOLVER -> null; // TODO
+        case EXPRESSION_RESOLVER -> null; // TODO
+        case LUT_RESOLVER -> null; // TODO
+        case CONSTANT_RESOLVER -> null; // TODO
+        case DEFER_RESOLUTION -> null; // TODO
       };
     }
     return new ContextualizableImpl(call);
   }
 
-  @Override
-  public Type getType() {
-    return this.type;
-  }
+  //  @Override
+  //  public Type getType() {
+  //    return this.type;
+  //  }
 
   @Override
   public String getTargetId() {
@@ -95,11 +97,11 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     return this.target;
   }
 
-  @Override
-  public String getMediationTargetId() {
-    return this.mediationTargetId;
-  }
-
+  //  @Override
+  //  public String getMediationTargetId() {
+  //    return this.mediationTargetId;
+  //  }
+  //
   @Override
   public String getLanguage() {
     return this.language;
@@ -149,10 +151,10 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     return this.inputs;
   }
 
-  @Override
-  public Parameters<String> getParameters() {
-    return this.parameters;
-  }
+  //  @Override
+  //  public Parameters<String> getParameters() {
+  //    return this.parameters;
+  //  }
 
   @Override
   public Collection<String> getInteractiveParameters() {
@@ -164,9 +166,19 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     return this.condition;
   }
 
+  //  @Override
+  //  public Pair<ValueMediator, ValueMediator> getConversion() {
+  //    return this.conversion;
+  //  }
+
+
   @Override
-  public Pair<ValueMediator, ValueMediator> getConversion() {
-    return this.conversion;
+  public Action getAction() {
+    return action;
+  }
+
+  public void setAction(Action action) {
+    this.action = action;
   }
 
   @Override
@@ -194,9 +206,9 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     return this.empty;
   }
 
-  public void setType(Type type) {
-    this.type = type;
-  }
+  //  public void setType(Type type) {
+  //    this.type = type;
+  //  }
 
   public void setTargetId(String targetId) {
     this.targetId = targetId;
@@ -206,9 +218,9 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     this.target = target;
   }
 
-  public void setMediationTargetId(String mediationTargetId) {
-    this.mediationTargetId = mediationTargetId;
-  }
+  //  public void setMediationTargetId(String mediationTargetId) {
+  //    this.mediationTargetId = mediationTargetId;
+  //  }
 
   public void setLanguage(String language) {
     this.language = language;
@@ -250,9 +262,9 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     this.inputs = inputs;
   }
 
-  public void setParameters(Parameters<String> parameters) {
-    this.parameters = parameters;
-  }
+  //  public void setParameters(Parameters<String> parameters) {
+  //    this.parameters = parameters;
+  //  }
 
   public void setInteractiveParameters(Collection<String> interactiveParameters) {
     this.interactiveParameters = interactiveParameters;
@@ -262,9 +274,9 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     this.condition = condition;
   }
 
-  public void setConversion(Pair<ValueMediator, ValueMediator> conversion) {
-    this.conversion = conversion;
-  }
+  //  public void setConversion(Pair<ValueMediator, ValueMediator> conversion) {
+  //    this.conversion = conversion;
+  //  }
 
   public void setNegated(boolean negated) {
     this.negated = negated;
@@ -280,6 +292,15 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
 
   public void setVariable(boolean variable) {
     this.variable = variable;
+  }
+
+  @Override
+  public Trigger getTrigger() {
+    return trigger;
+  }
+
+  public void setTrigger(Trigger trigger) {
+    this.trigger = trigger;
   }
 
   public void setEmpty(boolean empty) {

@@ -303,8 +303,8 @@ public abstract class AbstractUIController implements UIController {
             if (rs != null) {
                 for (var desc : rs) {
                     if (event != UIEvent.ServiceStatus) {
-                        System.out.println("Dispatching " + event + "(" + Arrays.toString(payload) + ") to "
-                                + desc.method);
+//                        System.out.println("Dispatching " + event + "(" + Arrays.toString(payload) + ") to "
+//                                + desc.method);
                     }
                     desc.call(sender, payload);
                 }

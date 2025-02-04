@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.runtime.computation;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -19,7 +20,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
     public BuilderImpl(Observation target, ContextScope scope, Actuator actuator) {}
 
     @Override
-    public boolean add(Contextualizable contextualizable) {
+    public boolean add(ServiceCall contextualizable) {
 
       return false;
     }

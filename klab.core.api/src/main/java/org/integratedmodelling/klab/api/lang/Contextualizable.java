@@ -257,12 +257,12 @@ public interface Contextualizable extends KlabStatement {
     }
   }
 
-  /**
-   * Return the type of the contained resource.
-   *
-   * @return
-   */
-  Type getType();
+//  /**
+//   * Return the type of the contained resource.
+//   *
+//   * @return
+//   */
+//  Type getType();
 
   /**
    * Target ID: if null, the main observable of the model, otherwise another observable which must
@@ -272,6 +272,12 @@ public interface Contextualizable extends KlabStatement {
    * @return the target ID.
    */
   String getTargetId();
+
+  /**
+   * The type of action (applies to expressions)
+   * @return
+   */
+  Action getAction();
 
   /**
    * The target observable for this computation, correspondent to the target ID. Accessible only
@@ -284,15 +290,15 @@ public interface Contextualizable extends KlabStatement {
    */
   KimObservable getTarget();
 
-  /**
-   * The target artifact ID when this computation is a mediation. In this case the computation means
-   * "send this artifact through this mediator".
-   *
-   * <p>This may be merged with getTarget() at some point as the use cases for it are similar.
-   *
-   * @return the mediation target ID.
-   */
-  String getMediationTargetId();
+//  /**
+//   * The target artifact ID when this computation is a mediation. In this case the computation means
+//   * "send this artifact through this mediator".
+//   *
+//   * <p>This may be merged with getTarget() at some point as the use cases for it are similar.
+//   *
+//   * @return the mediation target ID.
+//   */
+//  String getMediationTargetId();
 
   /**
    * Each computation may use a different language. Null means the default supported expression
@@ -382,13 +388,15 @@ public interface Contextualizable extends KlabStatement {
    */
   Collection<Pair<String, Artifact.Type>> getInputs();
 
-  /**
-   * Any parameters set for the computation, e.g. in the case of a function call or a URN with
-   * optional values.
-   *
-   * @return parameter map, never null, possibly empty.
-   */
-  Parameters<String> getParameters();
+  Trigger getTrigger();
+
+//  /**
+//   * Any parameters set for the computation, e.g. in the case of a function call or a URN with
+//   * optional values.
+//   *
+//   * @return parameter map, never null, possibly empty.
+//   */
+//  Parameters<String> getParameters();
 
   /**
    * In interactive mode, resources may expose parameters for users to check and modify before
@@ -406,17 +414,17 @@ public interface Contextualizable extends KlabStatement {
    */
   Contextualizable getCondition();
 
-  /**
-   * The computation may consist in a mediation of a quantity represented by the first element in
-   * the returned tuple, which must be converted into a value represented by the second.
-   *
-   * <p>If the resource is created, the mediators must be guaranteed compatible.
-   *
-   * <p>
-   *
-   * @return a tuple containing the original and target value semantics.
-   */
-  Pair<ValueMediator, ValueMediator> getConversion();
+//  /**
+//   * The computation may consist in a mediation of a quantity represented by the first element in
+//   * the returned tuple, which must be converted into a value represented by the second.
+//   *
+//   * <p>If the resource is created, the mediators must be guaranteed compatible.
+//   *
+//   * <p>
+//   *
+//   * @return a tuple containing the original and target value semantics.
+//   */
+//  Pair<ValueMediator, ValueMediator> getConversion();
 
   /**
    * Only meaningful if this computable is a condition computing a (scalar or distributed) boolean,

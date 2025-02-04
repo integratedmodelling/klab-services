@@ -251,22 +251,12 @@ public class ExecutionSequence {
                 continue;
               }
             }
-            case EXPRESSION_RESOLVER -> {
-              System.out.println("RESOLVE THE FEKKIN' EXPRESSION " + call.getParameters());
-              // TODO compile the expression in scope, add the compiled Expression in either scalar
-              // mapper or
-              //  not
-            }
-            case LUT_RESOLVER -> {
-              // Parameter in dataflow should be URN of LUT + @version, resolved through the
-              // knowledge repo. If the LUT is inline in a
-              // model it should still have a URN (that of the model + ".lut.n"?)
-              System.out.println("RESOLVE THE FEKKIN' LUT " + call.getParameters());
-            }
-            case CONSTANT_RESOLVER -> {
-              System.out.println("RESOLVE THE FEKKIN' CONSTANT " + call.getParameters());
-              // directly add a constant scalar mapper::run that returns the value and continue
-              // executors.add(whatever);
+            case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
+              (scalarBuilder == null
+                      ? (scalarBuilder =
+                          runtimeService.getComputationBuilder(observation, scope, actuator))
+                      : scalarBuilder)
+                  .add(call);
               continue;
             }
             case DEFER_RESOLUTION -> {
@@ -284,129 +274,97 @@ public class ExecutionSequence {
           return false;
         }
 
-        if (currentDescriptor.serviceInfo.getGeometry().isScalar()) {
+        if (scalarBuilder != null) {
+          var scalarMapper = scalarBuilder.build();
+          // offload the scalar mapping to the executors
+          executors.add(
+              () ->
+                  scalarMapper.run(
+                      scope
+                          .getDigitalTwin()
+                          .getStateStorage()
+                          .getOrCreateStorage(observation, Storage.class)));
+        }
 
-          if (scalarBuilder == null) {
-            scalarBuilder = runtimeService.getComputationBuilder(observation, scope, actuator);
-          }
+        // if we're a quality, we need storage at the discretion of the StorageManager.
+        Storage<?> storage =
+            observation.getObservable().is(SemanticType.QUALITY)
+                ? digitalTwin.getStateStorage().getOrCreateStorage(observation, Storage.class)
+                : null;
+        /*
+         * Create a runnable with matched parameters and have it set the context observation
+         * TODO allow multiple methods with same annotation, taking different storage
+         *  implementations, enabling the storage manager to be configured for the wanted precision
+         *
+         * Should match arguments, check if they all match, and if not move to the next until
+         * no available implementations remain.
+         */
+        if (componentRegistry.implementation(currentDescriptor).method != null) {
 
-          /**
-           * Executor is a class containing all consecutive steps in a single method and calling
-           * whatever mapping strategy is configured in the scope, using a different class per
-           * strategy.
-           */
-          if (!scalarBuilder.add(ContextualizableImpl.of(call))) {
+          var runArguments =
+              ComponentRegistry.matchArguments(
+                  componentRegistry.implementation(currentDescriptor).method,
+                  resource,
+                  observation.getGeometry(),
+                  null,
+                  observation,
+                  observation.getObservable(),
+                  urn,
+                  call.getParameters(),
+                  call,
+                  storage,
+                  expression,
+                  lookupTable,
+                  null, // TODO this won't work
+                  scope);
+
+          if (runArguments == null) {
             return false;
           }
 
-          System.out.println("SCALAR");
-
-        } else {
-          if (scalarBuilder != null) {
-            var scalarMapper = scalarBuilder.build();
-            // offload the scalar mapping to the executors
+          if (currentDescriptor.staticMethod) {
+            Extensions.FunctionDescriptor finalDescriptor1 = currentDescriptor;
             executors.add(
-                () ->
-                    scalarMapper.run(
-                        scope
-                            .getDigitalTwin()
-                            .getStateStorage()
-                            .getOrCreateStorage(observation, Storage.class)));
-            scalarBuilder = null;
-          }
-
-          // if we're a quality, we need storage at the discretion of the StorageManager.
-          Storage<?> storage =
-              observation.getObservable().is(SemanticType.QUALITY)
-                  ? digitalTwin.getStateStorage().getOrCreateStorage(observation, Storage.class)
-                  : null;
-          /*
-           * Create a runnable with matched parameters and have it set the context observation
-           * TODO allow multiple methods with same annotation, taking different storage
-           *  implementations, enabling the storage manager to be configured for the wanted precision
-           *
-           * Should match arguments, check if they all match, and if not move to the next until
-           * no available implementations remain.
-           */
-          if (componentRegistry.implementation(currentDescriptor).method != null) {
-
-            var runArguments =
-                ComponentRegistry.matchArguments(
-                    componentRegistry.implementation(currentDescriptor).method,
-                    resource,
-                    observation.getGeometry(),
-                    null,
-                    observation,
-                    observation.getObservable(),
-                    urn,
-                    call.getParameters(),
-                    call,
-                    storage,
-                    expression,
-                    lookupTable,
-                    null, // TODO this won't work
-                    scope);
-
-            if (runArguments == null) {
-              return false;
-            }
-
-            if (currentDescriptor.staticMethod) {
-              Extensions.FunctionDescriptor finalDescriptor1 = currentDescriptor;
-              executors.add(
-                  () -> {
-                    try {
-                      var context =
-                          componentRegistry
-                              .implementation(finalDescriptor1)
-                              .method
-                              .invoke(null, runArguments.toArray());
-                      //                      setExecutionContext(context == null ? observation :
-                      // context);
-                      return true;
-                    } catch (Exception e) {
-                      cause = e;
-                      scope.error(e /* TODO tracing parameters */);
-                    }
+                () -> {
+                  try {
+                    var context =
+                        componentRegistry
+                            .implementation(finalDescriptor1)
+                            .method
+                            .invoke(null, runArguments.toArray());
+                    //                      setExecutionContext(context == null ? observation :
+                    // context);
                     return true;
-                  });
-            } else if (componentRegistry.implementation(currentDescriptor).mainClassInstance
-                != null) {
-              Extensions.FunctionDescriptor finalDescriptor = currentDescriptor;
-              executors.add(
-                  () -> {
-                    try {
-                      var context =
-                          componentRegistry
-                              .implementation(finalDescriptor)
-                              .method
-                              .invoke(
-                                  componentRegistry.implementation(finalDescriptor)
-                                      .mainClassInstance,
-                                  runArguments.toArray());
-                      //                      setExecutionContext(context == null ? observation :
-                      // context);
-                      return true;
-                    } catch (Exception e) {
-                      cause = e;
-                      scope.error(e /* TODO tracing parameters */);
-                    }
+                  } catch (Exception e) {
+                    cause = e;
+                    scope.error(e /* TODO tracing parameters */);
+                  }
+                  return true;
+                });
+          } else if (componentRegistry.implementation(currentDescriptor).mainClassInstance
+              != null) {
+            Extensions.FunctionDescriptor finalDescriptor = currentDescriptor;
+            executors.add(
+                () -> {
+                  try {
+                    var context =
+                        componentRegistry
+                            .implementation(finalDescriptor)
+                            .method
+                            .invoke(
+                                componentRegistry.implementation(finalDescriptor).mainClassInstance,
+                                runArguments.toArray());
+                    //                      setExecutionContext(context == null ? observation :
+                    // context);
                     return true;
-                  });
-            }
+                  } catch (Exception e) {
+                    cause = e;
+                    scope.error(e /* TODO tracing parameters */);
+                  }
+                  return true;
+                });
           }
         }
-      }
-
-      if (scalarBuilder != null) {
-        var scalarMapper = scalarBuilder.build();
-        executors.add(
-            () ->
-                scalarMapper.run(
-                    scope
-                        .getDigitalTwin()
-                        .getStateStorage()
-                        .getOrCreateStorage(observation, Storage.class)));
       }
 
       return true;
