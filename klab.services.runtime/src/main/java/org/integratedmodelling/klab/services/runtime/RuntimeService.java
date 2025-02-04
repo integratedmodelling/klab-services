@@ -550,6 +550,7 @@ public class RuntimeService extends BaseService
                                 Activity.Type.EXECUTION,
                                 "Execution of resolved dataflow to contextualize " + observation,
                                 dataflow,
+                                observation,
                                 this);
 
                     try (contextualization) {
@@ -557,7 +558,11 @@ public class RuntimeService extends BaseService
                       //  (dependent on resolution) linked to actuators by runDataflow
                       result = runDataflow(dataflow, scope, contextualization);
                       ret.complete(result);
-                      contextualization.success(scope, dataflow, result);
+                      if (result.isEmpty()) {
+                        contextualization.fail(scope, dataflow);
+                      } else {
+                        contextualization.success(scope, dataflow, result);
+                      }
                     } catch (Throwable t) {
                       Logging.INSTANCE.error(t);
                       contextualization.fail(scope, dataflow, result, t);
@@ -581,9 +586,7 @@ public class RuntimeService extends BaseService
   }
 
   public Observation runDataflow(
-      Dataflow dataflow,
-      ContextScope contextScope,
-      KnowledgeGraph.Operation contextualization) {
+      Dataflow dataflow, ContextScope contextScope, KnowledgeGraph.Operation contextualization) {
 
     /*
     TODO Load or confirm availability of all needed resources and create any non-existing observations

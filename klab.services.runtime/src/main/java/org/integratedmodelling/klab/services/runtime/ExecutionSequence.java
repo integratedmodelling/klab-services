@@ -556,7 +556,7 @@ public class ExecutionSequence {
     cache.put(rootActuator.getId(), rootActuator);
     dependencyGraph.addVertex(rootActuator);
     for (Actuator child : rootActuator.getChildren()) {
-      if (child.getActuatorType() != Actuator.Type.REFERENCE) {
+      if (child.getActuatorType() == Actuator.Type.REFERENCE) {
         // may be satisfied by a previous resolution
         if (cache.containsKey(child.getId())) {
           dependencyGraph.addEdge(cache.get(child.getId()), rootActuator);

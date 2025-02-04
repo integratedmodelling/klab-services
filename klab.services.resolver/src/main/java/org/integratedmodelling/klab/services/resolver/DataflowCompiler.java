@@ -10,7 +10,6 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -183,7 +182,9 @@ public class DataflowCompiler {
             .getChildren()
             .addAll(compileObservation(dependentObservation, coverage, observationStrategy));
       } else if (child instanceof Observable observable) {
-        observationActuator.getChildren().add(compileReference(observable, coverage, edge.observationId));
+        observationActuator
+            .getChildren()
+            .add(compileReference(observable, coverage, edge.observationId));
       }
     }
 
@@ -192,7 +193,7 @@ public class DataflowCompiler {
     }
   }
 
-  private Actuator compileReference(Observable observable,Coverage coverage, long observationId) {
+  private Actuator compileReference(Observable observable, Coverage coverage, long observationId) {
     var ret = new ActuatorImpl();
     ret.setObservable(observable);
     ret.setId(observationId);
@@ -216,27 +217,45 @@ public class DataflowCompiler {
     } else if (!contextualizer.getResourceUrns().isEmpty()) {
       ret =
           new ServiceCallImpl(
-              RuntimeService.CoreFunctor.URN_RESOLVER.getServiceCall(),
+              RuntimeService.CoreFunctor.URN_RESOLVER.getServiceCallName(),
               "urns",
               contextualizer.getResourceUrns());
     } else if (contextualizer.getAccordingTo() != null) {
-      ret = new ServiceCallImpl(RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCall());
+      ret =
+          new ServiceCallImpl(
+              RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCallName(),
+              "accordingTo",
+              contextualizer.getAccordingTo());
     } else if (contextualizer.getClassification() != null) {
-      ret = new ServiceCallImpl(RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCall());
+      ret =
+          new ServiceCallImpl(
+              RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCallName(),
+              "classification",
+              contextualizer.getClassification());
     } else if (contextualizer.getLookupTable() != null) {
-      ret = new ServiceCallImpl(RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCall());
+      ret =
+          new ServiceCallImpl(
+              RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCallName(),
+              "lookupTable",
+              contextualizer.getLookupTable());
     } else if (contextualizer.getExpression() != null) {
-      ret = new ServiceCallImpl(RuntimeService.CoreFunctor.EXPRESSION_RESOLVER.getServiceCall());
-      //    } else if (contextualizer.getObservationStrategy() != null) {
-      //      ret = new
-      // ServiceCallImpl(RuntimeService.CoreFunctor.DEFER_RESOLUTION.getServiceCall());
+      // TODO distinguish integrators and take methods from annotations, pass with the parameters
+      ret =
+          new ServiceCallImpl(
+              RuntimeService.CoreFunctor.EXPRESSION_RESOLVER.getServiceCallName(),
+              "expression",
+              contextualizer.getExpression());
     } else if (contextualizer.getLiteral() != null) {
-      ret = new ServiceCallImpl(RuntimeService.CoreFunctor.CONSTANT_RESOLVER.getServiceCall());
+      ret =
+          new ServiceCallImpl(
+              RuntimeService.CoreFunctor.CONSTANT_RESOLVER.getServiceCallName(),
+              "value",
+              contextualizer.getLiteral());
     }
 
     // TODO add remaining info from the contextualizable in the call's metadata
-
     // TODO more?
+
     return ret;
   }
 }

@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api.services;
 
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -20,7 +19,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 /**
  * The runtime service holds the actual digital twins referred to by context scopes. Client scopes
@@ -36,11 +34,13 @@ import java.util.concurrent.Future;
 public interface RuntimeService extends KlabService {
 
   /**
-   * The core functors for k.LAB dataflow. The runtime must support all of these.
+   * The core functors for k.LAB dataflow supporting the primary k.IM constructs such as inline
+   * expressions, lookup tables and the like. The runtime must support all of these.
    *
    * <p>Calls to these functions are created directly by the resolver when {@link Contextualizable}s
    * of different k.IM types and/or {@link ObservationStrategyObsolete}es from the reasoner are
-   * translated into dataflow actuators.
+   * translated into dataflow actuators. Implementations are free to choose whether to implement
+   * actual service calls or implement a more efficient compilation strategy for these functors.
    *
    * @author Ferd
    */
@@ -57,17 +57,18 @@ public interface RuntimeService extends KlabService {
      * Contextualize a scalar or vector expression. Comes with an 'expression' parameter carrying
      * the k.IM KimExpression syntactic object for compilation and analysis.
      */
-    EXPRESSION_RESOLVER("klab.core.urn.resolver"),
+    EXPRESSION_RESOLVER("klab.core.expression.resolver"),
     /**
-     * Contextualize a lookup table (or classification) within a scalar wrapper. Comes with a 'lut'
-     * parameter carrying the URN of the lookup table to be resolved through resources.
+     * Contextualize a lookup table (or classification) within a scalar wrapper. Comes with variable
+     * parameters pointing to a classification, a lookup table, the URN of the lookup table or an
+     * "according to" external resource to be resolved. TODO formalize parameters and check usages.
      */
-    LUT_RESOLVER("klab.core.urn.resolver"),
+    LUT_RESOLVER("klab.core.lut.resolver"),
     /**
      * Contextualize a constant value. Comes with a 'value' parameter in case of POD values or with
      * a 'urn' parameter for complex values to be resolved through resources.
      */
-    CONSTANT_RESOLVER("klab.core.urn.resolver"),
+    CONSTANT_RESOLVER("klab.core.constant.resolver"),
     /**
      * Defer the resolution of the observations produced by this contextualization. Comes with a
      * 'strategy' parameter containing the contextualized ObservationStrategy to use.
@@ -81,7 +82,7 @@ public interface RuntimeService extends KlabService {
       this.serviceCallUrn = serviceCall;
     }
 
-    public String getServiceCall() {
+    public String getServiceCallName() {
       return serviceCallUrn;
     }
 

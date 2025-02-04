@@ -88,7 +88,7 @@ public class DataflowEncoder {
     }
 
     private String sanitize(String name) {
-        return "dio.porco";
+        return "cotechino";
 //        var ret = name.replace(" ", ".").toLowerCase();
 //        // TODO more
 //        return ret;

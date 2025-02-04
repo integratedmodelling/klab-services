@@ -12,9 +12,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.CoreLibrary;
 import org.integratedmodelling.klab.api.services.Language;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.objects.ObservationStrategyImpl;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -211,7 +209,7 @@ public class ObservationReasoner {
             .add(
                 new ContextualizableImpl(
                     ServiceCallImpl.create(
-                        RuntimeService.CoreFunctor.DEFER_RESOLUTION.getServiceCall(),
+                        RuntimeService.CoreFunctor.DEFER_RESOLUTION.getServiceCallName(),
                         "strategy",
                         contextualizeStrategy(deferred, patternVariableValues))));
       }
