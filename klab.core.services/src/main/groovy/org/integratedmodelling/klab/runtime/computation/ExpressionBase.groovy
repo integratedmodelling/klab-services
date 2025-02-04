@@ -7,7 +7,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService
 import org.integratedmodelling.klab.api.services.RuntimeService
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope
 
-abstract class ExpressionBase extends Script {
+abstract class ExpressionBase extends Script implements MathOps {
 
     ServiceContextScope scope;
     Observation observation;
