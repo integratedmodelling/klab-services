@@ -34,6 +34,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
@@ -44,6 +46,7 @@ import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.springframework.util.StringUtils;
@@ -70,8 +73,12 @@ import org.springframework.util.StringUtils;
  */
 public class GroovyExpressionPreprocessor {
 
+  public static final String LOCATOR_REGEXP = "@[A-Z]\\(.*?\\)";
+  public static final String CONCEPT_REGEXP = "[a-z|\\.]+:[A-Za-z][A-Za-z0-9]*";
+  public static final String OBSERVABLE_REGEXP = "\\{\\{.*\\}\\}";
+
   // private IGeometry domains;
-  private final ContextScope scope;
+  private final Scope scope;
   private KimNamespace namespace;
   // private Set<String> knownIdentifiers;
   // private Geometry inferredGeometry;
@@ -163,9 +170,9 @@ public class GroovyExpressionPreprocessor {
   private BiMap<String, Object> inherentVariables = HashBiMap.create();
   private Pattern conceptPattern = Pattern.compile(CONCEPT_PATTERN);
   private boolean ignoreRecontextualization = false;
-  
+
   public GroovyExpressionPreprocessor(
-      ContextScope scope,
+      Scope scope,
       //      KimNamespace currentNamespace,
       //      Expression.Scope expressionScope,
       Set<Expression.CompilerOption> options) {
@@ -688,6 +695,124 @@ public class GroovyExpressionPreprocessor {
    */
   public Collection<String> getIdentifiers() {
     return identifiers;
+  }
+
+  public static void main(String[] dio) throws Exception {
+
+    String code =
+        " (elevation - slope@S(nw)/elevation.max) is {{uffa:Eccheccazzo bestia qua ci va anche la merda 123 }} with canna:Sperma, vecchio.peto:DiCane";
+
+    Map<String, String> substitutions = new HashMap<>();
+    code = performSubstitutions(code, substitutions);
+
+    System.out.println("CAZZONE SOSTITUITO: " + code);
+
+    //
+
+    /**
+     * 1. Find all concepts, {{....}} and localizers @S() @T() using regexp matching and substitute
+     * with identifiers, add to known identifiers to add to the constants.
+     *
+     * <p>2. Process each token and substitute each with a single character, token itself for
+     * operators, I for known identifier, U for unknown, N for numbers and the like. Save start and
+     * end offsets in code for each of them along with the processed pattern match.
+     *
+     * <p>Use regexp patterns over the string to find out the patterns; group tokens into marked
+     * patterns
+     *
+     * <p>Go over the pattern list and compute the translation as required per group of tokens
+     *
+     * <p>Rebuild string by reassembling the recomputed identifiers
+     */
+    Lexer lexer = new Lexer(new StringReader(code));
+    lexer.setWhitespaceIncluded(false);
+    lexer.consume();
+    List<Token> acc = new ArrayList<>();
+
+    /**
+     * Compiled string contains a character per token identified with the following:
+     * ., ( and ) are literal;
+     * I = known identifier
+     * U = unknown identifier
+     * L = previously parsed locator
+     * C = previously parsed concept literal
+     * O = previously parsed observable literal
+     * T = anything else
+     *
+     * Keep a parallel list with the actual tokens along with their category matched by character index
+     *
+     * Recognize:
+     *    IL -> LOCATED_IDENTIFIER
+     *    I.U and I.I optionally followed by (L*) -> IDENTIFIER_METHOD_CALL
+     *
+     * Substitute these patterns as X and Y; change the corresponding list elements with the compound values of
+     * the pattern in the list
+     *
+     * Reassemble the expression using the token list with all the substitutions and related actions (add fields, call
+     * functions etc.)
+     */
+    StringBuilder compiled = new StringBuilder();
+    while (true) {
+      Token token = lexer.nextToken();
+      if (token == null || token.getType() == Token.EOF_TYPE) {
+        break;
+      }
+//      compiled.append(classify(token, n, klabTokens)  -- ADD each token's interpretation to a list with index = the char
+    }
+  }
+
+  public static String performSubstitutions(String code, Map<String, String> substitutions) {
+
+    final AtomicInteger locatorId = new AtomicInteger(0);
+    final AtomicInteger observableId = new AtomicInteger(0);
+    final AtomicInteger conceptId = new AtomicInteger(0);
+
+    // TODO the map should be a bimap and reuse tokens if the value is already present
+
+    code =
+        performSubstitution(
+            Pattern.compile(LOCATOR_REGEXP),
+            code,
+            x -> {
+              var ret = " __L__" + locatorId.getAndIncrement() + " ";
+              substitutions.put(ret, x);
+              return ret;
+            });
+    code =
+        performSubstitution(
+            Pattern.compile(OBSERVABLE_REGEXP),
+            code,
+            x -> {
+              var ret = " __O__" + observableId.getAndIncrement() + " ";
+              substitutions.put(ret, x);
+              return ret;
+            });
+    return performSubstitution(
+        Pattern.compile(CONCEPT_REGEXP),
+        code,
+        x -> {
+          var ret = " __C__" + conceptId.getAndIncrement() + " ";
+          substitutions.put(ret, x);
+          return ret;
+        });
+  }
+
+  private static String performSubstitution(
+      Pattern pattern, String code, Function<String, String> translator) {
+    StringBuilder output = new StringBuilder();
+    Matcher matcher = pattern.matcher(code);
+    int lastIndex = 0;
+    while (matcher.find()) {
+      output
+          .append(code, lastIndex, matcher.start())
+          .append(translator.apply(code.substring(matcher.start(), matcher.end())));
+
+      lastIndex = matcher.end();
+    }
+    if (lastIndex < code.length()) {
+      output.append(code, lastIndex, code.length());
+    }
+    return output.toString();
   }
 
   /**

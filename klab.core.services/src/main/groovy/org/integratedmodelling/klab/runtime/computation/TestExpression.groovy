@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.computation
 
 import org.integratedmodelling.klab.api.data.Data
+import org.integratedmodelling.klab.api.data.Storage
 import org.integratedmodelling.klab.api.knowledge.observation.Observation
 import org.integratedmodelling.klab.runtime.storage.DoubleBuffer
 
@@ -35,7 +36,8 @@ class Expression20349 extends ExpressionBase {
 
     def code(long offset) {
         // this is the expression set
-        return elevation.data().get(offset) - slope.data().get(offset)/slopeObs.max() // <- NON facile diocan
+
+        return elevation.data().get(_offset) - slope.data().get(_offset)/slopeObs.max() // <- NON facile diocan
     }
 
     // TODO this goes upstairs
@@ -43,5 +45,10 @@ class Expression20349 extends ExpressionBase {
     @Override
     Object run() {
         map(code)
+    }
+
+    @Override
+    boolean run(Storage<?> storage) {
+        return false
     }
 }

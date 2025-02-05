@@ -1,8 +1,11 @@
 package org.integratedmodelling.klab.runtime.computation;
 
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.knowledge.Expression;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.CoreLibrary;
@@ -10,8 +13,11 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
+import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.runtime.language.LanguageService;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 /**
@@ -22,12 +28,26 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
   static class BuilderImpl implements Builder {
 
+    private final List<Step> steps = new ArrayList<>();
+    private final ContextScope scope;
+    private final Actuator actuator;
+    private final Observation target;
+    private static GroovyProcessor groovyProcessor = new GroovyProcessor();
+
     // list of these to describe the sequence of steps
     class Step {
       String target = "self";
+      boolean scalar = true;
+      Expression.Descriptor expressionDescriptor;
+      // TODO compiled LUT and the like
+      Object constantLiteral;
     }
 
-    public BuilderImpl(Observation target, ContextScope scope, Actuator actuator) {}
+    public BuilderImpl(Observation target, ContextScope scope, Actuator actuator) {
+      this.scope = scope;
+      this.actuator = actuator;
+      this.target = target;
+    }
 
     @Override
     public boolean add(ServiceCall contextualizable) {
@@ -35,24 +55,46 @@ public class ScalarComputationGroovy implements ScalarComputation {
           .getServiceCallName()
           .equals(contextualizable.getUrn())) {
         // compile expression and check fit. May be vectorial (compile outside the loop) or scalar
+        Step step = new Step();
+        var expressionCode = contextualizable.getParameters().get("expression", ExpressionCode.class);
+        if (contextualizable.getParameters().contains("target")) {
+          step.target = contextualizable.getParameters().get("target", String.class);
+        }
+        step.expressionDescriptor = groovyProcessor.analyze(expressionCode, scope);
+
+        if (Utils.Notifications.hasErrors(step.expressionDescriptor.getNotifications())) {
+          return false;
+        }
+
+        steps.add(step);
+
       } else if (RuntimeService.CoreFunctor.LUT_RESOLVER
-              .getServiceCallName()
-              .equals(contextualizable.getUrn())) {
-          // LUT, classification or reference to codelist
+          .getServiceCallName()
+          .equals(contextualizable.getUrn())) {
+        // LUT, classification or reference to codelist
       } else if (RuntimeService.CoreFunctor.CONSTANT_RESOLVER
-              .getServiceCallName()
-              .equals(contextualizable.getUrn())) {
+          .getServiceCallName()
+          .equals(contextualizable.getUrn())) {
         // check types
       } else {
         // scalar contextualizer
       }
 
-//      calls.add(contextualizable);
+      //      calls.add(contextualizable);
       return true;
     }
 
     @Override
     public ScalarComputation build() {
+
+      // 1. Get class template for the final class
+      // 2. Create class fields as lazy injectors
+      // 3. Create wrappers for observations, time, space and whatever else was referenced
+      // 3. Create referenced concepts/observables as predefined fields
+      // 4. Create main code for each step
+      // 5. If scalar code is there, group it for code generation and define intermediate variables
+      // 5.1 Create loop based on fill curve and offset where scalar code goes in
+      // 6. Finalization
       return null;
     }
   }

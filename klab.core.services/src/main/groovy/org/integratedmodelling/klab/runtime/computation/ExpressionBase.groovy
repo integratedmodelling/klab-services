@@ -5,9 +5,13 @@ import org.integratedmodelling.klab.api.services.Reasoner
 import org.integratedmodelling.klab.api.services.Resolver
 import org.integratedmodelling.klab.api.services.ResourcesService
 import org.integratedmodelling.klab.api.services.RuntimeService
+import org.integratedmodelling.klab.api.services.runtime.ScalarComputation
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope
 
-abstract class ExpressionBase extends Script implements MathOps {
+/**
+ * Base class for all generated scalar computations
+ */
+abstract class ExpressionBase extends Script implements ScalarComputation, MathOps, ObservationOps {
 
     ServiceContextScope scope;
     Observation observation;
