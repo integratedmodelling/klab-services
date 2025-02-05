@@ -729,7 +729,7 @@ public class GroovyExpressionPreprocessor {
     lexer.consume();
     List<Token> acc = new ArrayList<>();
 
-    /**
+    /*
      * Compiled string contains a character per token identified with the following:
      * ., ( and ) are literal;
      * I = known identifier
@@ -746,7 +746,7 @@ public class GroovyExpressionPreprocessor {
      *    I.U and I.I optionally followed by (L*) -> IDENTIFIER_METHOD_CALL
      *
      * Substitute these patterns as X and Y; change the corresponding list elements with the compound values of
-     * the pattern in the list
+     * the pattern in the list using same strategy as the substitutions
      *
      * Reassemble the expression using the token list with all the substitutions and related actions (add fields, call
      * functions etc.)
