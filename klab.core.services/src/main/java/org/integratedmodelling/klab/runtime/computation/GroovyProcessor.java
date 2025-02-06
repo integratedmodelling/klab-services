@@ -192,19 +192,34 @@ public class GroovyProcessor implements Language.LanguageProcessor {
         // reconstruct the finalized expression while building template variables
         for (int i = 0; i < encoded.length(); i++) {
           var tokenInfo = tokens.get(i);
-          switch (encoded.charAt(i)) {
-            case 'I' -> {}
-            case 'U' -> {}
-            case 'L' -> {}
-            case 'C' -> {}
-            case 'O' -> {}
-            case 'T' -> {}
-            case 'X' -> {}
-            case 'Y' -> {}
+          preprocessedCode.append(switch (encoded.charAt(i)) { // TODO! Also add identifiers
+            case 'I' -> {
+              // ensure accessible; set scalar/vector flags
+              yield tokenInfo.translation;
+            }
+            case 'U' -> {
+              // TODO handle scale, scope, time, space, unknown etc. Also we probably need a klab object
+              //  and the service handles. This works nicely because they get overridden if the inputs
+              //  have the same name.
+              yield tokenInfo.translation;
+            }
+            case 'L' -> {
+              // LOCATOR call using scope etc, use a closure in fields or prepend local variable
+              yield tokenInfo.translation;
+            }
+            case 'C' -> {
+              // set variable field, return variable
+              yield tokenInfo.translation;
+            }
+            case 'O' -> {
+              // set variable field, return variable
+              yield tokenInfo.translation;
+            }
+            case 'T', 'X', 'Y', '(', ')', '.' -> tokenInfo.translation;
             default ->
                 throw new KlabInternalErrorException(
                     "wrong pattern encoding in expression preprocessor: " + code);
-          }
+          });
         }
 
         return preprocessedCode.toString();
