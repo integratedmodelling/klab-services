@@ -69,273 +69,268 @@ import java.util.concurrent.locks.ReentrantLock;
 @ThreadSafe
 public final class FileBasedLock implements Lock, java.io.Closeable {
 
-    private static final Cache<String, FileBasedLock> FILE_LOCKS =
-            CacheBuilder.newBuilder().weakValues().build();
+  private static final Cache<String, FileBasedLock> FILE_LOCKS =
+      CacheBuilder.newBuilder().weakValues().build();
 
-    public static final FileAttribute<?>[] NO_FILE_ATTRS = new FileAttribute<?>[0];
+  public static final FileAttribute<?>[] NO_FILE_ATTRS = new FileAttribute<?>[0];
 
-    private final RandomAccessFile file;
-    private final ReentrantLock jvmLock;
+  private final RandomAccessFile file;
+  private final ReentrantLock jvmLock;
 
-    @Nullable
-    private FileLock fileLock;
+  @Nullable private FileLock fileLock;
 
-    private static int next(final int maxVal) {
-        return ThreadLocalRandom.current().nextInt(maxVal);
+  private static int next(final int maxVal) {
+    return ThreadLocalRandom.current().nextInt(maxVal);
+  }
+
+  private FileBasedLock(final File lockFile, final FileAttribute<?>... fileAttributes)
+      throws IOException {
+    Path toPath = lockFile.toPath();
+    Set<PosixFilePermission> requestedPermissions = extractPosixPermissions(fileAttributes);
+    boolean isWindows = Utils.OS.get() == Utils.OS.WIN;
+    try {
+      if (isWindows && !requestedPermissions.isEmpty()) {
+        Files.createFile(toPath);
+      } else {
+        Files.createFile(toPath, fileAttributes);
+      }
+    } catch (FileAlreadyExistsException ex) {
+      // file exists, we are ok.
+    }
+    if (!isWindows && !requestedPermissions.isEmpty()) { // validate permissions
+      Set<PosixFilePermission> actualPermissions = Files.getPosixFilePermissions(toPath);
+      if (!requestedPermissions.equals(actualPermissions)) {
+        Files.setPosixFilePermissions(toPath, requestedPermissions);
+      }
     }
 
-    private FileBasedLock(final File lockFile, final FileAttribute<?>... fileAttributes)
-            throws IOException {
-        Path toPath = lockFile.toPath();
-        Set<PosixFilePermission> requestedPermissions = extractPosixPermissions(fileAttributes);
-        boolean isWindows = Utils.OS.get() == Utils.OS.WIN;
-        try {
-            if (isWindows && !requestedPermissions.isEmpty()) {
-                Files.createFile(toPath);
+    file = new RandomAccessFile(lockFile, "rws");
+    jvmLock = new ReentrantLock();
+    fileLock = null;
+  }
+
+  public static Set<PosixFilePermission> extractPosixPermissions(
+      final FileAttribute<?>[] fileAttributes) {
+    // create file depending on OS config will not create all requested attributes.
+    Set<PosixFilePermission> permissions = null;
+    for (FileAttribute<?> attr : fileAttributes) {
+      Object value = attr.value();
+      if (value instanceof Set) {
+        Set set = (Set) value;
+        for (Object obj : set) {
+          if (obj instanceof PosixFilePermission) {
+            if (permissions == null) {
+              permissions = EnumSet.of((PosixFilePermission) obj);
             } else {
-                Files.createFile(toPath, fileAttributes);
+              permissions.add((PosixFilePermission) obj);
             }
-        } catch (FileAlreadyExistsException ex) {
-            // file exists, we are ok.
+          }
         }
-        if (!isWindows && !requestedPermissions.isEmpty()) { // validate permissions
-            Set<PosixFilePermission> actualPermissions = Files.getPosixFilePermissions(toPath);
-            if (!requestedPermissions.equals(actualPermissions)) {
-                Files.setPosixFilePermissions(toPath, requestedPermissions);
-            }
-        }
-
-        file = new RandomAccessFile(lockFile, "rws");
-        jvmLock = new ReentrantLock();
-        fileLock = null;
+      }
     }
+    return permissions == null ? Collections.EMPTY_SET : permissions;
+  }
 
-    public static Set<PosixFilePermission> extractPosixPermissions(final FileAttribute<?>[] fileAttributes) {
-        // create file depending on OS config will not create all requested attributes.
-        Set<PosixFilePermission> permissions = null;
-        for (FileAttribute<?> attr : fileAttributes) {
-            Object value = attr.value();
-            if (value instanceof Set) {
-                Set set = (Set) value;
-                for (Object obj : set) {
-                    if (obj instanceof PosixFilePermission) {
-                        if (permissions == null) {
-                            permissions = EnumSet.of((PosixFilePermission) obj);
-                        } else {
-                            permissions.add((PosixFilePermission) obj);
-                        }
-                    }
-                }
-            }
-        }
-        return permissions == null ? Collections.EMPTY_SET : permissions;
+  /**
+   * Returns a FileBasedLock implementation.
+   *
+   * <p>FileBasedLock will hold onto a File Descriptor during the entire life of the instance.
+   * FileBasedLock is a reentrant lock. (it can be acquired multiple times by the same thread)
+   *
+   * @param lockFile the file to lock on.
+   * @return
+   * @throws IOException
+   */
+  public static FileBasedLock getLock(final File lockFile, final FileAttribute<?>... fileAttributes)
+      throws IOException {
+    String filePath = lockFile.getCanonicalPath();
+    try {
+      return FILE_LOCKS.get(filePath, () -> new FileBasedLock(lockFile, fileAttributes));
+    } catch (ExecutionException ex) {
+      throw new IOException(ex);
     }
+  }
 
+  public static FileBasedLock getLock(final File lockFile) throws IOException {
+    return getLock(lockFile, NO_FILE_ATTRS);
+  }
 
-    /**
-     * Returns a FileBasedLock implementation.
-     * <p>
-     * FileBasedLock will hold onto a File Descriptor during the entire life of the instance. FileBasedLock is
-     * a reentrant lock. (it can be acquired multiple times by the same thread)
-     *
-     * @param lockFile the file to lock on.
-     * @return
-     * @throws IOException
-     */
-    public static FileBasedLock getLock(final File lockFile, final FileAttribute<?>... fileAttributes)
-            throws IOException {
-        String filePath = lockFile.getCanonicalPath();
-        try {
-            return FILE_LOCKS.get(filePath, () -> new FileBasedLock(lockFile, fileAttributes));
-        } catch (ExecutionException ex) {
-            throw new IOException(ex);
-        }
+  @Override
+  public void lock() {
+    jvmLock.lock();
+    if (jvmLock.getHoldCount() > 1) {
+      // reentered, we already have the file lock
+      return;
     }
-
-
-    public static FileBasedLock getLock(final File lockFile) throws IOException {
-        return getLock(lockFile, NO_FILE_ATTRS);
+    try {
+      fileLock = file.getChannel().lock();
+      writeHolderInfo();
+    } catch (IOException ex) {
+      jvmLock.unlock();
+      throw new KlabIllegalStateException(ex);
+    } catch (Throwable ex) {
+      jvmLock.unlock();
+      throw ex;
     }
+  }
 
-    @Override
-    public void lock() {
-        jvmLock.lock();
-        if (jvmLock.getHoldCount() > 1) {
-            // reentered, we already have the file lock
-            return;
-        }
-        try {
-            fileLock = file.getChannel().lock();
-            writeHolderInfo();
-        } catch (IOException ex) {
-            jvmLock.unlock();
-            throw new KlabIllegalStateException(ex);
-        } catch (Throwable ex) {
-            jvmLock.unlock();
-            throw ex;
-        }
+  @Override
+  public void lockInterruptibly() throws InterruptedException {
+    jvmLock.lockInterruptibly();
+    if (jvmLock.getHoldCount() > 1) {
+      // reentered, we already have the file lock
+      return;
     }
-
-    @Override
-    public void lockInterruptibly() throws InterruptedException {
-        jvmLock.lockInterruptibly();
-        if (jvmLock.getHoldCount() > 1) {
-            // reentered, we already have the file lock
-            return;
-        }
-        try {
-            final FileChannel channel = file.getChannel();
-            boolean interrupted = false;
-            //CHECKSTYLE:OFF
-            while ((fileLock = channel.tryLock()) == null && !(interrupted = Thread.interrupted())) {
-                //CHECKSTYLE:ON
-                Thread.sleep(next(1000));
-            }
-            if (interrupted) {
-                throw new InterruptedException();
-            }
-            writeHolderInfo();
-        } catch (InterruptedException | RuntimeException ex) {
-            jvmLock.unlock();
-            throw ex;
-        } catch (IOException ex) {
-            jvmLock.unlock();
-            throw new KlabIllegalStateException(ex);
-        }
+    try {
+      final FileChannel channel = file.getChannel();
+      boolean interrupted = false;
+      // CHECKSTYLE:OFF
+      while ((fileLock = channel.tryLock()) == null && !(interrupted = Thread.interrupted())) {
+        // CHECKSTYLE:ON
+        Thread.sleep(next(1000));
+      }
+      if (interrupted) {
+        throw new InterruptedException();
+      }
+      writeHolderInfo();
+    } catch (InterruptedException | RuntimeException ex) {
+      jvmLock.unlock();
+      throw ex;
+    } catch (IOException ex) {
+      jvmLock.unlock();
+      throw new KlabIllegalStateException(ex);
     }
+  }
 
-    @Override
-    public boolean tryLock() {
-        if (jvmLock.tryLock()) {
-            if (jvmLock.getHoldCount() > 1) {
-                // reentrant
-                return true;
-            }
-            try {
-                fileLock = file.getChannel().tryLock();
-                if (fileLock != null) {
-                    writeHolderInfo();
-                    return true;
-                } else {
-                    jvmLock.unlock();
-                    return false;
-                }
-            } catch (IOException ex) {
-                jvmLock.unlock();
-                throw new KlabIllegalStateException(ex);
-            } catch (RuntimeException ex) {
-                jvmLock.unlock();
-                throw ex;
-            }
+  @Override
+  public boolean tryLock() {
+    if (jvmLock.tryLock()) {
+      if (jvmLock.getHoldCount() > 1) {
+        // reentrant
+        return true;
+      }
+      try {
+        fileLock = file.getChannel().tryLock();
+        if (fileLock != null) {
+          writeHolderInfo();
+          return true;
         } else {
-            return false;
+          jvmLock.unlock();
+          return false;
         }
+      } catch (IOException ex) {
+        jvmLock.unlock();
+        throw new KlabIllegalStateException(ex);
+      } catch (RuntimeException ex) {
+        jvmLock.unlock();
+        throw ex;
+      }
+    } else {
+      return false;
     }
+  }
 
-    @Override
-    public boolean tryLock(final long time, final TimeUnit unit) throws InterruptedException {
-        if (jvmLock.tryLock(time, unit)) {
-            if (jvmLock.getHoldCount() > 1) {
-                // reentered, we already have the file lock
-                return true;
-            }
-            try {
-                long waitTime = 0;
-                long maxWaitTime = unit.toMillis(time);
-                boolean interrupted = false;
-                while (waitTime < maxWaitTime
-                        //CHECKSTYLE:OFF
-                        && (fileLock = file.getChannel().tryLock()) == null
-                        && !(interrupted = Thread.interrupted())) {
-                    //CHECKSTYLE:ON
-                    Thread.sleep(next(1000));
-                    waitTime++;
-                }
-                if (interrupted) {
-                    throw new InterruptedException();
-                }
-                if (fileLock != null) {
-                    writeHolderInfo();
-                    return true;
-                } else {
-                    jvmLock.unlock();
-                    return false;
-                }
-            } catch (InterruptedException | RuntimeException ex) {
-                jvmLock.unlock();
-                throw ex;
-            } catch (IOException ex) {
-                jvmLock.unlock();
-                throw new KlabIllegalStateException(ex);
-            }
+  @Override
+  public boolean tryLock(final long time, final TimeUnit unit) throws InterruptedException {
+    if (jvmLock.tryLock(time, unit)) {
+      if (jvmLock.getHoldCount() > 1) {
+        // reentered, we already have the file lock
+        return true;
+      }
+      try {
+        long waitTime = 0;
+        long maxWaitTime = unit.toMillis(time);
+        boolean interrupted = false;
+        while (waitTime < maxWaitTime
+            // CHECKSTYLE:OFF
+            && (fileLock = file.getChannel().tryLock()) == null
+            && !(interrupted = Thread.interrupted())) {
+          // CHECKSTYLE:ON
+          Thread.sleep(next(1000));
+          waitTime++;
+        }
+        if (interrupted) {
+          throw new InterruptedException();
+        }
+        if (fileLock != null) {
+          writeHolderInfo();
+          return true;
         } else {
-            return false;
+          jvmLock.unlock();
+          return false;
         }
+      } catch (InterruptedException | RuntimeException ex) {
+        jvmLock.unlock();
+        throw ex;
+      } catch (IOException ex) {
+        jvmLock.unlock();
+        throw new KlabIllegalStateException(ex);
+      }
+    } else {
+      return false;
     }
+  }
 
-    @Override
-    public void unlock() {
-        try {
-            if (jvmLock.getHoldCount() == 1) {
-                if (fileLock == null) {
-                    throw new KlabIllegalStateException("Cannot unlock a lock that has not been locked " +
-                            "before.. " + jvmLock);
-                }
-                fileLock.release();
-            }
-        } catch (IOException ex) {
-            throw new KlabIllegalStateException(ex);
-        } finally {
-            jvmLock.unlock();
+  @Override
+  public void unlock() {
+    try {
+      if (jvmLock.getHoldCount() == 1) {
+        if (fileLock == null) {
+          throw new KlabIllegalStateException(
+              "Cannot unlock a lock that has not been locked " + "before.. " + jvmLock);
         }
+        fileLock.release();
+      }
+    } catch (IOException ex) {
+      throw new KlabIllegalStateException(ex);
+    } finally {
+      jvmLock.unlock();
     }
+  }
 
-    @Override
-    public Condition newCondition() {
-        throw new UnsupportedOperationException();
+  @Override
+  public Condition newCondition() {
+    throw new UnsupportedOperationException();
+  }
+
+  /** will release lock if owned, will do nothing if not owned. */
+  @Override
+  @WillClose
+  public void close() {
+    if (jvmLock.getHoldCount() > 0) {
+      unlock();
     }
+  }
 
-    /**
-     * will release lock if owned, will do nothing if not owned.
-     */
-    @Override
-    @WillClose
-    public void close() {
-        if (jvmLock.getHoldCount() > 0) {
-            unlock();
-        }
-    }
+  //    @Override
+  //    protected void finalize() throws Throwable {
+  //        try (RandomAccessFile f = file) {
+  //            super.finalize();
+  //        }
+  //    }
 
-//    @Override
-//    protected void finalize() throws Throwable {
-//        try (RandomAccessFile f = file) {
-//            super.finalize();
-//        }
-//    }
+  private void writeHolderInfo() throws IOException {
+    file.seek(0);
+    byte[] data = getContextInfo().getBytes(StandardCharsets.UTF_8);
+    file.write(data);
+    file.setLength(data.length);
+    file.getChannel().force(true);
+  }
 
-    private void writeHolderInfo() throws IOException {
-        file.seek(0);
-        byte[] data = getContextInfo().getBytes(StandardCharsets.UTF_8);
-        file.write(data);
-        file.setLength(data.length);
-        file.getChannel().force(true);
-    }
+  public static String getContextInfo() {
+    return ProcessHandle.current().pid() + ':' + Thread.currentThread().getName();
+  }
 
-    public static String getContextInfo() {
-        return ProcessHandle.current().pid() + ':' + Thread.currentThread().getName();
-    }
+  @Override
+  public String toString() {
+    return "FileBasedLock{" + "file=" + file + '}';
+  }
 
-    @Override
-    public String toString() {
-        return "FileBasedLock{" + "file=" + file + '}';
-    }
+  public int getLocalHoldCount() {
+    return jvmLock.getHoldCount();
+  }
 
-    public int getLocalHoldCount() {
-        return jvmLock.getHoldCount();
-    }
-
-    public boolean isHeldByCurrentThread() {
-        return jvmLock.isHeldByCurrentThread();
-    }
-
+  public boolean isHeldByCurrentThread() {
+    return jvmLock.isHeldByCurrentThread();
+  }
 }
