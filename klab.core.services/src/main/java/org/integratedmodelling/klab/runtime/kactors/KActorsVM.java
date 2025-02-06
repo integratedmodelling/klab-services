@@ -1684,7 +1684,7 @@ public class KActorsVM implements VM {
         compareDescriptor =
             languageService
                 .analyze(expr, scope.getMainScope())
-                .scalar(expr.isForcedScalar() ? Forcing.Always : Forcing.AsNeeded);
+                /*.scalar(expr.isForcedScalar() ? Forcing.Always : Forcing.AsNeeded)*/;
         compareExpression = compareDescriptor.compile();
         for (String input : compareDescriptor.getIdentifiers()) {
           // if (compareDescriptor.isScalar(input) && runtimeScope.getArtifact(input,
@@ -1705,7 +1705,7 @@ public class KActorsVM implements VM {
           languageService
               // TODO parameter only if target is a state
               .analyze(selector, scope.getMainScope())
-              .scalar(Forcing.Always);
+              /*.scalar(Forcing.Always)*/;
       selectExpression = selectDescriptor.compile();
       for (String input : selectDescriptor.getIdentifiers()) {
         // if (selectDescriptor.isScalar(input) && runtimeScope.getArtifact(input,

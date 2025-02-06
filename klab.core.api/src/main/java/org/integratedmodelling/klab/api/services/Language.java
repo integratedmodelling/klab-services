@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Expression.CompilerOption;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -53,10 +54,17 @@ public interface Language extends Service {
      *
      * @param expression an expression to analyze
      * @param scope a scope or null
+     * @param outputs the output observations visible in the scope of execution
+     * @param inputs the input observables visible in the scope of execution
+     * @param options any compilation options (currently unused)
      * @return the analyzed descriptor
      */
     Expression.Descriptor analyze(
-        ExpressionCode expression, Scope scope, CompilerOption... options);
+        ExpressionCode expression,
+        Scope scope,
+        List<Observable> outputs,
+        List<Observable> inputs,
+        CompilerOption... options);
 
     /**
      * Turn a previously analyzed expression descriptor (without errors) into executable code.
@@ -78,7 +86,12 @@ public interface Language extends Service {
 
   /**
    * To compile an expression within a given scope, the scope should be passed for analysis and the
-   * descriptor used to compile into an expression.
+   * descriptor used to compile into an expression. Normally used for expressions that exists outside
+   * contextualization as it passes empty inputs and outputs.
+   *
+   * TODO this modality of use should check the scope and if it's a ContextScope it may automatically
+   *  bind observations to the relevant IDs, assuming full visibility. This could be done by adding a
+   *  compiler option that scans the observations in the scope if no input/output list is passed.
    *
    * @param code
    * @param scope
@@ -88,7 +101,7 @@ public interface Language extends Service {
   default Expression.Descriptor analyze(
       ExpressionCode code, Scope scope, CompilerOption... options) {
     var processor = getLanguageProcessor(code.getLanguage());
-    return processor.analyze(code, scope, options);
+    return processor.analyze(code, scope, List.of(), List.of(), options);
   }
 
   /**
@@ -104,7 +117,11 @@ public interface Language extends Service {
     var processor = getLanguageProcessor(DEFAULT_EXPRESSION_LANGUAGE);
     var descriptor =
         processor.analyze(
-            ExpressionCode.of(expression, DEFAULT_EXPRESSION_LANGUAGE), null, options);
+            ExpressionCode.of(expression, DEFAULT_EXPRESSION_LANGUAGE),
+            null,
+            List.of(),
+            List.of(),
+            options);
     return descriptor.compile();
   }
 

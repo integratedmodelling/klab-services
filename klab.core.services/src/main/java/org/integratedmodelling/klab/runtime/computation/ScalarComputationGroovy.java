@@ -56,11 +56,17 @@ public class ScalarComputationGroovy implements ScalarComputation {
           .equals(contextualizable.getUrn())) {
         // compile expression and check fit. May be vectorial (compile outside the loop) or scalar
         Step step = new Step();
-        var expressionCode = contextualizable.getParameters().get("expression", ExpressionCode.class);
+        var expressionCode =
+            contextualizable.getParameters().get("expression", ExpressionCode.class);
         if (contextualizable.getParameters().contains("target")) {
           step.target = contextualizable.getParameters().get("target", String.class);
         }
-        step.expressionDescriptor = groovyProcessor.analyze(expressionCode, scope);
+        step.expressionDescriptor =
+            groovyProcessor.analyze(
+                expressionCode,
+                scope,
+                List.of(actuator.getObservable()),
+                actuator.getChildren().stream().map(Actuator::getObservable).toList());
 
         if (Utils.Notifications.hasErrors(step.expressionDescriptor.getNotifications())) {
           return false;

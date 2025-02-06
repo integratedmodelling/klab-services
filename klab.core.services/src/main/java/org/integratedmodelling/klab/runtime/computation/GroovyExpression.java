@@ -91,20 +91,20 @@ public class GroovyExpression /*extends Expression*/ implements Expression {
     return errors;
   }
 
-  /*
-   * MUST be called in all situations.
-   */
-  public void initialize(Map<String, Observable> inputs, Map<String, Observable> outputs) {
-    compile(preprocess(code, inputs, outputs));
-    initialized.set(Boolean.TRUE);
-  }
+//  /*
+//   * MUST be called in all situations.
+//   */
+//  public void initialize(Map<String, Observable> inputs, Map<String, Observable> outputs) {
+//    compile(preprocess(code, inputs, outputs));
+//    initialized.set(Boolean.TRUE);
+//  }
 
   GroovyExpression(String code, boolean preprocessed, Expression.Descriptor descriptor) {
     initialized.set(Boolean.FALSE);
     this.descriptor = descriptor;
-    this.variables = descriptor.getVariables();
+//    this.variables = descriptor.getVariables();
     this.code = code;
-    this.options.addAll(descriptor.getOptions());
+//    this.options.addAll(descriptor.getOptions());
     if (preprocessed) {
       this.preprocessed = this.code;
     }
@@ -141,7 +141,7 @@ public class GroovyExpression /*extends Expression*/ implements Expression {
       // finished. In this case we recycle them (TODO CHECK if this creates any
       // problems) - IGNORES OPTIONS
       if (initialized.get() == null || !initialized.get()) {
-        initialize(new HashMap<>(), new HashMap<>());
+//        initialize(new HashMap<>(), new HashMap<>());
         setupBindings(scope);
       }
 
@@ -279,21 +279,21 @@ public class GroovyExpression /*extends Expression*/ implements Expression {
     }
   }
 
-  private String preprocess(
-      String code, Map<String, Observable> inputs, Map<String, Observable> outputs) {
-
-    if (this.preprocessed != null) {
-      return this.preprocessed;
-    }
-
-    GroovyExpressionPreprocessor processor =
-        new GroovyExpressionPreprocessor(runtimeContext, this.options);
-    this.preprocessed = processor.process(code);
-    this.errors.addAll(processor.getErrors());
-    this.variables = processor.getVariables();
-
-    return this.preprocessed;
-  }
+//  private String preprocess(
+//      String code, Map<String, Observable> inputs, Map<String, Observable> outputs) {
+//
+//    if (this.preprocessed != null) {
+//      return this.preprocessed;
+//    }
+//
+//    GroovyExpressionPreprocessor processor =
+//        new GroovyExpressionPreprocessor(runtimeContext, this.options);
+//    this.preprocessed = processor.process(code);
+//    this.errors.addAll(processor.getErrors());
+//    this.variables = processor.getVariables();
+//
+//    return this.preprocessed;
+//  }
 
   public String toString() {
     return code;

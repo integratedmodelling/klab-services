@@ -77,6 +77,13 @@ public interface Expression extends Serializable {
     IgnoreContext,
 
     /**
+     * Enable automatic scanning of a context scope and pairing identifiers to the observations seen
+     * in it. Normal behavior is to compile based on a provided list of visible input and output
+     * observables.
+     */
+    ScanContext,
+
+    /**
      * Translate identifiers like id@ctx into id["ctx"] instead of inserting the recontextualization
      * hooks for states.
      */
@@ -280,18 +287,18 @@ public interface Expression extends Serializable {
      */
     Expression compile();
 
-    /**
-     * Return a descriptor scope that will compile into an expression with the required
-     * scalarization. The forcing passed defines the type of constraint: if {@link
-     * Forcing#AsNeeded}, the expression will be scalar only if it mentions quality variables in a
-     * scalar scope; if {@link Forcing#Always}, scalar behavior will be forced no matter the
-     * statement.
-     *
-     * @deprecated
-     * @param forcing
-     * @return
-     */
-    Descriptor scalar(Forcing forcing);
+//    /**
+//     * Return a descriptor scope that will compile into an expression with the required
+//     * scalarization. The forcing passed defines the type of constraint: if {@link
+//     * Forcing#AsNeeded}, the expression will be scalar only if it mentions quality variables in a
+//     * scalar scope; if {@link Forcing#Always}, scalar behavior will be forced no matter the
+//     * statement.
+//     *
+//     * @deprecated
+//     * @param forcing
+//     * @return
+//     */
+//    Descriptor scalar(Forcing forcing);
 
     /**
      * @return
@@ -303,32 +310,32 @@ public interface Expression extends Serializable {
      */
     Collection<String> getIdentifiersInNonscalarScope();
 
-    /**
-     * If the expression was compiled with the {@link CompilerOption#RecontextualizeAsMap} option,
-     * any identifier seen as id@ctx will have been turned into id["ctx"] and the id plus all the
-     * keys will be available here.
-     *
-     * @return
-     * @deprecated
-     */
-    Map<String, Set<String>> getMapIdentifiers();
+//    /**
+//     * If the expression was compiled with the {@link CompilerOption#RecontextualizeAsMap} option,
+//     * any identifier seen as id@ctx will have been turned into id["ctx"] and the id plus all the
+//     * keys will be available here.
+//     *
+//     * @return
+//     * @deprecated
+//     */
+//    Map<String, Set<String>> getMapIdentifiers();
 
-    /**
-     * Return the set of options that were passed when this expression was compiled. May be empty,
-     * never null.
-     *
-     * @return
-     */
-    Collection<CompilerOption> getOptions();
+//    /**
+//     * Return the set of options that were passed when this expression was compiled. May be empty,
+//     * never null.
+//     *
+//     * @return
+//     */
+//    Collection<CompilerOption> getOptions();
 
-    /**
-     * Predefined variables that have been inserted in the code and whose value is known at the time
-     * of compilation. Typically translations of k.IM identifiers and URNs into the correspondent
-     * objects.
-     *
-     * @return
-     */
-    Parameters<String> getVariables();
+//    /**
+//     * Predefined variables that have been inserted in the code and whose value is known at the time
+//     * of compilation. Typically translations of k.IM identifiers and URNs into the correspondent
+//     * objects.
+//     *
+//     * @return
+//     */
+//    Parameters<String> getVariables();
   }
 
   /**
