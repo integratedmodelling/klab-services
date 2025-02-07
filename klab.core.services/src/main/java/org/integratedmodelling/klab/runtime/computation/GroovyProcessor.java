@@ -14,6 +14,7 @@ import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
@@ -50,8 +51,22 @@ public class GroovyProcessor implements Language.LanguageProcessor {
     return descriptor.compile();
   }
 
+  /**
+   * Descriptor for all fields that end up in the template and their role in it
+   */
+  static class FieldInfo {
+    String varName; // null = definition is code to be run
+    String definition; // the actual code
+    String target; // code to run may have a target variable
+    boolean lazy; // for fields whose definition is a lazy closure
+    boolean constructorArgument; // if true the constructor initializes the variable
+    boolean scalar; // true for scalar code that must be distributed
+  }
+
   static class GroovyDescriptor implements Expression.Descriptor {
 
+    // TODO use https://github.com/casid/jte and a template (differentiating templates for
+    //  contextualizers or not)?
     private String processedCode;
     private Collection<String> identifiers = new LinkedHashSet<>();
     private Set<String> scalarIds = new LinkedHashSet<>();
@@ -100,6 +115,8 @@ public class GroovyProcessor implements Language.LanguageProcessor {
     record TokenInfo(String code, String encoding, String translation, Observable observable) {}
 
     public String preprocess(String code) {
+
+      int varCounter = 1;
 
       /*
        * pre-substitute any \] with ] so that we can use the Groovy lexer without error. Don't
@@ -192,34 +209,54 @@ public class GroovyProcessor implements Language.LanguageProcessor {
         // reconstruct the finalized expression while building template variables
         for (int i = 0; i < encoded.length(); i++) {
           var tokenInfo = tokens.get(i);
-          preprocessedCode.append(switch (encoded.charAt(i)) { // TODO! Also add identifiers
-            case 'I' -> {
-              // ensure accessible; set scalar/vector flags
-              yield tokenInfo.translation;
-            }
-            case 'U' -> {
-              // TODO handle scale, scope, time, space, unknown etc. Also we probably need a klab object
-              //  and the service handles. This works nicely because they get overridden if the inputs
-              //  have the same name.
-              yield tokenInfo.translation;
-            }
-            case 'L' -> {
-              // LOCATOR call using scope etc, use a closure in fields or prepend local variable
-              yield tokenInfo.translation;
-            }
-            case 'C' -> {
-              // set variable field, return variable
-              yield tokenInfo.translation;
-            }
-            case 'O' -> {
-              // set variable field, return variable
-              yield tokenInfo.translation;
-            }
-            case 'T', 'X', 'Y', '(', ')', '.' -> tokenInfo.translation;
-            default ->
-                throw new KlabInternalErrorException(
-                    "wrong pattern encoding in expression preprocessor: " + code);
-          });
+          preprocessedCode.append(
+              switch (encoded.charAt(i)) { // TODO! Also add identifiers
+                case 'I' -> {
+                  // ensure accessible; set scalar/vector flags
+                  var observable = knownObservables.get(code);
+                  identifiers.add(code);
+                  if (observable.getSemantics().is(SemanticType.QUALITY)) {
+                    scalarIds.add(code);
+                  }
+                  yield tokenInfo.translation;
+                }
+                case 'U' -> {
+                  // TODO handle scale, scope, time, space, unknown etc. Also we probably need a
+                  // klab object
+                  //  with the service handles. This works nicely because they get overridden if the
+                  // inputs
+                  //  have the same name.
+                  switch (code) {
+                    case "space" -> {}
+                    case "time" -> {}
+                    case "unknown" -> {}
+                    case "scope" -> {}
+                    case "scale" -> {}
+                    case "observer" -> {}
+                  }
+                  identifiers.add(code);
+                  yield tokenInfo.translation;
+                }
+                case 'L' -> {
+                  // TODO LOCATOR call using scope etc, use a closure in fields or prepend local
+                  // variable
+                  yield tokenInfo.translation;
+                }
+                case 'C' -> {
+                  // set variable field, return variable
+                  var vName = "_concept" + (varCounter++);
+                  //              templateFields.add();
+                  yield tokenInfo.translation;
+                }
+                case 'O' -> {
+                  // set variable field, return variable
+                  yield tokenInfo.translation;
+                }
+                case 'T', 'X', 'Y', '(', ')', '.' -> tokenInfo.translation;
+                default ->
+                    throw new KlabInternalErrorException(
+                        "wrong pattern encoding in expression preprocessor: " + code);
+              });
         }
 
         return preprocessedCode.toString();
@@ -252,7 +289,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
       }
 
       var ret = tokenInitializer.apply(removed);
-      tokens.add(n,ret);
+      tokens.add(n, ret);
       return ret;
     }
 

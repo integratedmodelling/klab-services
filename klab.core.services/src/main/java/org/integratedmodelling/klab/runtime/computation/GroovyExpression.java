@@ -79,9 +79,9 @@ public class GroovyExpression /*extends Expression*/ implements Expression {
   private Map<String, Object> variables;
   private Set<CompilerOption> options = EnumSet.noneOf(CompilerOption.class);
 
-  public GroovyExpression() {
-    initialized.set(Boolean.FALSE);
-  }
+//  public GroovyExpression() {
+//    initialized.set(Boolean.FALSE);
+//  }
 
   public boolean hasErrors() {
     return errors.size() > 0;

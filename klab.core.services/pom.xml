@@ -130,6 +130,13 @@
 
     <dependencies>
 
+        <!-- lightweights template engine for generated Groovy classes and more -->
+        <dependency>
+            <groupId>gg.jte</groupId>
+            <artifactId>jte</artifactId>
+            <version>3.1.16</version>
+        </dependency>
+
         <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.core.common</artifactId>
