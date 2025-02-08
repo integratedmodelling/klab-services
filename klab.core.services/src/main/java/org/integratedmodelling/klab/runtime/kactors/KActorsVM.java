@@ -1686,7 +1686,7 @@ public class KActorsVM implements VM {
                 .analyze(expr, scope.getMainScope())
                 /*.scalar(expr.isForcedScalar() ? Forcing.Always : Forcing.AsNeeded)*/;
         compareExpression = compareDescriptor.compile();
-        for (String input : compareDescriptor.getIdentifiers()) {
+        for (var input : compareDescriptor.getIdentifiers().values()) {
           // if (compareDescriptor.isScalar(input) && runtimeScope.getArtifact(input,
           // IState.class) != null) {
           // IState state = runtimeScope.getArtifact(input, IState.class);
@@ -1707,7 +1707,7 @@ public class KActorsVM implements VM {
               .analyze(selector, scope.getMainScope())
               /*.scalar(Forcing.Always)*/;
       selectExpression = selectDescriptor.compile();
-      for (String input : selectDescriptor.getIdentifiers()) {
+      for (var input : selectDescriptor.getIdentifiers().values()) {
         // if (selectDescriptor.isScalar(input) && runtimeScope.getArtifact(input,
         // IState.class) != null) {
         // IState state = runtimeScope.getArtifact(input, IState.class);

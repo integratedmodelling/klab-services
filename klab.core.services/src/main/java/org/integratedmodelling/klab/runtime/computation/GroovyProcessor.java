@@ -51,9 +51,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
     return descriptor.compile();
   }
 
-  /**
-   * Descriptor for all fields that end up in the template and their role in it
-   */
+  /** Descriptor for all fields that end up in the template and their role in it */
   static class FieldInfo {
     String varName; // null = definition is code to be run
     String definition; // the actual code
@@ -68,16 +66,16 @@ public class GroovyProcessor implements Language.LanguageProcessor {
     // TODO use https://github.com/casid/jte and a template (differentiating templates for
     //  contextualizers or not)?
     private String processedCode;
-    private Collection<String> identifiers = new LinkedHashSet<>();
-    private Set<String> scalarIds = new LinkedHashSet<>();
-    private Set<String> objectIds = new LinkedHashSet<>();
-    private Set<String> contextualizers = new LinkedHashSet<>();
+    //    private Collection<String> identifiers = new LinkedHashSet<>();
+    //    private Set<String> scalarIds = new LinkedHashSet<>();
+    //    private Set<String> objectIds = new LinkedHashSet<>();
+    //    private Set<String> contextualizers = new LinkedHashSet<>();
     private List<Notification> notifications = new ArrayList<>();
-    //    private Map<String, Set<String>> mapIdentifiers;
     private Set<Expression.CompilerOption> options;
-    //    private Parameters<String> variables;
     private final boolean forceScalar;
+    private Map<String, Expression.Descriptor.Identifier> identifiers = new LinkedHashMap<>();
     private final Map<String, Observable> knownObservables = new HashMap<>();
+    private List<FieldInfo> fields = new ArrayList<>();
 
     GroovyDescriptor(
         ExpressionCode expression,
@@ -147,15 +145,18 @@ public class GroovyProcessor implements Language.LanguageProcessor {
          *
          * Keep a parallel list with the actual tokens along with their category matched by character index
          *
-         * Recognize:
+         * The recognize regexp patterns in it:
          *    IL -> LOCATED_IDENTIFIER
-         *    I.U and I.I optionally followed by (L*) -> IDENTIFIER_METHOD_CALL
+         *    I.U and I.I -> IDENTIFIER_METHOD_CALL
          *
-         * Substitute these patterns as X and Y; change the corresponding list elements with the compound values of
-         * the pattern in the list using same strategy as the substitutions
+         * Substitute these patterns as X and Y using <I>Obs for the method call; change the corresponding list
+         * elements with the compound values of the pattern in the list using same strategy as the substitutions;
+         * define all needed variables corresponding to I as we go, to later insert in the class template. Also
+         * recognize known variables going through U and add the needed fields to the class template.
          *
-         * Reassemble the expression using the token list with all the substitutions and related actions (add fields, call
-         * functions etc.)
+         * Reassemble the expression and create the final code for the run() function, separating out all
+         * scalar code into loops honoring any @fillcurve setting or using the native fill curve of the
+         * buffers.
          */
         StringBuilder compiled = new StringBuilder();
         while (true) {
@@ -214,9 +215,9 @@ public class GroovyProcessor implements Language.LanguageProcessor {
                 case 'I' -> {
                   // ensure accessible; set scalar/vector flags
                   var observable = knownObservables.get(code);
-                  identifiers.add(code);
+//                  identifiers.add(code);
                   if (observable.getSemantics().is(SemanticType.QUALITY)) {
-                    scalarIds.add(code);
+//                    scalarIds.add(code);
                   }
                   yield tokenInfo.translation;
                 }
@@ -234,7 +235,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
                     case "scale" -> {}
                     case "observer" -> {}
                   }
-                  identifiers.add(code);
+//                  identifiers.add(code);
                   yield tokenInfo.translation;
                 }
                 case 'L' -> {
@@ -382,25 +383,30 @@ public class GroovyProcessor implements Language.LanguageProcessor {
       return output.toString();
     }
 
-    @Override
-    public Collection<String> getIdentifiers() {
-      return identifiers;
-    }
-
     //    @Override
-    //    public Collection<Expression.CompilerOption> getOptions() {
-    //      return options;
+    //    public Collection<String> getIdentifiers() {
+    //      return identifiers;
+    //    }
+    //
+    //    //    @Override
+    //    //    public Collection<Expression.CompilerOption> getOptions() {
+    //    //      return options;
+    //    //    }
+    //
+    //    @Override
+    //    public boolean isScalar(Collection<String> stateIdentifiers) {
+    //
+    //      for (String id : stateIdentifiers) {
+    //        if (this.scalarIds.contains(id)) {
+    //          return true;
+    //        }
+    //      }
+    //      return false;
     //    }
 
     @Override
-    public boolean isScalar(Collection<String> stateIdentifiers) {
-
-      for (String id : stateIdentifiers) {
-        if (this.scalarIds.contains(id)) {
-          return true;
-        }
-      }
-      return false;
+    public Map<String, Identifier> getIdentifiers() {
+      return identifiers;
     }
 
     @Override
@@ -408,15 +414,16 @@ public class GroovyProcessor implements Language.LanguageProcessor {
       return notifications;
     }
 
-    @Override
-    public Collection<String> getIdentifiersInScalarScope() {
-      return this.scalarIds;
-    }
-
-    @Override
-    public Collection<String> getIdentifiersInNonscalarScope() {
-      return this.objectIds;
-    }
+    //
+    //    @Override
+    //    public Collection<String> getIdentifiersInScalarScope() {
+    //      return this.scalarIds;
+    //    }
+    //
+    //    @Override
+    //    public Collection<String> getIdentifiersInNonscalarScope() {
+    //      return this.objectIds;
+    //    }
 
     @Override
     public Expression compile() {
@@ -427,31 +434,31 @@ public class GroovyProcessor implements Language.LanguageProcessor {
     //    public Expression.Descriptor scalar(Expression.Forcing forcing) {
     //      return null;
     //    }
-
-    @Override
-    public boolean isScalar(String identifier) {
-      return scalarIds.contains(identifier);
-    }
-
-    @Override
-    public boolean isNonscalar(String identifier) {
-      return objectIds.contains(identifier);
-    }
-
-    @Override
-    public boolean isNonscalar(Collection<String> stateIdentifiers) {
-      for (String id : stateIdentifiers) {
-        if (this.objectIds.contains(id)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    @Override
-    public Collection<String> getContextualizers() {
-      return contextualizers;
-    }
+    //
+    //    @Override
+    //    public boolean isScalar(String identifier) {
+    //      return scalarIds.contains(identifier);
+    //    }
+    //
+    //    @Override
+    //    public boolean isNonscalar(String identifier) {
+    //      return objectIds.contains(identifier);
+    //    }
+    //
+    //    @Override
+    //    public boolean isNonscalar(Collection<String> stateIdentifiers) {
+    //      for (String id : stateIdentifiers) {
+    //        if (this.objectIds.contains(id)) {
+    //          return true;
+    //        }
+    //      }
+    //      return false;
+    //    }
+    //
+    //    @Override
+    //    public Collection<String> getContextualizers() {
+    //      return contextualizers;
+    //    }
 
     //    @Override
     //    public Map<String, Set<String>> getMapIdentifiers() {
@@ -463,21 +470,21 @@ public class GroovyProcessor implements Language.LanguageProcessor {
     //      return variables;
     //    }
 
-    @Override
-    public boolean isScalar() {
-
-      if (forceScalar) {
-        return true;
-      }
-
-      for (String id : scalarIds) {
-        if (isScalar(id)) {
-          return true;
-        }
-      }
-
-      return false;
-    }
+    //    @Override
+    //    public boolean isScalar() {
+    //
+    //      if (forceScalar) {
+    //        return true;
+    //      }
+    //
+    //      for (String id : scalarIds) {
+    //        if (isScalar(id)) {
+    //          return true;
+    //        }
+    //      }
+    //
+    //      return false;
+    //    }
   }
 
   static class Lexer extends GroovyLexer {

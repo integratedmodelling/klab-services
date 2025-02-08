@@ -276,14 +276,7 @@ public class ExecutionSequence {
 
         if (scalarBuilder != null) {
           var scalarMapper = scalarBuilder.build();
-          // offload the scalar mapping to the executors
-          executors.add(
-              () ->
-                  scalarMapper.run(
-                      scope
-                          .getDigitalTwin()
-                          .getStateStorage()
-                          .getOrCreateStorage(observation, Storage.class)));
+            executors.add(scalarMapper::execute);
         }
 
         // if we're a quality, we need storage at the discretion of the StorageManager.

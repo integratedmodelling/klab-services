@@ -106,7 +106,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
   }
 
   @Override
-  public boolean run(Storage<?> storage) {
+  public boolean execute() {
     return false;
   }
 

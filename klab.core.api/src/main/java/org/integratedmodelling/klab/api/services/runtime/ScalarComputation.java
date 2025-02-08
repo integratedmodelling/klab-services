@@ -44,9 +44,6 @@ public interface ScalarComputation {
   /**
    * Run sequentially or map over the buffer. This may be called on partial buffers or an entire
    * state.
-   *
-   * @param storage
-   * @return
    */
-  boolean run(Storage<?> storage);
+  boolean execute();
 }
