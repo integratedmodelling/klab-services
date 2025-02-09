@@ -27,6 +27,22 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public interface Data {
 
   /**
+   * TODO merge Cursor and Filler (call it Cursor). Enable 6 unboxing methods for data access in each subclass:
+   *
+   * add(value)            -> standard add using buffer's curve
+   * add(value, FillCurve) -> add translating offsets from another curve set to the same geometry
+   * value get()           -> retrieve using buffer
+   * value get(FillCurve)  -> retrieve at current position translating curve
+   * value get(long)       -> random access get()
+   * set(value, long)      -> random access set()
+   *
+   * TODO OR: avoid the ones with FillCurve and just ask for a specific curve when creating the
+   *  cursor. So just add(value), get(), set(value, long) and get(long). Class without checking:
+   *  a different class for the two cases. The method should be available as FC translation from
+   *  (maybe) the geometry?
+   */
+
+  /**
    * A Cursor iterates one or more geometry dimensions using a long offset. If the geometry it
    * refers to results from splitting an original larger geometry, it can also locate the current
    * offset in it.
