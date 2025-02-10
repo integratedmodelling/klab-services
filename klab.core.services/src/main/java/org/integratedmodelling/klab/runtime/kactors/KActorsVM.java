@@ -62,6 +62,9 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * <p>All deprecated state should either be eliminated or moved to the scope.
  *
+ * TODO check out https://groovy.apache.org/blog/groovy-pekko-gpars for a compiled alternative
+ *  using Groovy and GPars OR Pekko
+ *
  * @author Ferd
  */
 public class KActorsVM implements VM {
