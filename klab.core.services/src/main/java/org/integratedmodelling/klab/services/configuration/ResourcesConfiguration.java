@@ -1,8 +1,5 @@
 package org.integratedmodelling.klab.services.configuration;
 
-import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
-
 import java.io.File;
 import java.io.Serial;
 import java.io.Serializable;
@@ -11,321 +8,313 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 
 /**
- * The resource service configuration is a POJO serialized from/to the resources.yaml file in the .klab
- * directory.
+ * The resource service configuration is a POJO serialized from/to the resources.yaml file in the
+ * .klab directory.
  *
  * @author Ferd
  */
 public class ResourcesConfiguration implements Serializable {
 
-    @Serial
-    private static final long serialVersionUID = 8407649258899502009L;
+  @Serial private static final long serialVersionUID = 8407649258899502009L;
 
-    public static class ResourceConfiguration implements Serializable {
+  public static class ResourceConfiguration implements Serializable {
 
-        @Serial
-        private static final long serialVersionUID = -8966889570222340019L;
-        private ResourcePrivileges privileges;
-        private String doi;
-        private int revisionTier;
-        private String localPath;
+    @Serial private static final long serialVersionUID = -8966889570222340019L;
+    private ResourcePrivileges privileges;
+    private String doi;
+    private int revisionTier;
+    private String localPath;
 
-        public ResourcePrivileges getPrivileges() {
-            return privileges;
-        }
-
-        public void setPrivileges(ResourcePrivileges privileges) {
-            this.privileges = privileges;
-        }
-
-        public String getDoi() {
-            return doi;
-        }
-
-        public void setDoi(String doi) {
-            this.doi = doi;
-        }
-
-        public int getRevisionTier() {
-            return revisionTier;
-        }
-
-        public void setRevisionTier(int revisionTier) {
-            this.revisionTier = revisionTier;
-        }
-
-        public String getLocalPath() {
-            return localPath;
-        }
-
-        public void setLocalPath(String localPath) {
-            this.localPath = localPath;
-        }
-
+    public ResourcePrivileges getPrivileges() {
+      return privileges;
     }
 
-    public static class ComponentConfiguration implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = -8966889570222340019L;
-        private ResourcePrivileges privileges;
-        private String doi;
-        private int revisionTier;
-        private String localPath;
-
-        public ResourcePrivileges getPrivileges() {
-            return privileges;
-        }
-
-        public void setPrivileges(ResourcePrivileges privileges) {
-            this.privileges = privileges;
-        }
-
-        public String getDoi() {
-            return doi;
-        }
-
-        public void setDoi(String doi) {
-            this.doi = doi;
-        }
-
-        public int getRevisionTier() {
-            return revisionTier;
-        }
-
-        public void setRevisionTier(int revisionTier) {
-            this.revisionTier = revisionTier;
-        }
-
-        public String getLocalPath() {
-            return localPath;
-        }
-
-        public void setLocalPath(String localPath) {
-            this.localPath = localPath;
-        }
-
+    public void setPrivileges(ResourcePrivileges privileges) {
+      this.privileges = privileges;
     }
 
-    public static class ProjectConfiguration implements Serializable {
+    public String getDoi() {
+      return doi;
+    }
 
-        @Serial
-        private static final long serialVersionUID = -8989429880321748157L;
+    public void setDoi(String doi) {
+      this.doi = doi;
+    }
 
-        private String sourceUrl;
-        private String referenceWorldview;
-        private boolean served;
-        private boolean worldview;
-        private ResourcePrivileges privileges;
-        private boolean locallyManaged;
-        private boolean authoritative;
-        private int syncIntervalMinutes;
-        private File localPath;
-        private String workspaceName;
-        private ProjectStorage.Type storageType;
+    public int getRevisionTier() {
+      return revisionTier;
+    }
 
-        public ProjectStorage.Type getStorageType() {
-            return storageType;
-        }
+    public void setRevisionTier(int revisionTier) {
+      this.revisionTier = revisionTier;
+    }
 
-        public void setStorageType(ProjectStorage.Type storageType) {
-            this.storageType = storageType;
-        }
+    public String getLocalPath() {
+      return localPath;
+    }
 
-        public String getSourceUrl() {
-            return sourceUrl;
-        }
+    public void setLocalPath(String localPath) {
+      this.localPath = localPath;
+    }
+  }
 
-        public void setSourceUrl(String sourceUrl) {
-            this.sourceUrl = sourceUrl;
-        }
+  public static class ComponentConfiguration implements Serializable {
 
-        public String getReferenceWorldview() {
-            return referenceWorldview;
-        }
+    @Serial private static final long serialVersionUID = -8966889570222340019L;
+    private ResourcePrivileges privileges;
+    private String doi;
+    private int revisionTier;
+    private String localPath;
 
-        public void setReferenceWorldview(String referenceWorldview) {
-            this.referenceWorldview = referenceWorldview;
-        }
+    public ResourcePrivileges getPrivileges() {
+      return privileges;
+    }
 
-        public boolean isWorldview() {
-            return worldview;
-        }
+    public void setPrivileges(ResourcePrivileges privileges) {
+      this.privileges = privileges;
+    }
 
-        public void setWorldview(boolean worldview) {
-            this.worldview = worldview;
-        }
+    public String getDoi() {
+      return doi;
+    }
 
-        public ResourcePrivileges getPrivileges() {
-            return privileges;
-        }
+    public void setDoi(String doi) {
+      this.doi = doi;
+    }
 
-        public void setPrivileges(ResourcePrivileges privileges) {
-            this.privileges = privileges;
-        }
+    public int getRevisionTier() {
+      return revisionTier;
+    }
 
-        public boolean isLocallyManaged() {
-            return locallyManaged;
-        }
+    public void setRevisionTier(int revisionTier) {
+      this.revisionTier = revisionTier;
+    }
 
-        public void setLocallyManaged(boolean locallyManaged) {
-            this.locallyManaged = locallyManaged;
-        }
+    public String getLocalPath() {
+      return localPath;
+    }
 
-        public boolean isAuthoritative() {
-            return authoritative;
-        }
+    public void setLocalPath(String localPath) {
+      this.localPath = localPath;
+    }
+  }
 
-        public void setAuthoritative(boolean authoritative) {
-            this.authoritative = authoritative;
-        }
+  public static class ProjectConfiguration implements Serializable {
 
-        public int getSyncIntervalMinutes() {
-            return syncIntervalMinutes;
-        }
+    @Serial private static final long serialVersionUID = -8989429880321748157L;
 
-        public void setSyncIntervalMinutes(int syncIntervalMinutes) {
-            this.syncIntervalMinutes = syncIntervalMinutes;
-        }
+    private String sourceUrl;
+    private String referenceWorldview;
+    private boolean served;
+    private boolean worldview;
+    private ResourcePrivileges privileges;
+    private boolean locallyManaged;
+    private boolean authoritative;
+    private int syncIntervalMinutes;
+    private File localPath;
+    private String workspaceName;
+    private ProjectStorage.Type storageType;
 
-        /**
-         * Projects that aren't served are there only to make other projects understood.
-         *
-         * @return
-         */
-        public boolean isServed() {
-            return served;
-        }
+    public ProjectStorage.Type getStorageType() {
+      return storageType;
+    }
 
-        public void setServed(boolean served) {
-            this.served = served;
-        }
+    public void setStorageType(ProjectStorage.Type storageType) {
+      this.storageType = storageType;
+    }
 
-        public File getLocalPath() {
-            return localPath;
-        }
+    public String getSourceUrl() {
+      return sourceUrl;
+    }
 
-        public void setLocalPath(File localPath) {
-            this.localPath = localPath;
-        }
+    public void setSourceUrl(String sourceUrl) {
+      this.sourceUrl = sourceUrl;
+    }
 
-        public String getWorkspaceName() {
-            return this.workspaceName;
-        }
+    public String getReferenceWorldview() {
+      return referenceWorldview;
+    }
 
-        public void setWorkspaceName(String workspaceName) {
-            this.workspaceName = workspaceName;
-        }
+    public void setReferenceWorldview(String referenceWorldview) {
+      this.referenceWorldview = referenceWorldview;
+    }
 
+    public boolean isWorldview() {
+      return worldview;
+    }
+
+    public void setWorldview(boolean worldview) {
+      this.worldview = worldview;
+    }
+
+    public ResourcePrivileges getPrivileges() {
+      return privileges;
+    }
+
+    public void setPrivileges(ResourcePrivileges privileges) {
+      this.privileges = privileges;
+    }
+
+    public boolean isLocallyManaged() {
+      return locallyManaged;
+    }
+
+    public void setLocallyManaged(boolean locallyManaged) {
+      this.locallyManaged = locallyManaged;
+    }
+
+    public boolean isAuthoritative() {
+      return authoritative;
+    }
+
+    public void setAuthoritative(boolean authoritative) {
+      this.authoritative = authoritative;
+    }
+
+    public int getSyncIntervalMinutes() {
+      return syncIntervalMinutes;
+    }
+
+    public void setSyncIntervalMinutes(int syncIntervalMinutes) {
+      this.syncIntervalMinutes = syncIntervalMinutes;
     }
 
     /**
-     * The service work directory path within the k.LAB work directory
+     * Projects that aren't served are there only to make other projects understood.
+     *
+     * @return
      */
-    private String servicePath = "resources";
-    /**
-     * all other paths are relative to the service path
-     */
-    private String localResourcePath = "local";
-    private String publicResourcePath = "public";
-    private URI brokerURI = null;
-
-    /**
-     * Each workspace name is a subdirectory with a number of projects in them. All are relative to the
-     * resource path. The order of declaration in config is the order of loading.
-     */
-    private Map<String, Set<String>> workspaces = new LinkedHashMap<>();
-
-    private String serviceId;
-
-    /**
-     * Each project managed by this service
-     */
-    private Map<String, ProjectConfiguration> projectConfiguration = new HashMap<>();
-
-    /**
-     * Same for individually managed resources (those local to projects are managed in the project config
-     * itself)
-     */
-    private Map<String, ResourceConfiguration> resourceConfiguration = new HashMap<>();
-
-    /**
-     * And for components, which are very similar to resources but list all the services
-     * and adapters they provide
-     */
-    private Map<String, ComponentConfiguration> componentConfiguration = new HashMap<>();
-
-    public String getServicePath() {
-        return servicePath;
+    public boolean isServed() {
+      return served;
     }
 
-    public void setServicePath(String servicePath) {
-        this.servicePath = servicePath;
+    public void setServed(boolean served) {
+      this.served = served;
     }
 
-    public Map<String, Set<String>> getWorkspaces() {
-        return workspaces;
+    public File getLocalPath() {
+      return localPath;
     }
 
-    public void setWorkspaces(Map<String, Set<String>> workspaces) {
-        this.workspaces = workspaces;
+    public void setLocalPath(File localPath) {
+      this.localPath = localPath;
     }
 
-    public Map<String, ProjectConfiguration> getProjectConfiguration() {
-        return projectConfiguration;
+    public String getWorkspaceName() {
+      return this.workspaceName;
     }
 
-    public void setProjectConfiguration(Map<String, ProjectConfiguration> projectConfiguration) {
-        this.projectConfiguration = projectConfiguration;
+    public void setWorkspaceName(String workspaceName) {
+      this.workspaceName = workspaceName;
     }
+  }
 
-    public String getLocalResourcePath() {
-        return localResourcePath;
-    }
+  /** The service work directory path within the k.LAB work directory */
+  private String servicePath = "resources";
 
-    public void setLocalResourcePath(String localResourcePath) {
-        this.localResourcePath = localResourcePath;
-    }
+  /** all other paths are relative to the service path */
+  private String localResourcePath = "local";
 
-    public String getPublicResourcePath() {
-        return publicResourcePath;
-    }
+  private String publicResourcePath = "public";
+  private URI brokerURI = null;
 
-    public void setPublicResourcePath(String publicResourcePath) {
-        this.publicResourcePath = publicResourcePath;
-    }
+  /**
+   * Each workspace name is a subdirectory with a number of projects in them. All are relative to
+   * the resource path. The order of declaration in config is the order of loading.
+   */
+  private Map<String, Set<String>> workspaces = new LinkedHashMap<>();
 
-    public String getServiceId() {
-        return serviceId;
-    }
+  private String serviceId;
 
-    public URI getBrokerURI() {
-        return brokerURI;
-    }
+  /** Each project managed by this service */
+  private Map<String, ProjectConfiguration> projectConfiguration = new HashMap<>();
 
-    public void setBrokerURI(URI brokerURI) {
-        this.brokerURI = brokerURI;
-    }
+  /**
+   * Same for individually managed resources (those local to projects are managed in the project
+   * config itself)
+   */
+  private Map<String, ResourceConfiguration> resourceConfiguration = new HashMap<>();
 
-    public void setServiceId(String serviceId) {
-        this.serviceId = serviceId;
-    }
+  /**
+   * And for components, which are very similar to resources but list all the services and adapters
+   * they provide
+   */
+  private Map<String, ComponentConfiguration> componentConfiguration = new HashMap<>();
 
-    public Map<String, ResourceConfiguration> getResourceConfiguration() {
-        return resourceConfiguration;
-    }
+  public String getServicePath() {
+    return servicePath;
+  }
 
-    public void setResourceConfiguration(Map<String, ResourceConfiguration> resourceConfiguration) {
-        this.resourceConfiguration = resourceConfiguration;
-    }
+  public void setServicePath(String servicePath) {
+    this.servicePath = servicePath;
+  }
 
-    public Map<String, ComponentConfiguration> getComponentConfiguration() {
-        return componentConfiguration;
-    }
+  public Map<String, Set<String>> getWorkspaces() {
+    return workspaces;
+  }
 
-    public void setComponentConfiguration(Map<String, ComponentConfiguration> componentConfiguration) {
-        this.componentConfiguration = componentConfiguration;
-    }
+  public void setWorkspaces(Map<String, Set<String>> workspaces) {
+    this.workspaces = workspaces;
+  }
+
+  public Map<String, ProjectConfiguration> getProjectConfiguration() {
+    return projectConfiguration;
+  }
+
+  public void setProjectConfiguration(Map<String, ProjectConfiguration> projectConfiguration) {
+    this.projectConfiguration = projectConfiguration;
+  }
+
+  public String getLocalResourcePath() {
+    return localResourcePath;
+  }
+
+  public void setLocalResourcePath(String localResourcePath) {
+    this.localResourcePath = localResourcePath;
+  }
+
+  public String getPublicResourcePath() {
+    return publicResourcePath;
+  }
+
+  public void setPublicResourcePath(String publicResourcePath) {
+    this.publicResourcePath = publicResourcePath;
+  }
+
+  public String getServiceId() {
+    return serviceId;
+  }
+
+  public URI getBrokerURI() {
+    return brokerURI;
+  }
+
+  public void setBrokerURI(URI brokerURI) {
+    this.brokerURI = brokerURI;
+  }
+
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
+  }
+
+  public Map<String, ResourceConfiguration> getResourceConfiguration() {
+    return resourceConfiguration;
+  }
+
+  public void setResourceConfiguration(Map<String, ResourceConfiguration> resourceConfiguration) {
+    this.resourceConfiguration = resourceConfiguration;
+  }
+
+  public Map<String, ComponentConfiguration> getComponentConfiguration() {
+    return componentConfiguration;
+  }
+
+  public void setComponentConfiguration(
+      Map<String, ComponentConfiguration> componentConfiguration) {
+    this.componentConfiguration = componentConfiguration;
+  }
 }

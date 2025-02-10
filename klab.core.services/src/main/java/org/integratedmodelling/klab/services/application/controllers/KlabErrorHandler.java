@@ -16,27 +16,25 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 @ControllerAdvice
 public class KlabErrorHandler {
 
-    @Autowired
-    ServiceNetworkedInstance<?> service;
+  @Autowired ServiceNetworkedInstance<?> service;
 
-    @Autowired
-    ServiceAuthorizationManager scopeManager;
+  @Autowired ServiceAuthorizationManager scopeManager;
 
-    @ExceptionHandler(NoHandlerFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public @ResponseBody ResponseEntity<ErrorResponse> handleNoMethodException(HttpServletRequest request,
-                                                                               NoHandlerFoundException ex) {
-        ErrorResponse errorResponse = ErrorResponse.create(ex, HttpStatus.NOT_FOUND, "Dio cane, handler " +
-                "not found");
-        ex.printStackTrace();
-        return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.NOT_FOUND);
-    }
+  @ExceptionHandler(NoHandlerFoundException.class)
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  public @ResponseBody ResponseEntity<ErrorResponse> handleNoMethodException(
+      HttpServletRequest request, NoHandlerFoundException ex) {
+    ErrorResponse errorResponse =
+        ErrorResponse.create(ex, HttpStatus.NOT_FOUND, "Dio cane, handler " + "not found");
+    ex.printStackTrace();
+    return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.NOT_FOUND);
+  }
 
-    @ExceptionHandler(Throwable.class)
-    public @ResponseBody ResponseEntity<ErrorResponse> handleDefaultException(Throwable ex) {
-        ErrorResponse errorResponse = ErrorResponse.create(ex, HttpStatus.BAD_REQUEST, "Dio cane, empty " +
-                "body or other shit");
-        ex.printStackTrace();
-        return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.BAD_REQUEST);
-    }
+  @ExceptionHandler(Throwable.class)
+  public @ResponseBody ResponseEntity<ErrorResponse> handleDefaultException(Throwable ex) {
+    ErrorResponse errorResponse =
+        ErrorResponse.create(ex, HttpStatus.BAD_REQUEST, "Dio cane, empty " + "body or other shit");
+    ex.printStackTrace();
+    return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.BAD_REQUEST);
+  }
 }
