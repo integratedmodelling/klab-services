@@ -68,8 +68,8 @@ public class GroovyExpression /*extends Expression*/ implements Expression {
    */
   private Class<ExpressionBase> sclass = null;
 
-  Geometry domain;
-  KimNamespace namespace;
+//  Geometry domain;
+//  KimNamespace namespace;
 
   private List<Notification> errors = new ArrayList<>();
   private KlabGroovyShell shell = new KlabGroovyShell();

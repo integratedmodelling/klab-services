@@ -51,31 +51,27 @@ public class GroovyProcessor implements Language.LanguageProcessor {
     return descriptor.compile();
   }
 
-  /** Descriptor for all fields that end up in the template and their role in it */
-  static class FieldInfo {
-    String varName; // null = definition is code to be run
-    String definition; // the actual code
-    String target; // code to run may have a target variable
-    boolean lazy; // for fields whose definition is a lazy closure
-    boolean constructorArgument; // if true the constructor initializes the variable
-    boolean scalar; // true for scalar code that must be distributed
-  }
+//  /** Descriptor for all fields that end up in the template and their role in it */
+//  static class FieldInfo {
+//    String varName; // null = definition is code to be run
+//    String definition; // the actual code
+//    String target; // code to run may have a target variable
+//    boolean lazy; // for fields whose definition is a lazy closure
+//    boolean constructorArgument; // if true the constructor initializes the variable
+//    boolean scalar; // true for scalar code that must be distributed
+//  }
 
   static class GroovyDescriptor implements Expression.Descriptor {
 
     // TODO use https://github.com/casid/jte and a template (differentiating templates for
     //  contextualizers or not)?
     private String processedCode;
-    //    private Collection<String> identifiers = new LinkedHashSet<>();
-    //    private Set<String> scalarIds = new LinkedHashSet<>();
-    //    private Set<String> objectIds = new LinkedHashSet<>();
-    //    private Set<String> contextualizers = new LinkedHashSet<>();
     private List<Notification> notifications = new ArrayList<>();
     private Set<Expression.CompilerOption> options;
     private final boolean forceScalar;
     private Map<String, Expression.Descriptor.Identifier> identifiers = new LinkedHashMap<>();
     private final Map<String, Observable> knownObservables = new HashMap<>();
-    private List<FieldInfo> fields = new ArrayList<>();
+//    private List<FieldInfo> fields = new ArrayList<>();
 
     GroovyDescriptor(
         ExpressionCode expression,
@@ -383,27 +379,6 @@ public class GroovyProcessor implements Language.LanguageProcessor {
       return output.toString();
     }
 
-    //    @Override
-    //    public Collection<String> getIdentifiers() {
-    //      return identifiers;
-    //    }
-    //
-    //    //    @Override
-    //    //    public Collection<Expression.CompilerOption> getOptions() {
-    //    //      return options;
-    //    //    }
-    //
-    //    @Override
-    //    public boolean isScalar(Collection<String> stateIdentifiers) {
-    //
-    //      for (String id : stateIdentifiers) {
-    //        if (this.scalarIds.contains(id)) {
-    //          return true;
-    //        }
-    //      }
-    //      return false;
-    //    }
-
     @Override
     public Map<String, Identifier> getIdentifiers() {
       return identifiers;
@@ -414,77 +389,10 @@ public class GroovyProcessor implements Language.LanguageProcessor {
       return notifications;
     }
 
-    //
-    //    @Override
-    //    public Collection<String> getIdentifiersInScalarScope() {
-    //      return this.scalarIds;
-    //    }
-    //
-    //    @Override
-    //    public Collection<String> getIdentifiersInNonscalarScope() {
-    //      return this.objectIds;
-    //    }
-
     @Override
     public Expression compile() {
       return new GroovyExpression(processedCode, true, this);
     }
-
-    //    @Override
-    //    public Expression.Descriptor scalar(Expression.Forcing forcing) {
-    //      return null;
-    //    }
-    //
-    //    @Override
-    //    public boolean isScalar(String identifier) {
-    //      return scalarIds.contains(identifier);
-    //    }
-    //
-    //    @Override
-    //    public boolean isNonscalar(String identifier) {
-    //      return objectIds.contains(identifier);
-    //    }
-    //
-    //    @Override
-    //    public boolean isNonscalar(Collection<String> stateIdentifiers) {
-    //      for (String id : stateIdentifiers) {
-    //        if (this.objectIds.contains(id)) {
-    //          return true;
-    //        }
-    //      }
-    //      return false;
-    //    }
-    //
-    //    @Override
-    //    public Collection<String> getContextualizers() {
-    //      return contextualizers;
-    //    }
-
-    //    @Override
-    //    public Map<String, Set<String>> getMapIdentifiers() {
-    //      return mapIdentifiers;
-    //    }
-    //
-    //    @Override
-    //    public Parameters<String> getVariables() {
-    //      return variables;
-    //    }
-
-    //    @Override
-    //    public boolean isScalar() {
-    //
-    //      if (forceScalar) {
-    //        return true;
-    //      }
-    //
-    //      for (String id : scalarIds) {
-    //        if (isScalar(id)) {
-    //          return true;
-    //        }
-    //      }
-    //
-    //      return false;
-    //    }
   }
 
   static class Lexer extends GroovyLexer {
