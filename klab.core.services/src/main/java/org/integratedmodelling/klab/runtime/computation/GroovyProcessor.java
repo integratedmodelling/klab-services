@@ -29,7 +29,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
   public static final String CONCEPT_REGEXP = "[a-z|\\.]+:[A-Za-z][A-Za-z0-9]*";
   public static final String OBSERVABLE_REGEXP = "\\{\\{.*\\}\\}";
   public static final String ENCODED_LOCATOR_REGEXP = "IL";
-  public static final String ENCODED_METHOD_CALL_REGEXP = "I\\.[L|U](\\(.*?\\))?";
+  public static final String ENCODED_METHOD_CALL_REGEXP = "I\\.[I|U]";
 
   public static final Pattern LOCATOR_PATTERN = Pattern.compile(LOCATOR_REGEXP);
   public static final Pattern CONCEPT_PATTERN = Pattern.compile(CONCEPT_REGEXP);
@@ -231,9 +231,6 @@ public class GroovyProcessor implements Language.LanguageProcessor {
       Map<String, String> substitutions = new HashMap<>();
       code = performSubstitutions(code, substitutions);
       List<TokenInfo> tokens = new ArrayList<>();
-
-      Map<String, AtomicInteger> scalarReferences = new HashMap<>();
-      Map<String, AtomicInteger> vectorReferences = new HashMap<>();
 
       try {
         // first pass recognizing k.LAB-unique patterns
