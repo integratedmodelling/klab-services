@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.runtime.computation
 
 import org.integratedmodelling.klab.api.knowledge.observation.Observation
-import org.integratedmodelling.klab.api.services.runtime.ScalarComputation
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope
 
 /**

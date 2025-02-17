@@ -10,7 +10,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jnr.ffi.annotations.In;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -51,15 +54,106 @@ public class GroovyProcessor implements Language.LanguageProcessor {
     return descriptor.compile();
   }
 
-//  /** Descriptor for all fields that end up in the template and their role in it */
-//  static class FieldInfo {
-//    String varName; // null = definition is code to be run
-//    String definition; // the actual code
-//    String target; // code to run may have a target variable
-//    boolean lazy; // for fields whose definition is a lazy closure
-//    boolean constructorArgument; // if true the constructor initializes the variable
-//    boolean scalar; // true for scalar code that must be distributed
-//  }
+  static class IdImpl implements Expression.Descriptor.Identifier {
+
+    private String name;
+    private Observable observable;
+    private Class<?> runtimeClass;
+    private int scalarReferenceCount;
+    private int nonScalarReferenceCount;
+    private List<String> methodsCalled;
+    private boolean predefined;
+
+    public IdImpl(String name) {
+      this.name = name;
+    }
+
+    @Override
+    public String name() {
+      return this.name;
+    }
+
+    @Override
+    public Observable observable() {
+      return this.observable;
+    }
+
+    @Override
+    public Class<?> runtimeClass() {
+      return this.runtimeClass;
+    }
+
+    @Override
+    public int scalarReferenceCount() {
+      return this.scalarReferenceCount;
+    }
+
+    @Override
+    public int nonScalarReferenceCount() {
+      return this.nonScalarReferenceCount;
+    }
+
+    @Override
+    public List<String> methodsCalled() {
+      return this.methodsCalled;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public void setName(String name) {
+      this.name = name;
+    }
+
+    public Observable getObservable() {
+      return observable;
+    }
+
+    public void setObservable(Observable observable) {
+      this.observable = observable;
+    }
+
+    public Class<?> getRuntimeClass() {
+      return runtimeClass;
+    }
+
+    public void setRuntimeClass(Class<?> runtimeClass) {
+      this.runtimeClass = runtimeClass;
+    }
+
+    public int getScalarReferenceCount() {
+      return scalarReferenceCount;
+    }
+
+    public void setScalarReferenceCount(int scalarReferenceCount) {
+      this.scalarReferenceCount = scalarReferenceCount;
+    }
+
+    public int getNonScalarReferenceCount() {
+      return nonScalarReferenceCount;
+    }
+
+    public void setNonScalarReferenceCount(int nonScalarReferenceCount) {
+      this.nonScalarReferenceCount = nonScalarReferenceCount;
+    }
+
+    public List<String> getMethodsCalled() {
+      return methodsCalled;
+    }
+
+    public void setMethodsCalled(List<String> methodsCalled) {
+      this.methodsCalled = methodsCalled;
+    }
+
+    public boolean isPredefined() {
+      return predefined;
+    }
+
+    public void setPredefined(boolean predefined) {
+      this.predefined = predefined;
+    }
+  }
 
   static class GroovyDescriptor implements Expression.Descriptor {
 
@@ -71,7 +165,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
     private final boolean forceScalar;
     private Map<String, Expression.Descriptor.Identifier> identifiers = new LinkedHashMap<>();
     private final Map<String, Observable> knownObservables = new HashMap<>();
-//    private List<FieldInfo> fields = new ArrayList<>();
+    private final List<String> templateFields = new ArrayList<>();
 
     GroovyDescriptor(
         ExpressionCode expression,
@@ -96,17 +190,33 @@ public class GroovyProcessor implements Language.LanguageProcessor {
         }
       }
 
-      for (int i = 0; i < knownInputs.size(); i++) {
-        var input = knownInputs.get(i);
+      for (Observable input : knownInputs) {
         var identifier =
             input.getStatedName() == null ? input.getSemantics().codeName() : input.getStatedName();
         knownObservables.put(identifier, input);
       }
 
       this.processedCode = preprocess(expression.getCode());
+
+      // TODO create template fields for anything that needs to be wrapped: observations and predefined stuff
+      // TODO define target for preprocessed code so that the final class can establish the run() return value
+
     }
 
-    record TokenInfo(String code, String encoding, String translation, Observable observable) {}
+    static class TokenInfo {
+
+      String code;
+      String encoding;
+      String translation;
+      Observable observable;
+
+      TokenInfo(String code, String encoding, String translation, Observable observable) {
+        this.code = code;
+        this.encoding = encoding;
+        this.translation = translation;
+        this.observable = observable;
+      }
+    }
 
     public String preprocess(String code) {
 
@@ -121,6 +231,9 @@ public class GroovyProcessor implements Language.LanguageProcessor {
       Map<String, String> substitutions = new HashMap<>();
       code = performSubstitutions(code, substitutions);
       List<TokenInfo> tokens = new ArrayList<>();
+
+      Map<String, AtomicInteger> scalarReferences = new HashMap<>();
+      Map<String, AtomicInteger> vectorReferences = new HashMap<>();
 
       try {
         // first pass recognizing k.LAB-unique patterns
@@ -167,8 +280,6 @@ public class GroovyProcessor implements Language.LanguageProcessor {
         }
 
         var encoded = compiled.toString();
-        var templateFields = new ArrayList<String>();
-        var templateLocalVariables = new ArrayList<String>();
 
         encoded =
             performSubstitution(
@@ -194,69 +305,90 @@ public class GroovyProcessor implements Language.LanguageProcessor {
                             /*
                             encoding should use identifierObs. reconstructed method call
                              */
+                            var buffer = new StringBuilder();
+                            for (int i = 0; i < p.length(); i++) {
+                              var token = tks.get(i);
+                              buffer.append(
+                                  switch (p.charAt(i)) {
+                                    case 'I' ->
+                                        knownObservables.containsKey(token.code)
+                                            ? token.code + "Obs"
+                                            : token.code;
+                                    case 'U' -> token.code;
+                                    default -> token.code;
+                                  });
+                            }
 
-                            return new TokenInfo("p", "Y", "TODO", null);
+                            return new TokenInfo(tks.getFirst().code, "Y", buffer.toString(), null);
                           });
 
                   return "Y";
                 });
 
-        var preprocessedCode = new StringBuilder();
-
         // reconstruct the finalized expression while building template variables
         for (int i = 0; i < encoded.length(); i++) {
           var tokenInfo = tokens.get(i);
-          preprocessedCode.append(
-              switch (encoded.charAt(i)) { // TODO! Also add identifiers
-                case 'I' -> {
-                  // ensure accessible; set scalar/vector flags
-                  var observable = knownObservables.get(code);
-//                  identifiers.add(code);
-                  if (observable.getSemantics().is(SemanticType.QUALITY)) {
-//                    scalarIds.add(code);
-                  }
-                  yield tokenInfo.translation;
+          switch (encoded.charAt(i)) {
+            case 'I' -> {
+              var identifier =
+                  (IdImpl) identifiers.computeIfAbsent(tokenInfo.translation, IdImpl::new);
+
+              var observable = knownObservables.get(code);
+              identifier.setObservable(observable);
+              if (observable == null || observable.getSemantics().is(SemanticType.QUALITY)) {
+                identifier.scalarReferenceCount++;
+              } else {
+                identifier.nonScalarReferenceCount++;
+                tokenInfo.translation = code + "Obs";
+              }
+            }
+            case 'U' -> {
+              // Handle scale, scope, time, space, unknown etc. Also we probably need a
+              // klab object with the service handles. This works nicely because they get
+              // overridden if the
+              // inputs have the same name.
+              switch (code) {
+                case "space", "time", "scope", "scale", "observer" -> {
+                  var identifier =
+                      (IdImpl) identifiers.computeIfAbsent(tokenInfo.translation, IdImpl::new);
+                  identifier.setPredefined(true);
+                  identifier.nonScalarReferenceCount++;
                 }
-                case 'U' -> {
-                  // TODO handle scale, scope, time, space, unknown etc. Also we probably need a
-                  // klab object
-                  //  with the service handles. This works nicely because they get overridden if the
-                  // inputs
-                  //  have the same name.
-                  switch (code) {
-                    case "space" -> {}
-                    case "time" -> {}
-                    case "unknown" -> {}
-                    case "scope" -> {}
-                    case "scale" -> {}
-                    case "observer" -> {}
-                  }
-//                  identifiers.add(code);
-                  yield tokenInfo.translation;
-                }
-                case 'L' -> {
-                  // TODO LOCATOR call using scope etc, use a closure in fields or prepend local
-                  // variable
-                  yield tokenInfo.translation;
-                }
-                case 'C' -> {
-                  // set variable field, return variable
-                  var vName = "_concept" + (varCounter++);
-                  //              templateFields.add();
-                  yield tokenInfo.translation;
-                }
-                case 'O' -> {
-                  // set variable field, return variable
-                  yield tokenInfo.translation;
-                }
-                case 'T', 'X', 'Y', '(', ')', '.' -> tokenInfo.translation;
-                default ->
-                    throw new KlabInternalErrorException(
-                        "wrong pattern encoding in expression preprocessor: " + code);
-              });
+              }
+              tokenInfo.translation = "unknown".equals(code) ? "null" : code;
+            }
+            case 'L' -> {
+              // TODO LOCATOR call using scope etc, use a closure in fields or prepend local
+              // variable
+              //                  yield tokenInfo.translation;
+            }
+            case 'C' -> {
+              // set variable field, return variable
+              var vName = "_concept" + (varCounter++);
+              templateFields.add(
+                  "@Lazy " + vName + " = { reasoner.resolveConcept(" + code + "); }()");
+              tokenInfo.translation = vName;
+            }
+            case 'O' -> {
+              var vName = "_observable" + (varCounter++);
+              templateFields.add(
+                  "@Lazy " + vName + " = { reasoner.resolveObservable(" + code + "); }()");
+              tokenInfo.translation = vName;
+            }
+            case 'Y' -> {
+              var identifier = (IdImpl) identifiers.computeIfAbsent(tokenInfo.code, IdImpl::new);
+              identifier.nonScalarReferenceCount++;
+            }
+            case 'T', 'X', '(', ')', '.' -> {
+              /* OK as is */
+            }
+            default ->
+                throw new KlabInternalErrorException(
+                    "wrong pattern encoding in expression preprocessor: " + code);
+          }
         }
 
-        return preprocessedCode.toString();
+        return Utils.Strings.join(tokens.stream().map(t -> t.translation).toList(), "");
 
       } catch (Exception e) {
 
@@ -313,6 +445,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
         } else {
           encoding = "U";
         }
+        translation = code;
       } else if ("(".equals(code) || ")".equals(code) || ".".equals(code)) {
         encoding = code;
         translation = code;
