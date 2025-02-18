@@ -141,42 +141,32 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
         new File(
             logDirectory + File.separator + options.getServiceType().name().toLowerCase() + ".log");
 
-    try {
-      SpringApplication app = new SpringApplication(cls);
-      Map<String, Object> props = new HashMap<>();
-      props.put("klab.service.options", options);
-      props.put("server.port", "" + options.getPort());
-      props.put("spring.main.banner-mode", "off");
-      props.put("logging.file.name", logFile.toPath().toString());
-      props.put("server.servlet.contextPath", options.getContextPath());
-      props.put("spring.servlet.multipart.max-file-size", options.getMaxMultipartFileSize());
-      props.put("spring.servlet.multipart.max-request-size", options.getMaxMultipartRequestSize());
-      props.put("spring.jmx.enabled", "true");
-      props.put("management.endpoints.web.exposure.include", "hawtio,jolokia");
-      props.put("hawtio.authenticationEnabled", "false"); // FIXME FOR TESTING ONLY
-      app.setDefaultProperties(props);
-      app.run(options.getArguments());
-      //            Environment environment = this.context.getEnvironment();
-      //            setPropertiesFromEnvironment(environment);
-      System.out.println("\n" + Branding.NODE_BANNER);
-      System.out.println(
-          "\nStartup successful: "
-              + "k.LAB service "
-              + options.getContextPath().toUpperCase()
-              + " v"
-              + Version.CURRENT
-              + " on "
-              + new Date());
-      System.out.println(
-          "Capabilities: "
-              + options.getServiceHostUrl()
-              + ":"
-              + options.getPort()
-              + options.getContextPath()
-              + ServicesAPI.CAPABILITIES);
-    } catch (Throwable e) {
-      Logging.INSTANCE.error(e);
-      return false;
+        try {
+            SpringApplication app = new SpringApplication(cls);
+            Map<String, Object> props = new HashMap<>();
+            props.put("klab.service.options", options);
+            props.put("server.port", "" + options.getPort());
+            props.put("spring.main.banner-mode", "off");
+            props.put("logging.file.name", logFile.toPath().toString());
+            props.put("server.servlet.contextPath", options.getContextPath());
+            props.put("spring.servlet.multipart.max-file-size", options.getMaxMultipartFileSize());
+            props.put("spring.servlet.multipart.max-request-size", options.getMaxMultipartRequestSize());
+            props.put("spring.jmx.enabled", "true");
+            props.put("management.endpoints.web.exposure.include", "hawtio,jolokia");
+            props.put("hawtio.authenticationEnabled", "false"); // FIXME FOR TESTING ONLY
+            app.setDefaultProperties(props);
+            app.run(options.getArguments());
+            //            Environment environment = this.context.getEnvironment();
+            //            setPropertiesFromEnvironment(environment);
+            System.out.println("\n" + Branding.SERVICE_BANNER);
+            System.out.println("\nStartup successful: " + "k.LAB service " + options.getContextPath().toUpperCase() + " v" + Version.CURRENT + " on " + new Date());
+            System.out.println("Capabilities: " + options.getServiceHostUrl() +
+                    ":" + options.getPort() + options.getContextPath() + ServicesAPI.CAPABILITIES);
+        } catch (Throwable e) {
+            Logging.INSTANCE.error(e);
+            return false;
+        }
+        return true;
     }
     return true;
   }
