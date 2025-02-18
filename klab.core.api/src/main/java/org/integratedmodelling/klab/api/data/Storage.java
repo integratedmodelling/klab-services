@@ -50,11 +50,13 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
 
     long size();
 
+    @Deprecated
     long[] offsets();
 
     /**
      * The portable histogram. Should never be null.
      *
+     * @deprecated should be internal
      * @return
      */
     Histogram histogram();
@@ -96,15 +98,35 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
    * Obtain a buffer to access and/or fill the storage or a part of it.
    *
    * @param size the size of the buffer - either from the full geometry or for a part using the
-   *     passed fill curve and offsets.
+   *     passed fill curve and offsets. If the buffer already exists, the passed fill curve should be
+   *             honored by enabling the buffer's cursors to translate the
    * @param fillCurve the fill curve along which the buffer is iterable. Only the subclasses
    *     implement primitive or boxing iterators. The filler returned by the buffer implements the
    *     same fill curve.
-   * @param offsets the offset for the storage within the geometry, so that the data can be
-   *     navigated according to the fill curve.
+   * @param offset the offset for the storage within the overall geometry according to the fill
+   *     curve. This should be 0 unless the buffer is a partial coverage.
+   *
    * @return a suitable buffer
+   * @deprecated this should come from a cursor and not be asked directly, The method could be internal
+   * and not in the API.
    */
-  B buffer(long size, Data.FillCurve fillCurve, long[] offsets);
+  B buffer(long size, Data.FillCurve fillCurve, long[] offset);
+
+//  /**
+//   * Obtain a cursor over the data with the specified class type. The Cursor subclasses provide the
+//   * add, set and get methods for both sequential and random r/w access.
+//   *
+//   * The resulting {@link Data.Cursor} will use the default fill curve for the geometry of the
+//   * underlying data buffer.
+//   *
+//   * @param cursorClass
+//   * @return
+//   * @param <T>
+//   */
+//  <T extends Data.Cursor> T cursor(Class<T> cursorClass);
+//  <T extends Data.Cursor> T cursor(Geometry geometry, Class<T> cursorClass);
+//  <T extends Data.Cursor> T cursor(Geometry geometry, Data.FillCurve fillCurve, Class<T> cursorClass);
+//  <T extends Data.Cursor> T cursor(Geometry geometry, Data.FillCurve fillCurve, long start, long end, Class<T> cursorClass);
 
   Type getType();
 

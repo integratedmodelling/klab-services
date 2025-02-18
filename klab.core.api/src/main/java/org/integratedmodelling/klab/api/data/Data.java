@@ -158,39 +158,48 @@ public interface Data {
    * A filler is a tag interface for an object that can be used to add data to a buffer along a
    * given geometry and filling curve. All subclasses of Filler expose an add() method using
    * primitive data types to avoid boxing.
+   *
+   * @deprecated use cursors
    */
   interface Filler {}
 
+  @Deprecated
   @FunctionalInterface
   interface IntFiller extends Filler {
     void add(int value);
   }
 
+  @Deprecated
   @FunctionalInterface
   interface LongFiller extends Filler {
     void add(long value);
   }
 
+  @Deprecated
   @FunctionalInterface
   interface FloatFiller extends Filler {
     void add(float value);
   }
 
+  @Deprecated
   @FunctionalInterface
   interface BooleanFiller extends Filler {
     void add(boolean value);
   }
 
+  @Deprecated
   @FunctionalInterface
   interface DoubleFiller extends Filler {
     void add(double value);
   }
 
+  @Deprecated
   @FunctionalInterface
   interface KeyedFiller extends Filler {
     void add(Object value);
   }
 
+  @Deprecated
   @FunctionalInterface
   interface ObjectFiller extends Filler {
     void add(Object value);

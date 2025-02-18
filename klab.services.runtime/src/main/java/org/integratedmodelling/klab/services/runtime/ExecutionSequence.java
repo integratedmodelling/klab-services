@@ -360,6 +360,20 @@ public class ExecutionSequence {
         }
       }
 
+      if (scalarBuilder != null) {
+        var scalarMapper = scalarBuilder.build();
+        executors.add(
+                () -> {
+                  try {
+                    return scalarMapper.execute();
+                  } catch (Exception e) {
+                    cause = e;
+                    scope.error(e /* TODO tracing parameters */);
+                  }
+                  return true;
+                });
+      }
+
       return true;
     }
 
