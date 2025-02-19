@@ -40,22 +40,26 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
    *
    * <p>Specific buffer types should also implement a mapping function for map/reduce operations.
    */
-  interface Buffer extends RuntimeAsset {
+  interface Buffer extends RuntimeAsset /* TODO must extend Cursor too */ {
 
     default RuntimeAsset.Type classify() {
       return Type.DATA;
     }
 
+    /*
+    FIXME remove - top level says everything
+     */
     Storage.Type dataType();
 
     long size();
 
+    // FIXME this is a single long according to the overall fill curve
     @Deprecated
     long[] offsets();
 
     /**
      * The portable histogram. Should never be null.
-     *
+     * FIXME remove
      * @deprecated should be internal
      * @return
      */
@@ -64,7 +68,7 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
     /**
      * The persistence tells us whether we need to periodically offload the buffer to disk in order
      * to keep the digital twin consistent across server boots.
-     *
+     * FIXME move to top level
      * @return
      */
     Persistence persistence();
@@ -74,7 +78,7 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
      * the buffer implements. When the last add() is called on the filler, the buffer is expected to
      * be finalized and immutable. Storage managers may decide to queue in operations such as
      * building statistics, images or the like on a low-priority queue.
-     *
+     * FIXME remove, merge with cursor
      * @param fillerClass
      * @return
      * @param <T>
@@ -84,6 +88,8 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
     /**
      * The {@link org.integratedmodelling.klab.api.data.Data.FillCurve} for this buffer. Applies to
      * both filling and iteration through subclasses.
+     *
+     * FIXME move to top level
      *
      * @return
      */
@@ -134,6 +140,15 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
    * After the contextualization is finished, the storage will contain one or more buffers with the
    * data content, geometry and data fill curve. The set of buffers will cover the geometry of the
    * observation.
+   *
+   * TODO the buffers should also be cursors and iterate longs. Buffers are predefined (possibly honoring
+   *  @split and @fillcurve annotations, otherwise using geometry-dependent defaults) when this is accessed.
+   *  A buffer(FillCurve) should also be provided that will return a single buffer honoring the fill curve,
+   *  applying any offsets if multiple (or throw an exception) and remap the iteration to the "actual" fill
+   *  curve unless it's the same.
+   *
+   * TODO The fill curve must be available at the Storage level, not the buffer level, as it cannot be different
+   *  in different buffers.
    *
    * @return
    */

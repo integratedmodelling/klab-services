@@ -8,7 +8,7 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope
  */
 abstract class ExpressionBase extends Script implements MathOps, ObservationOps, KlabOps {
 
-    Observation selfObs;
+    Observation _selfObs;
 
     // wrapped observations, geometry/scale fields and services
     /* FIELDS */
@@ -16,7 +16,7 @@ abstract class ExpressionBase extends Script implements MathOps, ObservationOps,
     // constructor takes all the observations used by the code
     ExpressionBase(ServiceContextScope scope, Observation observation /* ADDITIONAL OBSERVATIONS */) {
         this.scope = scope
-        this.selfObs = observation
+        this._selfObs = observation
     }
 
     // run method uses the fill curve(s) to assign scalar values and includes any non-scalar code

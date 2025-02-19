@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.data.Data
 import org.integratedmodelling.klab.api.data.Storage
 import org.integratedmodelling.klab.api.knowledge.observation.Observation
 import org.integratedmodelling.klab.runtime.storage.DoubleBuffer
+import org.integratedmodelling.klab.runtime.storage.DoubleStorage
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope
 
 // model shit observing elevation, slope
@@ -14,9 +15,8 @@ class Expression20349 extends ExpressionBase {
     Observation _slopeObs;
 
     /**
-     * Knows that elevation, slope are qualities and exist
-     *
-     * Calls to known states are translated to _x.data.get(_offset); others to _xObs wrapper
+     * Knows that elevation, slope are qualities and exist. This is for a naïve parallelization honoring
+     * any @split and/or @fillcurve annotation and is meant for scalars only.
      *
      * @param self
      * @param elevation
@@ -26,16 +26,32 @@ class Expression20349 extends ExpressionBase {
         super(scope, self)
     }
 
-    def code(long offset) {
-        // this is the expression set
-
-        return elevation.data().get(_offset) - slope.data().get(_offset)/slopeObs.max() // <- NON facile diocan
-    }
-
     @Override
     Object run() {
-        // groups of scalars using the set fillcurve
-        return false
+
+        /* BUFFERS FOR ALL QUALITIES */
+        def storage = scope.digitalTwin.stateStorage;
+        def elevationBuf = storage.getOrCreateStorage(_elevationObs, DoubleStorage.class).buffer(/* FILL CURVE */Data.FillCurve.D2_XY)
+        def slopeBuf = storage.getOrCreateStorage(_slopeObs, DoubleStorage.class).buffer(/* FILL CURVE */Data.FillCurve.D2_XY)
+        def selfBuf = storage.getOrCreateStorage(_selfObs, DoubleStorage.class).buffer(/* FILL CURVE */Data.FillCurve.D2_XY)
+
+        /* MAIN LOOP */
+        while (selfBuf.hasNext()) {
+            /* LOCAL VARS FROM OTHER QUALITIES */
+            def elevation = elevationBuf.next()
+            def slope = slopeBuf.next()
+            selfBuf.add(/* EXPR CODE */(elevation - _elevationObs.max)/slope)
+        }
+
+        // OR something like this with all buffers, which may be split according to model configuration (annotations)
+        GParsPool.withPool {
+            buffers.eachParallel { email ->
+                def wait = (long) new Random().nextDouble() * 1000
+                println "in closure"
+                this.sleep wait
+                sendEmail(email)
+            }
+        }
     }
 
 }
