@@ -29,11 +29,11 @@ public class BaseDataImpl implements Data {
   private boolean empty = false;
   private Map<Integer, String> dataKey;
   private Metadata metadata = Metadata.create();
-  private FillCurve fillCurve;
+  private SpaceFillingCurve spaceFillingCurve;
 
   public BaseDataImpl(Instance instance) {
     this.instance = instance;
-    this.fillCurve = FillCurve.valueOf(instance.getFillingCurve().toString());
+    this.spaceFillingCurve = SpaceFillingCurve.valueOf(instance.getFillingCurve().toString());
     this.semantics = instance.getObservable().toString();
     this.geometry =
         GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class);
@@ -45,7 +45,7 @@ public class BaseDataImpl implements Data {
     this.geometry = geometry;
     this.name = name;
     this.instance = instance;
-    this.fillCurve = FillCurve.DN_LINEAR;
+    this.spaceFillingCurve = SpaceFillingCurve.D1_LINEAR;
   }
 
   @Override
@@ -87,8 +87,8 @@ public class BaseDataImpl implements Data {
   }
 
   @Override
-  public FillCurve fillCurve() {
-    return fillCurve;
+  public SpaceFillingCurve fillCurve() {
+    return spaceFillingCurve;
   }
 
   @Override

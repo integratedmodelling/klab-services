@@ -33,7 +33,6 @@ import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.data.Cursors;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -289,28 +288,28 @@ public enum ServiceConfiguration {
           }
 
           @Override
-          public Data.Cursor getGeometryIterator(Geometry geometry, Data.FillCurve fillCurve) {
-            return switch (fillCurve) {
-              case D1_LINEAR ->
-                  geometry.size() == 1
-                      ? new Cursors.ScalarCursor(geometry)
-                      : new Cursors.Linear1D(geometry);
-              case DN_LINEAR ->
-                  geometry.size() == 1
-                      ? new Cursors.ScalarCursor(geometry)
-                      : new Cursors.LinearND(geometry);
-              case DN_InvLINEAR ->
-                  geometry.size() == 1
-                      ? new Cursors.ScalarCursor(geometry)
-                      : new Cursors.LinearNDInverted(geometry);
-              case D2_XY ->
-                  geometry.size() == 1
-                      ? new Cursors.ScalarCursor(geometry)
-                      : new Cursors.Matrix2DXY(geometry);
+          public Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction> getSpatialOffsetMapping(Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve) {
+            return switch (spaceFillingCurve) {
+//              case D1_LINEAR ->
+//                  geometry.size() == 1
+//                      ? new Cursors.ScalarCursor(geometry)
+//                      : new Cursors.Linear1D(geometry);
+//              case DN_LINEAR ->
+//                  geometry.size() == 1
+//                      ? new Cursors.ScalarCursor(geometry)
+//                      : new Cursors.LinearND(geometry);
+//              case DN_InvLINEAR ->
+//                  geometry.size() == 1
+//                      ? new Cursors.ScalarCursor(geometry)
+//                      : new Cursors.LinearNDInverted(geometry);
+//              case D2_XY ->
+//                  geometry.size() == 1
+//                      ? new Cursors.ScalarCursor(geometry)
+//                      : new Cursors.Matrix2DXY(geometry);
               // TODO the rest
               default ->
                   throw new KlabUnimplementedException(
-                      "ServiceConfiguration::getGeometryIterator(" + fillCurve + ")");
+                      "ServiceConfiguration::getGeometryIterator(" + spaceFillingCurve + ")");
             };
           }
         });

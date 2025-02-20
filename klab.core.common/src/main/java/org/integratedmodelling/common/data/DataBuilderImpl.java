@@ -18,7 +18,7 @@ public class DataBuilderImpl implements Data.Builder {
   private final Geometry geometry;
 //  private Observable observable;
   private Data.Filler filler;
-  private Data.FillCurve fillCurve;
+  private Data.SpaceFillingCurve spaceFillingCurve;
   private Map<Object, Integer> objectKey;
   private int objectCounter = 1;
 
@@ -74,7 +74,7 @@ public class DataBuilderImpl implements Data.Builder {
   }
 
   @Override
-  public <T extends Data.Filler> T filler(Class<T> fillerClass, Data.FillCurve curve) {
+  public <T extends Data.Filler> T filler(Class<T> fillerClass, Data.SpaceFillingCurve curve) {
 
     if (filler != null) {
       throw new KlabIllegalStateException("A data instance can only have one filler");
@@ -115,8 +115,8 @@ public class DataBuilderImpl implements Data.Builder {
 
   private class DoubleInstanceFiller implements Data.DoubleFiller {
 
-    DoubleInstanceFiller(Data.FillCurve fillCurve) {
-      builder.setFillingCurve(fillCurve.name());
+    DoubleInstanceFiller(Data.SpaceFillingCurve spaceFillingCurve) {
+      builder.setFillingCurve(spaceFillingCurve.name());
       builder.setDoubleData(new ArrayList<>());
     }
 
@@ -128,8 +128,8 @@ public class DataBuilderImpl implements Data.Builder {
 
   private class FloatInstanceFiller implements Data.FloatFiller {
 
-    FloatInstanceFiller(Data.FillCurve fillCurve) {
-      builder.setFillingCurve(fillCurve.name());
+    FloatInstanceFiller(Data.SpaceFillingCurve spaceFillingCurve) {
+      builder.setFillingCurve(spaceFillingCurve.name());
       builder.setFloatData(new ArrayList<>());
     }
 
@@ -141,8 +141,8 @@ public class DataBuilderImpl implements Data.Builder {
 
   private class LongInstanceFiller implements Data.LongFiller {
 
-    LongInstanceFiller(Data.FillCurve fillCurve) {
-      builder.setFillingCurve(fillCurve.name());
+    LongInstanceFiller(Data.SpaceFillingCurve spaceFillingCurve) {
+      builder.setFillingCurve(spaceFillingCurve.name());
       builder.setLongData(new ArrayList<>());
     }
 
@@ -154,8 +154,8 @@ public class DataBuilderImpl implements Data.Builder {
 
   private class IntInstanceFiller implements Data.IntFiller {
 
-    IntInstanceFiller(Data.FillCurve fillCurve) {
-      builder.setFillingCurve(fillCurve.name());
+    IntInstanceFiller(Data.SpaceFillingCurve spaceFillingCurve) {
+      builder.setFillingCurve(spaceFillingCurve.name());
       builder.setIntData(new ArrayList<>());
     }
 
@@ -167,8 +167,8 @@ public class DataBuilderImpl implements Data.Builder {
 
   private class ObjectInstanceFiller implements Data.ObjectFiller {
 
-    ObjectInstanceFiller(Data.FillCurve fillCurve) {
-      builder.setFillingCurve(fillCurve.name());
+    ObjectInstanceFiller(Data.SpaceFillingCurve spaceFillingCurve) {
+      builder.setFillingCurve(spaceFillingCurve.name());
       builder.setIntData(new ArrayList<>());
       objectKey = new HashMap<>();
     }

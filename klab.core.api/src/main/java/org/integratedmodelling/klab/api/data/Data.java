@@ -3,7 +3,9 @@ package org.integratedmodelling.klab.api.data;
 import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
+
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -27,19 +29,18 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public interface Data {
 
   /**
-   * TODO merge Cursor and Filler (call it Cursor). Enable 6 unboxing methods for data access in each subclass:
+   * TODO merge Cursor and Filler (call it Cursor). Enable 6 unboxing methods for data access in
+   * each subclass:
    *
-   * add(value)            -> standard add using buffer's curve
-   * add(value, FillCurve) -> add translating offsets from another curve set to the same geometry
-   * value get()           -> retrieve using buffer
-   * value get(FillCurve)  -> retrieve at current position translating curve
-   * value get(long)       -> random access get()
-   * set(value, long)      -> random access set()
+   * <p>add(value) -> standard add using buffer's curve add(value, FillCurve) -> add translating
+   * offsets from another curve set to the same geometry value get() -> retrieve using buffer value
+   * get(FillCurve) -> retrieve at current position translating curve value get(long) -> random
+   * access get() set(value, long) -> random access set()
    *
-   * TODO OR: avoid the ones with FillCurve and just ask for a specific curve when creating the
-   *  cursor. So just add(value), get(), set(value, long) and get(long). Class without checking:
-   *  a different class for the two cases. The method should be available as FC translation from
-   *  (maybe) the geometry?
+   * <p>TODO OR: avoid the ones with FillCurve and just ask for a specific curve when creating the
+   * cursor. So just add(value), get(), set(value, long) and get(long). Class without checking: a
+   * different class for the two cases. The method should be available as FC translation from
+   * (maybe) the geometry?
    */
 
   /**
@@ -50,67 +51,57 @@ public interface Data {
   interface Cursor extends PrimitiveIterator.OfLong {
 
     /**
-     * The current offset in the geometry being handled. If this is called during iteration, it will
-     * refer to the offset AFTER the one just produced using nextLong().
-     *
-     * @return
-     */
-    long currentOffset();
-
-    /**
-     * The linear offset corresponding to the dimension offsets passed, which must be in the number
-     * and range expected by the passed geometry and include 0 for any scalar dimension.
+     * The linear offset in the geometry corresponding to the dimension offsets passed relative to
+     * the space filling curve implemented, possibly along with offsets in any other varying
+     * dimensions. The passed offsets will be matched to the varying dimensions, ignoring the
+     * geometry extents that do not vary and assuming the dimensionality of the filling curve to
+     * establish the leval number of parameters. This should be used in situations when the geometry
+     * has been filtered so that only the varying dimensions remain.
      *
      * @param dimensionOffsets
-     * @return
+     * @return the offset or -1L if no mapping is possible.
      */
-    long offset(long... dimensionOffsets);
+    long offset(Cursor other, long... dimensionOffsets);
+  }
+
+  /** Non-boxing mapper for extent offsets to n-dimensional coordinates. */
+  @FunctionalInterface
+  public interface LongToLongArrayFunction {
 
     /**
-     * The current original offset for the original geometry. If the cursor is iterating a geometry
-     * that does not result from splitting another, this should return the same result as {@link
-     * #currentOffset()}.
+     * Applies this function to the given argument.
      *
-     * @return
+     * @param value the function argument
+     * @return the function result
      */
-    long currentOriginalOffset();
+    long[] apply(long value);
+  }
+
+  /** Non-boxing mapper for extent n-dimensional coordinates to linear offsets. */
+  @FunctionalInterface
+  public interface LongArrayToLongFunction {
 
     /**
-     * The linear offset in the original geometry corresponding to the dimension offsets passed, the
-     * latter relative to the geometry being handled. If the cursor is iterating a geometry that
-     * does not result from splitting another, this should return the same result as {@link
-     * #offset(long...)}}.
+     * Applies this function to the given argument.
      *
-     * @param dimensionOffsets
-     * @return
+     * @param value the function argument
+     * @return the function result
      */
-    long originalOffset(long... dimensionOffsets);
+    long apply(long[] value);
   }
 
   /**
    * Any of the space-filling curves are used in the data encoding. The {@link Data} object contains
    * a filling curve, which must be applied to the observation {@link Storage} for proper
-   * arrangement. Each state with multiple values must define the curve it uses. Normally these are
-   * used for 2D space but there may be 3D and others in the future, so extend as needed.
+   * arrangement of spatial dimensions. Each state with distributed space must define the curve it
+   * uses.
    *
-   * <p>The dimensions field is for validation: the curve can scan those dimensions only unless the
-   * value is -1.
+   * <p>Extents other than space can be assumed to always use D1_LINEAR whenever they are
+   * distributed. At some point we may generalize further.
    */
-  enum FillCurve {
-    /**
-     * Iterates along all varying dimensions using slower dimension-first order, interpreting any
-     * number of geometry dimensions, index interpreted according to local context. Use when the
-     * data ordering is not important in the output.
-     */
-    DN_LINEAR(-1),
+  enum SpaceFillingCurve {
 
-    /**
-     * Iterates along all varying dimensions using fastest-first order interpreting any number of
-     * geometry dimensions, index interpreted according to local context.
-     */
-    DN_InvLINEAR(-1),
-
-    /** Expects a single dimension changing. */
+    /** Expects a single dimension changing, such as along a line. */
     D1_LINEAR(1),
 
     /** Iterates along one two-dimensional extent with the first index varying slower (row-first) */
@@ -130,26 +121,22 @@ public interface Data {
 
     D3_ZYX(3),
 
-    // TODO
-    D2_SIERPINSKI_3(2),
     // TODO also hilbert n-dim
     D2_HILBERT(2),
-    // ... TODO Z2, Z3 and others as needed. Sierpinski can have different orders; the arrowhead can
-    //  be extended  to 3D
-    /** N-dimensional Hilbert curve */
-    DN_HILBERT(-1);
+
+    D3_HILBERT(3);
 
     public final int dimensions;
 
-    public Cursor cursor(Geometry geometry) {
+    public Pair<LongToLongArrayFunction, LongArrayToLongFunction> offsetMappers(Geometry geometry) {
       Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
       if (configuration == null) {
         throw new KlabIllegalStateException("k.LAB environment not configured");
       }
-      return configuration.getGeometryIterator(geometry, this);
+      return configuration.getSpatialOffsetMapping(geometry, this);
     }
 
-    FillCurve(int dimensions) {
+    SpaceFillingCurve(int dimensions) {
       this.dimensions = dimensions;
     }
   }
@@ -252,11 +239,11 @@ public interface Data {
      * org.integratedmodelling.klab.api.knowledge.DescriptionType}.
      *
      * @param fillerClass
-     * @param fillCurve
+     * @param spaceFillingCurve
      * @return
      * @param <T>
      */
-    <T extends Filler> T filler(Class<T> fillerClass, FillCurve fillCurve);
+    <T extends Filler> T filler(Class<T> fillerClass, SpaceFillingCurve spaceFillingCurve);
 
     /**
      * Must be called on any secondary builders. Should NOT be called on the root builder, passed to
@@ -336,7 +323,7 @@ public interface Data {
    *
    * @return
    */
-  FillCurve fillCurve();
+  SpaceFillingCurve fillCurve();
 
   /**
    * This is not null only when the observable is a categorical quality, i.e its {@link
@@ -414,7 +401,7 @@ public interface Data {
       }
 
       @Override
-      public FillCurve fillCurve() {
+      public SpaceFillingCurve fillCurve() {
         return null;
       }
 

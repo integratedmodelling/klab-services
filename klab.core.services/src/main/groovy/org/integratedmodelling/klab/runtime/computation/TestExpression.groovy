@@ -1,9 +1,7 @@
 package org.integratedmodelling.klab.runtime.computation
 
 import org.integratedmodelling.klab.api.data.Data
-import org.integratedmodelling.klab.api.data.Storage
 import org.integratedmodelling.klab.api.knowledge.observation.Observation
-import org.integratedmodelling.klab.runtime.storage.DoubleBuffer
 import org.integratedmodelling.klab.runtime.storage.DoubleStorage
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope
 
@@ -31,9 +29,9 @@ class Expression20349 extends ExpressionBase {
 
         /* BUFFERS FOR ALL QUALITIES */
         def storage = scope.digitalTwin.stateStorage;
-        def elevationBuf = storage.getOrCreateStorage(_elevationObs, DoubleStorage.class).buffer(/* FILL CURVE */Data.FillCurve.D2_XY)
-        def slopeBuf = storage.getOrCreateStorage(_slopeObs, DoubleStorage.class).buffer(/* FILL CURVE */Data.FillCurve.D2_XY)
-        def selfBuf = storage.getOrCreateStorage(_selfObs, DoubleStorage.class).buffer(/* FILL CURVE */Data.FillCurve.D2_XY)
+        def elevationBuf = storage.getOrCreateStorage(_elevationObs, DoubleStorage.class).buffer(/* FILL CURVE */ Data.SpaceFillingCurve.D2_XY)
+        def slopeBuf = storage.getOrCreateStorage(_slopeObs, DoubleStorage.class).buffer(/* FILL CURVE */ Data.SpaceFillingCurve.D2_XY)
+        def selfBuf = storage.getOrCreateStorage(_selfObs, DoubleStorage.class).buffer(/* FILL CURVE */ Data.SpaceFillingCurve.D2_XY)
 
         /* MAIN LOOP */
         while (selfBuf.hasNext()) {
