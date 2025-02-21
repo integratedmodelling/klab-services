@@ -1503,11 +1503,24 @@ public class ComponentRegistry {
           runArguments.add(serviceCall);
         } else if (Parameters.class.isAssignableFrom(argument)) {
           runArguments.add(urnParameters);
-        } else if (DoubleBuffer.class.isAssignableFrom(argument)) {
-
-          /* TODO DIO CAN. Also set the parallelism at 1. */
-          /* TODO must also recognize a list of buffers for the parallel case */
-          runArguments.add(null);
+        } else if (Storage.Buffer.class.isAssignableFrom(argument)) {
+          storage =
+              digitalTwin == null
+                  ? null
+                  : digitalTwin
+                      .getStateStorage()
+                      .promoteStorage(
+                          observation, storage, AbstractBuffer.getStorageClass(argument));
+          if (storage != null) {
+            var buffers = storage.buffers();
+            if (buffers.size() != 1) {
+              throw new KlabInternalErrorException(
+                  "Wrong buffer numerosity for single-buffer parameter: review configuration");
+            }
+            runArguments.add(buffers.getFirst());
+          } else {
+            runArguments.add(null);
+          }
 
         } else if (DoubleStorage.class.isAssignableFrom(argument)) {
           storage =

@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.data.CursorImpl;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
@@ -111,6 +112,20 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
   // storage
   //      //  manager based on the fill curve.
   //    }
+
+  /**
+   * Used to support the non-boxing parameters in contextualizers and data adapters
+   *
+   * @param bufferClass
+   * @return
+   */
+  public static Class<? extends Storage<?>> getStorageClass(Class<?> bufferClass) {
+      if (DoubleBuffer.class.isAssignableFrom(bufferClass)) {
+        return DoubleStorage.class;
+      }
+      // TODO
+      throw new KlabInternalErrorException("Wrong buffer class in AbstractBuffer::getStorageClass");
+  }
 
   @Override
   public String toString() {
