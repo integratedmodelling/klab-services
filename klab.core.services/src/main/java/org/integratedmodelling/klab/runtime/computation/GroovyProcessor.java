@@ -330,7 +330,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
               var identifier =
                   (IdImpl) identifiers.computeIfAbsent(tokenInfo.translation, IdImpl::new);
 
-              var observable = knownObservables.get(code);
+              var observable = knownObservables.get(tokenInfo.code);
               identifier.setObservable(observable);
               if (observable == null || observable.getSemantics().is(SemanticType.QUALITY)) {
                 identifier.scalarReferenceCount++;

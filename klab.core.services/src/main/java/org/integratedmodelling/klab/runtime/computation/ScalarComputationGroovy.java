@@ -61,12 +61,16 @@ public class ScalarComputationGroovy implements ScalarComputation {
         if (contextualizable.getParameters().contains("target")) {
           step.target = contextualizable.getParameters().get("target", String.class);
         }
+
         step.expressionDescriptor =
             groovyProcessor.analyze(
                 expressionCode,
                 scope,
                 List.of(actuator.getObservable()),
                 actuator.getChildren().stream().map(Actuator::getObservable).toList());
+        step.scalar =
+            step.expressionDescriptor.getIdentifiers().values().stream()
+                .anyMatch(id -> id.observable() != null && id.scalarReferenceCount() > 0);
 
         if (Utils.Notifications.hasErrors(step.expressionDescriptor.getNotifications())) {
           return false;
@@ -77,16 +81,18 @@ public class ScalarComputationGroovy implements ScalarComputation {
       } else if (RuntimeService.CoreFunctor.LUT_RESOLVER
           .getServiceCallName()
           .equals(contextualizable.getUrn())) {
-        // LUT, classification or reference to codelist
+        // check types
+        // LUT, classification or reference to codelist. Should build a LUT object for internal processing and
+        // generate the scalar code using it.
       } else if (RuntimeService.CoreFunctor.CONSTANT_RESOLVER
           .getServiceCallName()
           .equals(contextualizable.getUrn())) {
         // check types
+        // insert streamlined code
       } else {
-        // scalar contextualizer
+        // non-scalar contextualizer
       }
 
-      //      calls.add(contextualizable);
       return true;
     }
 
