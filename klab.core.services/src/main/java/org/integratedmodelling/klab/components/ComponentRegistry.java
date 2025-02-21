@@ -1474,7 +1474,7 @@ public class ComponentRegistry {
       Urn urn,
       Parameters<String> urnParameters,
       ServiceCall serviceCall,
-      Storage storage,
+      Storage<?> storage,
       Expression expression,
       LookupTable lookupTable,
       Data inputData,
@@ -1503,6 +1503,12 @@ public class ComponentRegistry {
           runArguments.add(serviceCall);
         } else if (Parameters.class.isAssignableFrom(argument)) {
           runArguments.add(urnParameters);
+        } else if (DoubleBuffer.class.isAssignableFrom(argument)) {
+
+          /* TODO DIO CAN. Also set the parallelism at 1. */
+          /* TODO must also recognize a list of buffers for the parallel case */
+          runArguments.add(null);
+
         } else if (DoubleStorage.class.isAssignableFrom(argument)) {
           storage =
               digitalTwin == null
@@ -1511,39 +1517,39 @@ public class ComponentRegistry {
                       .getStateStorage()
                       .promoteStorage(observation, storage, DoubleStorage.class);
           runArguments.add(storage);
-        } else if (LongStorage.class.isAssignableFrom(argument)) {
-          storage =
-              digitalTwin == null
-                  ? null
-                  : digitalTwin
-                      .getStateStorage()
-                      .promoteStorage(observation, storage, LongStorage.class);
-          runArguments.add(storage);
-        } else if (FloatStorage.class.isAssignableFrom(argument)) {
-          storage =
-              digitalTwin == null
-                  ? null
-                  : digitalTwin
-                      .getStateStorage()
-                      .promoteStorage(observation, storage, FloatStorage.class);
-          runArguments.add(storage);
-        } else if (BooleanStorage.class.isAssignableFrom(argument)) {
-          storage =
-              digitalTwin == null
-                  ? null
-                  : digitalTwin
-                      .getStateStorage()
-                      .promoteStorage(observation, storage, BooleanStorage.class);
-          runArguments.add(storage);
-        } else if (KeyedStorage.class.isAssignableFrom(argument)) {
-          storage =
-              digitalTwin == null
-                  ? null
-                  : digitalTwin
-                      .getStateStorage()
-                      .promoteStorage(observation, storage, KeyedStorage.class);
-          runArguments.add(storage);
-        } else if (Scale.class.isAssignableFrom(argument)) {
+        } /*else if (LongStorage.class.isAssignableFrom(argument)) {
+            storage =
+                digitalTwin == null
+                    ? null
+                    : digitalTwin
+                        .getStateStorage()
+                        .promoteStorage(observation, storage, LongStorage.class);
+            runArguments.add(storage);
+          } else if (FloatStorage.class.isAssignableFrom(argument)) {
+            storage =
+                digitalTwin == null
+                    ? null
+                    : digitalTwin
+                        .getStateStorage()
+                        .promoteStorage(observation, storage, FloatStorage.class);
+            runArguments.add(storage);
+          } else if (BooleanStorage.class.isAssignableFrom(argument)) {
+            storage =
+                digitalTwin == null
+                    ? null
+                    : digitalTwin
+                        .getStateStorage()
+                        .promoteStorage(observation, storage, BooleanStorage.class);
+            runArguments.add(storage);
+          } else if (KeyedStorage.class.isAssignableFrom(argument)) {
+            storage =
+                digitalTwin == null
+                    ? null
+                    : digitalTwin
+                        .getStateStorage()
+                        .promoteStorage(observation, storage, KeyedStorage.class);
+            runArguments.add(storage);
+          } */ else if (Scale.class.isAssignableFrom(argument)) {
           if (scale == null && geometry != null) {
             scale = Scale.create(geometry);
           }

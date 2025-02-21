@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -16,8 +17,8 @@ public class DataBuilderImpl implements Data.Builder {
   private final Instance.Builder builder;
   private Instance.Builder parentBuilder;
   private final Geometry geometry;
-//  private Observable observable;
-  private Data.Filler filler;
+  //  private Observable observable;
+  //  private Data.Filler filler;
   private Data.SpaceFillingCurve spaceFillingCurve;
   private Map<Object, Integer> objectKey;
   private int objectCounter = 1;
@@ -36,7 +37,7 @@ public class DataBuilderImpl implements Data.Builder {
     this.builder.setLongData(null);
     this.builder.setDataKey(null);
     this.geometry = geometry;
-//    this.observable = observable;
+    //    this.observable = observable;
   }
 
   private DataBuilderImpl(
@@ -74,26 +75,49 @@ public class DataBuilderImpl implements Data.Builder {
   }
 
   @Override
-  public <T extends Data.Filler> T filler(Class<T> fillerClass, Data.SpaceFillingCurve curve) {
-
-    if (filler != null) {
-      throw new KlabIllegalStateException("A data instance can only have one filler");
-    }
-
-    if (fillerClass == Data.DoubleFiller.class) {
-      return (T) new DoubleInstanceFiller(curve);
-    } else if (fillerClass == Data.FloatFiller.class) {
-      return (T) new FloatInstanceFiller(curve);
-    } else if (fillerClass == Data.IntFiller.class) {
-      return (T) new IntInstanceFiller(curve);
-    } else if (fillerClass == Data.LongFiller.class) {
-      return (T) new LongInstanceFiller(curve);
-    } else if (fillerClass == Data.ObjectFiller.class) {
-      return (T) new ObjectInstanceFiller(curve);
-    }
-    throw new KlabIllegalStateException(
-        "Unexpected filler class " + fillerClass.getCanonicalName());
+  public <T extends Storage.Buffer> T buffer(Class<T> fillerClass) {
+    // TODO
+    return null;
   }
+
+  @Override
+  public <T extends Storage.Buffer> T buffer(
+      Class<T> fillerClass, Data.SpaceFillingCurve spaceFillingCurve) {
+    return buffers(fillerClass, spaceFillingCurve).getFirst();
+  }
+
+  @Override
+  public <T extends Storage.Buffer> List<T> buffers(Class<T> fillerClass) {
+    return List.of();
+  }
+
+  @Override
+  public <T extends Storage.Buffer> List<T> buffers(
+      Class<T> fillerClass, Data.SpaceFillingCurve spaceFillingCurve) {
+    return List.of();
+  }
+
+  //  @Override
+  //  public <T extends Data.Filler> T filler(Class<T> fillerClass, Data.SpaceFillingCurve curve) {
+  //
+  //    if (filler != null) {
+  //      throw new KlabIllegalStateException("A data instance can only have one filler");
+  //    }
+  //
+  //    if (fillerClass == Data.DoubleFiller.class) {
+  //      return (T) new DoubleInstanceFiller(curve);
+  //    } else if (fillerClass == Data.FloatFiller.class) {
+  //      return (T) new FloatInstanceFiller(curve);
+  //    } else if (fillerClass == Data.IntFiller.class) {
+  //      return (T) new IntInstanceFiller(curve);
+  //    } else if (fillerClass == Data.LongFiller.class) {
+  //      return (T) new LongInstanceFiller(curve);
+  //    } else if (fillerClass == Data.ObjectFiller.class) {
+  //      return (T) new ObjectInstanceFiller(curve);
+  //    }
+  //    throw new KlabIllegalStateException(
+  //        "Unexpected filler class " + fillerClass.getCanonicalName());
+  //  }
 
   @Override
   public Data build() {
@@ -113,7 +137,7 @@ public class DataBuilderImpl implements Data.Builder {
     return BaseDataImpl.create(instance);
   }
 
-  private class DoubleInstanceFiller implements Data.DoubleFiller {
+  /* private class DoubleInstanceFiller implements Data.DoubleFiller {
 
     DoubleInstanceFiller(Data.SpaceFillingCurve spaceFillingCurve) {
       builder.setFillingCurve(spaceFillingCurve.name());
@@ -177,5 +201,5 @@ public class DataBuilderImpl implements Data.Builder {
     public void add(Object value) {
       builder.getIntData().add(objectKey.computeIfAbsent(value, v -> objectCounter++));
     }
-  }
+  }*/
 }

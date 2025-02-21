@@ -290,24 +290,15 @@ public enum ServiceConfiguration {
           @Override
           public Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction> getSpatialOffsetMapping(Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve) {
             return switch (spaceFillingCurve) {
-//              case D1_LINEAR ->
-//                  geometry.size() == 1
-//                      ? new Cursors.ScalarCursor(geometry)
-//                      : new Cursors.Linear1D(geometry);
-//              case DN_LINEAR ->
-//                  geometry.size() == 1
-//                      ? new Cursors.ScalarCursor(geometry)
-//                      : new Cursors.LinearND(geometry);
-//              case DN_InvLINEAR ->
-//                  geometry.size() == 1
-//                      ? new Cursors.ScalarCursor(geometry)
-//                      : new Cursors.LinearNDInverted(geometry);
-//              case D2_XY ->
-//                  geometry.size() == 1
-//                      ? new Cursors.ScalarCursor(geometry)
-//                      : new Cursors.Matrix2DXY(geometry);
-              // TODO the rest
-              default ->
+                case D1_LINEAR -> null;
+                case D2_XY -> null;
+//                case D2_YX -> null;
+//                case D2_XInvY -> null;
+//                case D3_XYZ -> null;
+//                case D3_ZYX -> null;
+//                case D2_HILBERT -> null;
+//                case D3_HILBERT -> null;
+                default ->
                   throw new KlabUnimplementedException(
                       "ServiceConfiguration::getGeometryIterator(" + spaceFillingCurve + ")");
             };

@@ -231,10 +231,10 @@ public class StateStorageImpl implements StateStorage {
     if (storageClass == Storage.class) {
       sClass =
           switch (observation.getObservable().getArtifactType()) {
-            case BOOLEAN -> BooleanStorage.class;
+//            case BOOLEAN -> BooleanStorage.class;
             case NUMBER -> /* TODO use config to choose between double and float */
                 DoubleStorage.class;
-            case TEXT, CONCEPT -> KeyedStorage.class;
+//            case TEXT, CONCEPT -> KeyedStorage.class;
             default ->
                 throw new KlabIllegalStateException(
                     "scalar mapping to type "
@@ -248,7 +248,7 @@ public class StateStorageImpl implements StateStorage {
     if (ret == null) {
       if (DoubleStorage.class.isAssignableFrom(sClass)) {
         ret = (T) new DoubleStorage(observation, this, contextScope);
-      } else if (LongStorage.class.isAssignableFrom(sClass)) {
+      } /*else if (LongStorage.class.isAssignableFrom(sClass)) {
         ret = (T) new LongStorage(observation, this, contextScope);
       } else if (FloatStorage.class.isAssignableFrom(sClass)) {
         ret = (T) new FloatStorage(observation, this, contextScope);
@@ -258,7 +258,7 @@ public class StateStorageImpl implements StateStorage {
         ret = (T) new BooleanStorage(observation, this, contextScope);
       } else if (KeyedStorage.class.isAssignableFrom(sClass)) {
         ret = (T) new KeyedStorage(observation, this, contextScope);
-      }
+      }*/
     }
 
     if (ret != null) {

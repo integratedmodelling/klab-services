@@ -9,19 +9,19 @@ import org.integratedmodelling.klab.common.data.Instance;
 
 public class IntDataImpl extends BaseDataImpl implements PrimitiveIterator.OfInt {
 
-  private final OfLong iterator;
+  private /*final*/ OfLong iterator;
 
   public IntDataImpl(Instance instance) {
     super(instance);
-    this.iterator =
-            fillCurve()
-                    .cursor(
-                            GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class));
+//    this.iterator =
+//            fillCurve()
+//                    .cursor(
+//                            GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class));
   }
 
   public IntDataImpl(Observable observable, Geometry geometry, String name, Instance instance) {
     super(observable, geometry, name, instance);
-    this.iterator = fillCurve().cursor(geometry);
+//    this.iterator = fillCurve().cursor(geometry);
   }
 
   @Override

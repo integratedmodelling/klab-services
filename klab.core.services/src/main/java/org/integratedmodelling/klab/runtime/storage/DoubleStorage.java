@@ -23,6 +23,7 @@ public class DoubleStorage extends AbstractStorage<DoubleBuffer> {
   @Override
   public <T extends Buffer> List<T> buffers(
       Geometry geometry, Class<T> bufferClass, Data.SpaceFillingCurve spaceFillingCurve) {
+    // TODO honor the split instructions in the observation or use defaults
     return List.of();
   }
 

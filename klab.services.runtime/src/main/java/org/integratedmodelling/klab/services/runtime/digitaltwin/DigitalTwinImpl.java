@@ -15,11 +15,13 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
 import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
+import org.integratedmodelling.klab.runtime.storage.DoubleBuffer;
 import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
-import org.integratedmodelling.klab.runtime.storage.LongStorage;
-import org.integratedmodelling.klab.runtime.storage.IntStorage;
+// import org.integratedmodelling.klab.runtime.storage.LongStorage;
+// import org.integratedmodelling.klab.runtime.storage.IntStorage;
 import org.integratedmodelling.klab.runtime.storage.StateStorageImpl;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.SchedulerImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -98,59 +100,64 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     if (data.hasStates()) {
 
-      // TODO negotiate any partial fill strategy from parallelized access to the storage
+      // TODO the observation should have collected @split and @fillcurve annotations from models
+      // and observables,
+      //  along with colormap from concepts and all that.
       var storage =
           scope.getDigitalTwin().getStateStorage().getOrCreateStorage(target, Storage.class);
 
       if (data instanceof DoubleDataImpl doubleData) {
-        // TODO handle floats
+
         var doubleStorage =
             scope
                 .getDigitalTwin()
                 .getStateStorage()
                 .promoteStorage(target, storage, DoubleStorage.class);
-        var buffer =
-            doubleStorage.buffer(
-                data.geometry().size(), data.fillCurve(), data.geometry().getExtentOffsets());
-        var filler = buffer.filler(Data.DoubleFiller.class);
-        while (doubleData.hasNext()) {
-          filler.add(doubleData.nextDouble());
-        }
-        return true;
-      } else if (data instanceof LongDataImpl longData) {
-        var longStorage =
-            scope
-                .getDigitalTwin()
-                .getStateStorage()
-                .promoteStorage(target, storage, LongStorage.class);
-        var buffer =
-            longStorage.buffer(
-                data.geometry().size(), data.fillCurve(), data.geometry().getExtentOffsets());
-        var filler = buffer.filler(Data.LongFiller.class);
-        while (longData.hasNext()) {
-          filler.add(longData.nextLong());
-        }
-      } else if (data instanceof IntDataImpl intData) {
-        var key = intData.getDataKey();
-        if (key == null) {
-          var intStorage =
+
+        var buffers = doubleStorage.buffers(data.geometry(), DoubleBuffer.class, data.fillCurve());
+
+        /* all buffers run in parallel */
+        return Utils.Java.distributeComputation(
+            buffers,
+            buffer -> {
+              while (doubleData.hasNext()) {
+                buffer.add(doubleData.nextDouble());
+              }
+            });
+      } /*else if (data instanceof LongDataImpl longData) {
+          var longStorage =
               scope
                   .getDigitalTwin()
                   .getStateStorage()
-                  .promoteStorage(target, storage, IntStorage.class);
+                  .promoteStorage(target, storage, LongStorage.class);
           var buffer =
-              intStorage.buffer(
+              longStorage.buffer(
                   data.geometry().size(), data.fillCurve(), data.geometry().getExtentOffsets());
-          var filler = buffer.filler(Data.IntFiller.class);
-          while (intData.hasNext()) {
-            filler.add(intData.nextInt());
+          var filler = buffer.filler(Data.LongFiller.class);
+          while (longData.hasNext()) {
+            filler.add(longData.nextLong());
           }
-          return true;
-        } else {
-          // TODO have the data object adapt the key to the observable before use
-          var table = new HashMap<Integer, Object>();
-        }
-      }
+        } else if (data instanceof IntDataImpl intData) {
+          var key = intData.getDataKey();
+          if (key == null) {
+            var intStorage =
+                scope
+                    .getDigitalTwin()
+                    .getStateStorage()
+                    .promoteStorage(target, storage, IntStorage.class);
+            var buffer =
+                intStorage.buffer(
+                    data.geometry().size(), data.fillCurve(), data.geometry().getExtentOffsets());
+            var filler = buffer.filler(Data.IntFiller.class);
+            while (intData.hasNext()) {
+              filler.add(intData.nextInt());
+            }
+            return true;
+          } else {
+            // TODO have the data object adapt the key to the observable before use
+            var table = new HashMap<Integer, Object>();
+          }
+        }*/
     }
 
     return false;

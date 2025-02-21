@@ -141,56 +141,56 @@ public interface Data {
     }
   }
 
-  /**
-   * A filler is a tag interface for an object that can be used to add data to a buffer along a
-   * given geometry and filling curve. All subclasses of Filler expose an add() method using
-   * primitive data types to avoid boxing.
-   *
-   * @deprecated use cursors
-   */
-  interface Filler {}
-
-  @Deprecated
-  @FunctionalInterface
-  interface IntFiller extends Filler {
-    void add(int value);
-  }
-
-  @Deprecated
-  @FunctionalInterface
-  interface LongFiller extends Filler {
-    void add(long value);
-  }
-
-  @Deprecated
-  @FunctionalInterface
-  interface FloatFiller extends Filler {
-    void add(float value);
-  }
-
-  @Deprecated
-  @FunctionalInterface
-  interface BooleanFiller extends Filler {
-    void add(boolean value);
-  }
-
-  @Deprecated
-  @FunctionalInterface
-  interface DoubleFiller extends Filler {
-    void add(double value);
-  }
-
-  @Deprecated
-  @FunctionalInterface
-  interface KeyedFiller extends Filler {
-    void add(Object value);
-  }
-
-  @Deprecated
-  @FunctionalInterface
-  interface ObjectFiller extends Filler {
-    void add(Object value);
-  }
+  //  /**
+  //   * A filler is a tag interface for an object that can be used to add data to a buffer along a
+  //   * given geometry and filling curve. All subclasses of Filler expose an add() method using
+  //   * primitive data types to avoid boxing.
+  //   *
+  //   * @deprecated use cursors
+  //   */
+  //  interface Filler {}
+  //
+  //  @Deprecated
+  //  @FunctionalInterface
+  //  interface IntFiller extends Filler {
+  //    void add(int value);
+  //  }
+  //
+  //  @Deprecated
+  //  @FunctionalInterface
+  //  interface LongFiller extends Filler {
+  //    void add(long value);
+  //  }
+  //
+  //  @Deprecated
+  //  @FunctionalInterface
+  //  interface FloatFiller extends Filler {
+  //    void add(float value);
+  //  }
+  //
+  //  @Deprecated
+  //  @FunctionalInterface
+  //  interface BooleanFiller extends Filler {
+  //    void add(boolean value);
+  //  }
+  //
+  //  @Deprecated
+  //  @FunctionalInterface
+  //  interface DoubleFiller extends Filler {
+  //    void add(double value);
+  //  }
+  //
+  //  @Deprecated
+  //  @FunctionalInterface
+  //  interface KeyedFiller extends Filler {
+  //    void add(Object value);
+  //  }
+  //
+  //  @Deprecated
+  //  @FunctionalInterface
+  //  interface ObjectFiller extends Filler {
+  //    void add(Object value);
+  //  }
 
   interface Builder {
 
@@ -234,8 +234,40 @@ public interface Data {
     Builder object(String name, Observable observable, Geometry geometry);
 
     /**
-     * Return a filler for the quality data object being built. Will throw an exception if the
-     * observable is not a quality and the class is not compatible with the observable's {@link
+     * Shorthand for buffers(.., storage.getFillingCurve()).getFirst() when the fill curve
+     * doesnt'matter and there is only one buffer because it's been forced to.
+     *
+     * @param fillerClass
+     * @return
+     * @param <T>
+     */
+    <T extends Storage.Buffer> T buffer(Class<T> fillerClass);
+
+    /**
+     * Shorthand for buffers(..).getFirst() when we know that there will be only one buffer due to
+     * contextualizer configuration (split=1).
+     *
+     * @param fillerClass
+     * @param spaceFillingCurve
+     * @return
+     * @param <T>
+     */
+    <T extends Storage.Buffer> T buffer(Class<T> fillerClass, SpaceFillingCurve spaceFillingCurve);
+
+    /**
+     * Shorthand for getting a set of parallel buffers with the filling curve mandated by the
+     * modeler, configuration or implementation.
+     *
+     * @param fillerClass
+     * @return
+     * @param <T>
+     */
+    <T extends Storage.Buffer> List<T> buffers(Class<T> fillerClass);
+
+    /**
+     * Return buffers for the quality data object being built, in number depending on settings on
+     * models, observables or contextualizer. Will throw an exception if the observable is not a
+     * quality and the class is not compatible with the observable's {@link
      * org.integratedmodelling.klab.api.knowledge.DescriptionType}.
      *
      * @param fillerClass
@@ -243,7 +275,8 @@ public interface Data {
      * @return
      * @param <T>
      */
-    <T extends Filler> T filler(Class<T> fillerClass, SpaceFillingCurve spaceFillingCurve);
+    <T extends Storage.Buffer> List<T> buffers(
+        Class<T> fillerClass, SpaceFillingCurve spaceFillingCurve);
 
     /**
      * Must be called on any secondary builders. Should NOT be called on the root builder, passed to

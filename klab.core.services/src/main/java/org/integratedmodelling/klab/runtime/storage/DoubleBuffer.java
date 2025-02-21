@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.storage;
 
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.ojalgo.array.BufferArray;
 
 public class DoubleBuffer extends AbstractBuffer {
@@ -8,9 +9,9 @@ public class DoubleBuffer extends AbstractBuffer {
 //  private final DoubleStorage doubleStorage;
   private final BufferArray data;
 
-  protected DoubleBuffer(
-          DoubleStorage doubleStorage, long size, Data.SpaceFillingCurve spaceFillingCurve, long[] offsets) {
-    super(doubleStorage, size, spaceFillingCurve, offsets);
+  protected DoubleBuffer(Geometry geometry,
+                         DoubleStorage doubleStorage, long size, Data.SpaceFillingCurve spaceFillingCurve, long[] offsets) {
+    super(geometry, doubleStorage, size, spaceFillingCurve, offsets);
 //    this.doubleStorage = doubleStorage;
     this.data = doubleStorage.stateStorage.getDoubleBuffer(doubleStorage.geometry.size());
   }

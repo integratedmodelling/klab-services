@@ -2,10 +2,8 @@ package org.integratedmodelling.klab.api.utils;
 
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classifier;
-import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -14,22 +12,17 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kim.*;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
-import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 
 import java.awt.*;
 import java.io.*;
@@ -49,6 +42,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -3632,8 +3627,31 @@ public class Utils {
   public static class Java {
     public static Object runWithMatchedParameters(
         Method method, Object instance, List<Object> parameters) {
-
       return null;
+    }
+
+    /**
+     * Distribute a consumer over a set of objects in one virtual thread per object. Return only
+     * when all the threads are finished and return status.
+     *
+     * @param objects
+     * @param task
+     * @return
+     * @param <T>
+     */
+    public static <T> boolean distributeComputation(Collection<T> objects, Consumer<T> task) {
+
+      List<Callable<Object>> tasks = new ArrayList<>();
+      for (T object : objects) {
+        tasks.add(Executors.callable(() -> task.accept(object)));
+      }
+
+      try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+        var ret = executorService.invokeAll(tasks);
+        return ret.stream().noneMatch(objectFuture -> objectFuture.state() == Future.State.FAILED);
+      } catch (Throwable t) {
+        return false;
+      }
     }
   }
 
