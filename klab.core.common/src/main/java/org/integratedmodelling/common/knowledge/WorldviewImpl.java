@@ -2,6 +2,7 @@ package org.integratedmodelling.common.knowledge;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -18,6 +19,7 @@ public class WorldviewImpl implements Worldview {
     private List<KimObservationStrategyDocument> observationStrategies = new ArrayList<>();
     private boolean empty;
     private String worldviewId = Utils.Names.newName("wv");
+    private List<Annotation> annotations = new ArrayList<>();
 
     @Override
     public String getUrn() {
@@ -71,5 +73,14 @@ public class WorldviewImpl implements Worldview {
 
     public void setEmpty(boolean empty) {
         this.empty = empty;
+    }
+
+    @Override
+    public List<Annotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<Annotation> annotations) {
+        this.annotations = annotations;
     }
 }

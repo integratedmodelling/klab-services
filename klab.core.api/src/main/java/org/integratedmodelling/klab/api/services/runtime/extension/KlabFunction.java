@@ -162,5 +162,5 @@ public @interface KlabFunction {
    *
    * @return
    */
-  Data.SpaceFillingCurve fillingCurve() default Data.SpaceFillingCurve.D1_LINEAR;
+  Data.SpaceFillingCurve fillingCurve() default Data.SpaceFillingCurve.UNSPECIFIED;
 }

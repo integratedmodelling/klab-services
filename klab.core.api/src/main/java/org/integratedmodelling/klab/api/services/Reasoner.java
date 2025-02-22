@@ -53,18 +53,6 @@ public interface Reasoner extends KlabService {
    */
   Concept resolveConcept(String definition);
 
-  //    /**
-  //     * Extract any component concept from the concept definition that matches all the semantic
-  // types passed.
-  //     * For example, pass {@link SemanticType#ABSTRACT} and {@link SemanticType#PREDICATE} to
-  // obtain all the
-  //     * abstract predicates involved in the concept definition.
-  //     *
-  //     * @param concept
-  //     * @return
-  //     */
-  //    Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> type);
-
   /**
    * @param definition
    * @return
@@ -81,45 +69,6 @@ public interface Reasoner extends KlabService {
    * @return
    */
   boolean resolves(Semantics toResolve, Semantics candidate, Semantics context);
-
-  //    /**
-  //     * @param conceptDeclaration
-  //     * @return
-  //     */
-  //    Concept declareConcept(KimConcept conceptDeclaration);
-  //
-  //    /**
-  //     * Declare a concept from a pattern using any pattern variables. If the observable is not a
-  // pattern,
-  //     * ignore the variables and return {@link #declareObservable(KimObservable)}. If some of the
-  // pattern
-  //     * variables are undefined in the passed array, return null.
-  //     *
-  //     * @param conceptDeclaration
-  //     * @return
-  //     */
-  //    Concept declareConcept(KimConcept conceptDeclaration, Map<String, Object> patternVariables);
-  //
-  //    /**
-  //     * @param observableDeclaration
-  //     * @return
-  //     */
-  //    Observable declareObservable(KimObservable observableDeclaration);
-
-  //    /**
-  //     * Declare an observable from a pattern using any pattern variables. If the observable is
-  // not a pattern,
-  //     * ignore the variables and return {@link #declareObservable(KimObservable)}. If some of the
-  // pattern
-  //     * variables are undefined in the passed array, return null.
-  //     *
-  //     * @param observableDeclaration
-  //     * @param patternVariables
-  //     * @return
-  //     */
-  //    Observable declareObservable(KimObservable observableDeclaration, Map<String, Object>
-  // patternVariables);
-
   /**
    * Basic reasoning operation for subsumption between concepts.
    *
@@ -153,14 +102,6 @@ public interface Reasoner extends KlabService {
    * @return
    */
   Collection<Concept> parents(Semantics target);
-
-//  /**
-//   * Get a builder specified on the passed observable, used to obtain a modified observable.
-//   *
-//   * @param observableImpl
-//   * @return
-//   */
-//  Builder observableBuilder(Observable observableImpl);
 
   /**
    * For fluency. Returns a single parent for a concept known to be part of a straight hierarchy. If
@@ -268,20 +209,6 @@ public interface Reasoner extends KlabService {
    * @return
    */
   boolean hasDirectRole(Semantics concept, Concept role);
-
-  //    /**
-  //     * @param concept
-  //     * @return
-  //     */
-  //    Concept directContext(Semantics concept);
-
-  //    /**
-  //     * Context is declared in the <code>within</code> clause in the worldview, but is no longer
-  //     modifiable
-  //     * @param concept
-  //     * @return
-  //     */
-  //    Concept context(Semantics concept);
 
   /**
    * @param concept

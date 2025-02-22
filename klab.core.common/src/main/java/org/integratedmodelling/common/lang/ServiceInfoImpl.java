@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -208,6 +209,7 @@ public class ServiceInfoImpl implements ServiceInfo {
     private FunctionType functionType;
     private Set<KnowledgeClass> targets = EnumSet.noneOf(KnowledgeClass.class);
     private Set<String> mediaTypes = new HashSet<>();
+    private List<Annotation> annotations = new ArrayList<>();
 
     public String getLabel() {
         return label;
@@ -651,6 +653,14 @@ public class ServiceInfoImpl implements ServiceInfo {
 
     public void setMediaTypes(Set<String> mediaTypes) {
         this.mediaTypes = mediaTypes;
+    }
+
+    public List<Annotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<Annotation> annotations) {
+        this.annotations = annotations;
     }
 
     @Override

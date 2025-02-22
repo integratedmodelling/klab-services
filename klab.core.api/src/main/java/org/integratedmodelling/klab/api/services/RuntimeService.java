@@ -4,7 +4,6 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -38,7 +37,8 @@ public interface RuntimeService extends KlabService {
    * expressions, lookup tables and the like. The runtime must support all of these.
    *
    * <p>Calls to these functions are created directly by the resolver when {@link Contextualizable}s
-   * of different k.IM types and/or {@link ObservationStrategyObsolete}es from the reasoner are
+   * of different k.IM types and/or {@link
+   * org.integratedmodelling.klab.api.knowledge.ObservationStrategy}es from the reasoner are
    * translated into dataflow actuators. Implementations are free to choose whether to implement
    * actual service calls or implement a more efficient compilation strategy for these functors.
    *

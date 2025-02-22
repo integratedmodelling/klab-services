@@ -341,13 +341,6 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
     Geometry getGeometry();
 
     /**
-     * Metadata. Never null, possibly empty.
-     *
-     * @return the metadata
-     */
-    Metadata getMetadata();
-
-    /**
      * <p>
      * getUrn.
      * </p>
@@ -355,16 +348,6 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      * @return a {@link java.lang.String} object.
      */
     String getUrn();
-
-    /**
-     * All the annotations proceeding from the k.IM lineage of this artifact (from the model that
-     * produced it, the concepts it incarnates, etc.). Never null, possibly empty.
-     * <p>
-     * When artifacts are persisted, these may or may not be preserved.
-     *
-     * @return k.IM annotations in the lineage of this artifact.
-     */
-    Collection<Annotation> getAnnotations();
 
     /**
      * Collect all artifacts of the passed concept (or with the passed role/trait) up the provenance

@@ -29,6 +29,7 @@ import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.data.ClientResourceContextualizer;
 import org.integratedmodelling.klab.data.ServiceResourceContextualizer;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -159,7 +160,24 @@ public class ExecutionSequence {
       this.id = actuator.getId();
       this.operation = operations.get(actuator);
       this.observation = scope.getObservation(this.id);
+      instrumentObservation(this.observation, actuator);
       this.operational = compile(actuator);
+    }
+
+    /**
+     * Determine fill curve and split strategy for quality observations. The actuator may contain
+     * contextualizers whose prototype mandates the strategy. Otherwise, there may be @fillcurve
+     * and @split annotations in the actuator (taken from the model or observable), Failing these,
+     * locally configured defaults take precedence. The inferred instructions will be passed on to
+     * the storage when asking for buffers.
+     *
+     * @param actuator
+     */
+    private void instrumentObservation(Observation observation, Actuator actuator) {
+//      Utils.Annotations.getAnnotation()
+      if (observation.getObservable().is(SemanticType.QUALITY)) {
+
+      }
     }
 
     private boolean compile(Actuator actuator) {
@@ -276,7 +294,7 @@ public class ExecutionSequence {
 
         if (scalarBuilder != null) {
           var scalarMapper = scalarBuilder.build();
-            executors.add(scalarMapper::execute);
+          executors.add(scalarMapper::execute);
         }
 
         // if we're a quality, we need storage at the discretion of the StorageManager.
@@ -363,15 +381,15 @@ public class ExecutionSequence {
       if (scalarBuilder != null) {
         var scalarMapper = scalarBuilder.build();
         executors.add(
-                () -> {
-                  try {
-                    return scalarMapper.execute();
-                  } catch (Exception e) {
-                    cause = e;
-                    scope.error(e /* TODO tracing parameters */);
-                  }
-                  return true;
-                });
+            () -> {
+              try {
+                return scalarMapper.execute();
+              } catch (Exception e) {
+                cause = e;
+                scope.error(e /* TODO tracing parameters */);
+              }
+              return true;
+            });
       }
 
       return true;

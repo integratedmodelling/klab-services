@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.api.data;
 import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
-
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -100,6 +99,9 @@ public interface Data {
    * distributed. At some point we may generalize further.
    */
   enum SpaceFillingCurve {
+
+    /** Unfortunately needed because of Java not accepting null in defaults for annotations */
+    UNSPECIFIED(0),
 
     /** Expects a single dimension changing, such as along a line. */
     D1_LINEAR(1),

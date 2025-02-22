@@ -1512,12 +1512,12 @@ public class ComponentRegistry {
                       .promoteStorage(
                           observation, storage, AbstractBuffer.getStorageClass(argument));
           if (storage != null) {
-            var buffers = storage.buffers();
-            if (buffers.size() != 1) {
-              throw new KlabInternalErrorException(
-                  "Wrong buffer numerosity for single-buffer parameter: review configuration");
-            }
-            runArguments.add(buffers.getFirst());
+////            var buffers = storage.buffers(geometry, DoubleStorage.class, observation.getMetadata().get());
+//            if (buffers.size() != 1) {
+//              throw new KlabInternalErrorException(
+//                  "Wrong buffer numerosity for single-buffer parameter: review configuration");
+//            }
+//            runArguments.add(buffers.getFirst());
           } else {
             runArguments.add(null);
           }

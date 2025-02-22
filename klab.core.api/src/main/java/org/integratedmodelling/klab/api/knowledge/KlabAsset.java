@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -11,6 +12,7 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 
 import java.io.Serializable;
+import java.util.Collection;
 
 /**
  * All k.LAB assets have a URN, a version, metadata and possibly annotations. They are
@@ -64,7 +66,7 @@ public interface KlabAsset extends Serializable {
      *
      * @return the unique identifier that specifies this.
      */
-    public String getUrn();
+    String getUrn();
 
     /**
      * Never null, possibly empty.
@@ -72,5 +74,17 @@ public interface KlabAsset extends Serializable {
      * @return
      */
     Metadata getMetadata();
+
+    /**
+     * All the annotations proceeding from the k.IM lineage of this artifact (from the model that
+     * produced it, the concepts it incarnates, etc.). Never null, possibly empty.
+     * <p>
+     * When artifacts are persisted, these may or may not be preserved.
+     *
+     * @return k.IM annotations in the lineage of this artifact.
+     */
+    Collection<Annotation> getAnnotations();
+
+
 
 }

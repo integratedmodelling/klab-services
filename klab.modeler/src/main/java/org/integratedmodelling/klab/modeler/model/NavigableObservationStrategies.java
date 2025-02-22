@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.modeler.model;
 
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
@@ -26,6 +27,8 @@ public class NavigableObservationStrategies extends NavigableKlabDocument<KimObs
 		return getStatements().stream().map(s -> new NavigableObservationStrategy(s, this)).toList();
 	}
 
+	@Override
+	public Collection<Annotation> getAnnotations() { return delegate.getAnnotations(); }
 
 	@Override
 	public Set<String> importedNamespaces(boolean withinType) {

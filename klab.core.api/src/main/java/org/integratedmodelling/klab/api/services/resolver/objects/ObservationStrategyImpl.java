@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.services.resolver.objects;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -19,6 +20,7 @@ public class ObservationStrategyImpl implements ObservationStrategy {
   private int rank;
   private List<Operation> operations = new ArrayList<>();
   private String documentation;
+  List<Annotation> annotations = new ArrayList<>();
 
   public static class OperationImpl implements Operation {
 
@@ -124,6 +126,15 @@ public class ObservationStrategyImpl implements ObservationStrategy {
 
   public void setDocumentation(String documentation) {
     this.documentation = documentation;
+  }
+
+  @Override
+  public List<Annotation> getAnnotations() {
+    return annotations;
+  }
+
+  public void setAnnotations(List<Annotation> annotations) {
+    this.annotations = annotations;
   }
 
   @Override

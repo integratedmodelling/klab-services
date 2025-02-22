@@ -40,7 +40,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
  */
 public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAsset {
 
-    static final long UNASSIGNED_ID = -1;
+    long UNASSIGNED_ID = -1;
 
     default RuntimeAsset.Type classify() {
         return RuntimeAsset.Type.OBSERVATION;

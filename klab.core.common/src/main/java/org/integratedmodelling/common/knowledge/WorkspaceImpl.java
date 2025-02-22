@@ -21,6 +21,7 @@ public class WorkspaceImpl implements Workspace {
     private Collection<Project> projects = new ArrayList<>();
     private Metadata metadata = Metadata.create();
     private ResourcePrivileges privileges =  ResourcePrivileges.empty();
+    private List<Annotation> annotations = new ArrayList<>();
 
     @Override
     public String getUrn() {
@@ -56,5 +57,14 @@ public class WorkspaceImpl implements Workspace {
 
     public void setPrivileges(ResourcePrivileges privileges) {
         this.privileges = privileges;
+    }
+
+    @Override
+    public List<Annotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<Annotation> annotations) {
+        this.annotations = annotations;
     }
 }

@@ -2,6 +2,7 @@ package org.integratedmodelling.common.lang.kactors;
 
 import org.integratedmodelling.common.lang.kim.KlabDocumentImpl;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 
@@ -28,6 +29,7 @@ public class KActorsBehaviorImpl extends KlabDocumentImpl<KActorsAction> impleme
     private Map<String, String> styleSpecs = new HashMap<>();
     private boolean isPublic;
     private Version version;
+    private List<Annotation> annotations = new ArrayList<>();
 
     @Override
     public String getUrn() {
@@ -175,5 +177,14 @@ public class KActorsBehaviorImpl extends KlabDocumentImpl<KActorsAction> impleme
 
     public void setStatements(List<KActorsAction> statements) {
         this.statements = statements;
+    }
+
+    @Override
+    public List<Annotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<Annotation> annotations) {
+        this.annotations = annotations;
     }
 }

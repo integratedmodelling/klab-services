@@ -351,11 +351,11 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         } else if (object instanceof Statement) {
           collectAnnotations((Statement) object, ret);
         } else if (object instanceof Artifact) {
-          for (Annotation annotation : ((Artifact) object).getAnnotations()) {
-            if (!ret.containsKey(annotation.getName())) {
-              ret.put(annotation.getName(), annotation);
-            }
-          }
+//          for (Annotation annotation : ((Artifact) object).getAnnotations()) {
+//            if (!ret.containsKey(annotation.getName())) {
+//              ret.put(annotation.getName(), annotation);
+//            }
+//          }
         }
       }
       return ret.values();
