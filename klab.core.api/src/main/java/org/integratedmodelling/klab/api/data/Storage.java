@@ -1,9 +1,10 @@
 package org.integratedmodelling.klab.api.data;
 
-import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.scope.Persistence;
-
+import java.util.Collection;
 import java.util.List;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.scope.Persistence;
 
 /**
  * Base storage providing only general methods. Children enable either boxed I/O or faster native
@@ -70,8 +71,8 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
   Type getType();
 
   /**
-   * The {@link Data.SpaceFillingCurve} for the spatial arrangement in
-   * the buffers. The fill curve is established based on the geometry unless a <code>@fillcurve
+   * The {@link Data.SpaceFillingCurve} for the spatial arrangement in the buffers. The fill curve
+   * is established based on the geometry unless a <code>@fillcurve
    * </code> annotation is present on the model. The fill curve is irrelevant if there is only one
    * spatial state or no spatial extent at all. In such cases it's best to avoid initializing a moot
    * Hilbert curve which has more overhead than the others.
@@ -98,18 +99,19 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
    *     and get methods exposed by the different {@link Buffer} subclasses. If a class is asked for
    *     that does not match the existing buffers, a mediating buffer should be produced. The native
    *     buffer class should always be understandable based on the storage type.
-   * @param spaceSpaceFillingCurve the fill curve to use to address the spatial arrangement of the geometry.
-   *     In some situations (e.g. single spatial buffer) it should be possible to use a different
-   *     fill curve (e.g. a S2HILBERT for a SXY when the buffer is orthonormal), which the
-   *     implementation should automatically remap. If that is not possible (e.g. there are multiple
-   *     buffers with a different FC) a {@link
+   * @param annotations may contain specifications for splits (<code>@split</code>); also <code>
+   *     fillcurve</code> can specify the fill curve to use to address the spatial arrangement of
+   *     the geometry. In some situations (e.g. single spatial buffer) it should be possible to use
+   *     a different fill curve (e.g. a S2HILBERT for a SXY when the buffer is orthonormal), which
+   *     the implementation should automatically remap. If that is not possible (e.g. there are
+   *     multiple buffers with a different FC) a {@link
    *     org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException} should be thrown.
    * @return the list of buffers covering the geometry and addressable through the passed curve.
    * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
    *     parameters cause non-resolvable geometry conflicts with the underlying implementation.
    */
   <T extends Storage.Buffer> List<T> buffers(
-      Geometry geometry, Class<T> bufferClass, Data.SpaceFillingCurve spaceSpaceFillingCurve);
+      Geometry geometry, Class<T> bufferClass, Collection<Annotation> annotations);
 
   /**
    * After the contextualization is finished, the storage will contain one or more buffers with the

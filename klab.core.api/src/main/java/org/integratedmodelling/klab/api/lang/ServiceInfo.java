@@ -154,6 +154,14 @@ public interface ServiceInfo extends Serializable {
      * @return
      */
     String getUnit();
+
+    /**
+     * When the argument specifies and imported or exported observation, the observable URN may be
+     * passed for matching and validation.
+     *
+     * @return
+     */
+    String getObservableUrn();
   }
 
   /**
@@ -169,6 +177,8 @@ public interface ServiceInfo extends Serializable {
    * @return the label
    */
   String getLabel();
+
+  List<Annotation> getAnnotations();
 
   /**
    * The types of knowledge this prototype applies to. Only used for annotations at the moment. If

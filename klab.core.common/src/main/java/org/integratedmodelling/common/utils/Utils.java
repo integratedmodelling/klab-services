@@ -22,6 +22,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.swing.*;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
@@ -50,6 +51,14 @@ import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.knowledge.*;
+import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
+import org.integratedmodelling.klab.api.lang.Statement;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -64,6 +73,145 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.springframework.web.util.UriUtils;
 
 public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
+
+  public static class Annotations {
+
+    public static boolean hasAnnotation(Object object, String s) {
+      for (Annotation annotation : getAnnotations(object, false)) {
+        if (annotation.getName().equals(s)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    public static boolean hasOrInheritsAnnotation(Object object, String s) {
+      for (Annotation annotation : getAnnotations(object, true)) {
+        if (annotation.getName().equals(s)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    public static Collection<Annotation> getAnnotations(Object object, boolean addInherited) {
+      return switch (object) {
+        case KlabAsset asset -> {
+          var ret = asset.getAnnotations();
+          if (addInherited) {
+            Object parent = switch (object) {
+              case Observable observable -> null;
+              // TODO inherit from concept definition; traits may redefine observable's
+              // if main observable, inherit from model
+              // if in namespace, inherit from namespace
+              default -> null;
+            };
+            if (parent != null) {
+              ret = addNotPresent(getAnnotations(parent, true), ret);
+            }
+          }
+          yield ret;
+        }
+        case ServiceInfo info -> info.getAnnotations();
+        default -> List.of();
+      };
+    }
+
+    private static Collection<Annotation> addNotPresent(Collection<Annotation> annotations, Collection<Annotation> current) {
+      if (annotations.isEmpty()) {
+        return current;
+      }
+      var ret = new ArrayList<>(current);
+      var existing = current.stream().map(Annotation::getName).collect(Collectors.toSet());
+      for (var annotation : annotations) {
+          if (!existing.contains(annotation.getName())) {
+            ret.add(annotation);
+          }
+      }
+      return ret;
+    }
+
+
+    /**
+     * Shorthand to check whether the default parameter (list or individual value) of an annotation
+     * contains the passed string.
+     *
+     * @param string
+     * @return
+     */
+    public static boolean defaultsContain(Annotation annotation, String string) {
+      if (annotation.get(ServiceCall.DEFAULT_PARAMETER_NAME) instanceof List) {
+        return ((List<?>) annotation.get(ServiceCall.DEFAULT_PARAMETER_NAME)).contains(string);
+      } else if (annotation.get(ServiceCall.DEFAULT_PARAMETER_NAME) != null) {
+        return annotation.get(ServiceCall.DEFAULT_PARAMETER_NAME).equals(string);
+      }
+      return false;
+    }
+
+    /**
+     * Simple methods that are messy to keep writing explicitly
+     ** @param id
+     * @return
+     */
+    public static Annotation getAnnotation(Object object, String id) {
+      for (Annotation annotation : getAnnotations(object, true)) {
+        if (id.equals(annotation.getName())) {
+          return annotation;
+        }
+      }
+      return null;
+    }
+
+    /**
+     * Find the passed annotation in the passed objects, using the order as priority
+     *
+     * @param annotationName
+     * @param objects
+     * @return
+     */
+    public static Annotation findAnnotation(String annotationName, Object... objects) {
+      return null;
+    }
+
+    /**
+     * Find the passed annotations in the passed objects, using the order as priority
+     *
+     * @param annotationNames
+     * @param objects
+     * @return
+     */
+    public static Collection<Annotation> findAnnotations(
+        Set<String> annotationNames, Object... objects) {
+      return collectAnnotations(objects).stream()
+          .filter(a -> annotationNames.contains(a.getName()))
+          .toList();
+    }
+
+    /**
+     * Collect the annotations from an k.IM object and its semantic lineage, ensuring that
+     * downstream annotations of the same name override those upstream. Any string parameter filters
+     * the annotations collected.
+     *
+     * @param objects
+     * @return all annotations from upstream
+     */
+    public static Collection<Annotation> collectAnnotations(Object... objects) {
+
+      Map<String, Annotation> ret = new LinkedHashMap<>();
+      for (Object object : objects) {
+          processAnnotations(object, ret);
+      }
+      return ret.values();
+    }
+
+    private static void processAnnotations(Object object, Map<String, Annotation> collection) {
+      for(var annotation : getAnnotations(object, true)) {
+        if (!collection.containsKey(annotation.getName())) {
+          collection.put(annotation.getName(), annotation);
+        }
+      }
+    }
+  }
 
   public static class Graphs {
 

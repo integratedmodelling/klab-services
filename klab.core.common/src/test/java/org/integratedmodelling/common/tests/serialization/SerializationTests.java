@@ -1,7 +1,7 @@
 package org.integratedmodelling.common.tests.serialization;
 
 
-import org.integratedmodelling.common.lang.AnnotationImpl;
+import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;

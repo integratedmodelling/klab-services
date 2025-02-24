@@ -872,13 +872,30 @@ public class ComponentRegistry {
       var arg = createArgument(argument);
       ret.getArguments().put(arg.getName(), arg);
     }
-    for (KlabFunction.Argument argument : annotation.exports()) {
+    for (KlabFunction.Export argument : annotation.exports()) {
       var arg = createArgument(argument);
       ret.getImports().add(arg);
     }
-    for (KlabFunction.Argument argument : annotation.imports()) {
+    for (KlabFunction.Import argument : annotation.imports()) {
       var arg = createArgument(argument);
       ret.getExports().add(arg);
+    }
+
+    if (annotation.fillingCurve() != null) {
+      ret.getAnnotations()
+          .add(
+              org.integratedmodelling.klab.api.lang.Annotation.of(
+                  "fillcurve",
+                  org.integratedmodelling.klab.api.lang.Annotation.VALUE_PARAMETER_KEY,
+                  annotation.fillingCurve()));
+    }
+    if (annotation.split() > 0) {
+      ret.getAnnotations()
+          .add(
+              org.integratedmodelling.klab.api.lang.Annotation.of(
+                  "split",
+                  org.integratedmodelling.klab.api.lang.Annotation.VALUE_PARAMETER_KEY,
+                  annotation.split()));
     }
 
     return ret;
@@ -966,6 +983,32 @@ public class ComponentRegistry {
     return arg;
   }
 
+  private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Import argument) {
+    var arg = new ServiceInfoImpl.ArgumentImpl();
+    arg.setName(argument.name());
+    arg.setDescription(argument.description());
+    arg.setOptional(argument.optional());
+    arg.setObservableUrn(argument.observable());
+    for (Artifact.Type a : argument.type()) {
+      arg.getType().add(a);
+    }
+
+    return arg;
+  }
+
+  private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Export argument) {
+    var arg = new ServiceInfoImpl.ArgumentImpl();
+    arg.setName(argument.name());
+    arg.setDescription(argument.description());
+    arg.setOptional(argument.optional());
+    arg.setObservableUrn(argument.observable());
+    for (Artifact.Type a : argument.type()) {
+      arg.getType().add(a);
+    }
+
+    return arg;
+  }
+
   public void loadExtensions(String... packageName) {
 
     var libraries = new ArrayList<Extensions.LibraryDescriptor>();
@@ -1011,16 +1054,16 @@ public class ComponentRegistry {
    */
   public void initializeComponents(ResourcesConfiguration configuration, File pluginPath) {
 
-    /*
-    TODO check all existing resources against the configuration; retrieve whatever needs updating;
-     remove anything not configured or deprecated; check integrity and certification for all components
-      before loading them.
-     */
-    if (Utils.Maven.needsUpdate(
-        "org.integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT")) {
-      // shitdown
-
-    }
+//    /*
+//    TODO check all existing resources against the configuration; retrieve whatever needs updating;
+//     remove anything not configured or deprecated; check integrity and certification for all components
+//      before loading them.
+//     */
+//    if (Utils.Maven.needsUpdate(
+//        "org.integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT")) {
+//      // shitdown
+//
+//    }
 
     initializeComponents(pluginPath);
   }
@@ -1220,6 +1263,7 @@ public class ComponentRegistry {
                 null,
                 null,
                 null,
+                List.of(),
                 scope);
 
         if (ret instanceof Throwable) {
@@ -1416,6 +1460,7 @@ public class ComponentRegistry {
       Expression expression,
       LookupTable lookupTable,
       Data inputData,
+      Collection<org.integratedmodelling.klab.api.lang.Annotation> annotations,
       Scope scope) {
 
     var arguments =
@@ -1433,6 +1478,7 @@ public class ComponentRegistry {
             expression,
             lookupTable,
             inputData,
+            annotations,
             scope);
     if (arguments == null) {
       return new KlabCompilationError(
@@ -1478,6 +1524,7 @@ public class ComponentRegistry {
       Expression expression,
       LookupTable lookupTable,
       Data inputData,
+      Collection<org.integratedmodelling.klab.api.lang.Annotation> annotations,
       Scope scope) {
     List<Object> runArguments = new ArrayList<>();
     DigitalTwin digitalTwin = null;
@@ -1512,12 +1559,13 @@ public class ComponentRegistry {
                       .promoteStorage(
                           observation, storage, AbstractBuffer.getStorageClass(argument));
           if (storage != null) {
-////            var buffers = storage.buffers(geometry, DoubleStorage.class, observation.getMetadata().get());
-//            if (buffers.size() != 1) {
-//              throw new KlabInternalErrorException(
-//                  "Wrong buffer numerosity for single-buffer parameter: review configuration");
-//            }
-//            runArguments.add(buffers.getFirst());
+            var buffers =
+                storage.buffers(geometry, argument.asSubclass(Storage.Buffer.class), annotations);
+            if (buffers.size() != 1) {
+              throw new KlabInternalErrorException(
+                  "Wrong buffer numerosity for single-buffer parameter: review configuration");
+            }
+            runArguments.add(buffers.getFirst());
           } else {
             runArguments.add(null);
           }

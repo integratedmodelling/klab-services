@@ -344,8 +344,6 @@ public class EngineImpl implements Engine, PropertyHolder {
     available.set(ok);
   }
 
-  public void updateStatus(Message message) {}
-
   /**
    * TODO remove the polling from the clients, put it here explicitly, check status and update
    * capablities if not available previously

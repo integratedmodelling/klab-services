@@ -1,7 +1,5 @@
 package org.integratedmodelling.common.lang;
 
-import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.documentation.Documentation;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -16,7 +14,6 @@ import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.Serial;
 import java.util.*;
-import java.util.logging.Level;
 
 public class ServiceInfoImpl implements ServiceInfo {
 
@@ -42,6 +39,7 @@ public class ServiceInfoImpl implements ServiceInfo {
         private String label = null;
         private String unit = null;
         private boolean isConst;
+        private String observableUrn;
 
         public ArgumentImpl() {
         }
@@ -188,6 +186,14 @@ public class ServiceInfoImpl implements ServiceInfo {
             this.unit = unit;
         }
 
+        public void setObservableUrn(String observable) {
+            this.observableUrn = observable;
+        }
+
+        @Override
+        public String getObservableUrn() {
+            return observableUrn;
+        }
     }
 
     private String name;
@@ -655,6 +661,7 @@ public class ServiceInfoImpl implements ServiceInfo {
         this.mediaTypes = mediaTypes;
     }
 
+    @Override
     public List<Annotation> getAnnotations() {
         return annotations;
     }

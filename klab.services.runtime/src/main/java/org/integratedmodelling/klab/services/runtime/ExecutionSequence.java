@@ -174,10 +174,8 @@ public class ExecutionSequence {
      * @param actuator
      */
     private void instrumentObservation(Observation observation, Actuator actuator) {
-//      Utils.Annotations.getAnnotation()
-      if (observation.getObservable().is(SemanticType.QUALITY)) {
-
-      }
+      //      Utils.Annotations.getAnnotation()
+      if (observation.getObservable().is(SemanticType.QUALITY)) {}
     }
 
     private boolean compile(Actuator actuator) {
@@ -312,6 +310,13 @@ public class ExecutionSequence {
          */
         if (componentRegistry.implementation(currentDescriptor).method != null) {
 
+          var fillCurveAnnotations =
+              Utils.Annotations.findAnnotations(
+                  Set.of("fillcurve", "split"),
+                  currentDescriptor.serviceInfo,
+                  actuator,
+                  observation.getObservable());
+
           var runArguments =
               ComponentRegistry.matchArguments(
                   componentRegistry.implementation(currentDescriptor).method,
@@ -326,7 +331,8 @@ public class ExecutionSequence {
                   storage,
                   expression,
                   lookupTable,
-                  null, // TODO this won't work
+                  null,
+                  fillCurveAnnotations,
                   scope);
 
           if (runArguments == null) {

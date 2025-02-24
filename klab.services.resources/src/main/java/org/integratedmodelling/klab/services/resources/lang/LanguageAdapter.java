@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.services.resources.lang;
 
 import java.util.*;
 
-import org.integratedmodelling.common.lang.AnnotationImpl;
+import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.klab.api.services.runtime.impl.ExpressionCodeImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;

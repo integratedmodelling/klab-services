@@ -11,38 +11,40 @@ import java.util.Set;
 
 public class EngineStatusImpl extends ServiceStatusImpl implements Engine.Status {
 
-    private Map<KlabService.Type, KlabService.ServiceStatus> servicesStatus = new HashMap<>();
-    private Map<KlabService.Type, KlabService.ServiceCapabilities> servicesCapabilities = new HashMap<>();
-    private Set<String> connectedUsernames = new HashSet<>();
+  private Map<KlabService.Type, KlabService.ServiceStatus> servicesStatus = new HashMap<>();
+  private Map<KlabService.Type, KlabService.ServiceCapabilities> servicesCapabilities =
+      new HashMap<>();
+  private Set<String> connectedUsernames = new HashSet<>();
 
-    public static Engine.Status inop() {
-        return new EngineStatusImpl();
-    }
+  public static Engine.Status inop() {
+    return new EngineStatusImpl();
+  }
 
-    @Override
-    public Map<KlabService.Type, KlabService.ServiceStatus> getServicesStatus() {
-        return servicesStatus;
-    }
+  @Override
+  public Map<KlabService.Type, KlabService.ServiceStatus> getServicesStatus() {
+    return servicesStatus;
+  }
 
-    public void setServicesStatus(Map<KlabService.Type, KlabService.ServiceStatus> servicesStatus) {
-        this.servicesStatus = servicesStatus;
-    }
+  public void setServicesStatus(Map<KlabService.Type, KlabService.ServiceStatus> servicesStatus) {
+    this.servicesStatus = servicesStatus;
+  }
 
-    @Override
-    public Map<KlabService.Type, KlabService.ServiceCapabilities> getServicesCapabilities() {
-        return servicesCapabilities;
-    }
+  @Override
+  public Map<KlabService.Type, KlabService.ServiceCapabilities> getServicesCapabilities() {
+    return servicesCapabilities;
+  }
 
-    public void setServicesCapabilities(Map<KlabService.Type, KlabService.ServiceCapabilities> servicesCapabilities) {
-        this.servicesCapabilities = servicesCapabilities;
-    }
+  public void setServicesCapabilities(
+      Map<KlabService.Type, KlabService.ServiceCapabilities> servicesCapabilities) {
+    this.servicesCapabilities = servicesCapabilities;
+  }
 
-    @Override
-    public Set<String> getConnectedUsernames() {
-        return connectedUsernames;
-    }
+  @Override
+  public Set<String> getConnectedUsernames() {
+    return connectedUsernames;
+  }
 
-    public void setConnectedUsernames(Set<String> connectedUsernames) {
-        this.connectedUsernames = connectedUsernames;
-    }
+  public void setConnectedUsernames(Set<String> connectedUsernames) {
+    this.connectedUsernames = connectedUsernames;
+  }
 }

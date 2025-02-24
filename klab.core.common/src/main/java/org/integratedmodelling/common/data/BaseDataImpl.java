@@ -2,17 +2,19 @@ package org.integratedmodelling.common.data;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.common.data.Instance;
 
@@ -29,11 +31,13 @@ public class BaseDataImpl implements Data {
   private boolean empty = false;
   private Map<Integer, String> dataKey;
   private Metadata metadata = Metadata.create();
-  private SpaceFillingCurve spaceFillingCurve;
+  private Collection<Annotation> annotations = new ArrayList<>();
 
   public BaseDataImpl(Instance instance) {
     this.instance = instance;
-    this.spaceFillingCurve = SpaceFillingCurve.valueOf(instance.getFillingCurve().toString());
+    this.annotations =
+        Utils.Annotations.findAnnotations(
+            Set.of("fillcurve", "split"), instance, instance.getObservable());
     this.semantics = instance.getObservable().toString();
     this.geometry =
         GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class);
@@ -45,7 +49,7 @@ public class BaseDataImpl implements Data {
     this.geometry = geometry;
     this.name = name;
     this.instance = instance;
-    this.spaceFillingCurve = SpaceFillingCurve.D1_LINEAR;
+    Utils.Annotations.findAnnotations(Set.of("fillcurve", "split"), observable, instance);
   }
 
   @Override
@@ -73,6 +77,14 @@ public class BaseDataImpl implements Data {
     return empty;
   }
 
+  public Collection<Annotation> annotations() {
+    return annotations;
+  }
+
+  public void setAnnotations(Collection<Annotation> annotations) {
+    this.annotations = annotations;
+  }
+
   @Override
   public List<Notification> notifications() {
     return List.of();
@@ -84,11 +96,6 @@ public class BaseDataImpl implements Data {
       return List.of();
     }
     return instance.getInstances().stream().map(BaseDataImpl::create).toList();
-  }
-
-  @Override
-  public SpaceFillingCurve fillCurve() {
-    return spaceFillingCurve;
   }
 
   @Override
@@ -149,10 +156,10 @@ public class BaseDataImpl implements Data {
   public static Data create(Instance instance) {
 
     if (instance.getDoubleData() != null) {
-        return new DoubleDataImpl(instance);
+      return new DoubleDataImpl(instance);
     } else if (instance.getFloatData() != null) {
       throw new KlabUnimplementedException("GAAAH");
-//      return new FloatDataImpl(instance);
+      //      return new FloatDataImpl(instance);
     } else if (instance.getIntData() != null) {
       if (instance.getDataKey() != null) {
         throw new KlabUnimplementedException("GEEEEH");

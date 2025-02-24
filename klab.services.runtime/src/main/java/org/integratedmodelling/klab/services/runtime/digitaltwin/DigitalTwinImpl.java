@@ -29,6 +29,7 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 
 public class DigitalTwinImpl implements DigitalTwin {
@@ -114,7 +115,12 @@ public class DigitalTwinImpl implements DigitalTwin {
                 .getStateStorage()
                 .promoteStorage(target, storage, DoubleStorage.class);
 
-        var buffers = doubleStorage.buffers(data.geometry(), DoubleBuffer.class, data.fillCurve());
+        var buffers =
+            doubleStorage.buffers(
+                data.geometry(),
+                DoubleBuffer.class,
+                org.integratedmodelling.common.utils.Utils.Annotations.findAnnotations(
+                    Set.of("fillcurve", "split"), data, target, scope));
 
         /* all buffers run in parallel */
         return Utils.Java.distributeComputation(

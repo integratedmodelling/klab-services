@@ -39,11 +39,12 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 public @interface KlabFunction {
 
   /**
-   * Arguments are used in the declaration to describe inputs, outputs and parameters.
+   * Arguments are used in the declaration to describe function parameters to be passed to
+   * prototypes.
    *
    * @author Ferd
    */
-  public @interface Argument {
+  @interface Argument {
 
     String name();
 
@@ -81,6 +82,72 @@ public @interface KlabFunction {
      * @return
      */
     boolean artifact() default false;
+  }
+
+  /**
+   * Tag an {@link org.integratedmodelling.klab.api.knowledge.observation.Observation}, {@link
+   * org.integratedmodelling.klab.api.data.Storage} or a subclass of {@link
+   * org.integratedmodelling.klab.api.data.Storage.Buffer} to define a dependency by name and type.
+   * The name will become a requirement from the dependencies in the model and the type will be
+   * validated. This can also be declared in the main prototype.
+   */
+  @Target({ElementType.PARAMETER})
+  @interface Import {
+
+    String name();
+
+    Artifact.Type[] type();
+
+    String observable() default "";
+
+    /**
+     * Where appropriate. Either a unit or a currency.
+     *
+     * @return
+     */
+    String unit() default "";
+
+    /**
+     * Mandatory description for the documentation.
+     *
+     * @return
+     */
+    String description();
+
+    boolean optional() default false;
+  }
+
+  /**
+   * Tag an {@link org.integratedmodelling.klab.api.knowledge.observation.Observation}, {@link
+   * org.integratedmodelling.klab.api.data.Storage} or a subclass of {@link
+   * org.integratedmodelling.klab.api.data.Storage.Buffer} to define an additional output by name
+   * and type. The name will become a requirement from the dependencies in the model and the type
+   * will be validated. This can also be declared in the main prototype.
+   */
+  @Target({ElementType.PARAMETER})
+  @interface Export {
+
+    String name();
+
+    Artifact.Type[] type();
+
+    String observable();
+
+    /**
+     * Where appropriate. Either a unit or a currency.
+     *
+     * @return
+     */
+    String unit() default "";
+
+    /**
+     * Mandatory description for the documentation.
+     *
+     * @return
+     */
+    String description();
+
+    boolean optional() default false;
   }
 
   /**
@@ -136,9 +203,9 @@ public @interface KlabFunction {
 
   String dataflowLabel() default "";
 
-  Argument[] imports() default {};
+  Import[] imports() default {};
 
-  Argument[] exports() default {};
+  Export[] exports() default {};
 
   Argument[] parameters() default {};
 

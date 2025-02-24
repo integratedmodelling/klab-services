@@ -17,7 +17,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
-import org.integratedmodelling.common.lang.AnnotationImpl;
+import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.common.lang.kim.KimConceptImpl;
 import org.integratedmodelling.common.lang.kim.KimObservableImpl;
