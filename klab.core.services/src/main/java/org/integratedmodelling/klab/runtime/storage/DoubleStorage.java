@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.storage;
 
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -24,8 +25,17 @@ public class DoubleStorage extends AbstractStorage<DoubleBuffer> {
 
   @Override
   public <T extends Buffer> List<T> buffers(
-          Geometry geometry, Class<T> bufferClass, Collection<Annotation> annotations) {
-    // TODO honor the split instructions in the observation or use defaults
+      Geometry geometry, Class<T> bufferClass, Collection<Annotation> annotations) {
+
+    var split = annotations.stream().filter(a -> "split".equals(a.getName())).findFirst();
+    var fillcurve = annotations.stream().filter(a -> "fillcurve".equals(a.getName())).findFirst();
+    var nVaryingDimensions = geometry.getDimensions().stream().filter(d -> d.size() > 1).count();
+
+    if (nVaryingDimensions > 1) {
+      throw new KlabIllegalStateException(
+          "Cannot create or retrieve buffers for more than one varying geometry extent at a time");
+    }
+
     return List.of();
   }
 

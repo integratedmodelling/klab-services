@@ -819,7 +819,7 @@ public class GeometryImpl implements Geometry {
     private Granularity granularity = Granularity.SINGLE;
     private GeometryImpl child;
     private boolean scalar;
-    private String key;
+    private transient String key;
     //    private double coverage = null;
 
     private boolean empty;
@@ -996,7 +996,7 @@ public class GeometryImpl implements Geometry {
         return this;
     }
 
-    public String getKey() {
+    public String key() {
         return key;
     }
 
@@ -1395,6 +1395,14 @@ public class GeometryImpl implements Geometry {
         //
         //            return new OffsetImpl(this, pos);
     }
+//
+//    @Override
+//    public String hash() {
+//        if (this.hash == null) {
+//            this.hash = Utils.Strings.hash(encode());
+//        }
+//        return this.hash;
+//    }
 
     @Override
     public long[] getExtentOffsets() {
