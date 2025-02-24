@@ -1016,11 +1016,11 @@ public class ComponentRegistry {
      remove anything not configured or deprecated; check integrity and certification for all components
       before loading them.
      */
-    if (Utils.Maven.needsUpdate(
-        "org.integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT")) {
-      // shitdown
+//    if (Utils.Maven.needsUpdate(
+//        "org.integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT")) {
+//      // shitdown
 
-    }
+//    }
 
     initializeComponents(pluginPath);
   }
