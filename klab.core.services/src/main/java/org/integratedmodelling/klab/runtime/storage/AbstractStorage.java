@@ -2,14 +2,20 @@ package org.integratedmodelling.klab.runtime.storage;
 
 import java.util.*;
 
+import jnr.ffi.annotations.In;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -27,6 +33,7 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
   protected Persistence persistence;
   //  private List<AbstractBuffer> buffers = new ArrayList<>();
   protected Data.SpaceFillingCurve spaceFillingCurve;
+  protected int splits;
 
   /*
    * Buffer storage along slowest-varying dimensions. All dimensions except the
@@ -49,8 +56,57 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
     this.observation = observation;
     this.geometry = observation.getGeometry();
     this.contextScope = contextScope;
+    // defaults
+    this.splits = 1;
   }
 
+  protected void setOptions(Collection<Annotation> annotations) {
+
+    var split = annotations.stream().filter(a -> "split".equals(a.getName())).findFirst();
+    var fillcurve = annotations.stream().filter(a -> "fillcurve".equals(a.getName())).findFirst();
+
+    // TODO cannot be null
+    if (split.isPresent()) {
+      this.splits = split.get().get("value", Integer.class);
+    }
+    if (fillcurve.isPresent()) {
+      this.spaceFillingCurve =
+          Data.SpaceFillingCurve.valueOf(fillcurve.get().get("value").toString());
+    } else {
+      var space =
+          geometry.getDimensions().stream()
+              .filter(d -> d.getType() == Geometry.Dimension.Type.SPACE)
+              .findFirst();
+      if (space.isEmpty() || space.get().size() <= 1) {
+        this.spaceFillingCurve = Data.SpaceFillingCurve.D1_LINEAR;
+      } else if (space.get().size() == 2) {
+        this.spaceFillingCurve = Data.SpaceFillingCurve.D2_XY;
+      } else if (space.get().size() == 3) {
+        this.spaceFillingCurve = Data.SpaceFillingCurve.D3_XYZ;
+      }
+    }
+  }
+
+  @Override
+  public <T extends Buffer> List<T> buffers(
+      Geometry geometry, Class<T> bufferClass, Collection<Annotation> annotations) {
+
+    if (this.spaceFillingCurve == null) {
+      setOptions(annotations);
+    }
+    var nVaryingDimensions = geometry.getDimensions().stream().filter(d -> d.size() > 1).count();
+
+    if (nVaryingDimensions > 1) {
+      throw new KlabIllegalStateException(
+          "Cannot create or retrieve buffers for more than one varying geometry extent at a time");
+    }
+
+    return (List<T>) buffersCovering(geometry, this.spaceFillingCurve, this.splits);
+  }
+
+  /*
+  The storage doesn't have a fill curve until the first buffer request.
+   */
   @Override
   public Data.SpaceFillingCurve spaceFillCurve() {
     return spaceFillingCurve;
@@ -77,40 +133,72 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
     return new SPDTHistogram<>(20);
   }
 
-  protected void registerBuffer(AbstractBuffer buffer) {
-    // TODO index geometries, validate
-    System.out.println("HOSTIA UN BUFFER");
-//    buffers.add(buffer);
-  }
+  //
+  //  protected void registerBuffer(AbstractBuffer buffer) {
+  //    // TODO index geometries, validate
+  //    System.out.println("HOSTIA UN BÜFFER");
+  //    //    buffers.add(buffer);
+  //  }
 
   @Override
   public Persistence persistence() {
     return persistence;
   }
 
-  protected Collection<AbstractBuffer> buffersCovering(Geometry geometry) {
-//    var scale = GeometryRepository.INSTANCE.get(geometry.key(), Scale.class);
+  protected List<? extends Buffer> buffersCovering(
+      Geometry geometry, Data.SpaceFillingCurve fillingCurve, int splits) {
 
-    /**
-     * Based on observation scale and passed geometry, determine how many indices of this.buffers we cover
-     */
+    if (this.spaceFillingCurve == null) {
+      this.spaceFillingCurve = fillingCurve;
+      this.splits = splits;
+    }
+
+    var scale = GeometryRepository.INSTANCE.get(geometry.toString(), Scale.class);
+    var time = scale.getTime();
+    if (time.size() != 1) {
+      throw new KlabUnimplementedException(
+          "Multiple time steps for a buffer request during contextualization");
+    }
+
+    long timeStart = time.is(Time.Type.INITIALIZATION) ? 0 : time.getStart().getMilliseconds();
+    List<AbstractBuffer> bufs = buffers.computeIfAbsent(timeStart, k -> new ArrayList<>());
 
     /*
-    For each index, lookup or build the correspondent collections
+     * Based on observation scale and passed geometry, determine how many indices of this.buffers we
+     * cover
      */
+    if (!bufs.isEmpty()) {
+      /*
+      TODO adapt the curve; ignore the splits
+       */
+      return bufs.stream().map(b -> adaptBuffer(b, fillingCurve)).toList();
+    }
 
-    /*
-    If the collection exists, it must cover each possible state of the observation geometry. If it doesn't,
-    build enough buffers to cover it honoring any splits and fill curve required. Otherwise determine which
-    buffers are covered and possibly adapt them to the fill curve required.
-     */
+    /* Build enough buffers to cover it honoring any splits and fill curve required. */
+    var ret = createBuffers(geometry, geometry.size(), fillingCurve, splits);
 
-    /*
-    We should never be in a situation when the splits requested are not in phase with existing buffers. In
-    that case we are free to throw an internal error exception so that the implementation can prevent this.
-     */
+    bufs.addAll(ret);
 
-    return List.of();
+    return ret;
+  }
+
+  /**
+   * The function in charge of creating the specific buffers wanted.
+   *
+   * @param size
+   * @param fillingCurve
+   * @param splits
+   * @return
+   */
+  protected abstract List<AbstractBuffer> createBuffers(
+      Geometry geometry, long size, Data.SpaceFillingCurve fillingCurve, int splits);
+
+  private AbstractBuffer adaptBuffer(AbstractBuffer b, Data.SpaceFillingCurve fillingCurve) {
+    // TODO !
+    if (b.getFillingCurve() != fillingCurve) {
+      // TODO
+    }
+    return b;
   }
 
   @Override

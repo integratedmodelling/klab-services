@@ -118,7 +118,7 @@ public class NDCursor {
 
     }
 
-    long multiplicity;
+    protected long multiplicity;
     int dimensions;
     long[] extents;
     long[] strides;

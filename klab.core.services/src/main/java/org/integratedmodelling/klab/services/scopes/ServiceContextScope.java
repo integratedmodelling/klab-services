@@ -218,8 +218,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                 observation,
                 (RuntimeAsset) buffer,
                 DigitalTwin.Relationship.HAS_DATA,
-                "offsets",
-                buffer.offsets());
+                "offset",
+                buffer.offset());
           }
         }
       }

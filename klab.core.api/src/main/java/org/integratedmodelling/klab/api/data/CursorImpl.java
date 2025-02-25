@@ -59,6 +59,6 @@ public class CursorImpl extends NDCursor implements Data.Cursor {
 
   @Override
   public boolean hasNext() {
-    return next < getMultiplicity();
+    return next < multiplicity;
   }
 }

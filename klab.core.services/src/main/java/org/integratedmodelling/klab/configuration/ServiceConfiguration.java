@@ -290,8 +290,41 @@ public enum ServiceConfiguration {
           @Override
           public Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction> getSpatialOffsetMapping(Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve) {
             return switch (spaceFillingCurve) {
-                case D1_LINEAR -> null;
-                case D2_XY -> null;
+                case D1_LINEAR -> new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
+
+                    final long[] l = new long[1];
+
+                    @Override
+                    public Data.LongToLongArrayFunction getFirst() {
+                        return n -> { l[0] = n; return l; };
+                    }
+
+                    @Override
+                    public Data.LongArrayToLongFunction getSecond() {
+                        return n -> n[0];
+                    }
+                };
+                case D2_XY -> {
+
+                    final var shape = geometry.dimension(Geometry.Dimension.Type.SPACE).getShape();
+                    final var x = shape.get(0);
+                    final var y = shape.get(1);
+
+                    yield  new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
+
+                        final long[] l = new long[2];
+
+                        @Override
+                        public Data.LongToLongArrayFunction getFirst() {
+                            return n -> { l[0] = n/x; l[1] = n % x; return l; };
+                        }
+
+                        @Override
+                        public Data.LongArrayToLongFunction getSecond() {
+                            return n -> n[1] * x + n[0];
+                        }
+                    };
+                }
 //                case D2_YX -> null;
 //                case D2_XInvY -> null;
 //                case D3_XYZ -> null;

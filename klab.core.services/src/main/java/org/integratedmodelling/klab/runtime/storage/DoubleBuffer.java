@@ -10,7 +10,7 @@ public class DoubleBuffer extends AbstractBuffer {
   private final BufferArray data;
 
   protected DoubleBuffer(Geometry geometry,
-                         DoubleStorage doubleStorage, long size, Data.SpaceFillingCurve spaceFillingCurve, long[] offsets) {
+                         DoubleStorage doubleStorage, long size, Data.SpaceFillingCurve spaceFillingCurve, long offsets) {
     super(geometry, doubleStorage, size, spaceFillingCurve, offsets);
 //    this.doubleStorage = doubleStorage;
     this.data = doubleStorage.stateStorage.getDoubleBuffer(doubleStorage.geometry.size());

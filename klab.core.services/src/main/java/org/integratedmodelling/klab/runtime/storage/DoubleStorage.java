@@ -23,20 +23,10 @@ public class DoubleStorage extends AbstractStorage<DoubleBuffer> {
     super(Type.DOUBLE, observation, scope, contextScope);
   }
 
+
   @Override
-  public <T extends Buffer> List<T> buffers(
-      Geometry geometry, Class<T> bufferClass, Collection<Annotation> annotations) {
-
-    var split = annotations.stream().filter(a -> "split".equals(a.getName())).findFirst();
-    var fillcurve = annotations.stream().filter(a -> "fillcurve".equals(a.getName())).findFirst();
-    var nVaryingDimensions = geometry.getDimensions().stream().filter(d -> d.size() > 1).count();
-
-    if (nVaryingDimensions > 1) {
-      throw new KlabIllegalStateException(
-          "Cannot create or retrieve buffers for more than one varying geometry extent at a time");
-    }
-
-    return List.of();
+  protected List<AbstractBuffer> createBuffers(Geometry geometry, long size, Data.SpaceFillingCurve fillingCurve, int splits) {
+    return List.of(new DoubleBuffer(geometry,this, size, fillingCurve, 0));
   }
 
   //  @Override

@@ -61,7 +61,7 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
      *
      * @return
      */
-    long[] offsets();
+    long offset();
   }
 
   default RuntimeAsset.Type classify() {
@@ -76,6 +76,8 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
    * </code> annotation is present on the model. The fill curve is irrelevant if there is only one
    * spatial state or no spatial extent at all. In such cases it's best to avoid initializing a moot
    * Hilbert curve which has more overhead than the others.
+   *
+   * <p>The storage may not have a fill curve until the first buffers are created.
    *
    * @return the spatial fill curve for the spatial extent.
    */

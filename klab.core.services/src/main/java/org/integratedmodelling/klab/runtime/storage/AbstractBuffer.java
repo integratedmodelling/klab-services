@@ -17,7 +17,7 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
   private final Persistence persistence;
   private final Storage.Type dataType;
   private final long size;
-  private final long[] offsets;
+  private final long offset;
   private final long id;
   private final AbstractStorage<?> storage;
   private long internalId;
@@ -36,14 +36,14 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
       AbstractStorage<?> stateStorage,
       long size,
       Data.SpaceFillingCurve spaceFillingCurve,
-      long[] offsets) {
+      long offsets) {
     super(geometry, spaceFillingCurve);
     this.storage = stateStorage;
     this.dataType = stateStorage.getType();
     this.id = stateStorage.stateStorage.nextBufferId();
     this.persistence = Persistence.SERVICE_SHUTDOWN;
     this.size = size;
-    this.offsets = offsets;
+    this.offset = offsets;
     this.spaceFillingCurve = spaceFillingCurve;
     if (stateStorage.stateStorage.isRecordHistogram()) {
       this.histogram = new SPDTHistogram<>(stateStorage.stateStorage.getHistogramBinSize());
@@ -71,8 +71,8 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
   }
 
   @Override
-  public long[] offsets() {
-    return offsets;
+  public long offset() {
+    return offset;
   }
 
   public Storage.Type getDataType() {
@@ -134,8 +134,8 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
         + spaceFillingCurve
         + ", size="
         + size
-        + ", offsets="
-        + offsets
+        + ", offset="
+        + offset
         + ", id='"
         + id
         + '\''
