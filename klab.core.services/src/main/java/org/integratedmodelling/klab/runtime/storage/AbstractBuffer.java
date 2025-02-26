@@ -21,7 +21,7 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
   private final long id;
   private final AbstractStorage<?> storage;
   private long internalId;
-  private SPDTHistogram<?> histogram;
+  protected SPDTHistogram<?> histogram;
 
     /**
      *

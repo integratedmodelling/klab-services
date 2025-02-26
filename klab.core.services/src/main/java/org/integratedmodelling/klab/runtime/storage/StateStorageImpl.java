@@ -224,6 +224,7 @@ public class StateStorageImpl implements StateStorage {
     return null;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T extends Storage> T getOrCreateStorage(Observation observation, Class<T> storageClass) {
 

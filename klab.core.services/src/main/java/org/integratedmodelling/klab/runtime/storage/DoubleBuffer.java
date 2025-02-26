@@ -44,6 +44,9 @@ public class DoubleBuffer extends AbstractBuffer {
    * @param value
    */
   public void add(double value) {
+    if (histogram != null) {
+      histogram.insert(value);
+    }
     data.add(next++, value);
   }
 

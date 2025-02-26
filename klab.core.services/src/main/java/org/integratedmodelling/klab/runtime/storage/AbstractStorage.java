@@ -203,8 +203,9 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
 
   @Override
   public List<Storage.Buffer> buffers() {
-    // hope this gets optimized
-    return Utils.Collections.join(buffers.values()).stream().map(b -> (Buffer) b).toList();
+    var ret = new ArrayList<Storage.Buffer>();
+    buffers.values().forEach(ret::addAll);
+    return ret;
   }
 
   @Override
