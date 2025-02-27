@@ -17,15 +17,11 @@ public class KlabGroovyShell extends GroovyShell {
   private static final String BASE_ACTION_CLASS =
       "org.integratedmodelling.klab.extensions.groovy.ExpressionBase";
 
-  private GroovyClassLoader groovyClassLoader;
-
   @SuppressWarnings("unchecked")
-  public <T extends Script> T compile(String sourceCode, Object... constructorArguments) {
-    if (groovyClassLoader == null) {
-      groovyClassLoader = new GroovyClassLoader();
-    }
+  public <T extends GroovyObject> T compile(
+      String sourceCode, Class<T> resultClass, Object... constructorArguments) {
     try {
-      Class<?> groovy = groovyClassLoader.parseClass(sourceCode);
+      Class<?> groovy = getClassLoader().parseClass(sourceCode);
       return (T)
           groovy
               .getConstructor(
