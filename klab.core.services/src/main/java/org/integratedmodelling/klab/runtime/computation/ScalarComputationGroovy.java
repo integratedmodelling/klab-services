@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.runtime.computation;
 import gg.jte.CodeResolver;
 import gg.jte.ContentType;
 import gg.jte.TemplateEngine;
+import gg.jte.TemplateOutput;
+import gg.jte.output.StringOutput;
 import gg.jte.resolve.ResourceCodeResolver;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.Expression;
@@ -20,6 +22,7 @@ import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.language.LanguageService;
 
+import javax.tools.JavaCompiler;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -112,9 +115,28 @@ public class ScalarComputationGroovy implements ScalarComputation {
     public ScalarComputation build() {
 
       var codeInfo = new TemplateCodeInfo();
+      codeInfo.setTemplateName("ScalarBufferFiller.jte");
+      codeInfo.setClassName("ScalarComputation" + Utils.Names.shortUUID());
 
       for (var step : steps) {
-        System.out.println("popopo");
+        if (step.expressionDescriptor instanceof GroovyProcessor.GroovyDescriptor groovyDescriptor) {
+          for (var field : groovyDescriptor.getTemplateFields()) {
+            codeInfo.getFieldDeclarations().add(field);
+          }
+        }
+        if (step.expressionDescriptor != null) {
+          for (var identifier : step.expressionDescriptor.getIdentifiers().keySet()) {
+            var desc = step.expressionDescriptor.getIdentifiers().get(identifier);
+            if (desc.nonScalarReferenceCount() > 0) {
+              codeInfo.getConstructorArguments().add("Observation " + identifier);
+              codeInfo.getFieldDeclarations().add("Observation " + identifier + "Obs;"); // TODO wrap
+              codeInfo.getConstructorInitializationStatements().add("this." + identifier + "Obs = " + identifier);
+            }
+            if (desc.scalarReferenceCount() > 0) {
+              // buffers, vars
+            }
+          }
+        }
       }
 
       // 1. Get class template for the final class
@@ -126,7 +148,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
       // 5.1 Create loop based on fill curve and offset where scalar code goes in
       // 6. Finalization
 
-
+      TemplateOutput output = new StringOutput();
+      templateEngine.render(codeInfo.getTemplateName(), codeInfo, output);
 
       return null;
     }

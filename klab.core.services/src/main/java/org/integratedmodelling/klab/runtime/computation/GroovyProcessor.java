@@ -198,8 +198,10 @@ public class GroovyProcessor implements Language.LanguageProcessor {
 
       this.processedCode = preprocess(expression.getCode());
 
-      // TODO create template fields for anything that needs to be wrapped: observations and predefined stuff
-      // TODO define target for preprocessed code so that the final class can establish the run() return value
+      // TODO create template fields for anything that needs to be wrapped: observations and
+      // predefined stuff
+      // TODO define target for preprocessed code so that the final class can establish the run()
+      // return value
 
     }
 
@@ -216,6 +218,22 @@ public class GroovyProcessor implements Language.LanguageProcessor {
         this.translation = translation;
         this.observable = observable;
       }
+    }
+
+    public String getProcessedCode() {
+      return processedCode;
+    }
+
+    public Map<String, Observable> getKnownObservables() {
+      return knownObservables;
+    }
+
+    public List<String> getTemplateFields() {
+      return templateFields;
+    }
+
+    public boolean isForceScalar() {
+      return forceScalar;
     }
 
     public String preprocess(String code) {
