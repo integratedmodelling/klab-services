@@ -11,6 +11,7 @@ class Expression20349 extends ExpressionBase {
 
     Observation _elevationObs;
     Observation _slopeObs;
+    @Lazy Observation diocan = {scope.getObservation(null)}()
 
     /**
      * Knows that elevation, slope are qualities and exist. This is for a naïve parallelization honoring
@@ -31,7 +32,7 @@ class Expression20349 extends ExpressionBase {
         def storage = scope.digitalTwin.stateStorage;
         def elevationBuf = storage.getOrCreateStorage(_elevationObs, DoubleStorage.class).buffer(/* FILL CURVE */ Data.SpaceFillingCurve.D2_XY)
         def slopeBuf = storage.getOrCreateStorage(_slopeObs, DoubleStorage.class).buffer(/* FILL CURVE */ Data.SpaceFillingCurve.D2_XY)
-        def selfBuf = storage.getOrCreateStorage(_selfObs, DoubleStorage.class).buffer(/* FILL CURVE */ Data.SpaceFillingCurve.D2_XY)
+        def selfBuf = storage.getOrCreateStorage(self, DoubleStorage.class).buffer(/* FILL CURVE */ Data.SpaceFillingCurve.D2_XY)
 
         /* MAIN LOOP */
         while (selfBuf.hasNext()) {

@@ -6,6 +6,7 @@ import gg.jte.TemplateEngine;
 import gg.jte.TemplateOutput;
 import gg.jte.output.StringOutput;
 import gg.jte.resolve.ResourceCodeResolver;
+import groovy.lang.Script;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -21,6 +22,7 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.language.LanguageService;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import javax.tools.JavaCompiler;
 import java.util.ArrayList;
@@ -38,7 +40,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
    */
   static TemplateEngine templateEngine =
       TemplateEngine.create(new ResourceCodeResolver("code/templates"), ContentType.Plain);
-
+  static KlabGroovyShell groovyShell = new KlabGroovyShell();
 
   static class BuilderImpl implements Builder {
 
@@ -118,22 +120,41 @@ public class ScalarComputationGroovy implements ScalarComputation {
       codeInfo.setTemplateName("ScalarBufferFiller.jte");
       codeInfo.setClassName("ScalarComputation" + Utils.Names.shortUUID());
 
+      // constructor arguments
+      List<Object> args = new ArrayList<>();
+      args.add(scope);
+      args.add(target);
+
       for (var step : steps) {
-        if (step.expressionDescriptor instanceof GroovyProcessor.GroovyDescriptor groovyDescriptor) {
+        if (step.expressionDescriptor
+            instanceof GroovyProcessor.GroovyDescriptor groovyDescriptor) {
           for (var field : groovyDescriptor.getTemplateFields()) {
             codeInfo.getFieldDeclarations().add(field);
           }
-        }
-        if (step.expressionDescriptor != null) {
-          for (var identifier : step.expressionDescriptor.getIdentifiers().keySet()) {
-            var desc = step.expressionDescriptor.getIdentifiers().get(identifier);
-            if (desc.nonScalarReferenceCount() > 0) {
-              codeInfo.getConstructorArguments().add("Observation " + identifier);
-              codeInfo.getFieldDeclarations().add("Observation " + identifier + "Obs;"); // TODO wrap
-              codeInfo.getConstructorInitializationStatements().add("this." + identifier + "Obs = " + identifier);
-            }
-            if (desc.scalarReferenceCount() > 0) {
-              // buffers, vars
+          if (step.expressionDescriptor != null) {
+            for (var identifier : step.expressionDescriptor.getIdentifiers().keySet()) {
+              var desc = step.expressionDescriptor.getIdentifiers().get(identifier);
+              if (desc.nonScalarReferenceCount() > 0) {
+                codeInfo.getConstructorArguments().add("Observable " + identifier);
+                args.add(groovyDescriptor.getKnownObservables().get(identifier));
+                codeInfo
+                    .getFieldDeclarations()
+                    .add("Observable " + identifier + "Observable"); // TODO wrap
+                codeInfo
+                    .getFieldDeclarations()
+                    .add(
+                        "@Lazy Observation "
+                            + identifier
+                            + "Obs = {scope.getObservation("
+                            + identifier
+                            + "Observable)}()"); // TODO wrap
+                codeInfo
+                    .getConstructorInitializationStatements()
+                    .add("this." + identifier + "Observable = " + identifier);
+              }
+              if (desc.scalarReferenceCount() > 0) {
+                // local vars buffers, vars
+              }
             }
           }
         }
@@ -150,13 +171,32 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
       TemplateOutput output = new StringOutput();
       templateEngine.render(codeInfo.getTemplateName(), codeInfo, output);
-
-      return null;
+      var compiled = groovyShell.compile(output.toString(), Script.class, args.toArray());
+      return new ScalarComputationGroovy(compiled, scope, output.toString());
     }
+  }
+
+  private Script script;
+  private ContextScope scope;
+  private String sourceCode;
+
+  private ScalarComputationGroovy(Script groovyScript, ContextScope scope, String sourceCode) {
+    this.script = groovyScript;
+    this.scope = scope;
+    this.sourceCode = sourceCode;
   }
 
   @Override
   public boolean execute() {
+    try {
+      var ret = script.run();
+      if (ret instanceof Boolean) {
+        return (Boolean) ret;
+      }
+      return true;
+    } catch (Throwable t) {
+      scope.error(t, sourceCode);
+    }
     return false;
   }
 

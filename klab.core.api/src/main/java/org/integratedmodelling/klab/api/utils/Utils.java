@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.utils;
 
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classifier;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -17,7 +18,10 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -3652,6 +3656,34 @@ public class Utils {
       } catch (Throwable t) {
         return false;
       }
+    }
+
+    /**
+     * Given a set of objects, return a corresponding array of the API interface classes
+     * that represent them in k.LAB. Anything null or not recognized gets mapped to Object.class.
+     *
+     * @param arguments
+     * @return
+     */
+    public static Class<?>[] mapArgumentsToInterfaces(Object[] arguments) {
+      var ret = new Class<?>[arguments.length];
+      for (int i = 0; i < arguments.length; i++) {
+        ret[i] =
+            switch (arguments[i]) {
+              case Observable ignored -> Observable.class;
+              case Observation ignored -> Observation.class;
+              case ContextScope ignored -> ContextScope.class;
+              case String ignored -> String.class;
+              case SessionScope ignored -> SessionScope.class;
+              case UserScope ignored -> UserScope.class;
+              case Concept ignored -> Concept.class;
+              case Storage<?> ignored -> Storage.class;
+              // TODO specialized buffers first
+              case Storage.Buffer ignored -> Storage.Buffer.class;
+              default -> Object.class;
+            };
+      }
+      return ret;
     }
   }
 

@@ -11,6 +11,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 public class KlabGroovyShell extends GroovyShell {
 
@@ -21,14 +22,10 @@ public class KlabGroovyShell extends GroovyShell {
   public <T extends GroovyObject> T compile(
       String sourceCode, Class<T> resultClass, Object... constructorArguments) {
     try {
-      Class<?> groovy = getClassLoader().parseClass(sourceCode);
+      var groovy = getClassLoader().parseClass(sourceCode);
       return (T)
           groovy
-              .getConstructor(
-                  (Class<?>[])
-                      Arrays.stream(constructorArguments)
-                          .map(o -> o == null ? Object.class : o.getClass())
-                          .toArray())
+              .getConstructor(Utils.Java.mapArgumentsToInterfaces(constructorArguments))
               .newInstance(constructorArguments);
     } catch (Exception e) {
       throw new KlabInternalErrorException(e);

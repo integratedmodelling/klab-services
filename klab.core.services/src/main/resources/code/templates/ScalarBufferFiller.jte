@@ -2,12 +2,17 @@
 @import gg.jte.support.ForSupport
 @param TemplateCodeInfo codeInfo
 
+import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.runtime.computation.ExpressionBase
+import org.integratedmodelling.klab.api.scope.ContextScope
+
 class ${codeInfo.getClassName()} extends ExpressionBase {
+
 @for(var field : codeInfo.getFieldDeclarations())
   ${field}
 @endfor
-  ${codeInfo.getClassName()}(ServiceContextScope scope, Observation self @for(var param : ForSupport.of(codeInfo.getConstructorArguments())), ${param.get()}@endfor
-  ) {
+  ${codeInfo.getClassName()}(ContextScope scope, Observation self @for(var param : ForSupport.of(codeInfo.getConstructorArguments())), ${param.get()}@endfor) {
     super(scope, self)
     @for(var param : ForSupport.of(codeInfo.getConstructorInitializationStatements()))
     ${param.get()}
@@ -22,6 +27,7 @@ class ${codeInfo.getClassName()} extends ExpressionBase {
 @for(var codeBlock : codeInfo.getMainCodeBlocks()) {
     ${codeBlock}
 @endfor
+    println "DIO CARRUBA!"
   }
 }
 
