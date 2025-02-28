@@ -1,8 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
 import org.integratedmodelling.common.data.DoubleDataImpl;
-import org.integratedmodelling.common.data.IntDataImpl;
-import org.integratedmodelling.common.data.LongDataImpl;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -18,16 +16,13 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
 import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
-import org.integratedmodelling.klab.runtime.storage.DoubleBuffer;
+import org.integratedmodelling.klab.runtime.storage.DoubleBufferImpl;
 import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
-// import org.integratedmodelling.klab.runtime.storage.LongStorage;
-// import org.integratedmodelling.klab.runtime.storage.IntStorage;
 import org.integratedmodelling.klab.runtime.storage.StateStorageImpl;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.SchedulerImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -118,7 +113,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         var buffers =
             doubleStorage.buffers(
                 data.geometry(),
-                DoubleBuffer.class,
+                Storage.DoubleBuffer.class,
                 org.integratedmodelling.common.utils.Utils.Annotations.findAnnotations(
                     Set.of("fillcurve", "split"), data, target, scope));
 

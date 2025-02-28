@@ -64,6 +64,88 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
     long offset();
   }
 
+  interface DoubleBuffer extends Buffer {
+
+    /**
+     * Return the value at the current offset in the iterator and advance the iteration.
+     *
+     * @return
+     */
+    double get();
+
+    /**
+     * Return the value at the current offset in the iterator without advancing the iteration.
+     *
+     * @return
+     */
+    double peek();
+
+    /**
+     * Set the value at the current iterable offset and advance the iteration. Do not use after get()!
+     *
+     * @param value
+     */
+    void add(double value);
+
+    /**
+     * Random access value. The offset is according to the overall fill curve and buffer-specific
+     * offsets.
+     *
+     * @param offset
+     */
+    double get(long offset);
+
+    /**
+     * Random value set. May be inefficient. Offset as in {@link #get(long)}.
+     *
+     * @param value
+     * @param offset
+     */
+    void set(double value, long offset);
+
+  }
+
+  interface LongBuffer extends Buffer {
+
+    /**
+     * Return the value at the current offset in the iterator and advance the iteration.
+     *
+     * @return
+     */
+    long get();
+
+    /**
+     * Return the value at the current offset in the iterator without advancing the iteration.
+     *
+     * @return
+     */
+    long peek();
+
+    /**
+     * Set the value at the current iterable offset and advance the iteration. Do not use after get()!
+     *
+     * @param value
+     */
+    void add(long value);
+
+    /**
+     * Random access value. The offset is according to the overall fill curve and buffer-specific
+     * offsets.
+     *
+     * @param offset
+     */
+    long get(long offset);
+
+    /**
+     * Random value set. May be inefficient. Offset as in {@link #get(long)}.
+     *
+     * @param value
+     * @param offset
+     */
+    void set(long value, long offset);
+
+  }
+
   default RuntimeAsset.Type classify() {
     return RuntimeAsset.Type.ARTIFACT;
   }

@@ -1,13 +1,10 @@
 package org.integratedmodelling.klab.runtime.storage;
 
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -16,7 +13,7 @@ import java.util.List;
  *
  * @author Ferd
  */
-public class DoubleStorage extends AbstractStorage<DoubleBuffer> {
+public class DoubleStorage extends AbstractStorage<DoubleBufferImpl> {
 
   public DoubleStorage(
       Observation observation, StateStorageImpl scope, ServiceContextScope contextScope) {
@@ -26,7 +23,7 @@ public class DoubleStorage extends AbstractStorage<DoubleBuffer> {
 
   @Override
   protected List<AbstractBuffer> createBuffers(Geometry geometry, long size, Data.SpaceFillingCurve fillingCurve, int splits) {
-    return List.of(new DoubleBuffer(geometry,this, size, fillingCurve, 0));
+    return List.of(new DoubleBufferImpl(geometry, this, size, fillingCurve, 0));
   }
 
   //  @Override

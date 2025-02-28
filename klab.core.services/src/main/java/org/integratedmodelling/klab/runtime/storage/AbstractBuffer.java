@@ -120,7 +120,7 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
    * @return
    */
   public static Class<? extends Storage<?>> getStorageClass(Class<?> bufferClass) {
-      if (DoubleBuffer.class.isAssignableFrom(bufferClass)) {
+      if (Storage.DoubleBuffer.class.isAssignableFrom(bufferClass)) {
         return DoubleStorage.class;
       }
       // TODO
