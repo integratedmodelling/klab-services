@@ -75,6 +75,20 @@ public class ExecutionSequence {
     this.digitalTwin = contextScope.getDigitalTwin();
   }
 
+  /**
+   * HERE - instead of compiling the whole thing for execution, should just build the order of
+   * contextualization and insert it in the DT as triggers relationships between either actuators or
+   * observations. As that is done, an actutor -> ExecutorOperation map can be filled. After that,
+   * an initialization event should be sent to the scheduler - which should lookup (lazily as we
+   * could be resuming after a crash) the operation and run them in triggering order, adding any
+   * other dependency to the KG as operations are triggered and building the relevant schedules to
+   * account for temporal events and any others. Obs should subscribe to the "fluxes" they will
+   * react to, using a Replay sink so that any new obs will receive the replayed events when they
+   * intercept them.
+   *
+   * @param rootActuator
+   * @return
+   */
   public boolean compile(Actuator rootActuator) {
 
     var pairs = sortComputation(rootActuator);
