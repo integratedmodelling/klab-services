@@ -8,21 +8,26 @@ import org.integratedmodelling.klab.api.services.ResourcesService
 import org.integratedmodelling.klab.api.services.RuntimeService
 
 /**
- * Base class for all generated scalar computations
+ * Base class for all generated scalar computations. The generated classes extending this will be created based on the
+ * code.templates.ScalarBufferFiller template.
  */
-abstract class ExpressionBase extends Script implements MathOps, ObservationOps, KlabOps {
+abstract class ExpressionBase extends Script implements MathOps, ObservationOps {
 
-    @Lazy Reasoner reasoner = { scope.getService(Reasoner.class) }()
-    @Lazy ResourcesService resourcesService = { scope.getService(ResourcesService.class) }()
-    @Lazy Collection<ResourcesService> resourcesServices = { scope.getServices(ResourcesService.class) }()
-    @Lazy Resolver resolver = { scope.getService(Resolver.class) }()
-    @Lazy RuntimeService runtime = { scope.getService(RuntimeService.class) }()
-    @Lazy Collection<RuntimeService> runtimes = { scope.getServices(RuntimeService.class) }()
+    @Lazy
+    Reasoner reasoner = { scope.getService(Reasoner.class) }()
+    @Lazy
+    ResourcesService resourcesService = { scope.getService(ResourcesService.class) }()
+    @Lazy
+    Collection<ResourcesService> resourcesServices = { scope.getServices(ResourcesService.class) }()
+    @Lazy
+    Resolver resolver = { scope.getService(Resolver.class) }()
+    @Lazy
+    RuntimeService runtime = { scope.getService(RuntimeService.class) }()
+    @Lazy
+    Collection<RuntimeService> runtimes = { scope.getServices(RuntimeService.class) }()
 
+    ContextScope scope;
     Observation self;
-
-    // wrapped observations, geometry/scale fields and services
-    /* FIELDS */
 
     // constructor takes all the observations used by the code
     ExpressionBase(ContextScope scope, Observation observation /* ADDITIONAL OBSERVATIONS */) {
@@ -30,6 +35,4 @@ abstract class ExpressionBase extends Script implements MathOps, ObservationOps,
         this.self = observation
     }
 
-    // run method uses the fill curve(s) to assign scalar values and includes any non-scalar code
-    /* RUN METHOD */
 }

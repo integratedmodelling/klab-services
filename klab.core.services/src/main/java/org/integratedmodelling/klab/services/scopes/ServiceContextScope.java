@@ -60,12 +60,21 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       new LinkedHashMap<>();
   protected Map<Observation, Geometry> currentlyObservedGeometries = new HashMap<>();
 
+  /**
+   * The splits for parallelization of scalar computation are assigned on a first-come, first-served
+   * basis but must be the same within a context. They are reassigned to undefined (-1) at each
+   * "within" and established when the first model that makes an explicit choice or using configured
+   * defaults.
+   */
+  private int splits = -1;
+
   LoadingCache<Long, Observation> observationCache;
 
   // This uses the SAME catalog, which should only be redefined when changing context or perspective
   private ServiceContextScope(ServiceContextScope parent) {
     super(parent);
     this.parent = parent;
+    this.splits = parent.splits;
     this.observer = parent.observer;
     this.contextObservation = parent.contextObservation;
     this.digitalTwin = parent.digitalTwin;
@@ -348,6 +357,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public ContextScope within(Observation contextObservation) {
     ServiceContextScope ret = new ServiceContextScope(this);
     ret.contextObservation = contextObservation;
+    ret.splits = -1;
     return ret;
   }
 
@@ -376,25 +386,27 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
           ret.resolutionConstraints.put(constraint.getType(), constraint);
         }
       }
-
-      //      var observedGeometry =
-      //          getConstraint(ResolutionConstraint.Type.ObserverGeometry, Geometry.class);
-      //      if (observedGeometry != null && observer != null) {
-      //        this.currentlyObservedGeometries.put(observer, observedGeometry);
-      //      }
     }
     return ret;
   }
 
+  /**
+   * Return the number of split segments in scalar computation of qualities, assigning them to the
+   * passed suggested value if they are still undefined.
+   *
+   * @param suggestedSplits
+   * @return
+   */
+  public int getSplits(int suggestedSplits) {
+    if (this.splits < 0) {
+      this.splits = suggestedSplits;
+    }
+    return this.splits;
+  }
+
   @Override
   public List<ResolutionConstraint> getResolutionConstraints() {
-    var ret = Utils.Collections.promoteToList(this.resolutionConstraints.values());
-    //    if (observer != null &&
-    // !this.resolutionConstraints.containsKey(ResolutionConstraint.Type.ObserverGeometry)) {
-    //      ret.add(ResolutionConstraint.of(ResolutionConstraint.Type.ObserverGeometry,
-    // observer.getGeometry()));
-    //    }
-    return ret;
+    return Utils.Collections.promoteToList(this.resolutionConstraints.values());
   }
 
   @Override

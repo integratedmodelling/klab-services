@@ -56,7 +56,9 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
     this.observation = observation;
     this.geometry = observation.getGeometry();
     this.contextScope = contextScope;
-    // defaults
+    // TODO set as below
+    this.splits = contextScope.getParallelism().getAsInt();
+    // TODO and remove the next
     this.splits = 1;
   }
 
@@ -64,15 +66,11 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
 
     var split = annotations.stream().filter(a -> "split".equals(a.getName())).findFirst();
     var fillcurve = annotations.stream().filter(a -> "fillcurve".equals(a.getName())).findFirst();
-
-    // TODO cannot be null
-    if (split.isPresent()) {
-      this.splits = split.get().get("value", Integer.class);
-    }
+    split.ifPresent(annotation -> this.splits = annotation.get("value", Integer.class));
     if (fillcurve.isPresent()) {
       this.spaceFillingCurve =
           Data.SpaceFillingCurve.valueOf(fillcurve.get().get("value").toString());
-    } else {
+    } else if (spaceFillingCurve == null) {
       var space =
           geometry.getDimensions().stream()
               .filter(d -> d.getType() == Geometry.Dimension.Type.SPACE)
@@ -85,15 +83,17 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
         this.spaceFillingCurve = Data.SpaceFillingCurve.D3_XYZ;
       }
     }
+
+    // adopt the splits from the context if they were set before. This should ensure that we have
+    // consistent splits across this scope.
+    this.splits = this.contextScope.getSplits(this.splits);
   }
 
   @Override
   public <T extends Buffer> List<T> buffers(
       Geometry geometry, Class<T> bufferClass, Collection<Annotation> annotations) {
 
-    if (this.spaceFillingCurve == null) {
-      setOptions(annotations);
-    }
+    setOptions(annotations);
     var nVaryingDimensions = geometry.getDimensions().stream().filter(d -> d.size() > 1).count();
 
     if (nVaryingDimensions > 1) {

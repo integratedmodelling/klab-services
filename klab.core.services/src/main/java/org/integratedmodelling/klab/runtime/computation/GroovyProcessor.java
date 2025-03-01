@@ -195,14 +195,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
             input.getStatedName() == null ? input.getSemantics().codeName() : input.getStatedName();
         knownObservables.put(identifier, input);
       }
-
       this.processedCode = preprocess(expression.getCode());
-
-      // TODO create template fields for anything that needs to be wrapped: observations and
-      // predefined stuff
-      // TODO define target for preprocessed code so that the final class can establish the run()
-      // return value
-
     }
 
     static class TokenInfo {
