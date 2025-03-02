@@ -14,23 +14,23 @@ import org.integratedmodelling.klab.api.services.RuntimeService
 abstract class ExpressionBase extends Script implements MathOps, ObservationOps {
 
     @Lazy
-    Reasoner reasoner = { scope.getService(Reasoner.class) }()
+    def reasoner = { scope.getService(Reasoner.class) }()
     @Lazy
-    ResourcesService resourcesService = { scope.getService(ResourcesService.class) }()
+    def resourcesService = { scope.getService(ResourcesService.class) }()
     @Lazy
-    Collection<ResourcesService> resourcesServices = { scope.getServices(ResourcesService.class) }()
+    def resourcesServices = { scope.getServices(ResourcesService.class) }()
     @Lazy
-    Resolver resolver = { scope.getService(Resolver.class) }()
+    def resolver = { scope.getService(Resolver.class) }()
     @Lazy
-    RuntimeService runtime = { scope.getService(RuntimeService.class) }()
+    def runtime = { scope.getService(RuntimeService.class) }()
     @Lazy
-    Collection<RuntimeService> runtimes = { scope.getServices(RuntimeService.class) }()
+    def runtimes = { scope.getServices(RuntimeService.class) }()
 
-    ContextScope scope;
-    Observation self;
+    ContextScope scope
+    Observation self
 
     // constructor takes all the observations used by the code
-    ExpressionBase(ContextScope scope, Observation observation /* ADDITIONAL OBSERVATIONS */) {
+    ExpressionBase(ContextScope scope, Observation observation) {
         this.scope = scope
         this.self = observation
     }

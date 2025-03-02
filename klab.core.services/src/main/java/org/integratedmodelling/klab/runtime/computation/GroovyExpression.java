@@ -79,10 +79,6 @@ public class GroovyExpression /*extends Expression*/ implements Expression {
   private Map<String, Object> variables;
   private Set<CompilerOption> options = EnumSet.noneOf(CompilerOption.class);
 
-//  public GroovyExpression() {
-//    initialized.set(Boolean.FALSE);
-//  }
-
   public boolean hasErrors() {
     return errors.size() > 0;
   }
@@ -91,31 +87,12 @@ public class GroovyExpression /*extends Expression*/ implements Expression {
     return errors;
   }
 
-//  /*
-//   * MUST be called in all situations.
-//   */
-//  public void initialize(Map<String, Observable> inputs, Map<String, Observable> outputs) {
-//    compile(preprocess(code, inputs, outputs));
-//    initialized.set(Boolean.TRUE);
-//  }
-
   GroovyExpression(String code, boolean preprocessed, Expression.Descriptor descriptor) {
     initialized.set(Boolean.FALSE);
     this.descriptor = descriptor;
-//    this.variables = descriptor.getVariables();
     this.code = code;
-//    this.options.addAll(descriptor.getOptions());
     if (preprocessed) {
       this.preprocessed = this.code;
-    }
-  }
-
-  private void compile(String code) {
-    try {
-      this.sclass = shell.parseToClass(code);
-    } catch (Throwable t) {
-      System.err.println("Groovy code won't parse: " + code);
-      this.fubar = true;
     }
   }
 
@@ -279,32 +256,8 @@ public class GroovyExpression /*extends Expression*/ implements Expression {
     }
   }
 
-//  private String preprocess(
-//      String code, Map<String, Observable> inputs, Map<String, Observable> outputs) {
-//
-//    if (this.preprocessed != null) {
-//      return this.preprocessed;
-//    }
-//
-//    GroovyExpressionPreprocessor processor =
-//        new GroovyExpressionPreprocessor(runtimeContext, this.options);
-//    this.preprocessed = processor.process(code);
-//    this.errors.addAll(processor.getErrors());
-//    this.variables = processor.getVariables();
-//
-//    return this.preprocessed;
-//  }
-
   public String toString() {
     return code;
-  }
-
-  public void setNegated(boolean negate) {
-    negated = negate;
-  }
-
-  public boolean isNegated() {
-    return negated;
   }
 
   @Override
@@ -312,19 +265,4 @@ public class GroovyExpression /*extends Expression*/ implements Expression {
       org.integratedmodelling.klab.api.scope.Scope scope, Object... additionalParameters) {
     return null;
   }
-
-  //  @Override
-  //  public Object eval(IContextualizationScope scope, Object... parameters) {
-  //    return eval(Parameters.create(parameters), scope);
-  //  }
-
-  //  @Override
-  //  public String getLanguage() {
-  //    return GroovyProcessor.ID;
-  //  }
-
-  //  @Override
-  //  public Collection<String> getIdentifiers() {
-  //    return descriptor.getIdentifiers();
-  //  }
 }

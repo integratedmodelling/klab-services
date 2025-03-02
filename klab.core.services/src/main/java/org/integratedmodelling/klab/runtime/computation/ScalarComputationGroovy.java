@@ -118,7 +118,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
       var codeInfo = new TemplateCodeInfo();
       codeInfo.setTemplateName("ScalarBufferFiller.jte");
-      codeInfo.setClassName("ScalarComputation" + Utils.Names.shortUUID());
+      codeInfo.setClassName("ScalarComputation_" + Utils.Names.shortUUID());
 
       // constructor arguments
       List<Object> args = new ArrayList<>();
@@ -131,6 +131,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
           for (var field : groovyDescriptor.getTemplateFields()) {
             codeInfo.getFieldDeclarations().add(field);
           }
+          codeInfo.getMainCodeBlocks().add(groovyDescriptor.getProcessedCode());
           if (step.expressionDescriptor != null) {
             for (var identifier : step.expressionDescriptor.getIdentifiers().keySet()) {
               var desc = step.expressionDescriptor.getIdentifiers().get(identifier);
@@ -153,7 +154,9 @@ public class ScalarComputationGroovy implements ScalarComputation {
                     .add("this." + identifier + "Observable = " + identifier);
               }
               if (desc.scalarReferenceCount() > 0) {
-                // local vars buffers, vars
+                // add local vars buffers, vars
+                // add loop variables assignments besides self
+                System.out.println("SPORP");
               }
             }
           }
