@@ -1557,7 +1557,7 @@ public class ComponentRegistry {
                   : digitalTwin
                       .getStateStorage()
                       .promoteStorage(
-                          observation, storage, AbstractBuffer.getStorageClass(argument));
+                          observation, storage, AbstractBuffer.getStorageClass(argument, annotations));
           if (storage != null) {
             var buffers =
                 storage.buffers(geometry, argument.asSubclass(Storage.Buffer.class), annotations);

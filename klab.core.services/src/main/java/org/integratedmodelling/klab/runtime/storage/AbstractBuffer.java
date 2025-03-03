@@ -6,9 +6,12 @@ import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
 import org.integratedmodelling.klab.utilities.Utils;
+
+import java.util.Collection;
 
 /** Base buffer provides the histogram and the geometry indexing/merging */
 public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffer {
@@ -55,16 +58,6 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
     return id;
   }
 
-  //    @Override
-  //    public Data.SpaceFillingCurve fillCurve() {
-  //        return spaceFillingCurve;
-  //    }
-  //
-  //    @Override
-  //    public Storage.Type dataType() {
-  //        return storage.type;
-  //    }
-
   @Override
   public long size() {
     return size;
@@ -107,19 +100,13 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
     return this.histogram.asHistogram();
   }
 
-  //    protected void finalizeStorage() {
-  //      // TODO doing nothing at the moment. Should create images, statistics etc. within the
-  // storage
-  //      //  manager based on the fill curve.
-  //    }
-
   /**
    * Used to support the non-boxing parameters in contextualizers and data adapters
    *
    * @param bufferClass
    * @return
    */
-  public static Class<? extends Storage<?>> getStorageClass(Class<?> bufferClass) {
+  public static Class<? extends Storage<?>> getStorageClass(Class<?> bufferClass, Collection<Annotation> annotations) {
       if (Storage.DoubleBuffer.class.isAssignableFrom(bufferClass)) {
         return DoubleStorage.class;
       }

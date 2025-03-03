@@ -8,6 +8,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -34,6 +35,7 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
   //  private List<AbstractBuffer> buffers = new ArrayList<>();
   protected Data.SpaceFillingCurve spaceFillingCurve;
   protected int splits;
+  protected GraphModel.DataType dataType;
 
   /*
    * Buffer storage along slowest-varying dimensions. All dimensions except the
@@ -89,6 +91,10 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
     this.splits = this.contextScope.getSplits(this.splits);
   }
 
+  public <T extends Buffer> List<T> existingBuffers(Geometry geometry, Class<T> bufferClass) {
+    return (List<T>) buffersCovering(geometry, this.spaceFillingCurve, this.splits, this.dataType);
+  }
+
   @Override
   public <T extends Buffer> List<T> buffers(
       Geometry geometry, Class<T> bufferClass, Collection<Annotation> annotations) {
@@ -101,7 +107,7 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
           "Cannot create or retrieve buffers for more than one varying geometry extent at a time");
     }
 
-    return (List<T>) buffersCovering(geometry, this.spaceFillingCurve, this.splits);
+    return (List<T>) buffersCovering(geometry, this.spaceFillingCurve, this.splits, this.dataType);
   }
 
   /*
@@ -133,20 +139,13 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
     return new SPDTHistogram<>(20);
   }
 
-  //
-  //  protected void registerBuffer(AbstractBuffer buffer) {
-  //    // TODO index geometries, validate
-  //    System.out.println("HOSTIA UN BÜFFER");
-  //    //    buffers.add(buffer);
-  //  }
-
   @Override
   public Persistence persistence() {
     return persistence;
   }
 
   protected List<? extends Buffer> buffersCovering(
-      Geometry geometry, Data.SpaceFillingCurve fillingCurve, int splits) {
+          Geometry geometry, Data.SpaceFillingCurve fillingCurve, int splits, GraphModel.DataType dataType) {
 
     if (this.spaceFillingCurve == null) {
       this.spaceFillingCurve = fillingCurve;

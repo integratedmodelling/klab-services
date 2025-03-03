@@ -37,7 +37,7 @@ public class BaseDataImpl implements Data {
     this.instance = instance;
     this.annotations =
         Utils.Annotations.findAnnotations(
-            Set.of("fillcurve", "split"), instance, instance.getObservable());
+            Set.of("fillcurve", "split", "storage"), instance, instance.getObservable());
     this.semantics = instance.getObservable().toString();
     this.geometry =
         GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class);
@@ -49,7 +49,7 @@ public class BaseDataImpl implements Data {
     this.geometry = geometry;
     this.name = name;
     this.instance = instance;
-    Utils.Annotations.findAnnotations(Set.of("fillcurve", "split"), observable, instance);
+    Utils.Annotations.findAnnotations(Set.of("fillcurve", "split", "storage"), observable, instance);
   }
 
   @Override

@@ -117,6 +117,7 @@ public class ExecutionSequence {
     return false;
   }
 
+  @Deprecated
   public boolean run() {
 
     for (var operationGroup : sequence) {
@@ -324,9 +325,9 @@ public class ExecutionSequence {
          */
         if (componentRegistry.implementation(currentDescriptor).method != null) {
 
-          var fillCurveAnnotations =
+          var storageAnnotation =
               Utils.Annotations.findAnnotations(
-                  Set.of("fillcurve", "split"),
+                  Set.of("fillcurve", "split", "storage"),
                   currentDescriptor.serviceInfo,
                   actuator,
                   observation.getObservable());
@@ -346,7 +347,7 @@ public class ExecutionSequence {
                   expression,
                   lookupTable,
                   null,
-                  fillCurveAnnotations,
+                  storageAnnotation,
                   scope);
 
           if (runArguments == null) {

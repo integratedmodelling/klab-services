@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -190,6 +191,20 @@ public class StateStorageImpl implements StateStorage {
     }
   }
 
+  /**
+   * Find out the representative interface of the passed buffer.
+   *
+   * @param buffer
+   * @return
+   */
+  public static Class<? extends Storage.Buffer> bufferClass(Storage.Buffer buffer) {
+    return switch (buffer) {
+      case DoubleBufferImpl ignored -> Storage.DoubleBuffer.class;
+      // TODO the rest!
+      default -> throw new KlabIllegalArgumentException("not a recognized buffer type");
+    };
+  }
+
   public BufferArray getIntBuffer(long sliceSize) {
     return getIntFactory().make(sliceSize);
   }
@@ -214,6 +229,10 @@ public class StateStorageImpl implements StateStorage {
     return histogramBinSize;
   }
 
+  public Storage<?> getStorage(Observation observation) {
+    return getExistingStorage(observation, Storage.class);
+  }
+
   @Override
   public <T extends Storage> T getExistingStorage(Observation observation, Class<T> storageClass) {
     // TODO
@@ -232,10 +251,10 @@ public class StateStorageImpl implements StateStorage {
     if (storageClass == Storage.class) {
       sClass =
           switch (observation.getObservable().getArtifactType()) {
-//            case BOOLEAN -> BooleanStorage.class;
+            //            case BOOLEAN -> BooleanStorage.class;
             case NUMBER -> /* TODO use config to choose between double and float */
                 DoubleStorage.class;
-//            case TEXT, CONCEPT -> KeyedStorage.class;
+            //            case TEXT, CONCEPT -> KeyedStorage.class;
             default ->
                 throw new KlabIllegalStateException(
                     "scalar mapping to type "
@@ -250,16 +269,16 @@ public class StateStorageImpl implements StateStorage {
       if (DoubleStorage.class.isAssignableFrom(sClass)) {
         ret = (T) new DoubleStorage(observation, this, contextScope);
       } /*else if (LongStorage.class.isAssignableFrom(sClass)) {
-        ret = (T) new LongStorage(observation, this, contextScope);
-      } else if (FloatStorage.class.isAssignableFrom(sClass)) {
-        ret = (T) new FloatStorage(observation, this, contextScope);
-      } else if (IntStorage.class.isAssignableFrom(sClass)) {
-        ret = (T) new IntStorage(observation, this, contextScope);
-      } else if (BooleanStorage.class.isAssignableFrom(sClass)) {
-        ret = (T) new BooleanStorage(observation, this, contextScope);
-      } else if (KeyedStorage.class.isAssignableFrom(sClass)) {
-        ret = (T) new KeyedStorage(observation, this, contextScope);
-      }*/
+          ret = (T) new LongStorage(observation, this, contextScope);
+        } else if (FloatStorage.class.isAssignableFrom(sClass)) {
+          ret = (T) new FloatStorage(observation, this, contextScope);
+        } else if (IntStorage.class.isAssignableFrom(sClass)) {
+          ret = (T) new IntStorage(observation, this, contextScope);
+        } else if (BooleanStorage.class.isAssignableFrom(sClass)) {
+          ret = (T) new BooleanStorage(observation, this, contextScope);
+        } else if (KeyedStorage.class.isAssignableFrom(sClass)) {
+          ret = (T) new KeyedStorage(observation, this, contextScope);
+        }*/
     }
 
     if (ret != null) {
@@ -314,12 +333,11 @@ public class StateStorageImpl implements StateStorage {
     } catch (Exception e) {
       throw new KlabIOException("cannot read configuration properties");
     }
-
   }
 
   private void writeConfiguration() {
     Properties p = new Properties();
-    p.setProperty(NEXT_ID_PROPERTY, nextId.get()+"");
+    p.setProperty(NEXT_ID_PROPERTY, nextId.get() + "");
     try {
       p.store(new FileOutputStream(propertyFile), null);
     } catch (Exception e) {

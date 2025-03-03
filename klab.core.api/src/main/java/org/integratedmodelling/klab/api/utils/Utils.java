@@ -3635,6 +3635,24 @@ public class Utils {
     }
 
     /**
+     * Starts a poor-man REPL that returns when "exit" is input. For testing.
+     *
+     * @param prompt
+     * @param lineHandler
+     */
+    public static void repl(String prompt, Consumer<String> lineHandler) {
+      Scanner scanner = new Scanner(System.in); // Create a Scanner object
+      while (true) {
+        System.out.print(prompt);
+        var line = scanner.nextLine();
+        if ("exit".equals(line.trim())) {
+          return;
+        }
+        lineHandler.accept(line.trim());
+      }
+    }
+
+    /**
      * Distribute a consumer over a set of objects in one virtual thread per object. Return only
      * when all the threads are finished and return status.
      *
@@ -3659,8 +3677,8 @@ public class Utils {
     }
 
     /**
-     * Given a set of objects, return a corresponding array of the API interface classes
-     * that represent them in k.LAB. Anything null or not recognized gets mapped to Object.class.
+     * Given a set of objects, return a corresponding array of the API interface classes that
+     * represent them in k.LAB. Anything null or not recognized gets mapped to Object.class.
      *
      * @param arguments
      * @return

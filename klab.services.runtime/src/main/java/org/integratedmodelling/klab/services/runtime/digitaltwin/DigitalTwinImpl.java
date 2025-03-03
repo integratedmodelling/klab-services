@@ -115,7 +115,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                 data.geometry(),
                 Storage.DoubleBuffer.class,
                 org.integratedmodelling.common.utils.Utils.Annotations.findAnnotations(
-                    Set.of("fillcurve", "split"), data, target, scope));
+                    Set.of("fillcurve", "split", "storage"), data, target, scope));
 
         /* all buffers run in parallel */
         return Utils.Java.distributeComputation(

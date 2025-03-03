@@ -154,7 +154,14 @@ public class ScalarComputationGroovy implements ScalarComputation {
                     .add("this." + identifier + "Observable = " + identifier);
               }
               if (desc.scalarReferenceCount() > 0) {
-                // add local vars buffers, vars
+
+                var observation = scope.getObservation(desc.observable());
+                var buffers =
+                    scope
+                        .getDigitalTwin()
+                        .getStateStorage()
+                        .getStorage(observation);
+
                 // add loop variables assignments besides self
                 System.out.println("SPORP");
               }
