@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.runtime.storage.AbstractBuffer;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.neo4j.driver.Transaction;
 
@@ -165,11 +166,11 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("outcome", activity.getOutcome() == null ? null : activity.getOutcome().name());
           ret.put("stackTrace", activity.getStackTrace());
         }
-        case Storage.Buffer buffer -> {
+        case AbstractBuffer buffer -> {
           ret.put("id", buffer.getId());
-          ret.put("persistence", buffer.persistence().name());
-          ret.put("type", buffer.dataType().name());
-          ret.put("fillCurve", buffer.fillCurve().name());
+          ret.put("persistence", buffer.getPersistence().name());
+          ret.put("type", buffer.getDataType().name());
+          ret.put("fillCurve", buffer.getFillingCurve().name());
           ret.put("size", buffer.size());
           ret.put(
               "histogram",

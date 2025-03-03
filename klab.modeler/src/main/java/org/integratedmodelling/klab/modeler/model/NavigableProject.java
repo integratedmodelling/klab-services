@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.modeler.model;
 
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
@@ -14,6 +15,7 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocumen
 import java.io.File;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class NavigableProject extends NavigableKlabAsset<Project> implements Project {
@@ -67,6 +69,9 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 	public List<String> getResourceUrns() {
 		return delegate.getResourceUrns();
 	}
+
+	@Override
+	public Collection<Annotation> getAnnotations() { return delegate.getAnnotations(); }
 
 	@Override
 	public List<KActorsBehavior> getTestCases() {

@@ -108,7 +108,7 @@ public interface ContextScope extends SessionScope {
    * @return the observation (possibly a collective) or null. The resulting observation may be
    *     unresolved; the implementation decides what to do with it and is responsible for checking.
    */
-  Observation getObservation(Concept observable);
+  Observation getObservation(Semantics observable);
 
   /**
    * Return all observations in this scope for which resolution has failed. Optionally only return

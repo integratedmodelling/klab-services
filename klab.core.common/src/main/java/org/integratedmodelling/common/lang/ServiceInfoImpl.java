@@ -1,12 +1,11 @@
 package org.integratedmodelling.common.lang;
 
-import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.documentation.Documentation;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -15,7 +14,6 @@ import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.Serial;
 import java.util.*;
-import java.util.logging.Level;
 
 public class ServiceInfoImpl implements ServiceInfo {
 
@@ -41,6 +39,7 @@ public class ServiceInfoImpl implements ServiceInfo {
         private String label = null;
         private String unit = null;
         private boolean isConst;
+        private String observableUrn;
 
         public ArgumentImpl() {
         }
@@ -187,6 +186,14 @@ public class ServiceInfoImpl implements ServiceInfo {
             this.unit = unit;
         }
 
+        public void setObservableUrn(String observable) {
+            this.observableUrn = observable;
+        }
+
+        @Override
+        public String getObservableUrn() {
+            return observableUrn;
+        }
     }
 
     private String name;
@@ -208,6 +215,7 @@ public class ServiceInfoImpl implements ServiceInfo {
     private FunctionType functionType;
     private Set<KnowledgeClass> targets = EnumSet.noneOf(KnowledgeClass.class);
     private Set<String> mediaTypes = new HashSet<>();
+    private List<Annotation> annotations = new ArrayList<>();
 
     public String getLabel() {
         return label;
@@ -651,6 +659,15 @@ public class ServiceInfoImpl implements ServiceInfo {
 
     public void setMediaTypes(Set<String> mediaTypes) {
         this.mediaTypes = mediaTypes;
+    }
+
+    @Override
+    public List<Annotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<Annotation> annotations) {
+        this.annotations = annotations;
     }
 
     @Override

@@ -1,127 +1,50 @@
 package org.integratedmodelling.klab.runtime.storage;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.PrimitiveIterator;
+import java.util.*;
 
+import jnr.ffi.annotations.In;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-import org.integratedmodelling.klab.utilities.Utils;
 
 /**
  * Abstract storage class providing geometry and buffer indexing, histograms, merging and splitting.
  */
-public abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer>
-    implements Storage<B> {
-
-
-  public static class DoubleFillerImpl implements Data.DoubleFiller {
-
-    DoubleStorage storage;
-    DoubleBuffer buffer;
-    PrimitiveIterator.OfLong iterator;
-
-    @Override
-    public void add(double value) {
-      buffer.data().add(iterator.nextLong(), value);
-      if (storage.histogram() != null) {
-        storage.histogram().insert((double) value);
-      }
-      //                if (!iterator.hasNext()) {
-      //                  finalizeStorage();
-      //                }
-    }
-  }
-
-
-  public static class BooleanFillerImpl implements Data.BooleanFiller {
-
-    DoubleStorage storage;
-    DoubleBuffer buffer;
-    PrimitiveIterator.OfLong iterator;
-
-    @Override
-    public void add(boolean value) {
-      buffer.data().add(iterator.nextLong(), value);
-      if (storage.histogram() != null) {
-        storage.histogram().insert(value ? 1.0 : 0.0);
-      }
-      //                if (!iterator.hasNext()) {
-      //                  finalizeStorage();
-      //                }
-    }
-  }
-
-
-  public static class LongFillerImpl implements Data.LongFiller {
-
-    DoubleStorage storage;
-    DoubleBuffer buffer;
-    PrimitiveIterator.OfLong iterator;
-
-    @Override
-    public void add(long value) {
-      buffer.data().add(iterator.nextLong(), value);
-      if (storage.histogram() != null) {
-        storage.histogram().insert((double) value);
-      }
-      //                if (!iterator.hasNext()) {
-      //                  finalizeStorage();
-      //                }
-    }
-  }
-
-
-  public static class FloatFillerImpl implements Data.FloatFiller {
-
-    DoubleStorage storage;
-    DoubleBuffer buffer;
-    PrimitiveIterator.OfLong iterator;
-
-    @Override
-    public void add(float value) {
-      buffer.data().add(iterator.nextLong(), value);
-      if (storage.histogram() != null) {
-        storage.histogram().insert((double) value);
-      }
-      //                if (!iterator.hasNext()) {
-      //                  finalizeStorage();
-      //                }
-    }
-  }
-
-
-  public static class IntFillerImpl implements Data.IntFiller {
-
-    DoubleStorage storage;
-    DoubleBuffer buffer;
-    PrimitiveIterator.OfLong iterator;
-
-    @Override
-    public void add(int value) {
-      buffer.data().add(iterator.nextLong(), value);
-      if (storage.histogram() != null) {
-        storage.histogram().insert((double) value);
-      }
-      //                if (!iterator.hasNext()) {
-      //                  finalizeStorage();
-      //                }
-    }
-  }
-
+public abstract class AbstractStorage<B extends AbstractBuffer> implements Storage<B> {
 
   protected final Type type;
   protected final StateStorageImpl stateStorage;
   protected final Observation observation;
   protected final Geometry geometry;
   protected final ServiceContextScope contextScope;
-  List<AbstractBuffer> buffers = new ArrayList<>();
+  protected Persistence persistence;
+  //  private List<AbstractBuffer> buffers = new ArrayList<>();
+  protected Data.SpaceFillingCurve spaceFillingCurve;
+  protected int splits;
+
+  /*
+   * Buffer storage along slowest-varying dimensions. All dimensions except the
+   * last (space) have linear indexing along a "start" number. The final version of this
+   * should have a Pair<NavigableMap, List<AbstractBuffer>> argument, which makes it compatible
+   * with multiple non-spatial dimensions. But that's unlikely to be useful soon and makes the code
+   * very complex, so we just assume start time as the first index and let the implementation provide
+   * as many buffers as needed for the second, which is assumed to be space.
+   *
+   */
+  private NavigableMap<Long, List<AbstractBuffer>> buffers = new TreeMap<>();
 
   protected AbstractStorage(
       Type type,
@@ -133,9 +56,61 @@ public abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer>
     this.observation = observation;
     this.geometry = observation.getGeometry();
     this.contextScope = contextScope;
+    // TODO set as below
+    this.splits = contextScope.getParallelism().getAsInt();
+    // TODO and remove the next
+    this.splits = 1;
   }
 
+  protected void setOptions(Collection<Annotation> annotations) {
 
+    var split = annotations.stream().filter(a -> "split".equals(a.getName())).findFirst();
+    var fillcurve = annotations.stream().filter(a -> "fillcurve".equals(a.getName())).findFirst();
+    split.ifPresent(annotation -> this.splits = annotation.get("value", Integer.class));
+    if (fillcurve.isPresent()) {
+      this.spaceFillingCurve =
+          Data.SpaceFillingCurve.valueOf(fillcurve.get().get("value").toString());
+    } else if (spaceFillingCurve == null) {
+      var space =
+          geometry.getDimensions().stream()
+              .filter(d -> d.getType() == Geometry.Dimension.Type.SPACE)
+              .findFirst();
+      if (space.isEmpty() || space.get().size() <= 1) {
+        this.spaceFillingCurve = Data.SpaceFillingCurve.D1_LINEAR;
+      } else if (space.get().size() == 2) {
+        this.spaceFillingCurve = Data.SpaceFillingCurve.D2_XY;
+      } else if (space.get().size() == 3) {
+        this.spaceFillingCurve = Data.SpaceFillingCurve.D3_XYZ;
+      }
+    }
+
+    // adopt the splits from the context if they were set before. This should ensure that we have
+    // consistent splits across this scope.
+    this.splits = this.contextScope.getSplits(this.splits);
+  }
+
+  @Override
+  public <T extends Buffer> List<T> buffers(
+      Geometry geometry, Class<T> bufferClass, Collection<Annotation> annotations) {
+
+    setOptions(annotations);
+    var nVaryingDimensions = geometry.getDimensions().stream().filter(d -> d.size() > 1).count();
+
+    if (nVaryingDimensions > 1) {
+      throw new KlabIllegalStateException(
+          "Cannot create or retrieve buffers for more than one varying geometry extent at a time");
+    }
+
+    return (List<T>) buffersCovering(geometry, this.spaceFillingCurve, this.splits);
+  }
+
+  /*
+  The storage doesn't have a fill curve until the first buffer request.
+   */
+  @Override
+  public Data.SpaceFillingCurve spaceFillCurve() {
+    return spaceFillingCurve;
+  }
 
   /**
    * Retrieve the merged histogram. TODO we should cache if the owning state is finalized.
@@ -143,131 +118,94 @@ public abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer>
    * @return
    */
   public SPDTHistogram<?> histogram() {
-    if (buffers.size() == 1) {
-      return buffers.getFirst().histogram;
-    } else if (buffers.size() > 1) {
-      SPDTHistogram ret = new SPDTHistogram<>(20);
-      for (var buffer : buffers) {
-        if (buffer.histogram != null) {
-          ret.merge(buffer.histogram);
-        }
-      }
-      // TODO cache if storage is finalized
-      return ret;
-    }
+    //    if (buffers.size() == 1) {
+    //      return buffers.getFirst().histogram;
+    //    } else if (buffers.size() > 1) {
+    //      SPDTHistogram ret = new SPDTHistogram<>(20);
+    //      for (var buffer : buffers) {
+    //        if (buffer.histogram != null) {
+    //          ret.merge(buffer.histogram);
+    //        }
+    //      }
+    //      // TODO cache if storage is finalized
+    //      return ret;
+    //    }
     return new SPDTHistogram<>(20);
   }
 
-  /** Base buffer provides the histogram and the geometry indexing/merging */
-  public abstract static class AbstractBuffer implements Buffer {
+  //
+  //  protected void registerBuffer(AbstractBuffer buffer) {
+  //    // TODO index geometries, validate
+  //    System.out.println("HOSTIA UN BÜFFER");
+  //    //    buffers.add(buffer);
+  //  }
 
-    private final Data.FillCurve fillCurve;
-    private final Persistence persistence;
-    private final long size;
-    private final long[] offsets;
-    private final long id;
-    private final AbstractStorage storage;
-    private long internalId;
-    private SPDTHistogram<?> histogram;
-
-    protected AbstractBuffer(AbstractStorage stateStorage, long size, Data.FillCurve fillCurve, long[] offsets) {
-      this.storage = stateStorage;
-      this.id = stateStorage.stateStorage.nextBufferId();
-      this.persistence = Persistence.SERVICE_SHUTDOWN;
-      this.size = size;
-      this.offsets = offsets;
-      this.fillCurve = fillCurve;
-      if (stateStorage.stateStorage.isRecordHistogram()) {
-        this.histogram = new SPDTHistogram<>(stateStorage.stateStorage.getHistogramBinSize());
-      }
-    }
-
-    @Override
-    public long getId() {
-      return id;
-    }
-
-    @Override
-    public Data.FillCurve fillCurve() {
-      return fillCurve;
-    }
-
-    @Override
-    public Storage.Type dataType() {
-      return storage.type;
-    }
-
-    @Override
-    public long size() {
-      return size;
-    }
-
-    @Override
-    public long[] offsets() {
-      return offsets;
-    }
-
-    public Persistence getPersistence() {
-      return persistence;
-    }
-
-    public long getInternalId() {
-      return internalId;
-    }
-
-    public void setInternalId(long internalId) {
-      this.internalId = internalId;
-    }
-
-    public SPDTHistogram<?> getHistogram() {
-      return histogram;
-    }
-
-    public void setHistogram(SPDTHistogram<?> histogram) {
-      this.histogram = histogram;
-    }
-
-    @Override
-    public Persistence persistence() {
-      return persistence;
-    }
-
-    public Histogram histogram() {
-      return this.histogram.asHistogram();
-    }
-
-//    protected void finalizeStorage() {
-//      // TODO doing nothing at the moment. Should create images, statistics etc. within the storage
-//      //  manager based on the fill curve.
-//    }
-
-    @Override
-    public String toString() {
-      return "Buffer{"
-          + "fillCurve="
-          + fillCurve
-          + ", size="
-          + size
-          + ", offsets="
-          + offsets
-          + ", id='"
-          + id
-          + '\''
-          + ", histogram="
-          + Utils.Json.asString(histogram.asHistogram())
-          + '}';
-    }
+  @Override
+  public Persistence persistence() {
+    return persistence;
   }
 
-  protected void registerBuffer(AbstractBuffer buffer) {
-    // TODO index geometries, validate
-    buffers.add(buffer);
+  protected List<? extends Buffer> buffersCovering(
+      Geometry geometry, Data.SpaceFillingCurve fillingCurve, int splits) {
+
+    if (this.spaceFillingCurve == null) {
+      this.spaceFillingCurve = fillingCurve;
+      this.splits = splits;
+    }
+
+    var scale = GeometryRepository.INSTANCE.get(geometry.toString(), Scale.class);
+    var time = scale.getTime();
+    if (time.size() != 1) {
+      throw new KlabUnimplementedException(
+          "Multiple time steps for a buffer request during contextualization");
+    }
+
+    long timeStart = time.is(Time.Type.INITIALIZATION) ? 0 : time.getStart().getMilliseconds();
+    List<AbstractBuffer> bufs = buffers.computeIfAbsent(timeStart, k -> new ArrayList<>());
+
+    /*
+     * Based on observation scale and passed geometry, determine how many indices of this.buffers we
+     * cover
+     */
+    if (!bufs.isEmpty()) {
+      /*
+      TODO adapt the curve; ignore the splits
+       */
+      return bufs.stream().map(b -> adaptBuffer(b, fillingCurve)).toList();
+    }
+
+    /* Build enough buffers to cover it honoring any splits and fill curve required. */
+    var ret = createBuffers(geometry, geometry.size(), fillingCurve, splits);
+
+    bufs.addAll(ret);
+
+    return ret;
+  }
+
+  /**
+   * The function in charge of creating the specific buffers wanted.
+   *
+   * @param size
+   * @param fillingCurve
+   * @param splits
+   * @return
+   */
+  protected abstract List<AbstractBuffer> createBuffers(
+      Geometry geometry, long size, Data.SpaceFillingCurve fillingCurve, int splits);
+
+  private AbstractBuffer adaptBuffer(AbstractBuffer b, Data.SpaceFillingCurve fillingCurve) {
+    // TODO !
+    if (b.getFillingCurve() != fillingCurve) {
+      // TODO
+    }
+    return b;
   }
 
   @Override
   public List<Storage.Buffer> buffers() {
-    // hope this gets optimized
-    return buffers.stream().map(b -> (Storage.Buffer) b).toList();
+    var ret = new ArrayList<Storage.Buffer>();
+    buffers.values().forEach(ret::addAll);
+    return ret;
   }
 
   @Override
@@ -288,5 +226,9 @@ public abstract class AbstractStorage<B extends AbstractStorage.AbstractBuffer>
   @Override
   public long getId() {
     return 0;
+  }
+
+  public Data.SpaceFillingCurve getFillCurve() {
+    return spaceFillingCurve;
   }
 }

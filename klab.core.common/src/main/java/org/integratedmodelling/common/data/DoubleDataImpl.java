@@ -9,19 +9,19 @@ import java.util.PrimitiveIterator;
 
 public class DoubleDataImpl extends BaseDataImpl implements PrimitiveIterator.OfDouble {
 
-  private final OfLong iterator;
+  private /*final*/ OfLong iterator;
 
   public DoubleDataImpl(Instance instance) {
     super(instance);
-    this.iterator =
-        fillCurve()
-            .cursor(
-                GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class));
+//    this.iterator =
+//        fillCurve()
+//            .cursor(
+//                GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class));
   }
 
   public DoubleDataImpl(Observable observable, Geometry geometry, String name, Instance instance) {
     super(observable, geometry, name, instance);
-    this.iterator = fillCurve().cursor(geometry);
+//    this.iterator = fillCurve().cursor(geometry);
   }
 
   @Override

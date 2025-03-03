@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.lang.kim;
 
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
@@ -14,6 +15,7 @@ public class KimOntologyImpl extends KlabDocumentImpl<KimConceptStatement> imple
     private List<Pair<String, String>> owlImports = new ArrayList<>();
     private List<Pair<String, List<String>>> vocabularyImports = new ArrayList<>();
     private KimConcept domain;
+    private List<Annotation> annotations = new ArrayList<>();
 
     @Override
     public List<KimConceptStatement> getStatements() {
@@ -67,4 +69,12 @@ public class KimOntologyImpl extends KlabDocumentImpl<KimConceptStatement> imple
         this.domain = domain;
     }
 
+    @Override
+    public List<Annotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<Annotation> annotations) {
+        this.annotations = annotations;
+    }
 }

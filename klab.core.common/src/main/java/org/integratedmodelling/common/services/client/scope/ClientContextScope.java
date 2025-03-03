@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -341,15 +342,17 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   }
 
   @Override
-  public Observation getObservation(Concept observable) {
+  public Observation getObservation(Semantics observable) {
     var ret =
         digitalTwin
             .getKnowledgeGraph()
             .query(Observation.class, this)
             .source(this)
             .along(DigitalTwin.Relationship.HAS_CHILD)
-            .where("semantics", KnowledgeGraph.Query.Operator.EQUALS, observable.getUrn())
+            .where(
+                "semantics", KnowledgeGraph.Query.Operator.EQUALS, observable.asConcept().getUrn())
             .run(this);
+    // TODO may need to adapt units or the like if the request is an observable
     return ret.isEmpty() ? null : ret.getFirst();
   }
 

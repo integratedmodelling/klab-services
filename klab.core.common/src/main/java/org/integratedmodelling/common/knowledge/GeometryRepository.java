@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -34,7 +33,7 @@ public enum GeometryRepository {
                             public Pair<Geometry, Scale> load(String key) throws Exception {
                                 var geometry = Geometry.create(key);
                                 Scale scale = Scale.create(geometry);
-                                if (geometry instanceof GeometryImpl geometryImpl && geometryImpl.getKey() == null)  {
+                                if (geometry instanceof GeometryImpl geometryImpl && geometryImpl.key() == null)  {
                                     geometryImpl.setKey(newKey());
                                 }
                                 return Pair.of(geometry, scale);

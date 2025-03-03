@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
@@ -13,6 +14,7 @@ import org.integratedmodelling.klab.modeler.panels.DocumentEditorAdvisor;
 import picocli.CommandLine;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @CommandLine.Command(name = "test", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
@@ -90,6 +92,11 @@ public class Test implements Runnable {
            @Override
            public Metadata getMetadata() {
                return null;
+           }
+
+           @Override
+           public Collection<Annotation> getAnnotations() {
+               return List.of();
            }
        });
 

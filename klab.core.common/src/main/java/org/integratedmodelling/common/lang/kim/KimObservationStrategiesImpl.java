@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.lang.kim;
 
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 
@@ -11,6 +12,7 @@ import java.util.Set;
 public class KimObservationStrategiesImpl extends KlabDocumentImpl<KimObservationStrategy> implements KimObservationStrategyDocument {
 
     private List<KimObservationStrategy> statements = new ArrayList<>();
+    private List<Annotation> annotations = new ArrayList<>();
 
     @Override
     public List<KimObservationStrategy> getStatements() {
@@ -25,5 +27,14 @@ public class KimObservationStrategiesImpl extends KlabDocumentImpl<KimObservatio
     public Set<String> importedNamespaces(boolean withinType) {
         Set<String> ret = new HashSet<>();
         return ret;
+    }
+
+    @Override
+    public List<Annotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<Annotation> annotations) {
+        this.annotations = annotations;
     }
 }

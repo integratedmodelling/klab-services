@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
 import java.util.*;
+
+import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.klab.api.services.runtime.impl.ExpressionCodeImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
@@ -53,6 +55,9 @@ public enum LanguageAdapter {
     ret.setOffsetInDocument(observableSyntax.getCodeOffset());
     ret.setUrn(observableSyntax.encode());
     ret.setNamespace(namespace);
+    for (var annotation : observableSyntax.getAnnotations()) {
+      ret.getAnnotations().add(adaptAnnotation(annotation, namespace, projectName, documentClass));
+    }
     if (observableSyntax.getSemantics().isPattern()) {
       ret.setPattern(observableSyntax.getSemantics().encode());
       ret.getPatternVariables().addAll(observableSyntax.getSemantics().getPatternVariables());
@@ -72,6 +77,26 @@ public enum LanguageAdapter {
 
     // TODO value ops
 
+    return ret;
+  }
+
+  private Annotation adaptAnnotation(
+      FunctionCallSyntax annotation,
+      String namespace,
+      String projectName,
+      KlabAsset.KnowledgeClass documentClass) {
+    AnnotationImpl ret = new AnnotationImpl();
+    ret.setName(annotation.getName());
+    for (int n = 0; n < annotation.getUnnamedParameterCount(); n++) {
+      ret.getUnnamedArguments()
+          .add(
+              adaptValue(annotation.nextUnnamedParameter(), namespace, projectName, documentClass));
+    }
+    for (String key : annotation.getArguments().keySet()) {
+      ret.put(
+          key,
+          adaptValue(annotation.getArguments().get(key), namespace, projectName, documentClass));
+    }
     return ret;
   }
 
@@ -271,7 +296,11 @@ public enum LanguageAdapter {
     }
 
     if (logicalOperator != null) {
-      ret.getType().add(logicalOperator == SemanticSyntax.BinaryOperator.OR ? SemanticType.UNION : SemanticType.INTERSECTION);
+      ret.getType()
+          .add(
+              logicalOperator == SemanticSyntax.BinaryOperator.OR
+                  ? SemanticType.UNION
+                  : SemanticType.INTERSECTION);
       ret.getOperands().addAll(logicalOperands);
     }
 
@@ -415,6 +444,15 @@ public enum LanguageAdapter {
     ret.setProjectName(namespace.getProjectName());
     ret.setDocumentClass(KlabAsset.KnowledgeClass.NAMESPACE);
     ret.getResourceUrns().addAll(model.getResourceUrns());
+    for (var annotation : model.getAnnotations()) {
+      ret.getAnnotations()
+          .add(
+              adaptAnnotation(
+                  annotation,
+                  namespace.getUrn(),
+                  namespace.getProjectName(),
+                  KlabAsset.KnowledgeClass.NAMESPACE));
+    }
 
     // TODO docstring set through next-gen literate programming features
 

@@ -22,7 +22,7 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -79,12 +79,13 @@ public interface Actuator extends Serializable, RuntimeAsset {
     return RuntimeAsset.Type.ACTUATOR;
   }
 
-  /**
-   * Name of the service call that encodes deferred resolution when that must be included in the
-   * computation. This will appear as a service call whose only parameter will be the contextualized
-   * observation strategy.
-   */
-  static final String DEFERRED_STRATEGY_CALL = "klab.internal.deferred";
+  //  /**
+  //   * Name of the service call that encodes deferred resolution when that must be included in the
+  //   * computation. This will appear as a service call whose only parameter will be the
+  // contextualized
+  //   * observation strategy.
+  //   */
+  //  String DEFERRED_STRATEGY_CALL = "klab.internal.deferred";
 
   /**
    * The ID of the actuator must be the same as that of the observation it handles. It is specific
@@ -168,12 +169,6 @@ public interface Actuator extends Serializable, RuntimeAsset {
    * reference, the list should be empty: any mediations are part of the referencing actuator's
    * computations.
    *
-   * <p>An internal service call named {@link #DEFERRED_STRATEGY_CALL} should be used to specify
-   * deferred observation strategies, with the {@link ObservationStrategyObsolete} communicated by
-   * the resolver as default {@link ServiceCall#DEFAULT_PARAMETER_NAME} parameter. The runtime will
-   * resolve the strategy once the context observation has been made and insert the resulting
-   * dataflow's actuators as children of the current one.
-   *
    * @return all computations. Never null, possibly empty.
    */
   List<ServiceCall> getComputation();
@@ -213,4 +208,15 @@ public interface Actuator extends Serializable, RuntimeAsset {
    * @return the merged coverage of all models in or below this actuator.
    */
   Geometry getCoverage();
+
+  /**
+   * The set of annotations is harvested from the language specifications starting at the
+   * observable, then the model, then the namespace and so on. Annotations that are more specific
+   * for the observation override the outer ones; they may specify visualization options (e.g.
+   * colors or colormaps), computation options (e.g. integration methods, parallelism or desired
+   * filling curve), interactive parameterization and defaults for expressions, etc.
+   *
+   * @return all annotations that influence the target observation
+   */
+  List<Annotation> getAnnotations();
 }

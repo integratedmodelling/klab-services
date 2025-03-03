@@ -33,7 +33,6 @@ import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.data.Cursors;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -289,28 +288,52 @@ public enum ServiceConfiguration {
           }
 
           @Override
-          public Data.Cursor getGeometryIterator(Geometry geometry, Data.FillCurve fillCurve) {
-            return switch (fillCurve) {
-              case D1_LINEAR ->
-                  geometry.size() == 1
-                      ? new Cursors.ScalarCursor(geometry)
-                      : new Cursors.Linear1D(geometry);
-              case DN_LINEAR ->
-                  geometry.size() == 1
-                      ? new Cursors.ScalarCursor(geometry)
-                      : new Cursors.LinearND(geometry);
-              case DN_InvLINEAR ->
-                  geometry.size() == 1
-                      ? new Cursors.ScalarCursor(geometry)
-                      : new Cursors.LinearNDInverted(geometry);
-              case D2_XY ->
-                  geometry.size() == 1
-                      ? new Cursors.ScalarCursor(geometry)
-                      : new Cursors.Matrix2DXY(geometry);
-              // TODO the rest
-              default ->
+          public Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction> getSpatialOffsetMapping(Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve) {
+            return switch (spaceFillingCurve) {
+                case D1_LINEAR -> new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
+
+                    final long[] l = new long[1];
+
+                    @Override
+                    public Data.LongToLongArrayFunction getFirst() {
+                        return n -> { l[0] = n; return l; };
+                    }
+
+                    @Override
+                    public Data.LongArrayToLongFunction getSecond() {
+                        return n -> n[0];
+                    }
+                };
+                case D2_XY -> {
+
+                    final var shape = geometry.dimension(Geometry.Dimension.Type.SPACE).getShape();
+                    final var x = shape.get(0);
+                    final var y = shape.get(1);
+
+                    yield  new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
+
+                        final long[] l = new long[2];
+
+                        @Override
+                        public Data.LongToLongArrayFunction getFirst() {
+                            return n -> { l[0] = n/x; l[1] = n % x; return l; };
+                        }
+
+                        @Override
+                        public Data.LongArrayToLongFunction getSecond() {
+                            return n -> n[1] * x + n[0];
+                        }
+                    };
+                }
+//                case D2_YX -> null;
+//                case D2_XInvY -> null;
+//                case D3_XYZ -> null;
+//                case D3_ZYX -> null;
+//                case D2_HILBERT -> null;
+//                case D3_HILBERT -> null;
+                default ->
                   throw new KlabUnimplementedException(
-                      "ServiceConfiguration::getGeometryIterator(" + fillCurve + ")");
+                      "ServiceConfiguration::getGeometryIterator(" + spaceFillingCurve + ")");
             };
           }
         });

@@ -1,10 +1,10 @@
 package org.integratedmodelling.klab.api.data;
 
-import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.scope.Persistence;
-
+import java.util.Collection;
 import java.util.List;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.scope.Persistence;
 
 /**
  * Base storage providing only general methods. Children enable either boxed I/O or faster native
@@ -40,117 +40,168 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
    *
    * <p>Specific buffer types should also implement a mapping function for map/reduce operations.
    */
-  interface Buffer extends RuntimeAsset /* TODO must extend Cursor too */ {
+  interface Buffer extends Data.Cursor, RuntimeAsset {
 
     default RuntimeAsset.Type classify() {
       return Type.DATA;
     }
 
-    /*
-    FIXME remove - top level says everything
+    /**
+     * Size of the buffer. In a simple situation this will normally be equal to the size of the
+     * fastest-changing extent of the geometry.
+     *
+     * @return
      */
-    Storage.Type dataType();
-
     long size();
 
-    // FIXME this is a single long according to the overall fill curve
-    @Deprecated
-    long[] offsets();
-
     /**
-     * The portable histogram. Should never be null.
-     * FIXME remove
-     * @deprecated should be internal
-     * @return
-     */
-    Histogram histogram();
-
-    /**
-     * The persistence tells us whether we need to periodically offload the buffer to disk in order
-     * to keep the digital twin consistent across server boots.
-     * FIXME move to top level
-     * @return
-     */
-    Persistence persistence();
-
-    /**
-     * Obtain a Data.Filler whose <code>add(value)</code> method will use the same fill curve that
-     * the buffer implements. When the last add() is called on the filler, the buffer is expected to
-     * be finalized and immutable. Storage managers may decide to queue in operations such as
-     * building statistics, images or the like on a low-priority queue.
-     * FIXME remove, merge with cursor
-     * @param fillerClass
-     * @return
-     * @param <T>
-     */
-    <T extends Data.Filler> T filler(Class<T> fillerClass);
-
-    /**
-     * The {@link org.integratedmodelling.klab.api.data.Data.FillCurve} for this buffer. Applies to
-     * both filling and iteration through subclasses.
-     *
-     * FIXME move to top level
+     * Locators of the buffer relative to the storage's fill curve and the sub-geometry of the
+     * overall storage geometry represented in it. Must agree with the number of buffers and the
+     * size. These are linear offsets, one per dimension.
      *
      * @return
      */
-    Data.FillCurve fillCurve();
+    long offset();
+  }
+
+  interface DoubleBuffer extends Buffer {
+
+    /**
+     * Return the value at the current offset in the iterator and advance the iteration.
+     *
+     * @return
+     */
+    double get();
+
+    /**
+     * Return the value at the current offset in the iterator without advancing the iteration.
+     *
+     * @return
+     */
+    double peek();
+
+    /**
+     * Set the value at the current iterable offset and advance the iteration. Do not use after get()!
+     *
+     * @param value
+     */
+    void add(double value);
+
+    /**
+     * Random access value. The offset is according to the overall fill curve and buffer-specific
+     * offsets.
+     *
+     * @param offset
+     */
+    double get(long offset);
+
+    /**
+     * Random value set. May be inefficient. Offset as in {@link #get(long)}.
+     *
+     * @param value
+     * @param offset
+     */
+    void set(double value, long offset);
+
+  }
+
+  interface LongBuffer extends Buffer {
+
+    /**
+     * Return the value at the current offset in the iterator and advance the iteration.
+     *
+     * @return
+     */
+    long get();
+
+    /**
+     * Return the value at the current offset in the iterator without advancing the iteration.
+     *
+     * @return
+     */
+    long peek();
+
+    /**
+     * Set the value at the current iterable offset and advance the iteration. Do not use after get()!
+     *
+     * @param value
+     */
+    void add(long value);
+
+    /**
+     * Random access value. The offset is according to the overall fill curve and buffer-specific
+     * offsets.
+     *
+     * @param offset
+     */
+    long get(long offset);
+
+    /**
+     * Random value set. May be inefficient. Offset as in {@link #get(long)}.
+     *
+     * @param value
+     * @param offset
+     */
+    void set(long value, long offset);
+
   }
 
   default RuntimeAsset.Type classify() {
     return RuntimeAsset.Type.ARTIFACT;
   }
 
-  /**
-   * Obtain a buffer to access and/or fill the storage or a part of it.
-   *
-   * @param size the size of the buffer - either from the full geometry or for a part using the
-   *     passed fill curve and offsets. If the buffer already exists, the passed fill curve should be
-   *             honored by enabling the buffer's cursors to translate the
-   * @param fillCurve the fill curve along which the buffer is iterable. Only the subclasses
-   *     implement primitive or boxing iterators. The filler returned by the buffer implements the
-   *     same fill curve.
-   * @param offset the offset for the storage within the overall geometry according to the fill
-   *     curve. This should be 0 unless the buffer is a partial coverage.
-   *
-   * @return a suitable buffer
-   * @deprecated this should come from a cursor and not be asked directly, The method could be internal
-   * and not in the API.
-   */
-  B buffer(long size, Data.FillCurve fillCurve, long[] offset);
-
-//  /**
-//   * Obtain a cursor over the data with the specified class type. The Cursor subclasses provide the
-//   * add, set and get methods for both sequential and random r/w access.
-//   *
-//   * The resulting {@link Data.Cursor} will use the default fill curve for the geometry of the
-//   * underlying data buffer.
-//   *
-//   * @param cursorClass
-//   * @return
-//   * @param <T>
-//   */
-//  <T extends Data.Cursor> T cursor(Class<T> cursorClass);
-//  <T extends Data.Cursor> T cursor(Geometry geometry, Class<T> cursorClass);
-//  <T extends Data.Cursor> T cursor(Geometry geometry, Data.FillCurve fillCurve, Class<T> cursorClass);
-//  <T extends Data.Cursor> T cursor(Geometry geometry, Data.FillCurve fillCurve, long start, long end, Class<T> cursorClass);
-
   Type getType();
+
+  /**
+   * The {@link Data.SpaceFillingCurve} for the spatial arrangement in the buffers. The fill curve
+   * is established based on the geometry unless a <code>@fillcurve
+   * </code> annotation is present on the model. The fill curve is irrelevant if there is only one
+   * spatial state or no spatial extent at all. In such cases it's best to avoid initializing a moot
+   * Hilbert curve which has more overhead than the others.
+   *
+   * <p>The storage may not have a fill curve until the first buffers are created.
+   *
+   * @return the spatial fill curve for the spatial extent.
+   */
+  Data.SpaceFillingCurve spaceFillCurve();
+
+  /**
+   * Retrieve all buffers that cover the passed geometry, which must be in phase with the overall
+   * geometry. Implementations may provide support for partial geometries within a single extent but
+   * this is not expected in general. There may be multiple buffers even with a single time extent,
+   * and they should be usable in parallel as needed. This one is called by contextualizers to
+   * obtain, and according to implementation possibly create, the needed buffer(s) for reading and
+   * writing according to the contextualization stage.
+   *
+   * <p>The buffers are allocated using the default fill curve and an implementation-dependent
+   * strategy unless a <code>@split</code> annotation is present on the model to define the split
+   * strategy.
+   *
+   * @param geometry the (sub)-geometry that covers the buffers. According to implementation, the
+   *     geometry's coverage of the overall geometry may be more or less constrained.
+   * @param bufferClass the class of the buffer, which is needed to access the non-boxing add, set
+   *     and get methods exposed by the different {@link Buffer} subclasses. If a class is asked for
+   *     that does not match the existing buffers, a mediating buffer should be produced. The native
+   *     buffer class should always be understandable based on the storage type.
+   * @param annotations may contain specifications for splits (<code>@split</code>); also <code>
+   *     fillcurve</code> can specify the fill curve to use to address the spatial arrangement of
+   *     the geometry. In some situations (e.g. single spatial buffer) it should be possible to use
+   *     a different fill curve (e.g. a S2HILBERT for a SXY when the buffer is orthonormal), which
+   *     the implementation should automatically remap. If that is not possible (e.g. there are
+   *     multiple buffers with a different FC) a {@link
+   *     org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException} should be thrown.
+   * @return the list of buffers covering the geometry and addressable through the passed curve.
+   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
+   *     parameters cause non-resolvable geometry conflicts with the underlying implementation.
+   */
+  <T extends Storage.Buffer> List<T> buffers(
+      Geometry geometry, Class<T> bufferClass, Collection<Annotation> annotations);
 
   /**
    * After the contextualization is finished, the storage will contain one or more buffers with the
    * data content, geometry and data fill curve. The set of buffers will cover the geometry of the
-   * observation.
-   *
-   * TODO the buffers should also be cursors and iterate longs. Buffers are predefined (possibly honoring
-   *  @split and @fillcurve annotations, otherwise using geometry-dependent defaults) when this is accessed.
-   *  A buffer(FillCurve) should also be provided that will return a single buffer honoring the fill curve,
-   *  applying any offsets if multiple (or throw an exception) and remap the iteration to the "actual" fill
-   *  curve unless it's the same.
-   *
-   * TODO The fill curve must be available at the Storage level, not the buffer level, as it cannot be different
-   *  in different buffers.
-   *
-   * @return
+   * observation. This one returns all the existing buffers; they are expected to be fully defined
+   * and read-only at this stage.
    */
   List<Storage.Buffer> buffers();
 
@@ -168,4 +219,12 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
    * @return
    */
   Histogram getHistogram();
+
+  /**
+   * The persistence tells us whether we need to periodically offload the buffers to disk in order
+   * to keep the digital twin consistent across server boots.
+   *
+   * @return
+   */
+  Persistence persistence();
 }

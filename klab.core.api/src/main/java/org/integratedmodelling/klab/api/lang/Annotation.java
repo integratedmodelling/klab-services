@@ -27,7 +27,10 @@ public interface Annotation extends Parameters<String> {
     String getName();
 
     String getContentClass();
-    
+
+    public static Annotation of(String name, Object... parameters) {
+        return AnnotationImpl.create(name, parameters);
+    }
 
     //
     // /**

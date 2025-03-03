@@ -40,6 +40,7 @@ public class ResourceImpl implements Resource {
     private List<String> categorizables = new ArrayList<>();
     private List<String> codelists = new ArrayList<>();
     private String serviceId;
+    private List<Annotation> annotations = new ArrayList<>();
 
     public List<Attribute> getOutputs() {
         return outputs;
@@ -236,6 +237,15 @@ public class ResourceImpl implements Resource {
 
     public void setLocalProjectName(String localProjectName) {
         this.localProjectName = localProjectName;
+    }
+
+    @Override
+    public List<Annotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<Annotation> annotations) {
+        this.annotations = annotations;
     }
 
     public String toString() {

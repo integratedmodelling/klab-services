@@ -9,6 +9,7 @@ import java.util.Set;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
@@ -77,4 +78,7 @@ public class NavigableKimNamespace extends NavigableKlabDocument<KlabStatement, 
 	public Set<String> importedNamespaces(boolean withinType) {
 		return delegate.importedNamespaces(withinType);
 	}
+
+	@Override
+	public Collection<Annotation> getAnnotations() { return delegate.getAnnotations(); }
 }

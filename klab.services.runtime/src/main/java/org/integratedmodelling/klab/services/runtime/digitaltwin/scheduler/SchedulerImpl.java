@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import reactor.core.publisher.Sinks;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -58,15 +59,21 @@ public class SchedulerImpl implements Scheduler {
     TIME_SYNCHRONOUS
   }
 
+  private static class Event {}
+
   private Type type;
   private long startTime = -1;
   private long endTime = -1;
   private Synchronicity synchronicity = Synchronicity.SYNCHRONOUS;
   private AtomicBoolean stopped = new AtomicBoolean(false);
   private int cursor = 0;
-//  private WaitStrategy waitStrategy;
+  //  private WaitStrategy waitStrategy;
   private boolean finished = false;
   private final ContextScope scope;
+
+  // TODO processor (sink) for events. We want a fully replayable, multicasting one. Events don't
+  //  end up in provenance although the activities they engender do.
+  private Sinks.Many<Event> processor = Sinks.many().replay().all();
 
   public SchedulerImpl(ContextScope scope) {
     this.scope = scope;

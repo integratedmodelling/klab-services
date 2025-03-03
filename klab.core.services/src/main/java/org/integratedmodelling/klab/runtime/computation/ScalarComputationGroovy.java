@@ -1,5 +1,12 @@
 package org.integratedmodelling.klab.runtime.computation;
 
+import gg.jte.CodeResolver;
+import gg.jte.ContentType;
+import gg.jte.TemplateEngine;
+import gg.jte.TemplateOutput;
+import gg.jte.output.StringOutput;
+import gg.jte.resolve.ResourceCodeResolver;
+import groovy.lang.Script;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -15,7 +22,9 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.language.LanguageService;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
+import javax.tools.JavaCompiler;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -25,6 +34,13 @@ import java.util.List;
  * compiled Java class for execution.
  */
 public class ScalarComputationGroovy implements ScalarComputation {
+
+  /*
+  TODO use createPrecompiled
+   */
+  static TemplateEngine templateEngine =
+      TemplateEngine.create(new ResourceCodeResolver("code/templates"), ContentType.Plain);
+  static KlabGroovyShell groovyShell = new KlabGroovyShell();
 
   static class BuilderImpl implements Builder {
 
@@ -82,7 +98,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
           .getServiceCallName()
           .equals(contextualizable.getUrn())) {
         // check types
-        // LUT, classification or reference to codelist. Should build a LUT object for internal processing and
+        // LUT, classification or reference to codelist. Should build a LUT object for internal
+        // processing and
         // generate the scalar code using it.
       } else if (RuntimeService.CoreFunctor.CONSTANT_RESOLVER
           .getServiceCallName()
@@ -99,6 +116,53 @@ public class ScalarComputationGroovy implements ScalarComputation {
     @Override
     public ScalarComputation build() {
 
+      var codeInfo = new TemplateCodeInfo();
+      codeInfo.setTemplateName("ScalarBufferFiller.jte");
+      codeInfo.setClassName("ScalarComputation_" + Utils.Names.shortUUID());
+
+      // constructor arguments
+      List<Object> args = new ArrayList<>();
+      args.add(scope);
+      args.add(target);
+
+      for (var step : steps) {
+        if (step.expressionDescriptor
+            instanceof GroovyProcessor.GroovyDescriptor groovyDescriptor) {
+          for (var field : groovyDescriptor.getTemplateFields()) {
+            codeInfo.getFieldDeclarations().add(field);
+          }
+          codeInfo.getMainCodeBlocks().add(groovyDescriptor.getProcessedCode());
+          if (step.expressionDescriptor != null) {
+            for (var identifier : step.expressionDescriptor.getIdentifiers().keySet()) {
+              var desc = step.expressionDescriptor.getIdentifiers().get(identifier);
+              if (desc.nonScalarReferenceCount() > 0) {
+                codeInfo.getConstructorArguments().add("Observable " + identifier);
+                args.add(groovyDescriptor.getKnownObservables().get(identifier));
+                codeInfo
+                    .getFieldDeclarations()
+                    .add("Observable " + identifier + "Observable"); // TODO wrap
+                codeInfo
+                    .getFieldDeclarations()
+                    .add(
+                        "@Lazy Observation "
+                            + identifier
+                            + "Obs = {scope.getObservation("
+                            + identifier
+                            + "Observable)}()"); // TODO wrap
+                codeInfo
+                    .getConstructorInitializationStatements()
+                    .add("this." + identifier + "Observable = " + identifier);
+              }
+              if (desc.scalarReferenceCount() > 0) {
+                // add local vars buffers, vars
+                // add loop variables assignments besides self
+                System.out.println("SPORP");
+              }
+            }
+          }
+        }
+      }
+
       // 1. Get class template for the final class
       // 2. Create class fields as lazy injectors
       // 3. Create wrappers for observations, time, space and whatever else was referenced
@@ -107,12 +171,35 @@ public class ScalarComputationGroovy implements ScalarComputation {
       // 5. If scalar code is there, group it for code generation and define intermediate variables
       // 5.1 Create loop based on fill curve and offset where scalar code goes in
       // 6. Finalization
-      return null;
+
+      TemplateOutput output = new StringOutput();
+      templateEngine.render(codeInfo.getTemplateName(), codeInfo, output);
+      var compiled = groovyShell.compile(output.toString(), Script.class, args.toArray());
+      return new ScalarComputationGroovy(compiled, scope, output.toString());
     }
+  }
+
+  private Script script;
+  private ContextScope scope;
+  private String sourceCode;
+
+  private ScalarComputationGroovy(Script groovyScript, ContextScope scope, String sourceCode) {
+    this.script = groovyScript;
+    this.scope = scope;
+    this.sourceCode = sourceCode;
   }
 
   @Override
   public boolean execute() {
+    try {
+      var ret = script.run();
+      if (ret instanceof Boolean) {
+        return (Boolean) ret;
+      }
+      return true;
+    } catch (Throwable t) {
+      scope.error(t, sourceCode);
+    }
     return false;
   }
 

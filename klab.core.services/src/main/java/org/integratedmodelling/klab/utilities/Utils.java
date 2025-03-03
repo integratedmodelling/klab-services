@@ -1,5 +1,10 @@
 package org.integratedmodelling.klab.utilities;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
 import maven.fetcher.MavenFetchRequest;
 import maven.fetcher.MavenFetcher;
 import org.apache.commons.io.FileUtils;
@@ -36,16 +41,7 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
-import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.Statement;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UI;
@@ -53,13 +49,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class Utils extends org.integratedmodelling.common.utils.Utils {
 
@@ -250,254 +239,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       List<String> jars = resolve(coords, null, localRepo, remotes);
       System.out.printf(">>>>>> jars: %s%n", jars);
     }
-  }
-
-  public static class Annotations {
-
-    public static boolean hasAnnotation(Observable observable, String s) {
-      for (Annotation annotation : observable.getAnnotations()) {
-        if (annotation.getName().equals(s)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    public static Annotation getAnnotation(Observable observable, String s) {
-      for (Annotation annotation : observable.getAnnotations()) {
-        if (annotation.getName().equals(s)) {
-          return annotation;
-        }
-      }
-      return null;
-    }
-
-    public static boolean hasAnnotation(Statement object, String s) {
-      for (Annotation annotation : object.getAnnotations()) {
-        if (annotation.getName().equals(s)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    public static Annotation getAnnotation(Statement object, String s) {
-      for (Annotation annotation : object.getAnnotations()) {
-        if (annotation.getName().equals(s)) {
-          return annotation;
-        }
-      }
-      return null;
-    }
-
-    /**
-     * Shorthand to check whether the default parameter (list or individual value) of an annotation
-     * contains the passed string.
-     *
-     * @param string
-     * @return
-     */
-    public static boolean defaultsContain(Annotation annotation, String string) {
-      if (annotation.get(ServiceCall.DEFAULT_PARAMETER_NAME) instanceof List) {
-        return ((List<?>) annotation.get(ServiceCall.DEFAULT_PARAMETER_NAME)).contains(string);
-      } else if (annotation.get(ServiceCall.DEFAULT_PARAMETER_NAME) != null) {
-        return annotation.get(ServiceCall.DEFAULT_PARAMETER_NAME).equals(string);
-      }
-      return false;
-    }
-
-    /**
-     * Simple methods that are messy to keep writing explicitly
-     *
-     * @param annotations
-     * @param id
-     * @return
-     */
-    public static Annotation getAnnotation(List<Annotation> annotations, String id) {
-      for (Annotation annotation : annotations) {
-        if (id.equals(annotation.getName())) {
-          return annotation;
-        }
-      }
-      return null;
-    }
-
-    public static Parameters<String> collectVariables(List<Annotation> annotations) {
-      Parameters<String> ret = Parameters.create();
-      for (Annotation annotation : annotations) {
-        if ("var".equals(annotation.getName())) {
-          for (String key : annotation.getNamedKeys()) {
-            ret.put(key, annotation.get(key));
-          }
-        }
-      }
-      return ret;
-    }
-
-    /**
-     * Collect the annotations from an k.IM object and its semantic lineage, ensuring that
-     * downstream annotations of the same name override those upstream. Any string parameter filters
-     * the annotations collected.
-     *
-     * @param objects
-     * @return all annotations from upstream
-     */
-    public static Collection<Annotation> collectAnnotations(Object... objects) {
-
-      Map<String, Annotation> ret = new HashMap<>();
-      for (Object object : objects) {
-        if (object instanceof KlabAsset) {
-          collectAnnotations((Knowledge) object, ret);
-        } else if (object instanceof Statement) {
-          collectAnnotations((Statement) object, ret);
-        } else if (object instanceof Artifact) {
-          for (Annotation annotation : ((Artifact) object).getAnnotations()) {
-            if (!ret.containsKey(annotation.getName())) {
-              ret.put(annotation.getName(), annotation);
-            }
-          }
-        }
-      }
-      return ret.values();
-    }
-
-    /**
-     * Collect the annotations from anything semantic lineage, ensuring that downstream annotations
-     * of the same name override those upstream.
-     *
-     * @param object
-     * @return all annotations from upstream
-     */
-    public static Collection<Annotation> collectAnnotations(KlabAsset object) {
-      Map<String, Annotation> ret = new HashMap<>();
-      collectAnnotations(object, ret);
-      return ret.values();
-    }
-
-    private static void collectAnnotations(KlabAsset object, Map<String, Annotation> collection) {
-
-      //            for (Annotation annotation : object.getAnnotations()) {
-      //                if (!collection.containsKey(annotation.getName())) {
-      //                    Annotation a = new AnnotationImpl(annotation);
-      //                    collection.put(a.getName(), a);
-      //                }
-      //            }
-
-      if (object instanceof KimObservable) {
-
-        // /*
-        // * collect from roles, traits and main in this order
-        // */
-        // // for (IConcept role : Roles.INSTANCE.getRoles(((IObservable)
-        // // object).getType())) {
-        // // collectAnnotations(role, collection);
-        // // }
-        // for (IConcept trait : Traits.INSTANCE.getTraits(((IObservable)
-        // object).getType())) {
-        // // FIXME REMOVE ugly hack: landcover is a type, but it's used as an attribute in
-        // // various places so the change
-        // // is deep. This makes landcover colormaps end up in places they shouldn't be.
-        // // TODO check - may not be relevant anymore now that landcover is correctly a
-        // type of and not a trait.
-        // if (!trait.getNamespace().equals("landcover")) {
-        // collectAnnotations(trait, collection);
-        // }
-        // }
-        //
-        // collectAnnotations(((IObservable) object).getType(), collection);
-      } else if (object instanceof KimConcept) {
-        // IKimObject mobject = Resources.INSTANCE.getModelObject(object.toString());
-        // if (mobject != null) {
-        // collectAnnotations(mobject, collection);
-        // }
-        // if (((IConcept) object).is(Type.CLASS)) {
-        // // collect annotations from what is classified
-        // IConcept classified = Observables.INSTANCE.getDescribedType((IConcept) object);
-        // if (classified != null) {
-        // collectAnnotations(classified, collection);
-        // }
-        // }
-        // for (IConcept parent : ((IConcept) object).getParents()) {
-        // if (!CoreOntology.CORE_ONTOLOGY_NAME.equals(parent.getNamespace())) {
-        // collectAnnotations(parent, collection);
-        // }
-        // }
-      } else if (object instanceof Concept) {
-        // TODO
-      } else if (object instanceof Observable) {
-        // TODO
-      } else if (object instanceof Model) {
-        collectAnnotations(((Model) object).getObservables().get(0), collection);
-        //            } else if (object instanceof Instance) {
-        //                collectAnnotations(((Instance) object).getObservable(), collection);
-      }
-      //
-      // if (getParent(object) != null) {
-      // collectAnnotations(object.getParent(), collection);
-      // }
-
-    }
-
-    // private void collectAnnotations(Knowledge object, Map<String, IAnnotation> collection) {
-    //
-    // for (Annotation annotation : object.getAnnotations()) {
-    // if (!collection.containsKey(annotation.getName())) {
-    // collection.put(annotation.getName(), annotation);
-    // }
-    // }
-    //
-    // }
-    //
-    // private void collectAnnotations(ISemantic object, Map<String, IAnnotation> collection) {
-    //
-    // if (object instanceof IObservable) {
-    //
-    // for (IAnnotation annotation : ((IObservable)object).getAnnotations()) {
-    // if (!collection.containsKey(annotation.getName())) {
-    // collection.put(annotation.getName(), annotation);
-    // }
-    // }
-    //
-    // /*
-    // * collect from roles, traits and main in this order
-    // */
-    // // for (IConcept role : Roles.INSTANCE.getRoles(((IObservable)
-    // // object).getType())) {
-    // // collectAnnotations(role, collection);
-    // // }
-    // for (IConcept trait : Traits.INSTANCE.getTraits(((IObservable) object).getType())) {
-    // // FIXME REMOVE ugly hack: landcover is a type, but it's used as an attribute in
-    // // various places so the change
-    // // is deep. This makes landcover colormaps end up in places they shouldn't be.
-    // // TODO check - may not be relevant anymore now that landcover is correctly a type of and
-    // not a trait.
-    // if (!trait.getNamespace().equals("landcover")) {
-    // collectAnnotations(trait, collection);
-    // }
-    // }
-    //
-    // collectAnnotations(((IObservable) object).getType(), collection);
-    //
-    // } else if (object instanceof IConcept) {
-    // IKimObject mobject = Resources.INSTANCE.getModelObject(object.toString());
-    // if (mobject != null) {
-    // collectAnnotations(mobject, collection);
-    // }
-    // if (((IConcept) object).is(Type.CLASS)) {
-    // // collect annotations from what is classified
-    // IConcept classified = Observables.INSTANCE.getDescribedType((IConcept) object);
-    // if (classified != null) {
-    // collectAnnotations(classified, collection);
-    // }
-    // }
-    // for (IConcept parent : ((IConcept) object).getParents()) {
-    // if (!CoreOntology.CORE_ONTOLOGY_NAME.equals(parent.getNamespace())) {
-    // collectAnnotations(parent, collection);
-    // }
-    // }
-    // }
-    // }
-
   }
 
   public static class Classpath {
