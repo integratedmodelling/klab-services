@@ -41,17 +41,17 @@ class TestExpression extends ExpressionBase {
     @Override
     Object run() {
 
-        def bufferSets = [selfBuffers, elevationBuffers, slopeBuffers]
-
-        return Utils.Java.distributeComputation(
-                bufferSets,
-                bufferArray -> {
-                    while (bufferArray[0].hasNext()) {
-                        def elevation = bufferArray[1].get()
-                        def slope = bufferArray[2].get()
-                        bufferArray[0].add((double) ((elevation - elevationObs.max) / slope))
-                    }
-                })
+//        def bufferSets = [selfBuffers, elevationBuffers, slopeBuffers]
+//
+//        return Utils.Java.distributeComputation(
+//                bufferSets,
+//                bufferArray -> {
+//                    while (bufferArray[0].hasNext()) {
+//                        def elevation = bufferArray[1].get()
+//                        def slope = bufferArray[2].get()
+//                        bufferArray[0].add((double) ((elevation - elevationObs.max) / slope))
+//                    }
+//                })
 
     }
 }
