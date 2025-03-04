@@ -91,8 +91,14 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
     this.splits = this.contextScope.getSplits(this.splits);
   }
 
-  public <T extends Buffer> List<T> existingBuffers(Geometry geometry, Class<T> bufferClass) {
-    return (List<T>) buffersCovering(geometry, this.spaceFillingCurve, this.splits, this.dataType);
+  /**
+   * Used after the buffers have been created.
+   * @param geometry
+   * @return
+   */
+  public List<Buffer> buffers(Geometry geometry) {
+    return (List<Buffer>)
+        buffersCovering(geometry, this.spaceFillingCurve, this.splits, this.dataType);
   }
 
   @Override
@@ -145,7 +151,10 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
   }
 
   protected List<? extends Buffer> buffersCovering(
-          Geometry geometry, Data.SpaceFillingCurve fillingCurve, int splits, GraphModel.DataType dataType) {
+      Geometry geometry,
+      Data.SpaceFillingCurve fillingCurve,
+      int splits,
+      GraphModel.DataType dataType) {
 
     if (this.spaceFillingCurve == null) {
       this.spaceFillingCurve = fillingCurve;

@@ -162,7 +162,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
                         .getStateStorage()
                         .getStorage(observation);
 
-                // add loop variables assignments besides self
+
+
                 System.out.println("SPORP");
               }
             }

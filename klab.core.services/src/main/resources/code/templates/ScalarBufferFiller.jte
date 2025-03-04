@@ -7,6 +7,9 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.runtime.computation.ExpressionBase
 import org.integratedmodelling.klab.api.scope.ContextScope
 import org.integratedmodelling.klab.api.utils.Utils;
+@for(var localImport : codeInfo.getAdditionalImports()) {
+    ${localImport}
+@endfor
 
 class ${codeInfo.getClassName()} extends ExpressionBase {
 
@@ -25,23 +28,9 @@ class ${codeInfo.getClassName()} extends ExpressionBase {
 @for(var localVar : codeInfo.getLocalVariableDeclarations()) {
     ${localVar}
 @endfor
-    <%-- Buffers from the fields --%>
-    def ret = Utils.Java.distributeComputation(
-        bufferSets, // must be a field with a buffer array
-        bufferArray -> {
-            while bufferArray[0].hasNext()) {
-               <%-- LOOP VARIABLES--%>
-               def elevation = bufferArray[1].next()
-               def slope = bufferArray[2].next()
-               <%--self as scalar, too--%>
-               def value = <%--THE EXPRS, pass the value around--%>
 @for(var codeBlock : codeInfo.getMainCodeBlocks()) {
-                  ${codeBlock}
+    ${codeBlock}
 @endfor
-               selfBuffer.add(value)
-        }
-    });
-    return ret;
   }
 }
 
