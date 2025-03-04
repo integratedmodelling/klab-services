@@ -42,7 +42,6 @@ import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.runtime.storage.AbstractBuffer;
-import org.integratedmodelling.klab.runtime.storage.AbstractStorage;
 import org.neo4j.cypherdsl.core.*;
 import org.neo4j.driver.*;
 

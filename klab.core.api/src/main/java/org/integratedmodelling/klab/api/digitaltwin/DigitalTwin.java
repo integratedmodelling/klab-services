@@ -6,7 +6,6 @@ import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -21,7 +20,6 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 /**
@@ -66,7 +64,7 @@ public interface DigitalTwin {
    *
    * @return
    */
-  StateStorage getStateStorage();
+  StorageManager getStorageManager();
 
   /**
    * The scheduler manages everything having to do with time, and coordinates with the {@link

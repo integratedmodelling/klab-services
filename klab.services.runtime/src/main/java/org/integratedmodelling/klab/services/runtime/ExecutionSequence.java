@@ -7,7 +7,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -310,10 +309,17 @@ public class ExecutionSequence {
           executors.add(scalarMapper::execute);
         }
 
+        var storageAnnotation =
+                Utils.Annotations.mergeAnnotations(
+                        "storage",
+                        currentDescriptor.serviceInfo,
+                        actuator,
+                        observation.getObservable());
+
         // if we're a quality, we need storage at the discretion of the StorageManager.
-        Storage<?> storage =
+        Storage storage =
             observation.getObservable().is(SemanticType.QUALITY)
-                ? digitalTwin.getStateStorage().getOrCreateStorage(observation, Storage.class)
+                ? digitalTwin.getStorageManager().getStorage(observation, storageAnnotation)
                 : null;
         /*
          * Create a runnable with matched parameters and have it set the context observation
@@ -324,13 +330,6 @@ public class ExecutionSequence {
          * no available implementations remain.
          */
         if (componentRegistry.implementation(currentDescriptor).method != null) {
-
-          var storageAnnotation =
-              Utils.Annotations.findAnnotations(
-                  Set.of("fillcurve", "split", "storage"),
-                  currentDescriptor.serviceInfo,
-                  actuator,
-                  observation.getObservable());
 
           var runArguments =
               ComponentRegistry.matchArguments(

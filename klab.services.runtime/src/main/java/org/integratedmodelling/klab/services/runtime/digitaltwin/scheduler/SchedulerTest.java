@@ -8,9 +8,11 @@ import reactor.core.publisher.SignalType;
 import reactor.core.publisher.Sinks;
 
 /**
- * Executors should be registered with the observations at dataflow compilation - the insertion in
- * the DT should also compile them.They should have a flag that says when the implementations can be
- * removed (init only, recompute, event-specific etc). The DT should be able to reconstruct the
+ * Reactive scheduler/event bus stub for testing, to evolve into the actual scheduler.
+ *
+ * <p>Executors should be registered with the observations at dataflow compilation - the insertion
+ * in the DT should also compile them.They should have a flag that says when the implementations can
+ * be removed (init only, recompute, event-specific etc). The DT should be able to reconstruct the
  * necessary ones from the recorded actuators without a need for the dataflow being there.
  */
 public class SchedulerTest {
@@ -18,7 +20,8 @@ public class SchedulerTest {
   /**
    * TODO instead of observation, just store a pair of longs (observation ID in DT + last time of
    * update, -1, 0 or N). A third long is a key to a map of event checkers which are reused on
-   * demand. A fourth could be the ID of a linked DT when the event is external.
+   * demand. A fourth could be the ID of a linked DT when the event is external. We can also keep
+   * the IDs of the affected and maybe affecting observations as a Set of longs..
    *
    * <p>The observation should also know if it's a dependent or not, in which case only actual
    * observation events only affects it, given that contextualization actions are handled through
@@ -31,8 +34,6 @@ public class SchedulerTest {
    * @param end
    */
   public record Observation(String name, String concept, SemanticType type, long start, long end) {}
-
-  private static Event init = new Event();
 
   /**
    * Event should have a type enum INITIALIZATION, TIME or EVENT (extendible: can have VISIT when a
@@ -60,22 +61,33 @@ public class SchedulerTest {
     }
   }
 
-  // TODO processor (sink) for events. We want a fully replayable, multicasting one. Events don't
-  //  end up in provenance although the activities they engender do.
-  private Sinks.Many<Event> processor = Sinks.many().replay().all();
+  // The event processor. We want a fully replayable, multicasting one with synchronized behavior.
+  // Events don't end up in provenance, although the activities they engender do. The scheduler acts
+  // as a provenance agent and is recorded as the agent for activities triggered by temporal events.
+  private final Sinks.Many<Event> processor = Sinks.many().replay().all();
 
   /**
-   * Only subscribe the root observations - those that are not affected by anything - and those that
-   * are directly affected by events. Use flags and activation for the filter so that they can be
-   * removed from the chain of events when time events pass.
+   * Register an observation. This should be called after resolution is complete and all actuators
+   * have been recorded in the knowledge graph.
    *
    * @param observation
    */
-  public void insert(Observation observation /*, Consumer<Observation> onEvent*/) {
+  public void register(Observation observation /*, Consumer<Observation> onEvent*/) {
     processor
         .asFlux()
         .filterWhen(event -> Mono.just(checkApplies(observation, event)))
         .subscribe(e -> handleEvent(observation, e));
+  }
+
+  public void post(Event event) {
+    processor.emitNext(
+        event,
+        new Sinks.EmitFailureHandler() {
+          @Override
+          public boolean onEmitFailure(SignalType signalType, Sinks.EmitResult emitResult) {
+            return false;
+          }
+        });
   }
 
   private Boolean checkApplies(Observation observation, Event event) {
@@ -107,39 +119,20 @@ public class SchedulerTest {
         s -> {
           switch (s) {
             // add a new observation and subscribe it to events
-            case "+" -> {
-              scheduler.insert(
-                  new Observation(
-                      "Obs" + obsId.getAndIncrement(),
-                      "Concept",
-                      SemanticType.AGENT,
-                      System.currentTimeMillis(),
-                      -1L));
-            }
+            case "+" ->
+                scheduler.register(
+                    new Observation(
+                        "Obs" + obsId.getAndIncrement(),
+                        "Concept",
+                        SemanticType.AGENT,
+                        System.currentTimeMillis(),
+                        -1L));
             // send init event
-            case "i" -> {
-              scheduler.processor.emitNext(
-                  init,
-                  new Sinks.EmitFailureHandler() {
-                    @Override
-                    public boolean onEmitFailure(
-                        SignalType signalType, Sinks.EmitResult emitResult) {
-                      return false;
-                    }
-                  });
-            }
+            case "i" -> scheduler.post(new Event());
             // send time event between now and 1s after
-            case "t" -> {
-              scheduler.processor.emitNext(
-                  new Event(System.currentTimeMillis(), System.currentTimeMillis() + 1000),
-                  new Sinks.EmitFailureHandler() {
-                    @Override
-                    public boolean onEmitFailure(
-                        SignalType signalType, Sinks.EmitResult emitResult) {
-                      return false;
-                    }
-                  });
-            }
+            case "t" ->
+                scheduler.post(
+                    new Event(System.currentTimeMillis(), System.currentTimeMillis() + 1000));
           }
         });
   }

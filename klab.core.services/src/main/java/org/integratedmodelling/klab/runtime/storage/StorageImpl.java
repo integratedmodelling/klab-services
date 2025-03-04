@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.runtime.storage;
 
 import java.util.*;
 
-import jnr.ffi.annotations.In;
+import org.apache.commons.math3.analysis.function.Abs;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
@@ -12,7 +12,6 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
@@ -24,10 +23,10 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 /**
  * Abstract storage class providing geometry and buffer indexing, histograms, merging and splitting.
  */
-public abstract class AbstractStorage<B extends AbstractBuffer> implements Storage<B> {
+public class StorageImpl implements Storage {
 
   protected final Type type;
-  protected final StateStorageImpl stateStorage;
+  protected final StorageManagerImpl stateStorage;
   protected final Observation observation;
   protected final Geometry geometry;
   protected final ServiceContextScope contextScope;
@@ -35,7 +34,6 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
   //  private List<AbstractBuffer> buffers = new ArrayList<>();
   protected Data.SpaceFillingCurve spaceFillingCurve;
   protected int splits;
-  protected GraphModel.DataType dataType;
 
   /*
    * Buffer storage along slowest-varying dimensions. All dimensions except the
@@ -48,72 +46,47 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
    */
   private NavigableMap<Long, List<AbstractBuffer>> buffers = new TreeMap<>();
 
-  protected AbstractStorage(
-      Type type,
+  protected StorageImpl(
       Observation observation,
-      StateStorageImpl stateStorage,
+      Type type,
+      Data.SpaceFillingCurve fillingCurve,
+      int splits,
+      StorageManagerImpl stateStorage,
       ServiceContextScope contextScope) {
     this.type = type;
     this.stateStorage = stateStorage;
     this.observation = observation;
     this.geometry = observation.getGeometry();
     this.contextScope = contextScope;
-    // TODO set as below
-    this.splits = contextScope.getParallelism().getAsInt();
-    // TODO and remove the next
-    this.splits = 1;
-  }
-
-  protected void setOptions(Collection<Annotation> annotations) {
-
-    var split = annotations.stream().filter(a -> "split".equals(a.getName())).findFirst();
-    var fillcurve = annotations.stream().filter(a -> "fillcurve".equals(a.getName())).findFirst();
-    split.ifPresent(annotation -> this.splits = annotation.get("value", Integer.class));
-    if (fillcurve.isPresent()) {
-      this.spaceFillingCurve =
-          Data.SpaceFillingCurve.valueOf(fillcurve.get().get("value").toString());
-    } else if (spaceFillingCurve == null) {
-      var space =
-          geometry.getDimensions().stream()
-              .filter(d -> d.getType() == Geometry.Dimension.Type.SPACE)
-              .findFirst();
-      if (space.isEmpty() || space.get().size() <= 1) {
-        this.spaceFillingCurve = Data.SpaceFillingCurve.D1_LINEAR;
-      } else if (space.get().size() == 2) {
-        this.spaceFillingCurve = Data.SpaceFillingCurve.D2_XY;
-      } else if (space.get().size() == 3) {
-        this.spaceFillingCurve = Data.SpaceFillingCurve.D3_XYZ;
-      }
-    }
-
-    // adopt the splits from the context if they were set before. This should ensure that we have
-    // consistent splits across this scope.
-    this.splits = this.contextScope.getSplits(this.splits);
+    this.spaceFillingCurve = fillingCurve;
+    this.splits = splits;
   }
 
   /**
    * Used after the buffers have been created.
+   *
    * @param geometry
    * @return
    */
   public List<Buffer> buffers(Geometry geometry) {
-    return (List<Buffer>)
-        buffersCovering(geometry, this.spaceFillingCurve, this.splits, this.dataType);
+    return buffersCovering(geometry, this.spaceFillingCurve, this.type);
   }
 
   @Override
-  public <T extends Buffer> List<T> buffers(
-      Geometry geometry, Class<T> bufferClass, Collection<Annotation> annotations) {
+  public List<? extends Buffer> buffers(Geometry geometry, Annotation storageAnnotation) {
+    return List.of();
+  }
 
-    setOptions(annotations);
+  @Override
+  public <T extends Buffer> List<T> buffers(Geometry geometry, Class<T> bufferClass) {
+
     var nVaryingDimensions = geometry.getDimensions().stream().filter(d -> d.size() > 1).count();
-
     if (nVaryingDimensions > 1) {
       throw new KlabIllegalStateException(
           "Cannot create or retrieve buffers for more than one varying geometry extent at a time");
     }
 
-    return (List<T>) buffersCovering(geometry, this.spaceFillingCurve, this.splits, this.dataType);
+    return (List<T>) buffersCovering(geometry, this.spaceFillingCurve, this.type);
   }
 
   /*
@@ -130,18 +103,20 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
    * @return
    */
   public SPDTHistogram<?> histogram() {
-    //    if (buffers.size() == 1) {
-    //      return buffers.getFirst().histogram;
-    //    } else if (buffers.size() > 1) {
-    //      SPDTHistogram ret = new SPDTHistogram<>(20);
-    //      for (var buffer : buffers) {
-    //        if (buffer.histogram != null) {
-    //          ret.merge(buffer.histogram);
-    //        }
-    //      }
-    //      // TODO cache if storage is finalized
-    //      return ret;
-    //    }
+
+    var allBuffers = allBuffers();
+    if (allBuffers.size() == 1) {
+      return ((AbstractBuffer) allBuffers.getFirst()).histogram;
+    } else if (allBuffers.size() > 1) {
+      SPDTHistogram ret = new SPDTHistogram<>(20);
+      for (var buffer : allBuffers) {
+        if (((AbstractBuffer) buffer).histogram != null) {
+          ret.merge(((AbstractBuffer) buffer).histogram);
+        }
+      }
+      // TODO cache if storage is finalized
+      return ret;
+    }
     return new SPDTHistogram<>(20);
   }
 
@@ -150,16 +125,13 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
     return persistence;
   }
 
-  protected List<? extends Buffer> buffersCovering(
-      Geometry geometry,
-      Data.SpaceFillingCurve fillingCurve,
-      int splits,
-      GraphModel.DataType dataType) {
+  protected List<Buffer> buffersCovering(
+      Geometry geometry, Data.SpaceFillingCurve fillingCurve, Storage.Type dataType) {
 
-    if (this.spaceFillingCurve == null) {
-      this.spaceFillingCurve = fillingCurve;
-      this.splits = splits;
-    }
+    //    if (this.spaceFillingCurve == null) {
+    //      this.spaceFillingCurve = fillingCurve;
+    //      this.splits = splits;
+    //    }
 
     var scale = GeometryRepository.INSTANCE.get(geometry.toString(), Scale.class);
     var time = scale.getTime();
@@ -183,25 +155,15 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
     }
 
     /* Build enough buffers to cover it honoring any splits and fill curve required. */
-    var ret = createBuffers(geometry, geometry.size(), fillingCurve, splits);
-
-    bufs.addAll(ret);
-
-    return ret;
+    return createBuffers(geometry);
   }
 
-  /**
-   * The function in charge of creating the specific buffers wanted.
-   *
-   * @param size
-   * @param fillingCurve
-   * @param splits
-   * @return
-   */
-  protected abstract List<AbstractBuffer> createBuffers(
-      Geometry geometry, long size, Data.SpaceFillingCurve fillingCurve, int splits);
+  private List<Buffer> createBuffers(Geometry geometry) {
+    // casca l'asino
+    return List.of();
+  }
 
-  private AbstractBuffer adaptBuffer(AbstractBuffer b, Data.SpaceFillingCurve fillingCurve) {
+  private Buffer adaptBuffer(AbstractBuffer b, Data.SpaceFillingCurve fillingCurve) {
     // TODO !
     if (b.getFillingCurve() != fillingCurve) {
       // TODO
@@ -210,7 +172,7 @@ public abstract class AbstractStorage<B extends AbstractBuffer> implements Stora
   }
 
   @Override
-  public List<Storage.Buffer> buffers() {
+  public List<Storage.Buffer> allBuffers() {
     var ret = new ArrayList<Storage.Buffer>();
     buffers.values().forEach(ret::addAll);
     return ret;

@@ -4,14 +4,10 @@ import org.integratedmodelling.klab.api.data.CursorImpl;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
 import org.integratedmodelling.klab.utilities.Utils;
-
-import java.util.Collection;
 
 /** Base buffer provides the histogram and the geometry indexing/merging */
 public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffer {
@@ -22,7 +18,7 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
   private final long size;
   private final long offset;
   private final long id;
-  private final AbstractStorage<?> storage;
+  private final StorageImpl storage;
   private long internalId;
   protected SPDTHistogram<?> histogram;
 
@@ -36,7 +32,7 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
      */
   protected AbstractBuffer(
       Geometry geometry,
-      AbstractStorage<?> stateStorage,
+      StorageImpl stateStorage,
       long size,
       Data.SpaceFillingCurve spaceFillingCurve,
       long offsets) {
@@ -100,19 +96,19 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
     return this.histogram.asHistogram();
   }
 
-  /**
-   * Used to support the non-boxing parameters in contextualizers and data adapters
-   *
-   * @param bufferClass
-   * @return
-   */
-  public static Class<? extends Storage<?>> getStorageClass(Class<?> bufferClass, Collection<Annotation> annotations) {
-      if (Storage.DoubleBuffer.class.isAssignableFrom(bufferClass)) {
-        return DoubleStorage.class;
-      }
-      // TODO
-      throw new KlabInternalErrorException("Wrong buffer class in AbstractBuffer::getStorageClass");
-  }
+//  /**
+//   * Used to support the non-boxing parameters in contextualizers and data adapters
+//   *
+//   * @param bufferClass
+//   * @return
+//   */
+//  public static Class<? extends Storage<?>> getStorageClass(Class<?> bufferClass, Collection<Annotation> annotations) {
+//      if (Storage.DoubleBuffer.class.isAssignableFrom(bufferClass)) {
+//        return DoubleStorage.class;
+//      }
+//      // TODO
+//      throw new KlabInternalErrorException("Wrong buffer class in AbstractBuffer::getStorageClass");
+//  }
 
   @Override
   public String toString() {

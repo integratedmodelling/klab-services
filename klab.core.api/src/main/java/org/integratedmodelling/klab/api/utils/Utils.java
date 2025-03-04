@@ -3695,7 +3695,7 @@ public class Utils {
               case SessionScope ignored -> SessionScope.class;
               case UserScope ignored -> UserScope.class;
               case Concept ignored -> Concept.class;
-              case Storage<?> ignored -> Storage.class;
+              case Storage ignored -> Storage.class;
               // TODO specialized buffers first
               case Storage.Buffer ignored -> Storage.Buffer.class;
               default -> Object.class;

@@ -12,7 +12,7 @@ import org.integratedmodelling.klab.api.scope.Persistence;
  *
  * @author Ferd
  */
-public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
+public interface Storage extends RuntimeAsset {
 
   enum Type {
     BOXING,
@@ -81,7 +81,8 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
     double peek();
 
     /**
-     * Set the value at the current iterable offset and advance the iteration. Do not use after get()!
+     * Set the value at the current iterable offset and advance the iteration. Do not use after
+     * get()!
      *
      * @param value
      */
@@ -102,7 +103,6 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
      * @param offset
      */
     void set(double value, long offset);
-
   }
 
   interface LongBuffer extends Buffer {
@@ -122,7 +122,8 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
     long peek();
 
     /**
-     * Set the value at the current iterable offset and advance the iteration. Do not use after get()!
+     * Set the value at the current iterable offset and advance the iteration. Do not use after
+     * get()!
      *
      * @param value
      */
@@ -143,7 +144,6 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
      * @param offset
      */
     void set(long value, long offset);
-
   }
 
   default RuntimeAsset.Type classify() {
@@ -166,6 +166,36 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
   Data.SpaceFillingCurve spaceFillCurve();
 
   /**
+   * Return the buffers that cover the passed geometry. Implementations may constrain this to only
+   * work with geometries that are "in phase" with the existing buffers, throwing an exception if
+   * not. Buffers should be created as required. The type, amount and filling curve of the buffers
+   * will reflect the defaults from service configuration, possibly overridden through the
+   * annotations passed at the moment of creating the storage. The service MUST ensure that the
+   * buffer splits are identical across all the qualities within the same subject.
+   *
+   * @param geometry
+   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
+   *     parameters cause non-resolvable geometry conflicts with the underlying implementation.
+   * @return
+   */
+  List<? extends Storage.Buffer> buffers(Geometry geometry);
+
+  /**
+   * Return the buffers that cover the passed geometry. Like {@link #buffers(Geometry)} but enables
+   * some degree of recontextualization so that contextualizers can establish the fill curve they
+   * expect to use. The returned buffers must be capable of adapting to the requested parameters,
+   * which would normally come as <code>@storage</code> annotations built from the contextualizer's
+   * declaration.
+   *
+   * @param geometry
+   * @param storageAnnotation
+   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
+   *     parameters cause non-resolvable conflicts with the underlying implementation.
+   * @return
+   */
+  List<? extends Storage.Buffer> buffers(Geometry geometry, Annotation storageAnnotation);
+
+  /**
    * Retrieve all buffers that cover the passed geometry, which must be in phase with the overall
    * geometry. Implementations may provide support for partial geometries within a single extent but
    * this is not expected in general. There may be multiple buffers even with a single time extent,
@@ -183,19 +213,11 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
    *     and get methods exposed by the different {@link Buffer} subclasses. If a class is asked for
    *     that does not match the existing buffers, a mediating buffer should be produced. The native
    *     buffer class should always be understandable based on the storage type.
-   * @param annotations may contain specifications for splits (<code>@split</code>); also <code>
-   *     fillcurve</code> can specify the fill curve to use to address the spatial arrangement of
-   *     the geometry. In some situations (e.g. single spatial buffer) it should be possible to use
-   *     a different fill curve (e.g. a S2HILBERT for a SXY when the buffer is orthonormal), which
-   *     the implementation should automatically remap. If that is not possible (e.g. there are
-   *     multiple buffers with a different FC) a {@link
-   *     org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException} should be thrown.
-   * @return the list of buffers covering the geometry and addressable through the passed curve.
    * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
-   *     parameters cause non-resolvable geometry conflicts with the underlying implementation.
+   *     parameters cause non-resolvable type or geometry conflicts with the underlying
+   *     implementation.
    */
-  <T extends Storage.Buffer> List<T> buffers(
-      Geometry geometry, Class<T> bufferClass, Collection<Annotation> annotations);
+  <T extends Storage.Buffer> List<T> buffers(Geometry geometry, Class<T> bufferClass);
 
   /**
    * After the contextualization is finished, the storage will contain one or more buffers with the
@@ -203,7 +225,7 @@ public interface Storage<B extends Storage.Buffer> extends RuntimeAsset {
    * observation. This one returns all the existing buffers; they are expected to be fully defined
    * and read-only at this stage.
    */
-  List<Storage.Buffer> buffers();
+  List<Storage.Buffer> allBuffers();
 
   /**
    * The overall geometry of the storage. Will change during contextualization to reflect dynamic

@@ -192,6 +192,7 @@ public class RuntimeService extends BaseService
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
     ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
+    ret.setDefaultStorageType(configuration.getNumericStorageType());
 
     return ret;
   }

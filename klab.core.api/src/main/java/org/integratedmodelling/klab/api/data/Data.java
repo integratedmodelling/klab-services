@@ -143,6 +143,23 @@ public interface Data {
     SpaceFillingCurve(int dimensions) {
       this.dimensions = dimensions;
     }
+
+    public static SpaceFillingCurve defaultCurve(Geometry geometry) {
+      var space =
+          geometry.getDimensions().stream()
+              .filter(d -> d.getType() == Geometry.Dimension.Type.SPACE)
+              .findFirst();
+
+      return space
+          .map(
+              dimension ->
+                  switch (dimension.getDimensionality()) {
+                    case 2 -> SpaceFillingCurve.D2_XY;
+                    case 3 -> SpaceFillingCurve.D3_XYZ;
+                    default -> SpaceFillingCurve.D1_LINEAR;
+                  })
+          .orElse(SpaceFillingCurve.D1_LINEAR);
+    }
   }
 
   interface Builder {
@@ -297,8 +314,8 @@ public interface Data {
    * through an observation constraint.
    *
    * <p>Each returned object will implement one of the {@link java.util.PrimitiveIterator} classes.
-   * A class switch should be used along with the {@link #fillCurve()} to transfer the data to the
-   * storage, filtering through the {@link #dataKey()} if appropriate.
+   * A class switch should be used along with the fill curve to transfer the data to the storage,
+   * filtering through the {@link #dataKey()} if appropriate.
    *
    * @return
    */

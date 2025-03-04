@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.services;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -180,7 +181,9 @@ public interface RuntimeService extends KlabService {
    *
    * @author Ferd
    */
-  interface Capabilities extends ServiceCapabilities {}
+  interface Capabilities extends ServiceCapabilities {
+      Storage.Type getDefaultStorageType();
+  }
 
   /**
    * Scope CAN be null for generic public capabilities.

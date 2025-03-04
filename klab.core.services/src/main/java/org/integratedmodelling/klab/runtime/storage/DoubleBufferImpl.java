@@ -11,7 +11,7 @@ public class DoubleBufferImpl extends AbstractBuffer implements Storage.DoubleBu
   private final BufferArray data;
 
   protected DoubleBufferImpl(Geometry geometry,
-                             DoubleStorage doubleStorage, long size, Data.SpaceFillingCurve spaceFillingCurve, long offsets) {
+                             StorageImpl doubleStorage, long size, Data.SpaceFillingCurve spaceFillingCurve, long offsets) {
     super(geometry, doubleStorage, size, spaceFillingCurve, offsets);
 //    this.doubleStorage = doubleStorage;
     this.data = doubleStorage.stateStorage.getDoubleBuffer(doubleStorage.geometry.size());

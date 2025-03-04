@@ -1,32 +1,22 @@
 package org.integratedmodelling.klab.runtime.computation;
 
-import gg.jte.CodeResolver;
 import gg.jte.ContentType;
 import gg.jte.TemplateEngine;
 import gg.jte.TemplateOutput;
 import gg.jte.output.StringOutput;
 import gg.jte.resolve.ResourceCodeResolver;
 import groovy.lang.Script;
-import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.Expression;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.CoreLibrary;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.runtime.language.LanguageService;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
-import javax.tools.JavaCompiler;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 
 /**
@@ -159,7 +149,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
                 var buffers =
                     scope
                         .getDigitalTwin()
-                        .getStateStorage()
+                        .getStorageManager()
                         .getStorage(observation);
 
 
