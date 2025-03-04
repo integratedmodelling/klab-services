@@ -6,6 +6,7 @@ import gg.jte.TemplateOutput;
 import gg.jte.output.StringOutput;
 import gg.jte.resolve.ResourceCodeResolver;
 import groovy.lang.Script;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
@@ -17,7 +18,9 @@ import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Scalar computation implementation using Groovy-based expressions and turning the sequence into a
@@ -114,6 +117,19 @@ public class ScalarComputationGroovy implements ScalarComputation {
       List<Object> args = new ArrayList<>();
       args.add(scope);
       args.add(target);
+
+      /**
+       * TODO all steps must generate merged local variables (using a map) and individual scalar
+       *  code blocks. These must be generated inside the main loop within the concurrent buffer
+       *  mapper function. The main loop iterates the selfBuffer[n] which is the last parameter
+       *  in the constructor and is at location 0 - others follow the numbering in the LinkedHashMap
+       *  describing the additional scalar dependencies.
+       *
+       *  Add selfBuffers + all others to the fields and constructor
+       */
+
+      // ordering in this one is important
+      Map<String, List<Storage.Buffer>> scalarBuffers = new LinkedHashMap<>();
 
       for (var step : steps) {
         if (step.expressionDescriptor

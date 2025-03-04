@@ -39,6 +39,7 @@ class TestExpression extends ExpressionBase {
     @Override
     Object run() {
 
+        // NOOOO must distribute in arrays of the three buffers TRANSPOSED
         def bufferSets = [selfBuffers, elevationBuffers, slopeBuffers]
         return Utils.Java.distributeComputation(
                 bufferSets,

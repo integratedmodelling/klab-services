@@ -25,6 +25,8 @@ class ${codeInfo.getClassName()} extends ExpressionBase {
 
   @Override
   Object run() {
+
+<%--TODO these must be within the main loop --%>
 @for(var localVar : codeInfo.getLocalVariableDeclarations()) {
     ${localVar}
 @endfor
