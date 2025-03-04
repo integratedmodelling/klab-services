@@ -886,13 +886,13 @@ public class ComponentRegistry {
     if (annotation.fillingCurve() != null) {
       storageAnnotation =
           org.integratedmodelling.klab.api.lang.Annotation.of(
-              "storage", "fillCurve", annotation.fillingCurve().name());
+              "storage", "fillcurve", annotation.fillingCurve().name());
     }
     if (annotation.split() > 0) {
       if (storageAnnotation == null) {
         storageAnnotation = org.integratedmodelling.klab.api.lang.Annotation.of("storage");
       }
-      storageAnnotation.put("split", annotation.split());
+      storageAnnotation.put("splits", annotation.split());
     }
 
     if (storageAnnotation != null) {

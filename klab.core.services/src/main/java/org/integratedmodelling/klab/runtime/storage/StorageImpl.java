@@ -123,12 +123,7 @@ public class StorageImpl implements Storage {
   }
 
   protected List<Buffer> buffersCovering(
-      Geometry geometry, Data.SpaceFillingCurve fillingCurve, Storage.Type dataType) {
-
-    //    if (this.spaceFillingCurve == null) {
-    //      this.spaceFillingCurve = fillingCurve;
-    //      this.splits = splits;
-    //    }
+      Geometry geometry, Data.SpaceFillingCurve fillingCurve, Type dataType) {
 
     var scale = GeometryRepository.INSTANCE.get(geometry.toString(), Scale.class);
     var time = scale.getTime();
@@ -156,8 +151,30 @@ public class StorageImpl implements Storage {
   }
 
   private List<Buffer> createBuffers(Geometry geometry) {
-    // casca l'asino
-    return List.of();
+
+    var ret = new ArrayList<Buffer>();
+    long[] splitSizes = new long[splits];
+    long size = geometry.size() / splits;
+    long remd = geometry.size() % splits;
+    Arrays.fill(splitSizes, size);
+    splitSizes[splits-1] += remd;
+
+    long offset = 0L;
+    for (long bs : splitSizes) {
+      ret.add(
+          switch (type) {
+            case BOXING -> null;
+            case DOUBLE -> new DoubleBufferImpl(geometry, this, bs, spaceFillingCurve, offset);
+            case FLOAT -> null;
+            case INTEGER -> null;
+            case LONG -> null;
+            case KEYED -> null;
+            case BOOLEAN -> null;
+          });
+      offset += bs;
+    }
+
+    return ret;
   }
 
   private Buffer adaptBuffer(BufferImpl b, Data.SpaceFillingCurve fillingCurve) {
@@ -169,8 +186,8 @@ public class StorageImpl implements Storage {
   }
 
   @Override
-  public List<Storage.Buffer> allBuffers() {
-    var ret = new ArrayList<Storage.Buffer>();
+  public List<Buffer> allBuffers() {
+    var ret = new ArrayList<Buffer>();
     buffers.values().forEach(ret::addAll);
     return ret;
   }
