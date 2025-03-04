@@ -1,35 +1,22 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
-import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
-import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
-import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
-import org.integratedmodelling.klab.api.services.runtime.Actuator;
-import org.integratedmodelling.klab.runtime.storage.AbstractBuffer;
+import org.integratedmodelling.klab.runtime.storage.BufferImpl;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.neo4j.driver.Transaction;
 
-import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
@@ -166,7 +153,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("outcome", activity.getOutcome() == null ? null : activity.getOutcome().name());
           ret.put("stackTrace", activity.getStackTrace());
         }
-        case AbstractBuffer buffer -> {
+        case BufferImpl buffer -> {
           ret.put("id", buffer.getId());
           ret.put("persistence", buffer.getPersistence().name());
           ret.put("type", buffer.getDataType().name());

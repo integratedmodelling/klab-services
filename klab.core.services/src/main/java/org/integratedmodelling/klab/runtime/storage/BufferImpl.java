@@ -10,7 +10,7 @@ import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
 import org.integratedmodelling.klab.utilities.Utils;
 
 /** Base buffer provides the histogram and the geometry indexing/merging */
-public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffer {
+public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
 
   private final Data.SpaceFillingCurve spaceFillingCurve;
   private final Persistence persistence;
@@ -30,7 +30,7 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
      * @param spaceFillingCurve
      * @param offsets extent-based offsets with the start offset in the
      */
-  protected AbstractBuffer(
+  protected BufferImpl(
       Geometry geometry,
       StorageImpl stateStorage,
       long size,
@@ -95,20 +95,6 @@ public abstract class AbstractBuffer extends CursorImpl implements Storage.Buffe
   public Histogram histogram() {
     return this.histogram.asHistogram();
   }
-
-//  /**
-//   * Used to support the non-boxing parameters in contextualizers and data adapters
-//   *
-//   * @param bufferClass
-//   * @return
-//   */
-//  public static Class<? extends Storage<?>> getStorageClass(Class<?> bufferClass, Collection<Annotation> annotations) {
-//      if (Storage.DoubleBuffer.class.isAssignableFrom(bufferClass)) {
-//        return DoubleStorage.class;
-//      }
-//      // TODO
-//      throw new KlabInternalErrorException("Wrong buffer class in AbstractBuffer::getStorageClass");
-//  }
 
   @Override
   public String toString() {

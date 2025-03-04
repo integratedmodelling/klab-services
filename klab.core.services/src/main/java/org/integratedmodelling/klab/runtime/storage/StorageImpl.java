@@ -2,13 +2,10 @@ package org.integratedmodelling.klab.runtime.storage;
 
 import java.util.*;
 
-import org.apache.commons.math3.analysis.function.Abs;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
-import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -44,7 +41,7 @@ public class StorageImpl implements Storage {
    * as many buffers as needed for the second, which is assumed to be space.
    *
    */
-  private NavigableMap<Long, List<AbstractBuffer>> buffers = new TreeMap<>();
+  private NavigableMap<Long, List<BufferImpl>> buffers = new TreeMap<>();
 
   protected StorageImpl(
       Observation observation,
@@ -106,12 +103,12 @@ public class StorageImpl implements Storage {
 
     var allBuffers = allBuffers();
     if (allBuffers.size() == 1) {
-      return ((AbstractBuffer) allBuffers.getFirst()).histogram;
+      return ((BufferImpl) allBuffers.getFirst()).histogram;
     } else if (allBuffers.size() > 1) {
       SPDTHistogram ret = new SPDTHistogram<>(20);
       for (var buffer : allBuffers) {
-        if (((AbstractBuffer) buffer).histogram != null) {
-          ret.merge(((AbstractBuffer) buffer).histogram);
+        if (((BufferImpl) buffer).histogram != null) {
+          ret.merge(((BufferImpl) buffer).histogram);
         }
       }
       // TODO cache if storage is finalized
@@ -141,7 +138,7 @@ public class StorageImpl implements Storage {
     }
 
     long timeStart = time.is(Time.Type.INITIALIZATION) ? 0 : time.getStart().getMilliseconds();
-    List<AbstractBuffer> bufs = buffers.computeIfAbsent(timeStart, k -> new ArrayList<>());
+    List<BufferImpl> bufs = buffers.computeIfAbsent(timeStart, k -> new ArrayList<>());
 
     /*
      * Based on observation scale and passed geometry, determine how many indices of this.buffers we
@@ -163,7 +160,7 @@ public class StorageImpl implements Storage {
     return List.of();
   }
 
-  private Buffer adaptBuffer(AbstractBuffer b, Data.SpaceFillingCurve fillingCurve) {
+  private Buffer adaptBuffer(BufferImpl b, Data.SpaceFillingCurve fillingCurve) {
     // TODO !
     if (b.getFillingCurve() != fillingCurve) {
       // TODO

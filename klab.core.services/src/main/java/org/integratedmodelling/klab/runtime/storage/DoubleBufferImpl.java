@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.ojalgo.array.BufferArray;
 
-public class DoubleBufferImpl extends AbstractBuffer implements Storage.DoubleBuffer {
+public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer {
 
 //  private final DoubleStorage doubleStorage;
   private final BufferArray data;
