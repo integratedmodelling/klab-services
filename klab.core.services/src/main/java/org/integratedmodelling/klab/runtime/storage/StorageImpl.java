@@ -133,31 +133,21 @@ public class StorageImpl implements Storage {
     }
 
     long timeStart = time.is(Time.Type.INITIALIZATION) ? 0 : time.getStart().getMilliseconds();
-    List<BufferImpl> bufs = buffers.computeIfAbsent(timeStart, k -> new ArrayList<>());
-
-    /*
-     * Based on observation scale and passed geometry, determine how many indices of this.buffers we
-     * cover
-     */
-    if (!bufs.isEmpty()) {
-      /*
-      TODO adapt the curve; ignore the splits
-       */
-      return bufs.stream().map(b -> adaptBuffer(b, fillingCurve)).toList();
-    }
-
-    /* Build enough buffers to cover it honoring any splits and fill curve required. */
-    return createBuffers(geometry);
+    return buffers
+        .computeIfAbsent(timeStart, k -> new ArrayList<>(createBuffers(geometry)))
+        .stream()
+        .map(b -> adaptBuffer(b, fillingCurve))
+        .toList();
   }
 
-  private List<Buffer> createBuffers(Geometry geometry) {
+  private List<BufferImpl> createBuffers(Geometry geometry) {
 
-    var ret = new ArrayList<Buffer>();
+    var ret = new ArrayList<BufferImpl>();
     long[] splitSizes = new long[splits];
     long size = geometry.size() / splits;
     long remd = geometry.size() % splits;
     Arrays.fill(splitSizes, size);
-    splitSizes[splits-1] += remd;
+    splitSizes[splits - 1] += remd;
 
     long offset = 0L;
     for (long bs : splitSizes) {
