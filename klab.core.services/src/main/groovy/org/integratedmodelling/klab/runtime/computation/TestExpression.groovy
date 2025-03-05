@@ -39,17 +39,19 @@ class TestExpression extends ExpressionBase {
     @Override
     Object run() {
 
-        // NOOOO must distribute in arrays of the three buffers TRANSPOSED
-        def bufferSets = [selfBuffers, elevationBuffers, slopeBuffers]
+        def bufferSets = Utils.Collections.transpose(selfBuffers, elevationBuffers, slopeBuffers)
         return Utils.Java.distributeComputation(
                 bufferSets,
                 { bufferArray ->
                     while (bufferArray[0].hasNext()) {
-                        def elevation = bufferArray[1].get()
-                        def slope = bufferArray[2].get()
-                        bufferArray[0].add((double) ((elevation - elevationObs.max) / slope))
+                        // TODO use the proper non-boxed type
+                        double elevation = bufferArray[1].get()
+                        double slope = bufferArray[2].get()
+                        double value =  ((elevation - elevationObs.max) / slope)
+                        // TODO any other transformations
+                        // TODO add() for any other targets
+                        bufferArray[0].add(value)
                     }
                 })
-
     }
 }

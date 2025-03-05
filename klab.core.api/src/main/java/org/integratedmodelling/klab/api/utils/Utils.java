@@ -4798,6 +4798,31 @@ public class Utils {
 
   public static class Collections {
 
+    /**
+     * Take a list of objects that represents rows or columns of data and return the transposed
+     * lists representing the opposite dimension.
+     *
+     * <p>CAUTION: no check on the size of the input lists is done.
+     *
+     * @param columns the lists to transpose. Size must be the same or an {@link
+     *     ArrayIndexOutOfBoundsException} will be thrown.
+     * @return the transposed "matrix". Transposing it again will yield the original lists.
+     * @param <T> type of the items
+     */
+    public static <T> List<List<T>> transpose(List<T>... columns) {
+      List<List<T>> ret = new ArrayList<>();
+      if (columns != null && columns.length > 0) {
+        for (int x = 0; x < columns[0].size(); x++) {
+          List<T> row = new ArrayList<>(columns.length);
+          for (int i = 0; i < columns.length; i++) {
+            row.add(columns[i].get(x));
+          }
+          ret.add(row);
+        }
+      }
+      return ret;
+    }
+
     public static <T> List<T> arrayToList(T[] objects) {
       List<T> ret = new ArrayList<>();
       if (objects != null) {

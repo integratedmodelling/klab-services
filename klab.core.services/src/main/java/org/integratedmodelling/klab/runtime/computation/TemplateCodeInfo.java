@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.runtime.computation;
 
+import jnr.ffi.Struct;
+import org.integratedmodelling.common.utils.Utils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +19,7 @@ public class TemplateCodeInfo {
   private List<String> mainCodeBlocks = new ArrayList<>();
   private List<String> loopVariableAssignments = new ArrayList<>();
   private List<String> additionalImports = new ArrayList<>();
+  private List<String> bufferListVariables = new ArrayList<>();
   private String className;
   private String templateName;
 
@@ -91,4 +95,17 @@ public class TemplateCodeInfo {
   public void setAdditionalImports(List<String> additionalImports) {
     this.additionalImports = additionalImports;
   }
+
+  public List<String> getBufferListVariables() {
+    return bufferListVariables;
+  }
+
+  public String bufferListVariables() {
+    return Utils.Strings.join(bufferListVariables, ", ");
+  }
+
+  public void setBufferListVariables(List<String> bufferListVariables) {
+    this.bufferListVariables = bufferListVariables;
+  }
+
 }

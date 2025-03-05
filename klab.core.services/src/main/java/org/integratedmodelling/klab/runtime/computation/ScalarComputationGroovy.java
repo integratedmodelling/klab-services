@@ -43,7 +43,9 @@ public class ScalarComputationGroovy implements ScalarComputation {
     private final Observation target;
     private static GroovyProcessor groovyProcessor = new GroovyProcessor();
 
-    // list of these to describe the sequence of steps
+    // list of th
+    //
+    // ese to describe the sequence of steps
     class Step {
       String target = "self";
       boolean scalar = true;
@@ -60,6 +62,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
     @Override
     public boolean add(ServiceCall contextualizable) {
+
       if (RuntimeService.CoreFunctor.EXPRESSION_RESOLVER
           .getServiceCallName()
           .equals(contextualizable.getUrn())) {
@@ -93,12 +96,13 @@ public class ScalarComputationGroovy implements ScalarComputation {
         // check types
         // LUT, classification or reference to codelist. Should build a LUT object for internal
         // processing and
-        // generate the scalar code using it.
+        // generate the scalar code using it. The result should STILL have a proper GroovyDescriptor with
+        // the scalar call.
       } else if (RuntimeService.CoreFunctor.CONSTANT_RESOLVER
           .getServiceCallName()
           .equals(contextualizable.getUrn())) {
         // check types
-        // insert streamlined code
+        // insert streamlined code, same as before (buffer.fill(value) TODO using native methods)
       } else {
         // non-scalar contextualizer
       }

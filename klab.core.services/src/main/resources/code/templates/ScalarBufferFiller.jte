@@ -24,15 +24,27 @@ class ${codeInfo.getClassName()} extends ExpressionBase {
   }
 
   @Override
-  Object run() {
+Object run() {
 
-<%--TODO these must be within the main loop --%>
-@for(var localVar : codeInfo.getLocalVariableDeclarations()) {
-    ${localVar}
-@endfor
-@for(var codeBlock : codeInfo.getMainCodeBlocks()) {
-    ${codeBlock}
-@endfor
+  <%--transposed list of buffers so that each thread has the same topology--%>
+  def bufferSets = Utils.Collections.transpose(${codeInfo.bufferListVariables()})
+  return Utils.Java.distributeComputation(
+    bufferSets,
+    { bufferArray ->
+        while (bufferArray[0].hasNext()) {
+        <%--extract all needed scalar dependencies as non-boxing scalars from buffers --%>
+        <%--e.g. double elevation = bufferArray[1].get() --%>
+        @for(var localVar : codeInfo.getLocalVariableDeclarations()) {
+            ${localVar}
+        @endfor
+        <%--set the buffers based on target, chaining as needed--%>
+        <%--e.g. double self = elevation/slope --%>
+        @for(var codeBlock : codeInfo.getMainCodeBlocks()) {
+            ${codeBlock}
+        @endfor
+        bufferArray[0].add(self)
+    })
   }
+
 }
 
