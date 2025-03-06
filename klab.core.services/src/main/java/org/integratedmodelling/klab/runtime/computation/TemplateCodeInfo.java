@@ -19,7 +19,8 @@ public class TemplateCodeInfo {
   private List<String> mainCodeBlocks = new ArrayList<>();
   private List<String> loopVariableAssignments = new ArrayList<>();
   private List<String> additionalImports = new ArrayList<>();
-  private List<String> bufferListVariables = new ArrayList<>();
+  private List<String> bodyInitializationStatements = new ArrayList<>();
+
   private String className;
   private String templateName;
 
@@ -96,16 +97,11 @@ public class TemplateCodeInfo {
     this.additionalImports = additionalImports;
   }
 
-  public List<String> getBufferListVariables() {
-    return bufferListVariables;
+  public List<String> getBodyInitializationStatements() {
+    return bodyInitializationStatements;
   }
 
-  public String bufferListVariables() {
-    return Utils.Strings.join(bufferListVariables, ", ");
+  public void setBodyInitializationStatements(List<String> bodyInitializationStatements) {
+    this.bodyInitializationStatements = bodyInitializationStatements;
   }
-
-  public void setBufferListVariables(List<String> bufferListVariables) {
-    this.bufferListVariables = bufferListVariables;
-  }
-
 }

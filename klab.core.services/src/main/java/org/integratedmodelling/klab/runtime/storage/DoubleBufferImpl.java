@@ -47,4 +47,9 @@ public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer
     data.add(offset, value);
   }
 
+  @Override
+  public void fill(double value) {
+    data.fillAll(value);
+  }
+
 }

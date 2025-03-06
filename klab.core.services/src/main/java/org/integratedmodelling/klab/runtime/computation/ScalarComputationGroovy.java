@@ -172,9 +172,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
                         .getStorageManager()
                         .getStorage(observation);
 
+                // HOSTIA the buffers need to be computed based on the geometry, which must be passed to run()
 
-
-                System.out.println("SPORP");
               }
             }
           }

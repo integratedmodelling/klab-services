@@ -11,23 +11,31 @@ import org.integratedmodelling.klab.api.utils.Utils;
     ${localImport}
 @endfor
 
+/**
+* Scalar buffer-based processing with "local" parallelism. Default for the local engines and OK for distributed
+* computation without involving clustered engines with Spark or other infrastructure.
+*/
 class ${codeInfo.getClassName()} extends ExpressionBase {
 
 @for(var field : codeInfo.getFieldDeclarations())
   ${field}
 @endfor
-  ${codeInfo.getClassName()}(ContextScope scope, Observation self @for(var param : ForSupport.of(codeInfo.getConstructorArguments())), ${param.get()}@endfor) {
+  ${codeInfo.getClassName()}(ContextScope scope, Observation self @for(var param : codeInfo.getConstructorArguments()), ${param}@endfor) {
     super(scope, self)
-    @for(var param : ForSupport.of(codeInfo.getConstructorInitializationStatements()))
-    ${param.get()}
+    @for(var param : codeInfo.getConstructorInitializationStatements())
+    ${param}
     @endfor
   }
 
-  @Override
-Object run() {
+@Override
+boolean run(Geometry geometry) {
 
-  <%--transposed list of buffers so that each thread has the same topology--%>
-  def bufferSets = Utils.Collections.transpose(${codeInfo.bufferListVariables()})
+  <%-- body initialization. Must include all buffer creation + the bufferSets as a transposed list of buffers, \
+       ensuring that each thread has the same topology--%>
+  @for(var param : codeInfo.getBodyInitializationStatements())
+    ${param}
+  @endfor
+  <%--this is the "locally parallel" version. A Spark template would do very different things --%>
   return Utils.Java.distributeComputation(
     bufferSets,
     { bufferArray ->

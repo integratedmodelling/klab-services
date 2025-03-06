@@ -119,7 +119,7 @@ public class GroovyExpression /*extends Expression*/ implements Expression {
       // problems) - IGNORES OPTIONS
       if (initialized.get() == null || !initialized.get()) {
 //        initialize(new HashMap<>(), new HashMap<>());
-        setupBindings(scope);
+//        setupBindings(scope);
       }
 
       try {
@@ -197,7 +197,7 @@ public class GroovyExpression /*extends Expression*/ implements Expression {
           //            binding.setVariable(v, Double.NaN);
           //          }
         }
-        return script.get().run();
+        return true; // TODO must put this away, not run it - script.get().run(geometry);
 
       } catch (MissingPropertyException e) {
         String property = e.getProperty();
@@ -219,42 +219,42 @@ public class GroovyExpression /*extends Expression*/ implements Expression {
     return null;
   }
 
-  /**
-   * This only gets done once per thread. Uses a new compiled class per thread and sets up the
-   * bindings with any invariant objects. The remaining variables are set before each call.
-   *
-   * @param scope
-   */
-  private void setupBindings(ContextScope scope) {
-
-    Binding bindings = new Binding();
-
-    /*
-     * inherent variables have known values at the time of compilation.
-     */
-    if (variables != null) {
-      for (String key : variables.keySet()) {
-        Object value = variables.get(key);
-        bindings.setVariable(key, value);
-      }
-    }
-
-    if (scope != null) {
-      bindings.setVariable("provenance", scope.getProvenance());
-      //      bindings.setVariable("structure", ((IRuntimeScope) scope).getStructure());
-      //      bindings.setVariable("_ns", scope.getNamespace());
-      //      bindings.setVariable("_monitor", scope.getMonitor());
-      //      if (scope.getSession().getState().getInspector() != null) {
-      //        bindings.setVariable("inspector", scope.getSession().getState().getInspector());
-      //      }
-    }
-
-    try {
-      script.set(shell.createFromClass(sclass, bindings));
-    } catch (Exception e) {
-      throw new KlabInternalErrorException(e);
-    }
-  }
+//  /**
+//   * This only gets done once per thread. Uses a new compiled class per thread and sets up the
+//   * bindings with any invariant objects. The remaining variables are set before each call.
+//   *
+//   * @param scope
+//   */
+//  private void setupBindings(ContextScope scope) {
+//
+//    Binding bindings = new Binding();
+//
+//    /*
+//     * inherent variables have known values at the time of compilation.
+//     */
+//    if (variables != null) {
+//      for (String key : variables.keySet()) {
+//        Object value = variables.get(key);
+//        bindings.setVariable(key, value);
+//      }
+//    }
+//
+//    if (scope != null) {
+//      bindings.setVariable("provenance", scope.getProvenance());
+//      //      bindings.setVariable("structure", ((IRuntimeScope) scope).getStructure());
+//      //      bindings.setVariable("_ns", scope.getNamespace());
+//      //      bindings.setVariable("_monitor", scope.getMonitor());
+//      //      if (scope.getSession().getState().getInspector() != null) {
+//      //        bindings.setVariable("inspector", scope.getSession().getState().getInspector());
+//      //      }
+//    }
+//
+//    try {
+//      script.set(shell.createFromClass(sclass, bindings));
+//    } catch (Exception e) {
+//      throw new KlabInternalErrorException(e);
+//    }
+//  }
 
   public String toString() {
     return code;

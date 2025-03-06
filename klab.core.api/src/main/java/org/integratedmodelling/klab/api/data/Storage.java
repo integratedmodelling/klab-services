@@ -103,6 +103,13 @@ public interface Storage extends RuntimeAsset {
      * @param offset
      */
     void set(double value, long offset);
+
+    /**
+     * Supposed to be more efficient than a loop, based on the implementation.
+     *
+     * @param value
+     */
+    void fill(double value);
   }
 
   interface LongBuffer extends Buffer {
@@ -144,6 +151,13 @@ public interface Storage extends RuntimeAsset {
      * @param offset
      */
     void set(long value, long offset);
+
+    /**
+     * Supposed to be more efficient than a loop, based on the implementation.
+     *
+     * @param value
+     */
+    void fill(long value);
   }
 
   default RuntimeAsset.Type classify() {
