@@ -34,12 +34,20 @@ public enum GeometryRepository {
                                 var geometry = Geometry.create(key);
                                 Scale scale = Scale.create(geometry);
                                 if (geometry instanceof GeometryImpl geometryImpl && geometryImpl.key() == null)  {
-                                    geometryImpl.setKey(newKey());
+                                    geometryImpl.setKey(newKey(geometry));
                                 }
                                 return Pair.of(geometry, scale);
                             }
                         });
 
+    /**
+     * TODO add one with Geometry with key lookup/insertion
+     *
+     * @param identifier
+     * @param geometryClass
+     * @return
+     * @param <T>
+     */
     public <T extends Geometry> T get(String identifier, Class<T> geometryClass) {
         try {
             var ret = cache.get(identifier);
@@ -61,7 +69,11 @@ public enum GeometryRepository {
         return identifier.startsWith("KG[");
     }
 
-    private String newKey() {
+    /**
+     * FIXME remove the stupid UUID and use a hash of the encoded geometry value.
+     * @return
+     */
+    private String newKey(Geometry geometry) {
         return "KG[" + Utils.Names.shortUUID() + "]";
     }
 

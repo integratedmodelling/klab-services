@@ -53,6 +53,5 @@ boolean run(Geometry geometry) {
         bufferArray[0].add(self)
     })
   }
-
 }
 

@@ -7,6 +7,7 @@ import gg.jte.output.StringOutput;
 import gg.jte.resolve.ResourceCodeResolver;
 import groovy.lang.Script;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
@@ -96,7 +97,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
         // check types
         // LUT, classification or reference to codelist. Should build a LUT object for internal
         // processing and
-        // generate the scalar code using it. The result should STILL have a proper GroovyDescriptor with
+        // generate the scalar code using it. The result should STILL have a proper GroovyDescriptor
+        // with
         // the scalar call.
       } else if (RuntimeService.CoreFunctor.CONSTANT_RESOLVER
           .getServiceCallName()
@@ -124,16 +126,20 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
       /**
        * TODO all steps must generate merged local variables (using a map) and individual scalar
-       *  code blocks. These must be generated inside the main loop within the concurrent buffer
-       *  mapper function. The main loop iterates the selfBuffer[n] which is the last parameter
-       *  in the constructor and is at location 0 - others follow the numbering in the LinkedHashMap
-       *  describing the additional scalar dependencies.
+       * code blocks. These must be generated inside the main loop within the concurrent buffer
+       * mapper function. The main loop iterates the selfBuffer[n] which is the last parameter in
+       * the constructor and is at location 0 - others follow the numbering in the LinkedHashMap
+       * describing the additional scalar dependencies.
        *
-       *  Add selfBuffers + all others to the fields and constructor
+       * <p>Add selfBuffers + all others to the fields and constructor
        */
+      record VarInfo(String name, String type, int index) {}
 
       // ordering in this one is important
-      Map<String, List<Storage.Buffer>> scalarBuffers = new LinkedHashMap<>();
+      Map<String, VarInfo> scalarBuffers = new LinkedHashMap<>();
+      var selfStorage = scope.getDigitalTwin().getStorageManager().getStorage(target);
+      codeInfo.getFieldDeclarations().add("Observation __self");
+      var codeStatements = new ArrayList<String>();
 
       for (var step : steps) {
         if (step.expressionDescriptor
@@ -143,77 +149,109 @@ public class ScalarComputationGroovy implements ScalarComputation {
           }
           codeInfo.getMainCodeBlocks().add(groovyDescriptor.getProcessedCode());
           if (step.expressionDescriptor != null) {
+            int n = 1;
             for (var identifier : step.expressionDescriptor.getIdentifiers().keySet()) {
               var desc = step.expressionDescriptor.getIdentifiers().get(identifier);
-              if (desc.nonScalarReferenceCount() > 0) {
-                codeInfo.getConstructorArguments().add("Observable " + identifier);
+              if (desc.nonScalarReferenceCount() + desc.scalarReferenceCount() > 0) {
                 args.add(groovyDescriptor.getKnownObservables().get(identifier));
-                codeInfo
-                    .getFieldDeclarations()
-                    .add("Observable " + identifier + "Observable"); // TODO wrap
+                codeInfo.getFieldDeclarations().add("Observation __" + identifier);
                 codeInfo
                     .getFieldDeclarations()
                     .add(
-                        "@Lazy Observation "
+                        "@Lazy ObservationWrapper "
                             + identifier
-                            + "Obs = {scope.getObservation("
+                            + "Obs = {new ObservationWrapper(__"
                             + identifier
-                            + "Observable)}()"); // TODO wrap
+                            + ")}()");
                 codeInfo
                     .getConstructorInitializationStatements()
-                    .add("this." + identifier + "Observable = " + identifier);
+                    .add("this.__" + identifier + " = " + identifier);
+
+                codeStatements.add(groovyDescriptor.getProcessedCode());
               }
               if (desc.scalarReferenceCount() > 0) {
 
                 var observation = scope.getObservation(desc.observable());
-                var buffers =
-                    scope
-                        .getDigitalTwin()
-                        .getStorageManager()
-                        .getStorage(observation);
+                var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
 
-                // HOSTIA the buffers need to be computed based on the geometry, which must be passed to run()
-
+                var typeDeclaration = getTypeDeclaration(storage);
+                scalarBuffers.put(identifier, new VarInfo(identifier, typeDeclaration, n++));
               }
             }
           }
         }
       }
 
-      // 1. Get class template for the final class
-      // 2. Create class fields as lazy injectors
-      // 3. Create wrappers for observations, time, space and whatever else was referenced
-      // 3. Create referenced concepts/observables as predefined fields
-      // 4. Create main code for each step
-      // 5. If scalar code is there, group it for code generation and define intermediate variables
-      // 5.1 Create loop based on fill curve and offset where scalar code goes in
-      // 6. Finalization
+      scalarBuffers.put("self", new VarInfo("self", getTypeDeclaration(selfStorage), 0));
+      codeInfo.getConstructorInitializationStatements().add("this.__self = self");
 
+      // buffer creation
+      StringBuilder bufferDeclaration = new StringBuilder("def bufferArray = [selfBuffers");
+      for (String var : scalarBuffers.keySet()) {
+        var info = scalarBuffers.get(var);
+        codeInfo
+            .getBodyInitializationStatements()
+            .add(
+                "def "
+                    + info.name
+                    + "Buffers = scope.getDigitalTwin().getStorage(__"
+                    + info.name
+                    + ").buffers(geometry)");
+
+        if (info.index > 0) {
+          bufferDeclaration.append(", ").append(info.name).append("Buffers");
+          codeInfo
+              .getMainCodeBlocks()
+              .add(info.type + " " + info.name + " = bufferArray[" + info.index + "].get()");
+        }
+      }
+
+      bufferDeclaration.append("]");
+
+      if (codeStatements.size() == 1) {
+        codeInfo.getMainCodeBlocks().add("bufferArray[0] = " + codeStatements.getFirst());
+      } else {
+        for (var statement : codeStatements) {
+          // TODO first statement declares self = statement, last statements sets bufferArray[0] to
+          //  the computed value
+        }
+      }
+
+      codeInfo.getLocalVariableDeclarations().add(bufferDeclaration.toString());
       TemplateOutput output = new StringOutput();
       templateEngine.render(codeInfo.getTemplateName(), codeInfo, output);
-      var compiled = groovyShell.compile(output.toString(), Script.class, args.toArray());
+      var compiled = groovyShell.compile(output.toString(), ExpressionBase.class, args.toArray());
       return new ScalarComputationGroovy(compiled, scope, output.toString());
+    }
+
+    private String getTypeDeclaration(Storage storage) {
+      return switch (storage.getType()) {
+        case BOXING -> "Object";
+        case DOUBLE -> "double";
+        case FLOAT -> "float";
+        case INTEGER -> "int";
+        case LONG -> "long";
+        case KEYED -> "Concept";
+        case BOOLEAN -> "boolean";
+      };
     }
   }
 
-  private Script script;
+  private ExpressionBase script;
   private ContextScope scope;
   private String sourceCode;
 
-  private ScalarComputationGroovy(Script groovyScript, ContextScope scope, String sourceCode) {
+  private ScalarComputationGroovy(
+      ExpressionBase groovyScript, ContextScope scope, String sourceCode) {
     this.script = groovyScript;
     this.scope = scope;
     this.sourceCode = sourceCode;
   }
 
   @Override
-  public boolean execute() {
+  public boolean execute(Geometry geometry) {
     try {
-      var ret = script.run();
-      if (ret instanceof Boolean) {
-        return (Boolean) ret;
-      }
-      return true;
+      return script.run(geometry);
     } catch (Throwable t) {
       scope.error(t, sourceCode);
     }

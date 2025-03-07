@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.integratedmodelling.common.runtime.DataflowImpl;
@@ -16,6 +17,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
@@ -117,7 +119,7 @@ public class ExecutionSequence {
   }
 
   @Deprecated
-  public boolean run() {
+  public boolean run(Geometry geometry) {
 
     for (var operationGroup : sequence) {
       // groups are sequential; grouped items are parallel. Empty groups are currently possible
@@ -126,7 +128,7 @@ public class ExecutionSequence {
       // really
       // bother anyone.
       if (operationGroup.size() == 1) {
-        if (!operationGroup.getFirst().run()) {
+        if (!operationGroup.getFirst().run(geometry)) {
           return false;
         }
         continue;
@@ -137,14 +139,14 @@ public class ExecutionSequence {
        */
       if (scope.getParallelism() == Parallelism.ONE) {
         for (var operation : operationGroup) {
-          if (!operation.run()) {
+          if (!operation.run(geometry)) {
             return false;
           }
         }
       } else {
         try (ExecutorService taskExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
           for (var operation : operationGroup) {
-            taskExecutor.execute(operation::run);
+            taskExecutor.execute(() -> operation.run(geometry));
           }
           taskExecutor.shutdown();
           if (!taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)) {
@@ -165,7 +167,7 @@ public class ExecutionSequence {
 
     private final long id;
     private final Observation observation;
-    protected List<Supplier<Boolean>> executors = new ArrayList<>();
+    protected List<Function<Geometry, Boolean>> executors = new ArrayList<>();
     private boolean scalar;
     private boolean operational;
     private KnowledgeGraph.Operation operation;
@@ -242,7 +244,7 @@ public class ExecutionSequence {
                 // enqueue data extraction from adapter method
                 final var contextualizer =
                     new ServiceResourceContextualizer(adapter, resource, observation);
-                executors.add(() -> contextualizer.contextualize(observation, scope));
+                executors.add(geometry -> contextualizer.contextualize(observation, scope));
                 continue;
 
               } else {
@@ -277,7 +279,7 @@ public class ExecutionSequence {
                 // enqueue data extraction from service method
                 final var contextualizer =
                     new ClientResourceContextualizer(service.get(), resource, observation);
-                executors.add(() -> contextualizer.contextualize(observation, scope));
+                executors.add(geometry -> contextualizer.contextualize(observation, scope));
                 continue;
               }
             }
@@ -356,7 +358,7 @@ public class ExecutionSequence {
           if (currentDescriptor.staticMethod) {
             Extensions.FunctionDescriptor finalDescriptor1 = currentDescriptor;
             executors.add(
-                () -> {
+                geometry -> {
                   try {
                     var context =
                         componentRegistry
@@ -376,7 +378,7 @@ public class ExecutionSequence {
               != null) {
             Extensions.FunctionDescriptor finalDescriptor = currentDescriptor;
             executors.add(
-                () -> {
+                geometry -> {
                   try {
                     var context =
                         componentRegistry
@@ -401,9 +403,9 @@ public class ExecutionSequence {
       if (scalarBuilder != null) {
         var scalarMapper = scalarBuilder.build();
         executors.add(
-            () -> {
+            geometry -> {
               try {
-                return scalarMapper.execute();
+                return scalarMapper.execute(geometry);
               } catch (Exception e) {
                 cause = e;
                 scope.error(e /* TODO tracing parameters */);
@@ -415,12 +417,12 @@ public class ExecutionSequence {
       return true;
     }
 
-    public boolean run() {
+    public boolean run(Geometry geometry) {
 
       // TODO compile info for provenance, to be added to the KG at finalization
       long start = System.currentTimeMillis();
       for (var executor : executors) {
-        if (!executor.get()) {
+        if (!executor.apply(geometry)) {
           if (operation != null) {
             operation.fail(scope, observation, cause);
           }
