@@ -42,12 +42,12 @@ boolean run(Geometry geometry) {
         while (bufferArray[0].hasNext()) {
         <%--extract all needed scalar dependencies as non-boxing scalars from buffers --%>
         <%--e.g. double elevation = bufferArray[1].get() --%>
-        @for(var localVar : codeInfo.getLocalVariableDeclarations()) {
+        @for(var localVar : codeInfo.getLocalVariableDeclarations())
             ${localVar}
         @endfor
         <%--set the buffers based on target, chaining as needed--%>
         <%--e.g. double self = elevation/slope --%>
-        @for(var codeBlock : codeInfo.getMainCodeBlocks()) {
+        @for(var codeBlock : codeInfo.getMainCodeBlocks())
             ${codeBlock}
         @endfor
         bufferArray[0].add(self)

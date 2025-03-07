@@ -186,7 +186,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
       codeInfo.getConstructorInitializationStatements().add("this.__self = self");
 
       // buffer creation
-      StringBuilder bufferDeclaration = new StringBuilder("def bufferArray = [selfBuffers");
+      StringBuilder bufferDeclaration =
+          new StringBuilder("def bufferArray = Utils.Collections.transpose(selfBuffers");
       for (String var : scalarBuffers.keySet()) {
         var info = scalarBuffers.get(var);
         codeInfo
@@ -206,7 +207,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
         }
       }
 
-      bufferDeclaration.append("]");
+      bufferDeclaration.append(")");
 
       if (codeStatements.size() == 1) {
         codeInfo.getMainCodeBlocks().add("bufferArray[0] = " + codeStatements.getFirst());
@@ -217,7 +218,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
         }
       }
 
-      codeInfo.getLocalVariableDeclarations().add(bufferDeclaration.toString());
+      codeInfo.getBodyInitializationStatements().add(bufferDeclaration.toString());
       TemplateOutput output = new StringOutput();
       templateEngine.render(codeInfo.getTemplateName(), codeInfo, output);
       var compiled = groovyShell.compile(output.toString(), ExpressionBase.class, args.toArray());
