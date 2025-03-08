@@ -5,7 +5,10 @@ import gg.jte.TemplateEngine;
 import gg.jte.TemplateOutput;
 import gg.jte.output.StringOutput;
 import gg.jte.resolve.ResourceCodeResolver;
-import groovy.lang.Script;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Expression;
@@ -17,11 +20,6 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.utils.Utils;
-
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Scalar computation implementation using Groovy-based expressions and turning the sequence into a
@@ -138,7 +136,6 @@ public class ScalarComputationGroovy implements ScalarComputation {
       // ordering in this one is important
       Map<String, VarInfo> scalarBuffers = new LinkedHashMap<>();
       var selfStorage = scope.getDigitalTwin().getStorageManager().getStorage(target);
-      codeInfo.getFieldDeclarations().add("Observation __self");
       var codeStatements = new ArrayList<String>();
 
       for (var step : steps) {
@@ -147,32 +144,30 @@ public class ScalarComputationGroovy implements ScalarComputation {
           for (var field : groovyDescriptor.getTemplateFields()) {
             codeInfo.getFieldDeclarations().add(field);
           }
-          codeInfo.getMainCodeBlocks().add(groovyDescriptor.getProcessedCode());
           if (step.expressionDescriptor != null) {
             int n = 1;
+            codeStatements.add(groovyDescriptor.getProcessedCode());
             for (var identifier : step.expressionDescriptor.getIdentifiers().keySet()) {
               var desc = step.expressionDescriptor.getIdentifiers().get(identifier);
+              var observation = scope.getObservation(desc.observable());
               if (desc.nonScalarReferenceCount() + desc.scalarReferenceCount() > 0) {
-                args.add(groovyDescriptor.getKnownObservables().get(identifier));
-                codeInfo.getFieldDeclarations().add("Observation __" + identifier);
-                codeInfo
-                    .getFieldDeclarations()
-                    .add(
-                        "@Lazy ObservationWrapper "
-                            + identifier
-                            + "Obs = {new ObservationWrapper(__"
-                            + identifier
-                            + ")}()");
+                args.add(observation);
+              }
+              var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
+              codeInfo.getConstructorArguments().add("Observation " + identifier);
+              codeInfo.getFieldDeclarations().add("Observation __" + identifier);
+              codeInfo
+                  .getFieldDeclarations()
+                  .add(
+                      "@Lazy ObservationWrapper "
+                          + identifier
+                          + "Obs = {new ObservationWrapper(__"
+                          + identifier
+                          + ")}()");
+              if (desc.scalarReferenceCount() > 0) {
                 codeInfo
                     .getConstructorInitializationStatements()
                     .add("this.__" + identifier + " = " + identifier);
-
-                codeStatements.add(groovyDescriptor.getProcessedCode());
-              }
-              if (desc.scalarReferenceCount() > 0) {
-
-                var observation = scope.getObservation(desc.observable());
-                var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
 
                 var typeDeclaration = getTypeDeclaration(storage);
                 scalarBuffers.put(identifier, new VarInfo(identifier, typeDeclaration, n++));
@@ -182,12 +177,12 @@ public class ScalarComputationGroovy implements ScalarComputation {
         }
       }
 
+      // we need it for the type
       scalarBuffers.put("self", new VarInfo("self", getTypeDeclaration(selfStorage), 0));
-      codeInfo.getConstructorInitializationStatements().add("this.__self = self");
 
       // buffer creation
       StringBuilder bufferDeclaration =
-          new StringBuilder("def bufferArray = Utils.Collections.transpose(selfBuffers");
+          new StringBuilder("def bufferSets = Utils.Collections.transpose(selfBuffers");
       for (String var : scalarBuffers.keySet()) {
         var info = scalarBuffers.get(var);
         codeInfo
@@ -195,7 +190,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
             .add(
                 "def "
                     + info.name
-                    + "Buffers = scope.getDigitalTwin().getStorage(__"
+                    + "Buffers = scope.getDigitalTwin().getStorageManager().getStorage(__"
                     + info.name
                     + ").buffers(geometry)");
 
@@ -210,7 +205,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
       bufferDeclaration.append(")");
 
       if (codeStatements.size() == 1) {
-        codeInfo.getMainCodeBlocks().add("bufferArray[0] = " + codeStatements.getFirst());
+        codeInfo.getMainCodeBlocks().add("bufferArray[0].add(" + codeStatements.getFirst() + ")");
       } else {
         for (var statement : codeStatements) {
           // TODO first statement declares self = statement, last statements sets bufferArray[0] to

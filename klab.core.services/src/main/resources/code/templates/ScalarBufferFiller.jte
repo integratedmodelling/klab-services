@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.runtime.computation.ExpressionBase
 import org.integratedmodelling.klab.api.scope.ContextScope
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 @for(var localImport : codeInfo.getAdditionalImports()) {
     ${localImport}
 @endfor
@@ -50,7 +51,7 @@ boolean run(Geometry geometry) {
         @for(var codeBlock : codeInfo.getMainCodeBlocks())
             ${codeBlock}
         @endfor
-        bufferArray[0].add(self)
+       }
     })
   }
 }

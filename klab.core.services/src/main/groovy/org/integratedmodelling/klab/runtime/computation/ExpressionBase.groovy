@@ -28,12 +28,13 @@ abstract class ExpressionBase extends GroovyObjectSupport implements MathOps, Ob
     def runtimes = { scope.getServices(RuntimeService.class) }()
 
     ContextScope scope
-    Observation self
+    Observation __self
+    Observation selfObs = {new ObservationWrapper(__self)}()
 
     // constructor takes all the observations used by the code
     ExpressionBase(ContextScope scope, Observation observation) {
         this.scope = scope
-        this.self = observation
+        this.__self = observation
     }
 
     abstract boolean run(Geometry geometry);

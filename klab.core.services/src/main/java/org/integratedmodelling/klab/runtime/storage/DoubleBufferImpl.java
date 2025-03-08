@@ -7,13 +7,11 @@ import org.ojalgo.array.BufferArray;
 
 public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer {
 
-//  private final DoubleStorage doubleStorage;
   private final BufferArray data;
 
   protected DoubleBufferImpl(Geometry geometry,
                              StorageImpl doubleStorage, long size, Data.SpaceFillingCurve spaceFillingCurve, long offsets) {
     super(geometry, doubleStorage, size, spaceFillingCurve, offsets);
-//    this.doubleStorage = doubleStorage;
     this.data = doubleStorage.stateStorage.getDoubleBuffer(doubleStorage.geometry.size());
   }
 
