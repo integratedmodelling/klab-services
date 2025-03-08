@@ -3677,6 +3677,38 @@ public class Utils {
     }
 
     /**
+     * Same as {@link #distributeComputation(Collection, Consumer)} but using a scope to report any
+     * error conditions before returning as usual.
+     *
+     * @param objects
+     * @param task
+     * @return
+     * @param <T>
+     */
+    public static <T> boolean distributeComputation(
+        Scope scope, Collection<T> objects, Consumer<T> task) {
+
+      List<Callable<Object>> tasks = new ArrayList<>();
+      for (T object : objects) {
+        tasks.add(Executors.callable(() -> task.accept(object)));
+      }
+
+      try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+        var results = executorService.invokeAll(tasks);
+        var ret =
+            results.stream().noneMatch(objectFuture -> objectFuture.state() == Future.State.FAILED);
+        if (!ret) {
+          scope.error("Distributed computation failed");
+        }
+        return ret;
+      } catch (Throwable t) {
+        scope.error(
+            "Distributed computation completed exceptionally: " + Exceptions.stackTrace(t), t);
+        return false;
+      }
+    }
+
+    /**
      * Given a set of objects, return a corresponding array of the API interface classes that
      * represent them in k.LAB. Anything null or not recognized gets mapped to Object.class.
      *

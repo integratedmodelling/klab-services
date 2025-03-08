@@ -37,10 +37,11 @@ boolean run(Geometry geometry) {
     ${param}
   @endfor
   <%--this is the "locally parallel" version. A Spark template would do very different things --%>
-  return Utils.Java.distributeComputation(
+  return Utils.Java.distributeComputation(scope,
     bufferSets,
     { bufferArray ->
-        while (bufferArray[0].hasNext()) {
+        var scannerArray = bufferArray.stream().map({ b -> b.scan()}).toArray();
+        while (scannerArray[0].hasNext()) { // template ends here
         <%--extract all needed scalar dependencies as non-boxing scalars from buffers --%>
         <%--e.g. double elevation = bufferArray[1].get() --%>
         @for(var localVar : codeInfo.getLocalVariableDeclarations())

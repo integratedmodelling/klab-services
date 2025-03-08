@@ -111,8 +111,9 @@ public class DigitalTwinImpl implements DigitalTwin {
         return Utils.Java.distributeComputation(
             buffers,
             buffer -> {
+              var scanner = buffer.scan();
               while (doubleData.hasNext()) {
-                buffer.add(doubleData.nextDouble());
+                scanner.add(doubleData.nextDouble());
               }
             });
       } /*else if (data instanceof LongDataImpl longData) {

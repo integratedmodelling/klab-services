@@ -50,15 +50,16 @@ class TestExpression extends ExpressionBase {
         return Utils.Java.distributeComputation( // template - this allows Spark templates to be different if the buffer is a spark thing
                 bufferSets,
                 { bufferArray ->
-                    while (bufferArray[0].hasNext()) { // template ends here
+                    var scannerArray = bufferArray.stream().map({ b->b.scan()}).toArray();
+                    while (scannerArray[0].hasNext()) { // template ends here
                         // TODO THESE use the proper non-boxed type
-                        double elevation = bufferArray[1].get()
-                        double slope = bufferArray[2].get()
+                        double elevation = scannerArray[1].get()
+                        double slope = scannerArray[2].get()
                         // THIS
                         double self = ((elevation - elevationObs.max) / slope)
                         // TODO any other transformations
                         // TODO add() for any other targets
-                        bufferArray[0].add(self) // template
+                        scannerArray[0].add(self) // template
                     }
                 })
     }

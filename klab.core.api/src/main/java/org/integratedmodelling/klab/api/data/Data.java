@@ -49,7 +49,7 @@ public interface Data {
    * refers to results from splitting an original larger geometry, it can also locate the current
    * offset in it.
    */
-  interface Cursor extends PrimitiveIterator.OfLong {
+  interface Cursor {
 
     /**
      * The linear offset in the geometry corresponding to the dimension offsets passed relative to
@@ -63,6 +63,15 @@ public interface Data {
      * @return the offset or -1L if no mapping is possible.
      */
     long offset(Cursor other, long... dimensionOffsets);
+
+    /**
+     * Produce a scanner that, at minimum, will produce all the consecutive long indices along the
+     * fill curve. The scanners exposed by cursors that scan a data buffer can also expose methods
+     * to set/get typed values sequentially.
+     *
+     * @return
+     */
+    PrimitiveIterator.OfLong scan();
   }
 
   /** Non-boxing mapper for extent offsets to n-dimensional coordinates. */

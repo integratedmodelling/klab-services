@@ -19,22 +19,39 @@ public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer
     return data;
   }
 
-  @Override
-  public double get() {
-    return this.data.get(next ++);
-  }
+  public DoubleScanner scan() {
+    return new DoubleScanner() {
 
-  @Override
-  public double peek() {
-    return this.data.get(next);
-  }
+      long next = 0L;
 
-  @Override
-  public void add(double value) {
-    if (histogram != null) {
-      histogram.insert(value);
-    }
-    data.add(next++, value);
+      @Override
+      public double get() {
+        return data.get(next++);
+      }
+
+      @Override
+      public double peek() {
+        return data.get(next);
+      }
+
+      @Override
+      public void add(double value) {
+        if (histogram != null) {
+          histogram.insert(value);
+        }
+        data.set(next++, value);
+      }
+
+      @Override
+      public long nextLong() {
+        return next++;
+      }
+
+      @Override
+      public boolean hasNext() {
+        return next < multiplicity;
+      }
+    };
   }
 
   @Override

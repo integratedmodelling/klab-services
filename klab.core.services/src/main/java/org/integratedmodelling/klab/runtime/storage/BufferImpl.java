@@ -15,7 +15,6 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   private final Data.SpaceFillingCurve spaceFillingCurve;
   private final Persistence persistence;
   private final Storage.Type dataType;
-  private final long size;
   private final long offset;
   private final long id;
   private final StorageImpl storage;
@@ -41,7 +40,6 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
     this.dataType = stateStorage.getType();
     this.id = stateStorage.stateStorage.nextBufferId();
     this.persistence = Persistence.SERVICE_SHUTDOWN;
-    this.size = size;
     this.offset = offsets;
     this.spaceFillingCurve = spaceFillingCurve;
     if (stateStorage.stateStorage.isRecordHistogram()) {
@@ -56,7 +54,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
 
   @Override
   public long size() {
-    return size;
+    return multiplicity;
   }
 
   @Override
@@ -102,7 +100,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
         + "fillCurve="
         + spaceFillingCurve
         + ", size="
-        + size
+        + multiplicity
         + ", offset="
         + offset
         + ", id='"

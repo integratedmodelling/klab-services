@@ -198,14 +198,14 @@ public class ScalarComputationGroovy implements ScalarComputation {
           bufferDeclaration.append(", ").append(info.name).append("Buffers");
           codeInfo
               .getMainCodeBlocks()
-              .add(info.type + " " + info.name + " = bufferArray[" + info.index + "].get()");
+              .add(info.type + " " + info.name + " = scannerArray[" + info.index + "].get()");
         }
       }
 
       bufferDeclaration.append(")");
 
       if (codeStatements.size() == 1) {
-        codeInfo.getMainCodeBlocks().add("bufferArray[0].add(" + codeStatements.getFirst() + ")");
+        codeInfo.getMainCodeBlocks().add("scannerArray[0].add(" + codeStatements.getFirst() + ")");
       } else {
         for (var statement : codeStatements) {
           // TODO first statement declares self = statement, last statements sets bufferArray[0] to

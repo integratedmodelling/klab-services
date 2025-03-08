@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.api.data;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.PrimitiveIterator;
+
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.Persistence;
@@ -66,27 +68,34 @@ public interface Storage extends RuntimeAsset {
 
   interface DoubleBuffer extends Buffer {
 
-    /**
-     * Return the value at the current offset in the iterator and advance the iteration.
-     *
-     * @return
-     */
-    double get();
+    interface DoubleScanner extends PrimitiveIterator.OfLong {
 
-    /**
-     * Return the value at the current offset in the iterator without advancing the iteration.
-     *
-     * @return
-     */
-    double peek();
+      /**
+       * Return the value at the current offset in the iterator and advance the iteration.
+       *
+       * @return
+       */
+      double get();
 
-    /**
-     * Set the value at the current iterable offset and advance the iteration. Do not use after
-     * get()!
-     *
-     * @param value
-     */
-    void add(double value);
+      /**
+       * Return the value at the current offset in the iterator without advancing the iteration.
+       *
+       * @return
+       */
+      double peek();
+
+      /**
+       * Set the value at the current iterable offset and advance the iteration. Do not use after
+       * get() - use peek() if the value must be known.
+       *
+       * @param value
+       */
+      void add(double value);
+
+    }
+
+    @Override
+    DoubleScanner scan();
 
     /**
      * Random access value. The offset is according to the overall fill curve and buffer-specific
