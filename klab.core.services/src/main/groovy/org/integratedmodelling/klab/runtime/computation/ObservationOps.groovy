@@ -16,6 +16,17 @@ trait ObservationOps {
             delegate = observation;
         }
 
+        // TODO all these pieces (check out 0.11)
+        double max() {
+            // TODO
+            return 1.0;
+        }
+
+        double min() {
+            // TODO
+            return 1.0;
+        }
+
     }
 
 }

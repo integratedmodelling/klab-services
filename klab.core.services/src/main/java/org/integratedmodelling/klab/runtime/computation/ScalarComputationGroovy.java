@@ -249,6 +249,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
     try {
       return script.run(geometry);
     } catch (Throwable t) {
+      System.out.println("Scalar code fucked up: " + Utils.Exceptions.stackTrace(t));
       scope.error(t, sourceCode);
     }
     return false;

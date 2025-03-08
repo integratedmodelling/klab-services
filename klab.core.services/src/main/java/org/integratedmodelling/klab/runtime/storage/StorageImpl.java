@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.runtime.storage;
 
 import java.util.*;
 
-import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -28,7 +27,6 @@ public class StorageImpl implements Storage {
   protected final Geometry geometry;
   protected final ServiceContextScope contextScope;
   protected Persistence persistence;
-  //  private List<AbstractBuffer> buffers = new ArrayList<>();
   protected Data.SpaceFillingCurve spaceFillingCurve;
   protected int splits;
 
@@ -56,7 +54,7 @@ public class StorageImpl implements Storage {
     this.geometry = observation.getGeometry();
     this.contextScope = contextScope;
     this.spaceFillingCurve = fillingCurve;
-    this.splits = splits;
+    this.splits = contextScope.getSplits(splits);
   }
 
   /**
@@ -125,7 +123,7 @@ public class StorageImpl implements Storage {
   protected List<Buffer> buffersCovering(
       Geometry geometry, Data.SpaceFillingCurve fillingCurve, Type dataType) {
 
-    var scale = GeometryRepository.INSTANCE.get(geometry.toString(), Scale.class);
+    var scale = Scale.create(geometry);
     var time = scale.getTime();
     if (time.size() != 1) {
       throw new KlabUnimplementedException(

@@ -312,11 +312,8 @@ public class ExecutionSequence {
         }
 
         var storageAnnotation =
-                Utils.Annotations.mergeAnnotations(
-                        "storage",
-                        currentDescriptor.serviceInfo,
-                        actuator,
-                        observation.getObservable());
+            Utils.Annotations.mergeAnnotations(
+                "storage", currentDescriptor.serviceInfo, actuator, observation.getObservable());
 
         // if we're a quality, we need storage at the discretion of the StorageManager.
         Storage storage =
@@ -406,11 +403,11 @@ public class ExecutionSequence {
             geometry -> {
               try {
                 return scalarMapper.execute(geometry);
-              } catch (Exception e) {
+              } catch (Throwable e) {
                 cause = e;
                 scope.error(e /* TODO tracing parameters */);
+                throw e;
               }
-              return true;
             });
       }
 
