@@ -17,12 +17,12 @@ trait ObservationOps {
         }
 
         // TODO all these pieces (check out 0.11)
-        double max() {
+        double getMax() {
             // TODO
             return 1.0;
         }
 
-        double min() {
+        double getMin() {
             // TODO
             return 1.0;
         }

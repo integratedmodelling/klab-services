@@ -40,7 +40,7 @@ boolean run(Geometry geometry) {
   return Utils.Java.distributeComputation(scope,
     bufferSets,
     { bufferArray ->
-        var scannerArray = bufferArray.stream().map({ b -> b.scan()}).toArray();
+        var scannerArray = bufferArray.stream().map({b -> b.scan()}).toArray();
         while (scannerArray[0].hasNext()) { // template ends here
         <%--extract all needed scalar dependencies as non-boxing scalars from buffers --%>
         <%--e.g. double elevation = bufferArray[1].get() --%>
