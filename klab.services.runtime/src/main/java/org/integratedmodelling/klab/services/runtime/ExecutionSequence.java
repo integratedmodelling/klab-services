@@ -118,6 +118,14 @@ public class ExecutionSequence {
     return false;
   }
 
+  /**
+   * TODO this must become SUBMIT(DigitalTwin) with 1) creation of influence diagram and 2) triggering of the
+   *  events (automatic as INIT may already be there? How?). The geometry comes with the event type and the
+   *  observation's.
+   *
+   * @param geometry
+   * @return
+   */
   @Deprecated
   public boolean run(Geometry geometry) {
 
@@ -167,6 +175,8 @@ public class ExecutionSequence {
 
     private final long id;
     private final Observation observation;
+    // TODO executors get cached within the DT, here we should just ensure they can be produced. A
+    //  list should be indexed by observation URN, empty for empty dataflows.
     protected List<Function<Geometry, Boolean>> executors = new ArrayList<>();
     private boolean scalar;
     private boolean operational;
@@ -238,6 +248,7 @@ public class ExecutionSequence {
               if (adapter != null) {
 
                 if (adapter.hasContextualizer()) {
+                  // FIXME move this within the URN_RESOLVER. Also shouldn't happen unless the adapter is local.
                   resource = adapter.contextualize(resource, observation.getGeometry(), scope);
                 }
 
