@@ -119,52 +119,27 @@ public class ExecutionSequence {
   }
 
   /**
-   * TODO this must become SUBMIT(DigitalTwin) with 1) creation of influence diagram and 2) triggering of the
-   *  events (automatic as INIT may already be there? How?). The geometry comes with the event type and the
-   *  observation's.
+   * Submit the operations to the scheduler, then submit the geometry so that the relevant temporal
+   * events can be generated if necessary.
    *
    * @param geometry
    * @return
    */
-  @Deprecated
-  public boolean run(Geometry geometry) {
+  public boolean submit(Geometry geometry) {
 
     for (var operationGroup : sequence) {
-      // groups are sequential; grouped items are parallel. Empty groups are currently possible
-      // although
-      // they should be filtered out, but we leave them for completeness for now as they don't
-      // really
-      // bother anyone.
-      if (operationGroup.size() == 1) {
-        if (!operationGroup.getFirst().run(geometry)) {
-          return false;
-        }
-        continue;
+
+      for (var operation : operationGroup) {
+        scope
+            .getDigitalTwin()
+            .getScheduler()
+            .registerExecutor(operation.observation, operation::run);
       }
 
-      /*
-       * Run also the empty operations because execution will update the observations
-       */
-      if (scope.getParallelism() == Parallelism.ONE) {
-        for (var operation : operationGroup) {
-          if (!operation.run(geometry)) {
-            return false;
-          }
-        }
-      } else {
-        try (ExecutorService taskExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
-          for (var operation : operationGroup) {
-            taskExecutor.execute(() -> operation.run(geometry));
-          }
-          taskExecutor.shutdown();
-          if (!taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)) {
-            return false;
-          }
-        } catch (InterruptedException e) {
-          this.cause = e;
-          scope.error(e);
-        }
-      }
+      scope.getDigitalTwin().getScheduler().register(geometry);
+
+      return true;
+
     }
 
     return true;
@@ -248,7 +223,8 @@ public class ExecutionSequence {
               if (adapter != null) {
 
                 if (adapter.hasContextualizer()) {
-                  // FIXME move this within the URN_RESOLVER. Also shouldn't happen unless the adapter is local.
+                  // FIXME move this within the URN_RESOLVER. Also shouldn't happen unless the
+                  // adapter is local.
                   resource = adapter.contextualize(resource, observation.getGeometry(), scope);
                 }
 

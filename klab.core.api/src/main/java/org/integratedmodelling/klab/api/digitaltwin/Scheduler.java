@@ -1,11 +1,13 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 
 import java.util.Collection;
+import java.util.function.Function;
 
 /**
  * Scheduler for arbitrary actions that can be registered to happen at given transitions, in either
@@ -57,6 +59,10 @@ public interface Scheduler {
    * @return
    */
   void submit(Observation observation);
+
+    void registerExecutor(Observation observation, Function<Geometry, Boolean> executor);
+
+  void register(Geometry geometry);
 
   /**
    * The scheduler keeps the first time instant seen in the DT. This can change during the lifetime

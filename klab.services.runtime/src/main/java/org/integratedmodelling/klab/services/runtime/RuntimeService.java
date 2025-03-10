@@ -619,7 +619,7 @@ public class RuntimeService extends BaseService
                   "Could not compile execution sequence for this target observation"));
           return Observation.empty();
         } else if (!executionSequence.isEmpty()) {
-          if (!executionSequence.run(geometry)) {
+          if (!executionSequence.submit(geometry)) {
             contextualization.fail(
                 contextScope, dataflow.getTarget(), executionSequence.getCause());
             return Observation.empty();
