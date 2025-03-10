@@ -3,6 +3,10 @@ package org.integratedmodelling.klab.services.runtime.neo4j;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
@@ -62,6 +66,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   private RuntimeAsset contextNode;
   private RuntimeAsset dataflowNode;
   private RuntimeAsset provenanceNode;
+
+  private LoadingCache<Long, Observation> observationCache =
+      CacheBuilder.newBuilder()
+          .maximumSize(200)
+          // .expireAfterAccess(10, TimeUnit.MINUTES)
+          .build(
+              new CacheLoader<Long, Observation>() {
+                public Observation load(Long key) {
+                  var ret = retrieve(key, Observation.class, scope);
+                  return ret == null ? Observation.empty() : ret;
+                }
+              });
 
   // all predefined Cypher queries
   interface Queries {
@@ -293,11 +309,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               Message.MessageClass.ObservationLifecycle,
               Message.MessageType.ActivityFinished,
               activity);
-          if (dataflow != null) {
-            // TODO record causal links
+          if (dataflow != null && activity.getType() == Activity.Type.RESOLUTION) {
             storeCausalLinks(dataflow);
           }
           transaction.commit();
+          if (observation != null && activity.getType() == Activity.Type.RESOLUTION) {
+            // this starts the initialization
+            scope.getDigitalTwin().getScheduler().submit(observation);
+          }
         } else if (outcome == Scope.Status.ABORTED) {
           scope.send(
               Message.MessageClass.ObservationLifecycle,
@@ -350,14 +369,28 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       update(this.activity, scope);
     }
-  }
 
-  private void storeCausalLinks(Dataflow dataflow) {
-    /*
-     * Any dependency could be seen as an "affects" link OR we can check the actual causality, meaning that
-     * all contextualizables must be able to tell us if they physically depend on each observable. Keep it
-     * simple and potentially wasteful for now.
-     */
+    private void storeCausalLinks(Dataflow dataflow) {
+      /*
+       * Any dependency could be seen as an "affects" link OR we can check the actual causality, meaning that
+       * all contextualizables must be able to tell us if they physically depend on each observable. Keep it
+       * simple and potentially wasteful for now.
+       */
+      for (var actuator : dataflow.getComputation()) {
+        Observation observation = observationCache.getIfPresent(actuator.getId());
+        storeCausalLinks(actuator, observation);
+      }
+    }
+
+    private void storeCausalLinks(Actuator actuator, Observation affected) {
+      for (var child : actuator.getChildren()) {
+        var affecting = observationCache.getIfPresent(child.getId());
+        if (affecting != null) {
+          storeCausalLinks(child, affecting);
+          link(affecting, affected, DigitalTwin.Relationship.AFFECTS);
+        }
+      }
+    }
   }
 
   @Override
@@ -741,6 +774,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       setId(asset, ret);
     }
 
+    if (asset instanceof Observation observation) {
+      observationCache.put(observation.getId(), observation);
+    }
+
     return ret;
   }
 
@@ -769,6 +806,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       if (geometry != null) {
         storeGeometry(geometry, asset);
+      }
+
+      if (asset instanceof Observation observation) {
+        observationCache.put(observation.getId(), observation);
       }
     }
 
@@ -1388,7 +1429,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   @Override
-  public <T extends RuntimeAsset> List<T> query(Query<T> graphQuery, Class<T> resultClass, Scope scope) {
+  public <T extends RuntimeAsset> List<T> query(
+      Query<T> graphQuery, Class<T> resultClass, Scope scope) {
     if (graphQuery instanceof KnowledgeGraphQuery<T> knowledgeGraphQuery) {
       var statement = compileQuery(knowledgeGraphQuery, resultClass, scope);
       if (statement == null) {
@@ -1451,7 +1493,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         var qret = Cypher.match(source.relationshipTo(target, getLabel(query.getRelationship())));
 
         for (int i = 0; i < restrictions.size(); i++) {
-            qret = qret.match(restrictions.get(i));
+          qret = qret.match(restrictions.get(i));
         }
 
         return qret.returning(target);
@@ -1459,11 +1501,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       case AND -> {
         // bring this upstream, returns a UnionQuery
         var queries =
-            query.getChildren().stream().map(q -> compileQuery(q, resultClass, scope).build()).toList();
+            query.getChildren().stream()
+                .map(q -> compileQuery(q, resultClass, scope).build())
+                .toList();
         //        return Cypher.union(queries);
       }
       case OR -> {
-        var queries = query.getChildren().stream().map(q -> compileQuery(q, resultClass, scope)).toList();
+        var queries =
+            query.getChildren().stream().map(q -> compileQuery(q, resultClass, scope)).toList();
       }
       case NOT -> {
         // naaah

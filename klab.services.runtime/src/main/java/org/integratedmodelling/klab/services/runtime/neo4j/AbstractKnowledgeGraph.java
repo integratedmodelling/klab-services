@@ -123,13 +123,13 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         case ActuatorImpl actuator -> {
           ret.put("observationId", actuator.getId());
           ret.put("id", actuator.getInternalId());
-          StringBuilder code = new StringBuilder();
-          for (var call : actuator.getComputation()) {
-            // TODO skip any recursive resolution calls and prepare for linking later
-            code.append(call.encode(Language.DEFAULT_EXPRESSION_LANGUAGE)).append("\n");
-          }
           ret.put("semantics", actuator.getObservable().getUrn());
-          ret.put("computation", code.toString());
+          ret.put(
+              "computation",
+              // TODO skip any recursive resolution calls and prepare for linking later
+              actuator.getComputation().stream()
+                  .map(call -> call.encode(Language.DEFAULT_EXPRESSION_LANGUAGE))
+                  .toList());
           ret.put("strategy", actuator.getStrategyUrn());
         }
         case Activity activity -> {

@@ -34,8 +34,7 @@ public interface DigitalTwin {
    * defined.
    */
   enum Relationship {
-    HAS_PARENT,
-    AFFECTED,
+    HAS_PARENT, AFFECTS,
     EMERGED_FROM,
     HAS_OBSERVER,
     HAS_RELATIONSHIP_TARGET,
