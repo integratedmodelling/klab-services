@@ -551,16 +551,6 @@ public class RuntimeService extends BaseService
                         new KlabResourceAccessException(
                             "Resolution of " + observation.getUrn() + " failed"));
                   }
-
-                  /* } catch (Throwable t) {
-                    Logging.INSTANCE.error(t);
-                    ret.completeExceptionally(t);
-                    resolution.fail(scope, observation, t);
-                    scope.send(
-                        Message.MessageClass.ObservationLifecycle,
-                        Message.MessageType.ResolutionAborted,
-                        observation);
-                  }*/
                 } catch (Throwable t) {
                   Logging.INSTANCE.error(t);
                   scope.send(
