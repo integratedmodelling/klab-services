@@ -122,27 +122,17 @@ public class ExecutionSequence {
    * Submit the operations to the scheduler, then submit the geometry so that the relevant temporal
    * events can be generated if necessary.
    *
-   * @param geometry
    * @return
    */
-  public boolean submit(Geometry geometry) {
-
+  public void submit() {
     for (var operationGroup : sequence) {
-
       for (var operation : operationGroup) {
         scope
             .getDigitalTwin()
             .getScheduler()
             .registerExecutor(operation.observation, operation::run);
       }
-
-      scope.getDigitalTwin().getScheduler().register(geometry);
-
-      return true;
-
     }
-
-    return true;
   }
 
   /** One operation per observation. Successful execution will update the observation in the DT. */
@@ -418,6 +408,7 @@ public class ExecutionSequence {
 
       if (operation != null) {
         operation.success(scope, observation, resolvedCoverage);
+        // FIXME move this to the scheduler. The operation in here is STILL resolution
         scope.finalizeObservation(observation, operation, true);
       }
 

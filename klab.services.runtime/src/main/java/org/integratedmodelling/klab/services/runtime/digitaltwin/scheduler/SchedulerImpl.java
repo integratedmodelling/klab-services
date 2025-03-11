@@ -1,14 +1,18 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -16,7 +20,9 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.ojalgo.concurrent.Parallelism;
 import reactor.core.publisher.Mono;
@@ -37,7 +43,7 @@ public class SchedulerImpl implements Scheduler {
   private long epochStart = 0L;
   private long epochEnd = 0L;
   private Time.Resolution resolution = null;
-
+  private KnowledgeGraph knowledgeGraph;
   /*
    * The event processor is a fully replayable, multicasting one with synchronized behavior.
    * Events don't end up in provenance, although the activities they engender do. The scheduler acts
@@ -62,8 +68,9 @@ public class SchedulerImpl implements Scheduler {
                 }
               });
 
-  public SchedulerImpl(ServiceContextScope scope) {
+  public SchedulerImpl(ServiceContextScope scope, DigitalTwinImpl digitalTwin) {
     this.scope = scope;
+    this.knowledgeGraph = digitalTwin.getKnowledgeGraph();
     // init event is created before anything happens.
     post(new Event());
   }
@@ -99,7 +106,94 @@ public class SchedulerImpl implements Scheduler {
   }
 
   /**
-   * Adjust the internal parameters to reflect the time seen and post any events this extent implies.
+   * This is called in response to the INIT event received by any root-level observation that was
+   * successfully resolved. Successive executions of the same executors will happen by directly
+   * calling {@link #contextualize(Observation, KnowledgeGraph.Operation, Geometry)}.
+   *
+   * @param observation
+   */
+  private void initialize(Observation observation) {
+
+    var parentActivities =
+        knowledgeGraph.get(scope, Activity.class, Activity.Type.RESOLUTION, observation);
+
+    var resolutionActivity = parentActivities.getFirst();
+
+    /*
+    this will commit all resources at close()
+     */
+    var contextualization =
+        knowledgeGraph.operation(
+            knowledgeGraph.klab(),
+            resolutionActivity,
+            Activity.Type.EXECUTION,
+            "Execution of resolved dataflow to contextualize " + observation,
+            observation,
+            this);
+
+    var scale = GeometryRepository.INSTANCE.get(observation.getGeometry().encode(), Scale.class);
+    var initializationGeometry = scale.initialization();
+
+    try (contextualization) {
+
+      if (contextualize(observation, contextualization, initializationGeometry)) {
+        contextualization.success(scope, observation);
+      } else {
+        contextualization.fail(scope, observation);
+      }
+    } catch (Throwable t) {
+      Logging.INSTANCE.error(t);
+      contextualization.fail(scope, observation, t);
+    }
+  }
+
+  private boolean contextualize(
+      Observation observation, KnowledgeGraph.Operation contextualization, Geometry geometry) {
+
+    // follow the dependency chain first, then execute self
+    Collection<Callable<Boolean>> tasks = new ArrayList<>();
+    for (var affected :
+        knowledgeGraph
+            .query(Observation.class, scope)
+            .source(observation)
+            .along(DigitalTwin.Relationship.AFFECTS)
+            .run(scope)) {
+
+      tasks.add(() -> contextualize(affected, contextualization, geometry));
+    }
+    if (!tasks.isEmpty())
+      try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+        var ret = executorService.invokeAll(tasks);
+        if (ret.stream().anyMatch(objectFuture -> objectFuture.state() == Future.State.FAILED)) {
+          // TODO collect the exceptions and pass them along
+          return false;
+        }
+        // check if anything has returned false
+        if (ret.stream()
+            .anyMatch(
+                future -> {
+                  try {
+                    return !future.get();
+                  } catch (Exception e) {
+                    return false;
+                  }
+                })) {}
+      } catch (Throwable t) {
+        scope.error(t);
+        return false;
+      }
+
+    var executor = executors.getIfPresent(observation.getId());
+    if (executor != null) {
+      return executor.apply(geometry);
+    }
+
+    return true;
+  }
+
+  /**
+   * Adjust the internal parameters to reflect the time seen and post any events this extent
+   * implies.
    *
    * @param time
    */
@@ -205,7 +299,7 @@ public class SchedulerImpl implements Scheduler {
    */
   private void handleEvent(Registration observation, Event e) {
     System.out.println(observation + " got event " + e);
-    // TODO follow influence diagram, any multiple outgoing edges are
+    // TODO dispatch event
   }
 
   /**
@@ -259,7 +353,7 @@ public class SchedulerImpl implements Scheduler {
 
   public static void main(String[] dio) {
 
-    var scheduler = new SchedulerImpl(null);
+    var scheduler = new SchedulerImpl(null, null);
     AtomicInteger obsId = new AtomicInteger(1);
 
     Utils.Java.repl(

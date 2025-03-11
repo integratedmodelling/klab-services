@@ -132,6 +132,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     private OperationImpl parent;
     private List<OperationImpl> children = new ArrayList<>();
     private Actuator actuator;
+    private Observation observationToSubmit;
 
     @Override
     public Agent getAgent() {
@@ -215,10 +216,24 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     @Override
     public Operation success(ContextScope scope, Object... assets) {
+
       this.outcome = Scope.Status.FINISHED;
       // updates as needed (activity end, observation resolved if type == resolution, context
       // timestamp
       this.assets = assets;
+
+      /*
+      if we have resolved a top-level observation, we must submit it for scheduling events at close.
+       */
+      if (this.activity.getType() == Activity.Type.RESOLUTION) {
+        if (assets != null) {
+          for (var asset : assets) {
+            if (asset instanceof Observation observation) {
+              this.observationToSubmit = observation;
+            }
+          }
+        }
+      }
       return this;
     }
 
@@ -329,6 +344,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         // npw that transactions are done, update all observations and activities w.r.t. the ones
         // contained here
         updateAssets();
+
+        /*
+         * Last, submit the observation to the scheduler, which will trigger execution of the
+         * contextualization strategy.
+         */
+        if (observationToSubmit != null) {
+          scope.getDigitalTwin().getScheduler().submit(observationToSubmit);
+        }
       }
     }
 

@@ -490,34 +490,69 @@ public class RuntimeService extends BaseService
                       Message.MessageClass.ObservationLifecycle,
                       Message.MessageType.ResolutionStarted,
                       result);
-                  try {
-                    // TODO send out the activity with the scope
-                    dataflow = resolver.resolve(observation, scope);
-                    if (dataflow != null) {
-                      resolution.success(
-                          scope,
-                          result,
-                          dataflow,
-                          "Resolution of observation _"
-                              + observation.getUrn()
-                              + "_ of **"
-                              + observation.getObservable().getUrn()
-                              + "**",
-                          resolver);
-                      scope.send(
-                          Message.MessageClass.ObservationLifecycle,
-                          dataflow.isEmpty()
-                              ? Message.MessageType.ResolutionUnsuccessful
-                              : Message.MessageType.ResolutionSuccessful,
-                          result);
-                      resolutionActivity = resolution.getActivity();
+                  //                  try {
+                  // TODO send out the activity with the scope
+                  dataflow = resolver.resolve(observation, scope);
+                  if (dataflow != null) {
+
+                    if (dataflow.isEmpty()
+                        && observation.getObservable().is(SemanticType.COUNTABLE)) {
+                      // if there is a dataflow, this step will be done in execution
+                      serviceContextScope.finalizeObservation(observation, resolution, false);
                     } else {
-                      resolution.fail(scope, observation);
-                      ret.completeExceptionally(
-                          new KlabResourceAccessException(
-                              "Resolution of " + observation.getUrn() + " failed"));
+
+                      for (var rootActuator : dataflow.getComputation()) {
+                        var executionSequence =
+                            new ExecutionSequence(
+                                this,
+                                resolution,
+                                dataflow,
+                                getComponentRegistry(),
+                                serviceContextScope);
+                        var compiled = executionSequence.compile(rootActuator);
+                        if (!compiled) {
+                          var t =
+                              new KlabCompilationError(
+                                  "Could not compile execution sequence for this target observation");
+                          resolution.fail(serviceContextScope, dataflow.getTarget(), t);
+                          ret.completeExceptionally(t);
+                        } else if (!executionSequence.isEmpty()) {
+                          executionSequence.submit();
+                        }
+                      }
+
+                      if (!ret.isCompletedExceptionally()) {
+                        resolution.success(
+                            scope,
+                            result,
+                            dataflow,
+                            "Resolution of observation _"
+                                + observation.getUrn()
+                                + "_ of **"
+                                + observation.getObservable().getUrn()
+                                + "**",
+                            resolver);
+                        scope.send(
+                            Message.MessageClass.ObservationLifecycle,
+                            dataflow.isEmpty()
+                                ? Message.MessageType.ResolutionUnsuccessful
+                                : Message.MessageType.ResolutionSuccessful,
+                            result);
+                      } else {
+                        resolution.fail(scope, observation);
+                        ret.completeExceptionally(
+                            new KlabResourceAccessException(
+                                "Resolution of " + observation.getUrn() + " failed"));
+                      }
                     }
-                  } catch (Throwable t) {
+                  } else {
+                    resolution.fail(scope, observation);
+                    ret.completeExceptionally(
+                        new KlabResourceAccessException(
+                            "Resolution of " + observation.getUrn() + " failed"));
+                  }
+
+                  /* } catch (Throwable t) {
                     Logging.INSTANCE.error(t);
                     ret.completeExceptionally(t);
                     resolution.fail(scope, observation, t);
@@ -525,7 +560,7 @@ public class RuntimeService extends BaseService
                         Message.MessageClass.ObservationLifecycle,
                         Message.MessageType.ResolutionAborted,
                         observation);
-                  }
+                  }*/
                 } catch (Throwable t) {
                   Logging.INSTANCE.error(t);
                   scope.send(
@@ -534,58 +569,6 @@ public class RuntimeService extends BaseService
                       observation);
                   resolution.fail(scope, observation, t);
                   ret.completeExceptionally(t);
-                }
-
-                if (!ret.isCompletedExceptionally() && dataflow != null) {
-
-                  if (dataflow.isEmpty()
-                      && observation.getObservable().is(SemanticType.COUNTABLE)) {
-                    // if there is a dataflow, this step will be done in execution
-                    serviceContextScope.finalizeObservation(observation, resolution, false);
-                  } else {
-                    /*
-                    this will commit all resources at close()
-                     */
-                    var contextualization =
-                        digitalTwin
-                            .getKnowledgeGraph()
-                            .operation(
-                                digitalTwin.getKnowledgeGraph().klab(),
-                                resolutionActivity,
-                                Activity.Type.EXECUTION,
-                                "Execution of resolved dataflow to contextualize " + observation,
-                                dataflow,
-                                observation,
-                                this);
-
-                    var scale =
-                        GeometryRepository.INSTANCE.get(
-                            observation.getGeometry().encode(), Scale.class);
-                    var initializationGeometry = scale.initialization();
-
-                    try (contextualization) {
-                      // TODO contextualization gets its own activities to use in operations
-                      //  (dependent on resolution) linked to actuators by runDataflow
-                      result =
-                          runDataflow(dataflow, initializationGeometry, scope, contextualization);
-                      ret.complete(result);
-                      if (result.isEmpty()) {
-                        contextualization.fail(scope, dataflow);
-                      } else {
-                        contextualization.success(scope, dataflow, result);
-                      }
-                    } catch (Throwable t) {
-                      Logging.INSTANCE.error(t);
-                      contextualization.fail(scope, dataflow, result, t);
-                      ret.completeExceptionally(t);
-                    } finally {
-                      if (!dataflow.isEmpty()
-                          && contextualization.getOutcome() == Scope.Status.FINISHED) {
-                        // this starts the initialization; executors have been registered already
-                        scope.getDigitalTwin().getScheduler().submit(observation);
-                      }
-                    }
-                  }
                 }
               });
 
@@ -631,11 +614,10 @@ public class RuntimeService extends BaseService
                   "Could not compile execution sequence for this target observation"));
           return Observation.empty();
         } else if (!executionSequence.isEmpty()) {
-          if (!executionSequence.submit(geometry)) {
-            contextualization.fail(
-                contextScope, dataflow.getTarget(), executionSequence.getCause());
-            return Observation.empty();
-          }
+          // TODO run it the old way, calling the executors one by one. This is for explicit
+          // dataflows and may not be
+          //  needed.
+          //          executionSequence.run(geometry);
         }
       }
 

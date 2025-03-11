@@ -36,7 +36,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     this.rootScope = scope;
     this.knowledgeGraph = database.contextualize(scope);
     this.storageManager = new StorageManagerImpl(service, scope);
-    this.scheduler = new SchedulerImpl(scope);
+    this.scheduler = new SchedulerImpl(scope, this);
   }
 
   @Override
