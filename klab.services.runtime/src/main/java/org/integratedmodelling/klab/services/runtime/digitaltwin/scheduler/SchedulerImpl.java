@@ -71,8 +71,8 @@ public class SchedulerImpl implements Scheduler {
   @Override
   public void submit(Observation observation) {
     var registration =
-            // TODO analyze the geometry and the events affecting; record initiation conditions for the
-            //  filter
+        // TODO analyze the geometry and the events affecting; record initiation conditions for the
+        //  filter
         new Registration(
             observation.getName(),
             observation.getObservable().getSemantics().getUrn(),
@@ -94,8 +94,18 @@ public class SchedulerImpl implements Scheduler {
     // TODO
     Time time = Scale.create(geometry).getTime();
     if (time != null) {
-
+      notifyTime(time);
     }
+  }
+
+  /**
+   * Adjust the internal parameters to reflect the time seen and post any events this extent implies.
+   *
+   * @param time
+   */
+  private void notifyTime(Time time) {
+    long tStart = time.getStart().getMilliseconds();
+    long tEnd = time.getEnd().getMilliseconds();
   }
 
   private void register(Registration registration) {
@@ -126,8 +136,8 @@ public class SchedulerImpl implements Scheduler {
    * demand. A fourth could be the ID of a linked DT when the event is external. We can also keep
    * the IDs of the affected and maybe affecting observations as a Set of longs.
    *
-   * TODO the registrations should be cached and reconstructed from the KG based on the resolution
-   *  status and last time of update.
+   * <p>TODO the registrations should be cached and reconstructed from the KG based on the
+   * resolution status and last time of update.
    *
    * <p>The observation should also know if it's a dependent or not, in which case only actual
    * observation events only affects it, given that contextualization actions are handled through
@@ -201,6 +211,7 @@ public class SchedulerImpl implements Scheduler {
   /**
    * TODO follow the AFFECTS relationships from the passed observation, submitting the geometry to
    * the corresponding executor(s) using separate threads for multiple dependents.
+   *
    * @param geometry
    * @return
    */
@@ -208,43 +219,42 @@ public class SchedulerImpl implements Scheduler {
 
     var executor = executors.getIfPresent(observation.getId());
 
-//
-//    // groups are sequential; grouped items are parallel. Empty groups are currently possible
-//    // although
-//    // they should be filtered out, but we leave them for completeness for now as they don't
-//    // really
-//    // bother anyone.
-//    if (operationGroup.size() == 1) {
-//      if (!operationGroup.getFirst().run(geometry)) {
-//        return false;
-//      }
-//      continue;
-//    }
-//
-//    /*
-//     * Run also the empty operations because execution will update the observations
-//     */
-//    if (scope.getParallelism() == Parallelism.ONE) {
-//      for (var operation : operationGroup) {
-//        if (!operation.run(geometry)) {
-//          return false;
-//        }
-//      }
-//    } else {
-//      try (ExecutorService taskExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
-//        for (var operation : operationGroup) {
-//          taskExecutor.execute(() -> operation.run(geometry));
-//        }
-//        taskExecutor.shutdown();
-//        if (!taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)) {
-//          return false;
-//        }
-//      } catch (InterruptedException e) {
-//        this.cause = e;
-//        scope.error(e);
-//      }
+    //
+    //    // groups are sequential; grouped items are parallel. Empty groups are currently possible
+    //    // although
+    //    // they should be filtered out, but we leave them for completeness for now as they don't
+    //    // really
+    //    // bother anyone.
+    //    if (operationGroup.size() == 1) {
+    //      if (!operationGroup.getFirst().run(geometry)) {
+    //        return false;
+    //      }
+    //      continue;
+    //    }
+    //
+    //    /*
+    //     * Run also the empty operations because execution will update the observations
+    //     */
+    //    if (scope.getParallelism() == Parallelism.ONE) {
+    //      for (var operation : operationGroup) {
+    //        if (!operation.run(geometry)) {
+    //          return false;
+    //        }
+    //      }
+    //    } else {
+    //      try (ExecutorService taskExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
+    //        for (var operation : operationGroup) {
+    //          taskExecutor.execute(() -> operation.run(geometry));
+    //        }
+    //        taskExecutor.shutdown();
+    //        if (!taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)) {
+    //          return false;
+    //        }
+    //      } catch (InterruptedException e) {
+    //        this.cause = e;
+    //        scope.error(e);
+    //      }
     return false;
-
   }
 
   public static void main(String[] dio) {

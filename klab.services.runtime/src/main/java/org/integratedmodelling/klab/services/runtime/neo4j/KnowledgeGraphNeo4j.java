@@ -232,6 +232,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     @Override
+    public Scope.Status getOutcome() {
+      return outcome;
+    }
+
+    @Override
     public void close() throws IOException {
 
       List<Actuator> childActuators = new ArrayList<>();
@@ -309,14 +314,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               Message.MessageClass.ObservationLifecycle,
               Message.MessageType.ActivityFinished,
               activity);
-          if (dataflow != null && activity.getType() == Activity.Type.RESOLUTION) {
+          if (dataflow != null && activity.getType() == Activity.Type.CONTEXTUALIZATION) {
             storeCausalLinks(dataflow);
           }
           transaction.commit();
-          if (observation != null && activity.getType() == Activity.Type.RESOLUTION) {
-            // this starts the initialization
-            scope.getDigitalTwin().getScheduler().submit(observation);
-          }
         } else if (outcome == Scope.Status.ABORTED) {
           scope.send(
               Message.MessageClass.ObservationLifecycle,

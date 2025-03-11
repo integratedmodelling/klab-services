@@ -558,13 +558,16 @@ public class RuntimeService extends BaseService
                                 observation,
                                 this);
 
-                    var scale = GeometryRepository.INSTANCE.get(observation.getGeometry().encode(), Scale.class);
+                    var scale =
+                        GeometryRepository.INSTANCE.get(
+                            observation.getGeometry().encode(), Scale.class);
                     var initializationGeometry = scale.initialization();
 
                     try (contextualization) {
                       // TODO contextualization gets its own activities to use in operations
                       //  (dependent on resolution) linked to actuators by runDataflow
-                      result = runDataflow(dataflow, initializationGeometry, scope, contextualization);
+                      result =
+                          runDataflow(dataflow, initializationGeometry, scope, contextualization);
                       ret.complete(result);
                       if (result.isEmpty()) {
                         contextualization.fail(scope, dataflow);
@@ -575,6 +578,12 @@ public class RuntimeService extends BaseService
                       Logging.INSTANCE.error(t);
                       contextualization.fail(scope, dataflow, result, t);
                       ret.completeExceptionally(t);
+                    } finally {
+                      if (!dataflow.isEmpty()
+                          && contextualization.getOutcome() == Scope.Status.FINISHED) {
+                        // this starts the initialization; executors have been registered already
+                        scope.getDigitalTwin().getScheduler().submit(observation);
+                      }
                     }
                   }
                 }
@@ -594,7 +603,10 @@ public class RuntimeService extends BaseService
   }
 
   public Observation runDataflow(
-          Dataflow dataflow, Geometry geometry, ContextScope contextScope, KnowledgeGraph.Operation contextualization) {
+      Dataflow dataflow,
+      Geometry geometry,
+      ContextScope contextScope,
+      KnowledgeGraph.Operation contextualization) {
 
     /*
     TODO Load or confirm availability of all needed resources and create any non-existing observations

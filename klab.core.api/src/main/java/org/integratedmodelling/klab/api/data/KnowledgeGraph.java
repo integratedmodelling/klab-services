@@ -169,6 +169,8 @@ public interface KnowledgeGraph {
      * @return
      */
     Operation fail(ContextScope scope, Object... assets);
+
+    Scope.Status getOutcome();
   }
 
   /**
