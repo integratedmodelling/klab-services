@@ -55,11 +55,23 @@ public interface Scheduler {
    * consequences of any resulting events and call the scope to carry on any necessary computations
    * and update the knowledge graph.
    *
+   * <p>This must be called after any {@link #registerExecutor(Observation, Function)} for the
+   * observation have been submitted.
+   *
    * @param observation
    * @return
    */
   void submit(Observation observation);
 
+  /**
+   * Register an executor compiled from the actuator that resolves the passed observation in the
+   * passed geometry.
+   *
+   * TODO the executors must also receive the current scope
+   *
+   * @param observation
+   * @param executor
+   */
   void registerExecutor(Observation observation, Function<Geometry, Boolean> executor);
 
   /**

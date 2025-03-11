@@ -91,7 +91,9 @@ public class SchedulerImpl implements Scheduler {
             0);
     register(registration);
     if (observation.getObservable().is(SemanticType.EVENT)) {
-      // EVENT!
+      // EVENT! Post iy
+    } else if (observation.getObservable().is(SemanticType.PROCESS)) {
+      // PROCESS! Time events will affect it
     }
   }
 
@@ -188,7 +190,9 @@ public class SchedulerImpl implements Scheduler {
 
     var executor = executors.getIfPresent(observation.getId());
     if (executor != null) {
-      return executor.apply(geometry);
+      var ret = executor.apply(geometry);
+      scope.finalizeObservation(observation, contextualization, ret);
+      return ret;
     }
 
     return true;
@@ -203,6 +207,13 @@ public class SchedulerImpl implements Scheduler {
   private void notifyTime(Time time) {
     long tStart = time.getStart().getMilliseconds();
     long tEnd = time.getEnd().getMilliseconds();
+    if (this.epochStart == 0 || this.epochStart > tStart) {
+      this.epochStart = tStart;
+    }
+    if (this.epochEnd == 0 || this.epochEnd < tEnd) {
+      this.epochEnd = tEnd;
+    }
+    // TODO compound resolutions, compile events
   }
 
   private void register(Registration registration) {
