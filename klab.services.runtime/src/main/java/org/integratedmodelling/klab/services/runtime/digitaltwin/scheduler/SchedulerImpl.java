@@ -77,6 +77,7 @@ public class SchedulerImpl implements Scheduler {
 
   @Override
   public void submit(Observation observation) {
+    register(observation.getGeometry());
     var registration =
         // TODO analyze the geometry and the events affecting; record initiation conditions for the
         //  filter
@@ -89,6 +90,9 @@ public class SchedulerImpl implements Scheduler {
             // TODO!
             0);
     register(registration);
+    if (observation.getObservable().is(SemanticType.EVENT)) {
+      // EVENT!
+    }
   }
 
   @Override
@@ -96,8 +100,7 @@ public class SchedulerImpl implements Scheduler {
     executors.put(observation.getId(), executor);
   }
 
-  @Override
-  public void register(Geometry geometry) {
+  private void register(Geometry geometry) {
     // TODO
     Time time = Scale.create(geometry).getTime();
     if (time != null) {

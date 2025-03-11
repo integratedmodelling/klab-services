@@ -60,9 +60,7 @@ public interface Scheduler {
    */
   void submit(Observation observation);
 
-    void registerExecutor(Observation observation, Function<Geometry, Boolean> executor);
-
-  void register(Geometry geometry);
+  void registerExecutor(Observation observation, Function<Geometry, Boolean> executor);
 
   /**
    * The scheduler keeps the first time instant seen in the DT. This can change during the lifetime

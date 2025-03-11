@@ -329,7 +329,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               Message.MessageClass.ObservationLifecycle,
               Message.MessageType.ActivityFinished,
               activity);
-          if (dataflow != null && activity.getType() == Activity.Type.CONTEXTUALIZATION) {
+          if (dataflow != null && activity.getType() == Activity.Type.RESOLUTION) {
             storeCausalLinks(dataflow);
           }
           transaction.commit();
