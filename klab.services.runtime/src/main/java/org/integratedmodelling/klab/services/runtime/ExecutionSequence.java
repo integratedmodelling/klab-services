@@ -530,7 +530,7 @@ public class ExecutionSequence {
 
     var childContextualization =
         contextualization.createChild(
-            rootActuator, "Contextualization of " + rootActuator, Activity.Type.CONTEXTUALIZATION);
+            rootActuator, "Contextualization of " + rootActuator, Activity.Type.RESOLUTION);
     operations.put(rootActuator, childContextualization);
 
     cache.put(rootActuator.getId(), rootActuator);
