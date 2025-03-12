@@ -1520,7 +1520,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           qret = qret.match(restrictions.get(i));
         }
 
-        return qret.returning(target);
+        return qret.returning(query.getSource() == null ? source : target);
       }
       case AND -> {
         // bring this upstream, returns a UnionQuery

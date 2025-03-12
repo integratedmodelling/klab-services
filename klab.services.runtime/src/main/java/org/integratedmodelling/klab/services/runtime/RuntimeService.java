@@ -495,10 +495,11 @@ public class RuntimeService extends BaseService
                   dataflow = resolver.resolve(observation, scope);
                   if (dataflow != null) {
 
-                    if (dataflow.isEmpty()
-                        && observation.getObservable().is(SemanticType.COUNTABLE)) {
-                      // if there is a dataflow, this step will be done in execution
-                      serviceContextScope.finalizeObservation(observation, resolution, false);
+                    if (dataflow.isEmpty()) {
+                      if (observation.getObservable().is(SemanticType.COUNTABLE)) {
+                        // if there is a dataflow, this step will be done in execution
+                        serviceContextScope.finalizeObservation(observation, resolution, false);
+                      }
                     } else {
 
                       for (var rootActuator : dataflow.getComputation()) {

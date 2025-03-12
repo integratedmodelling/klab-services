@@ -209,8 +209,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public void finalizeObservation(
       Observation observation, KnowledgeGraph.Operation operation, boolean successful) {
     if (successful) {
-      // TODO behaviors: assign if any, create actor and start the VM
-      digitalTwin.getScheduler().submit(observation);
       if (observation.getObservable().is(SemanticType.QUALITY)) {
         var storage = digitalTwin.getStorageManager().getStorage(observation);
         if (storage != null) {

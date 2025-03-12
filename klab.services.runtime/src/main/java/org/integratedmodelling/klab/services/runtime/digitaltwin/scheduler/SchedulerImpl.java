@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.*;
@@ -11,6 +12,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -71,30 +73,31 @@ public class SchedulerImpl implements Scheduler {
   public SchedulerImpl(ServiceContextScope scope, DigitalTwinImpl digitalTwin) {
     this.scope = scope;
     this.knowledgeGraph = digitalTwin.getKnowledgeGraph();
-    // init event is created before anything happens.
+    // The INIT event is created before anything happens and applies to every observation
+    // registered.
     post(new Event());
   }
 
   @Override
   public void submit(Observation observation) {
-    register(observation.getGeometry());
+
+    var timeData = register(observation.getGeometry());
     var registration =
-        // TODO analyze the geometry and the events affecting; record initiation conditions for the
-        //  filter
         new Registration(
-            observation.getName(),
-            observation.getObservable().getSemantics().getUrn(),
+            observation.getId(),
             SemanticType.fundamentalType(observation.getObservable().getSemantics().getType()),
-            // TODO!
-            0,
-            // TODO!
-            0);
-    register(registration);
+            timeData.getFirst(),
+            timeData.getSecond(),
+            timeData.getThird());
     if (observation.getObservable().is(SemanticType.EVENT)) {
       // EVENT! Post iy
     } else if (observation.getObservable().is(SemanticType.PROCESS)) {
       // PROCESS! Time events will affect it
     }
+    processor
+        .asFlux()
+        .filterWhen(event -> Mono.just(checkApplies(registration, event)))
+        .subscribe(e -> handleEvent(registration, e));
   }
 
   @Override
@@ -102,12 +105,13 @@ public class SchedulerImpl implements Scheduler {
     executors.put(observation.getId(), executor);
   }
 
-  private void register(Geometry geometry) {
+  private Triple<Long, Long, Time.Resolution> register(Geometry geometry) {
     // TODO
     Time time = Scale.create(geometry).getTime();
     if (time != null) {
-      notifyTime(time);
+      return notifyTime(time);
     }
+    return Triple.of(0L, 0L, null);
   }
 
   /**
@@ -131,7 +135,7 @@ public class SchedulerImpl implements Scheduler {
         knowledgeGraph.operation(
             knowledgeGraph.klab(),
             resolutionActivity,
-            Activity.Type.EXECUTION,
+            Activity.Type.CONTEXTUALIZATION,
             "Execution of resolved dataflow to contextualize " + observation,
             observation,
             this);
@@ -160,11 +164,16 @@ public class SchedulerImpl implements Scheduler {
     for (var affected :
         knowledgeGraph
             .query(Observation.class, scope)
-            .source(observation)
+            .target(observation)
             .along(DigitalTwin.Relationship.AFFECTS)
             .run(scope)) {
 
-      tasks.add(() -> contextualize(affected, contextualization, geometry));
+      tasks.add(
+          () ->
+              contextualize(
+                  affected,
+                  contextualization.createChild(affected, geometry, Activity.Type.CONTEXTUALIZATION),
+                  geometry));
     }
     if (!tasks.isEmpty())
       try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -204,7 +213,7 @@ public class SchedulerImpl implements Scheduler {
    *
    * @param time
    */
-  private void notifyTime(Time time) {
+  private Triple<Long, Long, Time.Resolution> notifyTime(Time time) {
     long tStart = time.getStart().getMilliseconds();
     long tEnd = time.getEnd().getMilliseconds();
     if (this.epochStart == 0 || this.epochStart > tStart) {
@@ -214,13 +223,8 @@ public class SchedulerImpl implements Scheduler {
       this.epochEnd = tEnd;
     }
     // TODO compound resolutions, compile events
-  }
 
-  private void register(Registration registration) {
-    processor
-        .asFlux()
-        .filterWhen(event -> Mono.just(checkApplies(registration, event)))
-        .subscribe(e -> handleEvent(registration, e));
+    return Triple.of(tStart, tEnd, time.getResolution());
   }
 
   @Override
@@ -251,14 +255,13 @@ public class SchedulerImpl implements Scheduler {
    * observation events only affects it, given that contextualization actions are handled through
    * the influence diagram in the DT.
    *
-   * @param name
-   * @param concept
+   * @param id
    * @param type
    * @param start
    * @param end
    */
   public record Registration(
-      String name, String concept, SemanticType type, long start, long end) {}
+      long id, SemanticType type, long start, long end, Time.Resolution resolution) {}
 
   /**
    * Event should have a type enum INITIALIZATION, TIME or EVENT (extendible: can have VISIT when a
@@ -266,23 +269,30 @@ public class SchedulerImpl implements Scheduler {
    */
   public static class Event {
 
-    String type;
+    private long start;
+    private long end;
 
-    public Event(Registration observation) {
-      type = observation.toString();
+    enum Type {
+      INITIALIZATION,
+      TEMPORAL_TRANSITION,
+      EVENT
     }
+
+    final Type type;
 
     public Event() {
-      type = "INIT";
+      type = Type.INITIALIZATION;
     }
 
-    public Event(long start, long end) {
-      type = "TIME " + start + "-" + end;
+    public Event(long start, long end, Time.Resolution resolution) {
+      type = Type.TEMPORAL_TRANSITION;
+      this.start = start;
+      this.end = end;
     }
 
     @Override
     public String toString() {
-      return type;
+      return type.toString();
     }
   }
 
@@ -298,71 +308,28 @@ public class SchedulerImpl implements Scheduler {
   }
 
   private Boolean checkApplies(Registration observation, Event event) {
-    boolean ok = !observation.name.endsWith("2");
-    System.out.println(
-        "Checking " + observation + " against " + event + ": " + (ok ? "OK" : "NAAH"));
-    return ok;
+    //    boolean ok = !observation.name.endsWith("2");
+    System.out.println("Checking " + observation + " against " + event);
+    // TODO
+    return true;
   }
 
   /**
    * These are guaranteed synchronous. Communication between actors will be synchronous at the actor
    * level, not at the scheduler level, so the actor system remains necessary.
    *
-   * @param observation
-   * @param e
+   * @param registration
+   * @param event
    */
-  private void handleEvent(Registration observation, Event e) {
-    System.out.println(observation + " got event " + e);
-    // TODO dispatch event
-  }
-
-  /**
-   * TODO follow the AFFECTS relationships from the passed observation, submitting the geometry to
-   * the corresponding executor(s) using separate threads for multiple dependents.
-   *
-   * @param geometry
-   * @return
-   */
-  private boolean execute(Observation observation, Geometry geometry) {
-
-    var executor = executors.getIfPresent(observation.getId());
-
-    //
-    //    // groups are sequential; grouped items are parallel. Empty groups are currently possible
-    //    // although
-    //    // they should be filtered out, but we leave them for completeness for now as they don't
-    //    // really
-    //    // bother anyone.
-    //    if (operationGroup.size() == 1) {
-    //      if (!operationGroup.getFirst().run(geometry)) {
-    //        return false;
-    //      }
-    //      continue;
-    //    }
-    //
-    //    /*
-    //     * Run also the empty operations because execution will update the observations
-    //     */
-    //    if (scope.getParallelism() == Parallelism.ONE) {
-    //      for (var operation : operationGroup) {
-    //        if (!operation.run(geometry)) {
-    //          return false;
-    //        }
-    //      }
-    //    } else {
-    //      try (ExecutorService taskExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
-    //        for (var operation : operationGroup) {
-    //          taskExecutor.execute(() -> operation.run(geometry));
-    //        }
-    //        taskExecutor.shutdown();
-    //        if (!taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)) {
-    //          return false;
-    //        }
-    //      } catch (InterruptedException e) {
-    //        this.cause = e;
-    //        scope.error(e);
-    //      }
-    return false;
+  private void handleEvent(Registration registration, Event event) {
+    System.out.println(registration + " got event " + event);
+    if (event.type == Event.Type.INITIALIZATION) {
+      var observation = scope.getObservation(registration.id());
+      if (observation != null
+          && !observation.isResolved()) { // TODO check resolution condition and put in filter
+        initialize(observation);
+      }
+    }
   }
 
   public static void main(String[] dio) {
@@ -373,23 +340,24 @@ public class SchedulerImpl implements Scheduler {
     Utils.Java.repl(
         "> ",
         s -> {
-          switch (s) {
-            // add a new observation and subscribe it to events
-            case "+" ->
-                scheduler.register(
-                    new Registration(
-                        "Obs" + obsId.getAndIncrement(),
-                        "Concept",
-                        SemanticType.AGENT,
-                        System.currentTimeMillis(),
-                        -1L));
-            // send init event
-            case "i" -> scheduler.post(new Event());
-            // send time event between now and 1s after
-            case "t" ->
-                scheduler.post(
-                    new Event(System.currentTimeMillis(), System.currentTimeMillis() + 1000));
-          }
+          //          switch (s) {
+          //            // add a new observation and subscribe it to events
+          //            case "+" ->
+          //                scheduler.register(
+          //                    new Registration(
+          //                        "Obs" + obsId.getAndIncrement(),
+          //                        "Concept",
+          //                        SemanticType.AGENT,
+          //                        System.currentTimeMillis(),
+          //                        -1L));
+          //            // send init event
+          //            case "i" -> scheduler.post(new Event());
+          //            // send time event between now and 1s after
+          //            case "t" ->
+          //                scheduler.post(
+          //                    new Event(System.currentTimeMillis(), System.currentTimeMillis() +
+          // 1000));
+          //          }
         });
   }
 }

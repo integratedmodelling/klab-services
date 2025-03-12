@@ -408,8 +408,6 @@ public class ExecutionSequence {
 
       if (operation != null) {
         operation.success(scope, observation, resolvedCoverage);
-        // FIXME move this to the scheduler. The operation in here is STILL resolution
-        scope.finalizeObservation(observation, operation, true);
       }
 
       return true;
