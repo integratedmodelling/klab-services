@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -53,6 +54,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private Observation contextObservation;
   private URL url;
   private DigitalTwin digitalTwin;
+  private KnowledgeGraph.Operation currentOperation;
+
   // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
   protected ServiceContextScope parent;
   protected Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
@@ -192,6 +195,23 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     ServiceContextScope ret = new ServiceContextScope(this);
     ret.observer = observer;
     return ret;
+  }
+
+  /**
+   * Store the current KG operation so that we can correctly record provenance and maintain graph
+   * integrity in secondary resolutions.
+   *
+   * @param operation
+   * @return
+   */
+  public ServiceContextScope withinOperation(KnowledgeGraph.Operation operation) {
+    ServiceContextScope ret = new ServiceContextScope(this);
+    ret.currentOperation = operation;
+    return ret;
+  }
+
+  public KnowledgeGraph.Operation getCurrentOperation() {
+    return currentOperation;
   }
 
   @Override
