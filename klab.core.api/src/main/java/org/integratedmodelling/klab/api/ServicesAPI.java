@@ -415,9 +415,9 @@ public interface ServicesAPI {
     String RETRIEVE_PROJECT = "/retrieveProject/{projectName}";
     String QUERY_RESOURCES = "/queryResources";
     String PRECURSORS = "/precursors/{namespaceId}";
-    String PROJECTS = "/projects";
-    String PROJECT = "/project/{projectName}";
-    String RESOLVE_MODEL = "/model/{modelName}";
+    String RESOLVE_PROJECTS = "/resolveProjects";
+    String PROJECT = "/retrieveProject/{projectName}";
+    String RESOLVE_MODEL = "/resolveModel/{modelName}";
     String RESOLVE_URN = "/resolve/{urn}";
     String RETRIEVE_NAMESPACE = "/retrieveNamespace/{urn}";
     String RETRIEVE_ONTOLOGY = "/retrieveOntology/{urn}";
@@ -437,7 +437,7 @@ public interface ServicesAPI {
     String RETRIEVE_DATAFLOW = "/retrieveDataflow/{urn}";
     String RETRIEVE_WORLDVIEW = "/getWorldview";
     String DEPENDENTS = "/dependents/{namespaceId}";
-    String RESOLVE_MODELS = "/retrieveModels";
+    String RESOLVE_MODELS = "/resolveModels";
     String MODEL_GEOMETRY = "/modelGeometry/{modelUrn}";
     String READ_BEHAVIOR = "/readBehavior";
     String LIST_PROJECTS = "/listProjects";
@@ -457,7 +457,7 @@ public interface ServicesAPI {
       String CREATE_PROJECT = "/createProject/{workspaceName}/{projectName}";
 
       /** POST request to update an existing project's manifest */
-      String UPDATE_PROJECT = "/createProject/{projectName}";
+      String UPDATE_PROJECT = "/updateProject/{projectName}";
 
       /**
        * GET endpoint: create new document with passed URN. Return changes in each workspace
