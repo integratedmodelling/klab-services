@@ -134,6 +134,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     private Actuator actuator;
     private Observation observationToSubmit;
     private boolean closed = false; // for debugging
+    private int level = 0;
 
     @Override
     public Agent getAgent() {
@@ -158,6 +159,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       activity.setUrn(this.activity.getUrn() + "." + Utils.Names.shortUUID());
       var ret = new OperationImpl();
 
+      ret.level = this.level + 1;
       ret.agent = agent;
       ret.transaction = transaction;
       ret.parent = this;
@@ -460,6 +462,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           ret.activity.setDescription(description);
         } else if (dat instanceof OperationImpl operation) {
           ret.parent = operation;
+          System.out.println("PIPPASPERMA! PIPPASPERMA!");
         } else if (dat instanceof KlabService service) {
           activity.setServiceId(service.serviceId());
           activity.setServiceName(service.getServiceName());
