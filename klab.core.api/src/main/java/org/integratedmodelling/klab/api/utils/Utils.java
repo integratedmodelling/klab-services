@@ -3635,6 +3635,24 @@ public class Utils {
     }
 
     /**
+     * Starts a poor-man REPL that returns when "exit" is input. For testing.
+     *
+     * @param prompt
+     * @param lineHandler
+     */
+    public static void repl(String prompt, Consumer<String> lineHandler) {
+      Scanner scanner = new Scanner(System.in); // Create a Scanner object
+      while (true) {
+        System.out.print(prompt);
+        var line = scanner.nextLine();
+        if ("exit".equals(line.trim())) {
+          return;
+        }
+        lineHandler.accept(line.trim());
+      }
+    }
+
+    /**
      * Distribute a consumer over a set of objects in one virtual thread per object. Return only
      * when all the threads are finished and return status.
      *
@@ -3659,8 +3677,40 @@ public class Utils {
     }
 
     /**
-     * Given a set of objects, return a corresponding array of the API interface classes
-     * that represent them in k.LAB. Anything null or not recognized gets mapped to Object.class.
+     * Same as {@link #distributeComputation(Collection, Consumer)} but using a scope to report any
+     * error conditions before returning as usual.
+     *
+     * @param objects
+     * @param task
+     * @return
+     * @param <T>
+     */
+    public static <T> boolean distributeComputation(
+        Scope scope, Collection<T> objects, Consumer<T> task) {
+
+      List<Callable<Object>> tasks = new ArrayList<>();
+      for (T object : objects) {
+        tasks.add(Executors.callable(() -> task.accept(object)));
+      }
+
+      try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+        var results = executorService.invokeAll(tasks);
+        var ret =
+            results.stream().noneMatch(objectFuture -> objectFuture.state() == Future.State.FAILED);
+        if (!ret) {
+          scope.error("Distributed computation failed");
+        }
+        return ret;
+      } catch (Throwable t) {
+        scope.error(
+            "Distributed computation completed exceptionally: " + Exceptions.stackTrace(t), t);
+        return false;
+      }
+    }
+
+    /**
+     * Given a set of objects, return a corresponding array of the API interface classes that
+     * represent them in k.LAB. Anything null or not recognized gets mapped to Object.class.
      *
      * @param arguments
      * @return
@@ -3677,7 +3727,7 @@ public class Utils {
               case SessionScope ignored -> SessionScope.class;
               case UserScope ignored -> UserScope.class;
               case Concept ignored -> Concept.class;
-              case Storage<?> ignored -> Storage.class;
+              case Storage ignored -> Storage.class;
               // TODO specialized buffers first
               case Storage.Buffer ignored -> Storage.Buffer.class;
               default -> Object.class;
@@ -4779,6 +4829,31 @@ public class Utils {
   }
 
   public static class Collections {
+
+    /**
+     * Take a list of objects that represents rows or columns of data and return the transposed
+     * lists representing the opposite dimension.
+     *
+     * <p>CAUTION: no check on the size of the input lists is done.
+     *
+     * @param columns the lists to transpose. Size must be the same or an {@link
+     *     ArrayIndexOutOfBoundsException} will be thrown.
+     * @return the transposed "matrix". Transposing it again will yield the original lists.
+     * @param <T> type of the items
+     */
+    public static <T> List<List<T>> transpose(List<T>... columns) {
+      List<List<T>> ret = new ArrayList<>();
+      if (columns != null && columns.length > 0) {
+        for (int x = 0; x < columns[0].size(); x++) {
+          List<T> row = new ArrayList<>(columns.length);
+          for (int i = 0; i < columns.length; i++) {
+            row.add(columns[i].get(x));
+          }
+          ret.add(row);
+        }
+      }
+      return ret;
+    }
 
     public static <T> List<T> arrayToList(T[] objects) {
       List<T> ret = new ArrayList<>();

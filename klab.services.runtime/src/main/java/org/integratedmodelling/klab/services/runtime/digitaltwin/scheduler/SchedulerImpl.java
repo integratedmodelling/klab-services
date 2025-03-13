@@ -99,29 +99,6 @@ public class SchedulerImpl implements Scheduler {
   public Time.Resolution resolution() {
     return null;
   }
-
-  //    /*
-  //     * keep changed observations here so we can replay the change at each replay of
-  //     * the schedule in successive resolutions. This is needed so that any new
-  //     * dependents can be updated.
-  //     */
-  //    private Set<IObservation> changedObservations = new LinkedHashSet<>();
-
-  //    /*
-  //     * used to track change in states that don't have processes connected
-  //     */
-  //    class Dependencies {
-  //        public ObservedConcept observable;
-  //        public Set<ObservedConcept> precursors = new HashSet<>();
-  //        public Actuator actuator;
-  //
-  //        @Override
-  //        public String toString() {
-  //            return "[D " + observable + " (" + precursors + ")]";
-  //        }
-  //
-  //    }
-
   /*
    * Period of all subscribed actuators, to compute resolution.
    */

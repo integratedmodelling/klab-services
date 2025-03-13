@@ -3,9 +3,9 @@ package org.integratedmodelling.klab.api.data;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.NDCursor;
 
-public class CursorImpl extends NDCursor implements Data.Cursor {
+import java.util.PrimitiveIterator;
 
-  protected long next = 0;
+public class CursorImpl extends NDCursor implements Data.Cursor {
 
   private Data.LongArrayToLongFunction inverseMapper;
   private Data.LongToLongArrayFunction mapper;
@@ -53,12 +53,21 @@ public class CursorImpl extends NDCursor implements Data.Cursor {
   }
 
   @Override
-  public long nextLong() {
-    return next++;
+  public PrimitiveIterator.OfLong scan() {
+    return new PrimitiveIterator.OfLong() {
+
+      long next = 0L;
+
+      @Override
+      public long nextLong() {
+        return next++;
+      }
+
+      @Override
+      public boolean hasNext() {
+        return next < multiplicity;
+      }
+    };
   }
 
-  @Override
-  public boolean hasNext() {
-    return next < multiplicity;
-  }
 }

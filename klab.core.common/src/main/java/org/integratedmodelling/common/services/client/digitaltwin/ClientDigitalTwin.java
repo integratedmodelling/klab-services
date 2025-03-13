@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
+import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -70,7 +70,7 @@ public class ClientDigitalTwin implements DigitalTwin {
   }
 
   @Override
-  public StateStorage getStateStorage() {
+  public StorageManager getStorageManager() {
     // TODO should throw an exception I guess - images and stats should come from the KG
     return null;
   }

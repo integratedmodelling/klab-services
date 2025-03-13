@@ -1,15 +1,17 @@
 package org.integratedmodelling.klab.runtime.storage;
 
-import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
+import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -20,9 +22,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * configuration was passed, and stored in the context data at the runtime side. The StorageScope is
  * managed by the StorageManager, which is a singleton used by the DigitalTwin.
  */
-public class StateStorageImpl implements StateStorage {
+public class StorageManagerImpl implements StorageManager {
 
   private static final String NEXT_ID_PROPERTY = "storage.mmap.nextid";
 
@@ -44,7 +44,7 @@ public class StateStorageImpl implements StateStorage {
   private File longBackupFile;
   private File booleanBackupFile;
   private int histogramBinSize = 20;
-  private final Map<String, Storage<?>> storage = new HashMap<>();
+  private final Map<String, Storage> storage = new HashMap<>();
   private AtomicLong nextId = new AtomicLong(0);
 
   public boolean isRecordHistogram() {
@@ -55,7 +55,7 @@ public class StateStorageImpl implements StateStorage {
 
   private Parallelism parallelism = Parallelism.ONE;
 
-  public StateStorageImpl(KlabService service, ServiceContextScope scope) {
+  public StorageManagerImpl(KlabService service, ServiceContextScope scope) {
     // choose the mm files, parallelism level and the floating point representation
     this.workspace = ServiceConfiguration.INSTANCE.getScratchDataDirectory("ktmp");
     this.floatBackupFile = new File(this.workspace + File.separator + "fstorage.bin");
@@ -81,43 +81,6 @@ public class StateStorageImpl implements StateStorage {
   BufferArray.MappedFileFactory intMappedArrayFactory = null;
   BufferArray.MappedFileFactory longMappedArrayFactory = null;
   BufferArray.MappedFileFactory booleanMappedArrayFactory = null;
-
-  public static void main(String[] args) throws InterruptedException {
-
-    //        for (int n = 1; n < 10; n++) {
-    //
-    //            var made = getFloatFactory().make(1000 * 1000);
-    //            AtomicInteger fatto = new AtomicInteger(0);
-    //            long start = System.currentTimeMillis();
-    //            for (int offset = 0; offset < made.size(); offset += made.size() / 10) {
-    //                int finalOffset = offset;
-    //                new Thread(() -> {
-    //                    System.out.println("Zana madonna faccio da " + finalOffset + " a " + (made
-    //                    .size() / 10 +
-    //                    finalOffset));
-    //                    for (long i = 0; i < made.size() / 10; i++) {
-    //                        made.set(i + finalOffset, (float) i);
-    //                    }
-    //                    fatto.set(fatto.get() + 1);
-    //                    System.out.println("Puta madonna fatto " + fatto.get() + " da " +
-    // finalOffset
-    //                    + " a " + (made
-    //                    .size() / 10 + finalOffset));
-    //                }).start();
-    //            }
-    //
-    //            while (fatto.get() < 10) Thread.sleep(100);
-    //            long end = System.currentTimeMillis();
-    //
-    //            System.out.println("Ci ho messo " + (end - start));
-    //
-    //            start = System.currentTimeMillis();
-    //            for (long i = 0; i < 1000 * 1000; i++) {
-    //                made.set(i, i);
-    //            }
-    //            System.out.println("Invece di " + (System.currentTimeMillis() - start));
-    //        }
-  }
 
   private BufferArray.MappedFileFactory getFloatFactory() {
     if (this.floatMappedArrayFactory == null) {
@@ -190,6 +153,20 @@ public class StateStorageImpl implements StateStorage {
     }
   }
 
+  /**
+   * Find out the representative interface of the passed buffer.
+   *
+   * @param buffer
+   * @return
+   */
+  public static Class<? extends Storage.Buffer> bufferClass(Storage.Buffer buffer) {
+    return switch (buffer) {
+      case DoubleBufferImpl ignored -> Storage.DoubleBuffer.class;
+      // TODO the rest!
+      default -> throw new KlabIllegalArgumentException("not a recognized buffer type");
+    };
+  }
+
   public BufferArray getIntBuffer(long sliceSize) {
     return getIntFactory().make(sliceSize);
   }
@@ -214,70 +191,130 @@ public class StateStorageImpl implements StateStorage {
     return histogramBinSize;
   }
 
-  @Override
-  public <T extends Storage> T getExistingStorage(Observation observation, Class<T> storageClass) {
-    // TODO
-    var ret = storage.get(observation.getUrn());
-    if (ret != null && storageClass.isAssignableFrom(ret.getClass())) {
-      return (T) ret;
-    }
-    return null;
+  public Storage getStorage(Observation observation) {
+    return getStorage(
+        observation, Utils.Annotations.findAnnotation("storage", observation.getAnnotations()));
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public <T extends Storage> T getOrCreateStorage(Observation observation, Class<T> storageClass) {
+  public static Triple<Integer, Data.SpaceFillingCurve, Storage.Type> getOptions(
+      ServiceContextScope contextScope, Annotation storageAnnotation, Observation observation) {
+    // defaults
+    var splits = contextScope.getParallelism().getAsInt();
+    var fillingCurve = Data.SpaceFillingCurve.defaultCurve(observation.getGeometry());
+    var storageType =
+        contextScope
+            .getService(RuntimeService.class)
+            .capabilities(contextScope)
+            .getDefaultStorageType();
 
-    Class<?> sClass = storageClass;
-    if (storageClass == Storage.class) {
-      sClass =
-          switch (observation.getObservable().getArtifactType()) {
-//            case BOOLEAN -> BooleanStorage.class;
-            case NUMBER -> /* TODO use config to choose between double and float */
-                DoubleStorage.class;
-//            case TEXT, CONCEPT -> KeyedStorage.class;
-            default ->
-                throw new KlabIllegalStateException(
-                    "scalar mapping to type "
-                        + observation.getObservable().getArtifactType()
-                        + " not supported");
-          };
+    /*
+     * Find specs if any. May not be honored.
+     */
+    if (storageAnnotation != null) {
+      if (storageAnnotation.containsKey("fillcurve")) {
+        try {
+          fillingCurve =
+              Data.SpaceFillingCurve.valueOf(
+                  storageAnnotation.get("fillcurve").toString().toUpperCase());
+        } catch (Throwable t) {
+          contextScope.error(
+              "Wrong fill curve specification: "
+                  + storageAnnotation.get("fillcurve")
+                  + " in "
+                  + observation);
+        }
+      }
+
+      if (storageAnnotation.containsKey("type")) {
+        try {
+          storageType =
+              Storage.Type.valueOf(storageAnnotation.get("type").toString().toUpperCase());
+        } catch (Throwable t) {
+          contextScope.error(
+              "Wrong storage type specification: "
+                  + storageAnnotation.get("type")
+                  + " in "
+                  + observation);
+        }
+      }
+
+      if (storageAnnotation.containsKey("splits")) {
+        splits = contextScope.getSplits(storageAnnotation.get("splits", Integer.class));
+      }
     }
 
-    T ret = getExistingStorage(observation, (Class<T>) sClass);
-
-    if (ret == null) {
-      if (DoubleStorage.class.isAssignableFrom(sClass)) {
-        ret = (T) new DoubleStorage(observation, this, contextScope);
-      } /*else if (LongStorage.class.isAssignableFrom(sClass)) {
-        ret = (T) new LongStorage(observation, this, contextScope);
-      } else if (FloatStorage.class.isAssignableFrom(sClass)) {
-        ret = (T) new FloatStorage(observation, this, contextScope);
-      } else if (IntStorage.class.isAssignableFrom(sClass)) {
-        ret = (T) new IntStorage(observation, this, contextScope);
-      } else if (BooleanStorage.class.isAssignableFrom(sClass)) {
-        ret = (T) new BooleanStorage(observation, this, contextScope);
-      } else if (KeyedStorage.class.isAssignableFrom(sClass)) {
-        ret = (T) new KeyedStorage(observation, this, contextScope);
-      }*/
-    }
-
-    if (ret != null) {
-      // TODO load any pre-existing state
-      storage.put(observation.getUrn(), ret);
-      return ret;
-    }
-
-    throw new KlabUnimplementedException(
-        "cannot create storage of class " + sClass.getCanonicalName());
+    return Triple.of(splits, fillingCurve, storageType);
   }
 
   @Override
+  public Storage getStorage(Observation observation, Annotation storageAnnotation) {
+    final var options = getOptions(contextScope, storageAnnotation, observation);
+    return this.storage.computeIfAbsent(
+        observation.getUrn(),
+        urn ->
+            new StorageImpl(
+                observation,
+                options.getThird(),
+                options.getSecond(),
+                options.getFirst(),
+                this,
+                contextScope));
+  }
+
+  //  @SuppressWarnings("unchecked")
+  //  @Override
+  //  private Storage getOrCreateStorage(Observation observation) {
+  //
+  //    Class<?> sClass = storageClass;
+  //    if (storageClass == Storage.class) {
+  //      sClass =
+  //          switch (observation.getObservable().getArtifactType()) {
+  //            //            case BOOLEAN -> BooleanStorage.class;
+  //            case NUMBER -> /* TODO use config to choose between double and float */
+  //                DoubleStorage.class;
+  //            //            case TEXT, CONCEPT -> KeyedStorage.class;
+  //            default ->
+  //                throw new KlabIllegalStateException(
+  //                    "scalar mapping to type "
+  //                        + observation.getObservable().getArtifactType()
+  //                        + " not supported");
+  //          };
+  //    }
+  //
+  //    T ret = getExistingStorage(observation, (Class<T>) sClass);
+  //
+  //    if (ret == null) {
+  //      if (DoubleStorage.class.isAssignableFrom(sClass)) {
+  //        ret = (T) new DoubleStorage(observation, this, contextScope);
+  //      } /*else if (LongStorage.class.isAssignableFrom(sClass)) {
+  //          ret = (T) new LongStorage(observation, this, contextScope);
+  //        } else if (FloatStorage.class.isAssignableFrom(sClass)) {
+  //          ret = (T) new FloatStorage(observation, this, contextScope);
+  //        } else if (IntStorage.class.isAssignableFrom(sClass)) {
+  //          ret = (T) new IntStorage(observation, this, contextScope);
+  //        } else if (BooleanStorage.class.isAssignableFrom(sClass)) {
+  //          ret = (T) new BooleanStorage(observation, this, contextScope);
+  //        } else if (KeyedStorage.class.isAssignableFrom(sClass)) {
+  //          ret = (T) new KeyedStorage(observation, this, contextScope);
+  //        }*/
+  //    }
+  //
+  //    if (ret != null) {
+  //      // TODO load any pre-existing state
+  //      storage.put(observation.getUrn(), ret);
+  //      return ret;
+  //    }
+  //
+  //    throw new KlabUnimplementedException(
+  //        "cannot create storage of class " + sClass.getCanonicalName());
+  //  }
+
+  //  @Override
   public <T extends Storage> T promoteStorage(
       Observation observation, Storage existingStorage, Class<T> storageClass) {
 
     if (existingStorage == null) {
-      return getOrCreateStorage(observation, storageClass);
+      //      return getOrCreateStorage(observation, storageClass);
     } else if (storageClass.isAssignableFrom(existingStorage.getClass())) {
       return (T) existingStorage;
     }
@@ -314,12 +351,11 @@ public class StateStorageImpl implements StateStorage {
     } catch (Exception e) {
       throw new KlabIOException("cannot read configuration properties");
     }
-
   }
 
   private void writeConfiguration() {
     Properties p = new Properties();
-    p.setProperty(NEXT_ID_PROPERTY, nextId.get()+"");
+    p.setProperty(NEXT_ID_PROPERTY, nextId.get() + "");
     try {
       p.store(new FileOutputStream(propertyFile), null);
     } catch (Exception e) {

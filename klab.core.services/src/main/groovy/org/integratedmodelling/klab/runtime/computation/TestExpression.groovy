@@ -1,56 +1,66 @@
 package org.integratedmodelling.klab.runtime.computation
 
-import org.integratedmodelling.klab.api.data.Data
+import org.integratedmodelling.klab.api.data.Storage
+import org.integratedmodelling.klab.api.geometry.Geometry
 import org.integratedmodelling.klab.api.knowledge.Observable
 import org.integratedmodelling.klab.api.knowledge.observation.Observation
 import org.integratedmodelling.klab.api.utils.Utils
-import org.integratedmodelling.klab.runtime.storage.DoubleStorage
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope
 
-import java.nio.DoubleBuffer
-
-// model shit observing elevation, slope
+// translates
 //  set to [elevation - slope/slope.max]
-class Expression20349 extends ExpressionBase {
+class TestExpression extends ExpressionBase {
 
-    Observable elevationObservable;
+    Observation __elevation;
+    Observation __slope;
+    Observation __self;
     @Lazy
-    Observation elevationObs = { scope.getObservation(elevationObservable) }()
-
-    List<DoubleBuffer> elevationBuffers;
-    List<DoubleBuffer> slopeBuffers;
-    List<DoubleBuffer> selfBuffers;
+    ObservationWrapper elevationObs = { new ObservationWrapper(__elevation) }()
+    @Lazy
+    ObservationWrapper slopeObs = { new ObservationWrapper(__slope) }()
+    @Lazy
+    ObservationWrapper selfObs = { new ObservationWrapper(__self) }()
 
     /**
      * Knows that elevation, slope are qualities and exist. This is for a naïve parallelization honoring
-     * any @split and/or @fillcurve annotation and is meant for scalars only.
+     * any @split and/or @fillcurve annotation and is meant for scalars only. Split strategy MUST be
+     * coordinated across all observations.
      *
      * @param self
      * @param elevation
      * @param scope
      */
-    Expression20349(ServiceContextScope scope, Observation self, Observable elevationObservable, Observable slopeObservable,
-                    List<DoubleBuffer> selfBuffers, List<DoubleBuffer> elevationBuffers, List<DoubleBuffer> slopeBuffers) {
+    TestExpression(ServiceContextScope scope, Observation self, Observation elevation, Observation slope) {
         super(scope, self)
-        this.elevationBuffers = elevationBuffers
-        this.selfBuffers = selfBuffers
-        this.slopeBuffers = slopeBuffers
+        this.__self = self
+        this.__elevation = elevation
+        this.__slope = slope
     }
 
     @Override
-    Object run() {
+    boolean run(Geometry geometry) {
 
-        def bufferSets = [selfBuffers, elevationBuffers, slopeBuffers]
-        return Utils.Java.distributeComputation(
+        /* TODO need to build the buffers here based on the geometry */
+        def selfBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__self).buffers(geometry)
+        def elevationBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__elevation).buffers(geometry)
+        def slopeBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__slope).buffers(geometry)
+
+        def bufferSets = Utils.Collections.transpose(selfBuffers, elevationBuffers, slopeBuffers)
+
+        return Utils.Java.distributeComputation( // template - this allows Spark templates to be different if the buffer is a spark thing
                 bufferSets,
-                bufferArray -> {
-                    while (selfBuf.hasNext()) {
-                        /* LOCAL VARS FROM OTHER QUALITIES */
-                        def elevation = bufferArray[1].get()
-                        def slope = bufferArray[2].get()
-                        bufferArray[0].add((double) ((elevation - _elevationObs.max) / slope))
+                { bufferArray ->
+                    var scannerArray = bufferArray.stream().map({ b->b.scan()}).toArray();
+                    while (scannerArray[0].hasNext()) { // template ends here
+                        // TODO THESE use the proper non-boxed type
+                        double elevation = scannerArray[1].get()
+                        double slope = scannerArray[2].get()
+                        // THIS
+                        double self = ((elevation - elevationObs.max) / slope)
+                        // TODO any other transformations
+                        // TODO add() for any other targets
+                        scannerArray[0].add(self) // template
                     }
                 })
-
     }
 }

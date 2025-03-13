@@ -67,7 +67,7 @@ public class AnnotationImpl extends ParametersImpl<String> implements Annotation
   }
 
   @SuppressWarnings("unchecked")
-  public static Annotation create(String name, Object... o) {
+  public static AnnotationImpl create(String name, Object... o) {
 
     Map<String, Object> inp = new LinkedHashMap<>();
     if (o != null && o.length == 1 && o[0] instanceof Map) {

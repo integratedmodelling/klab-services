@@ -40,6 +40,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
+import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -56,7 +57,6 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.*;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.extension.KlabComponent;
-import org.integratedmodelling.klab.runtime.storage.*;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -881,21 +881,22 @@ public class ComponentRegistry {
       ret.getExports().add(arg);
     }
 
+    AnnotationImpl storageAnnotation = null;
+
     if (annotation.fillingCurve() != null) {
-      ret.getAnnotations()
-          .add(
-              org.integratedmodelling.klab.api.lang.Annotation.of(
-                  "fillcurve",
-                  org.integratedmodelling.klab.api.lang.Annotation.VALUE_PARAMETER_KEY,
-                  annotation.fillingCurve()));
+      storageAnnotation =
+          org.integratedmodelling.klab.api.lang.Annotation.of(
+              "storage", "fillcurve", annotation.fillingCurve().name());
     }
     if (annotation.split() > 0) {
-      ret.getAnnotations()
-          .add(
-              org.integratedmodelling.klab.api.lang.Annotation.of(
-                  "split",
-                  org.integratedmodelling.klab.api.lang.Annotation.VALUE_PARAMETER_KEY,
-                  annotation.split()));
+      if (storageAnnotation == null) {
+        storageAnnotation = org.integratedmodelling.klab.api.lang.Annotation.of("storage");
+      }
+      storageAnnotation.put("splits", annotation.split());
+    }
+
+    if (storageAnnotation != null) {
+      ret.getAnnotations().add(storageAnnotation);
     }
 
     return ret;
@@ -1054,16 +1055,18 @@ public class ComponentRegistry {
    */
   public void initializeComponents(ResourcesConfiguration configuration, File pluginPath) {
 
-//    /*
-//    TODO check all existing resources against the configuration; retrieve whatever needs updating;
-//     remove anything not configured or deprecated; check integrity and certification for all components
-//      before loading them.
-//     */
-//    if (Utils.Maven.needsUpdate(
-//        "org.integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT")) {
-//      // shitdown
-//
-//    }
+    //    /*
+    //    TODO check all existing resources against the configuration; retrieve whatever needs
+    // updating;
+    //     remove anything not configured or deprecated; check integrity and certification for all
+    // components
+    //      before loading them.
+    //     */
+    //    if (Utils.Maven.needsUpdate(
+    //        "org.integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT")) {
+    //      // shitdown
+    //
+    //    }
 
     initializeComponents(pluginPath);
   }
@@ -1263,7 +1266,7 @@ public class ComponentRegistry {
                 null,
                 null,
                 null,
-                List.of(),
+                null,
                 scope);
 
         if (ret instanceof Throwable) {
@@ -1460,7 +1463,7 @@ public class ComponentRegistry {
       Expression expression,
       LookupTable lookupTable,
       Data inputData,
-      Collection<org.integratedmodelling.klab.api.lang.Annotation> annotations,
+      org.integratedmodelling.klab.api.lang.Annotation storageAnnotation,
       Scope scope) {
 
     var arguments =
@@ -1478,7 +1481,7 @@ public class ComponentRegistry {
             expression,
             lookupTable,
             inputData,
-            annotations,
+            storageAnnotation,
             scope);
     if (arguments == null) {
       return new KlabCompilationError(
@@ -1520,11 +1523,11 @@ public class ComponentRegistry {
       Urn urn,
       Parameters<String> urnParameters,
       ServiceCall serviceCall,
-      Storage<?> storage,
+      Storage storage,
       Expression expression,
       LookupTable lookupTable,
       Data inputData,
-      Collection<org.integratedmodelling.klab.api.lang.Annotation> annotations,
+      org.integratedmodelling.klab.api.lang.Annotation storageAnnotation,
       Scope scope) {
     List<Object> runArguments = new ArrayList<>();
     DigitalTwin digitalTwin = null;
@@ -1554,13 +1557,9 @@ public class ComponentRegistry {
           storage =
               digitalTwin == null
                   ? null
-                  : digitalTwin
-                      .getStateStorage()
-                      .promoteStorage(
-                          observation, storage, AbstractBuffer.getStorageClass(argument));
+                  : digitalTwin.getStorageManager().getStorage(observation, storageAnnotation);
           if (storage != null) {
-            var buffers =
-                storage.buffers(geometry, argument.asSubclass(Storage.Buffer.class), annotations);
+            var buffers = storage.buffers(geometry, argument.asSubclass(Storage.Buffer.class));
             if (buffers.size() != 1) {
               throw new KlabInternalErrorException(
                   "Wrong buffer numerosity for single-buffer parameter: review configuration");
@@ -1570,13 +1569,11 @@ public class ComponentRegistry {
             runArguments.add(null);
           }
 
-        } else if (DoubleStorage.class.isAssignableFrom(argument)) {
+        } else if (Storage.class.isAssignableFrom(argument)) {
           storage =
               digitalTwin == null
                   ? null
-                  : digitalTwin
-                      .getStateStorage()
-                      .promoteStorage(observation, storage, DoubleStorage.class);
+                  : digitalTwin.getStorageManager().getStorage(observation, storageAnnotation);
           runArguments.add(storage);
         } /*else if (LongStorage.class.isAssignableFrom(argument)) {
             storage =

@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.runtime.computation;
 
+import jnr.ffi.Struct;
+import org.integratedmodelling.common.utils.Utils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +18,9 @@ public class TemplateCodeInfo {
   private List<String> constructorInitializationStatements = new ArrayList<>();
   private List<String> mainCodeBlocks = new ArrayList<>();
   private List<String> loopVariableAssignments = new ArrayList<>();
+  private List<String> additionalImports = new ArrayList<>();
+  private List<String> bodyInitializationStatements = new ArrayList<>();
+
   private String className;
   private String templateName;
 
@@ -81,5 +87,21 @@ public class TemplateCodeInfo {
 
   public void setLoopVariableAssignments(List<String> loopVariableAssignments) {
     this.loopVariableAssignments = loopVariableAssignments;
+  }
+
+  public List<String> getAdditionalImports() {
+    return additionalImports;
+  }
+
+  public void setAdditionalImports(List<String> additionalImports) {
+    this.additionalImports = additionalImports;
+  }
+
+  public List<String> getBodyInitializationStatements() {
+    return bodyInitializationStatements;
+  }
+
+  public void setBodyInitializationStatements(List<String> bodyInitializationStatements) {
+    this.bodyInitializationStatements = bodyInitializationStatements;
   }
 }

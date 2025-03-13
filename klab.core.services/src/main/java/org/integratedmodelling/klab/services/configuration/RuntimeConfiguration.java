@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.services.configuration;
 
+import org.integratedmodelling.klab.api.data.Storage;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +13,7 @@ public class RuntimeConfiguration {
   private String url = null;
   private String serviceId;
   private URI brokerURI;
+  private Storage.Type numericStorageType = Storage.Type.DOUBLE;
 
   public List<String> getAllowedGroups() {
     return allowedGroups;
@@ -34,6 +37,20 @@ public class RuntimeConfiguration {
 
   public void setServiceId(String serviceId) {
     this.serviceId = serviceId;
+  }
+
+  /**
+   * Default numeric storage type when not specified by the model or observable through a <code>
+   * @storage</code> annotation.
+   *
+   * @return
+   */
+  public Storage.Type getNumericStorageType() {
+    return numericStorageType;
+  }
+
+  public void setNumericStorageType(Storage.Type numericStorageType) {
+    this.numericStorageType = numericStorageType;
   }
 
   /**

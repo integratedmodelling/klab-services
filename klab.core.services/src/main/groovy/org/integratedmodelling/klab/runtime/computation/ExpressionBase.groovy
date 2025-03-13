@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.computation
 
+import org.integratedmodelling.klab.api.geometry.Geometry
 import org.integratedmodelling.klab.api.knowledge.observation.Observation
 import org.integratedmodelling.klab.api.scope.ContextScope
 import org.integratedmodelling.klab.api.services.Reasoner
@@ -11,7 +12,7 @@ import org.integratedmodelling.klab.api.services.RuntimeService
  * Base class for all generated scalar computations. The generated classes extending this will be created based on the
  * code.templates.ScalarBufferFiller template.
  */
-abstract class ExpressionBase extends Script implements MathOps, ObservationOps {
+abstract class ExpressionBase extends GroovyObjectSupport implements MathOps, ObservationOps {
 
     @Lazy
     def reasoner = { scope.getService(Reasoner.class) }()
@@ -27,12 +28,15 @@ abstract class ExpressionBase extends Script implements MathOps, ObservationOps 
     def runtimes = { scope.getServices(RuntimeService.class) }()
 
     ContextScope scope
-    Observation self
+    Observation __self
+    Observation selfObs = {new ObservationWrapper(__self)}()
 
     // constructor takes all the observations used by the code
     ExpressionBase(ContextScope scope, Observation observation) {
         this.scope = scope
-        this.self = observation
+        this.__self = observation
     }
+
+    abstract boolean run(Geometry geometry);
 
 }

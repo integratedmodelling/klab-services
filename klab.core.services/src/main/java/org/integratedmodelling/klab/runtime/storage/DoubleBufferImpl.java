@@ -5,15 +5,13 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.ojalgo.array.BufferArray;
 
-public class DoubleBufferImpl extends AbstractBuffer implements Storage.DoubleBuffer {
+public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer {
 
-//  private final DoubleStorage doubleStorage;
   private final BufferArray data;
 
   protected DoubleBufferImpl(Geometry geometry,
-                             DoubleStorage doubleStorage, long size, Data.SpaceFillingCurve spaceFillingCurve, long offsets) {
+                             StorageImpl doubleStorage, long size, Data.SpaceFillingCurve spaceFillingCurve, long offsets) {
     super(geometry, doubleStorage, size, spaceFillingCurve, offsets);
-//    this.doubleStorage = doubleStorage;
     this.data = doubleStorage.stateStorage.getDoubleBuffer(doubleStorage.geometry.size());
   }
 
@@ -21,22 +19,39 @@ public class DoubleBufferImpl extends AbstractBuffer implements Storage.DoubleBu
     return data;
   }
 
-  @Override
-  public double get() {
-    return this.data.get(next ++);
-  }
+  public DoubleScanner scan() {
+    return new DoubleScanner() {
 
-  @Override
-  public double peek() {
-    return this.data.get(next);
-  }
+      long next = 0L;
 
-  @Override
-  public void add(double value) {
-    if (histogram != null) {
-      histogram.insert(value);
-    }
-    data.add(next++, value);
+      @Override
+      public double get() {
+        return data.get(next++);
+      }
+
+      @Override
+      public double peek() {
+        return data.get(next);
+      }
+
+      @Override
+      public void add(double value) {
+        if (histogram != null) {
+          histogram.insert(value);
+        }
+        data.set(next++, value);
+      }
+
+      @Override
+      public long nextLong() {
+        return next++;
+      }
+
+      @Override
+      public boolean hasNext() {
+        return next < multiplicity;
+      }
+    };
   }
 
   @Override
@@ -45,6 +60,11 @@ public class DoubleBufferImpl extends AbstractBuffer implements Storage.DoubleBu
   @Override
   public void set(double value, long offset) {
     data.add(offset, value);
+  }
+
+  @Override
+  public void fill(double value) {
+    data.fillAll(value);
   }
 
 }

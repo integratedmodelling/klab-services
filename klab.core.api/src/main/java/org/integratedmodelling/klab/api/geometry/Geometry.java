@@ -77,7 +77,7 @@ import java.util.List;
  */
 public interface Geometry extends Serializable, Locator {
 
-  public enum Granularity {
+    public enum Granularity {
     /** */
     SINGLE,
     /** */

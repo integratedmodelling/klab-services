@@ -54,6 +54,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -61,6 +62,7 @@ import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.common.data.DataRequest;
@@ -96,13 +98,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         case KlabAsset asset -> {
           var ret = asset.getAnnotations();
           if (addInherited) {
-            Object parent = switch (object) {
-              case Observable observable -> null;
-              // TODO inherit from concept definition; traits may redefine observable's
-              // if main observable, inherit from model
-              // if in namespace, inherit from namespace
-              default -> null;
-            };
+            Object parent =
+                switch (object) {
+                  case Observable observable -> null;
+                  // TODO inherit from concept definition; traits may redefine observable's
+                  // if main observable, inherit from model
+                  // if in namespace, inherit from namespace
+                  default -> null;
+                };
             if (parent != null) {
               ret = addNotPresent(getAnnotations(parent, true), ret);
             }
@@ -114,20 +117,20 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       };
     }
 
-    private static Collection<Annotation> addNotPresent(Collection<Annotation> annotations, Collection<Annotation> current) {
+    private static Collection<Annotation> addNotPresent(
+        Collection<Annotation> annotations, Collection<Annotation> current) {
       if (annotations.isEmpty()) {
         return current;
       }
       var ret = new ArrayList<>(current);
       var existing = current.stream().map(Annotation::getName).collect(Collectors.toSet());
       for (var annotation : annotations) {
-          if (!existing.contains(annotation.getName())) {
-            ret.add(annotation);
-          }
+        if (!existing.contains(annotation.getName())) {
+          ret.add(annotation);
+        }
       }
       return ret;
     }
-
 
     /**
      * Shorthand to check whether the default parameter (list or individual value) of an annotation
@@ -146,8 +149,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     }
 
     /**
-     * Simple methods that are messy to keep writing explicitly
-     ** @param id
+     * Simple methods that are messy to keep writing explicitly * @param id
+     *
      * @return
      */
     public static Annotation getAnnotation(Object object, String id) {
@@ -196,17 +199,48 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
       Map<String, Annotation> ret = new LinkedHashMap<>();
       for (Object object : objects) {
-          processAnnotations(object, ret);
+        processAnnotations(object, ret);
       }
       return ret.values();
     }
 
     private static void processAnnotations(Object object, Map<String, Annotation> collection) {
-      for(var annotation : getAnnotations(object, true)) {
+      for (var annotation : getAnnotations(object, true)) {
         if (!collection.containsKey(annotation.getName())) {
           collection.put(annotation.getName(), annotation);
         }
       }
+    }
+
+    /**
+     * Explore a list of objects carrying annotations in the passed order and look for a specific
+     * annotation, building a new one that carries all the parameters in the annotations encountered
+     * with the ones filled in first overriding the subsequent in case of repetition.
+     *
+     * @param name
+     * @param annotationCarriers null-proof list of objects that may carry the requested annotation
+     * @return a new annotation with the passed name, empty if there were no annotations in the
+     *     passed objects.
+     */
+    public static Annotation mergeAnnotations(String name, Object... annotationCarriers) {
+
+      var ret = new AnnotationImpl();
+      ret.setName(name);
+      if (annotationCarriers != null) {
+        for (var object : annotationCarriers) {
+          if (object != null) {
+            var a = getAnnotation(object, name);
+            if (a != null) {
+              for (var key : a.keySet()) {
+                if (!ret.containsKey(key)) {
+                  ret.put(key, a.get(key));
+                }
+              }
+            }
+          }
+        }
+      }
+      return ret;
     }
   }
 

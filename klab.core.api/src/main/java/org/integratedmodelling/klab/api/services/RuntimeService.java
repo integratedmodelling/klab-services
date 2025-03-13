@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.api.services;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -123,8 +125,9 @@ public interface RuntimeService extends KlabService {
    * @param dataflow
    * @param contextScope
    * @return
+   * FIXME/CHECK should this be behind the API?
    */
-  Observation runDataflow(Dataflow dataflow, ContextScope contextScope);
+  Observation runDataflow(Dataflow dataflow, Geometry geometry, ContextScope contextScope);
 
   /**
    * Submit the ID of a valid observation to invoke the resolver, build a dataflow and run it to
@@ -180,7 +183,9 @@ public interface RuntimeService extends KlabService {
    *
    * @author Ferd
    */
-  interface Capabilities extends ServiceCapabilities {}
+  interface Capabilities extends ServiceCapabilities {
+      Storage.Type getDefaultStorageType();
+  }
 
   /**
    * Scope CAN be null for generic public capabilities.

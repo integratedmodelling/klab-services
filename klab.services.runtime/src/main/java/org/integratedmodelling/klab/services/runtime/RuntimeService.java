@@ -9,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
@@ -18,9 +19,12 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.*;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -192,6 +196,7 @@ public class RuntimeService extends BaseService
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
     ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
+    ret.setDefaultStorageType(configuration.getNumericStorageType());
 
     return ret;
   }
@@ -553,10 +558,13 @@ public class RuntimeService extends BaseService
                                 observation,
                                 this);
 
+                    var scale = GeometryRepository.INSTANCE.get(observation.getGeometry().encode(), Scale.class);
+                    var initializationGeometry = scale.initialization();
+
                     try (contextualization) {
                       // TODO contextualization gets its own activities to use in operations
                       //  (dependent on resolution) linked to actuators by runDataflow
-                      result = runDataflow(dataflow, scope, contextualization);
+                      result = runDataflow(dataflow, initializationGeometry, scope, contextualization);
                       ret.complete(result);
                       if (result.isEmpty()) {
                         contextualization.fail(scope, dataflow);
@@ -580,13 +588,13 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public Observation runDataflow(Dataflow dataflow, ContextScope contextScope) {
+  public Observation runDataflow(Dataflow dataflow, Geometry geometry, ContextScope contextScope) {
     // TODO fill in the operation representing an external dataflow run
-    return runDataflow(dataflow, contextScope, null);
+    return runDataflow(dataflow, geometry, contextScope, null);
   }
 
   public Observation runDataflow(
-      Dataflow dataflow, ContextScope contextScope, KnowledgeGraph.Operation contextualization) {
+          Dataflow dataflow, Geometry geometry, ContextScope contextScope, KnowledgeGraph.Operation contextualization) {
 
     /*
     TODO Load or confirm availability of all needed resources and create any non-existing observations
@@ -611,7 +619,7 @@ public class RuntimeService extends BaseService
                   "Could not compile execution sequence for this target observation"));
           return Observation.empty();
         } else if (!executionSequence.isEmpty()) {
-          if (!executionSequence.run()) {
+          if (!executionSequence.run(geometry)) {
             contextualization.fail(
                 contextScope, dataflow.getTarget(), executionSequence.getCause());
             return Observation.empty();

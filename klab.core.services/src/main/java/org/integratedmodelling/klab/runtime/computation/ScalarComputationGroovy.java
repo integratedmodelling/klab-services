@@ -1,33 +1,25 @@
 package org.integratedmodelling.klab.runtime.computation;
 
-import gg.jte.CodeResolver;
 import gg.jte.ContentType;
 import gg.jte.TemplateEngine;
 import gg.jte.TemplateOutput;
 import gg.jte.output.StringOutput;
 import gg.jte.resolve.ResourceCodeResolver;
-import groovy.lang.Script;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Expression;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.CoreLibrary;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.runtime.language.LanguageService;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-
-import javax.tools.JavaCompiler;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
 
 /**
  * Scalar computation implementation using Groovy-based expressions and turning the sequence into a
@@ -50,7 +42,9 @@ public class ScalarComputationGroovy implements ScalarComputation {
     private final Observation target;
     private static GroovyProcessor groovyProcessor = new GroovyProcessor();
 
-    // list of these to describe the sequence of steps
+    // list of th
+    //
+    // ese to describe the sequence of steps
     class Step {
       String target = "self";
       boolean scalar = true;
@@ -67,6 +61,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
     @Override
     public boolean add(ServiceCall contextualizable) {
+
       if (RuntimeService.CoreFunctor.EXPRESSION_RESOLVER
           .getServiceCallName()
           .equals(contextualizable.getUrn())) {
@@ -100,12 +95,14 @@ public class ScalarComputationGroovy implements ScalarComputation {
         // check types
         // LUT, classification or reference to codelist. Should build a LUT object for internal
         // processing and
-        // generate the scalar code using it.
+        // generate the scalar code using it. The result should STILL have a proper GroovyDescriptor
+        // with
+        // the scalar call.
       } else if (RuntimeService.CoreFunctor.CONSTANT_RESOLVER
           .getServiceCallName()
           .equals(contextualizable.getUrn())) {
         // check types
-        // insert streamlined code
+        // insert streamlined code, same as before (buffer.fill(value) TODO using native methods)
       } else {
         // non-scalar contextualizer
       }
@@ -125,79 +122,134 @@ public class ScalarComputationGroovy implements ScalarComputation {
       args.add(scope);
       args.add(target);
 
+      /**
+       * TODO all steps must generate merged local variables (using a map) and individual scalar
+       * code blocks. These must be generated inside the main loop within the concurrent buffer
+       * mapper function. The main loop iterates the selfBuffer[n] which is the last parameter in
+       * the constructor and is at location 0 - others follow the numbering in the LinkedHashMap
+       * describing the additional scalar dependencies.
+       *
+       * <p>Add selfBuffers + all others to the fields and constructor
+       */
+      record VarInfo(String name, String type, int index) {}
+
+      // ordering in this one is important
+      Map<String, VarInfo> scalarBuffers = new LinkedHashMap<>();
+      var selfStorage = scope.getDigitalTwin().getStorageManager().getStorage(target);
+      var codeStatements = new ArrayList<String>();
+
       for (var step : steps) {
         if (step.expressionDescriptor
             instanceof GroovyProcessor.GroovyDescriptor groovyDescriptor) {
           for (var field : groovyDescriptor.getTemplateFields()) {
             codeInfo.getFieldDeclarations().add(field);
           }
-          codeInfo.getMainCodeBlocks().add(groovyDescriptor.getProcessedCode());
           if (step.expressionDescriptor != null) {
+            int n = 1;
+            codeStatements.add(groovyDescriptor.getProcessedCode());
             for (var identifier : step.expressionDescriptor.getIdentifiers().keySet()) {
               var desc = step.expressionDescriptor.getIdentifiers().get(identifier);
-              if (desc.nonScalarReferenceCount() > 0) {
-                codeInfo.getConstructorArguments().add("Observable " + identifier);
-                args.add(groovyDescriptor.getKnownObservables().get(identifier));
-                codeInfo
-                    .getFieldDeclarations()
-                    .add("Observable " + identifier + "Observable"); // TODO wrap
-                codeInfo
-                    .getFieldDeclarations()
-                    .add(
-                        "@Lazy Observation "
-                            + identifier
-                            + "Obs = {scope.getObservation("
-                            + identifier
-                            + "Observable)}()"); // TODO wrap
+              var observation = scope.getObservation(desc.observable());
+              if (desc.nonScalarReferenceCount() + desc.scalarReferenceCount() > 0) {
+                args.add(observation);
+              }
+              var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
+              codeInfo.getConstructorArguments().add("Observation " + identifier);
+              codeInfo.getFieldDeclarations().add("Observation __" + identifier);
+              codeInfo
+                  .getFieldDeclarations()
+                  .add(
+                      "@Lazy ObservationWrapper "
+                          + identifier
+                          + "Obs = {new ObservationWrapper(__"
+                          + identifier
+                          + ")}()");
+              if (desc.scalarReferenceCount() > 0) {
                 codeInfo
                     .getConstructorInitializationStatements()
-                    .add("this." + identifier + "Observable = " + identifier);
-              }
-              if (desc.scalarReferenceCount() > 0) {
-                // add local vars buffers, vars
-                // add loop variables assignments besides self
-                System.out.println("SPORP");
+                    .add("this.__" + identifier + " = " + identifier);
+
+                var typeDeclaration = getTypeDeclaration(storage);
+                scalarBuffers.put(identifier, new VarInfo(identifier, typeDeclaration, n++));
               }
             }
           }
         }
       }
 
-      // 1. Get class template for the final class
-      // 2. Create class fields as lazy injectors
-      // 3. Create wrappers for observations, time, space and whatever else was referenced
-      // 3. Create referenced concepts/observables as predefined fields
-      // 4. Create main code for each step
-      // 5. If scalar code is there, group it for code generation and define intermediate variables
-      // 5.1 Create loop based on fill curve and offset where scalar code goes in
-      // 6. Finalization
+      // we need it for the type
+      scalarBuffers.put("self", new VarInfo("self", getTypeDeclaration(selfStorage), 0));
 
+      // buffer creation
+      StringBuilder bufferDeclaration =
+          new StringBuilder("def bufferSets = Utils.Collections.transpose(selfBuffers");
+      for (String var : scalarBuffers.keySet()) {
+        var info = scalarBuffers.get(var);
+        codeInfo
+            .getBodyInitializationStatements()
+            .add(
+                "def "
+                    + info.name
+                    + "Buffers = scope.getDigitalTwin().getStorageManager().getStorage(__"
+                    + info.name
+                    + ").buffers(geometry)");
+
+        if (info.index > 0) {
+          bufferDeclaration.append(", ").append(info.name).append("Buffers");
+          codeInfo
+              .getMainCodeBlocks()
+              .add(info.type + " " + info.name + " = scannerArray[" + info.index + "].get()");
+        }
+      }
+
+      bufferDeclaration.append(")");
+
+      if (codeStatements.size() == 1) {
+        codeInfo.getMainCodeBlocks().add("scannerArray[0].add(" + codeStatements.getFirst() + ")");
+      } else {
+        for (var statement : codeStatements) {
+          // TODO first statement declares self = statement, last statements sets bufferArray[0] to
+          //  the computed value
+        }
+      }
+
+      codeInfo.getBodyInitializationStatements().add(bufferDeclaration.toString());
       TemplateOutput output = new StringOutput();
       templateEngine.render(codeInfo.getTemplateName(), codeInfo, output);
-      var compiled = groovyShell.compile(output.toString(), Script.class, args.toArray());
+      var compiled = groovyShell.compile(output.toString(), ExpressionBase.class, args.toArray());
       return new ScalarComputationGroovy(compiled, scope, output.toString());
+    }
+
+    private String getTypeDeclaration(Storage storage) {
+      return switch (storage.getType()) {
+        case BOXING -> "Object";
+        case DOUBLE -> "double";
+        case FLOAT -> "float";
+        case INTEGER -> "int";
+        case LONG -> "long";
+        case KEYED -> "Concept";
+        case BOOLEAN -> "boolean";
+      };
     }
   }
 
-  private Script script;
+  private ExpressionBase script;
   private ContextScope scope;
   private String sourceCode;
 
-  private ScalarComputationGroovy(Script groovyScript, ContextScope scope, String sourceCode) {
+  private ScalarComputationGroovy(
+      ExpressionBase groovyScript, ContextScope scope, String sourceCode) {
     this.script = groovyScript;
     this.scope = scope;
     this.sourceCode = sourceCode;
   }
 
   @Override
-  public boolean execute() {
+  public boolean execute(Geometry geometry) {
     try {
-      var ret = script.run();
-      if (ret instanceof Boolean) {
-        return (Boolean) ret;
-      }
-      return true;
+      return script.run(geometry);
     } catch (Throwable t) {
+      System.out.println("Scalar code fucked up: " + Utils.Exceptions.stackTrace(t));
       scope.error(t, sourceCode);
     }
     return false;

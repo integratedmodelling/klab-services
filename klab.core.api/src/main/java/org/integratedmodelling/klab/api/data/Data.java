@@ -49,7 +49,7 @@ public interface Data {
    * refers to results from splitting an original larger geometry, it can also locate the current
    * offset in it.
    */
-  interface Cursor extends PrimitiveIterator.OfLong {
+  interface Cursor {
 
     /**
      * The linear offset in the geometry corresponding to the dimension offsets passed relative to
@@ -63,6 +63,15 @@ public interface Data {
      * @return the offset or -1L if no mapping is possible.
      */
     long offset(Cursor other, long... dimensionOffsets);
+
+    /**
+     * Produce a scanner that, at minimum, will produce all the consecutive long indices along the
+     * fill curve. The scanners exposed by cursors that scan a data buffer can also expose methods
+     * to set/get typed values sequentially.
+     *
+     * @return
+     */
+    PrimitiveIterator.OfLong scan();
   }
 
   /** Non-boxing mapper for extent offsets to n-dimensional coordinates. */
@@ -142,6 +151,23 @@ public interface Data {
 
     SpaceFillingCurve(int dimensions) {
       this.dimensions = dimensions;
+    }
+
+    public static SpaceFillingCurve defaultCurve(Geometry geometry) {
+      var space =
+          geometry.getDimensions().stream()
+              .filter(d -> d.getType() == Geometry.Dimension.Type.SPACE)
+              .findFirst();
+
+      return space
+          .map(
+              dimension ->
+                  switch (dimension.getDimensionality()) {
+                    case 2 -> SpaceFillingCurve.D2_XY;
+                    case 3 -> SpaceFillingCurve.D3_XYZ;
+                    default -> SpaceFillingCurve.D1_LINEAR;
+                  })
+          .orElse(SpaceFillingCurve.D1_LINEAR);
     }
   }
 
@@ -297,8 +323,8 @@ public interface Data {
    * through an observation constraint.
    *
    * <p>Each returned object will implement one of the {@link java.util.PrimitiveIterator} classes.
-   * A class switch should be used along with the {@link #fillCurve()} to transfer the data to the
-   * storage, filtering through the {@link #dataKey()} if appropriate.
+   * A class switch should be used along with the fill curve to transfer the data to the storage,
+   * filtering through the {@link #dataKey()} if appropriate.
    *
    * @return
    */

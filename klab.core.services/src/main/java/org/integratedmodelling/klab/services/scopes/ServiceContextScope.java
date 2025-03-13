@@ -20,7 +20,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -213,9 +212,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       // TODO behaviors: assign if any, create actor and start the VM
       digitalTwin.getScheduler().submit(observation);
       if (observation.getObservable().is(SemanticType.QUALITY)) {
-        var storage = digitalTwin.getStateStorage().getExistingStorage(observation, Storage.class);
+        var storage = digitalTwin.getStorageManager().getStorage(observation);
         if (storage != null) {
-          for (var buf : storage.buffers()) {
+          for (var buf : storage.allBuffers()) {
 
             // WHY do I have to cast?
             var buffer = (Storage.Buffer) buf;

@@ -6,31 +6,28 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
+import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
 import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
-import org.integratedmodelling.klab.runtime.storage.DoubleBufferImpl;
-import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
-import org.integratedmodelling.klab.runtime.storage.StateStorageImpl;
+import org.integratedmodelling.klab.runtime.storage.StorageManagerImpl;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.SchedulerImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.integratedmodelling.klab.utilities.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.*;
 
 public class DigitalTwinImpl implements DigitalTwin {
 
   private final KnowledgeGraph knowledgeGraph;
-  private final StateStorage stateStorage;
+  private final StorageManager storageManager;
   private final ContextScope rootScope;
   private final Scheduler scheduler;
 
@@ -38,7 +35,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       RuntimeService service, ServiceContextScope scope, KnowledgeGraph database) {
     this.rootScope = scope;
     this.knowledgeGraph = database.contextualize(scope);
-    this.stateStorage = new StateStorageImpl(service, scope);
+    this.storageManager = new StorageManagerImpl(service, scope);
     this.scheduler = new SchedulerImpl(scope);
   }
 
@@ -48,8 +45,8 @@ public class DigitalTwinImpl implements DigitalTwin {
   }
 
   @Override
-  public StateStorage getStateStorage() {
-    return this.stateStorage;
+  public StorageManager getStorageManager() {
+    return this.storageManager;
   }
 
   @Override
@@ -100,29 +97,23 @@ public class DigitalTwinImpl implements DigitalTwin {
       // and observables,
       //  along with colormap from concepts and all that.
       var storage =
-          scope.getDigitalTwin().getStateStorage().getOrCreateStorage(target, Storage.class);
+          scope
+              .getDigitalTwin()
+              .getStorageManager()
+              .getStorage(
+                  target, Utils.Annotations.mergeAnnotations("storage", data, target, scope));
 
       if (data instanceof DoubleDataImpl doubleData) {
 
-        var doubleStorage =
-            scope
-                .getDigitalTwin()
-                .getStateStorage()
-                .promoteStorage(target, storage, DoubleStorage.class);
-
-        var buffers =
-            doubleStorage.buffers(
-                data.geometry(),
-                Storage.DoubleBuffer.class,
-                org.integratedmodelling.common.utils.Utils.Annotations.findAnnotations(
-                    Set.of("fillcurve", "split"), data, target, scope));
+        var buffers = storage.buffers(data.geometry(), Storage.DoubleBuffer.class);
 
         /* all buffers run in parallel */
         return Utils.Java.distributeComputation(
             buffers,
             buffer -> {
+              var scanner = buffer.scan();
               while (doubleData.hasNext()) {
-                buffer.add(doubleData.nextDouble());
+                scanner.add(doubleData.nextDouble());
               }
             });
       } /*else if (data instanceof LongDataImpl longData) {
@@ -177,6 +168,6 @@ public class DigitalTwinImpl implements DigitalTwin {
   @Override
   public void dispose() {
     this.knowledgeGraph.deleteContext();
-    this.stateStorage.clear();
+    this.storageManager.clear();
   }
 }
