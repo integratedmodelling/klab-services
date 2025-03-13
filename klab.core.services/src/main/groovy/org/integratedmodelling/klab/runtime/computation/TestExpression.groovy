@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.data.Storage
 import org.integratedmodelling.klab.api.geometry.Geometry
 import org.integratedmodelling.klab.api.knowledge.Observable
 import org.integratedmodelling.klab.api.knowledge.observation.Observation
+import org.integratedmodelling.klab.api.scope.ContextScope
 import org.integratedmodelling.klab.api.utils.Utils
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope
 
@@ -38,7 +39,7 @@ class TestExpression extends ExpressionBase {
     }
 
     @Override
-    boolean run(Geometry geometry) {
+    boolean run(Geometry geometry, ContextScope scope) {
 
         /* TODO need to build the buffers here based on the geometry */
         def selfBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__self).buffers(geometry)

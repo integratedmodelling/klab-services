@@ -29,7 +29,7 @@ class ${codeInfo.getClassName()} extends ExpressionBase {
   }
 
 @Override
-boolean run(Geometry geometry) {
+boolean run(Geometry geometry, ContextScope scope) {
 
   <%-- body initialization. Must include all buffer creation + the bufferSets as a transposed list of buffers, \
        ensuring that each thread has the same topology--%>

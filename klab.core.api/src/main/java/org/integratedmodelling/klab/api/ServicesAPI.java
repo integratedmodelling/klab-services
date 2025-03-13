@@ -416,7 +416,6 @@ public interface ServicesAPI {
     String QUERY_RESOURCES = "/queryResources";
     String PRECURSORS = "/precursors/{namespaceId}";
     String RESOLVE_PROJECTS = "/resolveProjects";
-    String PROJECT = "/retrieveProject/{projectName}";
     String RESOLVE_MODEL = "/resolveModel/{modelName}";
     String RESOLVE_URN = "/resolve/{urn}";
     String RETRIEVE_NAMESPACE = "/retrieveNamespace/{urn}";

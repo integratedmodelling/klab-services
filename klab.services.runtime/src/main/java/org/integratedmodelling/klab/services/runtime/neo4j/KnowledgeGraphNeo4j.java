@@ -133,6 +133,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     private List<OperationImpl> children = new ArrayList<>();
     private Actuator actuator;
     private Observation observationToSubmit;
+    private boolean closed = false; // for debugging
 
     @Override
     public Agent getAgent() {
@@ -146,6 +147,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     @Override
     public Operation createChild(Object... activityData) {
+
+      if (closed) {
+        throw new KlabInternalErrorException(
+            "Cannot create a child knowledge graph operation after termination");
+      }
 
       var activity = new ActivityImpl();
       activity.setStart(System.currentTimeMillis());
@@ -172,11 +178,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
       }
 
+      ret.activity = activity;
+
       store(activity);
       link(this.activity, activity, DigitalTwin.Relationship.TRIGGERED);
       link(activity, agent, DigitalTwin.Relationship.BY_AGENT);
-
-      ret.activity = activity;
 
       this.children.add(ret);
 
@@ -255,7 +261,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     public void close() throws IOException {
 
       List<Actuator> childActuators = new ArrayList<>();
-
       for (var child : children) {
         child.close();
         if (child.actuator != null) {
@@ -263,6 +268,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
       }
 
+      if (closed) {
+        return;
+      }
+
+      this.closed = true;
       this.activity.setEnd(System.currentTimeMillis());
       this.activity.setOutcome(
           outcome == null

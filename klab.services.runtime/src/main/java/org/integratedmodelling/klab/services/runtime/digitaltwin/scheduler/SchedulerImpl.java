@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import com.google.common.cache.CacheBuilder;
@@ -23,6 +24,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.provenance.Activity;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -58,15 +60,15 @@ public class SchedulerImpl implements Scheduler {
    * which triggers their usage. The cache loads actuator definitions from the knowledge graph on
    * demand and recompiles the executors if they are missing.
    */
-  private LoadingCache<Long, Function<Geometry, Boolean>> executors =
+  private LoadingCache<Long, BiFunction<Geometry, ContextScope, Boolean>> executors =
       CacheBuilder.newBuilder()
           .maximumSize(200)
           // .expireAfterAccess(10, TimeUnit.MINUTES)
           .build(
-              new CacheLoader<Long, Function<Geometry, Boolean>>() {
-                public Function<Geometry, Boolean> load(Long key) {
+              new CacheLoader<Long, BiFunction<Geometry, ContextScope, Boolean>>() {
+                public BiFunction<Geometry, ContextScope, Boolean> load(Long key) {
                   // TODO reconstruct the executor from actuator in the knowledge graph.
-                  return g -> true;
+                  return (g, s) -> true;
                 }
               });
 
@@ -101,7 +103,8 @@ public class SchedulerImpl implements Scheduler {
   }
 
   @Override
-  public void registerExecutor(Observation observation, Function<Geometry, Boolean> executor) {
+  public void registerExecutor(
+      Observation observation, BiFunction<Geometry, ContextScope, Boolean> executor) {
     executors.put(observation.getId(), executor);
   }
 
@@ -117,7 +120,8 @@ public class SchedulerImpl implements Scheduler {
   /**
    * This is called in response to the INIT event received by any root-level observation that was
    * successfully resolved. Successive executions of the same executors will happen by directly
-   * calling {@link #contextualize(Observation, KnowledgeGraph.Operation, Geometry)}.
+   * calling {@link #contextualize(Observation, KnowledgeGraph.Operation, Geometry,
+   * ServiceContextScope)}
    *
    * @param observation
    */
@@ -145,7 +149,7 @@ public class SchedulerImpl implements Scheduler {
 
     try (contextualization) {
 
-      if (contextualize(observation, contextualization, initializationGeometry)) {
+      if (contextualize(observation, contextualization, initializationGeometry, scope)) {
         contextualization.success(scope, observation);
       } else {
         contextualization.fail(scope, observation);
@@ -157,23 +161,30 @@ public class SchedulerImpl implements Scheduler {
   }
 
   private boolean contextualize(
-      Observation observation, KnowledgeGraph.Operation contextualization, Geometry geometry) {
+      Observation observation,
+      KnowledgeGraph.Operation contextualization,
+      Geometry geometry,
+      ServiceContextScope scope) {
+
+    var localScope = scope.withinOperation(contextualization);
 
     // follow the dependency chain first, then execute self
     Collection<Callable<Boolean>> tasks = new ArrayList<>();
     for (var affected :
         knowledgeGraph
-            .query(Observation.class, scope)
+            .query(Observation.class, localScope)
             .target(observation)
             .along(DigitalTwin.Relationship.AFFECTS)
-            .run(scope)) {
+            .run(localScope)) {
 
       tasks.add(
           () ->
               contextualize(
                   affected,
-                  contextualization.createChild(affected, geometry, Activity.Type.CONTEXTUALIZATION),
-                  geometry));
+                  contextualization.createChild(
+                      affected, geometry, Activity.Type.CONTEXTUALIZATION),
+                  geometry,
+                  localScope));
     }
     if (!tasks.isEmpty())
       try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -193,14 +204,14 @@ public class SchedulerImpl implements Scheduler {
                   }
                 })) {}
       } catch (Throwable t) {
-        scope.error(t);
+        localScope.error(t);
         return false;
       }
 
     var executor = executors.getIfPresent(observation.getId());
     if (executor != null) {
-      var ret = executor.apply(geometry);
-      scope.finalizeObservation(observation, contextualization, ret);
+      var ret = executor.apply(geometry, localScope);
+      localScope.finalizeObservation(observation, contextualization, ret);
       return ret;
     }
 

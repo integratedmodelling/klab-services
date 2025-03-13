@@ -82,6 +82,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.digitalTwin = parent.digitalTwin;
     this.observationCache = parent.observationCache;
     this.resolutionConstraints.putAll(parent.resolutionConstraints);
+    this.currentOperation = parent.currentOperation;
   }
 
   @Override
@@ -205,6 +206,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
    * @return
    */
   public ServiceContextScope withinOperation(KnowledgeGraph.Operation operation) {
+
+    if (operation == null) {
+      return this;
+    }
+
     ServiceContextScope ret = new ServiceContextScope(this);
     ret.currentOperation = operation;
     return ret;
@@ -561,4 +567,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     // TODO
     return Parallelism.CORES;
   }
+
+//  /**
+//   * This is called after submit() so that resolve() can find the observation without querying the
+//   * knowledge graph, which is still under a transaction. May not work.
+//   * @param observation
+//   */
+//  public void registerUnresolvedObservation(Observation observation) {
+//    this.observationCache.put(observation.getId(), observation);
+//  }
+
 }

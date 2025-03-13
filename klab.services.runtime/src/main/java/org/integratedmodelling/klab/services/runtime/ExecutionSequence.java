@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -21,6 +22,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -130,7 +132,8 @@ public class ExecutionSequence {
         scope
             .getDigitalTwin()
             .getScheduler()
-            .registerExecutor(operation.observation, operation::run);
+            .registerExecutor(
+                operation.observation, (g, s) -> operation.run(g, (ServiceContextScope) s));
       }
     }
   }
@@ -142,7 +145,7 @@ public class ExecutionSequence {
     private final Observation observation;
     // TODO executors get cached within the DT, here we should just ensure they can be produced. A
     //  list should be indexed by observation URN, empty for empty dataflows.
-    protected List<Function<Geometry, Boolean>> executors = new ArrayList<>();
+    protected List<BiFunction<Geometry, ContextScope, Boolean>> executors = new ArrayList<>();
     private boolean scalar;
     private boolean operational;
     private KnowledgeGraph.Operation operation;
@@ -221,7 +224,11 @@ public class ExecutionSequence {
                 // enqueue data extraction from adapter method
                 final var contextualizer =
                     new ServiceResourceContextualizer(adapter, resource, observation);
-                executors.add(geometry -> contextualizer.contextualize(observation, scope));
+                executors.add(
+                    (geometry, scope) ->
+                        contextualizer.contextualize(
+                            // pass the operation for provenance recording
+                            observation, scope));
                 continue;
 
               } else {
@@ -256,7 +263,8 @@ public class ExecutionSequence {
                 // enqueue data extraction from service method
                 final var contextualizer =
                     new ClientResourceContextualizer(service.get(), resource, observation);
-                executors.add(geometry -> contextualizer.contextualize(observation, scope));
+                executors.add(
+                    (geometry, scope) -> contextualizer.contextualize(observation, scope));
                 continue;
               }
             }
@@ -332,7 +340,7 @@ public class ExecutionSequence {
           if (currentDescriptor.staticMethod) {
             Extensions.FunctionDescriptor finalDescriptor1 = currentDescriptor;
             executors.add(
-                geometry -> {
+                (geometry, scope) -> {
                   try {
                     var context =
                         componentRegistry
@@ -352,7 +360,7 @@ public class ExecutionSequence {
               != null) {
             Extensions.FunctionDescriptor finalDescriptor = currentDescriptor;
             executors.add(
-                geometry -> {
+                (geometry, scope) -> {
                   try {
                     var context =
                         componentRegistry
@@ -377,9 +385,9 @@ public class ExecutionSequence {
       if (scalarBuilder != null) {
         var scalarMapper = scalarBuilder.build();
         executors.add(
-            geometry -> {
+            (geometry, scope) -> {
               try {
-                return scalarMapper.execute(geometry);
+                return scalarMapper.execute(geometry, scope);
               } catch (Throwable e) {
                 cause = e;
                 scope.error(e /* TODO tracing parameters */);
@@ -391,12 +399,12 @@ public class ExecutionSequence {
       return true;
     }
 
-    public boolean run(Geometry geometry) {
+    public boolean run(Geometry geometry, ServiceContextScope scope) {
 
       // TODO compile info for provenance, to be added to the KG at finalization
       long start = System.currentTimeMillis();
       for (var executor : executors) {
-        if (!executor.apply(geometry)) {
+        if (!executor.apply(geometry, scope)) {
           if (operation != null) {
             operation.fail(scope, observation, cause);
           }

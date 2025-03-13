@@ -76,18 +76,6 @@ public class ResourcesProviderController {
                 : null);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.PROJECT)
-  public @ResponseBody Project retrieveProject(
-      @PathVariable("projectName") String projectName, Principal principal) {
-    return resourcesServer
-        .klabService()
-        .retrieveProject(
-            projectName,
-            principal instanceof EngineAuthorization authorization
-                ? authorization.getScope()
-                : null);
-  }
-
   @GetMapping(ServicesAPI.RESOURCES.RESOLVE_MODEL)
   public @ResponseBody ResourceSet resolveModel(
       @PathVariable("modelName") String modelName, Principal principal) {
@@ -367,15 +355,15 @@ public class ResourcesProviderController {
   }
 
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_PROJECT)
-  public @ResponseBody Project resolveProject(
-      @PathVariable("projectName") String projectName, Principal principal) {
+  public @ResponseBody Project retrieveProject(
+          @PathVariable("projectName") String projectName, Principal principal) {
     return resourcesServer
-        .klabService()
-        .retrieveProject(
-            projectName,
-            principal instanceof EngineAuthorization authorization
-                ? authorization.getScope()
-                : null);
+            .klabService()
+            .retrieveProject(
+                    projectName,
+                    principal instanceof EngineAuthorization authorization
+                    ? authorization.getScope()
+                    : null);
   }
 
   @PostMapping(ServicesAPI.RESOURCES.RESOLVE_MODELS)

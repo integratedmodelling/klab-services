@@ -343,23 +343,28 @@ public class RuntimeService extends BaseService
     if (scope instanceof ServiceContextScope serviceContextScope) {
 
       var digitalTwin = getDigitalTwin(scope);
-      var parentActivity = Provenance.getActivity(scope);
       var agent = getAgent(scope);
 
-      /*
-       * The initial activity should be in the scope; if not, we're observing at the
-       * root DT level and we get the context initialization activity as parent.
-       */
       var instantiation =
-          digitalTwin
-              .getKnowledgeGraph()
-              .operation(
-                  agent,
-                  parentActivity,
-                  Activity.Type.INSTANTIATION,
-                  "Instantiation of " + observation,
-                  observation,
-                  this);
+          // FIXME at service side there should always be a current operation in the scope.
+          /*serviceContextScope.getCurrentOperation() != null
+              ? serviceContextScope
+                  .getCurrentOperation()
+                  .createChild(
+                      agent,
+                      Activity.Type.INSTANTIATION,
+                      "Instantiation of " + observation,
+                      observation,
+                      this)
+              : */digitalTwin
+                  .getKnowledgeGraph()
+                  .operation(
+                      agent,
+                      Provenance.getActivity(scope),
+                      Activity.Type.INSTANTIATION,
+                      "Instantiation of " + observation,
+                      observation,
+                      this);
 
       // if root, closing the operation will commit all transactions, or rollback if unsuccessful.
       try (instantiation) {
@@ -390,7 +395,7 @@ public class RuntimeService extends BaseService
          */
 
         instantiation.success(scope, observation);
-
+//        serviceContextScope.registerUnresolvedObservation(observation);
         return ret;
 
       } catch (Throwable t) {
@@ -475,14 +480,23 @@ public class RuntimeService extends BaseService
                 This will commit or rollback at close()
                  */
                 var resolution =
-                    digitalTwin
-                        .getKnowledgeGraph()
-                        .operation(
-                            digitalTwin.getKnowledgeGraph().klab(),
-                            parentActivity,
-                            Activity.Type.RESOLUTION,
-                            "Resolution of " + observation,
-                            resolver);
+                    // FIXME at service side there should always be a current operation in the scope.
+                    serviceContextScope.getCurrentOperation() == null
+                        ? digitalTwin
+                            .getKnowledgeGraph()
+                            .operation(
+                                digitalTwin.getKnowledgeGraph().klab(),
+                                parentActivity,
+                                Activity.Type.RESOLUTION,
+                                "Resolution of " + observation,
+                                resolver)
+                        : serviceContextScope
+                            .getCurrentOperation()
+                            .createChild(
+                                digitalTwin.getKnowledgeGraph().klab(),
+                                Activity.Type.RESOLUTION,
+                                "Resolution of " + observation,
+                                resolver);
 
                 try (resolution) {
                   result = observation;

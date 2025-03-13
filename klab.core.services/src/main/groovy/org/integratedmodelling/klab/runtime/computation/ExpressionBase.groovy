@@ -37,6 +37,6 @@ abstract class ExpressionBase extends GroovyObjectSupport implements MathOps, Ob
         this.__self = observation
     }
 
-    abstract boolean run(Geometry geometry);
+    abstract boolean run(Geometry geometry, ContextScope scope);
 
 }

@@ -5,8 +5,10 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 
 import java.util.Collection;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -67,12 +69,11 @@ public interface Scheduler {
    * Register an executor compiled from the actuator that resolves the passed observation in the
    * passed geometry.
    *
-   * TODO the executors must also receive the current scope
-   *
    * @param observation
    * @param executor
    */
-  void registerExecutor(Observation observation, Function<Geometry, Boolean> executor);
+  void registerExecutor(
+      Observation observation, BiFunction<Geometry, ContextScope, Boolean> executor);
 
   /**
    * The scheduler keeps the first time instant seen in the DT. This can change during the lifetime
