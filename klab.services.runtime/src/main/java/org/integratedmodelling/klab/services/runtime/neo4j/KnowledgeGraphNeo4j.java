@@ -136,6 +136,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     private boolean closed = false; // for debugging
     private int level = 0;
 
+    public OperationImpl() {
+      System.out.println("ECCOMI");
+    }
+
     @Override
     public Agent getAgent() {
       return this.agent;
@@ -257,6 +261,33 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     @Override
     public Scope.Status getOutcome() {
       return outcome;
+    }
+
+    @Override
+    public String toString() {
+      var root = this;
+      while (root.parent != null) {
+        root = root.parent;
+      }
+
+      StringBuilder ret = new StringBuilder();
+      dump(root, 0, ret);
+      return ret.toString();
+    }
+
+    private void dump(OperationImpl root, int i, StringBuilder ret) {
+      ret.append(org.integratedmodelling.common.utils.Utils.Strings.spaces(i * 3))
+          .append(closed ? "[" : "(")
+              .append(root.description())
+          .append(closed ? "]" : ")")
+          .append(root == this ? "*\n" : "\n");
+      for (var child : root.children) {
+        dump(child, i+1, ret);
+      }
+    }
+
+    private String description() {
+      return activity.getType().name();
     }
 
     @Override

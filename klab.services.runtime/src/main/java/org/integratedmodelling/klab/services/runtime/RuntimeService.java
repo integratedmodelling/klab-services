@@ -9,12 +9,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
-import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
-import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -23,8 +21,6 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -47,7 +43,6 @@ import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
-import org.integratedmodelling.klab.services.runtime.neo4j.AbstractKnowledgeGraph;
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JEmbedded;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
@@ -318,7 +313,7 @@ public class RuntimeService extends BaseService
   public long submit(Observation observation, ContextScope scope) {
 
     if (observation.isResolved()) {
-      // TODO there may be a context for this at some point.
+      // TODO there may be a context for this at some point, e.g. ingesting a remote observation
       throw new KlabIllegalStateException(
           "A resolved observation cannot be submitted to the " + "knowledge graph for now");
     }
@@ -342,7 +337,7 @@ public class RuntimeService extends BaseService
 
     if (scope instanceof ServiceContextScope serviceContextScope) {
 
-      var digitalTwin = getDigitalTwin(scope);
+      var digitalTwin = scope.getDigitalTwin();
       var agent = getAgent(scope);
 
       var instantiation =
@@ -425,7 +420,7 @@ public class RuntimeService extends BaseService
       return ret;
     }
     var activities =
-        getDigitalTwin(scope)
+        scope.getDigitalTwin()
             .getKnowledgeGraph()
             .get(scope, Activity.class, Activity.Type.INITIALIZATION);
     if (activities.size() == 1) {
@@ -459,7 +454,7 @@ public class RuntimeService extends BaseService
 
       var resolver = serviceContextScope.getService(Resolver.class);
       var observation = serviceContextScope.getObservation(id);
-      var digitalTwin = getDigitalTwin(scope);
+      var digitalTwin = scope.getDigitalTwin();
       var parentActivities =
           digitalTwin
               .getKnowledgeGraph()
@@ -642,13 +637,13 @@ public class RuntimeService extends BaseService
     return dataflow.getTarget();
   }
 
-  private DigitalTwin getDigitalTwin(ContextScope contextScope) {
-    if (contextScope instanceof ServiceContextScope serviceContextScope) {
-      return serviceContextScope.getDigitalTwin();
-    }
-    throw new KlabInternalErrorException(
-        "Digital twin is inaccessible because of unexpected scope " + "implementation");
-  }
+//  private DigitalTwin getDigitalTwin(ContextScope contextScope) {
+//    if (contextScope instanceof ServiceContextScope serviceContextScope) {
+//      return serviceContextScope.getDigitalTwin();
+//    }
+//    throw new KlabInternalErrorException(
+//        "Digital twin is inaccessible because of unexpected scope " + "implementation");
+//  }
 
   @Override
   public <T extends RuntimeAsset> List<T> retrieveAssets(

@@ -489,6 +489,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return false;
   }
 
+  @Override
   public DigitalTwin getDigitalTwin() {
     return digitalTwin;
   }
