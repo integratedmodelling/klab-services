@@ -81,6 +81,8 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
   @Override
   public <T extends RuntimeAsset> T get(long id, Class<T> resultClass) {
+    // TODO this one must be paired to an endpoint that first checks the runtime scope to handle
+    //  stuff that isn't yet in a committed transaction!
     throw new KlabUnimplementedException("CLIENT GRAPH GET()");
 //    return null;
   }
