@@ -155,23 +155,23 @@ public interface RuntimeService extends KlabService {
   //   *     URN and will be sent to the scope with the resolution result message.
   //   */
   //  CompletableFuture<Observation> resolve(long id, ContextScope scope);
-
-  /**
-   * Retrieve any assets from the knowledge graph in the digital twin matching a given class and
-   * some query objects.
-   *
-   * @param contextScope the scope for the request, which will determine the point in the knowledge
-   *     graph to start searching from
-   * @param assetClass the type of asset requested
-   * @param queryParameters any objects that will identify one or more assets of the passed type in
-   *     the passed scope, such as an observable, a string for a name or a geometry. All passed
-   *     objects will restrict the search.
-   * @param <T>
-   * @return
-   * @deprecated use the query system on the KG
-   */
-  <T extends RuntimeAsset> List<T> retrieveAssets(
-      ContextScope contextScope, Class<T> assetClass, Object... queryParameters);
+//
+//  /**
+//   * Retrieve any assets from the knowledge graph in the digital twin matching a given class and
+//   * some query objects.
+//   *
+//   * @param contextScope the scope for the request, which will determine the point in the knowledge
+//   *     graph to start searching from
+//   * @param assetClass the type of asset requested
+//   * @param queryParameters any objects that will identify one or more assets of the passed type in
+//   *     the passed scope, such as an observable, a string for a name or a geometry. All passed
+//   *     objects will restrict the search.
+//   * @param <T>
+//   * @return
+//   * @deprecated use the query system on the KG
+//   */
+//  <T extends RuntimeAsset> List<T> retrieveAssets(
+//      ContextScope contextScope, Class<T> assetClass, Object... queryParameters);
 
   /**
    * Use the resources service and the plug-in system to handle a model proposal from the resolver.

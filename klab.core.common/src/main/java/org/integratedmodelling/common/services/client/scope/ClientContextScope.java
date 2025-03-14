@@ -208,11 +208,11 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);
   }
-
-  @Override
-  public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
-    return List.of();
-  }
+//
+//  @Override
+//  public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
+//    return List.of();
+//  }
 
   /**
    * Retrieve the observation with the passed ID straight from the digital twin. This is non-API and

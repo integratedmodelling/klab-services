@@ -315,10 +315,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         .run(this);
   }
 
-  @Override
-  public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
-    return getService(RuntimeService.class).retrieveAssets(this, resultClass, queryData);
-  }
+//  @Override
+//  public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
+//    return getService(RuntimeService.class).retrieveAssets(this, resultClass, queryData);
+//  }
 
   @Override
   public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(

@@ -311,16 +311,16 @@ public interface ContextScope extends SessionScope {
    */
   ContextScope getRootContextScope();
 
-  /**
-   * The main method to retrieve anything visible to this scope from the knowledge graph.
-   *
-   * @param resultClass
-   * @param queryData
-   * @param <T>
-   * @return
-   * @deprecated use query on KG
-   */
-  <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData);
+//  /**
+//   * The main method to retrieve anything visible to this scope from the knowledge graph.
+//   *
+//   * @param resultClass
+//   * @param queryData
+//   * @param <T>
+//   * @return
+//   * @deprecated use query on KG
+//   */
+//  <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData);
 
   <T extends RuntimeAsset> List<T> queryKnowledgeGraph(KnowledgeGraph.Query<T> knowledgeGraphQuery);
 

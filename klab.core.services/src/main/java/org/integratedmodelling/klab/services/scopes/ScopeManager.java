@@ -216,7 +216,7 @@ public class ScopeManager {
   public ContextScope contextualizeScope(
       ServiceContextScope rootScope, ContextScope.ScopeData contextualization) {
 
-    ContextScope ret = rootScope;
+    ServiceContextScope ret = rootScope;
 
     if (contextualization.observationPath() != null) {
       for (var observationId : contextualization.observationPath()) {
@@ -229,7 +229,7 @@ public class ScopeManager {
                   + "found in context "
                   + ret.getName());
         }
-        ret = ret.within(observation.getFirst());
+        ret = (ServiceContextScope) ret.within(observation.getFirst());
       }
     }
 

@@ -392,12 +392,12 @@ public interface ServicesAPI {
 //     */
 //    String START_RESOLUTION = "/startResolution";
 
-    /**
-     * POST endpoint to retrieve one or more assets from the digital twin based on a query
-     *
-     * @deprecated use the query endpoint
-     */
-    String RETRIEVE_ASSET = "/asset";
+//    /**
+//     * POST endpoint to retrieve one or more assets from the digital twin based on a query
+//     *
+//     * @deprecated use the query endpoint
+//     */
+//    String RETRIEVE_ASSET = "/asset";
 
     /** Structured Knowledge Graph query */
     String QUERY = "/query";
