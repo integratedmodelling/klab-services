@@ -189,57 +189,44 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   }
 
   @Override
-  public long submit(Observation observation, ContextScope scope) {
+  public CompletableFuture<Observation> submit(Observation observation, ContextScope scope) {
+
     ResolutionRequest resolutionRequest = new ResolutionRequest();
     resolutionRequest.setObservation(observation);
     resolutionRequest.setAgentName(Provenance.getAgent(scope).getName());
     resolutionRequest.setResolutionConstraints(scope.getResolutionConstraints());
-    return client
-        .withScope(scope)
-        .post(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Long.class);
-  }
+    var result =
+        client
+            .withScope(scope)
+            .post(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Observation.class);
 
-  @Override
-  public CompletableFuture<Observation> resolve(long id, ContextScope scope) {
+    if (result.getId() > 0) {
+      return CompletableFuture.completedFuture(observation);
+    }
 
     /*
     Set up the task to track the messages. We do this before invoking the method so it's guaranteed to
     not return before we can notice.
      */
-    var ret =
-        scope.trackMessages(
-            Message.match(
-                    Message.MessageClass.ObservationLifecycle,
-                    Message.MessageType.ResolutionAborted,
-                    Message.MessageType.ResolutionSuccessful)
-                .when((message) -> message.getPayload(Observation.class).getId() == id),
-            (message) -> {
-              var observation = message.getPayload(Observation.class);
-              if (message.getMessageType() == Message.MessageType.ResolutionSuccessful) {
-                scope.info(
-                    "Resolution of "
-                        + observation
-                        + " successful with coverage "
-                        + observation.getResolvedCoverage());
-                return message.getPayload(Observation.class);
-              }
-              scope.info("Resolution of " + observation + " failed");
-              return observation;
-            });
-
-    var request = new ResolutionRequest();
-    request.setResolutionConstraints(scope.getResolutionConstraints());
-    request.setObservationId(id);
-
-    // this returns the URN of the observation/task or null - we can ignore it at this stage.
-    client.withScope(scope).post(ServicesAPI.RUNTIME.START_RESOLUTION, request, String.class);
-
-    return ret;
-  }
-
-  @Override
-  public Observation runDataflow(Dataflow dataflow, Geometry geometry, ContextScope contextScope) {
-    return null;
+    return scope.trackMessages(
+        Message.match(
+                Message.MessageClass.ObservationLifecycle,
+                Message.MessageType.ResolutionAborted,
+                Message.MessageType.ResolutionSuccessful)
+            .when((message) -> message.getPayload(Observation.class).getId() == result.getId()),
+        (message) -> {
+          var payload = message.getPayload(Observation.class);
+          if (message.getMessageType() == Message.MessageType.ResolutionSuccessful) {
+            scope.info(
+                "Resolution of "
+                    + payload
+                    + " successful with coverage "
+                    + payload.getResolvedCoverage());
+            return payload;
+          }
+          scope.info("Resolution of " + observation + " failed");
+          return result;
+        });
   }
 
   @Override

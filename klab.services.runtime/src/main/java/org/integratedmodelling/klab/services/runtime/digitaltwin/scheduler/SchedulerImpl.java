@@ -1,16 +1,13 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler;
 
-import java.io.IOException;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-import java.util.function.Function;
-
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Triple;
@@ -28,7 +25,6 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-import org.ojalgo.concurrent.Parallelism;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
 import reactor.core.publisher.Sinks;
@@ -43,7 +39,7 @@ import reactor.core.publisher.Sinks;
  */
 public class SchedulerImpl implements Scheduler {
 
-  private final ServiceContextScope scope;
+  private final ServiceContextScope rootScope;
   private long epochStart = 0L;
   private long epochEnd = 0L;
   private Time.Resolution resolution = null;
@@ -73,7 +69,7 @@ public class SchedulerImpl implements Scheduler {
               });
 
   public SchedulerImpl(ServiceContextScope scope, DigitalTwinImpl digitalTwin) {
-    this.scope = scope;
+    this.rootScope = scope;
     this.knowledgeGraph = digitalTwin.getKnowledgeGraph();
     // The INIT event is created before anything happens and applies to every observation
     // registered.
@@ -125,7 +121,7 @@ public class SchedulerImpl implements Scheduler {
    *
    * @param observation
    */
-  private void initialize(Observation observation) {
+  private void initialize(Observation observation, ServiceContextScope scope) {
 
     var parentActivities =
         knowledgeGraph.get(scope, Activity.class, Activity.Type.RESOLUTION, observation);
@@ -335,10 +331,10 @@ public class SchedulerImpl implements Scheduler {
   private void handleEvent(Registration registration, Event event) {
     System.out.println(registration + " got event " + event);
     if (event.type == Event.Type.INITIALIZATION) {
-      var observation = scope.getObservation(registration.id());
+      var observation = rootScope.getObservation(registration.id());
       if (observation != null
           && !observation.isResolved()) { // TODO check resolution condition and put in filter
-        initialize(observation);
+        initialize(observation, rootScope.of(observation));
       }
     }
   }

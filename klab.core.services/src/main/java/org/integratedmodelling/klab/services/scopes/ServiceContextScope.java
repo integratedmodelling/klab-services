@@ -222,14 +222,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public CompletableFuture<Observation> observe(Observation observation) {
-
     if (!isOperative()) {
       return null;
     }
-
     var runtime = getService(RuntimeService.class);
-    long taskId = runtime.submit(observation, this);
-    return runtime.resolve(taskId, this);
+    return runtime.submit(observation, this);
   }
 
   public void finalizeObservation(
@@ -240,19 +237,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         if (storage != null) {
           for (var buf : storage.allBuffers()) {
 
-            // WHY do I have to cast?
-            var buffer = (Storage.Buffer) buf;
-
             // TODO if geometry is scalar, save state as property instead
-
-            operation.store(buffer);
+            operation.store(buf);
             // The HAS_DATA link contains the offsets for the geometry, if any.
             operation.link(
-                observation,
-                (RuntimeAsset) buffer,
-                DigitalTwin.Relationship.HAS_DATA,
-                "offset",
-                buffer.offset());
+                observation, buf, DigitalTwin.Relationship.HAS_DATA, "offset", buf.offset());
           }
         }
       }
@@ -569,13 +558,27 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return Parallelism.CORES;
   }
 
-//  /**
-//   * This is called after submit() so that resolve() can find the observation without querying the
-//   * knowledge graph, which is still under a transaction. May not work.
-//   * @param observation
-//   */
-//  public void registerUnresolvedObservation(Observation observation) {
-//    this.observationCache.put(observation.getId(), observation);
-//  }
+  /**
+   * Return a scope with the context observation and the observer set according to the same
+   * pertaining to the passed observation. Used when the scheduler needs to independently work on an
+   * observation due to an event.
+   *
+   * @param observation
+   * @return
+   */
+  public ServiceContextScope of(Observation observation) {
+    // TODO
+    return this;
+  }
+
+  //  /**
+  //   * This is called after submit() so that resolve() can find the observation without querying
+  // the
+  //   * knowledge graph, which is still under a transaction. May not work.
+  //   * @param observation
+  //   */
+  //  public void registerUnresolvedObservation(Observation observation) {
+  //    this.observationCache.put(observation.getId(), observation);
+  //  }
 
 }

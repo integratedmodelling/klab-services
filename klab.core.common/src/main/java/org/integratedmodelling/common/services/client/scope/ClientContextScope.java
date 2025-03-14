@@ -123,20 +123,20 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   public CompletableFuture<Observation> observe(Observation observation) {
 
     var runtime = getService(RuntimeService.class);
-    long taskId = runtime.submit(observation, this);
-
-    if (taskId != Observation.UNASSIGNED_ID) {
-      if (observation instanceof ObservationImpl observation1) {
-        observation1.setId(taskId);
-        observation1.setUrn(this.getId() + "." + taskId);
-      }
-      return runtime.resolve(taskId, this);
-    }
-
-    // failure: this just returns the unresolved observation
-    info("Submission of " + observation + " failed");
-
-    return CompletableFuture.completedFuture(observation);
+    return runtime.submit(observation, this);
+//
+//    if (taskId != Observation.UNASSIGNED_ID) {
+//      if (observation instanceof ObservationImpl observation1) {
+//        observation1.setId(taskId);
+//        observation1.setUrn(this.getId() + "." + taskId);
+//      }
+//      return runtime.resolve(taskId, this);
+//    }
+//
+//    // failure: this just returns the unresolved observation
+//    info("Submission of " + observation + " failed");
+//
+//    return CompletableFuture.completedFuture(observation);
   }
 
   @Override

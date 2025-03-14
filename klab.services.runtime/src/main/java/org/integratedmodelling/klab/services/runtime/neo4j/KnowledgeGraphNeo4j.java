@@ -132,13 +132,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     private OperationImpl parent;
     private List<OperationImpl> children = new ArrayList<>();
     private Actuator actuator;
+    private Observation target;
     private Observation observationToSubmit;
     private boolean closed = false; // for debugging
     private int level = 0;
-
-    public OperationImpl() {
-      System.out.println("ECCOMI");
-    }
 
     @Override
     public Agent getAgent() {
@@ -180,6 +177,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             ret.agent = agent;
           } else if (o instanceof ActuatorImpl actuator) {
             ret.actuator = actuator;
+          } else if (o instanceof Observation observation) {
+            ret.target = observation;
           }
         }
       }
@@ -277,17 +276,17 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     private void dump(OperationImpl root, int i, StringBuilder ret) {
       ret.append(org.integratedmodelling.common.utils.Utils.Strings.spaces(i * 3))
-          .append(closed ? "[" : "(")
-              .append(root.description())
-          .append(closed ? "]" : ")")
+          .append(transaction.isOpen() ? "(" : "[")
+          .append(root.description())
+          .append(transaction.isOpen() ? ")" : "]")
           .append(root == this ? "*\n" : "\n");
       for (var child : root.children) {
-        dump(child, i+1, ret);
+        dump(child, i + 1, ret);
       }
     }
 
     private String description() {
-      return activity.getType().name();
+      return activity.getType().name() + (target == null ? "?" : (" " + target));
     }
 
     @Override
@@ -492,14 +491,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         if (dat instanceof String description) {
           ret.activity.setDescription(description);
         } else if (dat instanceof OperationImpl operation) {
-          ret.parent = operation;
-          System.out.println("PIPPASPERMA! PIPPASPERMA!");
+          throw new KlabInternalErrorException("Root-level operation including another");
         } else if (dat instanceof KlabService service) {
           activity.setServiceId(service.serviceId());
           activity.setServiceName(service.getServiceName());
           activity.setServiceType(KlabService.Type.classify(service));
         } else if (dat instanceof Dataflow dataflow) {
           activity.setDataflow(new DataflowEncoder(dataflow, scope).toString());
+        } else if (dat instanceof Observation observation) {
+          ret.target = observation;
         }
       }
     }

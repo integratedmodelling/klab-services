@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 /**
  * The runtime service holds the actual digital twins referred to by context scopes. Client scopes
@@ -105,43 +106,55 @@ public interface RuntimeService extends KlabService {
   }
 
   /**
-   * Submit an observation to the runtime in the passed scope. The return value is the observation
-   * ID, which should be passed to {@link #resolve(long, ContextScope)} to start the resolution
-   * unless the value is {@link Observation#UNASSIGNED_ID} which signals that the digital twin has
-   * rejected the observation (for example because one was already present). The observation exists
-   * in the DT in an unresolved state until resolution has finished.
+   * Submit an observation to the digital twin for inclusion in the knowledge graph in the passed
+   * scope and start its resolution. The return value is a future for the resolved observation,
+   * whose resolution may cause other observations to be made. If resolution fails, the future will
+   * complete exceptionally and the observation ID will be {@link Observation#UNASSIGNED_ID}, which
+   * signals that the digital twin has rejected the observation (for example because one was already
+   * present). The observation exists in the DT in an unresolved state until resolution has
+   * finished.
+   *
+   * <p>The submit operation is transactional, and a failed submission will leave the knowledge
+   * graph unaltered. Note that observations of non-collective subjects and agents will complete
+   * successfully even if they cannot be "explained" by the resolver, i.e. the ID will be valid and
+   * the knowledge graph will contain the observation, whose {@link Observation#isResolved()} will
+   * return false. All other observations will complete exceptionally if no dataflow can be built
+   * for them.
    *
    * @param observation
    * @param scope
    * @return
    */
-  long submit(@Mutable Observation observation, ContextScope scope);
+  CompletableFuture<Observation> submit(@Mutable Observation observation, ContextScope scope);
 
-  /**
-   * The main function of the runtime. It will be invoked externally only when the dataflow is
-   * externally supplied and fully resolved, like from a {@link
-   * org.integratedmodelling.klab.api.knowledge.Resource}.
-   *
-   * @param dataflow
-   * @param contextScope
-   * @return
-   * FIXME/CHECK should this be behind the API?
-   */
-  Observation runDataflow(Dataflow dataflow, Geometry geometry, ContextScope contextScope);
+  //  /**
+  //   * The main function of the runtime. It will be invoked externally only when the dataflow is
+  //   * externally supplied and fully resolved, like from a {@link
+  //   * org.integratedmodelling.klab.api.knowledge.Resource}.
+  //   *
+  //   * @param dataflow
+  //   * @param contextScope
+  //   * @return
+  //   * FIXME/CHECK should this be behind the API?
+  //   */
+  //  Observation runDataflow(Dataflow dataflow, Geometry geometry, ContextScope contextScope);
 
-  /**
-   * Submit the ID of a valid observation to invoke the resolver, build a dataflow and run it to
-   * obtain the resolved observation. Pass the ID of an accepted observation obtained through {@link
-   * #submit(Observation, ContextScope)}. The two operations are used in {@link
-   * ContextScope#observe(Observation)} to provide the full functionality with notification to the
-   * scope.
-   *
-   * @param id
-   * @param scope
-   * @return the ID of the task running in the runtime, which must be identical to the observation
-   *     URN and will be sent to the scope with the resolution result message.
-   */
-  CompletableFuture<Observation> resolve(long id, ContextScope scope);
+  //  /**
+  //   * Submit the ID of a valid observation to invoke the resolver, build a dataflow and run it to
+  //   * obtain the resolved observation. Pass the ID of an accepted observation obtained through
+  // {@link
+  //   * #submit(Observation, ContextScope)}. The two operations are used in {@link
+  //   * ContextScope#observe(Observation)} to provide the full functionality with notification to
+  // the
+  //   * scope.
+  //   *
+  //   * @param id
+  //   * @param scope
+  //   * @return the ID of the task running in the runtime, which must be identical to the
+  // observation
+  //   *     URN and will be sent to the scope with the resolution result message.
+  //   */
+  //  CompletableFuture<Observation> resolve(long id, ContextScope scope);
 
   /**
    * Retrieve any assets from the knowledge graph in the digital twin matching a given class and
@@ -184,7 +197,7 @@ public interface RuntimeService extends KlabService {
    * @author Ferd
    */
   interface Capabilities extends ServiceCapabilities {
-      Storage.Type getDefaultStorageType();
+    Storage.Type getDefaultStorageType();
   }
 
   /**
