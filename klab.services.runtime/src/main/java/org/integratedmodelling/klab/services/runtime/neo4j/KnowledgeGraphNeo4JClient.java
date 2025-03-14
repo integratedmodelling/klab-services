@@ -30,11 +30,11 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
     return null;
   }
 
-  @Override
-  public <T extends RuntimeAsset> List<T> get(
-      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
-    return List.of();
-  }
+//  @Override
+//  public <T extends RuntimeAsset> List<T> get(
+//      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
+//    return List.of();
+//  }
 
   @Override
   public KnowledgeGraph merge(URL remoteDigitalTwinURL) {

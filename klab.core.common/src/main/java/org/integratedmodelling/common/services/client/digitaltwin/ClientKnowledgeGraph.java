@@ -81,25 +81,14 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
   @Override
   public <T extends RuntimeAsset> T get(long id, Class<T> resultClass) {
-    return null;
-  }
-
-  @Override
-  public <T extends RuntimeAsset> List<T> get(
-      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
-    return List.of();
+    throw new KlabUnimplementedException("CLIENT GRAPH GET()");
+//    return null;
   }
 
   @Override
   public void update(RuntimeAsset observation, ContextScope scope, Object... arguments) {
     throw new KlabIllegalStateException(
         "Modifying operations not allowed on the client-side knowledge graph");
-  }
-
-  @Override
-  public <T extends RuntimeAsset> List<T> get(
-      ContextScope scope, Class<T> resultClass, Object... queryParameters) {
-    return List.of();
   }
 
   @Override

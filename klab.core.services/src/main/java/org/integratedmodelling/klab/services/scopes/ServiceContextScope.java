@@ -315,10 +315,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         .run(this);
   }
 
-//  @Override
-//  public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
-//    return getService(RuntimeService.class).retrieveAssets(this, resultClass, queryData);
-//  }
+  //  @Override
+  //  public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
+  //    return getService(RuntimeService.class).retrieveAssets(this, resultClass, queryData);
+  //  }
 
   @Override
   public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
@@ -568,7 +568,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
    */
   public ServiceContextScope of(Observation observation) {
     // TODO
+    System.out.println("IMPLEMENTAMI DIO BESTIA");
     return this;
+  }
+
+  public void registerObservation(Observation observation) {
+    observationCache.put(observation.getId(), observation);
   }
 
   //  /**

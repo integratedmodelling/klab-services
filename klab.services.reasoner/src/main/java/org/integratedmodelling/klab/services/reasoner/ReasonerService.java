@@ -189,9 +189,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     private Map<Observable, Observation> makeObservationCatalog(ContextScope scope) {
       Map<Observable, Observation> ret = new HashMap<>();
-      for (var observation : scope.query(Observation.class)) {
-        ret.put(observation.getObservable(), observation);
-      }
+//      for (var observation : scope.query(Observation.class)) {
+//        ret.put(observation.getObservable(), observation);
+//      }
       return ret;
     }
 

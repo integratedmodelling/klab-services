@@ -13,6 +13,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -123,10 +124,13 @@ public class SchedulerImpl implements Scheduler {
    */
   private void initialize(Observation observation, ServiceContextScope scope) {
 
-    var parentActivities =
-        knowledgeGraph.get(scope, Activity.class, Activity.Type.RESOLUTION, observation);
-
-    var resolutionActivity = parentActivities.getFirst();
+    var resolutionActivity =
+        // FIXME needs observation, scope and Type == RESOLUTION
+        knowledgeGraph.query(Activity.class, scope)
+                      .source(observation)
+                      .along(DigitalTwin.Relationship.HAS_ACTIVITY)
+                      // TODO
+                      .peek(scope);
 
     /*
     this will commit all resources at close()
@@ -134,7 +138,7 @@ public class SchedulerImpl implements Scheduler {
     var contextualization =
         knowledgeGraph.operation(
             knowledgeGraph.klab(),
-            resolutionActivity,
+            resolutionActivity.orElse(null),
             Activity.Type.CONTEXTUALIZATION,
             "Execution of resolved dataflow to contextualize " + observation,
             observation,

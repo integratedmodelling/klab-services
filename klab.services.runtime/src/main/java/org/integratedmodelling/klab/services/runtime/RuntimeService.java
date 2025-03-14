@@ -323,21 +323,21 @@ public class RuntimeService extends BaseService
     throw new KlabIllegalStateException("Cannot determine the requesting agent from scope");
   }
 
-  private Activity getInitializationActivity(Observation observation, ContextScope scope) {
-    var ret = Provenance.getActivity(scope);
-    if (ret != null) {
-      return ret;
-    }
-    var activities =
-        scope
-            .getDigitalTwin()
-            .getKnowledgeGraph()
-            .get(scope, Activity.class, Activity.Type.INITIALIZATION);
-    if (activities.size() == 1) {
-      return activities.getFirst();
-    }
-    throw new KlabInternalErrorException("cannot locate the context initialization activity");
-  }
+//  private Activity getInitializationActivity(Observation observation, ContextScope scope) {
+//    var ret = Provenance.getActivity(scope);
+//    if (ret != null) {
+//      return ret;
+//    }
+//    var activities =
+//        scope
+//            .getDigitalTwin()
+//            .getKnowledgeGraph()
+//            .get(scope, Activity.class, Activity.Type.INITIALIZATION);
+//    if (activities.size() == 1) {
+//      return activities.getFirst();
+//    }
+//    throw new KlabInternalErrorException("cannot locate the context initialization activity");
+//  }
 
   /**
    * Return the configured computation builder for the passed observation and scope. This may
@@ -416,6 +416,7 @@ public class RuntimeService extends BaseService
 
         var id = resolution.store(observation);
         observation1.setId(id);
+        serviceContextScope.registerObservation(observation);
 
         resolution.link(resolution.getActivity(), observation, DigitalTwin.Relationship.CREATED);
         if (serviceScope.getContextObservation() != null) {
@@ -605,11 +606,11 @@ public class RuntimeService extends BaseService
   //        "Digital twin is inaccessible because of unexpected scope " + "implementation");
   //  }
 
-  @Override
-  public <T extends RuntimeAsset> List<T> retrieveAssets(
-      ContextScope contextScope, Class<T> assetClass, Object... queryParameters) {
-    return knowledgeGraph.get(contextScope, assetClass, queryParameters);
-  }
+//  @Override
+//  public <T extends RuntimeAsset> List<T> retrieveAssets(
+//      ContextScope contextScope, Class<T> assetClass, Object... queryParameters) {
+//    return knowledgeGraph.get(contextScope, assetClass, queryParameters);
+//  }
 
   @Override
   public ResourceSet resolveContextualizables(

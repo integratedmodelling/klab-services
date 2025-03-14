@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Client-side knowledge graph query, serializable to be ingested by the runtime's REST digital twin
@@ -245,6 +246,12 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   public List<T> run(Scope scope) {
     throw new KlabIllegalStateException(
         "The client-side knowledge graph query must be sent to a runtime service to be run");
+  }
+
+  @Override
+  public Optional<T> peek(Scope scope) {
+    var results = run(scope);
+    return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
   }
 
   @Override

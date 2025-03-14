@@ -1189,80 +1189,80 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return ret;
   }
 
-  @Override
-  public <T extends RuntimeAsset> List<T> get(
-      ContextScope scope, Class<T> resultClass, Object... queriables) {
-
-    if (Activity.class.isAssignableFrom(resultClass)) {
-      return (List<T>) getActivity(scope, queriables);
-    } else if (Observation.class.isAssignableFrom(resultClass)) {
-      return (List<T>) getObservation(scope, queriables);
-    } else if (Agent.class.isAssignableFrom(resultClass)) {
-      return (List<T>) getAgent(scope, queriables);
-    } else if (Actuator.class.isAssignableFrom(resultClass)) {
-      return (List<T>) getActuator(scope, queriables);
-    }
-
-    // This is only in case we ask for any RuntimeAsset
-    Map<String, Object> queryParameters = new LinkedHashMap<>();
-    if (queriables != null) {
-      for (var parameter : queriables) {
-        if (parameter instanceof Observable observable) {
-          queryParameters.put("semantics", observable.getSemantics().getUrn());
-        } else if (parameter instanceof Long id) {
-          queryParameters.put("id", id);
-        } else if (parameter instanceof Observation observation) {
-          // define start node as the one with the observation URN
-        } else if (parameter instanceof Activity.Type activityType) {
-          if (Activity.class.isAssignableFrom(resultClass)) {
-            queryParameters.put("name", activityType.name());
-          }
-        }
-      }
-    }
-
-    if (queryParameters.containsKey("id") && RuntimeAsset.class.isAssignableFrom(resultClass)) {
-      return List.of(retrieve(queryParameters.get("id"), resultClass, scope));
-    }
-
-    StringBuilder locator = new StringBuilder("MATCH (c:Context {id: $contextId})");
-    var scopeData = ContextScope.parseScopeId(ContextScope.getScopeId(scope));
-    if (scopeData.observationPath() != null) {
-      for (var observationId : scopeData.observationPath()) {
-        locator.append("-[:HAS_CHILD]->(Observation {id: ").append(observationId).append("})");
-      }
-    }
-    if (scopeData.observerId() != Observation.UNASSIGNED_ID) {
-      // TODO needs a locator for the obs to POSTPONE to the query with reversed direction
-      // .....(n..)<-[:HAS_OBSERVER]-(observer:Observation {id: ...})
-    }
-
-    /*
-     * build the final query. For now the relationship is always HAS_CHILD and this only navigates
-     * child
-     * hierarchies.
-     */
-    String label = getLabel(resultClass);
-    StringBuilder query = new StringBuilder(locator).append("-[:HAS_CHILD]->").append(label);
-
-    if (!queryParameters.isEmpty()) {
-      query.append(" {");
-      int n = 0;
-      for (var key : queryParameters.keySet()) {
-        if (n > 0) {
-          query.append(", ");
-        }
-        query.append(key).append(": $").append(key);
-        n++;
-      }
-      query.append("}");
-    }
-
-    queryParameters.put("contextId", scope.getId());
-    var result = query(query.append(") return o").toString(), queryParameters, scope);
-
-    return adapt(result, resultClass, scope);
-  }
+//  @Override
+//  public <T extends RuntimeAsset> List<T> get(
+//      ContextScope scope, Class<T> resultClass, Object... queriables) {
+//
+//    if (Activity.class.isAssignableFrom(resultClass)) {
+//      return (List<T>) getActivity(scope, queriables);
+//    } else if (Observation.class.isAssignableFrom(resultClass)) {
+//      return (List<T>) getObservation(scope, queriables);
+//    } else if (Agent.class.isAssignableFrom(resultClass)) {
+//      return (List<T>) getAgent(scope, queriables);
+//    } else if (Actuator.class.isAssignableFrom(resultClass)) {
+//      return (List<T>) getActuator(scope, queriables);
+//    }
+//
+//    // This is only in case we ask for any RuntimeAsset
+//    Map<String, Object> queryParameters = new LinkedHashMap<>();
+//    if (queriables != null) {
+//      for (var parameter : queriables) {
+//        if (parameter instanceof Observable observable) {
+//          queryParameters.put("semantics", observable.getSemantics().getUrn());
+//        } else if (parameter instanceof Long id) {
+//          queryParameters.put("id", id);
+//        } else if (parameter instanceof Observation observation) {
+//          // define start node as the one with the observation URN
+//        } else if (parameter instanceof Activity.Type activityType) {
+//          if (Activity.class.isAssignableFrom(resultClass)) {
+//            queryParameters.put("name", activityType.name());
+//          }
+//        }
+//      }
+//    }
+//
+//    if (queryParameters.containsKey("id") && RuntimeAsset.class.isAssignableFrom(resultClass)) {
+//      return List.of(retrieve(queryParameters.get("id"), resultClass, scope));
+//    }
+//
+//    StringBuilder locator = new StringBuilder("MATCH (c:Context {id: $contextId})");
+//    var scopeData = ContextScope.parseScopeId(ContextScope.getScopeId(scope));
+//    if (scopeData.observationPath() != null) {
+//      for (var observationId : scopeData.observationPath()) {
+//        locator.append("-[:HAS_CHILD]->(Observation {id: ").append(observationId).append("})");
+//      }
+//    }
+//    if (scopeData.observerId() != Observation.UNASSIGNED_ID) {
+//      // TODO needs a locator for the obs to POSTPONE to the query with reversed direction
+//      // .....(n..)<-[:HAS_OBSERVER]-(observer:Observation {id: ...})
+//    }
+//
+//    /*
+//     * build the final query. For now the relationship is always HAS_CHILD and this only navigates
+//     * child
+//     * hierarchies.
+//     */
+//    String label = getLabel(resultClass);
+//    StringBuilder query = new StringBuilder(locator).append("-[:HAS_CHILD]->").append(label);
+//
+//    if (!queryParameters.isEmpty()) {
+//      query.append(" {");
+//      int n = 0;
+//      for (var key : queryParameters.keySet()) {
+//        if (n > 0) {
+//          query.append(", ");
+//        }
+//        query.append(key).append(": $").append(key);
+//        n++;
+//      }
+//      query.append("}");
+//    }
+//
+//    queryParameters.put("contextId", scope.getId());
+//    var result = query(query.append(") return o").toString(), queryParameters, scope);
+//
+//    return adapt(result, resultClass, scope);
+//  }
 
   private List<Activity> getActivity(ContextScope scope, Object... queriables) {
 
