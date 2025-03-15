@@ -9,6 +9,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -92,7 +93,7 @@ public class ExecutionSequence {
    * @param rootActuator
    * @return
    */
-  public boolean compile(Actuator rootActuator) {
+  public boolean compile(Actuator rootActuator, Geometry geometry) {
 
     var pairs = sortComputation(rootActuator);
     List<ExecutorOperation> current = null;
@@ -105,7 +106,7 @@ public class ExecutionSequence {
         current = new ArrayList<>();
       }
       currentGroup = pair.getSecond();
-      var operation = new ExecutorOperation(pair.getFirst());
+      var operation = new ExecutorOperation(pair.getFirst(), geometry);
       if (!operation.isOperational()) {
         return false;
       }
@@ -141,7 +142,7 @@ public class ExecutionSequence {
   /** One operation per observation. Successful execution will update the observation in the DT. */
   class ExecutorOperation {
 
-    private final long id;
+    private long id;
     private final Observation observation;
     // TODO executors get cached within the DT, here we should just ensure they can be produced. A
     //  list should be indexed by observation URN, empty for empty dataflows.
@@ -150,12 +151,27 @@ public class ExecutionSequence {
     private boolean operational;
     private KnowledgeGraph.Operation operation;
 
-    public ExecutorOperation(Actuator actuator) {
+    public ExecutorOperation(Actuator actuator, Geometry geometry) {
       this.id = actuator.getId();
       this.operation = operations.get(actuator);
-      this.observation = scope.getObservation(this.id);
+      this.observation = requireObservation(actuator, geometry);
       instrumentObservation(this.observation, actuator);
       this.operational = compile(actuator);
+    }
+
+    private Observation requireObservation(Actuator actuator, Geometry geometry) {
+      if (this.id < 0) {
+        var ret =
+            DigitalTwin.createObservation(
+                scope, actuator.getObservable(), geometry, actuator.getName());
+        this.id = this.operation.store(ret);
+        if (actuator instanceof ActuatorImpl actuator1) {
+          actuator1.setId(this.id);
+        }
+        scope.registerObservation(ret);
+        return ret;
+      }
+      return scope.getObservation(id);
     }
 
     /**

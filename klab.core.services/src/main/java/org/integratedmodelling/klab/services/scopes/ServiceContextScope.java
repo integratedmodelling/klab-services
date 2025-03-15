@@ -128,7 +128,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                 new CacheLoader<Long, Observation>() {
                   @Override
                   public Observation load(Long key) throws Exception {
-                    return digitalTwin.getKnowledgeGraph().get(key, ServiceContextScope.this, Observation.class);
+                    return digitalTwin
+                        .getKnowledgeGraph()
+                        .get(key, ServiceContextScope.this, Observation.class);
                   }
                 });
     /*
@@ -561,14 +563,28 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   /**
    * Return a scope with the context observation and the observer set according to the same
    * pertaining to the passed observation. Used when the scheduler needs to independently work on an
-   * observation due to an event.
+   * observation due to an event, outside of the scope that has contextualized it.
    *
    * @param observation
    * @return
    */
   public ServiceContextScope of(Observation observation) {
-    // TODO
-    System.out.println("IMPLEMENTAMI DIO BESTIA");
+
+    var observer = getObserverOf(observation);
+    Observation contextobs = null;
+    if (observation.getObservable().is(SemanticType.QUALITY)
+        || (observation.getObservable().is(SemanticType.COUNTABLE)
+            && !observation.getObservable().asConcept().isCollective())) {
+      contextobs = getParentOf(observation);
+    }
+
+    if (observer != null || contextobs != null) {
+      var ret = new ServiceContextScope(this);
+      ret.contextObservation = contextobs;
+      ret.observer = observer;
+      return ret;
+    }
+
     return this;
   }
 

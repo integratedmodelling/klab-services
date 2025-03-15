@@ -128,7 +128,7 @@ public class SchedulerImpl implements Scheduler {
         knowledgeGraph
             .query(Activity.class, scope)
             .target(observation)
-            .along(DigitalTwin.Relationship.RESOLVED)
+            .along(DigitalTwin.Relationship.CREATED)
             .peek(scope);
 
     /*

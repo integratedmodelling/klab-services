@@ -33,7 +33,7 @@ public class DataflowCompiler {
   private final ResolutionGraph resolutionGraph;
   private final ContextScope scope;
   private final Observation observation;
-  private Set<Observation> catalog = new HashSet<>();
+  private Map<Observable, Observation> catalog = new HashMap<>();
 
   /**
    * TODO add the context dataflow.
@@ -98,7 +98,7 @@ public class DataflowCompiler {
   List<Actuator> compileObservation(
       Observation observation, Geometry coverage, ObservationStrategy strategy) {
 
-    if (catalog.contains(observation)) {
+    if (catalog.containsKey(observation.getObservable())) {
       var ret = new ActuatorImpl();
       ret.setObservable(observation.getObservable());
       ret.setId(observation.getId());
@@ -107,7 +107,7 @@ public class DataflowCompiler {
       return List.of(ret);
     }
 
-    catalog.add(observation);
+    catalog.put(observation.getObservable(), observation);
 
     var ret = new ArrayList<Actuator>();
     for (var edge : resolutionGraph.graph().outgoingEdgesOf(observation)) {

@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -323,21 +324,21 @@ public class RuntimeService extends BaseService
     throw new KlabIllegalStateException("Cannot determine the requesting agent from scope");
   }
 
-//  private Activity getInitializationActivity(Observation observation, ContextScope scope) {
-//    var ret = Provenance.getActivity(scope);
-//    if (ret != null) {
-//      return ret;
-//    }
-//    var activities =
-//        scope
-//            .getDigitalTwin()
-//            .getKnowledgeGraph()
-//            .get(scope, Activity.class, Activity.Type.INITIALIZATION);
-//    if (activities.size() == 1) {
-//      return activities.getFirst();
-//    }
-//    throw new KlabInternalErrorException("cannot locate the context initialization activity");
-//  }
+  //  private Activity getInitializationActivity(Observation observation, ContextScope scope) {
+  //    var ret = Provenance.getActivity(scope);
+  //    if (ret != null) {
+  //      return ret;
+  //    }
+  //    var activities =
+  //        scope
+  //            .getDigitalTwin()
+  //            .getKnowledgeGraph()
+  //            .get(scope, Activity.class, Activity.Type.INITIALIZATION);
+  //    if (activities.size() == 1) {
+  //      return activities.getFirst();
+  //    }
+  //    throw new KlabInternalErrorException("cannot locate the context initialization activity");
+  //  }
 
   /**
    * Return the configured computation builder for the passed observation and scope. This may
@@ -456,6 +457,7 @@ public class RuntimeService extends BaseService
                       result);
                   //                  try {
                   // TODO send out the activity with the scope
+
                   dataflow = resolver.resolve(observation, serviceScope);
                   if (dataflow != null) {
 
@@ -465,12 +467,14 @@ public class RuntimeService extends BaseService
                         serviceScope.finalizeObservation(observation, resolution, false);
                       }
                     } else {
-
+                      // we use a scale to compile the actuators so we're sure all dimensions are
+                      // fully defined, in case the geometry has a parameteric definition
+                      var scale = Scale.create(observation.getGeometry());
                       for (var rootActuator : dataflow.getComputation()) {
                         var executionSequence =
                             new ExecutionSequence(
                                 this, resolution, dataflow, getComponentRegistry(), serviceScope);
-                        var compiled = executionSequence.compile(rootActuator);
+                        var compiled = executionSequence.compile(rootActuator, scale);
                         if (!compiled) {
                           var t =
                               new KlabCompilationError(
@@ -507,9 +511,9 @@ public class RuntimeService extends BaseService
 
                   if (ret.isCompletedExceptionally()) {
                     scope.send(
-                            Message.MessageClass.ObservationLifecycle,
-                            Message.MessageType.ResolutionUnsuccessful,
-                            observation);
+                        Message.MessageClass.ObservationLifecycle,
+                        Message.MessageType.ResolutionUnsuccessful,
+                        observation);
                   }
 
                   try {
@@ -517,10 +521,7 @@ public class RuntimeService extends BaseService
                   } catch (IOException e) {
                     throw new KlabIOException(e);
                   }
-
-
                 });
-
 
         return ret;
 
@@ -566,7 +567,7 @@ public class RuntimeService extends BaseService
         var executionSequence =
             new ExecutionSequence(
                 this, contextualization, dataflow, getComponentRegistry(), serviceContextScope);
-        var compiled = executionSequence.compile(rootActuator);
+        var compiled = executionSequence.compile(rootActuator, geometry);
         if (!compiled) {
           contextualization.fail(
               contextScope,
@@ -606,11 +607,11 @@ public class RuntimeService extends BaseService
   //        "Digital twin is inaccessible because of unexpected scope " + "implementation");
   //  }
 
-//  @Override
-//  public <T extends RuntimeAsset> List<T> retrieveAssets(
-//      ContextScope contextScope, Class<T> assetClass, Object... queryParameters) {
-//    return knowledgeGraph.get(contextScope, assetClass, queryParameters);
-//  }
+  //  @Override
+  //  public <T extends RuntimeAsset> List<T> retrieveAssets(
+  //      ContextScope contextScope, Class<T> assetClass, Object... queryParameters) {
+  //    return knowledgeGraph.get(contextScope, assetClass, queryParameters);
+  //  }
 
   @Override
   public ResourceSet resolveContextualizables(

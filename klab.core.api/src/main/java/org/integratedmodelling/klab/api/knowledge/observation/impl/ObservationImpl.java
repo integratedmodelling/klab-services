@@ -240,15 +240,4 @@ public class ObservationImpl implements Observation {
         return "(OBS) " + observable  + " [#" + (geometry == null ? "0" : geometry.size()) + "]";
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        ObservationImpl artifacts = (ObservationImpl) o;
-        return Objects.equals(urn, artifacts.urn);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(urn);
-    }
 }
