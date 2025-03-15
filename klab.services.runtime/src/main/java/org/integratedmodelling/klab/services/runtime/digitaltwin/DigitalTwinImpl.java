@@ -64,6 +64,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       for (var instance : data.children()) {
         var observation = DigitalTwin.createObservation(observationScope, instance);
         if (observation != null) {
+          // TODO ingest the observation. Must have an operation in the scope.
           tasks.add(
               Executors.callable(
                   () -> {
