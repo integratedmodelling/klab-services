@@ -128,7 +128,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                 new CacheLoader<Long, Observation>() {
                   @Override
                   public Observation load(Long key) throws Exception {
-                    return digitalTwin.getKnowledgeGraph().get(key, Observation.class);
+                    return digitalTwin.getKnowledgeGraph().get(key, ServiceContextScope.this, Observation.class);
                   }
                 });
     /*

@@ -53,6 +53,18 @@ public interface KnowledgeGraph {
       AFTER
     }
 
+    /**
+     * Select the object with the passed ID and return it. Because the result is only zero or one
+     * objects, the appropriate call after this is peek() and any other condition is ignored. The KG
+     * should be optimized to run this kind of query as fast as possible. The query must be able to
+     * retrieve observations that are not yet committed to the knowledge graph but are cached in the
+     * scope during resolution.
+     *
+     * @param id
+     * @return the query, ready to run
+     */
+    Query<T> id(long id);
+
     Query<T> source(Object startingPoint);
 
     Query<T> target(Object startingPoint);
@@ -204,7 +216,8 @@ public interface KnowledgeGraph {
    * @return
    * @param <T>
    */
-  <T extends RuntimeAsset> List<T> query(Query<T> knowledgeGraphQuery, Class<T> resultClass, Scope scope);
+  <T extends RuntimeAsset> List<T> query(
+      Query<T> knowledgeGraphQuery, Class<T> resultClass, Scope scope);
 
   /**
    * Remove all data relative to the currently contextualized scope. Graph becomes unusable after
@@ -264,26 +277,28 @@ public interface KnowledgeGraph {
   /**
    * Extract and return the one asset that has the specified ID from the graph, ensuring it is of
    * the passed class. Expected to be the fastest way to retrieve a node when the ID is known,
-   * therefore available besides the more general {@link #query(Query, Class)}.
+   * therefore available besides the more general {@link #query(Class, Scope)}. The scope must be
+   * passed to ensure that cached objects that may not yet be committed to the graph can be
+   * retrieved.
    *
    * @param id
    * @param resultClass
    * @param <T>
    * @return
    */
-  <T extends RuntimeAsset> T get(long id, Class<T> resultClass);
+  <T extends RuntimeAsset> T get(long id, ContextScope scope, Class<T> resultClass);
 
-//  /**
-//   * Extract and return all the assets linked to the passed one in the graph.
-//   *
-//   * @param source
-//   * @param linkType
-//   * @param <T>
-//   * @return
-//   * @deprecated use query()
-//   */
-//  <T extends RuntimeAsset> List<T> get(
-//      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass);
+  //  /**
+  //   * Extract and return all the assets linked to the passed one in the graph.
+  //   *
+  //   * @param source
+  //   * @param linkType
+  //   * @param <T>
+  //   * @return
+  //   * @deprecated use query()
+  //   */
+  //  <T extends RuntimeAsset> List<T> get(
+  //      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass);
 
   /**
    * Called when an observation has been contextualized
@@ -295,20 +310,22 @@ public interface KnowledgeGraph {
    */
   void update(RuntimeAsset observation, ContextScope scope, Object... arguments);
 
-//  /**
-//   * Query starting at the point implied by the scope and return matching objects using the query
-//   * parameters passed.
-//   *
-//   * @param scope
-//   * @param resultClass Can be an individual object (Observation, Actuator or Provenance node) or an
-//   *     entire Dataflow or Provenance
-//   * @param queryParameters
-//   * @param <T>
-//   * @return
-//   * @deprecated use query()
-//   */
-//  <T extends RuntimeAsset> List<T> get(
-//      ContextScope scope, Class<T> resultClass, Object... queryParameters);
+  //  /**
+  //   * Query starting at the point implied by the scope and return matching objects using the
+  // query
+  //   * parameters passed.
+  //   *
+  //   * @param scope
+  //   * @param resultClass Can be an individual object (Observation, Actuator or Provenance node)
+  // or an
+  //   *     entire Dataflow or Provenance
+  //   * @param queryParameters
+  //   * @param <T>
+  //   * @return
+  //   * @deprecated use query()
+  //   */
+  //  <T extends RuntimeAsset> List<T> get(
+  //      ContextScope scope, Class<T> resultClass, Object... queryParameters);
 
   /**
    * Find an agent by name. If the agent is not found, create it with the passed name. If the name

@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.services.application.security.EngineAuthoriz
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.runtime.server.RuntimeServer;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.mapdb.elsa.ElsaSerializerBase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +42,8 @@ public class RuntimeServerController {
    */
   @PostMapping(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION)
   public @ResponseBody Observation submit(
-      @RequestBody ResolutionRequest resolutionRequest, Principal principal) throws ExecutionException, InterruptedException {
+      @RequestBody ResolutionRequest resolutionRequest, Principal principal)
+      throws ExecutionException, InterruptedException {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope =
           authorization
@@ -66,25 +68,6 @@ public class RuntimeServerController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
-//  @PostMapping(ServicesAPI.RUNTIME.START_RESOLUTION)
-//  public @ResponseBody String startResolution(
-//      @RequestBody ResolutionRequest request, Principal principal) {
-//    if (principal instanceof EngineAuthorization authorization) {
-//      var contextScope =
-//          authorization
-//              .getScope(ContextScope.class)
-//              .withResolutionConstraints(
-//                  request.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
-//      if (contextScope instanceof ServiceContextScope serviceContextScope) {
-//
-//        var observation = serviceContextScope.getObservation(request.getObservationId());
-//        runtimeService.klabService().resolve(observation.getId(), serviceContextScope);
-//        return observation.getUrn();
-//      }
-//    }
-//    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
-//  }
-
   @GetMapping(ServicesAPI.RUNTIME.GET_SESSION_INFO)
   public @ResponseBody List<SessionInfo> getSessionInfo(Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
@@ -98,31 +81,19 @@ public class RuntimeServerController {
       @RequestBody KnowledgeGraphQuery<?> query, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
+      // TODO we may want to cache other RuntimeAssets too
+      if (query.getId() > 0
+          && contextScope instanceof ServiceContextScope serviceContextScope
+          && query.getResultType() == KnowledgeGraphQuery.AssetType.OBSERVATION) {
+        var ret = serviceContextScope.getObservation(query.getId());
+        if (ret != null) {
+          return List.of(ret);
+        }
+      }
       return runtimeService.klabService().queryKnowledgeGraph(query, contextScope);
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
-
-//  @PostMapping(ServicesAPI.RUNTIME.RETRIEVE_ASSET)
-//  public @ResponseBody List<? extends RuntimeAsset> queryKnowledgeGraph(
-//      @RequestBody AssetRequest request, Principal principal) {
-//    if (principal instanceof EngineAuthorization authorization) {
-//      var contextScope = authorization.getScope(ContextScope.class);
-//      List<Object> queryParameters = new ArrayList<>();
-//      if (request.getId() != Observation.UNASSIGNED_ID) queryParameters.add(request.getId());
-//      if (request.getObservable() != null) queryParameters.add(request.getObservable());
-//      if (request.getGeometry() != null) queryParameters.add(request.getGeometry());
-//      if (request.getContextObservation() != null)
-//        queryParameters.add(request.getContextObservation());
-//      if (!request.getMetadata().isEmpty()) queryParameters.add(request.getMetadata());
-//      if (request.getName() != null) queryParameters.add(request.getName());
-//      return runtimeService
-//          .klabService()
-//          .retrieveAssets(
-//              contextScope, request.getKnowledgeClass().assetClass, queryParameters.toArray());
-//    }
-//    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
-//  }
 
   @PostMapping(ServicesAPI.RUNTIME.RESOLVE_CONTEXTUALIZERS)
   public @ResponseBody ResourceSet resolveContextualizers(

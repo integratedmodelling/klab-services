@@ -127,52 +127,6 @@ public interface RuntimeService extends KlabService {
    */
   CompletableFuture<Observation> submit(@Mutable Observation observation, ContextScope scope);
 
-  //  /**
-  //   * The main function of the runtime. It will be invoked externally only when the dataflow is
-  //   * externally supplied and fully resolved, like from a {@link
-  //   * org.integratedmodelling.klab.api.knowledge.Resource}.
-  //   *
-  //   * @param dataflow
-  //   * @param contextScope
-  //   * @return
-  //   * FIXME/CHECK should this be behind the API?
-  //   */
-  //  Observation runDataflow(Dataflow dataflow, Geometry geometry, ContextScope contextScope);
-
-  //  /**
-  //   * Submit the ID of a valid observation to invoke the resolver, build a dataflow and run it to
-  //   * obtain the resolved observation. Pass the ID of an accepted observation obtained through
-  // {@link
-  //   * #submit(Observation, ContextScope)}. The two operations are used in {@link
-  //   * ContextScope#observe(Observation)} to provide the full functionality with notification to
-  // the
-  //   * scope.
-  //   *
-  //   * @param id
-  //   * @param scope
-  //   * @return the ID of the task running in the runtime, which must be identical to the
-  // observation
-  //   *     URN and will be sent to the scope with the resolution result message.
-  //   */
-  //  CompletableFuture<Observation> resolve(long id, ContextScope scope);
-//
-//  /**
-//   * Retrieve any assets from the knowledge graph in the digital twin matching a given class and
-//   * some query objects.
-//   *
-//   * @param contextScope the scope for the request, which will determine the point in the knowledge
-//   *     graph to start searching from
-//   * @param assetClass the type of asset requested
-//   * @param queryParameters any objects that will identify one or more assets of the passed type in
-//   *     the passed scope, such as an observable, a string for a name or a geometry. All passed
-//   *     objects will restrict the search.
-//   * @param <T>
-//   * @return
-//   * @deprecated use the query system on the KG
-//   */
-//  <T extends RuntimeAsset> List<T> retrieveAssets(
-//      ContextScope contextScope, Class<T> assetClass, Object... queryParameters);
-
   /**
    * Use the resources service and the plug-in system to handle a model proposal from the resolver.
    * The incoming request will propose to use resources, functions and the like; the runtime may

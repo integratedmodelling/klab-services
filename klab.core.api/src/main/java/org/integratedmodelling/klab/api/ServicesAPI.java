@@ -383,21 +383,24 @@ public interface ServicesAPI {
      */
     String SUBMIT_OBSERVATION = "/submit";
 
-//    /**
-//     * POST endpoint to start the resolution of a previously submitted observation whose ID must be
-//     * passed through the URL. Returns true/false; any notification happens through scope messaging
-//     * and the scope must be the same that generated the observation through {@link
-//     * #SUBMIT_OBSERVATION}. Both the request and the response may/must contain a {@link
-//     * #TASK_ID_HEADER} with the ID of the task started.
-//     */
-//    String START_RESOLUTION = "/startResolution";
+    //    /**
+    //     * POST endpoint to start the resolution of a previously submitted observation whose ID
+    // must be
+    //     * passed through the URL. Returns true/false; any notification happens through scope
+    // messaging
+    //     * and the scope must be the same that generated the observation through {@link
+    //     * #SUBMIT_OBSERVATION}. Both the request and the response may/must contain a {@link
+    //     * #TASK_ID_HEADER} with the ID of the task started.
+    //     */
+    //    String START_RESOLUTION = "/startResolution";
 
 //    /**
-//     * POST endpoint to retrieve one or more assets from the digital twin based on a query
+//     * POST endpoint to retrieve an asset from the digital twin's knowledge graph based on its
+//     * internal ID
 //     *
 //     * @deprecated use the query endpoint
 //     */
-//    String RETRIEVE_ASSET = "/asset";
+//    String RETRIEVE_ASSET_BY_ID = "/asset";
 
     /** Structured Knowledge Graph query */
     String QUERY = "/query";

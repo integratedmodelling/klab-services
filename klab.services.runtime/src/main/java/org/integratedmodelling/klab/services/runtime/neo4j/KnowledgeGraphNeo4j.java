@@ -352,8 +352,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       }
 
       if (observation != null && this.actuator != null && outcome == Scope.Status.FINISHED) {
-        // TODO add state and histogram
-        link(this.activity, observation, DigitalTwin.Relationship.CONTEXTUALIZED);
+        link(this.activity, observation, DigitalTwin.Relationship.RESOLVED);
       }
 
       if (parent == null) {

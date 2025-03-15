@@ -152,11 +152,22 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   private int depth = 1;
   private long limit = -1;
   private long offset = 0;
+  private long id = -1;
 
   public KnowledgeGraphQuery() {}
 
   public KnowledgeGraphQuery(AssetType assetType) {
     this.resultType = assetType;
+  }
+
+  @Override
+  public KnowledgeGraph.Query<T> id(long id) {
+    this.id = id;
+    return this;
+  }
+
+  public long getId() {
+    return this.id;
   }
 
   @Override

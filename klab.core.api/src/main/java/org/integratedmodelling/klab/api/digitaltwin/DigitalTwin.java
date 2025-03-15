@@ -47,7 +47,7 @@ public interface DigitalTwin {
     HAS_DATA,
     HAS_CHILD,
     TRIGGERED,
-    CONTEXTUALIZED;
+    RESOLVED;
   }
 
   /**

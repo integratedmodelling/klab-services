@@ -125,12 +125,11 @@ public class SchedulerImpl implements Scheduler {
   private void initialize(Observation observation, ServiceContextScope scope) {
 
     var resolutionActivity =
-        // FIXME needs observation, scope and Type == RESOLUTION
-        knowledgeGraph.query(Activity.class, scope)
-                      .source(observation)
-                      .along(DigitalTwin.Relationship.HAS_ACTIVITY)
-                      // TODO
-                      .peek(scope);
+        knowledgeGraph
+            .query(Activity.class, scope)
+            .target(observation)
+            .along(DigitalTwin.Relationship.RESOLVED)
+            .peek(scope);
 
     /*
     this will commit all resources at close()
@@ -144,7 +143,7 @@ public class SchedulerImpl implements Scheduler {
             observation,
             this);
 
-    var scale = GeometryRepository.INSTANCE.get(observation.getGeometry().encode(), Scale.class);
+    var scale = Scale.create(observation.getGeometry());
     var initializationGeometry = scale.initialization();
 
     try (contextualization) {

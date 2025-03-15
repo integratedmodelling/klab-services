@@ -17,6 +17,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
+import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.common.lang.kim.KimConceptImpl;
@@ -3041,6 +3042,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       if (contextScope.getId() == null) {
         throw new KlabIllegalArgumentException(
             "resolver: context scope has no ID, cannot register " + "a scope autonomously");
+      }
+
+      /*
+       * The resolver needs a digital twin client installed to find existing observations through the
+       * service-level context scope.
+       */
+      if (contextScope.getHostServiceId() != null) {
+        serviceContextScope.setDigitalTwin(
+                new ClientDigitalTwin(contextScope, serviceContextScope.getId()));
+      } else {
+        scope.warn(
+                "Registering context scope without service ID: digital twin will be inoperative");
       }
 
       getScopeManager()
