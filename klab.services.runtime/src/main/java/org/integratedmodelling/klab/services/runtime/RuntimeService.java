@@ -351,6 +351,36 @@ public class RuntimeService extends BaseService
     return ScalarComputationGroovy.builder(observation, scope, actuator);
   }
 
+  // next version
+  // The scope must be PROPER - based on the obs
+  public CompletableFuture<Observation> submitMyAss(Observation observation, ContextScope scope) {
+
+    /*
+     * Pre-existing observations are checked unless it's an acknowledged single subject, which can
+     * always be added.
+     */
+    var existing =
+        observation.getObservable().is(SemanticType.SUBJECT)
+                && !observation.getObservable().getSemantics().isCollective()
+            ? null
+            : scope.getObservation(observation.getObservable());
+
+    if (existing != null) {
+      return CompletableFuture.completedFuture(existing);
+    }
+
+    var resolver = scope.getService(Resolver.class);
+    var dataflow = resolver.resolve(observation, scope);
+    if (dataflow == null) {
+//      return CompletableFuture.failedFuture(new KlabResolutionException(observation));
+    } 
+    // operation is an atomic KG operation that also submits the finished observations and their compiled actuators
+    // to the DT. It contains all activities, new or old observations, actuators, and store/link sequence
+//    var operation = compile(dataflow, scope);
+    // operation.register stores everything using a transaction
+    return null; // var ret = if (operation.commit()) return scheduler.submit(obs);
+  }
+
   @Override
   public CompletableFuture<Observation> submit(Observation observation, ContextScope scope) {
 
