@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeIns
 import org.integratedmodelling.klab.api.scope.ContextScope;
 
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -57,8 +58,9 @@ public interface Scheduler {
    * consequences of any resulting events and call the scope to carry on any necessary computations
    * and update the knowledge graph.
    *
-   * <p>This must be called after any {@link #registerExecutor(Observation, Function)} for the
-   * observation have been submitted.
+   * <p>This must be called after the resolution has been successfully committed to the knowledge
+   * graph and all executors have been registered, which is done through {@link
+   * DigitalTwin.Transaction#commit()}.
    *
    * @param observation
    * @return

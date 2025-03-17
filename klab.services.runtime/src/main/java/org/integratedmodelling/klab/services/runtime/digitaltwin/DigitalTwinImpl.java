@@ -3,12 +3,16 @@ package org.integratedmodelling.klab.services.runtime.digitaltwin;
 import org.integratedmodelling.common.data.DoubleDataImpl;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -17,8 +21,12 @@ import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
 import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
 import org.integratedmodelling.klab.runtime.storage.StorageManagerImpl;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.SchedulerImpl;
+import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,17 +34,72 @@ import java.util.concurrent.*;
 
 public class DigitalTwinImpl implements DigitalTwin {
 
-  private final KnowledgeGraph knowledgeGraph;
+  private final KnowledgeGraphNeo4j knowledgeGraph;
   private final StorageManager storageManager;
   private final ContextScope rootScope;
   private final Scheduler scheduler;
 
+  public class TransactionImpl implements Transaction {
+
+    static class Rel extends DefaultEdge {
+      GraphModel.Relationship relationship;
+      Geometry geometry;
+      int sequence = -1;
+    }
+
+    Activity activity;
+    ServiceContextScope scope;
+    List<Throwable> failures = new ArrayList<>();
+    Graph<RuntimeAsset, DefaultEdge> graph = new DefaultDirectedGraph<>(Rel.class);
+
+    public TransactionImpl(Activity activity, ServiceContextScope scope) {
+      this.activity = activity;
+      this.scope = scope;
+    }
+
+    @Override
+    public void add(RuntimeAsset asset) {}
+
+    @Override
+    public void link(
+        RuntimeAsset source, RuntimeAsset destination, GraphModel.Relationship relationship) {}
+
+    @Override
+    public void resolveWith(Observation observation, Contextualizer contextualizer) {}
+
+    @Override
+    public boolean commit() {
+      if (!failures.isEmpty()) {
+        failures.forEach(t -> scope.error(t));
+        return false;
+      }
+
+      /*
+      Open transaction in the knowledge graph and store everything that needs to, then make all connections
+       */
+
+      return true;
+    }
+
+    @Override
+    public Transaction fail(Throwable compilationError) {
+      this.failures.add(compilationError);
+      return this;
+    }
+
+  }
+
   public DigitalTwinImpl(
-      RuntimeService service, ServiceContextScope scope, KnowledgeGraph database) {
+      RuntimeService service, ServiceContextScope scope, KnowledgeGraphNeo4j database) {
     this.rootScope = scope;
-    this.knowledgeGraph = database.contextualize(scope);
+    this.knowledgeGraph = (KnowledgeGraphNeo4j) database.contextualize(scope);
     this.storageManager = new StorageManagerImpl(service, scope);
     this.scheduler = new SchedulerImpl(scope, this);
+  }
+
+  @Override
+  public Transaction transaction(Activity activity, ContextScope scope) {
+    return new TransactionImpl(activity, (ServiceContextScope) scope);
   }
 
   @Override

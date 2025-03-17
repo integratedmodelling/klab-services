@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -169,7 +170,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             .getKnowledgeGraph()
             .query(Observation.class, this)
             .target(observation)
-            .along(DigitalTwin.Relationship.HAS_CHILD)
+            .along(GraphModel.Relationship.HAS_CHILD)
             .run(this);
     return ret.isEmpty() ? null : ret.getFirst();
   }
@@ -180,7 +181,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .getKnowledgeGraph()
         .query(Observation.class, this)
         .source(observation)
-        .along(DigitalTwin.Relationship.HAS_CHILD)
+        .along(GraphModel.Relationship.HAS_CHILD)
         .run(this);
   }
 
@@ -190,7 +191,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .getKnowledgeGraph()
         .query(Observation.class, this)
         .source(observation)
-        .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
+        .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);
   }
 
@@ -200,7 +201,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .getKnowledgeGraph()
         .query(Observation.class, this)
         .target(observation)
-        .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
+        .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);
   }
 //
@@ -241,7 +242,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             .getKnowledgeGraph()
             .query(Observation.class, this)
             .target(observation)
-            .along(DigitalTwin.Relationship.HAS_OBSERVER)
+            .along(GraphModel.Relationship.HAS_OBSERVER)
             .run(this);
     return ret.isEmpty() ? null : ret.getFirst();
   }
@@ -332,7 +333,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             .getKnowledgeGraph()
             .query(Observation.class, this)
             .source(this)
-            .along(DigitalTwin.Relationship.HAS_CHILD)
+            .along(GraphModel.Relationship.HAS_CHILD)
             .where(
                 "semantics", KnowledgeGraph.Query.Operator.EQUALS, observable.asConcept().getUrn())
             .run(this);
@@ -346,7 +347,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .getKnowledgeGraph()
         .query(Observation.class, this)
         .source(this)
-        .along(DigitalTwin.Relationship.HAS_CHILD)
+        .along(GraphModel.Relationship.HAS_CHILD)
         .run(this);
   }
 

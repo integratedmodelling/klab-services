@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -146,7 +146,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   private Asset target;
   private QueryType type = QueryType.QUERY;
   private List<KnowledgeGraphQuery<T>> children = new ArrayList<>();
-  private DigitalTwin.Relationship relationship;
+  private GraphModel.Relationship relationship;
   private List<Triple<String, String, String>> assetQueryCriteria = new ArrayList<>();
   private Parameters<String> relationshipQueryCriteria = Parameters.create();
   private int depth = 1;
@@ -211,7 +211,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
 
   @Override
   public KnowledgeGraph.Query<T> along(
-      DigitalTwin.Relationship relationship, Object... parameters) {
+          GraphModel.Relationship relationship, Object... parameters) {
     this.relationship = relationship;
     this.relationshipQueryCriteria = Parameters.create(parameters);
     return this;
@@ -315,11 +315,11 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
     this.children = children;
   }
 
-  public DigitalTwin.Relationship getRelationship() {
+  public GraphModel.Relationship getRelationship() {
     return relationship;
   }
 
-  public void setRelationship(DigitalTwin.Relationship relationship) {
+  public void setRelationship(GraphModel.Relationship relationship) {
     this.relationship = relationship;
   }
 

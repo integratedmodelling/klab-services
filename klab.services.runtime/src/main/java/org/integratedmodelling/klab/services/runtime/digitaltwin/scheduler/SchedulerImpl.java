@@ -8,11 +8,10 @@ import java.util.Collection;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-import org.integratedmodelling.common.knowledge.GeometryRepository;
+
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -128,7 +127,7 @@ public class SchedulerImpl implements Scheduler {
         knowledgeGraph
             .query(Activity.class, scope)
             .target(observation)
-            .along(DigitalTwin.Relationship.CREATED)
+            .along(GraphModel.Relationship.CREATED)
             .peek(scope);
 
     /*
@@ -173,7 +172,7 @@ public class SchedulerImpl implements Scheduler {
         knowledgeGraph
             .query(Observation.class, localScope)
             .target(observation)
-            .along(DigitalTwin.Relationship.AFFECTS)
+            .along(GraphModel.Relationship.AFFECTS)
             .run(localScope)) {
 
       tasks.add(

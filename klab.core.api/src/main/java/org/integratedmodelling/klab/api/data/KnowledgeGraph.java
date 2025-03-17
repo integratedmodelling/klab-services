@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.api.data;
 
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -69,7 +69,7 @@ public interface KnowledgeGraph {
 
     Query<T> target(Object startingPoint);
 
-    Query<T> along(DigitalTwin.Relationship relationship, Object... parameters);
+    Query<T> along(GraphModel.Relationship relationship, Object... parameters);
 
     Query<T> depth(int depth);
 
@@ -149,7 +149,7 @@ public interface KnowledgeGraph {
     void link(
         RuntimeAsset source,
         RuntimeAsset destination,
-        DigitalTwin.Relationship relationship,
+        GraphModel.Relationship relationship,
         Object... additionalProperties);
 
     /**
@@ -163,7 +163,7 @@ public interface KnowledgeGraph {
      */
     void linkToRootNode(
         RuntimeAsset destination,
-        DigitalTwin.Relationship relationship,
+        GraphModel.Relationship relationship,
         Object... additionalProperties);
 
     /**

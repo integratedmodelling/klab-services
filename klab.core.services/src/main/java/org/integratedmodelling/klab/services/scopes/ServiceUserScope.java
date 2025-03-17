@@ -61,7 +61,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
 
     // these are users of this service, which we keep around individually so that we can enable messaging for
     // local users
-    private KlabService service;
+    protected KlabService service;
 
     public ServiceUserScope(UserIdentity user, KlabService service) {
         super(user, true, false);

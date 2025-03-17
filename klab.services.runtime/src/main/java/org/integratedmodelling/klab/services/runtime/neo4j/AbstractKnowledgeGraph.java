@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.services.runtime.neo4j;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -79,7 +79,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
   protected abstract void link(
       RuntimeAsset source,
       RuntimeAsset destination,
-      DigitalTwin.Relationship relationship,
+      GraphModel.Relationship relationship,
       Scope scope,
       Object... additionalProperties);
 

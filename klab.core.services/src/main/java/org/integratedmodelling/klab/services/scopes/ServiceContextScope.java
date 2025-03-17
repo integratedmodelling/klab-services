@@ -7,6 +7,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.utils.Utils;
@@ -14,8 +15,8 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -24,8 +25,8 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -36,6 +37,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.ojalgo.concurrent.Parallelism;
+import org.springframework.web.socket.server.HandshakeHandler;
 
 /**
  * The service-side {@link ContextScope}. Does most of the heavy lifting in the runtime service
@@ -62,6 +64,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       new LinkedHashMap<>();
   protected Map<Observation, Geometry> currentlyObservedGeometries = new HashMap<>();
 
+  private Map<Long, ObservationImpl> resolutionCache = new HashMap<>();
+  private AtomicLong nextResolutionId = new AtomicLong(-1L);
+
   /**
    * The splits for parallelization of scalar computation are assigned on a first-come, first-served
    * basis but must be the same within a context. They are reassigned to undefined (-1) at each
@@ -83,6 +88,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.observationCache = parent.observationCache;
     this.resolutionConstraints.putAll(parent.resolutionConstraints);
     this.currentOperation = parent.currentOperation;
+    this.resolutionCache = parent.resolutionCache;
   }
 
   @Override
@@ -121,6 +127,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.observer = null;
     this.data = Parameters.create();
     this.data.putAll(parent.data);
+    this.resolutionCache = new HashMap<>();
     this.observationCache =
         CacheBuilder.newBuilder()
             .maximumSize(MAX_CACHED_OBSERVATIONS)
@@ -169,6 +176,21 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
    * @return
    */
   public Observation getObservation(long id) {
+    if (id == Observation.UNASSIGNED_ID) {
+      return null;
+    }
+    if (id < Observation.UNASSIGNED_ID) {
+      var ret = resolutionCache.get(id);
+      if (ret == null && !(this.service instanceof RuntimeService)) {
+        var obs = digitalTwin.getKnowledgeGraph().query(Observation.class, this).id(id).peek(this);
+        if (obs.isPresent()) {
+          ret = (ObservationImpl)obs.get();
+          resolutionCache.put(id, ret);
+          return ret;
+        }
+      }
+      return ret;
+    }
     try {
       return observationCache.get(id);
     } catch (ExecutionException e) {
@@ -183,7 +205,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             .getKnowledgeGraph()
             .query(Observation.class, this)
             .target(observation)
-            .along(DigitalTwin.Relationship.HAS_OBSERVER)
+            .along(GraphModel.Relationship.HAS_OBSERVER)
             .run(this);
     return ret.isEmpty() ? null : ret.getFirst();
   }
@@ -243,7 +265,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             operation.store(buf);
             // The HAS_DATA link contains the offsets for the geometry, if any.
             operation.link(
-                observation, buf, DigitalTwin.Relationship.HAS_DATA, "offset", buf.offset());
+                observation, buf, GraphModel.Relationship.HAS_DATA, "offset", buf.offset());
           }
         }
       }
@@ -282,7 +304,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             .getKnowledgeGraph()
             .query(Observation.class, this)
             .target(observation)
-            .along(DigitalTwin.Relationship.HAS_CHILD)
+            .along(GraphModel.Relationship.HAS_CHILD)
             .run(this);
     return ret.isEmpty() ? null : ret.getFirst();
   }
@@ -293,7 +315,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         .getKnowledgeGraph()
         .query(Observation.class, this)
         .source(observation)
-        .along(DigitalTwin.Relationship.HAS_CHILD)
+        .along(GraphModel.Relationship.HAS_CHILD)
         .run(this);
   }
 
@@ -303,7 +325,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         .getKnowledgeGraph()
         .query(Observation.class, this)
         .source(observation)
-        .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
+        .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);
   }
 
@@ -313,7 +335,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         .getKnowledgeGraph()
         .query(Observation.class, this)
         .target(observation)
-        .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
+        .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);
   }
 
@@ -530,7 +552,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         .getKnowledgeGraph()
         .query(Observation.class, this)
         .source(this)
-        .along(DigitalTwin.Relationship.HAS_CHILD)
+        .along(GraphModel.Relationship.HAS_CHILD)
         .run(this);
   }
 
@@ -541,7 +563,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             .getKnowledgeGraph()
             .query(Observation.class, this)
             .source(this)
-            .along(DigitalTwin.Relationship.HAS_CHILD)
+            .along(GraphModel.Relationship.HAS_CHILD)
             .where(
                 "semantics", KnowledgeGraph.Query.Operator.EQUALS, observable.asConcept().getUrn())
             .run(this);
@@ -589,17 +611,20 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   public void registerObservation(Observation observation) {
-    observationCache.put(observation.getId(), observation);
+    if (observation instanceof ObservationImpl observation1) {
+      if (observation.getId() == Observation.UNASSIGNED_ID) {
+        observation1.setId(nextResolutionId.decrementAndGet());
+        resolutionCache.put(observation1.getId(), observation1);
+      }
+      return;
+    }
+    throw new KlabInternalErrorException(
+        "ServiceContextScope::registerObservation: unexpected observation implementation");
   }
 
-  //  /**
-  //   * This is called after submit() so that resolve() can find the observation without querying
-  // the
-  //   * knowledge graph, which is still under a transaction. May not work.
-  //   * @param observation
-  //   */
-  //  public void registerUnresolvedObservation(Observation observation) {
-  //    this.observationCache.put(observation.getId(), observation);
-  //  }
-
+  public void initializeResolution(Observation observation) {
+    nextResolutionId.set(-1L);
+    resolutionCache.clear();
+    registerObservation(observation);
+  }
 }

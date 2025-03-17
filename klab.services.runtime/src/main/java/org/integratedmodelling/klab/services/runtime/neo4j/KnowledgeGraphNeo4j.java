@@ -15,7 +15,7 @@ import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -186,8 +186,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       ret.activity = activity;
 
       store(activity);
-      link(this.activity, activity, DigitalTwin.Relationship.TRIGGERED);
-      link(activity, agent, DigitalTwin.Relationship.BY_AGENT);
+      link(this.activity, activity, GraphModel.Relationship.TRIGGERED);
+      link(activity, agent, GraphModel.Relationship.BY_AGENT);
 
       this.children.add(ret);
 
@@ -203,7 +203,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     public void link(
         RuntimeAsset source,
         RuntimeAsset destination,
-        DigitalTwin.Relationship relationship,
+        GraphModel.Relationship relationship,
         Object... additionalProperties) {
       KnowledgeGraphNeo4j.this.link(
           transaction, source, destination, relationship, scope, additionalProperties);
@@ -212,7 +212,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     @Override
     public void linkToRootNode(
         RuntimeAsset destination,
-        DigitalTwin.Relationship relationship,
+        GraphModel.Relationship relationship,
         Object... additionalProperties) {
       var rootNode =
           switch (destination) {
@@ -341,18 +341,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       if (this.actuator != null) {
         store(actuator);
-        link(this.activity, this.actuator, DigitalTwin.Relationship.HAS_PLAN);
+        link(this.activity, this.actuator, GraphModel.Relationship.HAS_PLAN);
         for (Actuator childActuator : childActuators) {
-          link(this.actuator, childActuator, DigitalTwin.Relationship.HAS_CHILD);
+          link(this.actuator, childActuator, GraphModel.Relationship.HAS_CHILD);
         }
       } else {
         for (Actuator childActuator : childActuators) {
-          link(dataflowNode, childActuator, DigitalTwin.Relationship.HAS_CHILD);
+          link(dataflowNode, childActuator, GraphModel.Relationship.HAS_CHILD);
         }
       }
 
       if (observation != null && this.actuator != null && outcome == Scope.Status.FINISHED) {
-        link(this.activity, observation, DigitalTwin.Relationship.RESOLVED);
+        link(this.activity, observation, GraphModel.Relationship.RESOLVED);
       }
 
       if (parent == null) {
@@ -452,7 +452,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         var affecting = observationCache.getIfPresent(child.getId());
         if (affecting != null) {
           storeCausalLinks(child, affecting);
-          link(affecting, affected, DigitalTwin.Relationship.AFFECTS);
+          link(affecting, affected, GraphModel.Relationship.AFFECTS);
         }
       }
     }
@@ -504,13 +504,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     KnowledgeGraphNeo4j.this.store(activity, scope);
-    KnowledgeGraphNeo4j.this.link(activity, agent, DigitalTwin.Relationship.BY_AGENT, scope);
+    KnowledgeGraphNeo4j.this.link(activity, agent, GraphModel.Relationship.BY_AGENT, scope);
     if (parentActivity != null) {
       KnowledgeGraphNeo4j.this.link(
-          parentActivity, activity, DigitalTwin.Relationship.TRIGGERED, scope);
+              parentActivity, activity, GraphModel.Relationship.TRIGGERED, scope);
     } else {
       KnowledgeGraphNeo4j.this.link(
-          provenanceNode, activity, DigitalTwin.Relationship.HAS_CHILD, scope);
+              provenanceNode, activity, GraphModel.Relationship.HAS_CHILD, scope);
     }
 
     scope.send(
@@ -939,7 +939,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   protected void link(
       RuntimeAsset source,
       RuntimeAsset destination,
-      DigitalTwin.Relationship relationship,
+      GraphModel.Relationship relationship,
       Scope scope,
       Object... additionalProperties) {
 
@@ -966,7 +966,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       Transaction transaction,
       RuntimeAsset source,
       RuntimeAsset destination,
-      DigitalTwin.Relationship relationship,
+      GraphModel.Relationship relationship,
       Scope scope,
       Object... additionalProperties) {
 
@@ -1097,7 +1097,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       };
     }
 
-    if (target instanceof DigitalTwin.Relationship relationship) {
+    if (target instanceof GraphModel.Relationship relationship) {
       return relationship.name();
     }
 

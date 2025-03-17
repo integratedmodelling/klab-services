@@ -360,7 +360,8 @@ public class ResolutionCompiler {
   /**
    * If the runtime contains the observation, return it (in resolved or unresolved status but with a
    * valid ID). Otherwise create one in the geometry that the scope implies, with the unresolved ID,
-   * without submitting it to the runtime.
+   * without submitting it to the runtime. The unresolved ID will tell us that it's an internally
+   * created, provisional observation that the runtime does not have.
    *
    * @param observable
    * @param scope

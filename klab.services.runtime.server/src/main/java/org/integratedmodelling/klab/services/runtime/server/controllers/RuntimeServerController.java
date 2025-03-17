@@ -82,7 +82,7 @@ public class RuntimeServerController {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
       // TODO we may want to cache other RuntimeAssets too
-      if (query.getId() > 0
+      if (query.getId() != Observation.UNASSIGNED_ID
           && contextScope instanceof ServiceContextScope serviceContextScope
           && query.getResultType() == KnowledgeGraphQuery.AssetType.OBSERVATION) {
         var ret = serviceContextScope.getObservation(query.getId());

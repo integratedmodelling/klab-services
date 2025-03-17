@@ -86,7 +86,29 @@ public interface GraphModel {
     SERVICE_SHUTDOWN
   }
 
-  record Link(long sourceId, long targetId, LinkType type) {}
+    /**
+     * The type of relationships in the graph. All relationship carry further information, to be fully
+     * defined.
+     */
+    enum Relationship {
+      HAS_PARENT,
+      AFFECTS,
+      EMERGED_FROM,
+      HAS_OBSERVER,
+      HAS_RELATIONSHIP_TARGET,
+      HAS_PLAN,
+      BY_AGENT,
+      CREATED,
+      HAS_DATAFLOW,
+      HAS_PROVENANCE,
+      HAS_ACTIVITY,
+      HAS_DATA,
+      HAS_CHILD,
+      TRIGGERED,
+      RESOLVED;
+    }
+
+    record Link(long sourceId, long targetId, LinkType type) {}
 
   record Context(long id, long created, String name, Persistence expiration, String user) {
     public static final String ID_FIELD = "id";

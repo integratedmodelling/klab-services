@@ -21,7 +21,9 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
  * Activity (process). Primary processes produce artifacts. Secondary processes (after creation) may
@@ -133,4 +135,41 @@ public interface Activity extends Provenance.Node {
   Outcome getOutcome();
 
   String getStackTrace();
+
+  /**
+   * Create an activity with the passed parameters. Those that should always be passed are the
+   * activity type, a description, and the service that creates it. If a TimeInstant is passed, the
+   * start time will be set (otherwise it will be the time of creation). An {@link Outcome} can also
+   * be passed and a Throwable, which will also set the outcome to failure and the end time to the
+   * current time.
+   *
+   * @param arguments
+   * @return
+   */
+  static ActivityImpl of(Object... arguments) {
+
+    var ret = new ActivityImpl();
+    ret.setStart(System.currentTimeMillis());
+
+    for (Object o : arguments) {
+      if (o instanceof String string) {
+        ret.setDescription(string);
+      } else if (o instanceof TimeInstant timeInstant) {
+        ret.setStart(timeInstant.getMilliseconds());
+      } else if (o instanceof Type type) {
+        ret.setType(type);
+      } else if (o instanceof Outcome outcome) {
+        ret.setOutcome(outcome);
+      } else if (o instanceof Throwable throwable) {
+        ret.setStackTrace(Utils.Exceptions.stackTrace(throwable));
+        ret.setEnd(System.currentTimeMillis());
+        ret.setOutcome(Outcome.FAILURE);
+      } else if (o instanceof KlabService service) {
+        ret.setServiceId(service.serviceId());
+        ret.setServiceName(service.getServiceName());
+        ret.setServiceType(KlabService.Type.classify(service));
+      }
+    }
+    return ret;
+  }
 }
