@@ -69,6 +69,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
     request.getResolutionConstraints().addAll(contextScope.getResolutionConstraints());
     return client
         .withScope(contextScope)
+        .withTimeout(30) // TODO configure or use a better strategy
         .post(ServicesAPI.RESOLVER.RESOLVE_OBSERVATION, request, Dataflow.class);
   }
 

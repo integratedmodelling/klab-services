@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -370,9 +371,13 @@ public class ResolutionCompiler {
   private Observation requireObservation(
       Observable observable, ContextScope scope, Geometry geometry) {
     var ret = scope.getObservation(observable.getSemantics());
-    return (ret == null || ret.isEmpty())
-        ? DigitalTwin.createObservation(scope, observable, geometry)
-        : ret;
+    if (ret == null || ret.isEmpty()) {
+      ret = DigitalTwin.createObservation(scope, observable, geometry);
+      if (scope instanceof ServiceContextScope serviceContextScope) {
+        serviceContextScope.registerObservation(ret);
+      }
+    }
+    return ret;
     //      return DigitalTwin.createObservation(scope, observable, geometry);
     //      var id = scope.getService(RuntimeService.class).submit(newObs, scope);
     //      if (id >= 0) {

@@ -1498,6 +1498,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   public <T extends RuntimeAsset> List<T> query(
       Query<T> graphQuery, Class<T> resultClass, Scope scope) {
     if (graphQuery instanceof KnowledgeGraphQuery<T> knowledgeGraphQuery) {
+      try {
       var statement = compileQuery(knowledgeGraphQuery, resultClass, scope);
       if (statement == null) {
         return List.of();
@@ -1505,6 +1506,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       var queryCode = statement.build().getCypher();
       System.out.println("QUERY THIS: " + queryCode);
       return adapt(query(queryCode, null, scope), resultClass, scope);
+      } catch (Throwable t) {
+        System.out.println("DIO MAIALE");
+      }
     }
     throw new KlabUnimplementedException("Not ready to compile arbitrary query implementations");
   }

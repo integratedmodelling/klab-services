@@ -28,6 +28,7 @@ import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpGet;
@@ -472,6 +473,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       private final Map<String, List<String>> responseHeaders = new HashMap<>();
       private String forcedAcceptHeader = null;
       private String forcedContentHeader = null;
+      private int timeoutSeconds = 10;
 
       public void setAuthorization(String token) {
         this.authorization = token;
@@ -567,6 +569,18 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       public Client withScope(String scopeId) {
         var ret = new Client(this);
         ret.headers.put(ServicesAPI.SCOPE_HEADER, scopeId);
+        return ret;
+      }
+
+      /**
+       * Modify the default timeout.
+       *
+       * @param timeoutSeconds the new timeout in seconds
+       * @return
+       */
+      public Client withTimeout(int timeoutSeconds) {
+        var ret = new Client(this);
+        ret.timeoutSeconds = timeoutSeconds;
         return ret;
       }
 
@@ -802,7 +816,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           var requestBuilder =
               HttpRequest.newBuilder()
                   .version(HttpClient.Version.HTTP_1_1)
-                  .timeout(Duration.ofSeconds(10))
+                  .timeout(Duration.ofSeconds(timeoutSeconds))
                   .uri(uriBuilder.build());
           if (forcedAcceptHeader != null) {
             requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
@@ -840,6 +854,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return parseResponse(response.body(), resultClass);
           } else {
             var log = parseResponse(response.body(), Map.class);
+            System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
+            MapUtils.debugPrint(System.out, "Server error", log);
+            System.out.println("============ END OF REPORT  ==============");
             // TODO do something with the error response (which should be better and
             //  contain a stack trace)
           }
@@ -869,7 +886,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           var requestBuilder =
               HttpRequest.newBuilder()
                   .version(HttpClient.Version.HTTP_1_1)
-                  .timeout(Duration.ofSeconds(10))
+                  .timeout(Duration.ofSeconds(timeoutSeconds))
                   .uri(URI.create(uri + apiCall + encodeParameters(params)));
           if (forcedAcceptHeader != null) {
             requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
@@ -1044,6 +1061,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 client.send(
                     requestBuilder
                         .uri(URI.create(uri + apiCall + encodeParameters(params)))
+                        .timeout(Duration.ofSeconds(timeoutSeconds))
                         .build(),
                     HttpResponse.BodyHandlers.ofString());
 
@@ -1091,7 +1109,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
           var response =
               client.send(
-                  requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(),
+                  requestBuilder
+                      .uri(URI.create(uri + apiCall + encodeParameters(params)))
+                      .timeout(Duration.ofSeconds(timeoutSeconds))
+                      .build(),
                   HttpResponse.BodyHandlers.ofString());
 
           if (response != null && response.statusCode() == 200) {

@@ -135,9 +135,18 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                 new CacheLoader<Long, Observation>() {
                   @Override
                   public Observation load(Long key) throws Exception {
-                    return digitalTwin
-                        .getKnowledgeGraph()
-                        .get(key, ServiceContextScope.this, Observation.class);
+                    var ret =
+                        digitalTwin
+                            .getKnowledgeGraph()
+                            .get(key, ServiceContextScope.this, Observation.class);
+                    if (ret == null) {
+                      System.out.println(
+                          "CATXO null observation "
+                              + key
+                              + ": I am "
+                              + KlabService.Type.classify(service));
+                    }
+                    return ret;
                   }
                 });
     /*
@@ -184,7 +193,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       if (ret == null && !(this.service instanceof RuntimeService)) {
         var obs = digitalTwin.getKnowledgeGraph().query(Observation.class, this).id(id).peek(this);
         if (obs.isPresent()) {
-          ret = (ObservationImpl)obs.get();
+          ret = (ObservationImpl) obs.get();
           resolutionCache.put(id, ret);
           return ret;
         }
@@ -344,16 +353,17 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   //    return getService(RuntimeService.class).retrieveAssets(this, resultClass, queryData);
   //  }
 
-  @Override
-  public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
-      KnowledgeGraph.Query<T> knowledgeGraphQuery) {
-    if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> qc) {
-      return digitalTwin
-          .getKnowledgeGraph()
-          .query(knowledgeGraphQuery, (Class<T>) qc.getResultType().getAssetClass(), this);
-    }
-    throw new KlabUnimplementedException("Not ready to compile arbitrary KG query implementations");
-  }
+  //  @Override
+  //  public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
+  //      KnowledgeGraph.Query<T> knowledgeGraphQuery) {
+  //    if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> qc) {
+  //      return digitalTwin
+  //          .getKnowledgeGraph()
+  //          .query(knowledgeGraphQuery, (Class<T>) qc.getResultType().getAssetClass(), this);
+  //    }
+  //    throw new KlabUnimplementedException("Not ready to compile arbitrary KG query
+  // implementations");
+  //  }
 
   @Override
   public void runTransitions() {
@@ -558,6 +568,20 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Observation getObservation(Semantics observable) {
+
+    if ((contextObservation != null && contextObservation.getId() < Observation.UNASSIGNED_ID)
+        || observer != null && (observer.getId() < Observation.UNASSIGNED_ID)) {
+      // This situation happens during uncommitted resolution chains and would mess up the knowledge
+      // graph at the runtime side.
+      for (var obs : resolutionCache.values()) {
+        // TODO check if this is good enough or we need an additional map
+        if (obs.getObservable().equals(observable)) {
+          return obs;
+        }
+      }
+      return null;
+    }
+
     var ret =
         digitalTwin
             .getKnowledgeGraph()

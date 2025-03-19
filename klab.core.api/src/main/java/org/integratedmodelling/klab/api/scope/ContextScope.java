@@ -322,7 +322,7 @@ public interface ContextScope extends SessionScope {
 //   */
 //  <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData);
 
-  <T extends RuntimeAsset> List<T> queryKnowledgeGraph(KnowledgeGraph.Query<T> knowledgeGraphQuery);
+//  <T extends RuntimeAsset> List<T> queryKnowledgeGraph(KnowledgeGraph.Query<T> knowledgeGraphQuery);
 
   /**
    * Return the parent observation of the passed observation. The runtime context maintains the

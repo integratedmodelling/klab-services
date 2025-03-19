@@ -11,31 +11,41 @@ import org.integratedmodelling.klab.services.application.security.EngineAuthoriz
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.resolver.server.ResolverServer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 @RestController
 public class ResolverController {
 
-    @Autowired
-    private ResolverServer resolverServer;
+  @Autowired private ResolverServer resolverServer;
 
-    @Autowired
-    private ServiceAuthorizationManager authenticationManager;
+  @Autowired private ServiceAuthorizationManager authenticationManager;
 
-    @PostMapping(ServicesAPI.RESOLVER.RESOLVE_OBSERVATION)
-    public @ResponseBody Dataflow resolveObservation(@RequestBody ResolutionRequest resolutionRequest,
-                                                                  Principal principal) {
-        if (principal instanceof EngineAuthorization authorization) {
-            var contextScope =
-                    authorization.getScope(ContextScope.class).withResolutionConstraints(resolutionRequest.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
-            return resolverServer.klabService().resolve(resolutionRequest.getObservation(), contextScope);
-        }
-        throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  @Async
+  @PostMapping(ServicesAPI.RESOLVER.RESOLVE_OBSERVATION)
+  public @ResponseBody Future<Dataflow> resolveObservation(
+      @RequestBody ResolutionRequest resolutionRequest, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var contextScope =
+          authorization
+              .getScope(ContextScope.class)
+              .withResolutionConstraints(
+                  resolutionRequest
+                      .getResolutionConstraints()
+                      .toArray(new ResolutionConstraint[0]));
+      return CompletableFuture.supplyAsync(
+          () ->
+              resolverServer
+                  .klabService()
+                  .resolve(resolutionRequest.getObservation(), contextScope));
     }
-
+    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
 }

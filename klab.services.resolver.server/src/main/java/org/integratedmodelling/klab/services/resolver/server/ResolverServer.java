@@ -8,10 +8,12 @@ import org.integratedmodelling.klab.services.application.ServiceNetworkedInstanc
 import org.integratedmodelling.klab.services.resolver.ResolverService;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@EnableAsync
 @Component
 // TODO remove the argument when all gson dependencies are the same (never)
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration.class})
