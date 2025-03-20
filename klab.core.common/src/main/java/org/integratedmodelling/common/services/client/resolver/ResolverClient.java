@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 public class ResolverClient extends ServiceClient implements Resolver {
@@ -63,14 +64,13 @@ public class ResolverClient extends ServiceClient implements Resolver {
   }
 
   @Override
-  public Dataflow resolve(Observation observation, ContextScope contextScope) {
+  public CompletableFuture<Dataflow> resolve(Observation observation, ContextScope contextScope) {
     ResolutionRequest request = new ResolutionRequest();
     request.setObservation(observation);
     request.getResolutionConstraints().addAll(contextScope.getResolutionConstraints());
     return client
         .withScope(contextScope)
-        .withTimeout(30) // TODO configure or use a better strategy
-        .post(ServicesAPI.RESOLVER.RESOLVE_OBSERVATION, request, Dataflow.class);
+        .postAsync(ServicesAPI.RESOLVER.RESOLVE_OBSERVATION, request, Dataflow.class);
   }
 
   @Override

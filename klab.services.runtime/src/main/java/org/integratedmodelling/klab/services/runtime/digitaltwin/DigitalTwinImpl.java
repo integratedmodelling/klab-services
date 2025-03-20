@@ -75,6 +75,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
 
       /*
+      TODO!
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
        */
 
@@ -86,7 +87,6 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.failures.add(compilationError);
       return this;
     }
-
   }
 
   public DigitalTwinImpl(

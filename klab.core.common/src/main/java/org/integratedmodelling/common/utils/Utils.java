@@ -22,6 +22,8 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import javax.swing.*;
 import org.apache.avro.io.DecoderFactory;
@@ -872,6 +874,86 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         return null;
       }
 
+      /**
+       * GET helper that sets all headers and automatically handles JSON marshalling.
+       *
+       * @param apiRequest
+       * @param resultClass
+       * @param <T>
+       * @return
+       */
+      public <T> CompletableFuture<T> postAsync(
+              String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+
+        var options = new Options();
+        var params = makeKeyMap(options, parameters);
+        var apiCall = substituteTemplateParameters(apiRequest, params);
+
+        responseHeaders.clear();
+
+        try {
+          var payloadText = payload instanceof String ? (String) payload : Json.asString(payload);
+
+          var uriBuilder = new URIBuilder(uri + apiCall);
+          for (String key : params.keySet()) {
+            if (params.get(key) != null) {
+              uriBuilder = uriBuilder.addParameter(key, params.get(key).toString());
+            }
+          }
+
+          var requestBuilder =
+                  HttpRequest.newBuilder()
+                             .version(HttpClient.Version.HTTP_1_1)
+                             .timeout(Duration.ofSeconds(timeoutSeconds))
+                             .uri(uriBuilder.build());
+          if (forcedAcceptHeader != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+          } else {
+            requestBuilder =
+                    requestBuilder.header(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass));
+          }
+
+          if (forcedContentHeader != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.CONTENT_TYPE, forcedContentHeader);
+          } else {
+            requestBuilder =
+                    requestBuilder.header(
+                            HttpHeaders.CONTENT_TYPE,
+                            payload instanceof String
+                            ? MediaType.PLAIN_TEXT_UTF_8.toString()
+                            : MediaType.JSON_UTF_8.toString());
+          }
+
+          if (authorization != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+          }
+
+          for (String header : headers.keySet()) {
+            requestBuilder = requestBuilder.header(header, headers.get(header));
+          }
+
+          var request =
+                  requestBuilder.POST(HttpRequest.BodyPublishers.ofString(payloadText)).build();
+
+          return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+                  response -> {
+                    if (response.statusCode() == 200) {
+                      parseHeaders(response);
+                      return (T)parseResponse(response.body(), resultClass);
+                    } else {
+                      var log = parseResponse(response.body(), Map.class);
+                      System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
+                      MapUtils.debugPrint(System.out, "Server error", log);
+                      System.out.println("============ END OF REPORT  ==============");
+                      // TODO do something with the error response (which should be better and
+                      //  contain a stack trace)
+                    }
+                    return null;
+                  });
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
       public <T> List<T> postCollection(
           String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
 

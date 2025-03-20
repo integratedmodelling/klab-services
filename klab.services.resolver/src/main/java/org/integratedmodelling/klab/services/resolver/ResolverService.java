@@ -44,6 +44,7 @@ import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 public class ResolverService extends BaseService implements Resolver {
@@ -145,12 +146,15 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   @Override
-  public Dataflow resolve(Observation observation, ContextScope contextScope) {
-    var ret = resolutionCompiler.resolve(observation, contextScope);
-    if (!ret.isEmpty()) {
-      return new DataflowCompiler(observation, ret, contextScope).compile();
-    }
-    return Dataflow.empty();
+  public CompletableFuture<Dataflow> resolve(Observation observation, ContextScope contextScope) {
+    return CompletableFuture.supplyAsync(
+        () -> {
+          var ret = resolutionCompiler.resolve(observation, contextScope);
+          if (!ret.isEmpty()) {
+            return new DataflowCompiler(observation, ret, contextScope).compile();
+          }
+          return Dataflow.empty();
+        });
   }
 
   @Override
@@ -296,8 +300,7 @@ public class ResolverService extends BaseService implements Resolver {
     return ret.toString();
   }
 
-  private StringBuffer encodeResources(
-      Dataflow dataflow, Map<String, String> resources) {
+  private StringBuffer encodeResources(Dataflow dataflow, Map<String, String> resources) {
     StringBuffer ret = new StringBuffer(1024);
     // TODO
     return ret;

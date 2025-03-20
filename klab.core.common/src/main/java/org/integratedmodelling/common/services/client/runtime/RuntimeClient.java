@@ -195,38 +195,39 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     resolutionRequest.setObservation(observation);
     resolutionRequest.setAgentName(Provenance.getAgent(scope).getName());
     resolutionRequest.setResolutionConstraints(scope.getResolutionConstraints());
-    var result =
-        client
-            .withScope(scope)
-            .post(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Observation.class);
+    return client
+        .withScope(scope)
+        .postAsync(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Observation.class);
 
-    if (result.getId() > 0) {
-      return CompletableFuture.completedFuture(observation);
-    }
-
-    /*
-    Set up the task to track the messages. We do this before invoking the method so it's guaranteed to
-    not return before we can notice.
-     */
-    return scope.trackMessages(
-        Message.match(
-                Message.MessageClass.ObservationLifecycle,
-                Message.MessageType.ResolutionAborted,
-                Message.MessageType.ResolutionSuccessful)
-            .when((message) -> message.getPayload(Observation.class).getId() == result.getId()),
-        (message) -> {
-          var payload = message.getPayload(Observation.class);
-          if (message.getMessageType() == Message.MessageType.ResolutionSuccessful) {
-            scope.info(
-                "Resolution of "
-                    + payload
-                    + " successful with coverage "
-                    + payload.getResolvedCoverage());
-            return payload;
-          }
-          scope.info("Resolution of " + observation + " failed");
-          return result;
-        });
+    //    if (result.getId() > 0) {
+    //      return CompletableFuture.completedFuture(observation);
+    //    }
+    //
+    //    /*
+    //    Set up the task to track the messages. We do this before invoking the method so it's
+    // guaranteed to
+    //    not return before we can notice.
+    //     */
+    //    return scope.trackMessages(
+    //        Message.match(
+    //                Message.MessageClass.ObservationLifecycle,
+    //                Message.MessageType.ResolutionAborted,
+    //                Message.MessageType.ResolutionSuccessful)
+    //            .when((message) -> message.getPayload(Observation.class).getId() ==
+    // result.getId()),
+    //        (message) -> {
+    //          var payload = message.getPayload(Observation.class);
+    //          if (message.getMessageType() == Message.MessageType.ResolutionSuccessful) {
+    //            scope.info(
+    //                "Resolution of "
+    //                    + payload
+    //                    + " successful with coverage "
+    //                    + payload.getResolvedCoverage());
+    //            return payload;
+    //          }
+    //          scope.info("Resolution of " + observation + " failed");
+    //          return result;
+    //        });
   }
 
   @Override
@@ -289,31 +290,32 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
     throw new KlabIllegalStateException("Knowledge graph query using unexpected implementation");
   }
-//
-//  @Override
-//  public <T extends RuntimeAsset> List<T> retrieveAssets(
-//      ContextScope contextScope, Class<T> assetClass, Object... queryParameters) {
-//    AssetRequest request = new AssetRequest();
-//    RuntimeAsset.Type type = RuntimeAsset.Type.forClass(assetClass);
-//
-//    for (var object : queryParameters) {
-//      switch (object) {
-//        case Observable observable -> request.setObservable(observable);
-//        case Observation observation -> request.setContextObservation(observation);
-//        case Long id -> request.setId(id);
-//        case String string -> request.setName(string);
-//        case Geometry geometry -> request.setGeometry(geometry);
-//        case Metadata metadata -> request.getMetadata().putAll(metadata);
-//        case RuntimeAsset.Type assetType -> type = assetType;
-//        default -> throw new KlabIllegalStateException("Unexpected value: " + object);
-//      }
-//    }
-//    request.setKnowledgeClass(type);
-//
-//    return client
-//        .withScope(contextScope)
-//        .postCollection(ServicesAPI.RUNTIME.RETRIEVE_ASSET, request, assetClass);
-//  }
+
+  //
+  //  @Override
+  //  public <T extends RuntimeAsset> List<T> retrieveAssets(
+  //      ContextScope contextScope, Class<T> assetClass, Object... queryParameters) {
+  //    AssetRequest request = new AssetRequest();
+  //    RuntimeAsset.Type type = RuntimeAsset.Type.forClass(assetClass);
+  //
+  //    for (var object : queryParameters) {
+  //      switch (object) {
+  //        case Observable observable -> request.setObservable(observable);
+  //        case Observation observation -> request.setContextObservation(observation);
+  //        case Long id -> request.setId(id);
+  //        case String string -> request.setName(string);
+  //        case Geometry geometry -> request.setGeometry(geometry);
+  //        case Metadata metadata -> request.getMetadata().putAll(metadata);
+  //        case RuntimeAsset.Type assetType -> type = assetType;
+  //        default -> throw new KlabIllegalStateException("Unexpected value: " + object);
+  //      }
+  //    }
+  //    request.setKnowledgeClass(type);
+  //
+  //    return client
+  //        .withScope(contextScope)
+  //        .postCollection(ServicesAPI.RUNTIME.RETRIEVE_ASSET, request, assetClass);
+  //  }
 
   @Override
   public ResourceSet resolveContextualizables(

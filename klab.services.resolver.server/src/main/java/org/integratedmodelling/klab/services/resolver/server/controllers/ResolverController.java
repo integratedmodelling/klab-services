@@ -40,11 +40,7 @@ public class ResolverController {
                   resolutionRequest
                       .getResolutionConstraints()
                       .toArray(new ResolutionConstraint[0]));
-      return CompletableFuture.supplyAsync(
-          () ->
-              resolverServer
-                  .klabService()
-                  .resolve(resolutionRequest.getObservation(), contextScope));
+      return resolverServer.klabService().resolve(resolutionRequest.getObservation(), contextScope);
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }

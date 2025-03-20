@@ -98,17 +98,12 @@ public class RuntimeServerController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
-  @Async
   @PostMapping(ServicesAPI.RUNTIME.RESOLVE_CONTEXTUALIZERS)
-  public @ResponseBody Future<ResourceSet> resolveContextualizers(
+  public @ResponseBody ResourceSet resolveContextualizers(
       @RequestBody List<Contextualizable> contextualizables, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
-      return CompletableFuture.supplyAsync(
-          () ->
-              runtimeService
-                  .klabService()
-                  .resolveContextualizables(contextualizables, contextScope));
+      return runtimeService.klabService().resolveContextualizables(contextualizables, contextScope);
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
