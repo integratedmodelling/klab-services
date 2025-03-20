@@ -22,8 +22,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import javax.swing.*;
 import org.apache.avro.io.DecoderFactory;
@@ -50,10 +49,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
-import org.integratedmodelling.klab.api.exceptions.KlabIOException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -68,6 +64,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.objects.JobStatus;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.Instance;
 import org.jgrapht.Graph;
@@ -460,6 +457,72 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
   }
 
   public static class Http {
+
+    /**
+     * A Future for an object being computed at service side and complying with the job management
+     * system in all k.LAB services. Despite all attempts there's no way to avoid polling.
+     *
+     * <p>The polling is more frequent at the beginning, then becomes more sparse to avoid too many
+     * service calls when the remote job is long-running. No response from server will be attempted
+     * 3 times before reporting failure.
+     *
+     * @param <T>
+     */
+    public static class PollingFuture<T> extends CompletableFuture<T> {
+
+      private final Client client;
+      private final ScheduledExecutorService scheduler =
+          Executors.newSingleThreadScheduledExecutor();
+      private final Class<T> resultClass;
+      private int totalDelay = 0;
+      private int currentDelay = 500;
+      private int noResponseCount = 0;
+
+      /**
+       * Delay for the next poll cycle in millseconds
+       *
+       * @param previousDelay
+       * @return
+       */
+      private int nextDelay(int previousDelay) {
+        // TODO
+        return 500;
+      }
+
+      public PollingFuture(Client client, Class<T> resultClass, long id) {
+        // start polling
+        this.client = client;
+        this.resultClass = resultClass;
+        scheduler.schedule(this::poll, nextDelay(currentDelay), TimeUnit.MILLISECONDS);
+      }
+
+      public void poll() {
+        // if not done, reschedule, else complete. If exception (remote or local), complete
+        // exceptionally.
+        var status = client.get(ServicesAPI.JOBS.STATUS, JobStatus.class);
+        if (status == null) {
+          // try 3 times
+        } else if (status.getStatus() == Scope.Status.FINISHED) {
+          var result = client.get(ServicesAPI.JOBS.RETRIEVE, resultClass);
+          if (result != null) {
+            complete(result);
+          } else {
+            completeExceptionally(
+                new KlabServiceAccessException(
+                    status.getStackTrace() == null ? "Null result" : status.getStackTrace()));
+          }
+        } else if (status.getStatus() == Scope.Status.ABORTED) {
+          completeExceptionally(
+              new KlabServiceAccessException(
+                  status.getStackTrace() == null ? "Server error" : status.getStackTrace()));
+        } else if (status.getStatus() == Scope.Status.INTERRUPTED) {
+
+        } else {
+          // schedule the next step
+          scheduler.schedule(this::poll, nextDelay(currentDelay), TimeUnit.MILLISECONDS);
+        }
+      }
+    }
 
     /**
      * HTTP client instrumented for k.LAB. Thread safe <em>except</em> when the response headers are
@@ -883,7 +946,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
        * @return
        */
       public <T> CompletableFuture<T> postAsync(
-              String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+          String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
 
         var options = new Options();
         var params = makeKeyMap(options, parameters);
@@ -902,26 +965,26 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
 
           var requestBuilder =
-                  HttpRequest.newBuilder()
-                             .version(HttpClient.Version.HTTP_1_1)
-                             .timeout(Duration.ofSeconds(timeoutSeconds))
-                             .uri(uriBuilder.build());
+              HttpRequest.newBuilder()
+                  .version(HttpClient.Version.HTTP_1_1)
+                  .timeout(Duration.ofSeconds(timeoutSeconds))
+                  .uri(uriBuilder.build());
           if (forcedAcceptHeader != null) {
             requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
           } else {
             requestBuilder =
-                    requestBuilder.header(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass));
+                requestBuilder.header(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass));
           }
 
           if (forcedContentHeader != null) {
             requestBuilder = requestBuilder.header(HttpHeaders.CONTENT_TYPE, forcedContentHeader);
           } else {
             requestBuilder =
-                    requestBuilder.header(
-                            HttpHeaders.CONTENT_TYPE,
-                            payload instanceof String
-                            ? MediaType.PLAIN_TEXT_UTF_8.toString()
-                            : MediaType.JSON_UTF_8.toString());
+                requestBuilder.header(
+                    HttpHeaders.CONTENT_TYPE,
+                    payload instanceof String
+                        ? MediaType.PLAIN_TEXT_UTF_8.toString()
+                        : MediaType.JSON_UTF_8.toString());
           }
 
           if (authorization != null) {
@@ -933,16 +996,19 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
 
           var request =
-                  requestBuilder.POST(HttpRequest.BodyPublishers.ofString(payloadText)).build();
+              requestBuilder.POST(HttpRequest.BodyPublishers.ofString(payloadText)).build();
 
-          return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+          return client
+              .sendAsync(request, HttpResponse.BodyHandlers.ofString())
+              .thenApply(
                   response -> {
                     if (response.statusCode() == 200) {
                       parseHeaders(response);
-                      return (T)parseResponse(response.body(), resultClass);
+                      return (T) parseResponse(response.body(), resultClass);
                     } else {
                       var log = parseResponse(response.body(), Map.class);
-                      System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
+                      System.out.println(
+                          "============ POST " + apiCall + " EXCEPTION REPORT ==============");
                       MapUtils.debugPrint(System.out, "Server error", log);
                       System.out.println("============ END OF REPORT  ==============");
                       // TODO do something with the error response (which should be better and
@@ -954,6 +1020,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           throw new RuntimeException(e);
         }
       }
+
       public <T> List<T> postCollection(
           String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
 

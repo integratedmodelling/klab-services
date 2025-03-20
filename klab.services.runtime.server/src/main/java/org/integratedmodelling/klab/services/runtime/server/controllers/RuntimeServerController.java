@@ -65,7 +65,9 @@ public class RuntimeServerController {
         var scope =
             serviceContextScope.withResolutionConstraints(
                 ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, agent));
-        return runtimeService.klabService().submit(resolutionRequest.getObservation(), scope);
+        var ret = runtimeService.klabService().submit(resolutionRequest.getObservation(), scope);
+        System.out.println("DIO POLLO " + (ret.isCompletedExceptionally() ? "FOCK" : "POP"));
+        return ret;
       }
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
@@ -103,7 +105,8 @@ public class RuntimeServerController {
       @RequestBody List<Contextualizable> contextualizables, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
-      return runtimeService.klabService().resolveContextualizables(contextualizables, contextScope);
+      var ret = runtimeService.klabService().resolveContextualizables(contextualizables, contextScope);
+      return ret;
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }

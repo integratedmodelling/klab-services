@@ -426,6 +426,12 @@ public class RuntimeService extends BaseService
 
       var resolver = scope.getService(Resolver.class);
 
+      try {
+        var diostruzzo = resolver.resolve(observation, scope).join();
+        System.out.println("DIO STRUZZO " + diostruzzo);
+      } catch (Throwable t) {
+        System.out.println("PUTAZZA");
+      }
       return resolver
           /* resolve asynchronously */
           .resolve(observation, scope)
@@ -435,12 +441,14 @@ public class RuntimeService extends BaseService
                 /*
                  * Compile an atomic transaction from the dataflow, adding new observations if the digital twin does not have them.
                  */
+                System.out.println("ECCONE UNO");
                 compile(observation, dataflow, serviceContextScope).commit();
                 return observation;
               })
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
               o -> {
+                System.out.println("ECCONE DUE");
                 scope.getDigitalTwin().getScheduler().submit(o);
                 return o;
               });

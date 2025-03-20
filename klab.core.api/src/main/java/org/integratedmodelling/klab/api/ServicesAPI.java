@@ -125,6 +125,16 @@ public interface ServicesAPI {
     String CREDENTIALS = "/credentials";
   }
 
+  /**
+   * The jobs system is managed through the submission of completable futures indexed by an ID whose
+   * status can be polled and eventual results retrieved through the API.
+   */
+  interface JOBS {
+    String STATUS = "/jobs/status";
+    String RETRIEVE = "/jobs/retrieve";
+    String CANCEL = "/jobs/cancel";
+  }
+
   //    interface SCOPE {
   //
   ////        /**
@@ -394,13 +404,13 @@ public interface ServicesAPI {
     //     */
     //    String START_RESOLUTION = "/startResolution";
 
-//    /**
-//     * POST endpoint to retrieve an asset from the digital twin's knowledge graph based on its
-//     * internal ID
-//     *
-//     * @deprecated use the query endpoint
-//     */
-//    String RETRIEVE_ASSET_BY_ID = "/asset";
+    //    /**
+    //     * POST endpoint to retrieve an asset from the digital twin's knowledge graph based on its
+    //     * internal ID
+    //     *
+    //     * @deprecated use the query endpoint
+    //     */
+    //    String RETRIEVE_ASSET_BY_ID = "/asset";
 
     /** Structured Knowledge Graph query */
     String QUERY = "/query";
