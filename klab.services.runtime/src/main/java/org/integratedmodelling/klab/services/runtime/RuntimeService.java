@@ -326,22 +326,6 @@ public class RuntimeService extends BaseService
     throw new KlabIllegalStateException("Cannot determine the requesting agent from scope");
   }
 
-  //  private Activity getInitializationActivity(Observation observation, ContextScope scope) {
-  //    var ret = Provenance.getActivity(scope);
-  //    if (ret != null) {
-  //      return ret;
-  //    }
-  //    var activities =
-  //        scope
-  //            .getDigitalTwin()
-  //            .getKnowledgeGraph()
-  //            .get(scope, Activity.class, Activity.Type.INITIALIZATION);
-  //    if (activities.size() == 1) {
-  //      return activities.getFirst();
-  //    }
-  //    throw new KlabInternalErrorException("cannot locate the context initialization activity");
-  //  }
-
   /**
    * Return the configured computation builder for the passed observation and scope. This may
    * eventually analyze the scope and the dataflow to assess which kind of computation fits the
@@ -427,7 +411,7 @@ public class RuntimeService extends BaseService
       var resolver = scope.getService(Resolver.class);
 
       try {
-        var diostruzzo = resolver.resolve(observation, scope).join();
+        var diostruzzo = resolver.resolve(observation, scope).get();
         System.out.println("DIO STRUZZO " + diostruzzo);
       } catch (Throwable t) {
         System.out.println("PUTAZZA");
