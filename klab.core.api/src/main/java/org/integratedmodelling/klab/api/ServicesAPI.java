@@ -127,44 +127,14 @@ public interface ServicesAPI {
 
   /**
    * The jobs system is managed through the submission of completable futures indexed by an ID whose
-   * status can be polled and eventual results retrieved through the API.
+   * status can be polled and eventual results retrieved through the API. Each session has a job
+   * manager.
    */
   interface JOBS {
-    String STATUS = "/jobs/status";
-    String RETRIEVE = "/jobs/retrieve";
-    String CANCEL = "/jobs/cancel";
+    String STATUS = "/jobs/status/{id}";
+    String RETRIEVE = "/jobs/retrieve/{id}";
+    String CANCEL = "/jobs/cancel/{id}";
   }
-
-  //    interface SCOPE {
-  //
-  ////        /**
-  ////         * Create a new scope of the passed type as a precondition for creation of a client
-  // scope.
-  // Returns the
-  ////         * scope ID and any other data such as quotas or permissions, possibly including a
-  // Websockets or other
-  ////         * channel info for duplex communication.
-  ////         */
-  ////        String CREATE = "/scope/create/{scopeType}";
-  //
-  ////        /**
-  ////         * Register an existing scope with a service so that the service can associate it to
-  // successive
-  ////         * requests and potentially open a communication channel for pairing. Implied in
-  // CREATE as
-  // well, but
-  ////         * only for cases when the scope is already fully functional at the client side. May
-  // respond with
-  ////         * channel details for duplex communication.
-  ////         */
-  ////        String REGISTER = "/scope/register/{scopeType}/{scopeId}";
-  //
-
-  /// /        /** /         * Dispose of a previously created or registered scope. /         */ /
-  // String
-  /// DISPOSE = "/scope/dispose/{scopeId}";
-  //
-  //    }
 
   interface ENGINE {}
 

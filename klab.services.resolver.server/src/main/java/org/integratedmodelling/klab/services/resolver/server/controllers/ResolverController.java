@@ -1,25 +1,20 @@
 package org.integratedmodelling.klab.services.resolver.server.controllers;
 
+import java.security.Principal;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.resolver.server.ResolverServer;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.security.Principal;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 @RestController
 public class ResolverController {
@@ -28,9 +23,8 @@ public class ResolverController {
 
   @Autowired private ServiceAuthorizationManager authenticationManager;
 
-  @Async
   @PostMapping(ServicesAPI.RESOLVER.RESOLVE_OBSERVATION)
-  public @ResponseBody Future<Dataflow> resolveObservation(
+  public @ResponseBody long resolveObservation(
       @RequestBody ResolutionRequest resolutionRequest, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope =
@@ -40,7 +34,11 @@ public class ResolverController {
                   resolutionRequest
                       .getResolutionConstraints()
                       .toArray(new ResolutionConstraint[0]));
-      return resolverServer.klabService().resolve(resolutionRequest.getObservation(), contextScope);
+      if (contextScope instanceof ServiceContextScope serviceContextScope) {
+        var job =
+            resolverServer.klabService().resolve(resolutionRequest.getObservation(), contextScope);
+        return serviceContextScope.getJobManager().submit(job);
+      }
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }

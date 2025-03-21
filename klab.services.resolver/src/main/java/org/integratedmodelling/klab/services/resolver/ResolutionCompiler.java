@@ -146,10 +146,6 @@ public class ResolutionCompiler {
           var contextualizedScope =
               contextualizeScope(scope, operation.getObservable(), scaleToCover, graph);
 
-          if (contextualizedScope == null) {
-            return ResolutionGraph.empty();
-          }
-
           var observableResolution =
               resolve(
                   operation.getObservable(),
@@ -167,10 +163,6 @@ public class ResolutionCompiler {
           List<ResolutionGraph> modelGraphs = new ArrayList<>();
           var contextualizedScope =
               contextualizeScope(scope, operation.getObservable(), scaleToCover, graph);
-
-          if (contextualizedScope == null) {
-            return ResolutionGraph.empty();
-          }
 
           for (Model model :
               queryModels(

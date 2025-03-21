@@ -89,6 +89,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.resolutionConstraints.putAll(parent.resolutionConstraints);
     this.currentOperation = parent.currentOperation;
     this.resolutionCache = parent.resolutionCache;
+    this.jobManager = parent.jobManager;
   }
 
   @Override
@@ -128,6 +129,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.data = Parameters.create();
     this.data.putAll(parent.data);
     this.resolutionCache = new HashMap<>();
+    this.jobManager = parent.jobManager;
     this.observationCache =
         CacheBuilder.newBuilder()
             .maximumSize(MAX_CACHED_OBSERVATIONS)

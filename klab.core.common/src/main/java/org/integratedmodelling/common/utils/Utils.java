@@ -475,35 +475,42 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           Executors.newSingleThreadScheduledExecutor();
       private final Class<T> resultClass;
       private int totalDelay = 0;
-      private int currentDelay = 500;
+      private int currentDelay = 1000;
       private int noResponseCount = 0;
+      private final long id;
 
       /**
-       * Delay for the next poll cycle in millseconds
+       * Delay for the next poll cycle in milliseconds
        *
        * @param previousDelay
        * @return
        */
       private int nextDelay(int previousDelay) {
         // TODO
-        return 500;
+        return currentDelay;
       }
 
       public PollingFuture(Client client, Class<T> resultClass, long id) {
         // start polling
+        this.id = id;
         this.client = client;
         this.resultClass = resultClass;
         scheduler.schedule(this::poll, nextDelay(currentDelay), TimeUnit.MILLISECONDS);
       }
 
+      @Override
+      public boolean cancel(boolean b) {
+        return super.cancel(client.get(ServicesAPI.JOBS.CANCEL, Boolean.class, "id", id));
+      }
+
       public void poll() {
         // if not done, reschedule, else complete. If exception (remote or local), complete
         // exceptionally.
-        var status = client.get(ServicesAPI.JOBS.STATUS, JobStatus.class);
+        var status = client.get(ServicesAPI.JOBS.STATUS, JobStatus.class, "id", id);
         if (status == null) {
           // try 3 times
         } else if (status.getStatus() == Scope.Status.FINISHED) {
-          var result = client.get(ServicesAPI.JOBS.RETRIEVE, resultClass);
+          var result = client.get(ServicesAPI.JOBS.RETRIEVE, resultClass, "id", id);
           if (result != null) {
             complete(result);
           } else {
@@ -516,7 +523,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
               new KlabServiceAccessException(
                   status.getStackTrace() == null ? "Server error" : status.getStackTrace()));
         } else if (status.getStatus() == Scope.Status.INTERRUPTED) {
-
+          cancel(true);
         } else {
           // schedule the next step
           scheduler.schedule(this::poll, nextDelay(currentDelay), TimeUnit.MILLISECONDS);
@@ -998,26 +1005,24 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           var request =
               requestBuilder.POST(HttpRequest.BodyPublishers.ofString(payloadText)).build();
 
-          return client
-              .sendAsync(request, HttpResponse.BodyHandlers.ofString())
-              .thenApply(
-                  response -> {
-                    if (response.statusCode() == 200) {
-                      parseHeaders(response);
-                      return (T) parseResponse(response.body(), resultClass);
-                    } else {
-                      var log = parseResponse(response.body(), Map.class);
-                      System.out.println(
-                          "============ POST " + apiCall + " EXCEPTION REPORT ==============");
-                      MapUtils.debugPrint(System.out, "Server error", log);
-                      System.out.println("============ END OF REPORT  ==============");
-                      // TODO do something with the error response (which should be better and
-                      //  contain a stack trace)
-                    }
-                    return null;
-                  });
-        } catch (Exception e) {
-          throw new RuntimeException(e);
+          var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+          if (response.statusCode() == 200 || response.statusCode() == 202) {
+            var id = Long.parseLong(response.body());
+            return new PollingFuture<>(this, resultClass, id);
+          } else {
+            var log = parseResponse(response.body(), Map.class);
+            System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
+            MapUtils.debugPrint(System.out, "Server error", log);
+            System.out.println("============ END OF REPORT  ==============");
+            return CompletableFuture.failedFuture(new KlabServiceAccessException(response.body()));
+          }
+
+        } catch (Throwable e) {
+          if (scope != null) {
+            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          }
+          return CompletableFuture.failedFuture(e);
         }
       }
 

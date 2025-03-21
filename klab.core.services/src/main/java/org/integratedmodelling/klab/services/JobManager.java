@@ -1,6 +1,9 @@
 package org.integratedmodelling.klab.services;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -13,25 +16,57 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
-public enum JobManager {
-  INSTANCE;
+/**
+ * There is one job manager per session at service side. Jobs go away when the session is closed.
+ */
+public class JobManager {
 
   private Map<Long, CompletableFuture<?>> jobs = Collections.synchronizedMap(new HashMap<>());
+  private Cache<Long, Pair<Object, Throwable>> results =
+      CacheBuilder.newBuilder().maximumSize(400).build();
   private AtomicLong nextId = new AtomicLong(0L);
 
+  /**
+   * Submission of a completable future adds a stage that offloads the result (whether an object or
+   * an exception) to a local cache where it is kept for a while, then removes the job so that all
+   * resources can be freed.
+   *
+   * @param task
+   * @return
+   */
   public Long submit(CompletableFuture<?> task) {
     var ret = nextId.incrementAndGet();
-    // TODO add a whenCompleted or an Exceptionally() stage, put away the result and exception, and
-    //  remove self from the map. This allows caching of result/exception by taskId
-    jobs.put(ret, task);
+    jobs.put(
+        ret,
+        task.handle(
+            (o, t) -> {
+              // put away result
+              results.put(ret, Pair.of(o, t));
+              // dereference self
+              jobs.remove(ret);
+              return this;
+            }));
     return ret;
   }
 
   public JobStatus status(long id) {
 
     var ret = new JobStatus();
+
+    var result = results.getIfPresent(id);
+    if (result != null) {
+      if (result.getFirst() != null) {
+        ret.setStatus(Scope.Status.FINISHED);
+      } else if (result.getSecond() != null) {
+        ret.setStatus(Scope.Status.ABORTED);
+        ret.setStackTrace(Utils.Exceptions.stackTrace(result.getSecond()));
+      }
+      return ret;
+    }
+
     var task = jobs.get(id);
     if (task != null) {
+      // most of these should never happen
       if (task.isCompletedExceptionally()) {
         ret.setStatus(Scope.Status.ABORTED);
       } else if (task.isCancelled()) {
@@ -45,18 +80,20 @@ public enum JobManager {
       return ret;
     }
 
+    // this also happens after cancel
     ret.setStatus(Scope.Status.EMPTY);
     return ret;
   }
 
-  public String getResult(long id) {
-    var task = jobs.remove(id);
-    try {
-      return Utils.Json.asString(task.get());
-    } catch (Exception e) {
-      // TODO could return the same as the Spring exception catcher
-      throw new KlabResourceAccessException();
+  public String getResult(long id) throws Throwable {
+    var result = results.getIfPresent(id);
+    if (result != null) {
+      if (result.getSecond() != null) {
+        throw result.getSecond();
+      }
+      return Utils.Json.asString(result.getFirst());
     }
+    throw new KlabResourceAccessException("results of job " + id);
   }
 
   public boolean cancel(long id) {
