@@ -267,17 +267,6 @@ public class ResolutionGraph {
     return List.of();
   }
 
-  //  public Observation getContextObservation() {
-  //    ResolutionGraph target = this;
-  //    // lookup the first substantial that is not collective up in the resolution chain
-  //    while (target != null && !(target.target instanceof Observation observation
-  //        && observation.getObservable().is(SemanticType.COUNTABLE)
-  //        && !observation.getObservable().getSemantics().isCollective())) {
-  //      target = target.parent;
-  //    }
-  //    return target == null ? null : (Observation) target.target;
-  //  }
-
   public void setDependencies(ResourceSet dependencies) {
     rootGraph().dependencies = dependencies;
   }

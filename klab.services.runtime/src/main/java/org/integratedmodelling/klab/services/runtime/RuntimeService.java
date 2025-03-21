@@ -522,20 +522,6 @@ public class RuntimeService extends BaseService
     return dataflow.getTarget();
   }
 
-  //  private DigitalTwin getDigitalTwin(ContextScope contextScope) {
-  //    if (contextScope instanceof ServiceContextScope serviceContextScope) {
-  //      return serviceContextScope.getDigitalTwin();
-  //    }
-  //    throw new KlabInternalErrorException(
-  //        "Digital twin is inaccessible because of unexpected scope " + "implementation");
-  //  }
-
-  //  @Override
-  //  public <T extends RuntimeAsset> List<T> retrieveAssets(
-  //      ContextScope contextScope, Class<T> assetClass, Object... queryParameters) {
-  //    return knowledgeGraph.get(contextScope, assetClass, queryParameters);
-  //  }
-
   @Override
   public ResourceSet resolveContextualizables(
       List<Contextualizable> contextualizables, ContextScope scope) {
