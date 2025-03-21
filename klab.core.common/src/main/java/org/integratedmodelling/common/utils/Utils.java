@@ -474,8 +474,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       private final ScheduledExecutorService scheduler =
           Executors.newSingleThreadScheduledExecutor();
       private final Class<T> resultClass;
-      private int totalDelay = 0;
-      private int currentDelay = 1000;
       private int noResponseCount = 0;
       private final long id;
       private int[] stages;
@@ -486,12 +484,26 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       /**
        * Delay for the next poll cycle in milliseconds
        *
-       * @param previousDelay
        * @return
        */
-      private int nextDelay(int previousDelay) {
-        // TODO
-        return currentDelay;
+      private int nextDelay() {
+        if (stages[currentStage] < 0) {
+          return durations[durations.length - 1];
+        }
+        if (stageCounter == stages[currentStage]) {
+          currentStage++;
+          stageCounter = 0;
+        }
+        stageCounter++;
+        return durations[currentStage];
+      }
+
+      public static void main(String[] dio) {
+        var pop =
+            new PollingFuture<Object>(null, Object.class, 0, 5, 500, 7, 1000, 5, 1800, -1, 3000);
+        for (int i = 0; i < 100; i++) {
+          System.out.println(pop.nextDelay());
+        }
       }
 
       public PollingFuture(Client client, Class<T> resultClass, long id, int... waitStages) {
@@ -499,7 +511,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         this.id = id;
         this.client = client;
         this.resultClass = resultClass;
-        scheduler.schedule(this::poll, nextDelay(currentDelay), TimeUnit.MILLISECONDS);
         if (waitStages != null && waitStages.length > 1) {
           int stage = 0;
           stages = new int[waitStages.length / 2];
@@ -507,8 +518,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           for (int i = 0; i < waitStages.length; i++) {
             stages[stage] = waitStages[i];
             durations[stage] = waitStages[++i];
+            stage++;
           }
         }
+        scheduler.schedule(this::poll, 0, TimeUnit.MILLISECONDS);
       }
 
       @Override
@@ -539,7 +552,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           cancel(true);
         } else {
           // schedule the next step
-          scheduler.schedule(this::poll, nextDelay(currentDelay), TimeUnit.MILLISECONDS);
+          scheduler.schedule(this::poll, nextDelay(), TimeUnit.MILLISECONDS);
         }
       }
     }
