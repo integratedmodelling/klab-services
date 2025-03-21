@@ -478,6 +478,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       private int currentDelay = 1000;
       private int noResponseCount = 0;
       private final long id;
+      private int[] stages;
+      private int[] durations;
+      private int stageCounter = 0;
+      private int currentStage = 0;
 
       /**
        * Delay for the next poll cycle in milliseconds
@@ -490,12 +494,21 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         return currentDelay;
       }
 
-      public PollingFuture(Client client, Class<T> resultClass, long id) {
+      public PollingFuture(Client client, Class<T> resultClass, long id, int... waitStages) {
         // start polling
         this.id = id;
         this.client = client;
         this.resultClass = resultClass;
         scheduler.schedule(this::poll, nextDelay(currentDelay), TimeUnit.MILLISECONDS);
+        if (waitStages != null && waitStages.length > 1) {
+          int stage = 0;
+          stages = new int[waitStages.length / 2];
+          durations = new int[waitStages.length / 2];
+          for (int i = 0; i < waitStages.length; i++) {
+            stages[stage] = waitStages[i];
+            durations[stage] = waitStages[++i];
+          }
+        }
       }
 
       @Override
@@ -1009,7 +1022,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
           if (response.statusCode() == 200 || response.statusCode() == 202) {
             var id = Long.parseLong(response.body());
-            return new PollingFuture<>(this, resultClass, id);
+            return new PollingFuture<>(this, resultClass, id, 5, 500, 7, 1000, 5, 1800, -1, 3000);
           } else {
             var log = parseResponse(response.body(), Map.class);
             System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
