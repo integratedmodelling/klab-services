@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.runtime.server.RuntimeServer;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +35,7 @@ public class RuntimeServerController {
    * the observation tasks should monitor resolution until completion.
    *
    * @return
+   *
    */
   @PostMapping(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION)
   public @ResponseBody long submit(

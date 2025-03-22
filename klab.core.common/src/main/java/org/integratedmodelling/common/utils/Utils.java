@@ -463,8 +463,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
      * system in all k.LAB services. Despite all attempts there's no way to avoid polling.
      *
      * <p>The polling is more frequent at the beginning, then becomes more sparse to avoid too many
-     * service calls when the remote job is long-running. No response from server will be attempted
-     * 3 times before reporting failure.
+     * service calls when the remote job is long-running. If there is no response from server. two
+     * more attempts will be made at the set schedule 3 times before reporting failure.
      *
      * @param <T>
      */
@@ -480,6 +480,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       private int[] durations;
       private int stageCounter = 0;
       private int currentStage = 0;
+      private long start = System.currentTimeMillis();
 
       /**
        * Delay for the next poll cycle in milliseconds
@@ -506,6 +507,18 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
       }
 
+      /**
+       * Create a PollingFuture for the specified client and result class. The client must have
+       * started a k.LAB job and have all the configuration to connect to the session containing the
+       * job manager.
+       *
+       * @param client
+       * @param resultClass
+       * @param id
+       * @param waitStages pairs of (nTimes delay) for each phase desired. The last one should
+       *     always have -1 as nTimes, which establishes the constant delay after the throttling
+       *     phase is finished.
+       */
       public PollingFuture(Client client, Class<T> resultClass, long id, int... waitStages) {
         // start polling
         this.id = id;
@@ -534,7 +547,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         // exceptionally.
         var status = client.get(ServicesAPI.JOBS.STATUS, JobStatus.class, "id", id);
         if (status == null) {
-          // try 3 times
+          if (noResponseCount == 3) {
+            completeExceptionally(
+                new KlabServiceAccessException("Service unresponsive after 3 attempts"));
+          } else {
+            noResponseCount++;
+          }
         } else if (status.getStatus() == Scope.Status.FINISHED) {
           var result = client.get(ServicesAPI.JOBS.RETRIEVE, resultClass, "id", id);
           if (result != null) {

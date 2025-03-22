@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.services.application.security.ServiceAuthori
 import org.integratedmodelling.klab.services.resolver.server.ResolverServer;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;

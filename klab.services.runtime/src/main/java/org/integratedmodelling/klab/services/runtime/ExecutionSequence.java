@@ -52,28 +52,26 @@ public class ExecutionSequence {
   private final DigitalTwin digitalTwin;
   private final ComponentRegistry componentRegistry;
   private final double resolvedCoverage;
-//  private final KnowledgeGraph.Operation contextualization;
+  //  private final KnowledgeGraph.Operation contextualization;
   private final Dataflow dataflow;
-  @Deprecated
-  private List<List<ExecutorOperation>> sequence = new ArrayList<>();
+  @Deprecated private List<List<ExecutorOperation>> sequence = new ArrayList<>();
   private boolean empty;
   // the context for the next operation. Starts at the observation and doesn't normally change but
   // implementations
   // may change it when they return a non-null, non-POD object.
   //  // TODO check if this should be a RuntimeAsset or even an Observation.
   //  private Object currentExecutionContext;
-//  private Map<Actuator, KnowledgeGraph.Operation> operations = new HashMap<>();
+  //  private Map<Actuator, KnowledgeGraph.Operation> operations = new HashMap<>();
   private Throwable cause;
   private List<Pair<Actuator, Integer>> computation = new ArrayList<>();
+  private Map<Long, Observation> observations = new HashMap<>();
 
   public ExecutionSequence(
-          RuntimeService runtimeService,
-          Dataflow dataflow,
-          ServiceContextScope contextScope) {
+      RuntimeService runtimeService, Dataflow dataflow, ServiceContextScope contextScope) {
     this.runtimeService = runtimeService;
     this.scope = contextScope;
     this.resolvedCoverage =
-            dataflow instanceof DataflowImpl dataflow1 ? dataflow1.getResolvedCoverage() : 1.0;
+        dataflow instanceof DataflowImpl dataflow1 ? dataflow1.getResolvedCoverage() : 1.0;
     this.componentRegistry = runtimeService.getComponentRegistry();
     this.dataflow = dataflow;
     this.digitalTwin = contextScope.getDigitalTwin();
@@ -87,7 +85,7 @@ public class ExecutionSequence {
       ServiceContextScope contextScope) {
     this.runtimeService = runtimeService;
     this.scope = contextScope;
-//    this.contextualization = contextualization;
+    //    this.contextualization = contextualization;
     this.resolvedCoverage =
         dataflow instanceof DataflowImpl dataflow1 ? dataflow1.getResolvedCoverage() : 1.0;
     this.componentRegistry = componentRegistry;
@@ -155,8 +153,18 @@ public class ExecutionSequence {
     }
   }
 
-  public void store(DigitalTwinImpl.TransactionImpl ret) {
-    // TODO
+  /**
+   * Called after successful compilation to build the (uncommitted) graph of observations,
+   * activities, and actuators and to submit all the executors to the scheduler. The knowledge graph
+   * will be modified when the passed transaction is committed.
+   *
+   * @param transaction
+   */
+  public void store(DigitalTwinImpl.TransactionImpl transaction) {
+    /* Store all observations, activities and actuators */
+    for (var observation : this.computation) {
+
+    }
   }
 
   /** One operation per observation. Successful execution will update the observation in the DT. */
@@ -169,12 +177,11 @@ public class ExecutionSequence {
     protected List<BiFunction<Geometry, ContextScope, Boolean>> executors = new ArrayList<>();
     private boolean scalar;
     private boolean operational;
-//    private KnowledgeGraph.Operation operation;
 
     public ExecutorOperation(Actuator actuator, Geometry geometry) {
       this.id = actuator.getId();
-//      this.operation = operations.get(actuator);
       this.observation = requireObservation(actuator, geometry);
+      observations.put(this.id, this.observation);
       instrumentObservation(this.observation, actuator);
       this.operational = compile(actuator);
     }
@@ -184,7 +191,7 @@ public class ExecutionSequence {
         var ret =
             DigitalTwin.createObservation(
                 scope, actuator.getObservable(), geometry, actuator.getName());
-//        this.id = this.operation.store(ret);
+        //        this.id = this.operation.store(ret);
         if (actuator instanceof ActuatorImpl actuator1) {
           actuator1.setId(this.id);
         }
@@ -441,18 +448,18 @@ public class ExecutionSequence {
       long start = System.currentTimeMillis();
       for (var executor : executors) {
         if (!executor.apply(geometry, scope)) {
-//          if (operation != null) {
-//            operation.fail(scope, observation, cause);
-//          }
+          //          if (operation != null) {
+          //            operation.fail(scope, observation, cause);
+          //          }
           return false;
         }
       }
 
       long time = System.currentTimeMillis() - start;
 
-//      if (operation != null) {
-//        operation.success(scope, observation, resolvedCoverage);
-//      }
+      //      if (operation != null) {
+      //        operation.success(scope, observation, resolvedCoverage);
+      //      }
 
       return true;
     }
@@ -559,7 +566,7 @@ public class ExecutionSequence {
   private Graph<Actuator, DefaultEdge> computeActuatorOrder(Actuator rootActuator) {
     Graph<Actuator, DefaultEdge> dependencyGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
     Map<Long, Actuator> cache = new HashMap<>();
-    loadGraph(rootActuator, dependencyGraph, cache/*, this.contextualization*/);
+    loadGraph(rootActuator, dependencyGraph, cache /*, this.contextualization*/);
     // keep the actuators that do nothing so we can tag their observation as resolved
     return dependencyGraph;
   }
@@ -567,13 +574,7 @@ public class ExecutionSequence {
   private void loadGraph(
       Actuator rootActuator,
       Graph<Actuator, DefaultEdge> dependencyGraph,
-      Map<Long, Actuator> cache/*,
-      KnowledgeGraph.Operation contextualization*/) {
-
-//    var childContextualization =
-//        contextualization.createChild(
-//            rootActuator, "Contextualization of " + rootActuator, Activity.Type.RESOLUTION);
-//    operations.put(rootActuator, childContextualization);
+      Map<Long, Actuator> cache) {
 
     cache.put(rootActuator.getId(), rootActuator);
     dependencyGraph.addVertex(rootActuator);
@@ -584,7 +585,7 @@ public class ExecutionSequence {
           dependencyGraph.addEdge(cache.get(child.getId()), rootActuator);
         }
       } else {
-        loadGraph(child, dependencyGraph, cache/*, childContextualization*/);
+        loadGraph(child, dependencyGraph, cache /*, childContextualization*/);
         dependencyGraph.addEdge(child, rootActuator);
       }
     }

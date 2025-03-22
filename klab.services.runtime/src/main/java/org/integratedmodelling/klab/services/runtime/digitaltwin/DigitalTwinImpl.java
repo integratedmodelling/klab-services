@@ -55,6 +55,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     public TransactionImpl(Activity activity, ServiceContextScope scope) {
       this.activity = activity;
       this.scope = scope;
+      this.graph.addVertex(activity);
     }
 
     @Override
