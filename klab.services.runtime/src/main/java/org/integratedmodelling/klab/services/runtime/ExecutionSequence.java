@@ -162,6 +162,10 @@ public class ExecutionSequence {
       /* the geometry must be appropriate for the observable - collective substantials are in the observer's scope */
       // FIXME this same logic is replicated in the resolution compiler. We should have it in one place and ideally in
       //  the right one, and/or we can have the resolver send the geometries along with the dataflow.
+      /**
+       * TODO what we should do is that the actuator(s) should contain both resolvedCoverage and totalCoverage. We build the
+       *  new observations using resolvedCoverage.
+       */
       if (actuator.getObservable().is(SemanticType.COUNTABLE)
           && actuator.getObservable().getSemantics().isCollective()) {
         if (scope.getObserver() != null) {
