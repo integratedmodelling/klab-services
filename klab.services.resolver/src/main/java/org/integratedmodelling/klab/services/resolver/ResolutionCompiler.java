@@ -370,28 +370,5 @@ public class ResolutionCompiler {
       }
     }
     return ret;
-    //      return DigitalTwin.createObservation(scope, observable, geometry);
-    //      var id = scope.getService(RuntimeService.class).submit(newObs, scope);
-    //      if (id >= 0) {
-    //        ret = scope.getObservation(observable.getSemantics());
-    //      }
-    //    } else if (!ret.isResolved()) {
-    //      // unresolved and previously existing
-    //      return Observation.empty();
-    //    }
-    //
-    //    /* TODO this should also happen if the inherency is incompatible with the semantics for
-    // dependent
-    //    observables */
-    //    if (ret == null || ret.isEmpty()) {
-    //      scope.error(
-    //          "Cannot instantiate observation of "
-    //              + observable.getUrn()
-    //              + " in context "
-    //              + scope.getId());
-    //      return Observation.empty();
-    //    }
-    //
-    //    return ret;
   }
 }

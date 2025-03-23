@@ -255,6 +255,10 @@ public class DataflowCompiler {
 
     // TODO add remaining info from the contextualizable in the call's metadata
     // TODO more?
+    if (ret != null && contextualizer.getTarget() != null) {
+      ret.getParameters().put("_target", contextualizer.getTarget());
+      ret.getParameters().put("_targetId", contextualizer.getTargetId());
+    }
 
     return ret;
   }

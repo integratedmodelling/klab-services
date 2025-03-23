@@ -52,6 +52,7 @@ public class ResolutionGraph {
   private DefaultDirectedGraph<Resolvable, ResolutionGraph.ResolutionEdge> graph =
       new DefaultDirectedGraph<>(ResolutionEdge.class);
   private ResolutionGraph parent;
+  private long internalObservationId = -1;
 
   // these are only used in the root graph. They collect the merged dependencies of all
   // strategies and models, added only after the runtime has successfully resolved them.
@@ -187,6 +188,8 @@ public class ResolutionGraph {
     var edge = new ResolutionEdge(childGraph.targetCoverage, localName);
     if (childGraph.getResolved() != null) {
       edge.observationId = childGraph.getResolved().getId();
+    } else {
+      edge.observationId = -- internalObservationId;
     }
     this.graph.addEdge(this.target, childGraph.target, edge);
 

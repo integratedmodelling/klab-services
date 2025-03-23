@@ -406,8 +406,7 @@ public class RuntimeService extends BaseService
         }
       }
 
-      serviceContextScope.initializeResolution(observation);
-
+      serviceContextScope.initializeResolution();
       var resolver = scope.getService(Resolver.class);
 
       return resolver

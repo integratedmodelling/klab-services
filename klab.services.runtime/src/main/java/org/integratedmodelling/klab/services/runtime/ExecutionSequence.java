@@ -9,6 +9,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.klab.api.Klab;
@@ -21,6 +22,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -109,6 +111,9 @@ public class ExecutionSequence {
    */
   public boolean compile(Actuator rootActuator, Geometry geometry) {
 
+    // build the observations as required
+    requireObservations(rootActuator, geometry);
+
     this.computation = sortComputation(rootActuator);
     List<ExecutorOperation> current = null;
     int currentGroup = -1;
@@ -133,6 +138,49 @@ public class ExecutionSequence {
     }
 
     return false;
+  }
+
+  private void requireObservations(Actuator rootActuator, Geometry geometry) {
+    Map<Long, Observation> observationMap = scope.getResolvedObservations();
+    requireObservation(rootActuator, geometry, observationMap);
+    observations.putAll(observationMap);
+  }
+
+  private void requireObservation(
+      Actuator actuator, Geometry geometry, Map<Long, Observation> observationMap) {
+    if (!observationMap.containsKey(actuator.getId())) {
+      observationMap.put(actuator.getId(), requireObservation(actuator, geometry));
+    }
+    for (var child : actuator.getChildren()) {
+      requireObservation(child, geometry, observationMap);
+    }
+  }
+
+  private Observation requireObservation(Actuator actuator, Geometry geometry) {
+    if (actuator.getId() < 0) {
+
+      /* the geometry must be appropriate for the observable - collective substantials are in the observer's scope */
+      // FIXME this same logic is replicated in the resolution compiler. We should have it in one place and ideally in
+      //  the right one, and/or we can have the resolver send the geometries along with the dataflow.
+      if (actuator.getObservable().is(SemanticType.COUNTABLE)
+          && actuator.getObservable().getSemantics().isCollective()) {
+        if (scope.getObserver() != null) {
+          geometry =
+              GeometryRepository.INSTANCE.getUnion(geometry, scope.getObserver().getGeometry());
+        }
+      }
+
+      var ret =
+          DigitalTwin.createObservation(
+              scope, actuator.getObservable(), geometry, actuator.getName());
+      //        this.id = this.operation.store(ret);
+      if (actuator instanceof ActuatorImpl actuator1) {
+        actuator1.setId(actuator.getId());
+      }
+      scope.registerObservation(ret);
+      return ret;
+    }
+    return scope.getObservation(actuator.getId());
   }
 
   /**
@@ -162,9 +210,7 @@ public class ExecutionSequence {
    */
   public void store(DigitalTwinImpl.TransactionImpl transaction) {
     /* Store all observations, activities and actuators */
-    for (var observation : this.computation) {
-
-    }
+    for (var observation : this.computation) {}
   }
 
   /** One operation per observation. Successful execution will update the observation in the DT. */
@@ -180,25 +226,10 @@ public class ExecutionSequence {
 
     public ExecutorOperation(Actuator actuator, Geometry geometry) {
       this.id = actuator.getId();
-      this.observation = requireObservation(actuator, geometry);
+      this.observation = observations.get(this.id);
       observations.put(this.id, this.observation);
       instrumentObservation(this.observation, actuator);
       this.operational = compile(actuator);
-    }
-
-    private Observation requireObservation(Actuator actuator, Geometry geometry) {
-      if (this.id < 0) {
-        var ret =
-            DigitalTwin.createObservation(
-                scope, actuator.getObservable(), geometry, actuator.getName());
-        //        this.id = this.operation.store(ret);
-        if (actuator instanceof ActuatorImpl actuator1) {
-          actuator1.setId(this.id);
-        }
-        scope.registerObservation(ret);
-        return ret;
-      }
-      return scope.getObservation(id);
     }
 
     /**

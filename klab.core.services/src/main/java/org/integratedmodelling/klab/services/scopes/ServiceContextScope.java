@@ -64,8 +64,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       new LinkedHashMap<>();
   protected Map<Observation, Geometry> currentlyObservedGeometries = new HashMap<>();
 
-  private Map<Long, ObservationImpl> resolutionCache = new HashMap<>();
-  private AtomicLong nextResolutionId = new AtomicLong(-1L);
+  private Map<Long, Observation> resolutionCache = new HashMap<>();
+  private AtomicLong nextResolutionId;
 
   /**
    * The splits for parallelization of scalar computation are assigned on a first-come, first-served
@@ -89,6 +89,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.resolutionConstraints.putAll(parent.resolutionConstraints);
     this.currentOperation = parent.currentOperation;
     this.resolutionCache = parent.resolutionCache;
+    this.nextResolutionId = parent.nextResolutionId;
     this.jobManager = parent.jobManager;
   }
 
@@ -151,6 +152,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                     return ret;
                   }
                 });
+    this.nextResolutionId = new AtomicLong(-1L);
     /*
      * TODO choose the services if this context or user requires specific ones
      */
@@ -425,7 +427,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         if (constraint == null || constraint.empty()) {
           continue;
         }
-        if (constraint.getType().incremental
+        if (constraint.getType() == ResolutionConstraint.Type.UnresolvedContextObservation) {
+          ret.contextObservation = constraint.payload(Observation.class).getFirst();
+        } else if (constraint.getType().incremental
             && ret.resolutionConstraints.containsKey(constraint.getType())) {
           ret.resolutionConstraints.put(
               constraint.getType(),
@@ -571,8 +575,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public Observation getObservation(Semantics observable) {
 
-    if ((contextObservation != null && contextObservation.getId() < Observation.UNASSIGNED_ID)
-        || observer != null && (observer.getId() < Observation.UNASSIGNED_ID)) {
+    if (contextObservation != null && contextObservation.getId() < 0) {
       // This situation happens during uncommitted resolution chains and would mess up the knowledge
       // graph at the runtime side.
       for (var obs : resolutionCache.values()) {
@@ -648,9 +651,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         "ServiceContextScope::registerObservation: unexpected observation implementation");
   }
 
-  public void initializeResolution(Observation observation) {
+  public void initializeResolution() {
     nextResolutionId.set(-1L);
     resolutionCache.clear();
-    registerObservation(observation);
+  }
+
+  public Map<Long, Observation> getResolvedObservations() {
+    return resolutionCache;
   }
 }

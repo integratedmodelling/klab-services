@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
@@ -68,6 +69,15 @@ public class ResolverClient extends ServiceClient implements Resolver {
     ResolutionRequest request = new ResolutionRequest();
     request.setObservation(observation);
     request.getResolutionConstraints().addAll(contextScope.getResolutionConstraints());
+    if (contextScope.getContextObservation() != null
+        && contextScope.getContextObservation().getId() < 0) {
+      request
+          .getResolutionConstraints()
+          .add(
+              ResolutionConstraint.of(
+                  ResolutionConstraint.Type.UnresolvedContextObservation,
+                  contextScope.getContextObservation()));
+    }
     return client
         .withScope(contextScope)
         .postAsync(ServicesAPI.RESOLVER.RESOLVE_OBSERVATION, request, Dataflow.class);

@@ -86,6 +86,7 @@ public class RuntimeServerController {
         if (ret != null) {
           return List.of(ret);
         }
+        return List.of();
       }
       return runtimeService.klabService().queryKnowledgeGraph(query, contextScope);
     }
