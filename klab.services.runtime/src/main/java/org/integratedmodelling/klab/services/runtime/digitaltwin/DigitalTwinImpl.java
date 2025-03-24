@@ -30,7 +30,9 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 public class DigitalTwinImpl implements DigitalTwin {
@@ -47,13 +49,23 @@ public class DigitalTwinImpl implements DigitalTwin {
       Geometry geometry;
       int sequence = -1;
 
-      public Rel(GraphModel.Relationship relationship, Object... data) {}
+      public Rel(GraphModel.Relationship relationship, Object... data) {
+        this.relationship = relationship;
+        if (data != null) {
+          for (int i = 0; i < data.length; i++) {
+            if (data[i] instanceof Integer sequence) {
+              this.sequence = sequence;
+            } // TODO geometry and more
+          }
+        }
+      }
     }
 
     Activity activity;
     ServiceContextScope scope;
     List<Throwable> failures = new ArrayList<>();
     Graph<RuntimeAsset, Rel> graph = new DefaultDirectedGraph<>(Rel.class);
+    Map<Observation, Contextualizer> contextualizers = new HashMap<>();
 
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
       this.activity = activity;
@@ -89,7 +101,9 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     @Override
-    public void resolveWith(Observation observation, Contextualizer contextualizer) {}
+    public void resolveWith(Observation observation, Contextualizer contextualizer) {
+      this.contextualizers.put(observation, contextualizer);
+    }
 
     @Override
     public boolean commit() {
@@ -121,6 +135,11 @@ public class DigitalTwinImpl implements DigitalTwin {
       } catch (Exception e) {
         scope.error(e);
         return false;
+      }
+
+      for (var observation : contextualizers.keySet()) {
+        scheduler.registerExecutor(
+            observation, (g, s) -> contextualizers.get(observation).run(g, s));
       }
 
       return true;
