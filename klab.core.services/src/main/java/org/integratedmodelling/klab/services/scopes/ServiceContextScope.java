@@ -8,18 +8,14 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
-
-import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -37,7 +33,6 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.ojalgo.concurrent.Parallelism;
-import org.springframework.web.socket.server.HandshakeHandler;
 
 /**
  * The service-side {@link ContextScope}. Does most of the heavy lifting in the runtime service
@@ -56,7 +51,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private Observation contextObservation;
   private URL url;
   private DigitalTwin digitalTwin;
-  private KnowledgeGraph.Operation currentOperation;
+//  private KnowledgeGraph.Operation currentOperation;
 
   // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
   protected ServiceContextScope parent;
@@ -64,7 +59,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       new LinkedHashMap<>();
   protected Map<Observation, Geometry> currentlyObservedGeometries = new HashMap<>();
 
-  private Map<Long, Observation> resolutionCache = new HashMap<>();
+  private Map<Long, Observation> resolutionCache;
   private AtomicLong nextResolutionId;
 
   /**
@@ -87,7 +82,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.digitalTwin = parent.digitalTwin;
     this.observationCache = parent.observationCache;
     this.resolutionConstraints.putAll(parent.resolutionConstraints);
-    this.currentOperation = parent.currentOperation;
+//    this.currentOperation = parent.currentOperation;
     this.resolutionCache = parent.resolutionCache;
     this.nextResolutionId = parent.nextResolutionId;
     this.jobManager = parent.jobManager;
@@ -192,7 +187,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (id == Observation.UNASSIGNED_ID) {
       return null;
     }
-    if (id < Observation.UNASSIGNED_ID) {
+    if (id <= Observation.UNASSIGNED_ID) {
       var ret = resolutionCache.get(id);
       if (ret == null && !(this.service instanceof RuntimeService)) {
         var obs = digitalTwin.getKnowledgeGraph().query(Observation.class, this).id(id).peek(this);
@@ -203,6 +198,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         }
       }
       return ret;
+//      throw new KlabInternalErrorException("QUERY FOR UNRESOLVED OBSERVATION -- this should no longer happen");
     }
     try {
       return observationCache.get(id);
@@ -235,27 +231,27 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
-  /**
-   * Store the current KG operation so that we can correctly record provenance and maintain graph
-   * integrity in secondary resolutions.
-   *
-   * @param operation
-   * @return
-   */
-  public ServiceContextScope withinOperation(KnowledgeGraph.Operation operation) {
-
-    if (operation == null) {
-      return this;
-    }
-
-    ServiceContextScope ret = new ServiceContextScope(this);
-    ret.currentOperation = operation;
-    return ret;
-  }
-
-  public KnowledgeGraph.Operation getCurrentOperation() {
-    return currentOperation;
-  }
+//  /**
+//   * Store the current KG operation so that we can correctly record provenance and maintain graph
+//   * integrity in secondary resolutions.
+//   *
+//   * @param operation
+//   * @return
+//   */
+//  public ServiceContextScope withinOperation(KnowledgeGraph.Operation operation) {
+//
+//    if (operation == null) {
+//      return this;
+//    }
+//
+//    ServiceContextScope ret = new ServiceContextScope(this);
+//    ret.currentOperation = operation;
+//    return ret;
+//  }
+//
+//  public KnowledgeGraph.Operation getCurrentOperation() {
+//    return currentOperation;
+//  }
 
   @Override
   public CompletableFuture<Observation> observe(Observation observation) {
@@ -266,24 +262,24 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return runtime.submit(observation, this);
   }
 
-  public void finalizeObservation(
-      Observation observation, KnowledgeGraph.Operation operation, boolean successful) {
-    if (successful) {
-      if (observation.getObservable().is(SemanticType.QUALITY)) {
-        var storage = digitalTwin.getStorageManager().getStorage(observation);
-        if (storage != null) {
-          for (var buf : storage.allBuffers()) {
-
-            // TODO if geometry is scalar, save state as property instead
-            operation.store(buf);
-            // The HAS_DATA link contains the offsets for the geometry, if any.
-            operation.link(
-                observation, buf, GraphModel.Relationship.HAS_DATA, "offset", buf.offset());
-          }
-        }
-      }
-    }
-  }
+//  public void finalizeObservation(
+//      Observation observation, KnowledgeGraph.Operation operation, boolean successful) {
+//    if (successful) {
+//      if (observation.getObservable().is(SemanticType.QUALITY)) {
+//        var storage = digitalTwin.getStorageManager().getStorage(observation);
+//        if (storage != null) {
+//          for (var buf : storage.allBuffers()) {
+//
+//            // TODO if geometry is scalar, save state as property instead
+//            operation.store(buf);
+//            // The HAS_DATA link contains the offsets for the geometry, if any.
+//            operation.link(
+//                observation, buf, GraphModel.Relationship.HAS_DATA, "offset", buf.offset());
+//          }
+//        }
+//      }
+//    }
+//  }
 
   @Override
   public Provenance getProvenance() {
@@ -575,7 +571,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public Observation getObservation(Semantics observable) {
 
-    if (contextObservation != null && contextObservation.getId() < 0) {
+    if (contextObservation.getId() < 0) {
       // This situation happens during uncommitted resolution chains and would mess up the knowledge
       // graph at the runtime side.
       for (var obs : resolutionCache.values()) {
@@ -656,7 +652,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     resolutionCache.clear();
   }
 
-  public Map<Long, Observation> getResolvedObservations() {
-    return resolutionCache;
-  }
+//  public Map<Long, Observation> getResolvedObservations() {
+//    return resolutionCache;
+//  }
 }

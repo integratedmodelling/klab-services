@@ -116,87 +116,20 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             + "(a:Agent {name: $agentName}) RETURN a";
   }
 
-  /**
-   * A provenance-linked "transaction" that can be committed or rolled back by reporting failure or
-   * success. The related activity becomes part of the graph in any case and success/failure is
-   * recorded with it. Everything else stored or linked is rolled back in case of failure.
-   */
-  public class OperationImpl implements Operation {
+  class TransactionImpl implements Transaction {
 
-    private ActivityImpl activity;
-    private Agent agent;
-    private Transaction transaction;
-    private Scope.Status outcome;
-    private Throwable exception;
-    private Object[] assets;
-    private OperationImpl parent;
-    private List<OperationImpl> children = new ArrayList<>();
-    private Actuator actuator;
-    private Observation target;
-    private Observation observationToSubmit;
-    private boolean closed = false; // for debugging
-    private int level = 0;
+    private final org.neo4j.driver.Transaction transaction;
 
-    @Override
-    public Agent getAgent() {
-      return this.agent;
+    TransactionImpl() {
+      this.transaction =
+          driver
+              .session()
+              .beginTransaction(TransactionConfig.builder().withTimeout(Duration.ZERO).build());
     }
 
     @Override
-    public Activity getActivity() {
-      return this.activity;
-    }
-
-    @Override
-    public Operation createChild(Object... activityData) {
-
-      if (closed) {
-        throw new KlabInternalErrorException(
-            "Cannot create a child knowledge graph operation after termination");
-      }
-
-      var activity = new ActivityImpl();
-      activity.setStart(System.currentTimeMillis());
-      activity.setUrn(this.activity.getUrn() + "." + Utils.Names.shortUUID());
-      var ret = new OperationImpl();
-
-      ret.level = this.level + 1;
-      ret.agent = agent;
-      ret.transaction = transaction;
-      ret.parent = this;
-
-      if (activityData != null) {
-        for (Object o : activityData) {
-          if (o instanceof ActivityImpl a) {
-            activity = a;
-          } else if (o instanceof Activity.Type type) {
-            activity.setType(type);
-          } else if (o instanceof String description) {
-            activity.setDescription(description);
-          } else if (o instanceof Agent agent) {
-            ret.agent = agent;
-          } else if (o instanceof ActuatorImpl actuator) {
-            ret.actuator = actuator;
-          } else if (o instanceof Observation observation) {
-            ret.target = observation;
-          }
-        }
-      }
-
-      ret.activity = activity;
-
-      store(activity);
-      link(this.activity, activity, GraphModel.Relationship.TRIGGERED);
-      link(activity, agent, GraphModel.Relationship.BY_AGENT);
-
-      this.children.add(ret);
-
-      return ret;
-    }
-
-    @Override
-    public long store(RuntimeAsset asset, Object... additionalProperties) {
-      return KnowledgeGraphNeo4j.this.store(transaction, asset, scope, additionalProperties);
+    public void store(RuntimeAsset asset, Object... additionalProperties) {
+      KnowledgeGraphNeo4j.this.store(transaction, asset, scope, additionalProperties);
     }
 
     @Override
@@ -210,327 +143,441 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     @Override
-    public void linkToRootNode(
-        RuntimeAsset destination,
-        GraphModel.Relationship relationship,
-        Object... additionalProperties) {
-      var rootNode =
-          switch (destination) {
-            case Actuator ignored -> dataflowNode;
-            case Activity ignored -> provenanceNode;
-            case Observation ignored -> contextNode;
-            default -> throw new KlabIllegalStateException("Unexpected value: " + destination);
-          };
-      KnowledgeGraphNeo4j.this.link(
-          transaction, rootNode, destination, relationship, scope, additionalProperties);
-    }
-
-    @Override
-    public Operation success(ContextScope scope, Object... assets) {
-
-      this.outcome = Scope.Status.FINISHED;
-      // updates as needed (activity end, observation resolved if type == resolution, context
-      // timestamp
-      this.assets = assets;
-
-      /*
-      if we have resolved a top-level observation, we must submit it for scheduling events at close.
-       */
-      if (this.activity.getType() == Activity.Type.RESOLUTION) {
-        if (assets != null) {
-          for (var asset : assets) {
-            if (asset instanceof Observation observation) {
-              this.observationToSubmit = observation;
-            }
-          }
-        }
-      }
-      return this;
-    }
-
-    @Override
-    public Operation fail(ContextScope scope, Object... assets) {
-      // rollback; update activity end and context timestamp only, if we have an error or throwable
-      // update activity
-      this.outcome = Scope.Status.ABORTED;
-      this.assets = assets;
-      return this;
-    }
-
-    @Override
-    public Scope.Status getOutcome() {
-      return outcome;
-    }
-
-    @Override
-    public String toString() {
-      var root = this;
-      while (root.parent != null) {
-        root = root.parent;
-      }
-
-      StringBuilder ret = new StringBuilder();
-      dump(root, 0, ret);
-      return ret.toString();
-    }
-
-    private void dump(OperationImpl root, int i, StringBuilder ret) {
-      ret.append(org.integratedmodelling.common.utils.Utils.Strings.spaces(i * 3))
-          .append(transaction.isOpen() ? "(" : "[")
-          .append(root.description())
-          .append(transaction.isOpen() ? ")" : "]")
-          .append(root == this ? "*\n" : "\n");
-      for (var child : root.children) {
-        dump(child, i + 1, ret);
-      }
-    }
-
-    private String description() {
-      return activity.getType().name() + (target == null ? "?" : (" " + target));
-    }
-
-    @Override
     public void close() throws IOException {
-
-      List<Actuator> childActuators = new ArrayList<>();
-      for (var child : children) {
-        child.close();
-        if (child.actuator != null) {
-          childActuators.add(child.actuator);
-        }
-      }
-
-      if (closed) {
-        return;
-      }
-
-      this.closed = true;
-      this.activity.setEnd(System.currentTimeMillis());
-      this.activity.setOutcome(
-          outcome == null
-              ? Activity.Outcome.INTERNAL_FAILURE
-              : (outcome == Scope.Status.FINISHED
-                  ? Activity.Outcome.SUCCESS
-                  : Activity.Outcome.FAILURE));
-
-      // commit or rollback based on status after success() or fail(). If none has been
-      // called, status is null and this is an internal error, logged with the activity
-
-      ObservationImpl observation = null;
-      double coverage = 1.0;
-      var resolutionEmpty = false;
-      Dataflow dataflow = null;
-      if (assets != null) {
-        for (var asset : assets) {
-          if (asset instanceof ObservationImpl obs) {
-            observation = obs;
-            activity.setObservationUrn(obs.getUrn());
-          } else if (asset instanceof Throwable t) {
-            activity.setStackTrace(ExceptionUtils.getStackTrace(t));
-          } else if (asset instanceof Dataflow df) {
-            resolutionEmpty = df.isEmpty();
-            dataflow = df;
-          }
-        }
-      }
-
-      if (resolutionEmpty && activity.getType() == Activity.Type.RESOLUTION) {
-        activity.setOutcome(Activity.Outcome.FAILURE);
-        activity.setDescription("Resolution of " + observation + " failed");
-      }
-
-      if (this.actuator != null) {
-        store(actuator);
-        link(this.activity, this.actuator, GraphModel.Relationship.HAS_PLAN);
-        for (Actuator childActuator : childActuators) {
-          link(this.actuator, childActuator, GraphModel.Relationship.HAS_CHILD);
-        }
-      } else {
-        for (Actuator childActuator : childActuators) {
-          link(dataflowNode, childActuator, GraphModel.Relationship.HAS_CHILD);
-        }
-      }
-
-      if (observation != null && this.actuator != null && outcome == Scope.Status.FINISHED) {
-        link(this.activity, observation, GraphModel.Relationship.RESOLVED);
-      }
-
-      if (parent == null) {
-
-        if (outcome == null) {
-          // Log an internal failure (no success or failure, should not happen)
-          Logging.INSTANCE.error("Internal error: activity did not properly finish: " + activity);
-          scope.send(
-              Message.MessageClass.ObservationLifecycle,
-              Message.MessageType.ActivityAborted,
-              activity);
-          transaction.rollback();
-        } else if (outcome == Scope.Status.FINISHED) {
-          scope.send(
-              Message.MessageClass.ObservationLifecycle,
-              Message.MessageType.ActivityFinished,
-              activity);
-          if (dataflow != null && activity.getType() == Activity.Type.RESOLUTION) {
-            storeCausalLinks(dataflow);
-          }
-          transaction.commit();
-        } else if (outcome == Scope.Status.ABORTED) {
-          scope.send(
-              Message.MessageClass.ObservationLifecycle,
-              Message.MessageType.ActivityAborted,
-              activity);
-          transaction.rollback();
-        }
-
-        // npw that transactions are done, update all observations and activities w.r.t. the ones
-        // contained here
-        updateAssets();
-
-        /*
-         * Last, submit the observation to the scheduler, which will trigger execution of the
-         * contextualization strategy.
-         */
-        if (observationToSubmit != null) {
-          scope.getDigitalTwin().getScheduler().submit(observationToSubmit);
-        }
-      }
-    }
-
-    private void updateAssets() {
-
-      for (var child : children) {
-        child.updateAssets();
-      }
-
-      Dataflow dataflow = null;
-      ObservationImpl observation = null;
-      double coverage = 1.0;
-      if (assets != null) {
-        for (var asset : assets) {
-          if (asset instanceof ObservationImpl obs) {
-            observation = obs;
-          } else if (asset instanceof Double d) {
-            coverage = d;
-          } else if (asset instanceof Long l) {
-            this.activity.setCredits(l);
-          } else if (asset instanceof Throwable throwable) {
-            this.activity.setStackTrace(ExceptionUtils.getStackTrace(throwable));
-          } else if (asset instanceof Dataflow df) {
-            dataflow = df;
-          }
-        }
-      }
-
-      if (observation != null && outcome == Scope.Status.FINISHED) {
-        if (this.activity.getType() == Activity.Type.CONTEXTUALIZATION) {
-          observation.setResolved(true);
-          observation.setResolvedCoverage(coverage);
-        }
-        update(observation, scope);
-        if (observation.getGeometry() != null) {
-          storeGeometry(observation.getGeometry(), observation);
-        }
-      }
-
-      update(this.activity, scope);
-    }
-
-    private void storeCausalLinks(Dataflow dataflow) {
-      /*
-       * Any dependency could be seen as an "affects" link OR we can check the actual causality, meaning that
-       * all contextualizables must be able to tell us if they physically depend on each observable. Keep it
-       * simple and potentially wasteful for now.
-       */
-      for (var actuator : dataflow.getComputation()) {
-        Observation observation = observationCache.getIfPresent(actuator.getId());
-        storeCausalLinks(actuator, observation);
-      }
-    }
-
-    private void storeCausalLinks(Actuator actuator, Observation affected) {
-      for (var child : actuator.getChildren()) {
-        var affecting = observationCache.getIfPresent(child.getId());
-        if (affecting != null) {
-          storeCausalLinks(child, affecting);
-          link(affecting, affected, GraphModel.Relationship.AFFECTS);
-        }
-      }
+      transaction.commit();
     }
   }
 
   @Override
-  public Operation operation(
-      Agent agent, Activity parentActivity, Activity.Type activityType, Object... data) {
-
-    // validate arguments and complain loudly if anything is missing. Must have agent and activity
-    if (agent == null) {
-      throw new KlabInternalErrorException("Knowledge graph operation: agent is null");
-    }
-
-    // create and commit the activity record as a node, possibly linked to a parent
-    // activity.
-
-    // open the transaction for the remaining operations
-
-    var activity = new ActivityImpl();
-    activity.setType(activityType);
-    activity.setStart(System.currentTimeMillis());
-    activity.setName(activityType.name());
-    activity.setUrn(
-        (parentActivity == null ? "" : (parentActivity.getUrn() + ".")) + Utils.Names.shortUUID());
-
-    var ret = new OperationImpl();
-
-    ret.activity = activity;
-    ret.agent = agent;
-
-    // select arguments and put them where they belong
-    if (data != null) {
-      for (var dat : data) {
-        if (dat instanceof String description) {
-          ret.activity.setDescription(description);
-        } else if (dat instanceof OperationImpl operation) {
-          throw new KlabInternalErrorException("Root-level operation including another");
-        } else if (dat instanceof KlabService service) {
-          activity.setServiceId(service.serviceId());
-          activity.setServiceName(service.getServiceName());
-          activity.setServiceType(KlabService.Type.classify(service));
-        } else if (dat instanceof Dataflow dataflow) {
-          activity.setDataflow(new DataflowEncoder(dataflow, scope).toString());
-        } else if (dat instanceof Observation observation) {
-          ret.target = observation;
-        }
-      }
-    }
-
-    KnowledgeGraphNeo4j.this.store(activity, scope);
-    KnowledgeGraphNeo4j.this.link(activity, agent, GraphModel.Relationship.BY_AGENT, scope);
-    if (parentActivity != null) {
-      KnowledgeGraphNeo4j.this.link(
-              parentActivity, activity, GraphModel.Relationship.TRIGGERED, scope);
-    } else {
-      KnowledgeGraphNeo4j.this.link(
-              provenanceNode, activity, GraphModel.Relationship.HAS_CHILD, scope);
-    }
-
-    scope.send(
-        Message.MessageClass.ObservationLifecycle,
-        Message.MessageType.ActivityStarted,
-        ret.activity);
-
-    // open transaction if we are the root operation. We only commit within it.
-    ret.transaction =
-        ret.parent == null
-            ?
-            // this open a new session per transaction. Probably expensive but safe as
-            // transactions can't co-occur within a session.
-            driver
-                .session()
-                .beginTransaction(TransactionConfig.builder().withTimeout(Duration.ZERO).build())
-            : ret.parent.transaction;
-
-    return ret;
+  public Transaction createTransaction() {
+    return new TransactionImpl();
   }
+
+  //  /**
+  //   * A provenance-linked "transaction" that can be committed or rolled back by reporting failure
+  // or
+  //   * success. The related activity becomes part of the graph in any case and success/failure is
+  //   * recorded with it. Everything else stored or linked is rolled back in case of failure.
+  //   */
+  //  public class OperationImpl implements Operation {
+  //
+  //    private ActivityImpl activity;
+  //    private Agent agent;
+  //    private Transaction transaction;
+  //    private Scope.Status outcome;
+  //    private Throwable exception;
+  //    private Object[] assets;
+  //    private OperationImpl parent;
+  //    private List<OperationImpl> children = new ArrayList<>();
+  //    private Actuator actuator;
+  //    private Observation target;
+  //    private Observation observationToSubmit;
+  //    private boolean closed = false; // for debugging
+  //    private int level = 0;
+  //
+  //    @Override
+  //    public Agent getAgent() {
+  //      return this.agent;
+  //    }
+  //
+  //    @Override
+  //    public Activity getActivity() {
+  //      return this.activity;
+  //    }
+  //
+  //    @Override
+  //    public Operation createChild(Object... activityData) {
+  //
+  //      if (closed) {
+  //        throw new KlabInternalErrorException(
+  //            "Cannot create a child knowledge graph operation after termination");
+  //      }
+  //
+  //      var activity = new ActivityImpl();
+  //      activity.setStart(System.currentTimeMillis());
+  //      activity.setUrn(this.activity.getUrn() + "." + Utils.Names.shortUUID());
+  //      var ret = new OperationImpl();
+  //
+  //      ret.level = this.level + 1;
+  //      ret.agent = agent;
+  //      ret.transaction = transaction;
+  //      ret.parent = this;
+  //
+  //      if (activityData != null) {
+  //        for (Object o : activityData) {
+  //          if (o instanceof ActivityImpl a) {
+  //            activity = a;
+  //          } else if (o instanceof Activity.Type type) {
+  //            activity.setType(type);
+  //          } else if (o instanceof String description) {
+  //            activity.setDescription(description);
+  //          } else if (o instanceof Agent agent) {
+  //            ret.agent = agent;
+  //          } else if (o instanceof ActuatorImpl actuator) {
+  //            ret.actuator = actuator;
+  //          } else if (o instanceof Observation observation) {
+  //            ret.target = observation;
+  //          }
+  //        }
+  //      }
+  //
+  //      ret.activity = activity;
+  //
+  //      store(activity);
+  //      link(this.activity, activity, GraphModel.Relationship.TRIGGERED);
+  //      link(activity, agent, GraphModel.Relationship.BY_AGENT);
+  //
+  //      this.children.add(ret);
+  //
+  //      return ret;
+  //    }
+  //
+  //    @Override
+  //    public long store(RuntimeAsset asset, Object... additionalProperties) {
+  //      return KnowledgeGraphNeo4j.this.store(transaction, asset, scope, additionalProperties);
+  //    }
+  //
+  //    @Override
+  //    public void link(
+  //        RuntimeAsset source,
+  //        RuntimeAsset destination,
+  //        GraphModel.Relationship relationship,
+  //        Object... additionalProperties) {
+  //      KnowledgeGraphNeo4j.this.link(
+  //          transaction, source, destination, relationship, scope, additionalProperties);
+  //    }
+  //
+  //    @Override
+  //    public void linkToRootNode(
+  //        RuntimeAsset destination,
+  //        GraphModel.Relationship relationship,
+  //        Object... additionalProperties) {
+  //      var rootNode =
+  //          switch (destination) {
+  //            case Actuator ignored -> dataflowNode;
+  //            case Activity ignored -> provenanceNode;
+  //            case Observation ignored -> contextNode;
+  //            default -> throw new KlabIllegalStateException("Unexpected value: " + destination);
+  //          };
+  //      KnowledgeGraphNeo4j.this.link(
+  //          transaction, rootNode, destination, relationship, scope, additionalProperties);
+  //    }
+  //
+  //    @Override
+  //    public Operation success(ContextScope scope, Object... assets) {
+  //
+  //      this.outcome = Scope.Status.FINISHED;
+  //      // updates as needed (activity end, observation resolved if type == resolution, context
+  //      // timestamp
+  //      this.assets = assets;
+  //
+  //      /*
+  //      if we have resolved a top-level observation, we must submit it for scheduling events at
+  // close.
+  //       */
+  //      if (this.activity.getType() == Activity.Type.RESOLUTION) {
+  //        if (assets != null) {
+  //          for (var asset : assets) {
+  //            if (asset instanceof Observation observation) {
+  //              this.observationToSubmit = observation;
+  //            }
+  //          }
+  //        }
+  //      }
+  //      return this;
+  //    }
+  //
+  //    @Override
+  //    public Operation fail(ContextScope scope, Object... assets) {
+  //      // rollback; update activity end and context timestamp only, if we have an error or
+  // throwable
+  //      // update activity
+  //      this.outcome = Scope.Status.ABORTED;
+  //      this.assets = assets;
+  //      return this;
+  //    }
+  //
+  //    @Override
+  //    public Scope.Status getOutcome() {
+  //      return outcome;
+  //    }
+  //
+  //    @Override
+  //    public String toString() {
+  //      var root = this;
+  //      while (root.parent != null) {
+  //        root = root.parent;
+  //      }
+  //
+  //      StringBuilder ret = new StringBuilder();
+  //      dump(root, 0, ret);
+  //      return ret.toString();
+  //    }
+  //
+  //    private void dump(OperationImpl root, int i, StringBuilder ret) {
+  //      ret.append(org.integratedmodelling.common.utils.Utils.Strings.spaces(i * 3))
+  //          .append(transaction.isOpen() ? "(" : "[")
+  //          .append(root.description())
+  //          .append(transaction.isOpen() ? ")" : "]")
+  //          .append(root == this ? "*\n" : "\n");
+  //      for (var child : root.children) {
+  //        dump(child, i + 1, ret);
+  //      }
+  //    }
+  //
+  //    private String description() {
+  //      return activity.getType().name() + (target == null ? "?" : (" " + target));
+  //    }
+  //
+  //    @Override
+  //    public void close() throws IOException {
+  //
+  //      List<Actuator> childActuators = new ArrayList<>();
+  //      for (var child : children) {
+  //        child.close();
+  //        if (child.actuator != null) {
+  //          childActuators.add(child.actuator);
+  //        }
+  //      }
+  //
+  //      if (closed) {
+  //        return;
+  //      }
+  //
+  //      this.closed = true;
+  //      this.activity.setEnd(System.currentTimeMillis());
+  //      this.activity.setOutcome(
+  //          outcome == null
+  //              ? Activity.Outcome.INTERNAL_FAILURE
+  //              : (outcome == Scope.Status.FINISHED
+  //                  ? Activity.Outcome.SUCCESS
+  //                  : Activity.Outcome.FAILURE));
+  //
+  //      // commit or rollback based on status after success() or fail(). If none has been
+  //      // called, status is null and this is an internal error, logged with the activity
+  //
+  //      ObservationImpl observation = null;
+  //      double coverage = 1.0;
+  //      var resolutionEmpty = false;
+  //      Dataflow dataflow = null;
+  //      if (assets != null) {
+  //        for (var asset : assets) {
+  //          if (asset instanceof ObservationImpl obs) {
+  //            observation = obs;
+  //            activity.setObservationUrn(obs.getUrn());
+  //          } else if (asset instanceof Throwable t) {
+  //            activity.setStackTrace(ExceptionUtils.getStackTrace(t));
+  //          } else if (asset instanceof Dataflow df) {
+  //            resolutionEmpty = df.isEmpty();
+  //            dataflow = df;
+  //          }
+  //        }
+  //      }
+  //
+  //      if (resolutionEmpty && activity.getType() == Activity.Type.RESOLUTION) {
+  //        activity.setOutcome(Activity.Outcome.FAILURE);
+  //        activity.setDescription("Resolution of " + observation + " failed");
+  //      }
+  //
+  //      if (this.actuator != null) {
+  //        store(actuator);
+  //        link(this.activity, this.actuator, GraphModel.Relationship.HAS_PLAN);
+  //        for (Actuator childActuator : childActuators) {
+  //          link(this.actuator, childActuator, GraphModel.Relationship.HAS_CHILD);
+  //        }
+  //      } else {
+  //        for (Actuator childActuator : childActuators) {
+  //          link(dataflowNode, childActuator, GraphModel.Relationship.HAS_CHILD);
+  //        }
+  //      }
+  //
+  //      if (observation != null && this.actuator != null && outcome == Scope.Status.FINISHED) {
+  //        link(this.activity, observation, GraphModel.Relationship.RESOLVED);
+  //      }
+  //
+  //      if (parent == null) {
+  //
+  //        if (outcome == null) {
+  //          // Log an internal failure (no success or failure, should not happen)
+  //          Logging.INSTANCE.error("Internal error: activity did not properly finish: " +
+  // activity);
+  //          scope.send(
+  //              Message.MessageClass.ObservationLifecycle,
+  //              Message.MessageType.ActivityAborted,
+  //              activity);
+  //          transaction.rollback();
+  //        } else if (outcome == Scope.Status.FINISHED) {
+  //          scope.send(
+  //              Message.MessageClass.ObservationLifecycle,
+  //              Message.MessageType.ActivityFinished,
+  //              activity);
+  //          if (dataflow != null && activity.getType() == Activity.Type.RESOLUTION) {
+  //            storeCausalLinks(dataflow);
+  //          }
+  //          transaction.commit();
+  //        } else if (outcome == Scope.Status.ABORTED) {
+  //          scope.send(
+  //              Message.MessageClass.ObservationLifecycle,
+  //              Message.MessageType.ActivityAborted,
+  //              activity);
+  //          transaction.rollback();
+  //        }
+  //
+  //        // npw that transactions are done, update all observations and activities w.r.t. the
+  // ones
+  //        // contained here
+  //        updateAssets();
+  //
+  //        /*
+  //         * Last, submit the observation to the scheduler, which will trigger execution of the
+  //         * contextualization strategy.
+  //         */
+  //        if (observationToSubmit != null) {
+  //          scope.getDigitalTwin().getScheduler().submit(observationToSubmit);
+  //        }
+  //      }
+  //    }
+  //
+  //    private void updateAssets() {
+  //
+  //      for (var child : children) {
+  //        child.updateAssets();
+  //      }
+  //
+  //      Dataflow dataflow = null;
+  //      ObservationImpl observation = null;
+  //      double coverage = 1.0;
+  //      if (assets != null) {
+  //        for (var asset : assets) {
+  //          if (asset instanceof ObservationImpl obs) {
+  //            observation = obs;
+  //          } else if (asset instanceof Double d) {
+  //            coverage = d;
+  //          } else if (asset instanceof Long l) {
+  //            this.activity.setCredits(l);
+  //          } else if (asset instanceof Throwable throwable) {
+  //            this.activity.setStackTrace(ExceptionUtils.getStackTrace(throwable));
+  //          } else if (asset instanceof Dataflow df) {
+  //            dataflow = df;
+  //          }
+  //        }
+  //      }
+  //
+  //      if (observation != null && outcome == Scope.Status.FINISHED) {
+  //        if (this.activity.getType() == Activity.Type.CONTEXTUALIZATION) {
+  //          observation.setResolved(true);
+  //          observation.setResolvedCoverage(coverage);
+  //        }
+  //        update(observation, scope);
+  //        if (observation.getGeometry() != null) {
+  //          storeGeometry(observation.getGeometry(), observation);
+  //        }
+  //      }
+  //
+  //      update(this.activity, scope);
+  //    }
+  //
+  //    private void storeCausalLinks(Dataflow dataflow) {
+  //      /*
+  //       * Any dependency could be seen as an "affects" link OR we can check the actual causality,
+  // meaning that
+  //       * all contextualizables must be able to tell us if they physically depend on each
+  // observable. Keep it
+  //       * simple and potentially wasteful for now.
+  //       */
+  //      for (var actuator : dataflow.getComputation()) {
+  //        Observation observation = observationCache.getIfPresent(actuator.getId());
+  //        storeCausalLinks(actuator, observation);
+  //      }
+  //    }
+  //
+  //    private void storeCausalLinks(Actuator actuator, Observation affected) {
+  //      for (var child : actuator.getChildren()) {
+  //        var affecting = observationCache.getIfPresent(child.getId());
+  //        if (affecting != null) {
+  //          storeCausalLinks(child, affecting);
+  //          link(affecting, affected, GraphModel.Relationship.AFFECTS);
+  //        }
+  //      }
+  //    }
+  //  }
+
+  //  @Override
+  //  public Operation operation(
+  //      Agent agent, Activity parentActivity, Activity.Type activityType, Object... data) {
+  //
+  //    // validate arguments and complain loudly if anything is missing. Must have agent and
+  // activity
+  //    if (agent == null) {
+  //      throw new KlabInternalErrorException("Knowledge graph operation: agent is null");
+  //    }
+  //
+  //    // create and commit the activity record as a node, possibly linked to a parent
+  //    // activity.
+  //
+  //    // open the transaction for the remaining operations
+  //
+  //    var activity = new ActivityImpl();
+  //    activity.setType(activityType);
+  //    activity.setStart(System.currentTimeMillis());
+  //    activity.setName(activityType.name());
+  //    activity.setUrn(
+  //        (parentActivity == null ? "" : (parentActivity.getUrn() + ".")) +
+  // Utils.Names.shortUUID());
+  //
+  //    var ret = new OperationImpl();
+  //
+  //    ret.activity = activity;
+  //    ret.agent = agent;
+  //
+  //    // select arguments and put them where they belong
+  //    if (data != null) {
+  //      for (var dat : data) {
+  //        if (dat instanceof String description) {
+  //          ret.activity.setDescription(description);
+  //        } else if (dat instanceof OperationImpl operation) {
+  //          throw new KlabInternalErrorException("Root-level operation including another");
+  //        } else if (dat instanceof KlabService service) {
+  //          activity.setServiceId(service.serviceId());
+  //          activity.setServiceName(service.getServiceName());
+  //          activity.setServiceType(KlabService.Type.classify(service));
+  //        } else if (dat instanceof Dataflow dataflow) {
+  //          activity.setDataflow(new DataflowEncoder(dataflow, scope).toString());
+  //        } else if (dat instanceof Observation observation) {
+  //          ret.target = observation;
+  //        }
+  //      }
+  //    }
+  //
+  //    KnowledgeGraphNeo4j.this.store(activity, scope);
+  //    KnowledgeGraphNeo4j.this.link(activity, agent, GraphModel.Relationship.BY_AGENT, scope);
+  //    if (parentActivity != null) {
+  //      KnowledgeGraphNeo4j.this.link(
+  //              parentActivity, activity, GraphModel.Relationship.TRIGGERED, scope);
+  //    } else {
+  //      KnowledgeGraphNeo4j.this.link(
+  //              provenanceNode, activity, GraphModel.Relationship.HAS_CHILD, scope);
+  //    }
+  //
+  //    scope.send(
+  //        Message.MessageClass.ObservationLifecycle,
+  //        Message.MessageType.ActivityStarted,
+  //        ret.activity);
+  //
+  //    // open transaction if we are the root operation. We only commit within it.
+  //    ret.transaction =
+  //        ret.parent == null
+  //            ?
+  //            // this open a new session per transaction. Probably expensive but safe as
+  //            // transactions can't co-occur within a session.
+  //            driver
+  //                .session()
+  //
+  // .beginTransaction(TransactionConfig.builder().withTimeout(Duration.ZERO).build())
+  //            : ret.parent.transaction;
+  //
+  //    return ret;
+  //  }
 
   protected synchronized EagerResult query(
       String query, Map<String, Object> parameters, Scope scope) {
@@ -552,7 +599,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   protected synchronized Result query(
-      Transaction transaction, String query, Map<String, Object> parameters, Scope scope) {
+      org.neo4j.driver.Transaction transaction,
+      String query,
+      Map<String, Object> parameters,
+      Scope scope) {
     if (isOnline()) {
       try {
         return transaction.run(query, parameters);
@@ -849,7 +899,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   protected long store(
-      Transaction transaction, RuntimeAsset asset, Scope scope, Object... additionalProperties) {
+      org.neo4j.driver.Transaction transaction,
+      RuntimeAsset asset,
+      Scope scope,
+      Object... additionalProperties) {
 
     var type = getLabel(asset);
     var props = asParameters(asset, additionalProperties);
@@ -881,6 +934,34 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     return ret;
+  }
+
+  protected void link(
+      org.neo4j.driver.Transaction transaction,
+      RuntimeAsset source,
+      RuntimeAsset destination,
+      GraphModel.Relationship relationship,
+      Scope scope,
+      Object... additionalProperties) {
+
+    // find out if the internal ID or what stored ID should be used
+    var sourceQuery = matchAsset(source, "n", "sourceId");
+    var targetQuery = matchAsset(destination, "c", "targetId");
+    var props = asParameters(null, additionalProperties);
+    var query =
+        ("MATCH (n:{fromLabel}), (c:{toLabel}) WHERE {sourceQuery} AND {targetQuery} CREATE (n)"
+                + "-[r:{relationshipLabel}]->(c) SET r = $properties RETURN r")
+            .replace("{sourceQuery}", sourceQuery)
+            .replace("{targetQuery}", targetQuery)
+            .replace("{relationshipLabel}", relationship.name())
+            .replace("{fromLabel}", getLabel(source))
+            .replace("{toLabel}", getLabel(destination));
+
+    query(
+        transaction,
+        query,
+        Map.of("sourceId", getId(source), "targetId", getId(destination), "properties", props),
+        scope);
   }
 
   private void storeGeometry(Geometry geometry, RuntimeAsset asset) {
@@ -962,34 +1043,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         scope);
   }
 
-  protected void link(
-      Transaction transaction,
-      RuntimeAsset source,
-      RuntimeAsset destination,
-      GraphModel.Relationship relationship,
-      Scope scope,
-      Object... additionalProperties) {
-
-    // find out if the internal ID or what stored ID should be used
-    var sourceQuery = matchAsset(source, "n", "sourceId");
-    var targetQuery = matchAsset(destination, "c", "targetId");
-    var props = asParameters(null, additionalProperties);
-    var query =
-        ("MATCH (n:{fromLabel}), (c:{toLabel}) WHERE {sourceQuery} AND {targetQuery} CREATE (n)"
-                + "-[r:{relationshipLabel}]->(c) SET r = $properties RETURN r")
-            .replace("{sourceQuery}", sourceQuery)
-            .replace("{targetQuery}", targetQuery)
-            .replace("{relationshipLabel}", relationship.name())
-            .replace("{fromLabel}", getLabel(source))
-            .replace("{toLabel}", getLabel(destination));
-
-    query(
-        transaction,
-        query,
-        Map.of("sourceId", getId(source), "targetId", getId(destination), "properties", props),
-        scope);
-  }
-
   private String matchAsset(RuntimeAsset asset, String name, String queryVariable) {
 
     var ret =
@@ -1062,7 +1115,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   @Override
-  protected RuntimeAsset getProvenanceNode() {
+  public RuntimeAsset getProvenanceNode() {
     if (scope == null) {
       throw new KlabIllegalStateException(
           "Access to context node in a non-contexual knowledge graph");
@@ -1499,13 +1552,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       Query<T> graphQuery, Class<T> resultClass, Scope scope) {
     if (graphQuery instanceof KnowledgeGraphQuery<T> knowledgeGraphQuery) {
       try {
-      var statement = compileQuery(knowledgeGraphQuery, resultClass, scope);
-      if (statement == null) {
-        return List.of();
-      }
-      var queryCode = statement.build().getCypher();
-      System.out.println("QUERY THIS: " + queryCode);
-      return adapt(query(queryCode, null, scope), resultClass, scope);
+        var statement = compileQuery(knowledgeGraphQuery, resultClass, scope);
+        if (statement == null) {
+          return List.of();
+        }
+        var queryCode = statement.build().getCypher();
+        System.out.println("QUERY THIS: " + queryCode);
+        return adapt(query(queryCode, null, scope), resultClass, scope);
       } catch (Throwable t) {
         System.out.println("DIO MAIALE");
       }

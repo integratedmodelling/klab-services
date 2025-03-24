@@ -444,16 +444,16 @@ public class RuntimeService extends BaseService
                 scope);
 
     if (ret instanceof DigitalTwinImpl.TransactionImpl transaction) {
-      Scale scale = Scale.create(rootObservation.getGeometry());
       for (var rootActuator : dataflow.getComputation()) {
         var executionSequence = new ExecutionSequence(this, dataflow, scope);
-        if (!executionSequence.compile(rootActuator, scale)) {
+        if (!executionSequence.compile(rootActuator)) {
           return ret.fail(
               new KlabCompilationError(
                   "Could not compile execution sequence for this target observation"));
         }
         executionSequence.store(transaction);
       }
+
       return ret;
     }
     throw new KlabInternalErrorException(
@@ -464,8 +464,8 @@ public class RuntimeService extends BaseService
   public Observation runDataflow(
       Dataflow dataflow,
       Geometry geometry,
-      ContextScope contextScope,
-      KnowledgeGraph.Operation contextualization) {
+      ContextScope contextScope/*,
+      KnowledgeGraph.Operation contextualization*/) {
 
     /*
     TODO Load or confirm availability of all needed resources and create any non-existing observations
@@ -480,14 +480,14 @@ public class RuntimeService extends BaseService
       for (var rootActuator : dataflow.getComputation()) {
         var executionSequence =
             new ExecutionSequence(
-                this, contextualization, dataflow, getComponentRegistry(), serviceContextScope);
-        var compiled = executionSequence.compile(rootActuator, geometry);
+                this, /*contextualization,*/ dataflow, getComponentRegistry(), serviceContextScope);
+        var compiled = executionSequence.compile(rootActuator);
         if (!compiled) {
-          contextualization.fail(
-              contextScope,
-              dataflow.getTarget(),
-              new KlabCompilationError(
-                  "Could not compile execution sequence for this target observation"));
+//          contextualization.fail(
+//              contextScope,
+//              dataflow.getTarget(),
+//              new KlabCompilationError(
+//                  "Could not compile execution sequence for this target observation"));
           return Observation.empty();
         } else if (!executionSequence.isEmpty()) {
           // TODO run it the old way, calling the executors one by one. This is for explicit
@@ -507,7 +507,7 @@ public class RuntimeService extends BaseService
         obs.setResolvedCoverage(df.getResolvedCoverage());
       }
 
-      contextualization.success(contextScope, dataflow.getTarget(), dataflow);
+//      contextualization.success(contextScope, dataflow.getTarget(), dataflow);
     }
 
     return dataflow.getTarget();

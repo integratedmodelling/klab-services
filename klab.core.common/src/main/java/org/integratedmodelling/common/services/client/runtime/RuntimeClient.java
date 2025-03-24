@@ -276,6 +276,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     return false;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
       KnowledgeGraph.Query<T> knowledgeGraphQuery, Scope scope) {
@@ -290,32 +291,6 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
     throw new KlabIllegalStateException("Knowledge graph query using unexpected implementation");
   }
-
-  //
-  //  @Override
-  //  public <T extends RuntimeAsset> List<T> retrieveAssets(
-  //      ContextScope contextScope, Class<T> assetClass, Object... queryParameters) {
-  //    AssetRequest request = new AssetRequest();
-  //    RuntimeAsset.Type type = RuntimeAsset.Type.forClass(assetClass);
-  //
-  //    for (var object : queryParameters) {
-  //      switch (object) {
-  //        case Observable observable -> request.setObservable(observable);
-  //        case Observation observation -> request.setContextObservation(observation);
-  //        case Long id -> request.setId(id);
-  //        case String string -> request.setName(string);
-  //        case Geometry geometry -> request.setGeometry(geometry);
-  //        case Metadata metadata -> request.getMetadata().putAll(metadata);
-  //        case RuntimeAsset.Type assetType -> type = assetType;
-  //        default -> throw new KlabIllegalStateException("Unexpected value: " + object);
-  //      }
-  //    }
-  //    request.setKnowledgeClass(type);
-  //
-  //    return client
-  //        .withScope(contextScope)
-  //        .postCollection(ServicesAPI.RUNTIME.RETRIEVE_ASSET, request, assetClass);
-  //  }
 
   @Override
   public ResourceSet resolveContextualizables(

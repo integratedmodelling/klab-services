@@ -19,11 +19,13 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -56,7 +58,7 @@ public class ExecutionSequence {
   private final double resolvedCoverage;
   //  private final KnowledgeGraph.Operation contextualization;
   private final Dataflow dataflow;
-  @Deprecated private List<List<ExecutorOperation>> sequence = new ArrayList<>();
+  //  @Deprecated private List<List<ExecutorOperation>> sequence = new ArrayList<>();
   private boolean empty;
   // the context for the next operation. Starts at the observation and doesn't normally change but
   // implementations
@@ -66,7 +68,9 @@ public class ExecutionSequence {
   //  private Map<Actuator, KnowledgeGraph.Operation> operations = new HashMap<>();
   private Throwable cause;
   private List<Pair<Actuator, Integer>> computation = new ArrayList<>();
+  private Map<Long, ExecutorOperation> operations = new HashMap<>();
   private Map<Long, Observation> observations = new HashMap<>();
+  private Graph<Actuator, DependencyEdge> dependencyGraph;
 
   public ExecutionSequence(
       RuntimeService runtimeService, Dataflow dataflow, ServiceContextScope contextScope) {
@@ -79,9 +83,12 @@ public class ExecutionSequence {
     this.digitalTwin = contextScope.getDigitalTwin();
   }
 
+  /*
+  UNUSED - for independent dataflow execution
+   */
   public ExecutionSequence(
       RuntimeService runtimeService,
-      KnowledgeGraph.Operation contextualization,
+      //      KnowledgeGraph.Operation contextualization,
       Dataflow dataflow,
       ComponentRegistry componentRegistry,
       ServiceContextScope contextScope) {
@@ -96,114 +103,87 @@ public class ExecutionSequence {
   }
 
   /**
-   * HERE - instead of compiling the whole thing for execution, should just build the order of
-   * contextualization and insert it in the DT as triggers relationships between either actuators or
-   * observations. As that is done, an actuator -> ExecutorOperation map can be filled. After that,
-   * an initialization event should be sent to the scheduler - which should lookup (lazily as we
-   * could be resuming after a crash) the operation and run them in triggering order, adding any
-   * other dependency to the KG as operations are triggered and building the relevant schedules to
-   * account for temporal events and any others. Obs should subscribe to the "fluxes" they will
-   * react to, using a Replay sink so that any new obs will receive the replayed events when they
-   * intercept them.
+   * Build the ordered dependency graph, the executors and the observations
    *
    * @param rootActuator
    * @return
    */
-  public boolean compile(Actuator rootActuator, Geometry geometry) {
-
-    // build the observations as required
-    requireObservations(rootActuator, geometry);
+  public boolean compile(Actuator rootActuator) {
 
     this.computation = sortComputation(rootActuator);
-    List<ExecutorOperation> current = null;
-    int currentGroup = -1;
+
+    // build the observations as required
+    requireObservations(rootActuator);
+
+    //    List<ExecutorOperation> current = null;
+    //    int currentGroup = -1;
     for (var pair : this.computation) {
-      if (currentGroup != pair.getSecond()) {
-        if (current != null) {
-          sequence.add(current);
-        }
-        current = new ArrayList<>();
-      }
-      currentGroup = pair.getSecond();
-      var operation = new ExecutorOperation(pair.getFirst(), geometry);
+      //      if (currentGroup != pair.getSecond()) {
+      //        if (current != null) {
+      //          sequence.add(current);
+      //        }
+      //        current = new ArrayList<>();
+      //      }
+      //      currentGroup = pair.getSecond();
+      var operation = new ExecutorOperation(pair.getFirst());
       if (!operation.isOperational()) {
         return false;
       }
-      current.add(operation);
+      operations.put(pair.getFirst().getId(), operation);
     }
 
-    if (current != null) {
-      sequence.add(current);
-      return true;
-    }
-
-    return false;
+    //    if (current != null) {
+    //      sequence.add(current);
+    //      return true;
+    //    }
+    //
+    return true;
   }
 
-  private void requireObservations(Actuator rootActuator, Geometry geometry) {
-    Map<Long, Observation> observationMap = scope.getResolvedObservations();
-    requireObservation(rootActuator, geometry, observationMap);
+  private void requireObservations(Actuator rootActuator) {
+    Map<Long, Observation> observationMap = new HashMap<>();
+    requireObservation(rootActuator, observationMap);
     observations.putAll(observationMap);
   }
 
-  private void requireObservation(
-      Actuator actuator, Geometry geometry, Map<Long, Observation> observationMap) {
+  private void requireObservation(Actuator actuator, Map<Long, Observation> observationMap) {
     if (!observationMap.containsKey(actuator.getId())) {
-      observationMap.put(actuator.getId(), requireObservation(actuator, geometry));
+      observationMap.put(actuator.getId(), requireObservation(actuator));
     }
     for (var child : actuator.getChildren()) {
-      requireObservation(child, geometry, observationMap);
+      requireObservation(child, observationMap);
     }
   }
 
-  private Observation requireObservation(Actuator actuator, Geometry geometry) {
-    if (actuator.getId() < 0) {
-
-      /* the geometry must be appropriate for the observable - collective substantials are in the observer's scope */
-      // FIXME this same logic is replicated in the resolution compiler. We should have it in one place and ideally in
-      //  the right one, and/or we can have the resolver send the geometries along with the dataflow.
-      /**
-       * TODO what we should do is that the actuator(s) should contain both resolvedCoverage and totalCoverage. We build the
-       *  new observations using resolvedCoverage.
-       */
-      if (actuator.getObservable().is(SemanticType.COUNTABLE)
-          && actuator.getObservable().getSemantics().isCollective()) {
-        if (scope.getObserver() != null) {
-          geometry =
-              GeometryRepository.INSTANCE.getUnion(geometry, scope.getObserver().getGeometry());
-        }
-      }
-
+  private Observation requireObservation(Actuator actuator) {
+    if (actuator.getId() < 0 && actuator instanceof ActuatorImpl actuator1) {
       var ret =
           DigitalTwin.createObservation(
-              scope, actuator.getObservable(), geometry, actuator.getName());
-      //        this.id = this.operation.store(ret);
-      if (actuator instanceof ActuatorImpl actuator1) {
-        actuator1.setId(actuator.getId());
-      }
+              scope, actuator.getObservable(), actuator1.getResolvedGeometry(), actuator.getName());
       scope.registerObservation(ret);
       return ret;
     }
     return scope.getObservation(actuator.getId());
   }
 
-  /**
-   * Submit the operations to the scheduler, then submit the geometry so that the relevant temporal
-   * events can be generated if necessary.
-   *
-   * @return
-   */
-  public void submit() {
-    for (var operationGroup : sequence) {
-      for (var operation : operationGroup) {
-        scope
-            .getDigitalTwin()
-            .getScheduler()
-            .registerExecutor(
-                operation.observation, (g, s) -> operation.run(g, (ServiceContextScope) s));
-      }
-    }
-  }
+  //  /**
+  //   * Submit the operations to the scheduler, then submit the geometry so that the relevant
+  // temporal
+  //   * events can be generated if necessary.
+  //   *
+  //   * @return
+  //   */
+  //  public void submit() {
+  //    for (var operationGroup : sequence) {
+  //      for (var operation : operationGroup) {
+  //        scope
+  //            .getDigitalTwin()
+  //            .getScheduler()
+  //            .registerExecutor(
+  //                operation.observation, (g, s) -> operation.run(g, (ServiceContextScope) s));
+  //      }
+  //    }
+  //  }
 
   /**
    * Called after successful compilation to build the (uncommitted) graph of observations,
@@ -213,25 +193,102 @@ public class ExecutionSequence {
    * @param transaction
    */
   public void store(DigitalTwinImpl.TransactionImpl transaction) {
-    /* Store all observations, activities and actuators */
-    for (var observation : this.computation) {}
+
+    /* Add all observations. The unresolved ones will be automatically added. */
+    observations.values().forEach(transaction::add);
+    /*
+     * First root observation is linked to the activity, the others to the first through HAS_SIBLING
+     */
+    List<Observation> rootObservations =
+        dataflow.getComputation().stream().map(a -> observations.get(a.getId())).toList();
+
+    if (!rootObservations.isEmpty()) {
+      transaction.link(
+          transaction.getActivity(),
+          rootObservations.getFirst(),
+          rootObservations.getFirst().getId() < 0
+              ? GraphModel.Relationship.CREATED
+              : GraphModel.Relationship.RESOLVED);
+
+      for (int i = 1; i < rootObservations.size(); i++) {
+        transaction.link(
+            rootObservations.getFirst(),
+            rootObservations.get(i),
+            GraphModel.Relationship.HAS_SIBLING);
+      }
+    }
+
+    /*
+     * Establish the computation rank for the scheduler
+     */
+    int current = -1;
+    Set<Actuator> set = null;
+    List<Pair<Integer, Set<Actuator>>> order = new ArrayList<>();
+    for (var ac : computation) {
+      if (ac.getSecond() != current) {
+        if (set != null) {
+          order.add(Pair.of(current, set));
+        }
+        set = new HashSet<>();
+        current = ac.getSecond();
+      }
+      set.add(ac.getFirst());
+    }
+    if (set != null) {
+      order.add(Pair.of(current, set));
+    }
+
+    for (int i = 1; i < order.size(); i++) {
+      var cGroup = order.get(i);
+      var pGroup = order.get(i - 1);
+      for (var act : cGroup.getSecond()) {
+        for (var prv : pGroup.getSecond()) {
+          var edge = dependencyGraph.getEdge(prv, act);
+          if (edge != null) {
+            edge.order = pGroup.getFirst();
+          }
+        }
+      }
+    }
+
+    for (var actuator : dependencyGraph.vertexSet()) {
+      if (!actuator.getComputation().isEmpty()) {
+        transaction.add(actuator);
+        transaction.link(
+            observations.get(actuator.getId()),
+            actuator,
+            GraphModel.Relationship.CONTEXTUALIZES,
+            "geometry",
+            ((ActuatorImpl) actuator).getResolvedGeometry());
+        if (operations.containsKey(actuator.getId())) {
+          transaction.resolveWith(
+              observations.get(actuator.getId()), operations.get(actuator.getId()));
+        }
+      }
+    }
+
+    for (var edge : dependencyGraph.edgeSet()) {
+      var source = observations.get(dependencyGraph.getEdgeSource(edge).getId());
+      var target = observations.get(dependencyGraph.getEdgeTarget(edge).getId());
+      // TODO geometry?
+      transaction.link(source, target, GraphModel.Relationship.AFFECTS, "rank", edge.order);
+    }
   }
 
   /** One operation per observation. Successful execution will update the observation in the DT. */
-  class ExecutorOperation {
+  class ExecutorOperation implements DigitalTwin.Contextualizer {
 
-    private long id;
+    //    private long id;
     private final Observation observation;
     // TODO executors get cached within the DT, here we should just ensure they can be produced. A
     //  list should be indexed by observation URN, empty for empty dataflows.
     protected List<BiFunction<Geometry, ContextScope, Boolean>> executors = new ArrayList<>();
     private boolean scalar;
     private boolean operational;
+    private List<ServiceCall> serviceCalls = new ArrayList<>();
 
-    public ExecutorOperation(Actuator actuator, Geometry geometry) {
-      this.id = actuator.getId();
-      this.observation = observations.get(this.id);
-      observations.put(this.id, this.observation);
+    public ExecutorOperation(Actuator actuator) {
+      this.observation = observations.get(actuator.getId());
       instrumentObservation(this.observation, actuator);
       this.operational = compile(actuator);
     }
@@ -251,6 +308,8 @@ public class ExecutionSequence {
     }
 
     private boolean compile(Actuator actuator) {
+
+      this.serviceCalls.addAll(actuator.getComputation());
 
       // TODO compile info for provenance from actuator
 
@@ -477,7 +536,13 @@ public class ExecutionSequence {
       return true;
     }
 
-    public boolean run(Geometry geometry, ServiceContextScope scope) {
+    @Override
+    public List<ServiceCall> serialized() {
+      return serviceCalls;
+    }
+
+    @Override
+    public boolean run(Geometry geometry, ContextScope scope) {
 
       // TODO compile info for provenance, to be added to the KG at finalization
       long start = System.currentTimeMillis();
@@ -550,14 +615,11 @@ public class ExecutionSequence {
     int executionOrder = 0;
     Map<Long, Actuator> branch = new HashMap<>();
     Set<Actuator> group = new HashSet<>();
-    var dependencyGraph = computeActuatorOrder(rootActuator);
+    this.dependencyGraph = computeActuatorOrder(rootActuator);
     for (var nextActuator : ImmutableList.copyOf(new TopologicalOrderIterator<>(dependencyGraph))) {
       if (nextActuator.getActuatorType() != Actuator.Type.REFERENCE) {
-        ret.add(
-            Pair.of(
-                nextActuator,
-                (executionOrder =
-                    checkExecutionOrder(executionOrder, nextActuator, dependencyGraph, group))));
+        var order = checkExecutionOrder(executionOrder, nextActuator, dependencyGraph, group);
+        ret.add(Pair.of(nextActuator, (executionOrder = order)));
       }
     }
     return ret;
@@ -576,7 +638,7 @@ public class ExecutionSequence {
   private int checkExecutionOrder(
       int executionOrder,
       Actuator current,
-      Graph<Actuator, DefaultEdge> dependencyGraph,
+      Graph<Actuator, DependencyEdge> dependencyGraph,
       Set<Actuator> currentGroup) {
     boolean dependency = false;
     for (Actuator previous : currentGroup) {
@@ -598,8 +660,13 @@ public class ExecutionSequence {
     return executionOrder;
   }
 
-  private Graph<Actuator, DefaultEdge> computeActuatorOrder(Actuator rootActuator) {
-    Graph<Actuator, DefaultEdge> dependencyGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
+  private static class DependencyEdge extends DefaultEdge {
+    public int order;
+  }
+
+  private Graph<Actuator, DependencyEdge> computeActuatorOrder(Actuator rootActuator) {
+    Graph<Actuator, DependencyEdge> dependencyGraph =
+        new DefaultDirectedGraph<>(DependencyEdge.class);
     Map<Long, Actuator> cache = new HashMap<>();
     loadGraph(rootActuator, dependencyGraph, cache /*, this.contextualization*/);
     // keep the actuators that do nothing so we can tag their observation as resolved
@@ -608,7 +675,7 @@ public class ExecutionSequence {
 
   private void loadGraph(
       Actuator rootActuator,
-      Graph<Actuator, DefaultEdge> dependencyGraph,
+      Graph<Actuator, DependencyEdge> dependencyGraph,
       Map<Long, Actuator> cache) {
 
     cache.put(rootActuator.getId(), rootActuator);

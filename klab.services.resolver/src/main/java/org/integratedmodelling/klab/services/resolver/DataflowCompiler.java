@@ -121,6 +121,7 @@ public class DataflowCompiler {
         actuator.setId(observation.getId());
         actuator.setActuatorType(Actuator.Type.OBSERVE);
         actuator.setCoverage(childCoverage == null ? null : childCoverage.as(Geometry.class));
+        actuator.setResolvedGeometry(observation.getGeometry());
         actuator.setStrategyUrn(observationStrategy.getUrn());
         compileStrategy(actuator, observation, childCoverage, observationStrategy);
         ret.add(actuator);

@@ -31,8 +31,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
-  public Operation operation(
-      Agent agent, Activity parentActivity, Activity.Type activityType, Object... data) {
+  public Transaction createTransaction() {
     throw new KlabIllegalStateException(
         "Modifying operations not allowed on the client-side knowledge graph");
   }

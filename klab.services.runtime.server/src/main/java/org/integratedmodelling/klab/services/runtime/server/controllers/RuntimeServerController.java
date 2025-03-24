@@ -35,7 +35,6 @@ public class RuntimeServerController {
    * the observation tasks should monitor resolution until completion.
    *
    * @return
-   *
    */
   @PostMapping(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION)
   public @ResponseBody long submit(
@@ -83,10 +82,7 @@ public class RuntimeServerController {
           && contextScope instanceof ServiceContextScope serviceContextScope
           && query.getResultType() == KnowledgeGraphQuery.AssetType.OBSERVATION) {
         var ret = serviceContextScope.getObservation(query.getId());
-        if (ret != null) {
-          return List.of(ret);
-        }
-        return List.of();
+        return ret == null ? List.of() : List.of(ret);
       }
       return runtimeService.klabService().queryKnowledgeGraph(query, contextScope);
     }

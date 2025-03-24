@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
+import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -45,31 +46,54 @@ public class DigitalTwinImpl implements DigitalTwin {
       GraphModel.Relationship relationship;
       Geometry geometry;
       int sequence = -1;
+
+      public Rel(GraphModel.Relationship relationship, Object... data) {}
     }
 
     Activity activity;
     ServiceContextScope scope;
     List<Throwable> failures = new ArrayList<>();
-    Graph<RuntimeAsset, DefaultEdge> graph = new DefaultDirectedGraph<>(Rel.class);
+    Graph<RuntimeAsset, Rel> graph = new DefaultDirectedGraph<>(Rel.class);
 
-    public TransactionImpl(Activity activity, ServiceContextScope scope) {
+    public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
       this.activity = activity;
       this.scope = scope;
       this.graph.addVertex(activity);
+      if (data != null) {
+        for (int i = 0; i < data.length; i++) {
+          if (data[i] instanceof Agent agent) {
+            this.graph.addVertex(agent);
+            this.graph.addEdge(activity, agent, new Rel(GraphModel.Relationship.BY_AGENT));
+          }
+        }
+      }
     }
 
     @Override
-    public void add(RuntimeAsset asset) {}
+    public Activity getActivity() {
+      return this.activity;
+    }
+
+    @Override
+    public void add(RuntimeAsset asset) {
+      graph.addVertex(asset);
+    }
 
     @Override
     public void link(
-        RuntimeAsset source, RuntimeAsset destination, GraphModel.Relationship relationship) {}
+        RuntimeAsset source,
+        RuntimeAsset destination,
+        GraphModel.Relationship relationship,
+        Object... data) {
+      graph.addEdge(source, destination, new Rel(relationship, data));
+    }
 
     @Override
     public void resolveWith(Observation observation, Contextualizer contextualizer) {}
 
     @Override
     public boolean commit() {
+
       if (!failures.isEmpty()) {
         failures.forEach(t -> scope.error(t));
         return false;
@@ -79,6 +103,25 @@ public class DigitalTwinImpl implements DigitalTwin {
       TODO!
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
        */
+      try (var kgTransaction = knowledgeGraph.createTransaction()) {
+
+        for (var asset : graph.vertexSet()) {
+          kgTransaction.store(asset);
+        }
+
+        for (var edge : graph.edgeSet()) {
+          var source = graph.getEdgeSource(edge);
+          var target = graph.getEdgeTarget(edge);
+          kgTransaction.link(source, target, edge.relationship);
+        }
+
+        kgTransaction.link(
+            knowledgeGraph.getProvenanceNode(), activity, GraphModel.Relationship.HAS_CHILD);
+
+      } catch (Exception e) {
+        scope.error(e);
+        return false;
+      }
 
       return true;
     }

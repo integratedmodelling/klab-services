@@ -116,7 +116,7 @@ public class SchedulerImpl implements Scheduler {
   /**
    * This is called in response to the INIT event received by any root-level observation that was
    * successfully resolved. Successive executions of the same executors will happen by directly
-   * calling {@link #contextualize(Observation, KnowledgeGraph.Operation, Geometry,
+   * calling {@link #contextualize(Observation, Geometry,
    * ServiceContextScope)}
    *
    * @param observation
@@ -133,56 +133,56 @@ public class SchedulerImpl implements Scheduler {
     /*
     this will commit all resources at close()
      */
-    var contextualization =
-        knowledgeGraph.operation(
-            knowledgeGraph.klab(),
-            resolutionActivity.orElse(null),
-            Activity.Type.CONTEXTUALIZATION,
-            "Execution of resolved dataflow to contextualize " + observation,
-            observation,
-            this);
+//    var contextualization =
+//        knowledgeGraph.operation(
+//            knowledgeGraph.klab(),
+//            resolutionActivity.orElse(null),
+//            Activity.Type.CONTEXTUALIZATION,
+//            "Execution of resolved dataflow to contextualize " + observation,
+//            observation,
+//            this);
 
     var scale = Scale.create(observation.getGeometry());
     var initializationGeometry = scale.initialization();
 
-    try (contextualization) {
-
-      if (contextualize(observation, contextualization, initializationGeometry, scope)) {
-        contextualization.success(scope, observation);
-      } else {
-        contextualization.fail(scope, observation);
-      }
-    } catch (Throwable t) {
-      Logging.INSTANCE.error(t);
-      contextualization.fail(scope, observation, t);
-    }
+//    try (contextualization) {
+//
+//      if (contextualize(observation, /*contextualization,*/ initializationGeometry, scope)) {
+//        contextualization.success(scope, observation);
+//      } else {
+//        contextualization.fail(scope, observation);
+//      }
+//    } catch (Throwable t) {
+//      Logging.INSTANCE.error(t);
+//      contextualization.fail(scope, observation, t);
+//    }
   }
 
   private boolean contextualize(
       Observation observation,
-      KnowledgeGraph.Operation contextualization,
+//      KnowledgeGraph.Operation contextualization,
       Geometry geometry,
       ServiceContextScope scope) {
 
-    var localScope = scope.withinOperation(contextualization);
+//    var localScope = scope.withinOperation(contextualization);
 
     // follow the dependency chain first, then execute self
     Collection<Callable<Boolean>> tasks = new ArrayList<>();
     for (var affected :
         knowledgeGraph
-            .query(Observation.class, localScope)
+            .query(Observation.class, scope)
             .target(observation)
             .along(GraphModel.Relationship.AFFECTS)
-            .run(localScope)) {
+            .run(scope)) {
 
       tasks.add(
           () ->
               contextualize(
                   affected,
-                  contextualization.createChild(
-                      affected, geometry, Activity.Type.CONTEXTUALIZATION),
+//                  contextualization.createChild(
+//                      affected, geometry, Activity.Type.CONTEXTUALIZATION),
                   geometry,
-                  localScope));
+                  scope));
     }
     if (!tasks.isEmpty())
       try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -202,14 +202,14 @@ public class SchedulerImpl implements Scheduler {
                   }
                 })) {}
       } catch (Throwable t) {
-        localScope.error(t);
+        scope.error(t);
         return false;
       }
 
     var executor = executors.getIfPresent(observation.getId());
     if (executor != null) {
-      var ret = executor.apply(geometry, localScope);
-      localScope.finalizeObservation(observation, contextualization, ret);
+      var ret = executor.apply(geometry, scope);
+//      scope.finalizeObservation(observation,/* contextualization,*/ ret);
       return ret;
     }
 

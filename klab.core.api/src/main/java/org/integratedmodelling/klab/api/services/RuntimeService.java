@@ -45,6 +45,10 @@ public interface RuntimeService extends KlabService {
    * translated into dataflow actuators. Implementations are free to choose whether to implement
    * actual service calls or implement a more efficient compilation strategy for these functors.
    *
+   * <p>They all share the common parameters <code>_target</code> and <code>_targetId</code> for the
+   * target of the computation (main if not present). TODO parameterize the enums with their stated
+   * parameters.
+   *
    * @author Ferd
    */
   enum CoreFunctor {

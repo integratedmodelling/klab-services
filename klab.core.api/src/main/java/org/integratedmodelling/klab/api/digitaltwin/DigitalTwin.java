@@ -44,7 +44,7 @@ public interface DigitalTwin {
 
     List<ServiceCall> serialized();
 
-    boolean run(Geometry geometry);
+    boolean run(Geometry geometry, ContextScope scope);
   }
 
   /**
@@ -52,6 +52,13 @@ public interface DigitalTwin {
    * that all operations are linked to an activity that gets recorded in provenance.
    */
   interface Transaction {
+
+    /**
+     * Each transaction represents a provenance activity that cannot be null.
+     *
+     * @return the activity
+     */
+    Activity getActivity();
 
     /**
      * Record a new runtime asset in the graph. If the asset's ID is not {@link
@@ -62,7 +69,20 @@ public interface DigitalTwin {
      */
     void add(RuntimeAsset asset);
 
-    void link(RuntimeAsset source, RuntimeAsset destination, GraphModel.Relationship relationship);
+    /**
+     * Link two assets in the graph. The passed data will be matched to relationship properties
+     * according to the relationship.
+     *
+     * @param source
+     * @param destination
+     * @param relationship
+     * @param data
+     */
+    void link(
+        RuntimeAsset source,
+        RuntimeAsset destination,
+        GraphModel.Relationship relationship,
+        Object... data);
 
     void resolveWith(Observation observation, Contextualizer contextualizer);
 
@@ -84,8 +104,8 @@ public interface DigitalTwin {
   }
 
   /**
-   * Obtain a new transaction to make changes in the graph. Nothing is modified until {@link
-   * Transaction#commit()} is invoked on the returned object and returns true.
+   * Obtain a new transaction to make changes in the knowledge graph. Nothing is modified until
+   * {@link Transaction#commit()} is invoked on the returned object and returns true.
    *
    * @param activity
    * @return
