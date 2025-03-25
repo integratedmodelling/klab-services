@@ -420,6 +420,7 @@ public class RuntimeService extends BaseService
                  */
                 var transaction = compile(observation, dataflow, serviceContextScope);
                 if (transaction.commit()) {
+                  serviceContextScope.initializeResolution(); // clean up
                   return observation;
                 }
                 throw new KlabResolutionException(observation, "Dataflow compilation failed");
