@@ -38,7 +38,9 @@ public class ResolverController {
       if (contextScope instanceof ServiceContextScope serviceContextScope) {
         var job =
             resolverServer.klabService().resolve(resolutionRequest.getObservation(), contextScope);
-        return serviceContextScope.getJobManager().submit(job);
+        return serviceContextScope
+            .getJobManager()
+            .submit(job, "Resolution of " + resolutionRequest.getObservation());
       }
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");

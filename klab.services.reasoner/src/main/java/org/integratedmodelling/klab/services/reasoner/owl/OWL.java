@@ -1591,10 +1591,6 @@ public class OWL {
    */
   public synchronized Concept makeSubclass(Concept ret, String urn) {
 
-    if (urn.equals("earth:Region")) {
-      System.out.println("PORCO DIO");
-    }
-
     var ontology = requireOntology(INTERNAL_ONTOLOGY_ID);
     var name = ontology.createIdForDefinition(urn);
     List<Axiom> ax = new ArrayList<>();

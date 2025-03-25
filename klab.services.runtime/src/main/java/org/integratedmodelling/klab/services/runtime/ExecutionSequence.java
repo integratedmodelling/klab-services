@@ -194,6 +194,8 @@ public class ExecutionSequence {
    */
   public void store(DigitalTwinImpl.TransactionImpl transaction) {
 
+    var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
+
     /* Add all observations. The unresolved ones will be automatically added. */
     observations.values().forEach(transaction::add);
     /*
@@ -216,6 +218,13 @@ public class ExecutionSequence {
             rootObservations.get(i),
             GraphModel.Relationship.HAS_SIBLING);
       }
+
+      transaction.link(
+          scope.getContextObservation() == null
+              ? knowledgeGraph.scope()
+              : scope.getContextObservation(),
+          rootObservations.getFirst(),
+          GraphModel.Relationship.HAS_CHILD);
     }
 
     /*

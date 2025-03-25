@@ -12,11 +12,13 @@ import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
 import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
@@ -61,11 +63,12 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
     }
 
-    Activity activity;
-    ServiceContextScope scope;
-    List<Throwable> failures = new ArrayList<>();
-    Graph<RuntimeAsset, Rel> graph = new DefaultDirectedGraph<>(Rel.class);
-    Map<Observation, Contextualizer> contextualizers = new HashMap<>();
+    private Observation target;
+    private Activity activity;
+    private ServiceContextScope scope;
+    private List<Throwable> failures = new ArrayList<>();
+    private Graph<RuntimeAsset, Rel> graph = new DefaultDirectedGraph<>(Rel.class);
+    private Map<Observation, Contextualizer> contextualizers = new HashMap<>();
 
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
       this.activity = activity;
@@ -79,6 +82,10 @@ public class DigitalTwinImpl implements DigitalTwin {
           }
         }
       }
+    }
+
+    public void setTarget(Observation observation) {
+      this.target = observation;
     }
 
     @Override
@@ -97,6 +104,8 @@ public class DigitalTwinImpl implements DigitalTwin {
         RuntimeAsset destination,
         GraphModel.Relationship relationship,
         Object... data) {
+      graph.addVertex(source);
+      graph.addVertex(destination);
       graph.addEdge(source, destination, new Rel(relationship, data));
     }
 
@@ -120,17 +129,19 @@ public class DigitalTwinImpl implements DigitalTwin {
       try (var kgTransaction = knowledgeGraph.createTransaction()) {
 
         for (var asset : graph.vertexSet()) {
-          kgTransaction.store(asset);
+          if (setupForStorage(asset)) {
+            kgTransaction.store(asset);
+          }
         }
 
         for (var edge : graph.edgeSet()) {
           var source = graph.getEdgeSource(edge);
           var target = graph.getEdgeTarget(edge);
-          kgTransaction.link(source, target, edge.relationship);
+          kgTransaction.link(source, target, edge.relationship, getRelationshipData(edge));
         }
 
         kgTransaction.link(
-            knowledgeGraph.getProvenanceNode(), activity, GraphModel.Relationship.HAS_CHILD);
+            knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD);
 
       } catch (Exception e) {
         scope.error(e);
@@ -142,7 +153,38 @@ public class DigitalTwinImpl implements DigitalTwin {
             observation, (g, s) -> contextualizers.get(observation).run(g, s));
       }
 
+      /* Upon successful commit, establish the ID for any target that was passed in the initialization
+       * TODO see if anything else needs to be finalized, like the actuators and the activity */
+      if (target != null && target.getId() < 0) {
+        for (var asset : graph.vertexSet()) {
+          if (asset instanceof ObservationImpl observation
+              && observation.getObservable().equals(target.getObservable())
+              && target instanceof ObservationImpl targetObservation) {
+            targetObservation.setId(asset.getId());
+            break;
+          }
+        }
+      }
+
       return true;
+    }
+
+    private Object[] getRelationshipData(Rel edge) {
+      var ret = new ArrayList<Object>();
+      if (edge.relationship == GraphModel.Relationship.AFFECTS) {
+        ret.add("sequence");
+        ret.add(edge.sequence);
+      }
+      return ret.toArray();
+    }
+
+    private boolean setupForStorage(RuntimeAsset asset) {
+      return switch (asset) {
+        case Observation observation -> observation.getId() < 0;
+        case Actuator actuator -> true;
+        case Activity activity -> true;
+        default -> false;
+      };
     }
 
     @Override
@@ -161,8 +203,18 @@ public class DigitalTwinImpl implements DigitalTwin {
   }
 
   @Override
-  public Transaction transaction(Activity activity, ContextScope scope) {
-    return new TransactionImpl(activity, (ServiceContextScope) scope);
+  public Transaction transaction(Activity activity, ContextScope scope, Object... runtimeAssets) {
+    var ret = new TransactionImpl(activity, (ServiceContextScope) scope);
+    if (runtimeAssets != null) {
+      for (var asset : runtimeAssets) {
+        if (asset instanceof Observation observation) {
+          ret.setTarget(observation);
+        } else if (asset instanceof Dataflow dataflow) {
+          // TODO serialize and record with the activity
+        }
+      }
+    }
+    return ret;
   }
 
   @Override

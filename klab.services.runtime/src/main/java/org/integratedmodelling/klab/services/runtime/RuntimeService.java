@@ -418,8 +418,11 @@ public class RuntimeService extends BaseService
                 /*
                  * Compile an atomic transaction from the dataflow, adding new observations if the digital twin does not have them.
                  */
-                compile(observation, dataflow, serviceContextScope).commit();
-                return observation;
+                var transaction = compile(observation, dataflow, serviceContextScope);
+                if (transaction.commit()) {
+                  return observation;
+                }
+                throw new KlabResolutionException(observation, "Dataflow compilation failed");
               })
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
@@ -441,7 +444,9 @@ public class RuntimeService extends BaseService
             .transaction(
                 // TODO add encoded dataflow to the description
                 Activity.of("Resolution of " + rootObservation, Activity.Type.RESOLUTION, this),
-                scope);
+                scope,
+                dataflow,
+                rootObservation);
 
     if (ret instanceof DigitalTwinImpl.TransactionImpl transaction) {
       for (var rootActuator : dataflow.getComputation()) {
@@ -462,9 +467,7 @@ public class RuntimeService extends BaseService
 
   // TODO if we keep this, it must become asynchronous
   public Observation runDataflow(
-      Dataflow dataflow,
-      Geometry geometry,
-      ContextScope contextScope/*,
+      Dataflow dataflow, Geometry geometry, ContextScope contextScope /*,
       KnowledgeGraph.Operation contextualization*/) {
 
     /*
@@ -483,11 +486,11 @@ public class RuntimeService extends BaseService
                 this, /*contextualization,*/ dataflow, getComponentRegistry(), serviceContextScope);
         var compiled = executionSequence.compile(rootActuator);
         if (!compiled) {
-//          contextualization.fail(
-//              contextScope,
-//              dataflow.getTarget(),
-//              new KlabCompilationError(
-//                  "Could not compile execution sequence for this target observation"));
+          //          contextualization.fail(
+          //              contextScope,
+          //              dataflow.getTarget(),
+          //              new KlabCompilationError(
+          //                  "Could not compile execution sequence for this target observation"));
           return Observation.empty();
         } else if (!executionSequence.isEmpty()) {
           // TODO run it the old way, calling the executors one by one. This is for explicit
@@ -507,7 +510,7 @@ public class RuntimeService extends BaseService
         obs.setResolvedCoverage(df.getResolvedCoverage());
       }
 
-//      contextualization.success(contextScope, dataflow.getTarget(), dataflow);
+      //      contextualization.success(contextScope, dataflow.getTarget(), dataflow);
     }
 
     return dataflow.getTarget();

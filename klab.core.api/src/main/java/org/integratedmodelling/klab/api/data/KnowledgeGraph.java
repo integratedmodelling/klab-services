@@ -322,6 +322,32 @@ public interface KnowledgeGraph {
   KnowledgeGraph contextualize(ContextScope scope);
 
   /**
+   * The graph node that represents the scope we run under. If the KG is not the return value of a
+   * {@link #contextualize(ContextScope)} call, this will throw an exception.
+   *
+   * @return
+   */
+  RuntimeAsset scope();
+
+  /**
+   * The graph node that represents the root provenance node within the scope we run under. If the
+   * KG is not the return value of a {@link #contextualize(ContextScope)} call, this will throw an
+   * exception.
+   *
+   * @return
+   */
+  RuntimeAsset provenance();
+
+  /**
+   * The graph node that represents the root dataflow node within the scope we run under. If the
+   * KG is not the return value of a {@link #contextualize(ContextScope)} call, this will throw an
+   * exception.
+   *
+   * @return
+   */
+  RuntimeAsset dataflow();
+
+  /**
    * Extract and return the one asset that has the specified ID from the graph, ensuring it is of
    * the passed class. Expected to be the fastest way to retrieve a node when the ID is known,
    * therefore available besides the more general {@link #query(Class, Scope)}. The scope must be

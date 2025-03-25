@@ -71,7 +71,7 @@ public class SchedulerImpl implements Scheduler {
   public SchedulerImpl(ServiceContextScope scope, DigitalTwinImpl digitalTwin) {
     this.rootScope = scope;
     this.knowledgeGraph = digitalTwin.getKnowledgeGraph();
-    // The INIT event is created before anything happens and applies to every observation
+    // The INIT event is created before anything happens and applies to every new observation
     // registered.
     post(new Event());
   }
@@ -116,55 +116,18 @@ public class SchedulerImpl implements Scheduler {
   /**
    * This is called in response to the INIT event received by any root-level observation that was
    * successfully resolved. Successive executions of the same executors will happen by directly
-   * calling {@link #contextualize(Observation, Geometry,
-   * ServiceContextScope)}
+   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope)}
    *
    * @param observation
    */
   private void initialize(Observation observation, ServiceContextScope scope) {
-
-    var resolutionActivity =
-        knowledgeGraph
-            .query(Activity.class, scope)
-            .target(observation)
-            .along(GraphModel.Relationship.CREATED)
-            .peek(scope);
-
-    /*
-    this will commit all resources at close()
-     */
-//    var contextualization =
-//        knowledgeGraph.operation(
-//            knowledgeGraph.klab(),
-//            resolutionActivity.orElse(null),
-//            Activity.Type.CONTEXTUALIZATION,
-//            "Execution of resolved dataflow to contextualize " + observation,
-//            observation,
-//            this);
-
     var scale = Scale.create(observation.getGeometry());
     var initializationGeometry = scale.initialization();
-
-//    try (contextualization) {
-//
-//      if (contextualize(observation, /*contextualization,*/ initializationGeometry, scope)) {
-//        contextualization.success(scope, observation);
-//      } else {
-//        contextualization.fail(scope, observation);
-//      }
-//    } catch (Throwable t) {
-//      Logging.INSTANCE.error(t);
-//      contextualization.fail(scope, observation, t);
-//    }
+    if (contextualize(observation, scale, scope)) {}
   }
 
   private boolean contextualize(
-      Observation observation,
-//      KnowledgeGraph.Operation contextualization,
-      Geometry geometry,
-      ServiceContextScope scope) {
-
-//    var localScope = scope.withinOperation(contextualization);
+      Observation observation, Geometry geometry, ServiceContextScope scope) {
 
     // follow the dependency chain first, then execute self
     Collection<Callable<Boolean>> tasks = new ArrayList<>();
@@ -175,14 +138,7 @@ public class SchedulerImpl implements Scheduler {
             .along(GraphModel.Relationship.AFFECTS)
             .run(scope)) {
 
-      tasks.add(
-          () ->
-              contextualize(
-                  affected,
-//                  contextualization.createChild(
-//                      affected, geometry, Activity.Type.CONTEXTUALIZATION),
-                  geometry,
-                  scope));
+      tasks.add(() -> contextualize(affected, geometry, scope));
     }
     if (!tasks.isEmpty())
       try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -209,7 +165,7 @@ public class SchedulerImpl implements Scheduler {
     var executor = executors.getIfPresent(observation.getId());
     if (executor != null) {
       var ret = executor.apply(geometry, scope);
-//      scope.finalizeObservation(observation,/* contextualization,*/ ret);
+      //      scope.finalizeObservation(observation,/* contextualization,*/ ret);
       return ret;
     }
 

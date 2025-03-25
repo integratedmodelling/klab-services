@@ -554,13 +554,17 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             noResponseCount++;
           }
         } else if (status.getStatus() == Scope.Status.FINISHED) {
-          var result = client.get(ServicesAPI.JOBS.RETRIEVE, resultClass, "id", id);
-          if (result != null) {
-            complete(result);
-          } else {
-            completeExceptionally(
-                new KlabServiceAccessException(
-                    status.getStackTrace() == null ? "Null result" : status.getStackTrace()));
+          try {
+            var result = client.get(ServicesAPI.JOBS.RETRIEVE, resultClass, "id", id);
+            if (result != null) {
+              complete(result);
+            } else {
+              completeExceptionally(
+                  new KlabServiceAccessException(
+                      status.getStackTrace() == null ? "Null result" : status.getStackTrace()));
+            }
+          } catch (Throwable t) {
+            completeExceptionally(t);
           }
         } else if (status.getStatus() == Scope.Status.ABORTED) {
           completeExceptionally(

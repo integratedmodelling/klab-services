@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
@@ -34,12 +35,18 @@ public class JobManager {
    * @param task
    * @return
    */
-  public Long submit(CompletableFuture<?> task) {
+  public Long submit(CompletableFuture<?> task, String description) {
     var ret = nextId.incrementAndGet();
     jobs.put(
         ret,
         task.handle(
             (o, t) -> {
+              if (o == null) {
+                Logging.INSTANCE.error(
+                    "Job " + description + " failed\n" + Utils.Exceptions.stackTrace(t));
+              } else {
+                Logging.INSTANCE.info("Job " + description + " completed successfully");
+              }
               // put away result
               results.put(ret, Pair.of(o, t));
               // dereference self

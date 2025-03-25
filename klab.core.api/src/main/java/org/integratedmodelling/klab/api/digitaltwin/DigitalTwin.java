@@ -108,9 +108,13 @@ public interface DigitalTwin {
    * {@link Transaction#commit()} is invoked on the returned object and returns true.
    *
    * @param activity
+   * @param scope
+   * @param runtimeAssets any other assets related to the transaction that may be relevant or may
+   *     need to be finalized on commit. For example a resolution transaction may set the final
+   *     knowledge graph IDs in the arguments, so that they are available after commit.
    * @return
    */
-  Transaction transaction(Activity activity, ContextScope scope);
+  Transaction transaction(Activity activity, ContextScope scope, Object... runtimeAssets);
 
   /**
    * The full knowledge graph, including observations, actuators and provenance, referring to this

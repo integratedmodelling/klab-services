@@ -56,7 +56,7 @@ public class ClientDigitalTwin implements DigitalTwin {
   }
 
   @Override
-  public Transaction transaction(Activity activity, ContextScope scope) {
+  public Transaction transaction(Activity activity, ContextScope scope, Object... runtimeAssets) {
     throw new KlabIllegalStateException("Digital twin transactions can only be invoked at server side");
   }
 

@@ -58,9 +58,10 @@ public interface Scheduler {
    * consequences of any resulting events and call the scope to carry on any necessary computations
    * and update the knowledge graph.
    *
-   * <p>This must be called after the resolution has been successfully committed to the knowledge
-   * graph and all executors have been registered, which is done through {@link
-   * DigitalTwin.Transaction#commit()}.
+   * <p>This must be called <em>only on the root observation of a resolution</em> after the
+   * resolution has been successfully committed to the knowledge graph and all executors have been
+   * registered, which is done through {@link DigitalTwin.Transaction#commit()}. The observation
+   * after commit will contain its finalized IDs and all buffers will have been set up.
    *
    * @param observation
    * @return

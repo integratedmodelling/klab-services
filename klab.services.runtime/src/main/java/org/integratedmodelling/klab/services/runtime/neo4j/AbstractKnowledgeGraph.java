@@ -25,27 +25,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
   protected ContextScope scope;
 
-  /**
-   * Return a RuntimeAsset representing the overall dataflow related to the scope, so that it can be
-   * used for linking using the other CRUD methods.
-   *
-   * @return the dataflow root node, unique for the context.
-   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException if the graph is
-   *     not contextualized.
-   */
-  protected abstract RuntimeAsset getDataflowNode();
-
   protected abstract long nextKey();
-
-  /**
-   * Return a RuntimeAsset representing the overall provenance related to the scope, so that it can
-   * be used for linking using the other CRUD methods.
-   *
-   * @return the dataflow root node, unique for the context.
-   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException if the graph is
-   *     not contextualized.
-   */
-  protected abstract RuntimeAsset getProvenanceNode();
 
   /**
    * Retrieve the asset with the passed key.

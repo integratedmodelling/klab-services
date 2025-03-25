@@ -12,6 +12,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -651,8 +652,4 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     nextResolutionId.set(-1L);
     resolutionCache.clear();
   }
-
-//  public Map<Long, Observation> getResolvedObservations() {
-//    return resolutionCache;
-//  }
 }

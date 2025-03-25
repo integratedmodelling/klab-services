@@ -66,6 +66,21 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
+  public RuntimeAsset scope() {
+    return null;
+  }
+
+  @Override
+  public RuntimeAsset provenance() {
+    return null;
+  }
+
+  @Override
+  public RuntimeAsset dataflow() {
+    return null;
+  }
+
+  @Override
   public List<ContextInfo> getExistingContexts(UserScope scope) {
     return List.of();
   }

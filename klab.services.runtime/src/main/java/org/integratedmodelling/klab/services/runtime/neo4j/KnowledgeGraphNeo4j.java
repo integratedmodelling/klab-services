@@ -1106,7 +1106,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   @Override
-  protected RuntimeAsset getDataflowNode() {
+  public RuntimeAsset dataflow() {
     if (scope == null) {
       throw new KlabIllegalStateException(
           "Access to context node in a non-contexual knowledge graph");
@@ -1115,12 +1115,21 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   @Override
-  public RuntimeAsset getProvenanceNode() {
+  public RuntimeAsset provenance() {
     if (scope == null) {
       throw new KlabIllegalStateException(
           "Access to context node in a non-contexual knowledge graph");
     }
     return provenanceNode;
+  }
+
+  @Override
+  public RuntimeAsset scope() {
+    if (scope == null) {
+      throw new KlabIllegalStateException(
+          "Access to context node in a non-contexual knowledge graph");
+    }
+    return contextNode;
   }
 
   private String encodeGeometry(Geometry observationGeometry) {
