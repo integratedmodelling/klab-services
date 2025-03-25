@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.function.Supplier;
 import org.integratedmodelling.common.authentication.PartnerIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -18,6 +19,7 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -54,6 +56,7 @@ public class ServiceAuthorizationManager {
   private String nodeName;
   private String hubName;
   private boolean serviceAuthenticated;
+  private KlabService.Type type;
 
   /**
    * This is set explicitly after the scope is created. Without the root scope, no authentication is
@@ -92,11 +95,11 @@ public class ServiceAuthorizationManager {
 
     this.authenticatingHub = serverHub;
     this.nodeName =
-        options.getServiceName() == null
+            certificate.getProperty(KlabCertificate.KEY_NODENAME) != null
             ? certificate.getProperty(KlabCertificate.KEY_NODENAME)
             : options.getServiceName();
-
-    ServiceAuthenticationRequest request = new ServiceAuthenticationRequest();
+    this.type = KlabService.Type.valueOf(certificate.getProperty(KlabCertificate.KEY_CERTIFICATE_TYPE));
+    ServiceAuthenticationRequest request = new ServiceAuthenticationRequest(type);
 
     request.setCertificate(certificate.getProperty(KlabCertificate.KEY_CERTIFICATE));
     request.setName(nodeName);
@@ -111,12 +114,22 @@ public class ServiceAuthorizationManager {
      * the first token decryption fails and we have authenticated some time before,
      * we can try re-authenticating once to update it before refusing authorization.
      */
-    PublicKey publicKey = null;
-    ServiceAuthenticationResponse response = null; // client.authenticateNode(serverHub, request);
+    PublicKey publicKey;
+    ServiceAuthenticationResponse response;
+    try (var client = Utils.Http.getClient(this.authenticatingHub, null)) {
+      response = client.post(ServicesAPI.HUB.AUTHENTICATE_SERVICE, request,
+              ServiceAuthenticationResponse.class);
+    } catch (Exception e) {
+      throw new KlabAuthorizationException("error authenticating: " + e);
+    }
+
+    if (response == null) {
+      throw new KlabAuthorizationException("authentication response is null");
+    }
     this.hubName = response.getAuthenticatingHub();
 
     try {
-      byte publicKeyData[] = Base64.getDecoder().decode(response.getPublicKey());
+      byte[] publicKeyData = Base64.getDecoder().decode(response.getPublicKey());
       X509EncodedKeySpec spec = new X509EncodedKeySpec(publicKeyData);
       KeyFactory kf = KeyFactory.getInstance("RSA");
       publicKey = kf.generatePublic(spec);
@@ -145,7 +158,9 @@ public class ServiceAuthorizationManager {
     jwksVerifiers.put(response.getAuthenticatingHub(), jwtVerifier);
 
     // TODO fill in services from hub response, which at the moment contains no provision for that
+    ServiceReference service = new ServiceReference();
     List<ServiceReference> services = new ArrayList<>();
+    services.add(service);
 
     /*
      * return the institutional identity this certificate belongs to.

@@ -8,6 +8,17 @@ pipeline {
         MAVEN_OPTS="-Xmx1g"
         MINIO_HOST = "http://192.168.250.150:9000"
         MINIO_CREDENTIALS = "jenkins-ci-minio"
+        REGISTRY = "registry.integratedmodelling.org"
+        REGISTRY_CREDENTIALS = "83f9fb8b-e503-4566-9784-e80f2f2d7c64"
+
+        VERSION_DATE = sh(
+                    script: "date '+%Y-%m-%dT%H:%M:%S'",
+                    returnStdout: true).trim()
+        RESOURCES_CONTAINER = "resources-service-21"
+        RUNTIME_CONTAINER = "runtime-service-21"
+        RESOLVER_CONTAINER = "resolver-service-21"
+        REASONER_CONTAINER = "reasoner-service-21"
+        BASE_CONTAINER = "klab-base-21:dd2b778c852f20ad9c82fe6e12d57"
     }
     stages {
         stage('Build') {
@@ -39,6 +50,13 @@ pipeline {
                        mc rm --recursive --force minio/klab/products/klab/ || echo "klab/products/klab/ does not exists"
                        mc cp --recursive ./klab.distribution/target/distribution/ minio/klab/products/klab
                        """
+                }
+            }
+        }
+        stage('Maven install with jib') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${params.REGISTRY_CREDENTIALS}", passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                    sh './mvnw clean install -U -DskipTests jib:build -Djib.httpTimeout=180000'
                 }
             }
         }

@@ -11,9 +11,11 @@ import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.branding.Branding;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -98,8 +100,15 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
      * identity. Otherwise proceed as per default. If service is certified, record the privileges
      * and adjust the service scope.
      */
-    File config = BaseService.getConfigurationDirectory(getStartupOptions());
-    config = new File(config + File.separator + "klab.cert");
+    File cert = getStartupOptions().getCertificateFile();
+    if (cert != null) {
+        KlabCertificate certificate = KlabCertificateImpl.createFromFile(cert);
+        if (!certificate.isValid()) {
+            throw new KlabAuthorizationException("Certificate is invalid: " + certificate.getInvalidityCause());
+        }
+        return authorizationManager.authenticateService(certificate, getStartupOptions());
+    }
+    File config = new File(BaseService.getConfigurationDirectory(getStartupOptions()) + File.separator + KlabCertificate.DEFAULT_SERVICE_CERTIFICATE_FILENAME);
     if (config.isFile()) {
       return authorizationManager.authenticateService(
           KlabCertificateImpl.createFromFile(config), getStartupOptions());

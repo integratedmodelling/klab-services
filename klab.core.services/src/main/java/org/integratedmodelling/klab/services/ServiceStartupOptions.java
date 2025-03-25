@@ -22,7 +22,7 @@ public class ServiceStartupOptions implements StartupOptions {
 
     @Option(
             name = "-cert",
-            usage = "certificate file (default: <dataDir>/" + KlabCertificate.DEFAULT_NODE_CERTIFICATE_FILENAME + ")",
+            usage = "certificate file (default: <dataDir>/" + KlabCertificate.DEFAULT_SERVICE_CERTIFICATE_FILENAME + ")",
             metaVar = "<FILE_PATH>")
     File certificateFile = null;
 
@@ -194,7 +194,7 @@ public class ServiceStartupOptions implements StartupOptions {
     public File getCertificateFile() {
         if (certificateFile == null) {
             certificateFile =
-                    new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + KlabCertificate.DEFAULT_NODE_CERTIFICATE_FILENAME);
+                    new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + KlabCertificate.DEFAULT_SERVICE_CERTIFICATE_FILENAME);
         }
         return certificateFile;
     }
