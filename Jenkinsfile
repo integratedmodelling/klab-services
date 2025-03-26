@@ -10,7 +10,7 @@ pipeline {
         MINIO_HOST = "http://192.168.250.150:9000"
         MINIO_CREDENTIALS = "jenkins-ci-minio"
         REGISTRY = "registry.integratedmodelling.org"
-        REGISTRY_CREDENTIALS = "83f9fb8b-e503-4566-9784-e80f2f2d7c64"
+        REGISTRY_CREDENTIALS = "registry-jenkins-credentials"
 
         VERSION_DATE = sh(
                     script: "date '+%Y-%m-%dT%H:%M:%S'",
