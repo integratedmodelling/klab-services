@@ -68,10 +68,10 @@ pipeline {
             steps {
                 sshagent(["bc3-im-services"]) {
                     sh '''
-                      ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${VM_IP} << 'ENDSSH'
-                      cd ${VM_DOCKER_PATH}
-                      docker compose up -d
-ENDSSH'
+ssh bc3@192.168.250.215 << ENDOF
+cd /home/bc3/repos/klab-services-infrastructure/docker/
+docker compose up -d
+ENDOF
                      '''
                 }
             }
