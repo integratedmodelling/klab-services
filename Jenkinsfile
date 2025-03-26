@@ -19,7 +19,7 @@ pipeline {
         RUNTIME_CONTAINER = "runtime-service-21"
         RESOLVER_CONTAINER = "resolver-service-21"
         REASONER_CONTAINER = "reasoner-service-21"
-        BASE_CONTAINER = "klab-base-21:dd2b778c852f20ad9c82fe6e12d57"
+        BASE_CONTAINER = "klab-base-21:dd2b778c852f20ad9c82fe6e12d5723e23e3dd19"
     }
     stages {
         stage('Build') {
