@@ -65,7 +65,7 @@ pipeline {
         stage('Update services') {
             steps {
                 sshagent(["bc3-im-services"]) {
-                     sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${VM_IP} docker pull  docker pull registry.integratedmodelling.org/resources-service-21:${TAG}"
+                     sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${VM_IP} docker pull registry.integratedmodelling.org/resources-service-21:${TAG}"
                      sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${VM_IP} ${VM_DOCKER_PATH}/docker compose up -d"
                 }
             }
