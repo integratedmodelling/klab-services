@@ -58,7 +58,7 @@
                         <image>${env.REGISTRY}/${env.RESOURCES_CONTAINER}</image>
                         <tags>
                             <tag>${env.TAG}</tag>
-                            <!-- <tag>${env.CURRENT_COMMIT}</tag> -->
+                            <tag>${env.CURRENT_COMMIT}</tag>
                         </tags>
                         <auth>
                             <username>${env.REGISTRY_USERNAME}</username>
@@ -70,11 +70,11 @@
                         <user>klab:klab</user>
                         <jvmFlags>${jib.jvmFlags}</jvmFlags>
                         <mainClass>org.integratedmodelling.resources.server.ResourcesServer</mainClass>
-                        <args></args>
+                        <args/>
                         <ports>
-                            <port>8287</port>
+                            <port>8092</port>
                         </ports>
-                        <labels></labels>
+                        <labels/>
                     </container>
                 </configuration>
             </plugin>

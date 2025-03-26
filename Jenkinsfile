@@ -19,6 +19,7 @@ pipeline {
         RESOLVER_CONTAINER = "resolver-service-21"
         REASONER_CONTAINER = "reasoner-service-21"
         BASE_CONTAINER = "klab-base-21:dd2b778c852f20ad9c82fe6e12d57"
+        TAG = "${env.BRANCH_NAME.replace('/','-')}"
     }
     stages {
         stage('Build') {
@@ -31,6 +32,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: "${env.REGISTRY_CREDENTIALS}", passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
                     sh './mvnw clean source:jar install -DskipTests -U jib:build -Djib.httpTimeout=180000'
                 }
+                echo "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
             }
         }
         stage('Deploy artifacts') {
