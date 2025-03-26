@@ -24,7 +24,9 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                currentBuild.description = "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
+                script {
+                    currentBuild.description = "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
+                }
                 sh './mvnw clean source:jar package'
             }
         }
