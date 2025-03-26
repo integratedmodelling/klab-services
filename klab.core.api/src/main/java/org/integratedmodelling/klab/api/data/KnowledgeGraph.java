@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.data;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.provenance.Activity;
@@ -30,6 +31,17 @@ import java.util.Optional;
  * respective service calls.
  */
 public interface KnowledgeGraph {
+
+  /**
+   * A runtime asset representing a relationship. Used when submitting queries whose return value is
+   * the link, to inspect the relationships.
+   */
+  interface Link extends RuntimeAsset {
+
+    GraphModel.Relationship type();
+
+    Parameters<String> properties();
+  }
 
   /**
    * Simple query interface. Obtain a query, if needed combine it with others, and run it to obtain
@@ -70,6 +82,17 @@ public interface KnowledgeGraph {
     Query<T> target(Object startingPoint);
 
     Query<T> along(GraphModel.Relationship relationship, Object... parameters);
+
+    /**
+     * Find the (assumed unique) relationship between <code>source</code> and <code>target</code> of
+     * the passed type, and adapt the result to the query target class, which should normally be a
+     * {@link java.util.Map} where the relationship properties are recorded.
+     *
+     * @param source
+     * @param target
+     * @return
+     */
+    Query<T> between(Object source, Object target, GraphModel.Relationship relationship);
 
     Query<T> depth(int depth);
 
@@ -339,8 +362,8 @@ public interface KnowledgeGraph {
   RuntimeAsset provenance();
 
   /**
-   * The graph node that represents the root dataflow node within the scope we run under. If the
-   * KG is not the return value of a {@link #contextualize(ContextScope)} call, this will throw an
+   * The graph node that represents the root dataflow node within the scope we run under. If the KG
+   * is not the return value of a {@link #contextualize(ContextScope)} call, this will throw an
    * exception.
    *
    * @return
@@ -379,7 +402,7 @@ public interface KnowledgeGraph {
    * @param observation
    * @param scope
    * @param arguments additional parameters to add to the observation or to override existing ones
-   * @deprecated remove from API
+   * @deprecated remove from API and move to {@link Transaction}
    */
   void update(RuntimeAsset observation, ContextScope scope, Object... arguments);
 

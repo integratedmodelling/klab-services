@@ -56,7 +56,8 @@ public class ResolutionCompiler {
     if (observation.getObservable().getSemantics().isCollective()) {
       if (scope.getObserver() != null && scope.getObserver().getGeometry() != null) {
         geometry =
-            GeometryRepository.INSTANCE.getUnion(geometry, scope.getObserver().getGeometry());
+            GeometryRepository.INSTANCE.getUnion(
+                geometry, scope.getObserver().getGeometry(), Scale.class);
       }
     }
     return geometry;
@@ -74,7 +75,7 @@ public class ResolutionCompiler {
       return ResolutionGraph.empty();
     }
 
-    var scale = Scale.create(resolutionGeometry, scope);
+    var scale = GeometryRepository.INSTANCE.scale(resolutionGeometry, scope);
     Coverage coverage = Coverage.create(scale, 0.0);
     for (var resolvable : parentGraph.getResolving(observation.getObservable(), scale)) {
       if (resolvable.getSecond().getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
@@ -287,7 +288,7 @@ public class ResolutionCompiler {
       if (scope.getObserver() != null
           && !(scope.getObserver().getGeometry().isScalar()
               || !scope.getObserver().getGeometry().isEmpty())) {
-        scale = Scale.create(scope.getObserver().getGeometry());
+        scale = GeometryRepository.INSTANCE.scale(scope.getObserver().getGeometry());
       }
     }
     Observation context = scope.getContextObservation();

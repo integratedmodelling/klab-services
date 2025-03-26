@@ -22,10 +22,9 @@ import java.util.stream.Collectors;
 
 public class ScaleImpl implements Scale {
 
-  @Serial private static final long serialVersionUID = -4518044986262539876L;
-
   Extent<?>[] extents;
   long size;
+  String key;
 
   /**
    * Internal locator class f. Uses the enclosing scale in a lazy fashion for everything and just
@@ -175,6 +174,7 @@ public class ScaleImpl implements Scale {
   }
 
   public ScaleImpl(Geometry geometry, Scope scope) {
+    this.key = geometry.key();
     List<Extent<?>> extents = new ArrayList<>(3);
     for (Geometry.Dimension dimension : geometry.getDimensions()) {
       if (dimension.getType() == Type.SPACE) {
@@ -259,6 +259,14 @@ public class ScaleImpl implements Scale {
       if (extent instanceof ExtentImpl<?> extentImpl) ret.append(extentImpl.encode());
     }
     return ret.toString();
+  }
+
+  @Override
+  public String key() {
+    if (key == null) {
+      key = as(Geometry.class).key();
+    }
+    return key;
   }
 
   @Override
@@ -531,11 +539,14 @@ public class ScaleImpl implements Scale {
    */
   class DelegatingScale implements Scale {
 
-    private static final long serialVersionUID = -8416028789360949571L;
-
     @Override
     public String encode(Encoder... encoders) {
       return ScaleImpl.this.encode(encoders);
+    }
+
+    @Override
+    public String key() {
+      return ScaleImpl.this.key();
     }
 
     public Scale with(Extent<?> dimension) {

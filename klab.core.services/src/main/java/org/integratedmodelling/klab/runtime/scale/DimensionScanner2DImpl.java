@@ -136,6 +136,11 @@ public class DimensionScanner2DImpl implements DimensionScanner2D {
     }
 
     @Override
+    public String key() {
+        return originalScale.key();
+    }
+
+    @Override
     public boolean isGeneric() {
         return originalScale.isGeneric();
     }

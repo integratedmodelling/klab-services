@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import org.integratedmodelling.common.data.DataBuilderImpl;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.knowledge.ModelBuilderImpl;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
@@ -34,6 +35,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
@@ -107,7 +109,12 @@ public enum ServiceConfiguration {
 
           @Override
           public Scale promoteGeometryToScale(Geometry geometry, Scope scope) {
-            return scope == null ? new ScaleImpl(geometry) : new ScaleImpl(geometry, scope);
+              if (geometry instanceof Scale scale) {
+                  return scale;
+              }
+              var ret = new ScaleImpl(geometry);
+              GeometryRepository.INSTANCE.put(geometry, ret);
+              return ret;
           }
 
           @Override

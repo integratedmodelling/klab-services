@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.kactors;
 
 import org.apache.commons.lang3.reflect.MethodUtils;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -1729,7 +1730,7 @@ public class KActorsVM implements VM {
       states.put("self", observation);
 
       for (Locator locator :
-          Scale.create(((ContextScope) runtimeScope).getContextObservation().getGeometry())) {
+              GeometryRepository.INSTANCE.scale(((ContextScope) runtimeScope).getContextObservation().getGeometry())) {
 
         args.clear();
         for (String key : states.keySet()) {

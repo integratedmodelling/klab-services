@@ -153,6 +153,9 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   private long limit = -1;
   private long offset = 0;
   private long id = -1;
+  private Asset relationshipSource;
+  private Asset relationshipTarget;
+
 
   public KnowledgeGraphQuery() {}
 
@@ -217,6 +220,14 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   public KnowledgeGraph.Query<T> along(GraphModel.Relationship relationship, Object... parameters) {
     this.relationship = relationship;
     this.relationshipQueryCriteria = Parameters.create(parameters);
+    return this;
+  }
+
+  @Override
+  public KnowledgeGraph.Query<T> between(Object source, Object target, GraphModel.Relationship relationship) {
+    this.relationship = relationship;
+    this.relationshipSource = makeAsset(source);
+    this.relationshipTarget = makeAsset(target);
     return this;
   }
 
@@ -364,6 +375,22 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
 
   public void setOffset(long offset) {
     this.offset = offset;
+  }
+
+  public Asset getRelationshipSource() {
+    return relationshipSource;
+  }
+
+  public void setRelationshipSource(Asset relationshipSource) {
+    this.relationshipSource = relationshipSource;
+  }
+
+  public Asset getRelationshipTarget() {
+    return relationshipTarget;
+  }
+
+  public void setRelationshipTarget(Asset relationshipTarget) {
+    this.relationshipTarget = relationshipTarget;
   }
 
   public AssetType getResultType() {

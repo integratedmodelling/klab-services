@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resolver;
 
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
@@ -74,7 +75,7 @@ public class DataflowCompiler {
         throw new KlabIllegalStateException("Resolution root is not an observation");
       }
       ret.getComputation()
-          .addAll(compileObservation(observation, Scale.create(observation.getGeometry()), null));
+          .addAll(compileObservation(observation, GeometryRepository.INSTANCE.scale(observation.getGeometry()), null));
     }
 
     var out = new StringWriter();

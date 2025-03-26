@@ -120,6 +120,11 @@ public class DimensionScanner1DImpl implements DimensionScanner1D {
     }
 
     @Override
+    public String key() {
+        return originalScale.key;
+    }
+
+    @Override
     public boolean isGeneric() {
         return false;
     }

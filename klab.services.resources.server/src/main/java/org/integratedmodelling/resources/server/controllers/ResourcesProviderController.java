@@ -174,7 +174,7 @@ public class ResourcesProviderController {
               resourcesServer
                   .klabService()
                   .retrieveResource(List.of(request.getUrn()), authorization.getScope()),
-              Geometry.create(request.getGeometry()),
+              GeometryRepository.INSTANCE.get(request.getGeometry(), Geometry.class),
               authorization.getScope());
     }
     throw new KlabInternalErrorException("Resources service: unexpected authorization");
@@ -356,14 +356,14 @@ public class ResourcesProviderController {
 
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_PROJECT)
   public @ResponseBody Project retrieveProject(
-          @PathVariable("projectName") String projectName, Principal principal) {
+      @PathVariable("projectName") String projectName, Principal principal) {
     return resourcesServer
-            .klabService()
-            .retrieveProject(
-                    projectName,
-                    principal instanceof EngineAuthorization authorization
-                    ? authorization.getScope()
-                    : null);
+        .klabService()
+        .retrieveProject(
+            projectName,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
   }
 
   @PostMapping(ServicesAPI.RESOURCES.RESOLVE_MODELS)

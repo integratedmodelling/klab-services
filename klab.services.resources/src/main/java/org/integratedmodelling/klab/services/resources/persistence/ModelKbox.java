@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resources.persistence;
 
 import org.h2gis.utilities.SpatialResultSet;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
@@ -271,7 +272,7 @@ public class ModelKbox extends ObservableKbox {
       return ret;
     }
 
-    var scale = Scale.create(geometry);
+    var scale = GeometryRepository.INSTANCE.scale(geometry);
     String query = "SELECT model.oid FROM model WHERE ";
     Concept contextObservable =
         context.getContextObservation() == null
@@ -777,7 +778,7 @@ public class ModelKbox extends ObservableKbox {
   private Collection<ModelReference> getModelDescriptors(KimModel model, Scope monitor) {
 
     List<ModelReference> ret = new ArrayList<>();
-    Scale scale = Scale.create(resourceService.modelGeometry(model.getUrn()));
+    Scale scale = GeometryRepository.INSTANCE.scale(resourceService.modelGeometry(model.getUrn()));
 
     Shape spaceExtent = null;
     Time timeExtent = null;

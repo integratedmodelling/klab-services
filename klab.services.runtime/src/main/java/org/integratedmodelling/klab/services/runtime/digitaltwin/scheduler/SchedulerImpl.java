@@ -3,13 +3,16 @@ package org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import java.util.ArrayList;
-import java.util.Collection;
+
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -106,7 +109,7 @@ public class SchedulerImpl implements Scheduler {
 
   private Triple<Long, Long, Time.Resolution> register(Geometry geometry) {
     // TODO
-    Time time = Scale.create(geometry).getTime();
+    Time time = GeometryRepository.INSTANCE.scale(geometry).getTime();
     if (time != null) {
       return notifyTime(time);
     }
@@ -121,7 +124,7 @@ public class SchedulerImpl implements Scheduler {
    * @param observation
    */
   private void initialize(Observation observation, ServiceContextScope scope) {
-    var scale = Scale.create(observation.getGeometry());
+    var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry());
     var initializationGeometry = scale.initialization();
     if (contextualize(observation, scale, scope)) {}
   }
@@ -129,8 +132,10 @@ public class SchedulerImpl implements Scheduler {
   private boolean contextualize(
       Observation observation, Geometry geometry, ServiceContextScope scope) {
 
+    var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
+
     // follow the dependency chain first, then execute self
-    Collection<Callable<Boolean>> tasks = new ArrayList<>();
+    Map<Integer, List<Callable<Boolean>>> tasks = new HashMap<>();
     for (var affected :
         knowledgeGraph
             .query(Observation.class, scope)
@@ -138,35 +143,60 @@ public class SchedulerImpl implements Scheduler {
             .along(GraphModel.Relationship.AFFECTS)
             .run(scope)) {
 
-      tasks.add(() -> contextualize(affected, geometry, scope));
-    }
-    if (!tasks.isEmpty())
-      try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
-        var ret = executorService.invokeAll(tasks);
-        if (ret.stream().anyMatch(objectFuture -> objectFuture.state() == Future.State.FAILED)) {
-          // TODO collect the exceptions and pass them along
-          return false;
-        }
-        // check if anything has returned false
-        if (ret.stream()
-            .anyMatch(
-                future -> {
-                  try {
-                    return !future.get();
-                  } catch (Exception e) {
-                    return false;
-                  }
-                })) {}
-      } catch (Throwable t) {
-        scope.error(t);
-        return false;
+      var relationship =
+          knowledgeGraph
+              .query(KnowledgeGraph.Link.class, scope)
+              .between(affected, observation, GraphModel.Relationship.AFFECTS)
+              .peek(scope);
+
+      var sequence = 0;
+      if (relationship.isPresent()) {
+        sequence = relationship.get().properties().get(/* TODO use formal property */"sequence", 0);
       }
 
+      tasks
+          .computeIfAbsent(sequence, n -> new ArrayList<>())
+          .add(() -> contextualize(affected, geometry, scope));
+    }
+
+    var sortedTasks =
+        tasks.entrySet().stream()
+            .sorted((i1, i2) -> i1.getKey().compareTo(i2.getKey()))
+            .map(Map.Entry::getValue)
+            .toList();
+
+    for (var group : sortedTasks) {
+      if (!group.isEmpty())
+        try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+          var ret = executorService.invokeAll(group);
+          if (ret.stream().anyMatch(objectFuture -> objectFuture.state() == Future.State.FAILED)) {
+            // TODO collect the exceptions and pass them along
+            return false;
+          }
+          // check if anything has returned false
+          if (ret.stream()
+              .anyMatch(
+                  future -> {
+                    try {
+                      return !future.get();
+                    } catch (Exception e) {
+                      return false;
+                    }
+                  })) {}
+        } catch (Throwable t) {
+          scope.error(t);
+          return false;
+        }
+    }
+
+    /*
+     * The actual execution for self
+     */
     var executor = executors.getIfPresent(observation.getId());
     if (executor != null) {
-      var ret = executor.apply(geometry, scope);
-      //      scope.finalizeObservation(observation,/* contextualization,*/ ret);
-      return ret;
+      return executor.apply(geometry, scope);
+//      //      scope.finalizeObservation(observation,/* contextualization,*/ ret);
+//      return ret;
     }
 
     return true;

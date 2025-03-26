@@ -205,11 +205,11 @@ public interface Scale extends Geometry, Topology<Scale> {
      */
     Scale mergeExtent(Extent<?> extent);
 
-    public static Scale create(String geometrySpecifications) {
+    static Scale create(String geometrySpecifications) {
         return create(Geometry.create(geometrySpecifications));
     }
 
-    public static Scale create(Collection<Extent<?>> extents) {
+    static Scale create(Collection<Extent<?>> extents) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
         if (configuration == null) {
             throw new KlabIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
@@ -217,11 +217,11 @@ public interface Scale extends Geometry, Topology<Scale> {
         return configuration.createScaleFromExtents(extents);
     }
 
-    public static Scale create(Extent<?>... extents) {
+    static Scale create(Extent<?>... extents) {
         return extents == null ? create(Geometry.EMPTY) : create(Arrays.asList(extents));
     }
 
-    public static Scale create(Geometry geometry) {
+    static Scale create(Geometry geometry) {
         return geometry == null ? null : create(geometry, null);
     }
 
@@ -232,7 +232,7 @@ public interface Scale extends Geometry, Topology<Scale> {
      * @param scope
      * @return
      */
-    public static Scale create(Geometry geometry, Scope scope) {
+    static Scale create(Geometry geometry, Scope scope) {
         if (geometry instanceof Scale) {
             return (Scale) geometry;
         }
@@ -243,7 +243,7 @@ public interface Scale extends Geometry, Topology<Scale> {
         return configuration.promoteGeometryToScale(geometry, scope);
     }
 
-    public static Scale empty() {
+    static Scale empty() {
         return create(Geometry.EMPTY);
     }
 

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resolver;
 
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Model;
@@ -121,15 +122,15 @@ public class ResolutionGraph {
     this.parent = parent;
     this.resolved = resolvedObservation;
     this.target = target;
-    this.targetCoverage = Coverage.create(Scale.create(resolvedObservation.getGeometry()), 1.0);
+    this.targetCoverage = Coverage.create(GeometryRepository.INSTANCE.scale(resolvedObservation.getGeometry()), 1.0);
     this.rootScope = parent.rootScope;
     this.resolutionCatalog.putAll(parent.resolutionCatalog);
   }
 
   private Scale getCoverage(Resolvable target) {
     return switch (target) {
-      case Model model -> Scale.create(model.getCoverage());
-      case Observation observation -> Scale.create(observation.getGeometry());
+      case Model model -> GeometryRepository.INSTANCE.scale(model.getCoverage());
+      case Observation observation -> GeometryRepository.INSTANCE.scale(observation.getGeometry());
       default -> null;
     };
   }

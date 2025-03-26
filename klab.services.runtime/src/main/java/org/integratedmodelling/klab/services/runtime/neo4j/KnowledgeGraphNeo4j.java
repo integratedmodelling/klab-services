@@ -739,6 +739,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
         ret.add((T) node.asMap(Map.of()));
 
+      } else if (Link.class.isAssignableFrom(cls)) {
+
+        System.out.println("DIO POLLO");
+
       } else if (Agent.class.isAssignableFrom(cls)) {
 
         var instance = new AgentImpl();
@@ -982,7 +986,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     // only record fully specified scales, not syntactic specifications
-    geometry = Scale.create(geometry);
+    geometry = GeometryRepository.INSTANCE.scale(geometry);
 
     double coverage = geometry instanceof Coverage cov ? cov.getCoverage() : 1.0;
 
@@ -1138,7 +1142,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
      * Ensure that the shape parameter is in WKB and any prescriptive grid parameters are resolved.
      * TODO we should cache the geometries and scales, then reuse them.
      */
-    var ret = Scale.create(observationGeometry).encode(ShapeImpl.wkbEncoder);
+    var ret = GeometryRepository.INSTANCE.scale(observationGeometry).encode(ShapeImpl.wkbEncoder);
 
     return ret;
   }
@@ -1561,15 +1565,37 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       Query<T> graphQuery, Class<T> resultClass, Scope scope) {
     if (graphQuery instanceof KnowledgeGraphQuery<T> knowledgeGraphQuery) {
       try {
-        var statement = compileQuery(knowledgeGraphQuery, resultClass, scope);
-        if (statement == null) {
-          return List.of();
+        String queryCode = null;
+        // special case of query to retrieve a single relationship with its properties as result
+        if (Link.class.isAssignableFrom(resultClass)
+            && knowledgeGraphQuery.getResultType() == KnowledgeGraphQuery.AssetType.DATA
+            && knowledgeGraphQuery.getRelationshipSource() != null
+            && knowledgeGraphQuery.getRelationshipTarget() != null) {
+          StringBuilder q = new StringBuilder("MATCH ");
+          q.append("(x:")
+              .append(getLabel(knowledgeGraphQuery.getRelationshipSource()))
+              .append(" {urn: \"")
+              .append(knowledgeGraphQuery.getRelationshipSource().getUrn())
+              .append("\"})-[r:")
+              .append(knowledgeGraphQuery.getRelationship().name())
+              .append("->(y:")
+              .append(getLabel(knowledgeGraphQuery.getRelationshipTarget()))
+              .append(" {urn: \"")
+              .append(knowledgeGraphQuery.getRelationshipTarget().getUrn())
+              .append("\"}) RETURN r");
+          queryCode = q.toString();
+        } else {
+          var statement = compileQuery(knowledgeGraphQuery, resultClass, scope);
+          if (statement == null) {
+            return List.of();
+          }
+          queryCode = statement.build().getCypher();
         }
-        var queryCode = statement.build().getCypher();
         System.out.println("QUERY THIS: " + queryCode);
         return adapt(query(queryCode, null, scope), resultClass, scope);
       } catch (Throwable t) {
-        System.out.println("DIO MAIALE");
+        scope.error(t);
+        return List.of();
       }
     }
     throw new KlabUnimplementedException("Not ready to compile arbitrary query implementations");
