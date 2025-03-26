@@ -20,6 +20,8 @@ pipeline {
         RESOLVER_CONTAINER = "resolver-service-21"
         REASONER_CONTAINER = "reasoner-service-21"
         BASE_CONTAINER = "klab-base-21:dd2b778c852f20ad9c82fe6e12d5723e23e3dd19"
+        VM_IP = "192.168.250.215"
+        VM_DOCKER_PATH = "/repos/klab-services-infrastructure/docker"
     }
     stages {
         stage('Build') {
@@ -57,6 +59,14 @@ pipeline {
                        mc rm --recursive --force minio/klab/products/klab/ || echo "klab/products/klab/ does not exists"
                        mc cp --recursive ./klab.distribution/target/distribution/ minio/klab/products/klab
                        """
+                }
+            }
+        }
+        stage('Update services') {
+            steps {
+                sshagent(["bc3-im-services"]) {
+                     sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${VM_IP} docker pull  docker pull registry.integratedmodelling.org/resources-service-21:${TAG}"
+                     sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${VM_IP} ${VM_DOCKER_PATH}/docker compose up -d"
                 }
             }
         }
