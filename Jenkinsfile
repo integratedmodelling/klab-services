@@ -40,6 +40,7 @@ pipeline {
                 }
             }
         }
+        /*
         stage('Deploy artifacts') {
             when {
                 anyOf { branch 'develop'; branch 'master' }
@@ -62,6 +63,7 @@ pipeline {
                 }
             }
         }
+        */
         stage('Update services') {
             steps {
                 sshagent(["bc3-im-services"]) {
