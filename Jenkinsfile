@@ -21,7 +21,7 @@ pipeline {
         REASONER_CONTAINER = "reasoner-service-21"
         BASE_CONTAINER = "klab-base-21:dd2b778c852f20ad9c82fe6e12d5723e23e3dd19"
         VM_IP = "192.168.250.215"
-        VM_DOCKER_PATH = "~/repos/klab-services-infrastructure/docker/"
+        VM_DOCKER_PATH = "/home/bc3/repos/klab-services-infrastructure/docker/"
     }
     stages {
         /*
