@@ -26,9 +26,11 @@ pipeline {
                 sh './mvnw clean source:jar package'
             }
         }
-        stage('Install') {
+        stage('Install with JIB') {
             steps {
-                sh './mvnw clean source:jar install -DskipTests -U'
+                withCredentials([usernamePassword(credentialsId: "${env.REGISTRY_CREDENTIALS}", passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                    sh './mvnw clean source:jar install -DskipTests -U jib:build -Djib.httpTimeout=180000'
+                }
             }
         }
         stage('Deploy artifacts') {
@@ -53,12 +55,8 @@ pipeline {
                 }
             }
         }
-        stage('Maven install with jib') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: "${params.REGISTRY_CREDENTIALS}", passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
-                    sh './mvnw clean install -U -DskipTests jib:build -Djib.httpTimeout=180000'
-                }
-            }
+        stage('Update services') {
+
         }
     }
 }
