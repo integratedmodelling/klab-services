@@ -24,6 +24,7 @@ pipeline {
         VM_DOCKER_PATH = "/repos/klab-services-infrastructure/docker"
     }
     stages {
+        /*
         stage('Build') {
             steps {
                 script {
@@ -40,7 +41,6 @@ pipeline {
                 }
             }
         }
-        /*
         stage('Deploy artifacts') {
             when {
                 anyOf { branch 'develop'; branch 'master' }
