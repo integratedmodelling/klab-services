@@ -58,7 +58,7 @@
                         <image>${env.REGISTRY}/${env.RESOURCES_CONTAINER}</image>
                         <tags>
                             <tag>${env.TAG}</tag>
-                            <tag>${env.CURRENT_COMMIT}</tag>
+                            <tag>${env.GIT_COMMIT}</tag>
                         </tags>
                         <auth>
                             <username>${env.REGISTRY_USERNAME}</username>
