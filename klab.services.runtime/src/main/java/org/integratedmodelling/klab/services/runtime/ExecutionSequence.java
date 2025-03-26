@@ -166,25 +166,6 @@ public class ExecutionSequence {
     return scope.getObservation(actuator.getId());
   }
 
-  //  /**
-  //   * Submit the operations to the scheduler, then submit the geometry so that the relevant
-  // temporal
-  //   * events can be generated if necessary.
-  //   *
-  //   * @return
-  //   */
-  //  public void submit() {
-  //    for (var operationGroup : sequence) {
-  //      for (var operation : operationGroup) {
-  //        scope
-  //            .getDigitalTwin()
-  //            .getScheduler()
-  //            .registerExecutor(
-  //                operation.observation, (g, s) -> operation.run(g, (ServiceContextScope) s));
-  //      }
-  //    }
-  //  }
-
   /**
    * Called after successful compilation to build the (uncommitted) graph of observations,
    * activities, and actuators and to submit all the executors to the scheduler. The knowledge graph

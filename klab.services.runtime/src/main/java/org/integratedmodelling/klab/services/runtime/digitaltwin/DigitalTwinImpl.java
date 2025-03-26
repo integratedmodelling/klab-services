@@ -46,17 +46,17 @@ public class DigitalTwinImpl implements DigitalTwin {
 
   public class TransactionImpl implements Transaction {
 
-    static class Rel extends DefaultEdge {
+    static class RelationshipEdge extends DefaultEdge {
       GraphModel.Relationship relationship;
       Geometry geometry;
       int sequence = -1;
 
-      public Rel(GraphModel.Relationship relationship, Object... data) {
+      public RelationshipEdge(GraphModel.Relationship relationship, Object... data) {
         this.relationship = relationship;
         if (data != null) {
           for (int i = 0; i < data.length; i++) {
-            if (data[i] instanceof Integer sequence) {
-              this.sequence = sequence;
+            if (data[i] instanceof Integer seq) {
+              this.sequence = seq;
             } // TODO geometry and more
           }
         }
@@ -67,7 +67,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     private Activity activity;
     private ServiceContextScope scope;
     private List<Throwable> failures = new ArrayList<>();
-    private Graph<RuntimeAsset, Rel> graph = new DefaultDirectedGraph<>(Rel.class);
+    private Graph<RuntimeAsset, RelationshipEdge> graph = new DefaultDirectedGraph<>(RelationshipEdge.class);
     private Map<Observation, Contextualizer> contextualizers = new HashMap<>();
 
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
@@ -78,7 +78,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         for (int i = 0; i < data.length; i++) {
           if (data[i] instanceof Agent agent) {
             this.graph.addVertex(agent);
-            this.graph.addEdge(activity, agent, new Rel(GraphModel.Relationship.BY_AGENT));
+            this.graph.addEdge(activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));
           }
         }
       }
@@ -106,7 +106,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         Object... data) {
       graph.addVertex(source);
       graph.addVertex(destination);
-      graph.addEdge(source, destination, new Rel(relationship, data));
+      graph.addEdge(source, destination, new RelationshipEdge(relationship, data));
     }
 
     @Override
@@ -169,7 +169,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       return true;
     }
 
-    private Object[] getRelationshipData(Rel edge) {
+    private Object[] getRelationshipData(RelationshipEdge edge) {
       var ret = new ArrayList<Object>();
       if (edge.relationship == GraphModel.Relationship.AFFECTS) {
         ret.add("sequence");
