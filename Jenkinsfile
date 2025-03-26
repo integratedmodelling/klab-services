@@ -5,6 +5,7 @@ pipeline {
         label 'maven-3-9-5-eclipse-temurin-21'
     }
     environment {
+        TAG = "${env.BRANCH_NAME.replace('/','-')}"
         MAVEN_OPTS="-Xmx1g"
         MINIO_HOST = "http://192.168.250.150:9000"
         MINIO_CREDENTIALS = "jenkins-ci-minio"
@@ -19,20 +20,20 @@ pipeline {
         RESOLVER_CONTAINER = "resolver-service-21"
         REASONER_CONTAINER = "reasoner-service-21"
         BASE_CONTAINER = "klab-base-21:dd2b778c852f20ad9c82fe6e12d57"
-        TAG = "${env.BRANCH_NAME.replace('/','-')}"
     }
     stages {
         stage('Build') {
             steps {
+                currentBuild.description = "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
                 sh './mvnw clean source:jar package'
             }
         }
         stage('Install with JIB') {
             steps {
+                echo "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
                 withCredentials([usernamePassword(credentialsId: "${env.REGISTRY_CREDENTIALS}", passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
                     sh './mvnw clean source:jar install -DskipTests -U jib:build -Djib.httpTimeout=180000'
                 }
-                echo "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
             }
         }
         stage('Deploy artifacts') {
