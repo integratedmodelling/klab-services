@@ -55,8 +55,5 @@ pipeline {
                 }
             }
         }
-        stage('Update services') {
-
-        }
     }
 }
