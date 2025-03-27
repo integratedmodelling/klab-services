@@ -16,12 +16,13 @@ pipeline {
                     script: "date '+%Y-%m-%dT%H:%M:%S'",
                     returnStdout: true).trim()
         RESOURCES_CONTAINER = "resources-service-21"
+        RESOURCE_SERVICE = "resources"
         RUNTIME_CONTAINER = "runtime-service-21"
         RESOLVER_CONTAINER = "resolver-service-21"
         REASONER_CONTAINER = "reasoner-service-21"
         BASE_CONTAINER = "klab-base-21:dd2b778c852f20ad9c82fe6e12d5723e23e3dd19"
-        VM_IP = "192.168.250.215"
-        VM_DOCKER_PATH = "/home/bc3/repos/klab-services-infrastructure/docker/"
+        DOCKER_HOST = "192.168.250.215"
+        DOCKER_STACK = "klab"
     }
     stages {
         /*
@@ -67,12 +68,7 @@ pipeline {
         stage('Update services') {
             steps {
                 sshagent(["bc3-im-services"]) {
-                    sh '''
-ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 192.168.250.215 << ENDOF
-cd /home/bc3/repos/klab-services-infrastructure/docker/
-docker compose up -d
-ENDOF
-                     '''
+                    sh "ssh -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${DOCKER_SERVICE} --image ${RESOURCES_CONTAINER}:${TAG} --with-registry-auth
                 }
             }
         }
