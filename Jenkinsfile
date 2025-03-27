@@ -25,7 +25,6 @@ pipeline {
         DOCKER_STACK = "klab"
     }
     stages {
-        /*
         stage('Build') {
             steps {
                 script {
@@ -64,7 +63,6 @@ pipeline {
                 }
             }
         }
-        */
         stage('Update services') {
             steps {
                 sshagent(["bc3-im-services"]) {
