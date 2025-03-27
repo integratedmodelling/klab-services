@@ -120,7 +120,7 @@ public class SchedulerImpl implements Scheduler {
   /**
    * This is called in response to the INIT event received by any root-level observation that was
    * successfully resolved. Successive executions of the same executors will happen by directly
-   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope)}
+   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope, DigitalTwin.Transaction)}}
    *
    * @param observation
    */
