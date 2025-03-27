@@ -66,7 +66,7 @@ pipeline {
         stage('Update services') {
             steps {
                 sshagent(["bc3-im-services"]) {
-                    sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${RESOURCE_SERVICE} --image ${REGISTRY}${RESOURCES_CONTAINER}:${TAG} --with-registry-auth"
+                    sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${RESOURCE_SERVICE} --image ${REGISTRY}/${RESOURCES_CONTAINER}:${TAG} --with-registry-auth"
                 }
             }
         }
