@@ -110,7 +110,7 @@ public enum GeometryRepository {
 
   public <T extends Geometry> T getIntersection(
       Geometry geometry, Geometry geometry1, Class<T> geometryClass) {
-    var key = geometry.key() + "|" + geometry1.key();
+    var key = geometry.key() + "&" + geometry1.key();
     var cached = cache.getIfPresent(key);
     if (cached == null) {
       var scale1 = Scale.create(geometry);

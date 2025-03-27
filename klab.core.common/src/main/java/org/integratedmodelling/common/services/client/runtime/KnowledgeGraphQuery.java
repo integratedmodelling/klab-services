@@ -53,6 +53,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
     OBSERVATION,
     SEMANTICS,
     OBSERVABLE,
+    LINK,
     DATA;
 
     public static AssetType classify(Object asset) {
@@ -66,6 +67,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
             ignored.getContextObservation() == null ? AssetType.SCOPE : AssetType.OBSERVATION;
         case Concept ignored -> AssetType.SEMANTICS;
         case KimConcept ignored -> AssetType.SEMANTICS;
+        case KnowledgeGraph.Link ignored -> AssetType.LINK;
         case Storage.Buffer ignored -> AssetType.DATA;
         default ->
             throw new KlabIllegalArgumentException(
@@ -98,6 +100,9 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
       if (KimConcept.class.isAssignableFrom(asset)) {
         return AssetType.SEMANTICS;
       }
+      if (KnowledgeGraph.Link.class.isAssignableFrom(asset)) {
+        return AssetType.LINK;
+      }
       if (Storage.Buffer.class.isAssignableFrom(asset)) {
         return AssetType.DATA;
       }
@@ -115,6 +120,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
         case SEMANTICS -> Concept.class;
         case OBSERVABLE -> Observable.class;
         case DATA -> Storage.Buffer.class;
+        case LINK -> KnowledgeGraph.Link.class;
       };
     }
   }

@@ -65,12 +65,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
   @Override
   public <T extends RuntimeAsset> T get(long id, ContextScope scope, Class<T> resultClass) {
-//    if (Observation.class.isAssignableFrom(resultClass) && scope instanceof ServiceContextScope serviceContextScope) {
-//      var ret = serviceContextScope.getObservation(id);
-//      if (ret != null) {
-//        return (T)ret;
-//      }
-//    }
     return retrieve(id, resultClass, scope);
   }
 

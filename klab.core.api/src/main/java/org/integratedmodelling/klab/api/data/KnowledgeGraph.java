@@ -124,6 +124,8 @@ public interface KnowledgeGraph {
      */
     void store(RuntimeAsset asset, Object... additionalProperties);
 
+    void update(RuntimeAsset asset, Object... properties);
+
     /**
      * Link the two passed assets.
      *
@@ -384,18 +386,6 @@ public interface KnowledgeGraph {
    */
   <T extends RuntimeAsset> T get(long id, ContextScope scope, Class<T> resultClass);
 
-  //  /**
-  //   * Extract and return all the assets linked to the passed one in the graph.
-  //   *
-  //   * @param source
-  //   * @param linkType
-  //   * @param <T>
-  //   * @return
-  //   * @deprecated use query()
-  //   */
-  //  <T extends RuntimeAsset> List<T> get(
-  //      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass);
-
   /**
    * Called when an observation has been contextualized
    *
@@ -405,23 +395,6 @@ public interface KnowledgeGraph {
    * @deprecated remove from API and move to {@link Transaction}
    */
   void update(RuntimeAsset observation, ContextScope scope, Object... arguments);
-
-  //  /**
-  //   * Query starting at the point implied by the scope and return matching objects using the
-  // query
-  //   * parameters passed.
-  //   *
-  //   * @param scope
-  //   * @param resultClass Can be an individual object (Observation, Actuator or Provenance node)
-  // or an
-  //   *     entire Dataflow or Provenance
-  //   * @param queryParameters
-  //   * @param <T>
-  //   * @return
-  //   * @deprecated use query()
-  //   */
-  //  <T extends RuntimeAsset> List<T> get(
-  //      ContextScope scope, Class<T> resultClass, Object... queryParameters);
 
   /**
    * Find an agent by name. If the agent is not found, create it with the passed name. If the name
