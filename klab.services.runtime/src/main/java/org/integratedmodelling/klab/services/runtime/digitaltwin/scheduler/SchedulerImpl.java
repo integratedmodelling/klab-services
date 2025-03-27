@@ -15,6 +15,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -126,11 +127,27 @@ public class SchedulerImpl implements Scheduler {
   private void initialize(Observation observation, ServiceContextScope scope) {
     var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry());
     var initializationGeometry = scale.initialization();
-    if (contextualize(observation, scale, scope)) {}
+    var transaction =
+        scope
+            .getDigitalTwin()
+            .transaction(
+                Activity.of(
+                    Activity.Type.INITIALIZATION, observation, "Initialization of " + observation),
+                scope);
+    try {
+      if (contextualize(observation, scale, scope, transaction)) {
+        transaction.commit();
+      }
+    } catch (Throwable t) {
+      transaction.fail(t);
+    }
   }
 
   private boolean contextualize(
-      Observation observation, Geometry geometry, ServiceContextScope scope) {
+      Observation observation,
+      Geometry geometry,
+      ServiceContextScope scope,
+      DigitalTwin.Transaction transaction) {
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
 
@@ -151,12 +168,13 @@ public class SchedulerImpl implements Scheduler {
 
       var sequence = 0;
       if (relationship.isPresent()) {
-        sequence = relationship.get().properties().get(/* TODO use formal property */"sequence", 0);
+        sequence =
+            relationship.get().properties().get(/* TODO use formal property */ "sequence", 0);
       }
 
       tasks
           .computeIfAbsent(sequence, n -> new ArrayList<>())
-          .add(() -> contextualize(affected, geometry, scope));
+          .add(() -> contextualize(affected, geometry, contextualizeScope(scope, affected), transaction));
     }
 
     var sortedTasks =
@@ -195,11 +213,16 @@ public class SchedulerImpl implements Scheduler {
     var executor = executors.getIfPresent(observation.getId());
     if (executor != null) {
       return executor.apply(geometry, scope);
-//      //      scope.finalizeObservation(observation,/* contextualization,*/ ret);
-//      return ret;
+      //      //      scope.finalizeObservation(observation,/* contextualization,*/ ret);
+      //      return ret;
     }
 
     return true;
+  }
+
+  private ServiceContextScope contextualizeScope(ServiceContextScope scope, Observation affected) {
+    // TODO
+    return scope;
   }
 
   /**
