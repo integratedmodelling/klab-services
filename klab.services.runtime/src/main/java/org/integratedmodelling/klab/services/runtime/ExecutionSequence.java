@@ -132,7 +132,7 @@ public class ExecutionSequence {
   }
 
   private void requireObservations(Actuator rootActuator) {
-    Map<Long, Observation> observationMap = new HashMap<>();
+    Map<Long, Observation> observationMap = new HashMap<>(observations);
     requireObservation(rootActuator, observationMap);
     observations.putAll(observationMap);
   }
