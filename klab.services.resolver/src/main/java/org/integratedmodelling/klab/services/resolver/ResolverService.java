@@ -10,10 +10,7 @@ import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalT
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.Knowledge;
-import org.integratedmodelling.klab.api.knowledge.Model;
-import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -153,7 +150,12 @@ public class ResolverService extends BaseService implements Resolver {
           if (!ret.isEmpty()) {
             return new DataflowCompiler(observation, ret, contextScope).compile();
           }
-          return Dataflow.empty();
+
+          boolean isSubstantial =
+              observation.getObservable().is(SemanticType.SUBJECT)
+                  && !observation.getObservable().getSemantics().isCollective();
+
+          return isSubstantial ? Dataflow.trivial() : Dataflow.empty();
         });
   }
 

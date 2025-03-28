@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,13 +16,11 @@ import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuer
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -406,29 +403,41 @@ public class RuntimeService extends BaseService
         }
       }
 
-      serviceContextScope.initializeResolution();
+      var contextScope = serviceContextScope.initializeResolution();
       var resolver = scope.getService(Resolver.class);
 
       return resolver
           /* resolve asynchronously */
-          .resolve(observation, scope)
+          .resolve(observation, contextScope)
           /* then compile the dataflow */
           .thenApply(
               dataflow -> {
-                /*
-                 * Compile an atomic transaction from the dataflow, adding new observations if the digital twin does not have them.
-                 */
-                var transaction = compile(observation, dataflow, serviceContextScope);
-                if (transaction.commit()) {
-                  serviceContextScope.initializeResolution(); // clean up
-                  return observation;
+                if (!dataflow.isEmpty()) {
+                  /*
+                   * Compile an atomic transaction from the dataflow, adding new observations if the digital twin does not have them.
+                   */
+                  var transaction =
+                      scope
+                          .getDigitalTwin()
+                          .transaction(
+                              // TODO add encoded dataflow to the description
+                              Activity.of(
+                                  "Resolution of " + observation, Activity.Type.RESOLUTION, this),
+                              scope,
+                              dataflow,
+                              observation);
+
+                  if (compile(observation, dataflow, contextScope, transaction)
+                      && transaction.commit()) {
+                    return observation;
+                  }
                 }
-                throw new KlabResolutionException(observation, "Dataflow compilation failed");
+                return Observation.empty();
               })
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
               o -> {
-                scope.getDigitalTwin().getScheduler().submit(o);
+                contextScope.getDigitalTwin().getScheduler().submit(o);
                 return o;
               });
     }
@@ -436,31 +445,25 @@ public class RuntimeService extends BaseService
         "RuntimeService::observe() called with unexpected scope implementation");
   }
 
-  private DigitalTwin.Transaction compile(
-      Observation rootObservation, Dataflow dataflow, ServiceContextScope scope) {
+  private boolean compile(
+      Observation rootObservation,
+      Dataflow dataflow,
+      ServiceContextScope scope,
+      DigitalTwin.Transaction transaction) {
 
-    var ret =
-        scope
-            .getDigitalTwin()
-            .transaction(
-                // TODO add encoded dataflow to the description
-                Activity.of("Resolution of " + rootObservation, Activity.Type.RESOLUTION, this),
-                scope,
-                dataflow,
-                rootObservation);
-
-    if (ret instanceof DigitalTwinImpl.TransactionImpl transaction) {
+    if (transaction instanceof DigitalTwinImpl.TransactionImpl transactionImpl) {
       for (var rootActuator : dataflow.getComputation()) {
-        var executionSequence = new ExecutionSequence(this, dataflow, scope);
+        var executionSequence = new ExecutionSequence(this, dataflow, rootObservation, scope);
         if (!executionSequence.compile(rootActuator)) {
-          return ret.fail(
+          transaction.fail(
               new KlabCompilationError(
                   "Could not compile execution sequence for this target observation"));
+          return false;
         }
-        executionSequence.store(transaction);
+        return executionSequence.store(transactionImpl);
       }
 
-      return ret;
+      //      return transaction;
     }
     throw new KlabInternalErrorException(
         "RuntimeService::observe() called with unexpected transaction implementation");

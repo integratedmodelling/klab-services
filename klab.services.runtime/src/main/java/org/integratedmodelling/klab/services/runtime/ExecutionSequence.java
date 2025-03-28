@@ -71,16 +71,22 @@ public class ExecutionSequence {
   private Map<Long, ExecutorOperation> operations = new HashMap<>();
   private Map<Long, Observation> observations = new HashMap<>();
   private Graph<Actuator, DependencyEdge> dependencyGraph;
+  private Observation rootObservation;
 
   public ExecutionSequence(
-      RuntimeService runtimeService, Dataflow dataflow, ServiceContextScope contextScope) {
+      RuntimeService runtimeService,
+      Dataflow dataflow,
+      Observation rootObservation,
+      ServiceContextScope contextScope) {
     this.runtimeService = runtimeService;
     this.scope = contextScope;
+    this.rootObservation = rootObservation;
     this.resolvedCoverage =
         dataflow instanceof DataflowImpl dataflow1 ? dataflow1.getResolvedCoverage() : 1.0;
     this.componentRegistry = runtimeService.getComponentRegistry();
     this.dataflow = dataflow;
     this.digitalTwin = contextScope.getDigitalTwin();
+    this.observations.put(rootObservation.getId(), rootObservation);
   }
 
   /*
@@ -115,28 +121,13 @@ public class ExecutionSequence {
     // build the observations as required
     requireObservations(rootActuator);
 
-    //    List<ExecutorOperation> current = null;
-    //    int currentGroup = -1;
     for (var pair : this.computation) {
-      //      if (currentGroup != pair.getSecond()) {
-      //        if (current != null) {
-      //          sequence.add(current);
-      //        }
-      //        current = new ArrayList<>();
-      //      }
-      //      currentGroup = pair.getSecond();
       var operation = new ExecutorOperation(pair.getFirst());
       if (!operation.isOperational()) {
         return false;
       }
       operations.put(pair.getFirst().getId(), operation);
     }
-
-    //    if (current != null) {
-    //      sequence.add(current);
-    //      return true;
-    //    }
-    //
     return true;
   }
 
@@ -173,7 +164,7 @@ public class ExecutionSequence {
    *
    * @param transaction
    */
-  public void store(DigitalTwinImpl.TransactionImpl transaction) {
+  public boolean store(DigitalTwinImpl.TransactionImpl transaction) {
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
 
@@ -245,8 +236,8 @@ public class ExecutionSequence {
       if (!actuator.getComputation().isEmpty()) {
         transaction.add(actuator);
         transaction.link(
-            observations.get(actuator.getId()),
             actuator,
+            observations.get(actuator.getId()),
             GraphModel.Relationship.CONTEXTUALIZES,
             "geometry",
             ((ActuatorImpl) actuator).getResolvedGeometry());
@@ -263,6 +254,8 @@ public class ExecutionSequence {
       // TODO geometry?
       transaction.link(source, target, GraphModel.Relationship.AFFECTS, "rank", edge.order);
     }
+
+    return true;
   }
 
   /** One operation per observation. Successful execution will update the observation in the DT. */

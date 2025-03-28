@@ -648,8 +648,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         "ServiceContextScope::registerObservation: unexpected observation implementation");
   }
 
-  public void initializeResolution() {
-    nextResolutionId.set(-1L);
-    resolutionCache.clear();
+  public ServiceContextScope initializeResolution() {
+    ServiceContextScope ret = new ServiceContextScope(this);
+    ret.nextResolutionId.set(-1L);
+    ret.resolutionCache.clear();
+    return ret;
   }
 }

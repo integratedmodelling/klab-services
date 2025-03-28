@@ -83,6 +83,10 @@ public class SchedulerImpl implements Scheduler {
   @Override
   public void submit(Observation observation) {
 
+    if (observation.isEmpty()) {
+      return;
+    }
+
     var timeData = register(observation.getGeometry());
     var registration =
         new Registration(
@@ -120,7 +124,8 @@ public class SchedulerImpl implements Scheduler {
   /**
    * This is called in response to the INIT event received by any root-level observation that was
    * successfully resolved. Successive executions of the same executors will happen by directly
-   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope, DigitalTwin.Transaction)}}
+   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope,
+   * DigitalTwin.Transaction)}}
    *
    * @param observation
    */
@@ -174,7 +179,10 @@ public class SchedulerImpl implements Scheduler {
 
       tasks
           .computeIfAbsent(sequence, n -> new ArrayList<>())
-          .add(() -> contextualize(affected, geometry, contextualizeScope(scope, affected), transaction));
+          .add(
+              () ->
+                  contextualize(
+                      affected, geometry, contextualizeScope(scope, affected), transaction));
     }
 
     var sortedTasks =

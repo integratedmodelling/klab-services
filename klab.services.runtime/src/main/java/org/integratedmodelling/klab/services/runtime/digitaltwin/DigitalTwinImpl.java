@@ -67,7 +67,8 @@ public class DigitalTwinImpl implements DigitalTwin {
     private Activity activity;
     private ServiceContextScope scope;
     private List<Throwable> failures = new ArrayList<>();
-    private Graph<RuntimeAsset, RelationshipEdge> graph = new DefaultDirectedGraph<>(RelationshipEdge.class);
+    private Graph<RuntimeAsset, RelationshipEdge> graph =
+        new DefaultDirectedGraph<>(RelationshipEdge.class);
     private Map<Observation, Contextualizer> contextualizers = new HashMap<>();
 
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
@@ -78,7 +79,12 @@ public class DigitalTwinImpl implements DigitalTwin {
         for (int i = 0; i < data.length; i++) {
           if (data[i] instanceof Agent agent) {
             this.graph.addVertex(agent);
-            this.graph.addEdge(activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));
+            this.graph.addEdge(
+                activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));
+          } else if (data[i] instanceof Activity activity1) {
+            this.graph.addVertex(activity1);
+            this.graph.addEdge(
+                activity1, activity, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
           }
         }
       }
@@ -86,6 +92,9 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     public void setTarget(Observation observation) {
       this.target = observation;
+      this.graph.addVertex(observation);
+      this.graph.addEdge(
+          activity, observation, new RelationshipEdge(GraphModel.Relationship.CREATED));
     }
 
     @Override

@@ -49,7 +49,8 @@ public class BaseDataImpl implements Data {
     this.geometry = geometry;
     this.name = name;
     this.instance = instance;
-    Utils.Annotations.findAnnotations(Set.of("fillcurve", "split", "storage"), observable, instance);
+    Utils.Annotations.findAnnotations(
+        Set.of("fillcurve", "split", "storage"), observable, instance);
   }
 
   @Override
@@ -105,7 +106,7 @@ public class BaseDataImpl implements Data {
 
   @Override
   public long size() {
-    return instance.getInstances().size();
+    return instance.getInstances() == null ? 0 : instance.getInstances().size();
   }
 
   @Override
