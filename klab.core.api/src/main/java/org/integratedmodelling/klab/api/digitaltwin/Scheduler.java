@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 
 import java.util.Collection;
@@ -64,9 +65,11 @@ public interface Scheduler {
    * after commit will contain its finalized IDs and all buffers will have been set up.
    *
    * @param observation
+   * @param triggeringActivity the activity that triggered the submission (not the submission
+   *     activity itself)
    * @return
    */
-  void submit(Observation observation);
+  void submit(Observation observation, Activity triggeringActivity);
 
   /**
    * Register an executor compiled from the actuator that resolves the passed observation in the

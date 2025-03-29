@@ -1214,7 +1214,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           }
           queryCode = statement.build().getCypher();
         }
-        System.out.println("QUERY THIS: " + queryCode);
+//        System.out.println("QUERY THIS: " + queryCode);
         return adapt(query(queryCode, null, scope), resultClass, scope);
       } catch (Throwable t) {
         scope.error(t);

@@ -132,7 +132,6 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
 
       /*
-      TODO!
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
        */
       try (var kgTransaction = knowledgeGraph.createTransaction()) {

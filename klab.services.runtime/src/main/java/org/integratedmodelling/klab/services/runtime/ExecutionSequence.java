@@ -43,6 +43,7 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
+import org.neo4j.cypher.internal.ast.factory.ASTFactory;
 import org.ojalgo.concurrent.Parallelism;
 
 /**
@@ -132,7 +133,7 @@ public class ExecutionSequence {
   }
 
   private void requireObservations(Actuator rootActuator) {
-    Map<Long, Observation> observationMap = new HashMap<>(observations);
+    Map<Long, Observation> observationMap = new HashMap<>();
     requireObservation(rootActuator, observationMap);
     observations.putAll(observationMap);
   }
@@ -158,45 +159,27 @@ public class ExecutionSequence {
   }
 
   /**
-   * Called after successful compilation to build the (uncommitted) graph of observations,
-   * activities, and actuators and to submit all the executors to the scheduler. The knowledge graph
-   * will be modified when the passed transaction is committed.
+   * Called after successful compilation and insertion of the root observation to add the actuators
+   * and sibling observations in the execution sequence and to submit all the compiled executors to the
+   * scheduler. The knowledge graph will be modified when the passed transaction is committed.
    *
    * @param transaction
    */
   public boolean store(DigitalTwinImpl.TransactionImpl transaction) {
 
-    var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
-
     /* Add all observations. The unresolved ones will be automatically added. */
     observations.values().forEach(transaction::add);
+
     /*
      * First root observation is linked to the activity, the others to the first through HAS_SIBLING
+     * FIXME move outside
      */
     List<Observation> rootObservations =
         dataflow.getComputation().stream().map(a -> observations.get(a.getId())).toList();
 
-    if (!rootObservations.isEmpty()) {
+    for (int i = 1; i < rootObservations.size(); i++) {
       transaction.link(
-          transaction.getActivity(),
-          rootObservations.getFirst(),
-          rootObservations.getFirst().getId() < 0
-              ? GraphModel.Relationship.CREATED
-              : GraphModel.Relationship.RESOLVED);
-
-      for (int i = 1; i < rootObservations.size(); i++) {
-        transaction.link(
-            rootObservations.getFirst(),
-            rootObservations.get(i),
-            GraphModel.Relationship.HAS_SIBLING);
-      }
-
-      transaction.link(
-          scope.getContextObservation() == null
-              ? knowledgeGraph.scope()
-              : scope.getContextObservation(),
-          rootObservations.getFirst(),
-          GraphModel.Relationship.HAS_CHILD);
+          rootObservation, rootObservations.get(i), GraphModel.Relationship.HAS_SIBLING);
     }
 
     /*
@@ -254,6 +237,8 @@ public class ExecutionSequence {
       // TODO geometry?
       transaction.link(source, target, GraphModel.Relationship.AFFECTS, "rank", edge.order);
     }
+
+    System.out.println("STORED FUCKING DT TRANSACTION FOR " + rootObservation);
 
     return true;
   }

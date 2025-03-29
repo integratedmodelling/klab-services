@@ -81,7 +81,7 @@ public class SchedulerImpl implements Scheduler {
   }
 
   @Override
-  public void submit(Observation observation) {
+  public void submit(Observation observation, Activity triggeringActivity) {
 
     if (observation.isEmpty()) {
       return;

@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.resources.persistence;
 
 import org.h2gis.utilities.SpatialResultSet;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
@@ -243,10 +244,15 @@ public class ModelKbox extends ObservableKbox {
      * only query locally if we've seen a model before.
      */
     if (database.hasTable("model")) {
+      try {
       for (ModelReference md : queryModels(observable, scope)) {
         if (md.getPermissions().checkAuthorization(scope)) {
           local.add(md);
         }
+      }
+      } catch (Throwable t) {
+        Logging.INSTANCE.error("Unexpected error querying models: verify geometry and observables");
+        return List.of();
       }
     }
     return local;

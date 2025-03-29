@@ -16,6 +16,7 @@ import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuer
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -405,6 +406,7 @@ public class RuntimeService extends BaseService
 
       var contextScope = serviceContextScope.initializeResolution();
       var resolver = scope.getService(Resolver.class);
+      var resolution = Activity.of("Resolution of " + observation, Activity.Type.RESOLUTION, this);
 
       return resolver
           /* resolve asynchronously */
@@ -417,15 +419,7 @@ public class RuntimeService extends BaseService
                    * Compile an atomic transaction from the dataflow, adding new observations if the digital twin does not have them.
                    */
                   var transaction =
-                      scope
-                          .getDigitalTwin()
-                          .transaction(
-                              // TODO add encoded dataflow to the description
-                              Activity.of(
-                                  "Resolution of " + observation, Activity.Type.RESOLUTION, this),
-                              scope,
-                              dataflow,
-                              observation);
+                      scope.getDigitalTwin().transaction(resolution, scope, dataflow, observation);
 
                   if (compile(observation, dataflow, contextScope, transaction)
                       && transaction.commit()) {
@@ -437,7 +431,7 @@ public class RuntimeService extends BaseService
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
               o -> {
-                contextScope.getDigitalTwin().getScheduler().submit(o);
+                contextScope.getDigitalTwin().getScheduler().submit(o, resolution);
                 return o;
               });
     }
@@ -451,6 +445,21 @@ public class RuntimeService extends BaseService
       ServiceContextScope scope,
       DigitalTwin.Transaction transaction) {
 
+    transaction.add(rootObservation);
+    transaction.link(
+        scope.getContextObservation() == null
+            ? scope.getDigitalTwin().getKnowledgeGraph().scope()
+            : scope.getContextObservation(),
+        rootObservation,
+        GraphModel.Relationship.HAS_CHILD);
+
+    transaction.link(
+        transaction.getActivity(),
+        rootObservation,
+        rootObservation.getId() < 0
+            ? GraphModel.Relationship.CREATED
+            : GraphModel.Relationship.RESOLVED);
+
     if (transaction instanceof DigitalTwinImpl.TransactionImpl transactionImpl) {
       for (var rootActuator : dataflow.getComputation()) {
         var executionSequence = new ExecutionSequence(this, dataflow, rootObservation, scope);
@@ -460,11 +469,15 @@ public class RuntimeService extends BaseService
                   "Could not compile execution sequence for this target observation"));
           return false;
         }
-        return executionSequence.store(transactionImpl);
+
+        if (!executionSequence.store(transactionImpl)) {
+          return false;
+        }
       }
 
-      //      return transaction;
+      return true;
     }
+
     throw new KlabInternalErrorException(
         "RuntimeService::observe() called with unexpected transaction implementation");
   }
