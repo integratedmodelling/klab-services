@@ -44,6 +44,16 @@ public interface DigitalTwin {
 
     List<ServiceCall> serialized();
 
+    /**
+     * TODO this should probably receive a DigitalTwin.Transaction to update the state of the
+     * observation and potentially the activity, which may be optional. The scheduler should send
+     * the transaction when the task is called upon with the rationale for the call -
+     * initialization, behavior action, debug, dependency change etc
+     *
+     * @param geometry
+     * @param scope
+     * @return
+     */
     boolean run(Geometry geometry, ContextScope scope);
   }
 

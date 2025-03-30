@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
@@ -471,13 +472,32 @@ public class CompiledDataflow {
     @Override
     public boolean run(Geometry geometry, ContextScope scope) {
 
-      // TODO compile info for provenance, to be added to the KG at finalization
-      long start = System.currentTimeMillis();
+      scope.send(
+          Message.create(
+              scope,
+              Message.MessageType.ContextualizationStarted,
+              Message.MessageClass.DigitalTwin,
+              observation));
+
       for (var executor : executors) {
         if (!executor.apply(geometry, scope)) {
+          scope.send(
+              Message.create(
+                  scope,
+                  Message.MessageType.ContextualizationAborted,
+                  Message.MessageClass.DigitalTwin,
+                  observation));
           return false;
         }
       }
+
+      scope.send(
+          Message.create(
+              scope,
+              Message.MessageType.ContextualizationSuccessful,
+              Message.MessageClass.DigitalTwin,
+              observation));
+
       return true;
     }
 

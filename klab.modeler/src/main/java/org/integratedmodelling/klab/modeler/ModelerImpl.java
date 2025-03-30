@@ -309,10 +309,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     final boolean observering = isObserver;
 
+    // FIXME this is obsolete. Resolution is a normal future and contextualization happens asynchronously
     /* one-time event handlers */
     currentContext
         .onEvent(
-            Message.MessageClass.ObservationLifecycle,
+            Message.MessageClass.DigitalTwin,
             Message.MessageType.ResolutionSuccessful,
             (message) -> {
               var obs = message.getPayload(Observation.class);
@@ -339,7 +340,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             },
             observation)
         .onEvent(
-            Message.MessageClass.ObservationLifecycle,
+            Message.MessageClass.DigitalTwin,
             Message.MessageType.ResolutionAborted,
             (message) -> {
               currentContext.error(
@@ -351,7 +352,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             },
             observation)
         .onEvent(
-            Message.MessageClass.ObservationLifecycle,
+            Message.MessageClass.DigitalTwin,
             Message.MessageType.ResolutionUnsuccessful,
             (message) -> {
               var obs = message.getPayload(Observation.class);
