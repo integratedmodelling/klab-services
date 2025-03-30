@@ -110,15 +110,26 @@ public interface RuntimeService extends KlabService {
   }
 
   /**
-   * Submit an observation to the digital twin for inclusion in the knowledge graph in the passed
-   * scope and start its resolution. The return value is a future for the resolved observation,
-   * whose resolution may cause other observations to be made. If resolution fails, the future will
-   * complete exceptionally and the observation ID will be {@link Observation#UNASSIGNED_ID}, which
-   * signals that the digital twin has rejected the observation (for example because one was already
-   * present). The observation exists in the DT in an unresolved state until resolution has
-   * finished.
+   * Submit an unresolved observation to the digital twin for inclusion in the knowledge graph in
+   * the passed scope and start its resolution. The return value is a future for the resolved
+   * observation, whose resolution may cause other observations to be made. If resolution fails, the
+   * future will complete exceptionally and the observation ID will be {@link
+   * Observation#UNASSIGNED_ID}, which signals that the digital twin has rejected the observation
+   * (for example because one was already present). If resolution succeeds, the finished observation
+   * will have its {@link Observation#getId()} set to a valid ID (>0L).
    *
-   * <p>The submit operation is transactional, and a failed submission will leave the knowledge
+   * <p>If the observation submitted is resolved (its ID is valid when submitted), the submission is
+   * ignored and the completed future for the submitted observation is returned.
+   *
+   * <p>Successful resolution means that the knowledge needed to properly represent the observable
+   * in the DT is resolved and consistent. It does not mean that the observation has been
+   * contextualized, i.e. that its computation is finished. Contextualization is started
+   * automatically by the scheduler for the resolved observation upon submission, and may happen
+   * again as events such as relevant temporal transitions, behavior-induced changes or dependence
+   * collisions trigger the calculations again. Contextualization cannot be controlled through the
+   * API and all events related to it are transmitted to the context scope through messaging.
+   *
+   * <p>The submit operation is transactional, i.e. a failed submission will leave the knowledge
    * graph unaltered. Note that observations of individual substantials, i.e. non-collective
    * subjects and agents, will complete successfully even if they cannot be "explained" by the
    * resolver, i.e. the ID will be valid and the knowledge graph will contain the observation, whose

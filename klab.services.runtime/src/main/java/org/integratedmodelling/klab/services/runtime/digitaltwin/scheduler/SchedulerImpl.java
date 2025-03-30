@@ -351,8 +351,7 @@ public class SchedulerImpl implements Scheduler {
     System.out.println(registration + " got event " + event);
     if (event.type == Event.Type.INITIALIZATION) {
       var observation = rootScope.getObservation(registration.id());
-      if (observation != null
-          && !observation.isResolved()) { // TODO check resolution condition and put in filter
+      if (observation != null) {
         initialize(observation, rootScope.of(observation));
       }
     }

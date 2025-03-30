@@ -66,7 +66,7 @@ public class ResolutionCompiler {
   private ResolutionGraph resolve(
       Observation observation, ContextScope scope, ResolutionGraph parentGraph) {
 
-    if (observation.isResolved()) {
+    if (observation.getId() > 0) {
       return parentGraph;
     }
 
@@ -318,7 +318,7 @@ public class ResolutionCompiler {
 
     if (observation.isEmpty()) {
       return ResolutionGraph.empty();
-    } else if (observation.isResolved()) {
+    } else if (observation.getId() > 0) {
       return graph.createReference(observable, observation);
     }
 

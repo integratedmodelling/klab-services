@@ -366,8 +366,12 @@ public class RuntimeService extends BaseService
    * @return
    */
   @Override
-  public synchronized CompletableFuture<Observation> submit(
+  public CompletableFuture<Observation> submit(
       Observation observation, ContextScope scope) {
+
+    if (observation.getId() > 0) {
+      return CompletableFuture.completedFuture(observation);
+    }
 
     if (scope instanceof ServiceContextScope serviceContextScope) {
 
@@ -462,7 +466,7 @@ public class RuntimeService extends BaseService
 
     if (transaction instanceof DigitalTwinImpl.TransactionImpl transactionImpl) {
       for (var rootActuator : dataflow.getComputation()) {
-        var executionSequence = new ExecutionSequence(this, dataflow, rootObservation, scope);
+        var executionSequence = new CompiledDataflow(this, /*dataflow,*/ rootObservation, scope);
         if (!executionSequence.compile(rootActuator)) {
           transaction.fail(
               new KlabCompilationError(
@@ -499,7 +503,7 @@ public class RuntimeService extends BaseService
       /** Run each actuator set in order */
       for (var rootActuator : dataflow.getComputation()) {
         var executionSequence =
-            new ExecutionSequence(
+            new CompiledDataflow(
                 this, /*contextualization,*/ dataflow, getComponentRegistry(), serviceContextScope);
         var compiled = executionSequence.compile(rootActuator);
         if (!compiled) {
@@ -523,7 +527,6 @@ public class RuntimeService extends BaseService
 
       if (dataflow instanceof DataflowImpl df
           && dataflow.getTarget() instanceof ObservationImpl obs) {
-        obs.setResolved(true);
         obs.setResolvedCoverage(df.getResolvedCoverage());
       }
 

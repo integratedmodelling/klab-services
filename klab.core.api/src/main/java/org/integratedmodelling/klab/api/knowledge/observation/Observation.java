@@ -24,91 +24,83 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 
 /**
- * The interface Observation, which is the semantic equivalent of an Artifact and represents an observable in
- * the observation graph of a k.LAB context. Once created in a k.LAB session, it can be made reactive by
- * supplementing it with a behavior, which will create an agent accessible through the context scope focused
- * on the observation. Models may bind instantiated observations to actor files that will provide behaviors
- * for their instances (or a subset thereof). Once made reactive, they can interact with each other and the
- * system.
- * <p>
- * TODO we could just use Observation (abstract) + DirectObservation (rename to Substantial) and State, then
- *  everything else is taken care of by the semantics (folder == getObservable().isCollective()), the DT
- *  and its graph.
+ * The interface Observation, which is the semantic equivalent of an Artifact and represents an
+ * observable in the observation graph of a k.LAB context. Once created in a k.LAB session, it can
+ * be made reactive by supplementing it with a behavior, which will create an agent accessible
+ * through the context scope focused on the observation. Models may bind instantiated observations
+ * to actor files that will provide behaviors for their instances (or a subset thereof). Once made
+ * reactive, they can interact with each other and the system.
+ *
+ * <p>TODO we could just use Observation (abstract) + DirectObservation (rename to Substantial) and
+ * State, then everything else is taken care of by the semantics (folder ==
+ * getObservable().isCollective()), the DT and its graph.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
 public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAsset {
 
-    long UNASSIGNED_ID = -1;
+  long UNASSIGNED_ID = -1;
 
-    default RuntimeAsset.Type classify() {
-        return RuntimeAsset.Type.OBSERVATION;
-    }
+  default RuntimeAsset.Type classify() {
+    return RuntimeAsset.Type.OBSERVATION;
+  }
 
-    /**
-     * The ID of an observation is a positive long for efficiency. Paths such as 3.44.234 identify observation
-     * hierarchies to reconstruct scopes. An ID of -1L means that the observation is unassigned to the
-     * observation graph.
-     *
-     * @return
-     */
-    long getId();
+  /**
+   * The ID of an observation is a positive long for efficiency. Paths such as 3.44.234 identify
+   * observation hierarchies to reconstruct scopes. If the ID is negative, the observation is
+   * unresolved and does not exist in the knowledge graph.
+   *
+   * @return
+   */
+  long getId();
 
-    /**
-     * A name should never be null, although only substantials have the name as a defining feature. Names do
-     * not need to be unique or conform to any syntax rule.
-     *
-     * @return
-     */
-    String getName();
+  /**
+   * A name should never be null, although only substantials have the name as a defining feature.
+   * Names do not need to be unique or conform to any syntax rule.
+   *
+   * @return
+   */
+  String getName();
 
-    /**
-     * Return the observable.
-     *
-     * @return the observation's observable
-     */
-    Observable getObservable();
+  /**
+   * Return the observable.
+   *
+   * @return the observation's observable
+   */
+  Observable getObservable();
 
-    /**
-     * True if the observation has been resolved. This will be false until the resolution task with the same
-     * ID has finished. Dependent observation that are unresolved make the context inconsistent. Substantials
-     * remain usable in an unresolved state.
-     *
-     * @return
-     */
-    boolean isResolved();
+  /**
+   * Return a view of this observation restricted to the passed locator, which is applied to the
+   * scale to obtain a new scale, used as a filter to obtain the view. The result should be able to
+   * handle both conformant scaling (e.g. fix one dimension) and non-conformant (i.e. one state maps
+   * to multiple ones with irregular extent coverage) in both reading and writing.
+   *
+   * @param locator
+   * @return a rescaled view of this observation
+   * @throws IllegalArgumentException if the locator is unsuitable for the observation
+   */
+  Observation at(Locator locator);
 
-    /**
-     * Return a view of this observation restricted to the passed locator, which is applied to the scale to
-     * obtain a new scale, used as a filter to obtain the view. The result should be able to handle both
-     * conformant scaling (e.g. fix one dimension) and non-conformant (i.e. one state maps to multiple ones
-     * with irregular extent coverage) in both reading and writing.
-     *
-     * @param locator
-     * @return a rescaled view of this observation
-     * @throws IllegalArgumentException if the locator is unsuitable for the observation
-     */
-    Observation at(Locator locator);
-
-    Observation EMPTY_OBSERVATION = new ObservationImpl() {
+  Observation EMPTY_OBSERVATION =
+      new ObservationImpl() {
 
         @Override
         public boolean isEmpty() {
-            return true;
+          return true;
         }
-    };
+      };
 
-    static Observation empty() {
-        return EMPTY_OBSERVATION;
-    }
+  static Observation empty() {
+    return EMPTY_OBSERVATION;
+  }
 
-    Object getValue();
+  Object getValue();
 
-    /**
-     * After resolution, this will report the 0-1 coverage resolved. Before resolution this will be 0.
-     *
-     * @return
-     */
-    double getResolvedCoverage();
+  /**
+   * After resolution, this will report the 0-1 coverage resolved. Before resolution this will be 0.
+   *
+   * @return
+   */
+  double getResolvedCoverage();
 }

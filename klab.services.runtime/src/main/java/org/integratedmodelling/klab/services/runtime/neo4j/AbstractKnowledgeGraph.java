@@ -87,7 +87,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                   ? observation.getObservable().codeName()
                   : observation.getName());
           ret.put("updated", observation.getLastUpdate());
-          ret.put("resolved", observation.isResolved());
           ret.put("type", observation.getType().name());
           ret.put("urn", observation.getUrn());
           ret.put(

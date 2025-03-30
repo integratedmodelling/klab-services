@@ -93,7 +93,7 @@ public interface GraphModel {
     enum Relationship {
       HAS_PARENT,
       AFFECTS,
-      CONTEXTUALIZES,
+      CONTEXTUALIZED_BY,
       EMERGED_FROM,
       HAS_OBSERVER,
       HAS_SIBLING,

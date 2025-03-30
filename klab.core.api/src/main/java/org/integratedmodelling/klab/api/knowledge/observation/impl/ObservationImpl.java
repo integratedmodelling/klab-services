@@ -30,7 +30,6 @@ public class ObservationImpl implements Observation {
     private Metadata metadata = Metadata.create();
     private long id = UNASSIGNED_ID;
     private String urn;
-    private boolean resolved;
     private Object value;
     private String name;
     private double resolvedCoverage;
@@ -194,15 +193,6 @@ public class ObservationImpl implements Observation {
 
     public void setUrn(String urn) {
         this.urn = urn;
-    }
-
-    @Override
-    public boolean isResolved() {
-        return resolved;
-    }
-
-    public void setResolved(boolean resolved) {
-        this.resolved = resolved;
     }
 
     public void setGeometry(Geometry geometry) {

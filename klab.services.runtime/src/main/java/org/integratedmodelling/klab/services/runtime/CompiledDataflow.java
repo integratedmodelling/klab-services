@@ -2,19 +2,12 @@ package org.integratedmodelling.klab.services.runtime;
 
 import com.google.common.collect.ImmutableList;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
-import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
@@ -23,10 +16,8 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -43,30 +34,18 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
-import org.neo4j.cypher.internal.ast.factory.ASTFactory;
-import org.ojalgo.concurrent.Parallelism;
 
 /**
  * Object that follows the execution of the actuators. Each run produces a new context that is the
  * one for the next execution.
  */
-public class ExecutionSequence {
+public class CompiledDataflow {
 
   private final RuntimeService runtimeService;
   private final ServiceContextScope scope;
   private final DigitalTwin digitalTwin;
   private final ComponentRegistry componentRegistry;
-  private final double resolvedCoverage;
-  //  private final KnowledgeGraph.Operation contextualization;
-  private final Dataflow dataflow;
-  //  @Deprecated private List<List<ExecutorOperation>> sequence = new ArrayList<>();
   private boolean empty;
-  // the context for the next operation. Starts at the observation and doesn't normally change but
-  // implementations
-  // may change it when they return a non-null, non-POD object.
-  //  // TODO check if this should be a RuntimeAsset or even an Observation.
-  //  private Object currentExecutionContext;
-  //  private Map<Actuator, KnowledgeGraph.Operation> operations = new HashMap<>();
   private Throwable cause;
   private List<Pair<Actuator, Integer>> computation = new ArrayList<>();
   private Map<Long, ExecutorOperation> operations = new HashMap<>();
@@ -74,38 +53,27 @@ public class ExecutionSequence {
   private Graph<Actuator, DependencyEdge> dependencyGraph;
   private Observation rootObservation;
 
-  public ExecutionSequence(
+  public CompiledDataflow(
       RuntimeService runtimeService,
-      Dataflow dataflow,
+      //      Dataflow dataflow,
       Observation rootObservation,
       ServiceContextScope contextScope) {
     this.runtimeService = runtimeService;
     this.scope = contextScope;
     this.rootObservation = rootObservation;
-    this.resolvedCoverage =
-        dataflow instanceof DataflowImpl dataflow1 ? dataflow1.getResolvedCoverage() : 1.0;
     this.componentRegistry = runtimeService.getComponentRegistry();
-    this.dataflow = dataflow;
     this.digitalTwin = contextScope.getDigitalTwin();
-    this.observations.put(rootObservation.getId(), rootObservation);
   }
 
-  /*
-  UNUSED - for independent dataflow execution
-   */
-  public ExecutionSequence(
+  /* STILL UNUSED - for independent dataflow execution */
+  public CompiledDataflow(
       RuntimeService runtimeService,
-      //      KnowledgeGraph.Operation contextualization,
       Dataflow dataflow,
       ComponentRegistry componentRegistry,
       ServiceContextScope contextScope) {
     this.runtimeService = runtimeService;
     this.scope = contextScope;
-    //    this.contextualization = contextualization;
-    this.resolvedCoverage =
-        dataflow instanceof DataflowImpl dataflow1 ? dataflow1.getResolvedCoverage() : 1.0;
     this.componentRegistry = componentRegistry;
-    this.dataflow = dataflow;
     this.digitalTwin = contextScope.getDigitalTwin();
   }
 
@@ -139,7 +107,9 @@ public class ExecutionSequence {
   }
 
   private void requireObservation(Actuator actuator, Map<Long, Observation> observationMap) {
-    if (!observationMap.containsKey(actuator.getId())) {
+    // we don't add the root observation because it's added externally
+    if (rootObservation.getId() != actuator.getId()
+        && !observationMap.containsKey(actuator.getId())) {
       observationMap.put(actuator.getId(), requireObservation(actuator));
     }
     for (var child : actuator.getChildren()) {
@@ -152,7 +122,7 @@ public class ExecutionSequence {
       var ret =
           DigitalTwin.createObservation(
               scope, actuator.getObservable(), actuator1.getResolvedGeometry(), actuator.getName());
-      scope.registerObservation(ret);
+      //      scope.registerObservation(ret);
       return ret;
     }
     return scope.getObservation(actuator.getId());
@@ -160,27 +130,32 @@ public class ExecutionSequence {
 
   /**
    * Called after successful compilation and insertion of the root observation to add the actuators
-   * and sibling observations in the execution sequence and to submit all the compiled executors to the
-   * scheduler. The knowledge graph will be modified when the passed transaction is committed.
+   * and sibling observations in the execution sequence and to submit all the compiled executors to
+   * the scheduler. The knowledge graph will be modified when the passed transaction is committed.
    *
    * @param transaction
    */
   public boolean store(DigitalTwinImpl.TransactionImpl transaction) {
 
-    /* Add all observations. The unresolved ones will be automatically added. */
-    observations.values().forEach(transaction::add);
+    var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
 
-    /*
-     * First root observation is linked to the activity, the others to the first through HAS_SIBLING
-     * FIXME move outside
-     */
-    List<Observation> rootObservations =
-        dataflow.getComputation().stream().map(a -> observations.get(a.getId())).toList();
+    /* Add all missing and unresolved observations. The unresolved ones will be automatically added. */
+    observations
+        .values()
+        .forEach(
+            o -> {
+              transaction.add(o);
+              if (o.getObservable().is(SemanticType.QUALITY)
+                  || o.getObservable().is(SemanticType.PROCESS)) {
+                transaction.link(rootObservation, o, GraphModel.Relationship.HAS_CHILD);
+              } else {
+                transaction.link(knowledgeGraph.scope(), o, GraphModel.Relationship.HAS_CHILD);
+              }
+            });
 
-    for (int i = 1; i < rootObservations.size(); i++) {
-      transaction.link(
-          rootObservation, rootObservations.get(i), GraphModel.Relationship.HAS_SIBLING);
-    }
+    // now add the root to a temporary map so that we can properly set up the links
+    var allObservations = new HashMap<>(observations);
+    allObservations.put(rootObservation.getId(), rootObservation);
 
     /*
      * Establish the computation rank for the scheduler
@@ -219,26 +194,25 @@ public class ExecutionSequence {
       if (!actuator.getComputation().isEmpty()) {
         transaction.add(actuator);
         transaction.link(
+            allObservations.get(actuator.getId()),
             actuator,
-            observations.get(actuator.getId()),
-            GraphModel.Relationship.CONTEXTUALIZES,
+            GraphModel.Relationship.CONTEXTUALIZED_BY,
+            // TODO the geometry key or something else must be in the link.
             "geometry",
             ((ActuatorImpl) actuator).getResolvedGeometry());
         if (operations.containsKey(actuator.getId())) {
           transaction.resolveWith(
-              observations.get(actuator.getId()), operations.get(actuator.getId()));
+              allObservations.get(actuator.getId()), operations.get(actuator.getId()));
         }
       }
     }
 
     for (var edge : dependencyGraph.edgeSet()) {
-      var source = observations.get(dependencyGraph.getEdgeSource(edge).getId());
-      var target = observations.get(dependencyGraph.getEdgeTarget(edge).getId());
+      var source = allObservations.get(dependencyGraph.getEdgeSource(edge).getId());
+      var target = allObservations.get(dependencyGraph.getEdgeTarget(edge).getId());
       // TODO geometry?
       transaction.link(source, target, GraphModel.Relationship.AFFECTS, "rank", edge.order);
     }
-
-    System.out.println("STORED FUCKING DT TRANSACTION FOR " + rootObservation);
 
     return true;
   }
@@ -246,33 +220,18 @@ public class ExecutionSequence {
   /** One operation per observation. Successful execution will update the observation in the DT. */
   class ExecutorOperation implements DigitalTwin.Contextualizer {
 
-    //    private long id;
     private final Observation observation;
-    // TODO executors get cached within the DT, here we should just ensure they can be produced. A
-    //  list should be indexed by observation URN, empty for empty dataflows.
     protected List<BiFunction<Geometry, ContextScope, Boolean>> executors = new ArrayList<>();
     private boolean scalar;
-    private boolean operational;
-    private List<ServiceCall> serviceCalls = new ArrayList<>();
+    private final boolean operational;
+    private final List<ServiceCall> serviceCalls = new ArrayList<>();
 
     public ExecutorOperation(Actuator actuator) {
-      this.observation = observations.get(actuator.getId());
-      instrumentObservation(this.observation, actuator);
+      this.observation =
+          actuator.getId() == rootObservation.getId()
+              ? rootObservation
+              : observations.get(actuator.getId());
       this.operational = compile(actuator);
-    }
-
-    /**
-     * Determine fill curve and split strategy for quality observations. The actuator may contain
-     * contextualizers whose prototype mandates the strategy. Otherwise, there may be @fillcurve
-     * and @split annotations in the actuator (taken from the model or observable), Failing these,
-     * locally configured defaults take precedence. The inferred instructions will be passed on to
-     * the storage when asking for buffers.
-     *
-     * @param actuator
-     */
-    private void instrumentObservation(Observation observation, Actuator actuator) {
-      //      Utils.Annotations.getAnnotation()
-      if (observation.getObservable().is(SemanticType.QUALITY)) {}
     }
 
     private boolean compile(Actuator actuator) {
@@ -516,19 +475,9 @@ public class ExecutionSequence {
       long start = System.currentTimeMillis();
       for (var executor : executors) {
         if (!executor.apply(geometry, scope)) {
-          //          if (operation != null) {
-          //            operation.fail(scope, observation, cause);
-          //          }
           return false;
         }
       }
-
-      long time = System.currentTimeMillis() - start;
-
-      //      if (operation != null) {
-      //        operation.success(scope, observation, resolvedCoverage);
-      //      }
-
       return true;
     }
 

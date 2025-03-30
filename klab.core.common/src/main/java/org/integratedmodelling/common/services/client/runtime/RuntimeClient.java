@@ -191,6 +191,10 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   @Override
   public CompletableFuture<Observation> submit(Observation observation, ContextScope scope) {
 
+    if (observation.getId() > 0) {
+      return CompletableFuture.completedFuture(observation);
+    }
+
     ResolutionRequest resolutionRequest = new ResolutionRequest();
     resolutionRequest.setObservation(observation);
     resolutionRequest.setAgentName(Provenance.getAgent(scope).getName());
@@ -198,36 +202,6 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     return client
         .withScope(scope)
         .postAsync(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Observation.class);
-
-    //    if (result.getId() > 0) {
-    //      return CompletableFuture.completedFuture(observation);
-    //    }
-    //
-    //    /*
-    //    Set up the task to track the messages. We do this before invoking the method so it's
-    // guaranteed to
-    //    not return before we can notice.
-    //     */
-    //    return scope.trackMessages(
-    //        Message.match(
-    //                Message.MessageClass.ObservationLifecycle,
-    //                Message.MessageType.ResolutionAborted,
-    //                Message.MessageType.ResolutionSuccessful)
-    //            .when((message) -> message.getPayload(Observation.class).getId() ==
-    // result.getId()),
-    //        (message) -> {
-    //          var payload = message.getPayload(Observation.class);
-    //          if (message.getMessageType() == Message.MessageType.ResolutionSuccessful) {
-    //            scope.info(
-    //                "Resolution of "
-    //                    + payload
-    //                    + " successful with coverage "
-    //                    + payload.getResolvedCoverage());
-    //            return payload;
-    //          }
-    //          scope.info("Resolution of " + observation + " failed");
-    //          return result;
-    //        });
   }
 
   @Override

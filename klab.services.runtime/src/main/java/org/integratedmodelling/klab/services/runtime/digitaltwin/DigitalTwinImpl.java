@@ -84,7 +84,7 @@ public class DigitalTwinImpl implements DigitalTwin {
           } else if (data[i] instanceof Activity activity1) {
             this.graph.addVertex(activity1);
             this.graph.addEdge(
-                activity1, activity, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
+                activity, activity1, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
           }
         }
       }

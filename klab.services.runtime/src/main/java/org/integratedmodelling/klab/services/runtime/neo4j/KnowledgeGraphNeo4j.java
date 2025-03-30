@@ -385,7 +385,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setUrn(node.get("urn").asString());
         instance.setName(node.get("name").asString());
         instance.setObservable(reasoner.resolveObservable(node.get("observable").asString()));
-        instance.setResolved(node.get("resolved").asBoolean());
         instance.setId(node.get("id").asLong());
 
         var gResult =
@@ -613,7 +612,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   private void storeGeometry(
       Geometry geometry, RuntimeAsset asset, @Nullable org.neo4j.driver.Transaction transaction) {
 
-    var encoded = geometry.encode();
+    // This guarantees processed, stable geometry representation with WBT
+    var encoded = GeometryRepository.INSTANCE.scale(geometry).encode();
 
     // Must be called after update() and this may happen more than once, so we must check to avoid
     // multiple relationships.
@@ -936,7 +936,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var result = query("MATCH (n:Statistics) return n.nextId", Map.of(), scope);
     if (result != null) {
       if (result.records().isEmpty()) {
-        ret = 1; 
+        ret = 1;
         query("CREATE (n:Statistics {nextId: 1})", Map.of(), scope);
       } else {
         var id = result.records().getFirst().get(result.keys().getFirst()).asLong();
@@ -1214,7 +1214,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           }
           queryCode = statement.build().getCypher();
         }
-//        System.out.println("QUERY THIS: " + queryCode);
+        //        System.out.println("QUERY THIS: " + queryCode);
         return adapt(query(queryCode, null, scope), resultClass, scope);
       } catch (Throwable t) {
         scope.error(t);
