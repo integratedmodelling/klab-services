@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.scope.Scope;
 
 /**
  * The interface Observation, which is the semantic equivalent of an Artifact and represents an
@@ -30,6 +31,13 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
  * through the context scope focused on the observation. Models may bind instantiated observations
  * to actor files that will provide behaviors for their instances (or a subset thereof). Once made
  * reactive, they can interact with each other and the system.
+ *
+ * <p>The ID of an observation is a positive long for efficiency. Paths such as 3.44.234 identify
+ * observation hierarchies to reconstruct scopes. If the ID is negative, the observation is
+ * unresolved and does not exist in the knowledge graph. So a client may <em>send</em> an unresolved
+ * observation (normally created with {@link
+ * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin#createObservation(Scope, Object...)} but
+ * will never <em>receive</em> one, except in case of resolution error.
  *
  * <p>TODO we could just use Observation (abstract) + DirectObservation (rename to Substantial) and
  * State, then everything else is taken care of by the semantics (folder ==
@@ -45,15 +53,6 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
   default RuntimeAsset.Type classify() {
     return RuntimeAsset.Type.OBSERVATION;
   }
-
-  /**
-   * The ID of an observation is a positive long for efficiency. Paths such as 3.44.234 identify
-   * observation hierarchies to reconstruct scopes. If the ID is negative, the observation is
-   * unresolved and does not exist in the knowledge graph.
-   *
-   * @return
-   */
-  long getId();
 
   /**
    * A name should never be null, although only substantials have the name as a defining feature.
