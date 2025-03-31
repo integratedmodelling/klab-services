@@ -425,9 +425,10 @@ public class RuntimeService extends BaseService
                   var transaction =
                       scope.getDigitalTwin().transaction(resolution, scope, dataflow, observation);
 
-                  if (compile(observation, dataflow, contextScope, transaction)
-                      && transaction.commit()) {
-                    return observation;
+                  if (compile(observation, dataflow, contextScope, transaction)) {
+                    if (transaction.commit()) {
+                      return observation;
+                    }
                   }
                 }
                 return Observation.empty();

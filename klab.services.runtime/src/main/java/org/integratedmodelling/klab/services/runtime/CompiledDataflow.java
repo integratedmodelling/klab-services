@@ -141,8 +141,6 @@ public class CompiledDataflow {
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
 
-    transaction.link(transaction.getActivity(), rootObservation, GraphModel.Relationship.RESOLVED);
-
     /* Add all missing and unresolved observations. The unresolved ones will be automatically added. */
     observations
         .values()
@@ -212,6 +210,7 @@ public class CompiledDataflow {
     }
 
     transaction.link(knowledgeGraph.dataflow(), rootActuator, GraphModel.Relationship.HAS_CHILD);
+    transaction.link(transaction.getActivity(), rootObservation, GraphModel.Relationship.RESOLVED);
 
     for (var edge : dependencyGraph.edgeSet()) {
       var aSource = dependencyGraph.getEdgeSource(edge);
