@@ -550,7 +550,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var props = asParameters(asset, additionalProperties);
     var ret = nextKey();
     props.put("id", ret);
-    if (asset instanceof Observation) {
+    if (asset instanceof Observation || asset instanceof Activity) {
       props.put("urn", this.scope.getId() + "." + ret);
     }
     var result =
@@ -781,7 +781,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       }
       case ActuatorImpl actuator -> actuator.setId(id);
       case BufferImpl buffer -> buffer.setInternalId(id);
-      case ActivityImpl activity -> activity.setId(id);
+      case ActivityImpl activity -> {
+        activity.setId(id);
+        activity.setUrn(scope.getId() + "." + id);
+      }
       case AgentImpl agent -> agent.setId(id);
       default -> {}
     }

@@ -34,17 +34,16 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 public interface DigitalTwin {
 
   /**
-   * A contextualizer is a runnable operation linked to an observation, compiled from an actuator in
-   * the dataflow. It can be serialized in the KnowledgeGraph as a sequence of {@link ServiceCall}s
-   * and reconstructed from them. Contextualizers, like actuators, may cover partial geometries so
-   * more than one can coexist for the same observation.
+   * An executor is a runnable operation linked to an observation, compiled from an actuator in the
+   * dataflow. It can be serialized in the KnowledgeGraph as a sequence of {@link ServiceCall}s and
+   * reconstructed from them. Executors, like actuators, may cover partial geometries so more than
+   * one can coexist for the same observation.
    */
   interface Executor {
 
     List<ServiceCall> serialized();
 
     /**
-     *
      * @param geometry
      * @param event
      * @param scope
