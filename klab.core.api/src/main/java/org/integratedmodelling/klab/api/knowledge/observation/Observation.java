@@ -47,15 +47,6 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
   }
 
   /**
-   * The ID of an observation is a positive long for efficiency. Paths such as 3.44.234 identify
-   * observation hierarchies to reconstruct scopes. If the ID is negative, the observation is
-   * unresolved and does not exist in the knowledge graph.
-   *
-   * @return
-   */
-  long getId();
-
-  /**
    * A name should never be null, although only substantials have the name as a defining feature.
    * Names do not need to be unique or conform to any syntax rule.
    *

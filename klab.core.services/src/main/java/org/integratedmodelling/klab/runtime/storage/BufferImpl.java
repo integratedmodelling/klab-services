@@ -8,7 +8,6 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.scope.Persistence;
-import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
 import org.integratedmodelling.klab.utilities.Utils;
 
 /** Base buffer provides the histogram and the geometry indexing/merging */
@@ -21,7 +20,6 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   private final long id;
   private final StorageImpl storage;
   private long internalId;
-  //  protected SPDTHistogram<?> histogram;
   protected com.dynatrace.dynahist.Histogram histogram;
 
   /**
@@ -86,14 +84,6 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   public void setInternalId(long internalId) {
     this.internalId = internalId;
   }
-
-  //  public SPDTHistogram<?> getHistogram() {
-  //    return histogram;
-  //  }
-  //
-  //  public void setHistogram(SPDTHistogram<?> histogram) {
-  //    this.histogram = histogram;
-  //  }
 
   public Histogram histogram() {
     return Utils.Data.adaptHistogram(this.histogram);

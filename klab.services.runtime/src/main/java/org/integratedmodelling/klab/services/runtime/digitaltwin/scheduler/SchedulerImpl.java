@@ -6,7 +6,6 @@ import com.google.common.cache.LoadingCache;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -102,7 +101,8 @@ public class SchedulerImpl implements Scheduler {
             SemanticType.fundamentalType(observation.getObservable().getSemantics().getType()),
             timeData.getFirst(),
             timeData.getSecond(),
-            timeData.getThird());
+            timeData.getThird(),
+            triggeringActivity);
     if (observation.getObservable().is(SemanticType.EVENT)) {
       // EVENT! Post iy
     } else if (observation.getObservable().is(SemanticType.PROCESS)) {
@@ -138,7 +138,8 @@ public class SchedulerImpl implements Scheduler {
    *
    * @param observation
    */
-  private void initialize(Observation observation, ServiceContextScope scope) {
+  private void initialize(
+      Observation observation, ServiceContextScope scope, Activity triggeringResolution) {
     var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry());
     var transaction =
         scope
@@ -146,7 +147,8 @@ public class SchedulerImpl implements Scheduler {
             .transaction(
                 Activity.of(
                     Activity.Type.INITIALIZATION, observation, "Initialization of " + observation),
-                scope);
+                scope,
+                triggeringResolution);
     try {
       if (contextualize(observation, scale, scope, this.initializationEvent, transaction)) {
         transaction.commit();
@@ -156,6 +158,17 @@ public class SchedulerImpl implements Scheduler {
     }
   }
 
+  /**
+   * Returns true if anything was done. By returning false we don't add activities when they don't
+   * do any operations.
+   *
+   * @param observation
+   * @param geometry
+   * @param scope
+   * @param causingEvent
+   * @param transaction
+   * @return
+   */
   private boolean contextualize(
       Observation observation,
       Geometry geometry,
@@ -188,14 +201,7 @@ public class SchedulerImpl implements Scheduler {
 
       tasks
           .computeIfAbsent(sequence, n -> new ArrayList<>())
-          .add(
-              () -> {
-                if (contextualize(affected, geometry, scope, causingEvent, transaction)) {
-                  // TODO update the observation and any data it built
-                  return true;
-                }
-                return false;
-              });
+          .add(() -> contextualize(affected, geometry, scope, causingEvent, transaction));
     }
 
     var sortedTasks =
@@ -233,7 +239,7 @@ public class SchedulerImpl implements Scheduler {
      */
     var executor = executors.getIfPresent(observation.getId());
     if (executor != null) {
-      return executor.apply(geometry, causingEvent, scope);
+      executor.apply(geometry, causingEvent, scope);
     }
 
     return true;
@@ -291,9 +297,15 @@ public class SchedulerImpl implements Scheduler {
    * @param type
    * @param start
    * @param end
+   * @param activity the activity that made the registration
    */
   public record Registration(
-      long id, SemanticType type, long start, long end, Time.Resolution resolution) {}
+      long id,
+      SemanticType type,
+      long start,
+      long end,
+      Time.Resolution resolution,
+      Activity activity) {}
 
   /**
    * Event should have a type enum INITIALIZATION, TIME or EVENT (extendible: can have VISIT when a
@@ -382,7 +394,7 @@ public class SchedulerImpl implements Scheduler {
     if (event.type == EventImpl.Type.INITIALIZATION) {
       var observation = rootScope.getObservation(registration.id());
       if (observation != null) {
-        initialize(observation, rootScope.of(observation));
+        initialize(observation, rootScope.of(observation), registration.activity());
       }
     }
   }

@@ -77,17 +77,23 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.scope = scope;
       this.graph.addVertex(activity);
       if (data != null) {
-        for (int i = 0; i < data.length; i++) {
-          if (data[i] instanceof Agent agent) {
-            this.graph.addVertex(agent);
-            this.graph.addEdge(
-                activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));
-          } else if (data[i] instanceof Activity activity1) {
-            this.graph.addVertex(activity1);
-            this.graph.addEdge(
-                activity, activity1, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
+          for (Object datum : data) {
+              if (datum instanceof Agent agent) {
+                  this.graph.addVertex(agent);
+                  this.graph.addEdge(activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));
+              } else if (datum instanceof Activity activity1) {
+                  this.graph.addVertex(activity1);
+                  this.graph.addEdge(activity, activity1,
+                                     new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
+              } else if (datum instanceof Observation observation) {
+                  setTarget(observation);
+              } else if (datum instanceof Dataflow dataflow) {
+                  // serialize and record the dataflow with the activity
+                  if (activity instanceof ActivityImpl activity1) {
+                      activity1.setDescription(Utils.Dataflows.encode(dataflow, scope));
+                  }
+              }
           }
-        }
       }
     }
 
@@ -130,6 +136,10 @@ public class DigitalTwinImpl implements DigitalTwin {
       if (!failures.isEmpty()) {
         failures.forEach(t -> scope.error(t));
         return false;
+      }
+
+      if (activity instanceof ActivityImpl activity1) {
+        activity1.setEnd(System.currentTimeMillis());
       }
 
       /*
@@ -213,20 +223,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
   @Override
   public Transaction transaction(Activity activity, ContextScope scope, Object... runtimeAssets) {
-    var ret = new TransactionImpl(activity, (ServiceContextScope) scope);
-    if (runtimeAssets != null) {
-      for (var asset : runtimeAssets) {
-        if (asset instanceof Observation observation) {
-          ret.setTarget(observation);
-        } else if (asset instanceof Dataflow dataflow) {
-          // serialize and record the dataflow with the activity
-          if (activity instanceof ActivityImpl activity1) {
-            activity1.setDescription(Utils.Dataflows.encode(dataflow, scope));
-          }
-        }
-      }
-    }
-    return ret;
+    return new TransactionImpl(activity, (ServiceContextScope) scope, runtimeAssets);
   }
 
   @Override

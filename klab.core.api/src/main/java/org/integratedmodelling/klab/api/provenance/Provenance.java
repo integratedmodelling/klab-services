@@ -57,13 +57,6 @@ public interface Provenance extends RuntimeAsset, Iterable<Activity> {
     interface Node extends RuntimeAsset {
 
         /**
-         * The ID of the node is the same as the ID of the relationship or actuator it relates to.
-         *
-         * @return
-         */
-        long getId();
-
-        /**
          * Name is not unique and is just for human consumption. The internal identification of each node is
          * the provenance graph's problem.
          *
