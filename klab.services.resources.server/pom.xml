@@ -71,9 +71,6 @@
                         <jvmFlags>${jib.jvmFlags}</jvmFlags>
                         <mainClass>org.integratedmodelling.resources.server.ResourcesServer</mainClass>
                         <args/>
-                        <ports>
-                            <port>8092</port>
-                        </ports>
                         <labels/>
                     </container>
                 </configuration>
