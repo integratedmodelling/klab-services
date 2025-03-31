@@ -45,6 +45,7 @@ import org.apache.tika.mime.MimeTypes;
 import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -62,6 +63,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.JobStatus;
@@ -72,6 +74,24 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.springframework.web.util.UriUtils;
 
 public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
+
+  public static class Dataflows {
+
+    /**
+     * Return the encoded form of a passed dataflow in the passed scope.
+     *
+     * @param dataflow
+     * @param scope
+     * @return
+     */
+    public static String encode(Dataflow dataflow, ContextScope scope) {
+
+      var ret = new StringWriter();
+      var output = new PrintWriter(ret);
+      new DataflowEncoder(dataflow, scope).encode(output);
+      return ret.toString();
+    }
+  }
 
   public static class Annotations {
 

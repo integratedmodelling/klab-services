@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -69,7 +70,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     private List<Throwable> failures = new ArrayList<>();
     private Graph<RuntimeAsset, RelationshipEdge> graph =
         new DefaultDirectedGraph<>(RelationshipEdge.class);
-    private Map<Observation, Contextualizer> contextualizers = new HashMap<>();
+    private Map<Observation, Executor> contextualizers = new HashMap<>();
 
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
       this.activity = activity;
@@ -119,8 +120,8 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     @Override
-    public void resolveWith(Observation observation, Contextualizer contextualizer) {
-      this.contextualizers.put(observation, contextualizer);
+    public void resolveWith(Observation observation, Executor executor) {
+      this.contextualizers.put(observation, executor);
     }
 
     @Override
@@ -158,7 +159,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       for (var observation : contextualizers.keySet()) {
         scheduler.registerExecutor(
-            observation, (g, s) -> contextualizers.get(observation).run(g, s));
+            observation, (g, e, s) -> contextualizers.get(observation).run(g, e, s));
       }
 
       /* Upon successful commit, establish the ID for any target that was passed in the initialization
@@ -218,7 +219,10 @@ public class DigitalTwinImpl implements DigitalTwin {
         if (asset instanceof Observation observation) {
           ret.setTarget(observation);
         } else if (asset instanceof Dataflow dataflow) {
-          // TODO serialize and record with the activity
+          // serialize and record the dataflow with the activity
+          if (activity instanceof ActivityImpl activity1) {
+            activity1.setDescription(Utils.Dataflows.encode(dataflow, scope));
+          }
         }
       }
     }

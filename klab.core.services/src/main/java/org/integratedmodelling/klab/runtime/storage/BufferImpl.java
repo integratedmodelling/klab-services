@@ -1,10 +1,12 @@
 package org.integratedmodelling.klab.runtime.storage;
 
+import com.dynatrace.dynahist.layout.Layout;
 import org.integratedmodelling.klab.api.data.CursorImpl;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -19,18 +21,19 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   private final long id;
   private final StorageImpl storage;
   private long internalId;
-  protected SPDTHistogram<?> histogram;
+  //  protected SPDTHistogram<?> histogram;
+  protected com.dynatrace.dynahist.Histogram histogram;
 
-    /**
-     *
-     * @param geometry The <em>overall</em> geometry for the buffer
-     * @param stateStorage
-     * @param size
-     * @param spaceFillingCurve
-     * @param offsets extent-based offsets with the start offset in the
-     */
+  /**
+   * @param geometry The <em>overall</em> geometry for the buffer
+   * @param stateStorage
+   * @param size
+   * @param spaceFillingCurve
+   * @param offsets extent-based offsets with the start offset in the
+   */
   protected BufferImpl(
       Geometry geometry,
+      Observable observable,
       StorageImpl stateStorage,
       long size,
       Data.SpaceFillingCurve spaceFillingCurve,
@@ -43,9 +46,11 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
     this.offset = offsets;
     this.spaceFillingCurve = spaceFillingCurve;
     if (stateStorage.stateStorage.isRecordHistogram()) {
-      this.histogram = new SPDTHistogram<>(stateStorage.stateStorage.getHistogramBinSize());
+      this.histogram = com.dynatrace.dynahist.Histogram.createDynamic(histogramLayout(observable));
     }
   }
+
+  protected abstract Layout histogramLayout(Observable observable);
 
   @Override
   public long getId() {
@@ -82,16 +87,16 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
     this.internalId = internalId;
   }
 
-  public SPDTHistogram<?> getHistogram() {
-    return histogram;
-  }
-
-  public void setHistogram(SPDTHistogram<?> histogram) {
-    this.histogram = histogram;
-  }
+  //  public SPDTHistogram<?> getHistogram() {
+  //    return histogram;
+  //  }
+  //
+  //  public void setHistogram(SPDTHistogram<?> histogram) {
+  //    this.histogram = histogram;
+  //  }
 
   public Histogram histogram() {
-    return this.histogram.asHistogram();
+    return Utils.Data.adaptHistogram(this.histogram);
   }
 
   @Override
@@ -107,7 +112,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
         + id
         + '\''
         + ", histogram="
-        + Utils.Json.asString(histogram.asHistogram())
+        + Utils.Json.asString(histogram())
         + '}';
   }
 }

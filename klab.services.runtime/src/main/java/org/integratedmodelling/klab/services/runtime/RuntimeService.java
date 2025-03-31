@@ -525,15 +525,15 @@ public class RuntimeService extends BaseService
       intersect coverage from dataflow with contextualization scale
        */
 
-      if (dataflow instanceof DataflowImpl df
-          && dataflow.getTarget() instanceof ObservationImpl obs) {
-        obs.setResolvedCoverage(df.getResolvedCoverage());
-      }
+//      if (dataflow instanceof DataflowImpl df
+//          && dataflow.getTarget() instanceof ObservationImpl obs) {
+//        obs.setResolvedCoverage(df.getResolvedCoverage());
+//      }
 
       //      contextualization.success(contextScope, dataflow.getTarget(), dataflow);
     }
 
-    return dataflow.getTarget();
+    return null; // dataflow.getTarget();
   }
 
   @Override

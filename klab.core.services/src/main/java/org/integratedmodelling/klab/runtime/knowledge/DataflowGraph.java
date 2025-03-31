@@ -46,10 +46,10 @@ public class DataflowGraph implements Dataflow {
         return List.of();
     }
 
-    @Override
-    public Observation getTarget() {
-        return null;
-    }
+//    @Override
+//    public Observation getTarget() {
+//        return null;
+//    }
 
     public DataflowImpl adapt() {
         return null;

@@ -8,7 +8,6 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.exceptions.KlabCompilationError;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -40,11 +39,18 @@ public interface DigitalTwin {
    * and reconstructed from them. Contextualizers, like actuators, may cover partial geometries so
    * more than one can coexist for the same observation.
    */
-  interface Contextualizer {
+  interface Executor {
 
     List<ServiceCall> serialized();
 
-    boolean run(Geometry geometry, ContextScope scope);
+    /**
+     *
+     * @param geometry
+     * @param event
+     * @param scope
+     * @return
+     */
+    boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope);
   }
 
   /**
@@ -84,7 +90,7 @@ public interface DigitalTwin {
         GraphModel.Relationship relationship,
         Object... data);
 
-    void resolveWith(Observation observation, Contextualizer contextualizer);
+    void resolveWith(Observation observation, Executor executor);
 
     /**
      * Commit the transaction and return true if it was successful.

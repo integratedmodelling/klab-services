@@ -3,16 +3,11 @@ package org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
-
 import org.integratedmodelling.common.knowledge.GeometryRepository;
-import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -21,9 +16,9 @@ import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -48,36 +43,49 @@ public class SchedulerImpl implements Scheduler {
   private long epochEnd = 0L;
   private Time.Resolution resolution = null;
   private KnowledgeGraph knowledgeGraph;
+  private TimeEmitter timeEmitter;
+  private EventImpl initializationEvent;
+
   /*
    * The event processor is a fully replayable, multicasting one with synchronized behavior.
    * Events don't end up in provenance, although the activities they engender do. The scheduler acts
    * as a provenance agent and is recorded as the agent for activities triggered by temporal events.
    */
-  private final Sinks.Many<Event> processor = Sinks.many().replay().all();
+  private final Sinks.Many<EventImpl> processor = Sinks.many().replay().all();
 
   /*
    * Executors are loaded upon dataflow validation/compilation before registering the observations,
    * which triggers their usage. The cache loads actuator definitions from the knowledge graph on
    * demand and recompiles the executors if they are missing.
    */
-  private LoadingCache<Long, BiFunction<Geometry, ContextScope, Boolean>> executors =
-      CacheBuilder.newBuilder()
-          .maximumSize(200)
-          // .expireAfterAccess(10, TimeUnit.MINUTES)
-          .build(
-              new CacheLoader<Long, BiFunction<Geometry, ContextScope, Boolean>>() {
-                public BiFunction<Geometry, ContextScope, Boolean> load(Long key) {
-                  // TODO reconstruct the executor from actuator in the knowledge graph.
-                  return (g, s) -> true;
-                }
-              });
+  private LoadingCache<Long, TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean>>
+      executors =
+          CacheBuilder.newBuilder()
+              .maximumSize(200)
+              // .expireAfterAccess(10, TimeUnit.MINUTES)
+              .build(
+                  new CacheLoader<
+                      Long, TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean>>() {
+                    public TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> load(
+                        Long key) {
+                      // TODO reconstruct the executor from actuator in the knowledge graph.
+                      return (g, e, s) -> true;
+                    }
+                  });
 
   public SchedulerImpl(ServiceContextScope scope, DigitalTwinImpl digitalTwin) {
     this.rootScope = scope;
     this.knowledgeGraph = digitalTwin.getKnowledgeGraph();
+    this.timeEmitter = new TimeEmitter(this);
+    initializeScheduler();
+  }
+
+  private void initializeScheduler() {
     // The INIT event is created before anything happens and applies to every new observation
     // registered.
-    post(new Event());
+    post(this.initializationEvent = new EventImpl());
+    // TODO read the existing context state from the knowledge graph and rebuild all relevant past
+    //  events
   }
 
   @Override
@@ -108,12 +116,13 @@ public class SchedulerImpl implements Scheduler {
 
   @Override
   public void registerExecutor(
-      Observation observation, BiFunction<Geometry, ContextScope, Boolean> executor) {
+      Observation observation,
+      TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor) {
     executors.put(observation.getId(), executor);
   }
 
   private Triple<Long, Long, Time.Resolution> register(Geometry geometry) {
-    // TODO
+    // TODO record frequency @ starting point and determine which events to send
     Time time = GeometryRepository.INSTANCE.scale(geometry).getTime();
     if (time != null) {
       return notifyTime(time);
@@ -124,14 +133,13 @@ public class SchedulerImpl implements Scheduler {
   /**
    * This is called in response to the INIT event received by any root-level observation that was
    * successfully resolved. Successive executions of the same executors will happen by directly
-   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope,
-   * DigitalTwin.Transaction)}}
+   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope, EventImpl,
+   * DigitalTwin.Transaction)}}}
    *
    * @param observation
    */
   private void initialize(Observation observation, ServiceContextScope scope) {
     var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry());
-    var initializationGeometry = scale.initialization();
     var transaction =
         scope
             .getDigitalTwin()
@@ -140,7 +148,7 @@ public class SchedulerImpl implements Scheduler {
                     Activity.Type.INITIALIZATION, observation, "Initialization of " + observation),
                 scope);
     try {
-      if (contextualize(observation, scale, scope, transaction)) {
+      if (contextualize(observation, scale, scope, this.initializationEvent, transaction)) {
         transaction.commit();
       }
     } catch (Throwable t) {
@@ -152,6 +160,7 @@ public class SchedulerImpl implements Scheduler {
       Observation observation,
       Geometry geometry,
       ServiceContextScope scope,
+      EventImpl causingEvent,
       DigitalTwin.Transaction transaction) {
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
@@ -180,9 +189,13 @@ public class SchedulerImpl implements Scheduler {
       tasks
           .computeIfAbsent(sequence, n -> new ArrayList<>())
           .add(
-              () ->
-                  contextualize(
-                      affected, geometry, contextualizeScope(scope, affected), transaction));
+              () -> {
+                if (contextualize(affected, geometry, scope, causingEvent, transaction)) {
+                  // TODO update the observation and any data it built
+                  return true;
+                }
+                return false;
+              });
     }
 
     var sortedTasks =
@@ -220,17 +233,10 @@ public class SchedulerImpl implements Scheduler {
      */
     var executor = executors.getIfPresent(observation.getId());
     if (executor != null) {
-      return executor.apply(geometry, scope);
-      //      //      scope.finalizeObservation(observation,/* contextualization,*/ ret);
-      //      return ret;
+      return executor.apply(geometry, causingEvent, scope);
     }
 
     return true;
-  }
-
-  private ServiceContextScope contextualizeScope(ServiceContextScope scope, Observation affected) {
-    // TODO
-    return scope;
   }
 
   /**
@@ -248,8 +254,8 @@ public class SchedulerImpl implements Scheduler {
     if (this.epochEnd == 0 || this.epochEnd < tEnd) {
       this.epochEnd = tEnd;
     }
-    // TODO compound resolutions, compile events
-
+    /* ensure that all events are there */
+    timeEmitter.updateEvents(tStart, tEnd, time.getResolution());
     return Triple.of(tStart, tEnd, time.getResolution());
   }
 
@@ -293,27 +299,51 @@ public class SchedulerImpl implements Scheduler {
    * Event should have a type enum INITIALIZATION, TIME or EVENT (extendible: can have VISIT when a
    * new DT is connected for example).
    */
-  public static class Event {
+  public static class EventImpl implements Event {
 
     private long start;
     private long end;
+    private final Type type;
+    private final Observation event;
 
-    enum Type {
-      INITIALIZATION,
-      TEMPORAL_TRANSITION,
-      EVENT
-    }
-
-    final Type type;
-
-    public Event() {
+    private EventImpl() {
       type = Type.INITIALIZATION;
+      event = null;
     }
 
-    public Event(long start, long end, Time.Resolution resolution) {
+    public EventImpl(long start, long end, Time.Resolution resolution) {
       type = Type.TEMPORAL_TRANSITION;
       this.start = start;
       this.end = end;
+      event = null;
+    }
+
+    @Override
+    public long getStart() {
+      return start;
+    }
+
+    public void setStart(long start) {
+      this.start = start;
+    }
+
+    @Override
+    public long getEnd() {
+      return end;
+    }
+
+    public void setEnd(long end) {
+      this.end = end;
+    }
+
+    @Override
+    public Type getType() {
+      return type;
+    }
+
+    @Override
+    public Observation getEvent() {
+      return event;
     }
 
     @Override
@@ -322,7 +352,7 @@ public class SchedulerImpl implements Scheduler {
     }
   }
 
-  public void post(Event event) {
+  public void post(EventImpl event) {
     processor.emitNext(
         event,
         new Sinks.EmitFailureHandler() {
@@ -333,7 +363,7 @@ public class SchedulerImpl implements Scheduler {
         });
   }
 
-  private Boolean checkApplies(Registration observation, Event event) {
+  private Boolean checkApplies(Registration observation, EventImpl event) {
     //    boolean ok = !observation.name.endsWith("2");
     System.out.println("Checking " + observation + " against " + event);
     // TODO
@@ -347,9 +377,9 @@ public class SchedulerImpl implements Scheduler {
    * @param registration
    * @param event
    */
-  private void handleEvent(Registration registration, Event event) {
+  private void handleEvent(Registration registration, EventImpl event) {
     System.out.println(registration + " got event " + event);
-    if (event.type == Event.Type.INITIALIZATION) {
+    if (event.type == EventImpl.Type.INITIALIZATION) {
       var observation = rootScope.getObservation(registration.id());
       if (observation != null) {
         initialize(observation, rootScope.of(observation));
