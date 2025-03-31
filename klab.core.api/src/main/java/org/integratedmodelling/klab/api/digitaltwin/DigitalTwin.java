@@ -1,21 +1,26 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.exceptions.KlabCompilationError;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -30,26 +35,96 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 public interface DigitalTwin {
 
   /**
-   * The type of relationships in the graph. All relationship carry further information, to be fully
-   * defined.
+   * A contextualizer is a runnable operation linked to an observation, compiled from an actuator in
+   * the dataflow. It can be serialized in the KnowledgeGraph as a sequence of {@link ServiceCall}s
+   * and reconstructed from them. Contextualizers, like actuators, may cover partial geometries so
+   * more than one can coexist for the same observation.
    */
-  enum Relationship {
-    HAS_PARENT,
-    AFFECTED,
-    EMERGED_FROM,
-    HAS_OBSERVER,
-    HAS_RELATIONSHIP_TARGET,
-    HAS_PLAN,
-    BY_AGENT,
-    CREATED,
-    HAS_DATAFLOW,
-    HAS_PROVENANCE,
-    HAS_ACTIVITY,
-    HAS_DATA,
-    HAS_CHILD,
-    TRIGGERED,
-    CONTEXTUALIZED;
+  interface Contextualizer {
+
+    List<ServiceCall> serialized();
+
+    /**
+     * TODO this should probably receive a DigitalTwin.Transaction to update the state of the
+     * observation and potentially the activity, which may be optional. The scheduler should send
+     * the transaction when the task is called upon with the rationale for the call -
+     * initialization, behavior action, debug, dependency change etc
+     *
+     * @param geometry
+     * @param scope
+     * @return
+     */
+    boolean run(Geometry geometry, ContextScope scope);
   }
+
+  /**
+   * Operations that modify the digital twin are transactional and use this object, which guarantees
+   * that all operations are linked to an activity that gets recorded in provenance.
+   */
+  interface Transaction {
+
+    /**
+     * Each transaction represents a provenance activity that cannot be null.
+     *
+     * @return the activity
+     */
+    Activity getActivity();
+
+    /**
+     * Record a new runtime asset in the graph. If the asset's ID is not {@link
+     * Observation#UNASSIGNED_ID}, the asset is already present in the KG; otherwise it will be
+     * added at commit() and the object in the graph will be modified to include its ID.
+     *
+     * @param asset
+     */
+    void add(RuntimeAsset asset);
+
+    /**
+     * Link two assets in the graph. The passed data will be matched to relationship properties
+     * according to the relationship.
+     *
+     * @param source
+     * @param destination
+     * @param relationship
+     * @param data
+     */
+    void link(
+        RuntimeAsset source,
+        RuntimeAsset destination,
+        GraphModel.Relationship relationship,
+        Object... data);
+
+    void resolveWith(Observation observation, Contextualizer contextualizer);
+
+    /**
+     * Commit the transaction and return true if it was successful.
+     *
+     * @return true if the commit succeeded
+     */
+    boolean commit();
+
+    /**
+     * Signal compilation failure. Return a transaction that will throw the same exception at
+     * commit() with as much tracking info as practical.
+     *
+     * @param compilationError
+     * @return
+     */
+    Transaction fail(Throwable compilationError);
+  }
+
+  /**
+   * Obtain a new transaction to make changes in the knowledge graph. Nothing is modified until
+   * {@link Transaction#commit()} is invoked on the returned object and returns true.
+   *
+   * @param activity
+   * @param scope
+   * @param runtimeAssets any other assets related to the transaction that may be relevant or may
+   *     need to be finalized on commit. For example a resolution transaction may set the final
+   *     knowledge graph IDs in the arguments, so that they are available after commit.
+   * @return
+   */
+  Transaction transaction(Activity activity, ContextScope scope, Object... runtimeAssets);
 
   /**
    * The full knowledge graph, including observations, actuators and provenance, referring to this
@@ -114,7 +189,6 @@ public interface DigitalTwin {
    * knowledge graph and resolved.
    *
    * @param scope a scope used to resolve semantics.
-   *
    * @param resolvables
    * @return
    */
@@ -131,6 +205,7 @@ public interface DigitalTwin {
     String defaultValue = null;
     Metadata metadata = Metadata.create();
     boolean isObserver = false;
+    long id = Observation.UNASSIGNED_ID;
 
     Geometry ogeom = null;
     if (resolvables != null) {
@@ -210,6 +285,8 @@ public interface DigitalTwin {
           observable = scope.getService(Reasoner.class).resolveObservable(concept.getUrn());
         } else if (o instanceof KimObservable obs) {
           observable = scope.getService(Reasoner.class).resolveObservable(obs.getUrn());
+        } else if (o instanceof Long oid) {
+          id = oid;
         }
       }
     }
@@ -225,15 +302,7 @@ public interface DigitalTwin {
       ret.setObservable(observable);
       ret.setValue(defaultValue);
       ret.setName(name);
-
-      //      if (observerGeometry != null && scope instanceof ContextScope contextScope) {
-      //        contextScope
-      //            .getResolutionConstraints()
-      //            .add(
-      //                ResolutionConstraint.of(
-      //                    ResolutionConstraint.Type.ObserverGeometry, observerGeometry));
-      //      }
-
+      ret.setId(id);
       return ret;
     }
 

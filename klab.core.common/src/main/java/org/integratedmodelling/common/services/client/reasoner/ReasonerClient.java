@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
@@ -645,6 +646,14 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     ResolutionRequest resolutionRequest = new ResolutionRequest();
     resolutionRequest.setObservation(observation);
     resolutionRequest.getResolutionConstraints().addAll(scope.getResolutionConstraints());
+    if (scope.getContextObservation() != null && scope.getContextObservation().getId() < 0) {
+      resolutionRequest
+          .getResolutionConstraints()
+          .add(
+              ResolutionConstraint.of(
+                  ResolutionConstraint.Type.UnresolvedContextObservation,
+                  scope.getContextObservation()));
+    }
     return client
         .withScope(scope)
         .postCollection(

@@ -1,6 +1,7 @@
 package org.integratedmodelling.cli.views;
 
 import org.integratedmodelling.cli.KlabCLI;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Version;
@@ -148,7 +149,8 @@ public class CLIReasonerView {
       var reasoner = ctx.getService(Reasoner.class);
       var observable = reasoner.resolveObservable(urn);
 
-      var geom = geometry == null ? null : Geometry.create(geometry);
+      var geom =
+          geometry == null ? null : GeometryRepository.INSTANCE.get(geometry, Geometry.class);
 
       if (observable == null) {
         err.println(

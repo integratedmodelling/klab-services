@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resolver;
 
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
@@ -33,7 +34,7 @@ public class DataflowCompiler {
   private final ResolutionGraph resolutionGraph;
   private final ContextScope scope;
   private final Observation observation;
-  private Set<Observation> catalog = new HashSet<>();
+  private Map<Observable, Observation> catalog = new HashMap<>();
 
   /**
    * TODO add the context dataflow.
@@ -74,7 +75,7 @@ public class DataflowCompiler {
         throw new KlabIllegalStateException("Resolution root is not an observation");
       }
       ret.getComputation()
-          .addAll(compileObservation(observation, Scale.create(observation.getGeometry()), null));
+          .addAll(compileObservation(observation, GeometryRepository.INSTANCE.scale(observation.getGeometry()), null));
     }
 
     var out = new StringWriter();
@@ -98,7 +99,7 @@ public class DataflowCompiler {
   List<Actuator> compileObservation(
       Observation observation, Geometry coverage, ObservationStrategy strategy) {
 
-    if (catalog.contains(observation)) {
+    if (catalog.containsKey(observation.getObservable())) {
       var ret = new ActuatorImpl();
       ret.setObservable(observation.getObservable());
       ret.setId(observation.getId());
@@ -107,7 +108,7 @@ public class DataflowCompiler {
       return List.of(ret);
     }
 
-    catalog.add(observation);
+    catalog.put(observation.getObservable(), observation);
 
     var ret = new ArrayList<Actuator>();
     for (var edge : resolutionGraph.graph().outgoingEdgesOf(observation)) {
@@ -121,6 +122,7 @@ public class DataflowCompiler {
         actuator.setId(observation.getId());
         actuator.setActuatorType(Actuator.Type.OBSERVE);
         actuator.setCoverage(childCoverage == null ? null : childCoverage.as(Geometry.class));
+        actuator.setResolvedGeometry(observation.getGeometry());
         actuator.setStrategyUrn(observationStrategy.getUrn());
         compileStrategy(actuator, observation, childCoverage, observationStrategy);
         ret.add(actuator);
@@ -255,6 +257,10 @@ public class DataflowCompiler {
 
     // TODO add remaining info from the contextualizable in the call's metadata
     // TODO more?
+    if (ret != null && contextualizer.getTarget() != null) {
+      ret.getParameters().put("_target", contextualizer.getTarget());
+      ret.getParameters().put("_targetId", contextualizer.getTargetId());
+    }
 
     return ret;
   }

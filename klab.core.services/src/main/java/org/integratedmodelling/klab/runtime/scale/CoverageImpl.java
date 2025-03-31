@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
@@ -191,7 +192,7 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
     @Override
     public Coverage merge(Geometry other, LogicalConnector how) {
 
-        var scale = Scale.create(other);
+        var scale = GeometryRepository.INSTANCE.scale(other);
 
         /*
          * trivial cases first

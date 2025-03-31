@@ -1,7 +1,8 @@
 package org.integratedmodelling.klab.api.data;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -13,6 +14,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import java.io.Closeable;
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A persistent knowledge graph instrumented for k.LAB operation, hosting all the runtime assets
@@ -29,6 +31,17 @@ import java.util.List;
  * respective service calls.
  */
 public interface KnowledgeGraph {
+
+  /**
+   * A runtime asset representing a relationship. Used when submitting queries whose return value is
+   * the link, to inspect the relationships.
+   */
+  interface Link extends RuntimeAsset {
+
+    GraphModel.Relationship type();
+
+    Parameters<String> properties();
+  }
 
   /**
    * Simple query interface. Obtain a query, if needed combine it with others, and run it to obtain
@@ -52,11 +65,34 @@ public interface KnowledgeGraph {
       AFTER
     }
 
+    /**
+     * Select the object with the passed ID and return it. Because the result is only zero or one
+     * objects, the appropriate call after this is peek() and any other condition is ignored. The KG
+     * should be optimized to run this kind of query as fast as possible. The query must be able to
+     * retrieve observations that are not yet committed to the knowledge graph but are cached in the
+     * scope during resolution.
+     *
+     * @param id
+     * @return the query, ready to run
+     */
+    Query<T> id(long id);
+
     Query<T> source(Object startingPoint);
 
     Query<T> target(Object startingPoint);
 
-    Query<T> along(DigitalTwin.Relationship relationship, Object... parameters);
+    Query<T> along(GraphModel.Relationship relationship, Object... parameters);
+
+    /**
+     * Find the (assumed unique) relationship between <code>source</code> and <code>target</code> of
+     * the passed type, and adapt the result to the query target class, which should normally be a
+     * {@link java.util.Map} where the relationship properties are recorded.
+     *
+     * @param source
+     * @param target
+     * @return
+     */
+    Query<T> between(Object source, Object target, GraphModel.Relationship relationship);
 
     Query<T> depth(int depth);
 
@@ -70,47 +106,14 @@ public interface KnowledgeGraph {
 
     List<T> run(Scope scope);
 
+    Optional<T> peek(Scope scope);
+
     Query<T> or(Query<T> query);
 
     Query<T> and(Query<T> query);
   }
 
-  /**
-   * Operations are defined and run to modify the knowledge graph. The operation API guarantees the
-   * proper updating of provenance in the graph so that any modification is recorded, attributed and
-   * saves in re-playable history.
-   *
-   * <p>At close, the operation commits or rolls back changes (except the activity it creates in
-   * provenance) according to which finalization mechanism has been called. If none has been called,
-   * the activity will be stored as an internal failure and everything else rolled back.
-   */
-  interface Operation extends Closeable {
-
-    /**
-     * Any operation on the KG is done by someone or something, dutifully recorded in the
-     * provenance.
-     *
-     * @return
-     */
-    Agent getAgent();
-
-    /**
-     * This is only used to pass the activity to a child operation.
-     *
-     * @return
-     */
-    Activity getActivity();
-
-    /**
-     * Create a child operation using the same transaction and representing a new activity, which
-     * will be linked as a subordinate to the current one. Pass anything that can affect the child
-     * activity, at minimum an Activity.Type and a description.
-     *
-     * @param activityData
-     * @return
-     */
-    Operation createChild(Object... activityData);
-
+  interface Transaction extends Closeable {
     /**
      * Store the passed asset, return its unique long ID.
      *
@@ -119,7 +122,9 @@ public interface KnowledgeGraph {
      *     right or you'll get an exception.
      * @return
      */
-    long store(RuntimeAsset asset, Object... additionalProperties);
+    void store(RuntimeAsset asset, Object... additionalProperties);
+
+    void update(RuntimeAsset asset, Object... properties);
 
     /**
      * Link the two passed assets.
@@ -134,51 +139,135 @@ public interface KnowledgeGraph {
     void link(
         RuntimeAsset source,
         RuntimeAsset destination,
-        DigitalTwin.Relationship relationship,
+        GraphModel.Relationship relationship,
         Object... additionalProperties);
-
-    /**
-     * Link the passed asset to the root node it "naturally" belongs to in the scope.
-     *
-     * <p>*
-     *
-     * @param destination
-     * @param additionalProperties any pair of properties we want overridden. Pass pairs and do it
-     *     right or you'll get an exception.
-     */
-    void linkToRootNode(
-        RuntimeAsset destination,
-        DigitalTwin.Relationship relationship,
-        Object... additionalProperties);
-
-    /**
-     * Call after run() when the activity has finished without errors to ensure that all info in the
-     * knowledge graph is up to date from a successful run.
-     *
-     * @param scope
-     * @return
-     */
-    Operation success(ContextScope scope, Object... assets);
-
-    /**
-     * Call after run() when the activity has finished with errors to ensure that all info in the
-     * knowledge graph reflect what has gone wrong.
-     *
-     * @param scope
-     * @param assets anything pertinent, assets, exceptions and the like
-     * @return
-     */
-    Operation fail(ContextScope scope, Object... assets);
   }
 
   /**
-   * Create a new operation with a new activity and a transaction, which can be committed or rolled
-   * back after using it to define the graph.
+   * Create a transaction which will make changes in the knowledge graph when closed.
    *
-   * @return
+   * @return a new transaction
    */
-  Operation operation(
-      Agent agent, Activity parentActivity, Activity.Type activityType, Object... data);
+  Transaction createTransaction();
+
+  //
+  //  /**
+  //   * Operations are defined and run to modify the knowledge graph. The operation API guarantees
+  // the
+  //   * proper updating of provenance in the graph so that any modification is recorded, attributed
+  // and
+  //   * saves in re-playable history.
+  //   *
+  //   * <p>At close, the operation commits or rolls back changes (except the activity it creates in
+  //   * provenance) according to which finalization mechanism has been called. If none has been
+  // called,
+  //   * the activity will be stored as an internal failure and everything else rolled back.
+  //   */
+  //  interface Operation extends Closeable {
+  //
+  //    /**
+  //     * Any operation on the KG is done by someone or something, dutifully recorded in the
+  //     * provenance.
+  //     *
+  //     * @return
+  //     */
+  //    Agent getAgent();
+  //
+  //    /**
+  //     * This is only used to pass the activity to a child operation.
+  //     *
+  //     * @return
+  //     */
+  //    Activity getActivity();
+  //
+  //    /**
+  //     * Create a child operation using the same transaction and representing a new activity,
+  // which
+  //     * will be linked as a subordinate to the current one. Pass anything that can affect the
+  // child
+  //     * activity, at minimum an Activity.Type and a description.
+  //     *
+  //     * @param activityData
+  //     * @return
+  //     */
+  //    Operation createChild(Object... activityData);
+  //
+  //    /**
+  //     * Store the passed asset, return its unique long ID.
+  //     *
+  //     * @param asset
+  //     * @param additionalProperties any pair of properties we want overridden. Pass pairs and do
+  // it
+  //     *     right or you'll get an exception.
+  //     * @return
+  //     */
+  //    long store(RuntimeAsset asset, Object... additionalProperties);
+  //
+  //    /**
+  //     * Link the two passed assets.
+  //     *
+  //     * <p>*
+  //     *
+  //     * @param source
+  //     * @param destination
+  //     * @param additionalProperties any pair of properties we want overridden. Pass pairs and do
+  // it
+  //     *     right or you'll get an exception.
+  //     */
+  //    void link(
+  //        RuntimeAsset source,
+  //        RuntimeAsset destination,
+  //        GraphModel.Relationship relationship,
+  //        Object... additionalProperties);
+  //
+  //    /**
+  //     * Link the passed asset to the root node it "naturally" belongs to in the scope.
+  //     *
+  //     * <p>*
+  //     *
+  //     * @param destination
+  //     * @param additionalProperties any pair of properties we want overridden. Pass pairs and do
+  // it
+  //     *     right or you'll get an exception.
+  //     */
+  //    void linkToRootNode(
+  //        RuntimeAsset destination,
+  //        GraphModel.Relationship relationship,
+  //        Object... additionalProperties);
+  //
+  //    /**
+  //     * Call after run() when the activity has finished without errors to ensure that all info in
+  // the
+  //     * knowledge graph is up to date from a successful run.
+  //     *
+  //     * @param scope
+  //     * @return
+  //     */
+  //    Operation success(ContextScope scope, Object... assets);
+  //
+  //    /**
+  //     * Call after run() when the activity has finished with errors to ensure that all info in
+  // the
+  //     * knowledge graph reflect what has gone wrong.
+  //     *
+  //     * @param scope
+  //     * @param assets anything pertinent, assets, exceptions and the like
+  //     * @return
+  //     */
+  //    Operation fail(ContextScope scope, Object... assets);
+  //
+  //    Scope.Status getOutcome();
+  //  }
+  //
+  //  /**
+  //   * Create a new operation with a new activity and a transaction, which can be committed or
+  // rolled
+  //   * back after using it to define the graph.
+  //   *
+  //   * @return
+  //   */
+  //  Operation operation(
+  //      Agent agent, Activity parentActivity, Activity.Type activityType, Object... data);
 
   /**
    * Obtain a query for an object of a specific type, to be specified and then run to obtain the
@@ -199,7 +288,8 @@ public interface KnowledgeGraph {
    * @return
    * @param <T>
    */
-  <T extends RuntimeAsset> List<T> query(Query<T> knowledgeGraphQuery, Class<T> resultClass, Scope scope);
+  <T extends RuntimeAsset> List<T> query(
+      Query<T> knowledgeGraphQuery, Class<T> resultClass, Scope scope);
 
   /**
    * Remove all data relative to the currently contextualized scope. Graph becomes unusable after
@@ -257,28 +347,44 @@ public interface KnowledgeGraph {
   KnowledgeGraph contextualize(ContextScope scope);
 
   /**
+   * The graph node that represents the scope we run under. If the KG is not the return value of a
+   * {@link #contextualize(ContextScope)} call, this will throw an exception.
+   *
+   * @return
+   */
+  RuntimeAsset scope();
+
+  /**
+   * The graph node that represents the root provenance node within the scope we run under. If the
+   * KG is not the return value of a {@link #contextualize(ContextScope)} call, this will throw an
+   * exception.
+   *
+   * @return
+   */
+  RuntimeAsset provenance();
+
+  /**
+   * The graph node that represents the root dataflow node within the scope we run under. If the KG
+   * is not the return value of a {@link #contextualize(ContextScope)} call, this will throw an
+   * exception.
+   *
+   * @return
+   */
+  RuntimeAsset dataflow();
+
+  /**
    * Extract and return the one asset that has the specified ID from the graph, ensuring it is of
    * the passed class. Expected to be the fastest way to retrieve a node when the ID is known,
-   * therefore available besides the more general {@link #query(Query, Class)}.
+   * therefore available besides the more general {@link #query(Class, Scope)}. The scope must be
+   * passed to ensure that cached objects that may not yet be committed to the graph can be
+   * retrieved.
    *
    * @param id
    * @param resultClass
    * @param <T>
    * @return
    */
-  <T extends RuntimeAsset> T get(long id, Class<T> resultClass);
-
-  /**
-   * Extract and return all the assets linked to the passed one in the graph.
-   *
-   * @param source
-   * @param linkType
-   * @param <T>
-   * @return
-   * @deprecated use query()
-   */
-  <T extends RuntimeAsset> List<T> get(
-      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass);
+  <T extends RuntimeAsset> T get(long id, ContextScope scope, Class<T> resultClass);
 
   /**
    * Called when an observation has been contextualized
@@ -286,24 +392,9 @@ public interface KnowledgeGraph {
    * @param observation
    * @param scope
    * @param arguments additional parameters to add to the observation or to override existing ones
-   * @deprecated remove from API
+   * @deprecated remove from API and move to {@link Transaction}
    */
   void update(RuntimeAsset observation, ContextScope scope, Object... arguments);
-
-  /**
-   * Query starting at the point implied by the scope and return matching objects using the query
-   * parameters passed.
-   *
-   * @param scope
-   * @param resultClass Can be an individual object (Observation, Actuator or Provenance node) or an
-   *     entire Dataflow or Provenance
-   * @param queryParameters
-   * @param <T>
-   * @return
-   * @deprecated use query()
-   */
-  <T extends RuntimeAsset> List<T> get(
-      ContextScope scope, Class<T> resultClass, Object... queryParameters);
 
   /**
    * Find an agent by name. If the agent is not found, create it with the passed name. If the name

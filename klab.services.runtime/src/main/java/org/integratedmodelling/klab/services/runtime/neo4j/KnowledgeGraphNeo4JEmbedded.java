@@ -122,11 +122,11 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
     return ret;
   }
 
-  @Override
-  public <T extends RuntimeAsset> List<T> get(
-      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
-    return List.of();
-  }
+//  @Override
+//  public <T extends RuntimeAsset> List<T> get(
+//      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
+//    return List.of();
+//  }
 
   @Override
   public KnowledgeGraph merge(URL remoteDigitalTwinURL) {

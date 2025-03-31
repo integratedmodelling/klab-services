@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A {@link UIController} specialized to provide and orchestrate the views and panels that compose
@@ -207,7 +208,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   @Override
-  public void observe(Object asset, boolean adding) {
+  public CompletableFuture<Observation> observe(Object asset, boolean adding) {
 
     if (currentUser() == null) {
       throw new KlabAuthorizationException("Cannot make observations with an invalid user");
@@ -245,7 +246,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     if (currentContext == null) {
       user().error("cannot create an observation context: aborting", UI.Interactivity.DISPLAY);
-      return;
+      return CompletableFuture.completedFuture(Observation.empty());
     }
 
     List<Object> resolvables = new ArrayList<>();
@@ -297,22 +298,24 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     if (resolvables.isEmpty()) {
       currentContext.warn("No resolvable assets: observation not started");
-      return;
+      return CompletableFuture.completedFuture(Observation.empty());
     }
 
     var observation = DigitalTwin.createObservation(currentContext, resolvables.toArray());
 
     if (observation == null) {
       currentContext.error("Cannot create an observation out of " + asset + ": aborting");
-      return;
+      return CompletableFuture.completedFuture(Observation.empty());
     }
 
     final boolean observering = isObserver;
 
+    // FIXME this is obsolete. Resolution is a normal future and contextualization happens
+    // asynchronously
     /* one-time event handlers */
     currentContext
         .onEvent(
-            Message.MessageClass.ObservationLifecycle,
+            Message.MessageClass.DigitalTwin,
             Message.MessageType.ResolutionSuccessful,
             (message) -> {
               var obs = message.getPayload(Observation.class);
@@ -339,7 +342,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             },
             observation)
         .onEvent(
-            Message.MessageClass.ObservationLifecycle,
+            Message.MessageClass.DigitalTwin,
             Message.MessageType.ResolutionAborted,
             (message) -> {
               currentContext.error(
@@ -351,7 +354,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             },
             observation)
         .onEvent(
-            Message.MessageClass.ObservationLifecycle,
+            Message.MessageClass.DigitalTwin,
             Message.MessageType.ResolutionUnsuccessful,
             (message) -> {
               var obs = message.getPayload(Observation.class);
@@ -388,9 +391,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             },
             observation);
 
-    currentContext
+    return currentContext
         .withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new))
-        .observe(observation);
+        .observe(observation)
+        .exceptionally(t -> observation) // TODO
+        .thenApply(observation1 -> /* TODO logics here */ observation);
   }
 
   @Override

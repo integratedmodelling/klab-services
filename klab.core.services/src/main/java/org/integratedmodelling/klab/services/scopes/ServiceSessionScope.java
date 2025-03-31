@@ -7,6 +7,8 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.objects.JobStatus;
+import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.base.BaseService;
 
 import java.util.ArrayList;
@@ -22,7 +24,7 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
     private String name;
     private boolean operative = true;
-
+    protected JobManager jobManager;
     public void setName(String name) {
         this.name = name;
     }
@@ -31,6 +33,7 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
         super(parent);
         this.data = Parameters.create();
         this.data.putAll(parent.data);
+        // the job manager is created upstream
     }
 
     @Override
@@ -42,6 +45,9 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     protected void copyInfo(ServiceUserScope other) {
         super.copyInfo(other);
         this.data.putAll(other.data);
+        if (other instanceof ServiceSessionScope serviceSessionScope) {
+            this.jobManager = serviceSessionScope.jobManager;
+        }
     }
 
     @Override
@@ -135,5 +141,9 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
         }
         
         return ret;
+    }
+
+    public JobManager getJobManager() {
+        return jobManager;
     }
 }

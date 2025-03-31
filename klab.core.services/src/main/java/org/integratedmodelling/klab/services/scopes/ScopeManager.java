@@ -216,12 +216,12 @@ public class ScopeManager {
   public ContextScope contextualizeScope(
       ServiceContextScope rootScope, ContextScope.ScopeData contextualization) {
 
-    ContextScope ret = rootScope;
+    ServiceContextScope ret = rootScope;
 
     if (contextualization.observationPath() != null) {
       for (var observationId : contextualization.observationPath()) {
-        var observation = ret.query(Observation.class, observationId);
-        if (observation.isEmpty()) {
+        var observation = ret.getObservation(observationId);
+        if (observation == null) {
           throw new KlabResourceAccessException(
               "Observation with ID "
                   + observationId
@@ -229,13 +229,13 @@ public class ScopeManager {
                   + "found in context "
                   + ret.getName());
         }
-        ret = ret.within(observation.getFirst());
+        ret = (ServiceContextScope) ret.within(observation);
       }
     }
 
     if (contextualization.observerId() != Observation.UNASSIGNED_ID) {
-      var observer = ret.query(Observation.class, contextualization.observerId());
-      if (observer.isEmpty()) {
+      var observer = ret.getObservation(contextualization.observerId());
+      if (observer == null) {
         throw new KlabResourceAccessException(
             "Subject with ID "
                 + contextualization.observerId()
@@ -243,7 +243,7 @@ public class ScopeManager {
                 + "context "
                 + ret.getName());
       }
-      ret = ret.withObserver(observer.getFirst());
+      ret = ret.withObserver(observer);
     }
 
     return ret;

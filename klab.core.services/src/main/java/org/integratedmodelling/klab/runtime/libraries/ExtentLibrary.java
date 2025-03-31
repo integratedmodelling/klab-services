@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.libraries;
 
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -363,10 +364,10 @@ public class ExtentLibrary {
       Resource resource =
           scope.getService(ResourcesService.class).retrieveResource(List.of(value), scope);
       if (resource != null) {
-        ret = Scale.create(resource.getGeometry());
+        ret = GeometryRepository.INSTANCE.scale(resource.getGeometry());
       }
     } else {
-      ret = Scale.create(Geometry.create(value));
+      ret = GeometryRepository.INSTANCE.get(value, Scale.class);
     }
 
     return ret;
@@ -376,7 +377,7 @@ public class ExtentLibrary {
    * Parse a string like "1 km" or a k.IM quantity ('1.km') and return the meters in it. Throw an
    * exception if this cannot be parsed.
    *
-   * @param string
+   * @param spec
    * @return the resolution in meters
    * @throws KlabValidationException
    */

@@ -1,13 +1,5 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
-import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.lang.SemanticClause;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
-import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.List;
 
@@ -15,19 +7,21 @@ import java.util.List;
  * Holds the types and field constants for the digital twin graph model and the correspondent
  * GraphQL schema. All enums are local and they correspond to those actually used in the models so
  * that the schema is internally consistent and has no dependency.
+ *
+ * <p>TODO use this in the KnowledgeGraph implementation
  */
-public class GraphModel {
+public interface GraphModel {
 
   // TODO queries may belong to a Queries interface here.
 
-  public enum ServiceType {
+  enum ServiceType {
     REASONER,
     RESOLVER,
     RUNTIME,
     RESOURCES
   }
 
-  public enum SemanticType {
+  enum SemanticType {
     QUALITY,
     AGENT,
     SUBJECT,
@@ -39,13 +33,13 @@ public class GraphModel {
     CONFIGURATION
   }
 
-  public enum LinkType {
+  enum LinkType {
     CHILD,
     PARENT,
     OBSERVER
   }
 
-  public enum ObservationType {
+  enum ObservationType {
     SUBJECT,
     STATE,
     PROCESS,
@@ -54,7 +48,7 @@ public class GraphModel {
     RELATIONSHIP
   }
 
-  public enum ActivityType {
+  enum ActivityType {
     INSTANTIATION,
     CONTEXTUALIZATION,
     RESOLUTION,
@@ -62,19 +56,19 @@ public class GraphModel {
     INITIALIZATION
   }
 
-  public enum ActivityOutcome {
+  enum ActivityOutcome {
     SUCCESS,
     FAILURE,
     EXCEPTION
   }
 
-  public enum AgentType {
+  enum AgentType {
     AI,
     USER,
     MODELED
   }
 
-  public enum DataType {
+  enum DataType {
     DOUBLE,
     FLOAT,
     INT,
@@ -82,26 +76,50 @@ public class GraphModel {
     LONG
   }
 
-  public enum ValueType {
+  enum ValueType {
     SCALAR,
     DISTRIBUTION,
     TABLE
   }
 
-  public enum Persistence {
+  enum Persistence {
     SERVICE_SHUTDOWN
   }
 
-  public record Link(long sourceId, long targetId, LinkType type) {}
+    /**
+     * The type of relationships in the graph. All relationship carry further information, to be fully
+     * defined.
+     */
+    enum Relationship {
+      HAS_PARENT,
+      AFFECTS,
+      CONTEXTUALIZED_BY,
+      EMERGED_FROM,
+      HAS_OBSERVER,
+      HAS_SIBLING,
+      HAS_RELATIONSHIP_TARGET,
+      HAS_PLAN,
+      BY_AGENT,
+      CREATED,
+      HAS_DATAFLOW,
+      HAS_PROVENANCE,
+      HAS_ACTIVITY,
+      HAS_DATA,
+      HAS_CHILD,
+      TRIGGERED,
+      RESOLVED;
+    }
 
-  public record Context(long id, long created, String name, Persistence expiration, String user) {
+    record Link(long sourceId, long targetId, LinkType type) {}
+
+  record Context(long id, long created, String name, Persistence expiration, String user) {
     public static final String ID_FIELD = "id";
     public static final String NAME_FIELD = "name";
     public static final String EXPIRATION_FIELD = "expiration";
     public static final String USER_FIELD = "user";
   }
 
-  public record Data(
+  record Data(
       long id,
       String fillCurve,
       long size,
@@ -111,11 +129,11 @@ public class GraphModel {
       String histogramJson,
       Persistence persistence) {}
 
-  public record Geometry(long id, String definition, long size) {}
+  record Geometry(long id, String definition, long size) {}
 
-  public record Agent(long id, AgentType type, String name) {}
+  record Agent(long id, AgentType type, String name) {}
 
-  public record Observation(
+  record Observation(
       long id,
       String name,
       String urn,
@@ -138,14 +156,14 @@ public class GraphModel {
     public static final String N_CHILDREN_FIELD = "nChildren";
   }
 
-  public record Dataflow(long id) {}
+  record Dataflow(long id) {}
 
-  public record Actuator(
+  record Actuator(
       long id, long observationId, String semantics, String strategy, List<String> computation) {}
 
-  public record ProvenanceNode(String id) {}
+  record ProvenanceNode(String id) {}
 
-  public record Activity(
+  record Activity(
       long id,
       String urn,
       long size,

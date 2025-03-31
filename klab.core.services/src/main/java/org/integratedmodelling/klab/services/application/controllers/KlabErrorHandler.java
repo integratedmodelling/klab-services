@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,16 +26,14 @@ public class KlabErrorHandler {
   public @ResponseBody ResponseEntity<ErrorResponse> handleNoMethodException(
       HttpServletRequest request, NoHandlerFoundException ex) {
     ErrorResponse errorResponse =
-        ErrorResponse.create(ex, HttpStatus.NOT_FOUND, "Dio cane, handler " + "not found");
-    ex.printStackTrace();
+        ErrorResponse.create(ex, HttpStatus.NOT_FOUND, Utils.Exceptions.stackTrace(ex));
     return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.NOT_FOUND);
   }
 
   @ExceptionHandler(Throwable.class)
   public @ResponseBody ResponseEntity<ErrorResponse> handleDefaultException(Throwable ex) {
     ErrorResponse errorResponse =
-        ErrorResponse.create(ex, HttpStatus.BAD_REQUEST, "Dio cane, empty " + "body or other shit");
-    ex.printStackTrace();
+        ErrorResponse.create(ex, HttpStatus.INTERNAL_SERVER_ERROR, Utils.Exceptions.stackTrace(ex));
     return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.BAD_REQUEST);
   }
 }

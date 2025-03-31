@@ -30,7 +30,6 @@ public class ObservationImpl implements Observation {
     private Metadata metadata = Metadata.create();
     private long id = UNASSIGNED_ID;
     private String urn;
-    private boolean resolved;
     private Object value;
     private String name;
     private double resolvedCoverage;
@@ -196,15 +195,6 @@ public class ObservationImpl implements Observation {
         this.urn = urn;
     }
 
-    @Override
-    public boolean isResolved() {
-        return resolved;
-    }
-
-    public void setResolved(boolean resolved) {
-        this.resolved = resolved;
-    }
-
     public void setGeometry(Geometry geometry) {
         this.geometry = geometry;
     }
@@ -240,15 +230,4 @@ public class ObservationImpl implements Observation {
         return "(OBS) " + observable  + " [#" + (geometry == null ? "0" : geometry.size()) + "]";
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        ObservationImpl artifacts = (ObservationImpl) o;
-        return Objects.equals(urn, artifacts.urn);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(urn);
-    }
 }

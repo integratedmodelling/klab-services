@@ -1,11 +1,17 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.provenance.Activity;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Scheduler for arbitrary actions that can be registered to happen at given transitions, in either
@@ -53,10 +59,27 @@ public interface Scheduler {
    * consequences of any resulting events and call the scope to carry on any necessary computations
    * and update the knowledge graph.
    *
+   * <p>This must be called <em>only on the root observation of a resolution</em> after the
+   * resolution has been successfully committed to the knowledge graph and all executors have been
+   * registered, which is done through {@link DigitalTwin.Transaction#commit()}. The observation
+   * after commit will contain its finalized IDs and all buffers will have been set up.
+   *
    * @param observation
+   * @param triggeringActivity the activity that triggered the submission (not the submission
+   *     activity itself)
    * @return
    */
-  void submit(Observation observation);
+  void submit(Observation observation, Activity triggeringActivity);
+
+  /**
+   * Register an executor compiled from the actuator that resolves the passed observation in the
+   * passed geometry.
+   *
+   * @param observation
+   * @param executor
+   */
+  void registerExecutor(
+      Observation observation, BiFunction<Geometry, ContextScope, Boolean> executor);
 
   /**
    * The scheduler keeps the first time instant seen in the DT. This can change during the lifetime

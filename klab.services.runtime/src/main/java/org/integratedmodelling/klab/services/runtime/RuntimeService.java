@@ -9,22 +9,19 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
-import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
-import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -47,8 +44,8 @@ import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
-import org.integratedmodelling.klab.services.runtime.neo4j.AbstractKnowledgeGraph;
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JEmbedded;
+import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
@@ -61,7 +58,7 @@ public class RuntimeService extends BaseService
   private String hardwareSignature =
       org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
   private RuntimeConfiguration configuration;
-  private KnowledgeGraph knowledgeGraph;
+  private KnowledgeGraphNeo4j knowledgeGraph;
   private SystemLauncher systemLauncher;
 
   public RuntimeService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
@@ -96,7 +93,7 @@ public class RuntimeService extends BaseService
     return this.knowledgeGraph.isOnline();
   }
 
-  public KnowledgeGraph getMainKnowledgeGraph() {
+  public KnowledgeGraphNeo4j getMainKnowledgeGraph() {
     return this.knowledgeGraph;
   }
 
@@ -314,93 +311,6 @@ public class RuntimeService extends BaseService
     throw new KlabIllegalArgumentException("unexpected scope class");
   }
 
-  @Override
-  public long submit(Observation observation, ContextScope scope) {
-
-    if (observation.isResolved()) {
-      // TODO there may be a context for this at some point.
-      throw new KlabIllegalStateException(
-          "A resolved observation cannot be submitted to the " + "knowledge graph for now");
-    }
-
-    if (observation.getObservable().is(SemanticType.QUALITY)
-        && scope.getContextObservation() == null) {
-      throw new KlabIllegalStateException("Cannot observe a quality without a context observation");
-    }
-
-    /** Only situation when we accept an observation w/o geometry */
-    if (observation.getGeometry() == null && observation instanceof ObservationImpl observation1) {
-      if (observation.getObservable().is(SemanticType.QUALITY)
-          && scope.getContextObservation() != null) {
-        observation1.setGeometry(scope.getContextObservation().getGeometry());
-      } else if (observation.getObservable().is(SemanticType.COUNTABLE)
-          && observation.getObservable().getSemantics().isCollective()
-          && scope.getObserver() != null) {
-        observation1.setGeometry(scope.getObserver().getGeometry());
-      }
-    }
-
-    if (scope instanceof ServiceContextScope serviceContextScope) {
-
-      var digitalTwin = getDigitalTwin(scope);
-      var parentActivity = Provenance.getActivity(scope);
-      var agent = getAgent(scope);
-
-      /*
-       * The initial activity should be in the scope; if not, we're observing at the
-       * root DT level and we get the context initialization activity as parent.
-       */
-      var instantiation =
-          digitalTwin
-              .getKnowledgeGraph()
-              .operation(
-                  agent,
-                  parentActivity,
-                  Activity.Type.INSTANTIATION,
-                  "Instantiation of " + observation,
-                  observation,
-                  this);
-
-      // if root, closing the operation will commit all transactions, or rollback if unsuccessful.
-      try (instantiation) {
-
-        var ret = instantiation.store(observation);
-        instantiation.link(
-            instantiation.getActivity(), observation, DigitalTwin.Relationship.CREATED);
-        if (scope.getContextObservation() != null) {
-          instantiation.link(
-              scope.getContextObservation(), observation, DigitalTwin.Relationship.HAS_CHILD);
-        } else {
-          instantiation.linkToRootNode(observation, DigitalTwin.Relationship.HAS_CHILD);
-        }
-
-        if (scope.getObserver() != null) {
-          instantiation.link(
-              observation, scope.getObserver(), DigitalTwin.Relationship.HAS_OBSERVER);
-        }
-
-        /*
-         * TODO start computing the set of consequences that this operation engenders if successful and
-         * link them to the observation for deferred execution after contextualization (failure of
-         * one of those shouldn't jeopardize the success of the contextualization). This includes computing
-         * configurations that may emerge and must consider any linked DTs. If the observation is a time
-         * event, the consequences are the only thing that matters and the storage of the event is conditional
-         * to being consequential. These can be computed in a thread to avoid interrupting the execution of
-         * this submission.
-         */
-
-        instantiation.success(scope, observation);
-
-        return ret;
-
-      } catch (Throwable t) {
-        instantiation.fail(scope, observation, t);
-      }
-    }
-
-    return Observation.UNASSIGNED_ID;
-  }
-
   private Agent getAgent(ContextScope scope) {
 
     var ret = Provenance.getAgent(scope);
@@ -414,21 +324,6 @@ public class RuntimeService extends BaseService
     throw new KlabIllegalStateException("Cannot determine the requesting agent from scope");
   }
 
-  private Activity getInitializationActivity(Observation observation, ContextScope scope) {
-    var ret = Provenance.getActivity(scope);
-    if (ret != null) {
-      return ret;
-    }
-    var activities =
-        getDigitalTwin(scope)
-            .getKnowledgeGraph()
-            .get(scope, Activity.class, Activity.Type.INITIALIZATION);
-    if (activities.size() == 1) {
-      return activities.getFirst();
-    }
-    throw new KlabInternalErrorException("cannot locate the context initialization activity");
-  }
-
   /**
    * Return the configured computation builder for the passed observation and scope. This may
    * eventually analyze the scope and the dataflow to assess which kind of computation fits the
@@ -440,161 +335,161 @@ public class RuntimeService extends BaseService
     return ScalarComputationGroovy.builder(observation, scope, actuator);
   }
 
+  /**
+   * The structure of the graph will be:
+   *
+   * <ul>
+   *   <li>The RESOLUTION activity as top node, linking to ALL the observations created by a
+   *       RESOLVED link. The dataflow source code is also attached to it. Pre-existing observations
+   *       referenced are not linked to the activity but will get any additional AFFECTS
+   *       relationship. Activity is attached to the agent and the provenance, timestamped for
+   *       reconstruction
+   *   <li>The link to each observation contains the sequence number (0-based) to reconstruct the
+   *       contextualization order. -1 flags links to pre-existing referenced observations.
+   *   <li>AFFECTS relationships are added for all causal links
+   *   <li>The actuator is linked to each observation. Activities can reconstruct the dataflow by
+   *       following the observations.
+   *   <li>HAS_CHILD relationships are added between dependents and substantials and between
+   *       instantiated substantials and their collective observations
+   *   <li>Any other observation is linked to the context
+   *   <li>All observations are linked to their observer if any
+   *   <li>Contextualization will add data buffers for qualities and set the computation time
+   *       (incrementally) and the latest contextualization update time, with -1 before
+   *       contextualization
+   *   <li>The INIT CONTEXTUALIZATION activity is added by the scheduler when the initialization
+   *       event is scheduled on the submitted root observation. The activity is TRIGGERED by
+   *       RESOLUTION and linked to the Observations affected by a timestamped CONTEXTUALIZED link.
+   * </ul>
+   *
+   * @param observation
+   * @param scope
+   * @return
+   */
   @Override
-  public CompletableFuture<Observation> resolve(long id, ContextScope scope) {
+  public CompletableFuture<Observation> submit(
+      Observation observation, ContextScope scope) {
+
+    if (observation.getId() > 0) {
+      return CompletableFuture.completedFuture(observation);
+    }
 
     if (scope instanceof ServiceContextScope serviceContextScope) {
 
       /*
-      TODO must consult the knowledge graph to see if we have a pre-resolved dataflow that
-       can handle this observation. Could be done by looking up an existing RESOLUTION activity
-       that was linked to the overall covered geometry of the dataflow. Should use the spatial
-       queries in Neo4J or maintain a separate spatial index for the dataflows/activities.
+       * Pre-existing observations are checked unless it's an acknowledged single subject, which can
+       * always be added.
        */
+      var existing =
+          observation.getObservable().is(SemanticType.SUBJECT)
+                  && !observation.getObservable().getSemantics().isCollective()
+              ? null
+              : scope.getObservation(observation.getObservable());
 
-      var resolver = serviceContextScope.getService(Resolver.class);
-      var observation = serviceContextScope.getObservation(id);
-      var digitalTwin = getDigitalTwin(scope);
-      var parentActivities =
-          digitalTwin
-              .getKnowledgeGraph()
-              .get(scope, Activity.class, Activity.Type.INSTANTIATION, observation);
+      if (existing != null) {
+        return CompletableFuture.completedFuture(existing);
+      }
 
-      // TODO check
-      var parentActivity = parentActivities.getFirst();
-      final var ret = new CompletableFuture<Observation>();
+      if (observation.getObservable().is(SemanticType.QUALITY)
+          && scope.getContextObservation() == null) {
+        throw new KlabIllegalStateException(
+            "Cannot observe a quality without a context observation");
+      }
 
-      Thread.ofVirtual()
-          .start(
-              () -> {
-                Dataflow dataflow = null;
-                Activity resolutionActivity = null;
-                Observation result = null;
+      /** Only situation when we accept an observation w/o geometry */
+      if (observation.getGeometry() == null
+          && observation instanceof ObservationImpl observation1) {
+        if (observation.getObservable().is(SemanticType.QUALITY)
+            && scope.getContextObservation() != null) {
+          observation1.setGeometry(scope.getContextObservation().getGeometry());
+        } else if (observation.getObservable().is(SemanticType.COUNTABLE)
+            && observation.getObservable().getSemantics().isCollective()
+            && scope.getObserver() != null) {
+          observation1.setGeometry(scope.getObserver().getGeometry());
+        }
+      }
 
-                /*
-                This will commit or rollback at close()
-                 */
-                var resolution =
-                    digitalTwin
-                        .getKnowledgeGraph()
-                        .operation(
-                            digitalTwin.getKnowledgeGraph().klab(),
-                            parentActivity,
-                            Activity.Type.RESOLUTION,
-                            "Resolution of " + observation,
-                            resolver);
+      var contextScope = serviceContextScope.initializeResolution();
+      var resolver = scope.getService(Resolver.class);
+      var resolution = Activity.of("Resolution of " + observation, Activity.Type.RESOLUTION, this);
 
-                try (resolution) {
-                  result = observation;
-                  scope.send(
-                      Message.MessageClass.ObservationLifecycle,
-                      Message.MessageType.ResolutionStarted,
-                      result);
-                  try {
-                    // TODO send out the activity with the scope
-                    dataflow = resolver.resolve(observation, scope);
-                    if (dataflow != null) {
-                      resolution.success(
-                          scope,
-                          result,
-                          dataflow,
-                          "Resolution of observation _"
-                              + observation.getUrn()
-                              + "_ of **"
-                              + observation.getObservable().getUrn()
-                              + "**",
-                          resolver);
-                      scope.send(
-                          Message.MessageClass.ObservationLifecycle,
-                          dataflow.isEmpty()
-                              ? Message.MessageType.ResolutionUnsuccessful
-                              : Message.MessageType.ResolutionSuccessful,
-                          result);
-                      resolutionActivity = resolution.getActivity();
-                    } else {
-                      resolution.fail(scope, observation);
-                      ret.completeExceptionally(
-                          new KlabResourceAccessException(
-                              "Resolution of " + observation.getUrn() + " failed"));
-                    }
-                  } catch (Throwable t) {
-                    Logging.INSTANCE.error(t);
-                    ret.completeExceptionally(t);
-                    resolution.fail(scope, observation, t);
-                    scope.send(
-                        Message.MessageClass.ObservationLifecycle,
-                        Message.MessageType.ResolutionAborted,
-                        observation);
-                  }
-                } catch (Throwable t) {
-                  Logging.INSTANCE.error(t);
-                  scope.send(
-                      Message.MessageClass.ObservationLifecycle,
-                      Message.MessageType.ResolutionAborted,
-                      observation);
-                  resolution.fail(scope, observation, t);
-                  ret.completeExceptionally(t);
-                }
+      return resolver
+          /* resolve asynchronously */
+          .resolve(observation, contextScope)
+          /* then compile the dataflow */
+          .thenApply(
+              dataflow -> {
+                if (!dataflow.isEmpty()) {
+                  /*
+                   * Compile an atomic transaction from the dataflow, adding new observations if the digital twin does not have them.
+                   */
+                  var transaction =
+                      scope.getDigitalTwin().transaction(resolution, scope, dataflow, observation);
 
-                if (!ret.isCompletedExceptionally() && dataflow != null) {
-
-                  if (dataflow.isEmpty()
-                      && observation.getObservable().is(SemanticType.COUNTABLE)) {
-                    // if there is a dataflow, this step will be done in execution
-                    serviceContextScope.finalizeObservation(observation, resolution, false);
-                  } else {
-                    /*
-                    this will commit all resources at close()
-                     */
-                    var contextualization =
-                        digitalTwin
-                            .getKnowledgeGraph()
-                            .operation(
-                                digitalTwin.getKnowledgeGraph().klab(),
-                                resolutionActivity,
-                                Activity.Type.EXECUTION,
-                                "Execution of resolved dataflow to contextualize " + observation,
-                                dataflow,
-                                observation,
-                                this);
-
-                    var scale = GeometryRepository.INSTANCE.get(observation.getGeometry().encode(), Scale.class);
-                    var initializationGeometry = scale.initialization();
-
-                    try (contextualization) {
-                      // TODO contextualization gets its own activities to use in operations
-                      //  (dependent on resolution) linked to actuators by runDataflow
-                      result = runDataflow(dataflow, initializationGeometry, scope, contextualization);
-                      ret.complete(result);
-                      if (result.isEmpty()) {
-                        contextualization.fail(scope, dataflow);
-                      } else {
-                        contextualization.success(scope, dataflow, result);
-                      }
-                    } catch (Throwable t) {
-                      Logging.INSTANCE.error(t);
-                      contextualization.fail(scope, dataflow, result, t);
-                      ret.completeExceptionally(t);
-                    }
+                  if (compile(observation, dataflow, contextScope, transaction)
+                      && transaction.commit()) {
+                    return observation;
                   }
                 }
+                return Observation.empty();
+              })
+          /* then submit the observation to the scheduler, which will trigger contextualization */
+          .thenApply(
+              o -> {
+                contextScope.getDigitalTwin().getScheduler().submit(o, resolution);
+                return o;
               });
+    }
+    throw new KlabInternalErrorException(
+        "RuntimeService::observe() called with unexpected scope implementation");
+  }
 
-      return ret;
+  private boolean compile(
+      Observation rootObservation,
+      Dataflow dataflow,
+      ServiceContextScope scope,
+      DigitalTwin.Transaction transaction) {
+
+    transaction.add(rootObservation);
+    transaction.link(
+        scope.getContextObservation() == null
+            ? scope.getDigitalTwin().getKnowledgeGraph().scope()
+            : scope.getContextObservation(),
+        rootObservation,
+        GraphModel.Relationship.HAS_CHILD);
+
+    transaction.link(
+        transaction.getActivity(),
+        rootObservation,
+        rootObservation.getId() < 0
+            ? GraphModel.Relationship.CREATED
+            : GraphModel.Relationship.RESOLVED);
+
+    if (transaction instanceof DigitalTwinImpl.TransactionImpl transactionImpl) {
+      for (var rootActuator : dataflow.getComputation()) {
+        var executionSequence = new CompiledDataflow(this, /*dataflow,*/ rootObservation, scope);
+        if (!executionSequence.compile(rootActuator)) {
+          transaction.fail(
+              new KlabCompilationError(
+                  "Could not compile execution sequence for this target observation"));
+          return false;
+        }
+
+        if (!executionSequence.store(transactionImpl)) {
+          return false;
+        }
+      }
+
+      return true;
     }
 
     throw new KlabInternalErrorException(
-        "Digital twin is inaccessible because of unexpected scope implementation");
+        "RuntimeService::observe() called with unexpected transaction implementation");
   }
 
-  @Override
-  public Observation runDataflow(Dataflow dataflow, Geometry geometry, ContextScope contextScope) {
-    // TODO fill in the operation representing an external dataflow run
-    return runDataflow(dataflow, geometry, contextScope, null);
-  }
-
+  // TODO if we keep this, it must become asynchronous
   public Observation runDataflow(
-          Dataflow dataflow, Geometry geometry, ContextScope contextScope, KnowledgeGraph.Operation contextualization) {
+      Dataflow dataflow, Geometry geometry, ContextScope contextScope /*,
+      KnowledgeGraph.Operation contextualization*/) {
 
     /*
     TODO Load or confirm availability of all needed resources and create any non-existing observations
@@ -608,22 +503,21 @@ public class RuntimeService extends BaseService
       /** Run each actuator set in order */
       for (var rootActuator : dataflow.getComputation()) {
         var executionSequence =
-            new ExecutionSequence(
-                this, contextualization, dataflow, getComponentRegistry(), serviceContextScope);
+            new CompiledDataflow(
+                this, /*contextualization,*/ dataflow, getComponentRegistry(), serviceContextScope);
         var compiled = executionSequence.compile(rootActuator);
         if (!compiled) {
-          contextualization.fail(
-              contextScope,
-              dataflow.getTarget(),
-              new KlabCompilationError(
-                  "Could not compile execution sequence for this target observation"));
+          //          contextualization.fail(
+          //              contextScope,
+          //              dataflow.getTarget(),
+          //              new KlabCompilationError(
+          //                  "Could not compile execution sequence for this target observation"));
           return Observation.empty();
         } else if (!executionSequence.isEmpty()) {
-          if (!executionSequence.run(geometry)) {
-            contextualization.fail(
-                contextScope, dataflow.getTarget(), executionSequence.getCause());
-            return Observation.empty();
-          }
+          // TODO run it the old way, calling the executors one by one. This is for explicit
+          // dataflows and may not be
+          //  needed.
+          //          executionSequence.run(geometry);
         }
       }
 
@@ -633,28 +527,13 @@ public class RuntimeService extends BaseService
 
       if (dataflow instanceof DataflowImpl df
           && dataflow.getTarget() instanceof ObservationImpl obs) {
-        obs.setResolved(true);
         obs.setResolvedCoverage(df.getResolvedCoverage());
       }
 
-      contextualization.success(contextScope, dataflow.getTarget(), dataflow);
+      //      contextualization.success(contextScope, dataflow.getTarget(), dataflow);
     }
 
     return dataflow.getTarget();
-  }
-
-  private DigitalTwin getDigitalTwin(ContextScope contextScope) {
-    if (contextScope instanceof ServiceContextScope serviceContextScope) {
-      return serviceContextScope.getDigitalTwin();
-    }
-    throw new KlabInternalErrorException(
-        "Digital twin is inaccessible because of unexpected scope " + "implementation");
-  }
-
-  @Override
-  public <T extends RuntimeAsset> List<T> retrieveAssets(
-      ContextScope contextScope, Class<T> assetClass, Object... queryParameters) {
-    return knowledgeGraph.get(contextScope, assetClass, queryParameters);
   }
 
   @Override

@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.services.application.ServiceNetworkedInstanc
 import org.integratedmodelling.klab.services.resolver.ResolverService;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

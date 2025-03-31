@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Client-side knowledge graph query, serializable to be ingested by the runtime's REST digital twin
@@ -52,6 +53,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
     OBSERVATION,
     SEMANTICS,
     OBSERVABLE,
+    LINK,
     DATA;
 
     public static AssetType classify(Object asset) {
@@ -65,6 +67,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
             ignored.getContextObservation() == null ? AssetType.SCOPE : AssetType.OBSERVATION;
         case Concept ignored -> AssetType.SEMANTICS;
         case KimConcept ignored -> AssetType.SEMANTICS;
+        case KnowledgeGraph.Link ignored -> AssetType.LINK;
         case Storage.Buffer ignored -> AssetType.DATA;
         default ->
             throw new KlabIllegalArgumentException(
@@ -97,6 +100,9 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
       if (KimConcept.class.isAssignableFrom(asset)) {
         return AssetType.SEMANTICS;
       }
+      if (KnowledgeGraph.Link.class.isAssignableFrom(asset)) {
+        return AssetType.LINK;
+      }
       if (Storage.Buffer.class.isAssignableFrom(asset)) {
         return AssetType.DATA;
       }
@@ -114,6 +120,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
         case SEMANTICS -> Concept.class;
         case OBSERVABLE -> Observable.class;
         case DATA -> Storage.Buffer.class;
+        case LINK -> KnowledgeGraph.Link.class;
       };
     }
   }
@@ -145,17 +152,31 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   private Asset target;
   private QueryType type = QueryType.QUERY;
   private List<KnowledgeGraphQuery<T>> children = new ArrayList<>();
-  private DigitalTwin.Relationship relationship;
+  private GraphModel.Relationship relationship;
   private List<Triple<String, String, String>> assetQueryCriteria = new ArrayList<>();
   private Parameters<String> relationshipQueryCriteria = Parameters.create();
   private int depth = 1;
   private long limit = -1;
   private long offset = 0;
+  private long id = -1;
+  private Asset relationshipSource;
+  private Asset relationshipTarget;
+
 
   public KnowledgeGraphQuery() {}
 
   public KnowledgeGraphQuery(AssetType assetType) {
     this.resultType = assetType;
+  }
+
+  @Override
+  public KnowledgeGraph.Query<T> id(long id) {
+    this.id = id;
+    return this;
+  }
+
+  public long getId() {
+    return this.id;
   }
 
   @Override
@@ -167,27 +188,31 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   private Asset makeAsset(Object startingPoint) {
     var ret = new Asset();
     ret.type = AssetType.classify(startingPoint);
-    ret.urn =
-        switch (startingPoint) {
-          case Observation ignored -> ignored.getUrn();
-          case Actuator ignored -> ignored.getId() + "";
-          case Activity ignored -> ignored.getUrn();
-          case Observable ignored -> ignored.getUrn();
-          case KimObservable ignored -> ignored.getUrn();
-          case Concept ignored -> ignored.getUrn();
-          case KimConcept ignored -> ignored.getUrn();
-          case ServiceSideScope ignored ->
-              ignored instanceof ContextScope contextScope
-                      && contextScope.getContextObservation() != null
-                  ? contextScope.getContextObservation().getUrn()
-                  : ignored.getId();
-          case ClientContextScope ignored ->
-              ignored.getContextObservation() == null
-                  ? ignored.getId()
-                  : ignored.getContextObservation().getUrn();
-          case Storage.Buffer ignored -> ignored.getId() + "";
-          default -> null;
-        };
+      ret.urn =
+          switch (startingPoint) {
+            case Observation ignored -> ignored.getUrn();
+            case Actuator ignored -> ignored.getId() + "";
+            case Activity ignored -> ignored.getUrn();
+            case Observable ignored -> ignored.getUrn();
+            case KimObservable ignored -> ignored.getUrn();
+            case Concept ignored -> ignored.getUrn();
+            case KimConcept ignored -> ignored.getUrn();
+            case ServiceSideScope ignored ->
+                ignored instanceof ContextScope contextScope
+                        && contextScope.getContextObservation() != null
+                    ? contextScope.getContextObservation().getUrn()
+                    : ignored.getId();
+            case ClientContextScope ignored ->
+                ignored.getContextObservation() == null
+                    ? ignored.getId()
+                    : ignored.getContextObservation().getUrn();
+            case Storage.Buffer ignored -> ignored.getId() + "";
+            default -> null;
+          };
+
+      if (ret.urn == null) {
+        throw new KlabIllegalStateException("Unresolved asset passed to a query");
+      }
     return ret;
   }
 
@@ -198,10 +223,17 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   }
 
   @Override
-  public KnowledgeGraph.Query<T> along(
-      DigitalTwin.Relationship relationship, Object... parameters) {
+  public KnowledgeGraph.Query<T> along(GraphModel.Relationship relationship, Object... parameters) {
     this.relationship = relationship;
     this.relationshipQueryCriteria = Parameters.create(parameters);
+    return this;
+  }
+
+  @Override
+  public KnowledgeGraph.Query<T> between(Object source, Object target, GraphModel.Relationship relationship) {
+    this.relationship = relationship;
+    this.relationshipSource = makeAsset(source);
+    this.relationshipTarget = makeAsset(target);
     return this;
   }
 
@@ -245,6 +277,12 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   public List<T> run(Scope scope) {
     throw new KlabIllegalStateException(
         "The client-side knowledge graph query must be sent to a runtime service to be run");
+  }
+
+  @Override
+  public Optional<T> peek(Scope scope) {
+    var results = run(scope);
+    return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
   }
 
   @Override
@@ -297,11 +335,11 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
     this.children = children;
   }
 
-  public DigitalTwin.Relationship getRelationship() {
+  public GraphModel.Relationship getRelationship() {
     return relationship;
   }
 
-  public void setRelationship(DigitalTwin.Relationship relationship) {
+  public void setRelationship(GraphModel.Relationship relationship) {
     this.relationship = relationship;
   }
 
@@ -343,6 +381,22 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
 
   public void setOffset(long offset) {
     this.offset = offset;
+  }
+
+  public Asset getRelationshipSource() {
+    return relationshipSource;
+  }
+
+  public void setRelationshipSource(Asset relationshipSource) {
+    this.relationshipSource = relationshipSource;
+  }
+
+  public Asset getRelationshipTarget() {
+    return relationshipTarget;
+  }
+
+  public void setRelationshipTarget(Asset relationshipTarget) {
+    this.relationshipTarget = relationshipTarget;
   }
 
   public AssetType getResultType() {

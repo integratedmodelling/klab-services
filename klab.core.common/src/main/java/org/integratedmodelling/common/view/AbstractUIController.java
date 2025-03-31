@@ -263,7 +263,7 @@ public abstract class AbstractUIController implements UIController {
             }
             case TaskLifecycle -> {
             }
-            case ObservationLifecycle -> {
+            case DigitalTwin -> {
             }
             case SessionLifecycle -> {
             }

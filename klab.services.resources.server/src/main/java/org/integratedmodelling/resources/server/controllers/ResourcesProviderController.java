@@ -64,8 +64,8 @@ public class ResourcesProviderController {
    * @param principal
    * @return the resources to load to ingest the knowledge included in the requested projects
    */
-  @GetMapping(ServicesAPI.RESOURCES.PROJECTS)
-  public @ResponseBody List<ResourceSet> getProjects(
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_PROJECTS)
+  public @ResponseBody List<ResourceSet> resolveProjects(
       @RequestParam Collection<String> projects, Principal principal) {
     return resourcesServer
         .klabService()
@@ -76,20 +76,8 @@ public class ResourcesProviderController {
                 : null);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.PROJECT)
-  public @ResponseBody Project getProject(
-      @PathVariable("projectName") String projectName, Principal principal) {
-    return resourcesServer
-        .klabService()
-        .retrieveProject(
-            projectName,
-            principal instanceof EngineAuthorization authorization
-                ? authorization.getScope()
-                : null);
-  }
-
   @GetMapping(ServicesAPI.RESOURCES.RESOLVE_MODEL)
-  public @ResponseBody ResourceSet getModel(
+  public @ResponseBody ResourceSet resolveModel(
       @PathVariable("modelName") String modelName, Principal principal) {
     return resourcesServer
         .klabService()
@@ -112,7 +100,7 @@ public class ResourcesProviderController {
   }
 
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_NAMESPACE)
-  public @ResponseBody KimNamespace resolveNamespace(
+  public @ResponseBody KimNamespace retrieveNamespace(
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
@@ -124,7 +112,7 @@ public class ResourcesProviderController {
   }
 
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_ONTOLOGY)
-  public @ResponseBody KimOntology resolveOntology(
+  public @ResponseBody KimOntology retrieveOntology(
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
@@ -153,7 +141,7 @@ public class ResourcesProviderController {
   }
 
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_BEHAVIOR)
-  public @ResponseBody KActorsBehavior resolveBehavior(
+  public @ResponseBody KActorsBehavior retrieveBehavior(
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
@@ -186,7 +174,7 @@ public class ResourcesProviderController {
               resourcesServer
                   .klabService()
                   .retrieveResource(List.of(request.getUrn()), authorization.getScope()),
-              Geometry.create(request.getGeometry()),
+              GeometryRepository.INSTANCE.get(request.getGeometry(), Geometry.class),
               authorization.getScope());
     }
     throw new KlabInternalErrorException("Resources service: unexpected authorization");
@@ -367,7 +355,7 @@ public class ResourcesProviderController {
   }
 
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_PROJECT)
-  public @ResponseBody Project resolveProject(
+  public @ResponseBody Project retrieveProject(
       @PathVariable("projectName") String projectName, Principal principal) {
     return resourcesServer
         .klabService()
@@ -378,7 +366,6 @@ public class ResourcesProviderController {
                 : null);
   }
 
-  // FIXME use POST and a ResolutionRequest
   @PostMapping(ServicesAPI.RESOURCES.RESOLVE_MODELS)
   public @ResponseBody ResourceSet queryModels(
       @RequestBody ResolutionRequest request, Principal principal) {

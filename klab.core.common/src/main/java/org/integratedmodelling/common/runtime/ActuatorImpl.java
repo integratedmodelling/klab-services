@@ -26,6 +26,7 @@ public class ActuatorImpl implements Actuator {
   private List<ServiceCall> computation = new ArrayList<>();
   private Geometry coverage = Geometry.EMPTY;
   private Parameters<String> data = Parameters.create();
+  private Geometry resolvedGeometry = Geometry.EMPTY;
   private Actuator.Type actuatorType;
   private long internalId; // ID within the graph, can't be the same as the observation
   private double resolvedCoverage;
@@ -146,8 +147,16 @@ public class ActuatorImpl implements Actuator {
     this.annotations = annotations;
   }
 
+  public Geometry getResolvedGeometry() {
+    return resolvedGeometry;
+  }
+
+  public void setResolvedGeometry(Geometry resolvedGeometry) {
+    this.resolvedGeometry = resolvedGeometry;
+  }
+
   @Override
   public String toString() {
-    return "ActuatorImpl{ " + this.id + "}";
+    return "A(" + this.id + ", " + this.observable + ")";
   }
 }

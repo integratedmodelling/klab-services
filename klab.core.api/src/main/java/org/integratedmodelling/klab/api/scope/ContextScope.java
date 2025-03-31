@@ -11,9 +11,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -313,18 +311,19 @@ public interface ContextScope extends SessionScope {
    */
   ContextScope getRootContextScope();
 
-  /**
-   * The main method to retrieve anything visible to this scope from the knowledge graph.
-   *
-   * @param resultClass
-   * @param queryData
-   * @param <T>
-   * @return
-   * @deprecated use query on KG
-   */
-  <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData);
+  //  /**
+  //   * The main method to retrieve anything visible to this scope from the knowledge graph.
+  //   *
+  //   * @param resultClass
+  //   * @param queryData
+  //   * @param <T>
+  //   * @return
+  //   * @deprecated use query on KG
+  //   */
+  //  <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData);
 
-  <T extends RuntimeAsset> List<T> queryKnowledgeGraph(KnowledgeGraph.Query<T> knowledgeGraphQuery);
+  //  <T extends RuntimeAsset> List<T> queryKnowledgeGraph(KnowledgeGraph.Query<T>
+  // knowledgeGraphQuery);
 
   /**
    * Return the parent observation of the passed observation. The runtime context maintains the
@@ -444,7 +443,11 @@ public interface ContextScope extends SessionScope {
 
     ret.append(scope.getId());
 
-    if (scope.getContextObservation() != null) {
+    /**
+     * If the context observation is unresolved, it cannot be retrieved from the knowledge graph, so
+     * do not add it; the calling function will need to reconstruct the scope in other ways
+     */
+    if (scope.getContextObservation() != null && scope.getContextObservation().getId() > 0) {
 
       var cobs = new ArrayList<Observation>();
       ContextScope rootContext = scope;
@@ -464,6 +467,7 @@ public interface ContextScope extends SessionScope {
       }
     }
 
+    // observers are necessarily resolved
     if (scope.getObserver() != null) {
       ret.append("#").append(scope.getObserver().getId());
     }

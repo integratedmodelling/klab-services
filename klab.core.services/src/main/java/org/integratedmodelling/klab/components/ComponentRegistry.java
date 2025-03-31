@@ -21,6 +21,7 @@ import javassist.Modifier;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.h2.util.IOUtils;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -1609,7 +1610,7 @@ public class ComponentRegistry {
             runArguments.add(storage);
           } */ else if (Scale.class.isAssignableFrom(argument)) {
           if (scale == null && geometry != null) {
-            scale = Scale.create(geometry);
+            scale = GeometryRepository.INSTANCE.scale(geometry);
           }
           runArguments.add(scale);
         } else if (Geometry.class.isAssignableFrom(argument)) {
@@ -1618,12 +1619,12 @@ public class ComponentRegistry {
           runArguments.add(observable);
         } else if (Space.class.isAssignableFrom(argument)) {
           if (scale == null && geometry != null) {
-            scale = Scale.create(geometry);
+            scale = GeometryRepository.INSTANCE.scale(geometry);
           }
           runArguments.add(scale == null ? null : scale.getSpace());
         } else if (Time.class.isAssignableFrom(argument)) {
           if (scale == null && geometry != null) {
-            scale = Scale.create(geometry);
+            scale = GeometryRepository.INSTANCE.scale(geometry);
           }
           runArguments.add(scale == null ? null : scale.getTime());
         } else if (Resource.class.isAssignableFrom(argument) && resource != null) {

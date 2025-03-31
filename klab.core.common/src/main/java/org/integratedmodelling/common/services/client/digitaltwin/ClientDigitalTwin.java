@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -52,6 +53,11 @@ public class ClientDigitalTwin implements DigitalTwin {
   public void ingest(Message event) {
     // TODO build activity tree and inform any UI listeners in the scope
     //    System.out.println("ACTIVITY " + event);
+  }
+
+  @Override
+  public Transaction transaction(Activity activity, ContextScope scope, Object... runtimeAssets) {
+    throw new KlabIllegalStateException("Digital twin transactions can only be invoked at server side");
   }
 
   @Override

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resolver;
 
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Model;
@@ -52,6 +53,7 @@ public class ResolutionGraph {
   private DefaultDirectedGraph<Resolvable, ResolutionGraph.ResolutionEdge> graph =
       new DefaultDirectedGraph<>(ResolutionEdge.class);
   private ResolutionGraph parent;
+  private long internalObservationId = -1;
 
   // these are only used in the root graph. They collect the merged dependencies of all
   // strategies and models, added only after the runtime has successfully resolved them.
@@ -120,15 +122,15 @@ public class ResolutionGraph {
     this.parent = parent;
     this.resolved = resolvedObservation;
     this.target = target;
-    this.targetCoverage = Coverage.create(Scale.create(resolvedObservation.getGeometry()), 1.0);
+    this.targetCoverage = Coverage.create(GeometryRepository.INSTANCE.scale(resolvedObservation.getGeometry()), 1.0);
     this.rootScope = parent.rootScope;
     this.resolutionCatalog.putAll(parent.resolutionCatalog);
   }
 
   private Scale getCoverage(Resolvable target) {
     return switch (target) {
-      case Model model -> Scale.create(model.getCoverage());
-      case Observation observation -> Scale.create(observation.getGeometry());
+      case Model model -> GeometryRepository.INSTANCE.scale(model.getCoverage());
+      case Observation observation -> GeometryRepository.INSTANCE.scale(observation.getGeometry());
       default -> null;
     };
   }
@@ -187,6 +189,8 @@ public class ResolutionGraph {
     var edge = new ResolutionEdge(childGraph.targetCoverage, localName);
     if (childGraph.getResolved() != null) {
       edge.observationId = childGraph.getResolved().getId();
+    } else {
+      edge.observationId = -- internalObservationId;
     }
     this.graph.addEdge(this.target, childGraph.target, edge);
 
@@ -266,17 +270,6 @@ public class ResolutionGraph {
   public List<Pair<Resolvable, Coverage>> getResolving(Observable observable, Scale scale) {
     return List.of();
   }
-
-  //  public Observation getContextObservation() {
-  //    ResolutionGraph target = this;
-  //    // lookup the first substantial that is not collective up in the resolution chain
-  //    while (target != null && !(target.target instanceof Observation observation
-  //        && observation.getObservable().is(SemanticType.COUNTABLE)
-  //        && !observation.getObservable().getSemantics().isCollective())) {
-  //      target = target.parent;
-  //    }
-  //    return target == null ? null : (Observation) target.target;
-  //  }
 
   public void setDependencies(ResourceSet dependencies) {
     rootGraph().dependencies = dependencies;

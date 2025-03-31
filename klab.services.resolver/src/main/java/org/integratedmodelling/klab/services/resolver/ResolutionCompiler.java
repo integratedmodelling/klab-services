@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +56,8 @@ public class ResolutionCompiler {
     if (observation.getObservable().getSemantics().isCollective()) {
       if (scope.getObserver() != null && scope.getObserver().getGeometry() != null) {
         geometry =
-            GeometryRepository.INSTANCE.getUnion(geometry, scope.getObserver().getGeometry());
+            GeometryRepository.INSTANCE.getUnion(
+                geometry, scope.getObserver().getGeometry(), Scale.class);
       }
     }
     return geometry;
@@ -64,7 +66,7 @@ public class ResolutionCompiler {
   private ResolutionGraph resolve(
       Observation observation, ContextScope scope, ResolutionGraph parentGraph) {
 
-    if (observation.isResolved()) {
+    if (observation.getId() > 0) {
       return parentGraph;
     }
 
@@ -73,7 +75,7 @@ public class ResolutionCompiler {
       return ResolutionGraph.empty();
     }
 
-    var scale = Scale.create(resolutionGeometry, scope);
+    var scale = GeometryRepository.INSTANCE.scale(resolutionGeometry, scope);
     Coverage coverage = Coverage.create(scale, 0.0);
     for (var resolvable : parentGraph.getResolving(observation.getObservable(), scale)) {
       if (resolvable.getSecond().getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
@@ -145,10 +147,6 @@ public class ResolutionCompiler {
           var contextualizedScope =
               contextualizeScope(scope, operation.getObservable(), scaleToCover, graph);
 
-          if (contextualizedScope == null) {
-            return ResolutionGraph.empty();
-          }
-
           var observableResolution =
               resolve(
                   operation.getObservable(),
@@ -166,10 +164,6 @@ public class ResolutionCompiler {
           List<ResolutionGraph> modelGraphs = new ArrayList<>();
           var contextualizedScope =
               contextualizeScope(scope, operation.getObservable(), scaleToCover, graph);
-
-          if (contextualizedScope == null) {
-            return ResolutionGraph.empty();
-          }
 
           for (Model model :
               queryModels(
@@ -294,7 +288,7 @@ public class ResolutionCompiler {
       if (scope.getObserver() != null
           && !(scope.getObserver().getGeometry().isScalar()
               || !scope.getObserver().getGeometry().isEmpty())) {
-        scale = Scale.create(scope.getObserver().getGeometry());
+        scale = GeometryRepository.INSTANCE.scale(scope.getObserver().getGeometry());
       }
     }
     Observation context = scope.getContextObservation();
@@ -324,7 +318,7 @@ public class ResolutionCompiler {
 
     if (observation.isEmpty()) {
       return ResolutionGraph.empty();
-    } else if (observation.isResolved()) {
+    } else if (observation.getId() > 0) {
       return graph.createReference(observable, observation);
     }
 
@@ -360,7 +354,8 @@ public class ResolutionCompiler {
   /**
    * If the runtime contains the observation, return it (in resolved or unresolved status but with a
    * valid ID). Otherwise create one in the geometry that the scope implies, with the unresolved ID,
-   * and return it for submission to the knowledge graph.
+   * without submitting it to the runtime. The unresolved ID will tell us that it's an internally
+   * created, provisional observation that the runtime does not have.
    *
    * @param observable
    * @param scope
@@ -370,27 +365,11 @@ public class ResolutionCompiler {
       Observable observable, ContextScope scope, Geometry geometry) {
     var ret = scope.getObservation(observable.getSemantics());
     if (ret == null || ret.isEmpty()) {
-      var newObs = DigitalTwin.createObservation(scope, observable, geometry);
-      var id = scope.getService(RuntimeService.class).submit(newObs, scope);
-      if (id >= 0) {
-        ret = scope.getObservation(observable.getSemantics());
+      ret = DigitalTwin.createObservation(scope, observable, geometry);
+      if (scope instanceof ServiceContextScope serviceContextScope) {
+        serviceContextScope.registerObservation(ret);
       }
-    } else if (!ret.isResolved()) {
-      // unresolved and previously existing
-      return Observation.empty();
     }
-
-    /* TODO this should also happen if the inherency is incompatible with the semantics for dependent
-    observables */
-    if (ret == null || ret.isEmpty()) {
-      scope.error(
-          "Cannot instantiate observation of "
-              + observable.getUrn()
-              + " in context "
-              + scope.getId());
-      return Observation.empty();
-    }
-
     return ret;
   }
 }

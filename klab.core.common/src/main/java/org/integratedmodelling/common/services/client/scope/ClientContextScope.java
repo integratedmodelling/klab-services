@@ -3,21 +3,17 @@ package org.integratedmodelling.common.services.client.scope;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
-import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -123,20 +119,20 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   public CompletableFuture<Observation> observe(Observation observation) {
 
     var runtime = getService(RuntimeService.class);
-    long taskId = runtime.submit(observation, this);
-
-    if (taskId != Observation.UNASSIGNED_ID) {
-      if (observation instanceof ObservationImpl observation1) {
-        observation1.setId(taskId);
-        observation1.setUrn(this.getId() + "." + taskId);
-      }
-      return runtime.resolve(taskId, this);
-    }
-
-    // failure: this just returns the unresolved observation
-    info("Submission of " + observation + " failed");
-
-    return CompletableFuture.completedFuture(observation);
+    return runtime.submit(observation, this);
+    //
+    //    if (taskId != Observation.UNASSIGNED_ID) {
+    //      if (observation instanceof ObservationImpl observation1) {
+    //        observation1.setId(taskId);
+    //        observation1.setUrn(this.getId() + "." + taskId);
+    //      }
+    //      return runtime.resolve(taskId, this);
+    //    }
+    //
+    //    // failure: this just returns the unresolved observation
+    //    info("Submission of " + observation + " failed");
+    //
+    //    return CompletableFuture.completedFuture(observation);
   }
 
   @Override
@@ -174,7 +170,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             .getKnowledgeGraph()
             .query(Observation.class, this)
             .target(observation)
-            .along(DigitalTwin.Relationship.HAS_CHILD)
+            .along(GraphModel.Relationship.HAS_CHILD)
             .run(this);
     return ret.isEmpty() ? null : ret.getFirst();
   }
@@ -185,7 +181,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .getKnowledgeGraph()
         .query(Observation.class, this)
         .source(observation)
-        .along(DigitalTwin.Relationship.HAS_CHILD)
+        .along(GraphModel.Relationship.HAS_CHILD)
         .run(this);
   }
 
@@ -195,7 +191,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .getKnowledgeGraph()
         .query(Observation.class, this)
         .source(observation)
-        .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
+        .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);
   }
 
@@ -205,25 +201,15 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .getKnowledgeGraph()
         .query(Observation.class, this)
         .target(observation)
-        .along(DigitalTwin.Relationship.HAS_RELATIONSHIP_TARGET)
+        .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);
   }
 
-  @Override
-  public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
-    return List.of();
-  }
-
-  /**
-   * Retrieve the observation with the passed ID straight from the digital twin. This is non-API and
-   * is the fastest way.
-   *
-   * @param id
-   * @return
-   */
-  public Observation getObservation(long id) {
-    return null;
-  }
+  //
+  //  @Override
+  //  public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
+  //    return List.of();
+  //  }
 
   @Override
   public void close() {
@@ -257,7 +243,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             .getKnowledgeGraph()
             .query(Observation.class, this)
             .target(observation)
-            .along(DigitalTwin.Relationship.HAS_OBSERVER)
+            .along(GraphModel.Relationship.HAS_OBSERVER)
             .run(this);
     return ret.isEmpty() ? null : ret.getFirst();
   }
@@ -295,7 +281,9 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         if (constraint == null || constraint.empty()) {
           continue;
         }
-        if (constraint.getType().incremental
+        if (constraint.getType() == ResolutionConstraint.Type.UnresolvedContextObservation) {
+          ret.contextObservation = constraint.payload(Observation.class).getFirst();
+        } else if (constraint.getType().incremental
             && ret.resolutionConstraints.containsKey(constraint.getType())) {
           ret.resolutionConstraints.put(
               constraint.getType(),
@@ -348,7 +336,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             .getKnowledgeGraph()
             .query(Observation.class, this)
             .source(this)
-            .along(DigitalTwin.Relationship.HAS_CHILD)
+            .along(GraphModel.Relationship.HAS_CHILD)
             .where(
                 "semantics", KnowledgeGraph.Query.Operator.EQUALS, observable.asConcept().getUrn())
             .run(this);
@@ -362,7 +350,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .getKnowledgeGraph()
         .query(Observation.class, this)
         .source(this)
-        .along(DigitalTwin.Relationship.HAS_CHILD)
+        .along(GraphModel.Relationship.HAS_CHILD)
         .run(this);
   }
 
@@ -380,9 +368,9 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     this.digitalTwin = new ClientDigitalTwin(this, id);
   }
 
-  @Override
-  public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
-      KnowledgeGraph.Query<T> knowledgeGraphQuery) {
-    return runtimeService.queryKnowledgeGraph(knowledgeGraphQuery, this);
-  }
+  //  @Override
+  //  public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
+  //      KnowledgeGraph.Query<T> knowledgeGraphQuery) {
+  //    return runtimeService.queryKnowledgeGraph(knowledgeGraphQuery, this);
+  //  }
 }

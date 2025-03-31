@@ -31,8 +31,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
-  public Operation operation(
-      Agent agent, Activity parentActivity, Activity.Type activityType, Object... data) {
+  public Transaction createTransaction() {
     throw new KlabIllegalStateException(
         "Modifying operations not allowed on the client-side knowledge graph");
   }
@@ -67,6 +66,21 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
+  public RuntimeAsset scope() {
+    return null;
+  }
+
+  @Override
+  public RuntimeAsset provenance() {
+    return null;
+  }
+
+  @Override
+  public RuntimeAsset dataflow() {
+    return null;
+  }
+
+  @Override
   public List<ContextInfo> getExistingContexts(UserScope scope) {
     return List.of();
   }
@@ -80,26 +94,15 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
-  public <T extends RuntimeAsset> T get(long id, Class<T> resultClass) {
-    return null;
-  }
-
-  @Override
-  public <T extends RuntimeAsset> List<T> get(
-      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
-    return List.of();
+  public <T extends RuntimeAsset> T get(long id, ContextScope scope, Class<T> resultClass) {
+    var ret = query(resultClass, scope).id(id).peek(scope);
+    return (T)ret.orElse(null);
   }
 
   @Override
   public void update(RuntimeAsset observation, ContextScope scope, Object... arguments) {
     throw new KlabIllegalStateException(
         "Modifying operations not allowed on the client-side knowledge graph");
-  }
-
-  @Override
-  public <T extends RuntimeAsset> List<T> get(
-      ContextScope scope, Class<T> resultClass, Object... queryParameters) {
-    return List.of();
   }
 
   @Override

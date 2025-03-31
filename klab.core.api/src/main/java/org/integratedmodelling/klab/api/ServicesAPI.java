@@ -125,36 +125,16 @@ public interface ServicesAPI {
     String CREDENTIALS = "/credentials";
   }
 
-  //    interface SCOPE {
-  //
-  ////        /**
-  ////         * Create a new scope of the passed type as a precondition for creation of a client
-  // scope.
-  // Returns the
-  ////         * scope ID and any other data such as quotas or permissions, possibly including a
-  // Websockets or other
-  ////         * channel info for duplex communication.
-  ////         */
-  ////        String CREATE = "/scope/create/{scopeType}";
-  //
-  ////        /**
-  ////         * Register an existing scope with a service so that the service can associate it to
-  // successive
-  ////         * requests and potentially open a communication channel for pairing. Implied in
-  // CREATE as
-  // well, but
-  ////         * only for cases when the scope is already fully functional at the client side. May
-  // respond with
-  ////         * channel details for duplex communication.
-  ////         */
-  ////        String REGISTER = "/scope/register/{scopeType}/{scopeId}";
-  //
-
-  /// /        /** /         * Dispose of a previously created or registered scope. /         */ /
-  // String
-  /// DISPOSE = "/scope/dispose/{scopeId}";
-  //
-  //    }
+  /**
+   * The jobs system is managed through the submission of completable futures indexed by an ID whose
+   * status can be polled and eventual results retrieved through the API. Each session has a job
+   * manager.
+   */
+  interface JOBS {
+    String STATUS = "/jobs/status/{id}";
+    String RETRIEVE = "/jobs/retrieve/{id}";
+    String CANCEL = "/jobs/cancel/{id}";
+  }
 
   interface ENGINE {}
 
@@ -383,21 +363,24 @@ public interface ServicesAPI {
      */
     String SUBMIT_OBSERVATION = "/submit";
 
-    /**
-     * POST endpoint to start the resolution of a previously submitted observation whose ID must be
-     * passed through the URL. Returns true/false; any notification happens through scope messaging
-     * and the scope must be the same that generated the observation through {@link
-     * #SUBMIT_OBSERVATION}. Both the request and the response may/must contain a {@link
-     * #TASK_ID_HEADER} with the ID of the task started.
-     */
-    String START_RESOLUTION = "/startResolution";
+    //    /**
+    //     * POST endpoint to start the resolution of a previously submitted observation whose ID
+    // must be
+    //     * passed through the URL. Returns true/false; any notification happens through scope
+    // messaging
+    //     * and the scope must be the same that generated the observation through {@link
+    //     * #SUBMIT_OBSERVATION}. Both the request and the response may/must contain a {@link
+    //     * #TASK_ID_HEADER} with the ID of the task started.
+    //     */
+    //    String START_RESOLUTION = "/startResolution";
 
-    /**
-     * POST endpoint to retrieve one or more assets from the digital twin based on a query
-     *
-     * @deprecated use the query endpoint
-     */
-    String RETRIEVE_ASSET = "/asset";
+    //    /**
+    //     * POST endpoint to retrieve an asset from the digital twin's knowledge graph based on its
+    //     * internal ID
+    //     *
+    //     * @deprecated use the query endpoint
+    //     */
+    //    String RETRIEVE_ASSET_BY_ID = "/asset";
 
     /** Structured Knowledge Graph query */
     String QUERY = "/query";
@@ -415,9 +398,8 @@ public interface ServicesAPI {
     String RETRIEVE_PROJECT = "/retrieveProject/{projectName}";
     String QUERY_RESOURCES = "/queryResources";
     String PRECURSORS = "/precursors/{namespaceId}";
-    String PROJECTS = "/projects";
-    String PROJECT = "/project/{projectName}";
-    String RESOLVE_MODEL = "/model/{modelName}";
+    String RESOLVE_PROJECTS = "/resolveProjects";
+    String RESOLVE_MODEL = "/resolveModel/{modelName}";
     String RESOLVE_URN = "/resolve/{urn}";
     String RETRIEVE_NAMESPACE = "/retrieveNamespace/{urn}";
     String RETRIEVE_ONTOLOGY = "/retrieveOntology/{urn}";
@@ -437,7 +419,7 @@ public interface ServicesAPI {
     String RETRIEVE_DATAFLOW = "/retrieveDataflow/{urn}";
     String RETRIEVE_WORLDVIEW = "/getWorldview";
     String DEPENDENTS = "/dependents/{namespaceId}";
-    String RESOLVE_MODELS = "/retrieveModels";
+    String RESOLVE_MODELS = "/resolveModels";
     String MODEL_GEOMETRY = "/modelGeometry/{modelUrn}";
     String READ_BEHAVIOR = "/readBehavior";
     String LIST_PROJECTS = "/listProjects";
@@ -457,7 +439,7 @@ public interface ServicesAPI {
       String CREATE_PROJECT = "/createProject/{workspaceName}/{projectName}";
 
       /** POST request to update an existing project's manifest */
-      String UPDATE_PROJECT = "/createProject/{projectName}";
+      String UPDATE_PROJECT = "/updateProject/{projectName}";
 
       /**
        * GET endpoint: create new document with passed URN. Return changes in each workspace

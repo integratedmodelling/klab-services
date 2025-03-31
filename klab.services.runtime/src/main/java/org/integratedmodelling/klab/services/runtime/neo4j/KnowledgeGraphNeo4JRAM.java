@@ -23,17 +23,6 @@ public class KnowledgeGraphNeo4JRAM extends KnowledgeGraphNeo4j implements Knowl
   }
 
   @Override
-  public <T extends RuntimeAsset> T get(long id, Class<T> resultClass) {
-    return null;
-  }
-
-  @Override
-  public <T extends RuntimeAsset> List<T> get(
-      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
-    return List.of();
-  }
-
-  @Override
   public KnowledgeGraph merge(URL remoteDigitalTwinURL) {
     return null;
   }

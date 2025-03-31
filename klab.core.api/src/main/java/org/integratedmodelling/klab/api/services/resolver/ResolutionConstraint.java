@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionConstraintImpl;
@@ -58,6 +59,11 @@ public interface ResolutionConstraint extends Serializable {
     Geometry(Geometry.class, false),
     ResolutionNamespace(String.class, false),
     ResolutionProject(String.class, false),
+    /**
+     * this is used when communicating a scope whose context observation is not in the remote
+     * knowledge graph yet
+     */
+    UnresolvedContextObservation(Observation.class, false),
     UsingModel(String.class, false),
     ConcretePredicates(Concept.class, true),
     /** The dataflow needs the passed additional observables produced by an adapter. */

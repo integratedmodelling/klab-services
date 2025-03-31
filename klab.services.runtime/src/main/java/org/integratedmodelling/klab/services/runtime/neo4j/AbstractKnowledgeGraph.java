@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.services.runtime.neo4j;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.runtime.storage.BufferImpl;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.util.HashMap;
@@ -24,27 +25,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
   protected ContextScope scope;
 
-  /**
-   * Return a RuntimeAsset representing the overall dataflow related to the scope, so that it can be
-   * used for linking using the other CRUD methods.
-   *
-   * @return the dataflow root node, unique for the context.
-   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException if the graph is
-   *     not contextualized.
-   */
-  protected abstract RuntimeAsset getDataflowNode();
-
   protected abstract long nextKey();
-
-  /**
-   * Return a RuntimeAsset representing the overall provenance related to the scope, so that it can
-   * be used for linking using the other CRUD methods.
-   *
-   * @return the dataflow root node, unique for the context.
-   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException if the graph is
-   *     not contextualized.
-   */
-  protected abstract RuntimeAsset getProvenanceNode();
 
   /**
    * Retrieve the asset with the passed key.
@@ -78,12 +59,12 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
   protected abstract void link(
       RuntimeAsset source,
       RuntimeAsset destination,
-      DigitalTwin.Relationship relationship,
+      GraphModel.Relationship relationship,
       Scope scope,
       Object... additionalProperties);
 
   @Override
-  public <T extends RuntimeAsset> T get(long id, Class<T> resultClass) {
+  public <T extends RuntimeAsset> T get(long id, ContextScope scope, Class<T> resultClass) {
     return retrieve(id, resultClass, scope);
   }
 
@@ -106,7 +87,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                   ? observation.getObservable().codeName()
                   : observation.getName());
           ret.put("updated", observation.getLastUpdate());
-          ret.put("resolved", observation.isResolved());
           ret.put("type", observation.getType().name());
           ret.put("urn", observation.getUrn());
           ret.put(
@@ -123,13 +103,13 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         case ActuatorImpl actuator -> {
           ret.put("observationId", actuator.getId());
           ret.put("id", actuator.getInternalId());
-          StringBuilder code = new StringBuilder();
-          for (var call : actuator.getComputation()) {
-            // TODO skip any recursive resolution calls and prepare for linking later
-            code.append(call.encode(Language.DEFAULT_EXPRESSION_LANGUAGE)).append("\n");
-          }
           ret.put("semantics", actuator.getObservable().getUrn());
-          ret.put("computation", code.toString());
+          ret.put(
+              "computation",
+              // TODO skip any recursive resolution calls and prepare for linking later
+              actuator.getComputation().stream()
+                  .map(call -> call.encode(Language.DEFAULT_EXPRESSION_LANGUAGE))
+                  .toList());
           ret.put("strategy", actuator.getStrategyUrn());
         }
         case Activity activity -> {

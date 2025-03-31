@@ -52,7 +52,8 @@ public interface Dataflow extends Serializable, RuntimeAsset {
 
   /**
    * An empty dataflow is a valid dataflow that produces an {@link Artifact#isEmpty() empty
-   * artifact} when run in its scale.
+   * artifact} when run in its scale. It is <em>not</em> a trivial dataflow that leaves the
+   * observation as it is - that is a non-empty dataflow with an empty computation.
    *
    * @return true if the dataflow is empty
    */
@@ -102,7 +103,7 @@ public interface Dataflow extends Serializable, RuntimeAsset {
    *
    * @return
    */
-  public static Dataflow empty() {
+  static Dataflow empty() {
     return new Dataflow() {
 
       @Override
@@ -115,6 +116,43 @@ public interface Dataflow extends Serializable, RuntimeAsset {
       @Override
       public boolean isEmpty() {
         return true;
+      }
+
+      @Override
+      public ResourceSet getRequirements() {
+        return ResourceSet.empty();
+      }
+
+      @Override
+      public Coverage getCoverage() {
+        return Coverage.empty();
+      }
+
+      @Override
+      public List<Actuator> getComputation() {
+        return Collections.emptyList();
+      }
+
+      @Override
+      public Observation getTarget() {
+        return null;
+      }
+    };
+  }
+
+  static Dataflow trivial() {
+    return new Dataflow() {
+
+      @Override
+      public long getId() {
+        return 0;
+      }
+
+      @Serial private static final long serialVersionUID = -1115441423700817816L;
+
+      @Override
+      public boolean isEmpty() {
+        return false;
       }
 
       @Override

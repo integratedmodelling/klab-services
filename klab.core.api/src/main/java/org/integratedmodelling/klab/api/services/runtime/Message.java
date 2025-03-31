@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.impl.MatchImpl;
@@ -100,8 +99,8 @@ public interface Message extends Serializable {
     Authorization,
     /** */
     TaskLifecycle,
-    /** */
-    ObservationLifecycle,
+    /** DT events */
+    DigitalTwin,
     /** */
     SessionLifecycle,
     /** */
@@ -193,11 +192,15 @@ public interface Message extends Serializable {
     CreateSession,
     Fire,
 
-    /** Resolver event messages */
+    /** Resolver event messages. FIXME these are obsolete */
     ResolutionUnsuccessful(Queue.Events, Observation.class),
     ResolutionSuccessful(Queue.Events, Observation.class),
     ResolutionAborted(Queue.Events, Observation.class),
     ResolutionStarted(Queue.Events, Observation.class),
+
+    ContextualizationSuccessful(Queue.Events, Observation.class),
+    ContextualizationAborted(Queue.Events, Observation.class),
+    ContextualizationStarted(Queue.Events, Observation.class),
 
     ActivityStarted(Queue.Events, Activity.class),
     ActivityFinished(Queue.Events, Activity.class),

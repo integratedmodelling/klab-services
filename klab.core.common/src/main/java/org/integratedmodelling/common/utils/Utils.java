@@ -22,12 +22,14 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import javax.swing.*;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpGet;
@@ -47,10 +49,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
-import org.integratedmodelling.klab.api.exceptions.KlabIOException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -65,6 +64,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.objects.JobStatus;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.Instance;
 import org.jgrapht.Graph;
@@ -459,6 +459,127 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
   public static class Http {
 
     /**
+     * A Future for an object being computed at service side and complying with the job management
+     * system in all k.LAB services. Despite all attempts there's no way to avoid polling.
+     *
+     * <p>The polling is more frequent at the beginning, then becomes more sparse to avoid too many
+     * service calls when the remote job is long-running. If there is no response from server. two
+     * more attempts will be made at the set schedule 3 times before reporting failure.
+     *
+     * @param <T>
+     */
+    public static class PollingFuture<T> extends CompletableFuture<T> {
+
+      private final Client client;
+      private final ScheduledExecutorService scheduler =
+          Executors.newSingleThreadScheduledExecutor();
+      private final Class<T> resultClass;
+      private int noResponseCount = 0;
+      private final long id;
+      private int[] stages;
+      private int[] durations;
+      private int stageCounter = 0;
+      private int currentStage = 0;
+      private long start = System.currentTimeMillis();
+
+      /**
+       * Delay for the next poll cycle in milliseconds
+       *
+       * @return
+       */
+      private int nextDelay() {
+        if (stages[currentStage] < 0) {
+          return durations[durations.length - 1];
+        }
+        if (stageCounter == stages[currentStage]) {
+          currentStage++;
+          stageCounter = 0;
+        }
+        stageCounter++;
+        return durations[currentStage];
+      }
+
+      public static void main(String[] dio) {
+        var pop =
+            new PollingFuture<Object>(null, Object.class, 0, 5, 500, 7, 1000, 5, 1800, -1, 3000);
+        for (int i = 0; i < 100; i++) {
+          System.out.println(pop.nextDelay());
+        }
+      }
+
+      /**
+       * Create a PollingFuture for the specified client and result class. The client must have
+       * started a k.LAB job and have all the configuration to connect to the session containing the
+       * job manager.
+       *
+       * @param client
+       * @param resultClass
+       * @param id
+       * @param waitStages pairs of (nTimes delay) for each phase desired. The last one should
+       *     always have -1 as nTimes, which establishes the constant delay after the throttling
+       *     phase is finished.
+       */
+      public PollingFuture(Client client, Class<T> resultClass, long id, int... waitStages) {
+        // start polling
+        this.id = id;
+        this.client = client;
+        this.resultClass = resultClass;
+        if (waitStages != null && waitStages.length > 1) {
+          int stage = 0;
+          stages = new int[waitStages.length / 2];
+          durations = new int[waitStages.length / 2];
+          for (int i = 0; i < waitStages.length; i++) {
+            stages[stage] = waitStages[i];
+            durations[stage] = waitStages[++i];
+            stage++;
+          }
+        }
+        scheduler.schedule(this::poll, 0, TimeUnit.MILLISECONDS);
+      }
+
+      @Override
+      public boolean cancel(boolean b) {
+        return super.cancel(client.get(ServicesAPI.JOBS.CANCEL, Boolean.class, "id", id));
+      }
+
+      public void poll() {
+        // if not done, reschedule, else complete. If exception (remote or local), complete
+        // exceptionally.
+        var status = client.get(ServicesAPI.JOBS.STATUS, JobStatus.class, "id", id);
+        if (status == null) {
+          if (noResponseCount == 3) {
+            completeExceptionally(
+                new KlabServiceAccessException("Service unresponsive after 3 attempts"));
+          } else {
+            noResponseCount++;
+          }
+        } else if (status.getStatus() == Scope.Status.FINISHED) {
+          try {
+            var result = client.get(ServicesAPI.JOBS.RETRIEVE, resultClass, "id", id);
+            if (result != null) {
+              complete(result);
+            } else {
+              completeExceptionally(
+                  new KlabServiceAccessException(
+                      status.getStackTrace() == null ? "Null result" : status.getStackTrace()));
+            }
+          } catch (Throwable t) {
+            completeExceptionally(t);
+          }
+        } else if (status.getStatus() == Scope.Status.ABORTED) {
+          completeExceptionally(
+              new KlabServiceAccessException(
+                  status.getStackTrace() == null ? "Server error" : status.getStackTrace()));
+        } else if (status.getStatus() == Scope.Status.INTERRUPTED) {
+          cancel(true);
+        } else {
+          // schedule the next step
+          scheduler.schedule(this::poll, nextDelay(), TimeUnit.MILLISECONDS);
+        }
+      }
+    }
+
+    /**
      * HTTP client instrumented for k.LAB. Thread safe <em>except</em> when the response headers are
      * accessed (they are filled in after each call and reset before the next).
      */
@@ -472,6 +593,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       private final Map<String, List<String>> responseHeaders = new HashMap<>();
       private String forcedAcceptHeader = null;
       private String forcedContentHeader = null;
+      private int timeoutSeconds = 10;
 
       public void setAuthorization(String token) {
         this.authorization = token;
@@ -567,6 +689,18 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       public Client withScope(String scopeId) {
         var ret = new Client(this);
         ret.headers.put(ServicesAPI.SCOPE_HEADER, scopeId);
+        return ret;
+      }
+
+      /**
+       * Modify the default timeout.
+       *
+       * @param timeoutSeconds the new timeout in seconds
+       * @return
+       */
+      public Client withTimeout(int timeoutSeconds) {
+        var ret = new Client(this);
+        ret.timeoutSeconds = timeoutSeconds;
         return ret;
       }
 
@@ -802,7 +936,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           var requestBuilder =
               HttpRequest.newBuilder()
                   .version(HttpClient.Version.HTTP_1_1)
-                  .timeout(Duration.ofSeconds(10))
+                  .timeout(Duration.ofSeconds(timeoutSeconds))
                   .uri(uriBuilder.build());
           if (forcedAcceptHeader != null) {
             requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
@@ -840,6 +974,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return parseResponse(response.body(), resultClass);
           } else {
             var log = parseResponse(response.body(), Map.class);
+            System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
+            MapUtils.debugPrint(System.out, "Server error", log);
+            System.out.println("============ END OF REPORT  ==============");
             // TODO do something with the error response (which should be better and
             //  contain a stack trace)
           }
@@ -853,6 +990,88 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         return null;
+      }
+
+      /**
+       * GET helper that sets all headers and automatically handles JSON marshalling.
+       *
+       * @param apiRequest
+       * @param resultClass
+       * @param <T>
+       * @return
+       */
+      public <T> CompletableFuture<T> postAsync(
+          String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+
+        var options = new Options();
+        var params = makeKeyMap(options, parameters);
+        var apiCall = substituteTemplateParameters(apiRequest, params);
+
+        responseHeaders.clear();
+
+        try {
+          var payloadText = payload instanceof String ? (String) payload : Json.asString(payload);
+
+          var uriBuilder = new URIBuilder(uri + apiCall);
+          for (String key : params.keySet()) {
+            if (params.get(key) != null) {
+              uriBuilder = uriBuilder.addParameter(key, params.get(key).toString());
+            }
+          }
+
+          var requestBuilder =
+              HttpRequest.newBuilder()
+                  .version(HttpClient.Version.HTTP_1_1)
+                  .timeout(Duration.ofSeconds(timeoutSeconds))
+                  .uri(uriBuilder.build());
+          if (forcedAcceptHeader != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+          } else {
+            requestBuilder =
+                requestBuilder.header(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass));
+          }
+
+          if (forcedContentHeader != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.CONTENT_TYPE, forcedContentHeader);
+          } else {
+            requestBuilder =
+                requestBuilder.header(
+                    HttpHeaders.CONTENT_TYPE,
+                    payload instanceof String
+                        ? MediaType.PLAIN_TEXT_UTF_8.toString()
+                        : MediaType.JSON_UTF_8.toString());
+          }
+
+          if (authorization != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+          }
+
+          for (String header : headers.keySet()) {
+            requestBuilder = requestBuilder.header(header, headers.get(header));
+          }
+
+          var request =
+              requestBuilder.POST(HttpRequest.BodyPublishers.ofString(payloadText)).build();
+
+          var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+          if (response.statusCode() == 200 || response.statusCode() == 202) {
+            var id = Long.parseLong(response.body());
+            return new PollingFuture<>(this, resultClass, id, 5, 500, 7, 1000, 5, 1800, -1, 3000);
+          } else {
+            var log = parseResponse(response.body(), Map.class);
+            System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
+            MapUtils.debugPrint(System.out, "Server error", log);
+            System.out.println("============ END OF REPORT  ==============");
+            return CompletableFuture.failedFuture(new KlabServiceAccessException(response.body()));
+          }
+
+        } catch (Throwable e) {
+          if (scope != null) {
+            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          }
+          return CompletableFuture.failedFuture(e);
+        }
       }
 
       public <T> List<T> postCollection(
@@ -869,7 +1088,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           var requestBuilder =
               HttpRequest.newBuilder()
                   .version(HttpClient.Version.HTTP_1_1)
-                  .timeout(Duration.ofSeconds(10))
+                  .timeout(Duration.ofSeconds(timeoutSeconds))
                   .uri(URI.create(uri + apiCall + encodeParameters(params)));
           if (forcedAcceptHeader != null) {
             requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
@@ -1044,6 +1263,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 client.send(
                     requestBuilder
                         .uri(URI.create(uri + apiCall + encodeParameters(params)))
+                        .timeout(Duration.ofSeconds(timeoutSeconds))
                         .build(),
                     HttpResponse.BodyHandlers.ofString());
 
@@ -1091,7 +1311,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
           var response =
               client.send(
-                  requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(),
+                  requestBuilder
+                      .uri(URI.create(uri + apiCall + encodeParameters(params)))
+                      .timeout(Duration.ofSeconds(timeoutSeconds))
+                      .build(),
                   HttpResponse.BodyHandlers.ofString());
 
           if (response != null && response.statusCode() == 200) {

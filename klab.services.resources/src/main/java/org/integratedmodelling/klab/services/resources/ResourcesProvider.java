@@ -18,6 +18,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
+import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -1428,6 +1429,18 @@ public class ResourcesProvider extends BaseService
       if (contextScope.getId() == null) {
         throw new KlabIllegalArgumentException(
             "resolver: context scope has no ID, cannot register " + "a scope autonomously");
+      }
+
+      /*
+       * The resolver needs a digital twin client installed to find existing observations through the
+       * service-level context scope.
+       */
+      if (contextScope.getHostServiceId() != null) {
+        serviceContextScope.setDigitalTwin(
+                new ClientDigitalTwin(contextScope, serviceContextScope.getId()));
+      } else {
+        scope.warn(
+                "Registering context scope without service ID: digital twin will be inoperative");
       }
 
       getScopeManager()

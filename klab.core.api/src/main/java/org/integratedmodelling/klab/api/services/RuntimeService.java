@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 /**
  * The runtime service holds the actual digital twins referred to by context scopes. Client scopes
@@ -43,6 +44,10 @@ public interface RuntimeService extends KlabService {
    * org.integratedmodelling.klab.api.knowledge.ObservationStrategy}es from the reasoner are
    * translated into dataflow actuators. Implementations are free to choose whether to implement
    * actual service calls or implement a more efficient compilation strategy for these functors.
+   *
+   * <p>They all share the common parameters <code>_target</code> and <code>_targetId</code> for the
+   * target of the computation (main if not present). TODO parameterize the enums with their stated
+   * parameters.
    *
    * @author Ferd
    */
@@ -105,60 +110,38 @@ public interface RuntimeService extends KlabService {
   }
 
   /**
-   * Submit an observation to the runtime in the passed scope. The return value is the observation
-   * ID, which should be passed to {@link #resolve(long, ContextScope)} to start the resolution
-   * unless the value is {@link Observation#UNASSIGNED_ID} which signals that the digital twin has
-   * rejected the observation (for example because one was already present). The observation exists
-   * in the DT in an unresolved state until resolution has finished.
+   * Submit an unresolved observation to the digital twin for inclusion in the knowledge graph in
+   * the passed scope and start its resolution. The return value is a future for the resolved
+   * observation, whose resolution may cause other observations to be made. If resolution fails, the
+   * future will complete exceptionally and the observation ID will be {@link
+   * Observation#UNASSIGNED_ID}, which signals that the digital twin has rejected the observation
+   * (for example because one was already present). If resolution succeeds, the finished observation
+   * will have its {@link Observation#getId()} set to a valid ID (>0L).
+   *
+   * <p>If the observation submitted is resolved (its ID is valid when submitted), the submission is
+   * ignored and the completed future for the submitted observation is returned.
+   *
+   * <p>Successful resolution means that the knowledge needed to properly represent the observable
+   * in the DT is resolved and consistent. It does not mean that the observation has been
+   * contextualized, i.e. that its computation is finished. Contextualization is started
+   * automatically by the scheduler for the resolved observation upon submission, and may happen
+   * again as events such as relevant temporal transitions, behavior-induced changes or dependence
+   * collisions trigger the calculations again. Contextualization cannot be controlled through the
+   * API and all events related to it are transmitted to the context scope through messaging.
+   *
+   * <p>The submit operation is transactional, i.e. a failed submission will leave the knowledge
+   * graph unaltered. Note that observations of individual substantials, i.e. non-collective
+   * subjects and agents, will complete successfully even if they cannot be "explained" by the
+   * resolver, i.e. the ID will be valid and the knowledge graph will contain the observation, whose
+   * {@link Observation#isResolved()} will return false. All other observations will complete
+   * exceptionally if no dataflow can be built for them, and the knowledge graph will not contain
+   * the observation submitted after completion.
    *
    * @param observation
    * @param scope
    * @return
    */
-  long submit(@Mutable Observation observation, ContextScope scope);
-
-  /**
-   * The main function of the runtime. It will be invoked externally only when the dataflow is
-   * externally supplied and fully resolved, like from a {@link
-   * org.integratedmodelling.klab.api.knowledge.Resource}.
-   *
-   * @param dataflow
-   * @param contextScope
-   * @return
-   * FIXME/CHECK should this be behind the API?
-   */
-  Observation runDataflow(Dataflow dataflow, Geometry geometry, ContextScope contextScope);
-
-  /**
-   * Submit the ID of a valid observation to invoke the resolver, build a dataflow and run it to
-   * obtain the resolved observation. Pass the ID of an accepted observation obtained through {@link
-   * #submit(Observation, ContextScope)}. The two operations are used in {@link
-   * ContextScope#observe(Observation)} to provide the full functionality with notification to the
-   * scope.
-   *
-   * @param id
-   * @param scope
-   * @return the ID of the task running in the runtime, which must be identical to the observation
-   *     URN and will be sent to the scope with the resolution result message.
-   */
-  CompletableFuture<Observation> resolve(long id, ContextScope scope);
-
-  /**
-   * Retrieve any assets from the knowledge graph in the digital twin matching a given class and
-   * some query objects.
-   *
-   * @param contextScope the scope for the request, which will determine the point in the knowledge
-   *     graph to start searching from
-   * @param assetClass the type of asset requested
-   * @param queryParameters any objects that will identify one or more assets of the passed type in
-   *     the passed scope, such as an observable, a string for a name or a geometry. All passed
-   *     objects will restrict the search.
-   * @param <T>
-   * @return
-   * @deprecated use the query system on the KG
-   */
-  <T extends RuntimeAsset> List<T> retrieveAssets(
-      ContextScope contextScope, Class<T> assetClass, Object... queryParameters);
+  CompletableFuture<Observation> submit(@Mutable Observation observation, ContextScope scope);
 
   /**
    * Use the resources service and the plug-in system to handle a model proposal from the resolver.
@@ -184,7 +167,7 @@ public interface RuntimeService extends KlabService {
    * @author Ferd
    */
   interface Capabilities extends ServiceCapabilities {
-      Storage.Type getDefaultStorageType();
+    Storage.Type getDefaultStorageType();
   }
 
   /**

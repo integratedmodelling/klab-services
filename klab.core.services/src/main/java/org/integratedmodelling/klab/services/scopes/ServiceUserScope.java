@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.base.BaseService;
 
@@ -61,7 +62,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
 
     // these are users of this service, which we keep around individually so that we can enable messaging for
     // local users
-    private KlabService service;
+    protected KlabService service;
 
     public ServiceUserScope(UserIdentity user, KlabService service) {
         super(user, true, false);
@@ -167,6 +168,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         final ServiceSessionScope ret = new ServiceSessionScope(this);
         ret.setStatus(Status.WAITING);
         ret.setName(sessionName);
+        ret.jobManager = new JobManager();
         // Scope is incomplete and will be instrumented with ID, messaging connection, queues and agent by
         // the caller explicitly calling the methods.
         return ret;

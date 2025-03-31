@@ -36,6 +36,7 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
@@ -468,6 +469,14 @@ public class ResourcesClient extends ServiceClient
     ResolutionRequest request = new ResolutionRequest();
     request.setObservable(observable);
     request.setResolutionConstraints(scope.getResolutionConstraints());
+    if (scope.getContextObservation() != null && scope.getContextObservation().getId() < 0) {
+      request
+          .getResolutionConstraints()
+          .add(
+              ResolutionConstraint.of(
+                  ResolutionConstraint.Type.UnresolvedContextObservation,
+                  scope.getContextObservation()));
+    }
     return client
         .withScope(scope)
         .post(ServicesAPI.RESOURCES.RESOLVE_MODELS, request, ResourceSet.class);

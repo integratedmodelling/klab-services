@@ -77,7 +77,7 @@ import java.util.List;
  */
 public interface Geometry extends Serializable, Locator {
 
-    public enum Granularity {
+  public enum Granularity {
     /** */
     SINGLE,
     /** */
@@ -266,10 +266,23 @@ public interface Geometry extends Serializable, Locator {
     boolean distributed();
   }
 
-  public static Geometry EMPTY = create("X");
+  Geometry EMPTY = create("X");
 
-  public static Geometry create(String geometry) {
+  static Geometry create(String geometry) {
     return GeometryImpl.makeGeometry(geometry, 0);
+  }
+
+  /**
+   * This will create the geometry and set the key at the same time. Use only when the key is
+   * sensible - using the geometry manager with a carelessly constructed geometry guarantees
+   * disaster.
+   *
+   * @param geometry
+   * @param key
+   * @return
+   */
+  static Geometry create(String geometry, String key) {
+    return GeometryImpl.makeGeometry(geometry, 0, key);
   }
 
   /**
@@ -282,23 +295,21 @@ public interface Geometry extends Serializable, Locator {
   String encode(Encoder... encoders);
 
   /**
+   * Return a short key identifier made from hashing the encoded form. The key can be reasonably
+   * expected (but is not guaranteed) to be uniquely related to the geometry and will be short
+   * enough to be used for caching geometries and scales.
+   *
+   * @return
+   */
+  String key();
+
+  /**
    * Generic means 'not completely defined', i.e. not usable for contextualization. This corresponds
    * to the Greek lowercase letter for the dimension in the string encoding.
    *
    * @return
    */
   boolean isGeneric();
-
-  //    /**
-  //     * A geometry may imply another for component objects. E.g. spatial data may have geometry
-  // and
-  //     * define objects within it, with different geometry constrained by this.
-  //     *
-  //     * Was using Optional but it does not serialize well - do not do that.
-  //     *
-  //     * @return the optional child geometry, or null.
-  //     */
-  //    Geometry getChild();
 
   /**
    * Return all the dimensions this geometry. Dimensions are reinterpreted through the worldview and

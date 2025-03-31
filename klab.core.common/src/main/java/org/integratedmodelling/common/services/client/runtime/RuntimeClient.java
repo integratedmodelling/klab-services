@@ -189,57 +189,19 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   }
 
   @Override
-  public long submit(Observation observation, ContextScope scope) {
+  public CompletableFuture<Observation> submit(Observation observation, ContextScope scope) {
+
+    if (observation.getId() > 0) {
+      return CompletableFuture.completedFuture(observation);
+    }
+
     ResolutionRequest resolutionRequest = new ResolutionRequest();
     resolutionRequest.setObservation(observation);
     resolutionRequest.setAgentName(Provenance.getAgent(scope).getName());
     resolutionRequest.setResolutionConstraints(scope.getResolutionConstraints());
     return client
         .withScope(scope)
-        .post(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Long.class);
-  }
-
-  @Override
-  public CompletableFuture<Observation> resolve(long id, ContextScope scope) {
-
-    /*
-    Set up the task to track the messages. We do this before invoking the method so it's guaranteed to
-    not return before we can notice.
-     */
-    var ret =
-        scope.trackMessages(
-            Message.match(
-                    Message.MessageClass.ObservationLifecycle,
-                    Message.MessageType.ResolutionAborted,
-                    Message.MessageType.ResolutionSuccessful)
-                .when((message) -> message.getPayload(Observation.class).getId() == id),
-            (message) -> {
-              var observation = message.getPayload(Observation.class);
-              if (message.getMessageType() == Message.MessageType.ResolutionSuccessful) {
-                scope.info(
-                    "Resolution of "
-                        + observation
-                        + " successful with coverage "
-                        + observation.getResolvedCoverage());
-                return message.getPayload(Observation.class);
-              }
-              scope.info("Resolution of " + observation + " failed");
-              return observation;
-            });
-
-    var request = new ResolutionRequest();
-    request.setResolutionConstraints(scope.getResolutionConstraints());
-    request.setObservationId(id);
-
-    // this returns the URN of the observation/task or null - we can ignore it at this stage.
-    client.withScope(scope).post(ServicesAPI.RUNTIME.START_RESOLUTION, request, String.class);
-
-    return ret;
-  }
-
-  @Override
-  public Observation runDataflow(Dataflow dataflow, Geometry geometry, ContextScope contextScope) {
-    return null;
+        .postAsync(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Observation.class);
   }
 
   @Override
@@ -288,6 +250,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     return false;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
       KnowledgeGraph.Query<T> knowledgeGraphQuery, Scope scope) {
@@ -301,31 +264,6 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
                   knowledgeGraphQuery1.getResultType().getAssetClass());
     }
     throw new KlabIllegalStateException("Knowledge graph query using unexpected implementation");
-  }
-
-  @Override
-  public <T extends RuntimeAsset> List<T> retrieveAssets(
-      ContextScope contextScope, Class<T> assetClass, Object... queryParameters) {
-    AssetRequest request = new AssetRequest();
-    RuntimeAsset.Type type = RuntimeAsset.Type.forClass(assetClass);
-
-    for (var object : queryParameters) {
-      switch (object) {
-        case Observable observable -> request.setObservable(observable);
-        case Observation observation -> request.setContextObservation(observation);
-        case Long id -> request.setId(id);
-        case String string -> request.setName(string);
-        case Geometry geometry -> request.setGeometry(geometry);
-        case Metadata metadata -> request.getMetadata().putAll(metadata);
-        case RuntimeAsset.Type assetType -> type = assetType;
-        default -> throw new KlabIllegalStateException("Unexpected value: " + object);
-      }
-    }
-    request.setKnowledgeClass(type);
-
-    return client
-        .withScope(contextScope)
-        .postCollection(ServicesAPI.RUNTIME.RETRIEVE_ASSET, request, assetClass);
   }
 
   @Override

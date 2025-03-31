@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
@@ -21,6 +22,7 @@ import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 public class ResolverClient extends ServiceClient implements Resolver {
@@ -63,13 +65,22 @@ public class ResolverClient extends ServiceClient implements Resolver {
   }
 
   @Override
-  public Dataflow resolve(Observation observation, ContextScope contextScope) {
+  public CompletableFuture<Dataflow> resolve(Observation observation, ContextScope contextScope) {
     ResolutionRequest request = new ResolutionRequest();
     request.setObservation(observation);
     request.getResolutionConstraints().addAll(contextScope.getResolutionConstraints());
+    if (contextScope.getContextObservation() != null
+        && contextScope.getContextObservation().getId() < 0) {
+      request
+          .getResolutionConstraints()
+          .add(
+              ResolutionConstraint.of(
+                  ResolutionConstraint.Type.UnresolvedContextObservation,
+                  contextScope.getContextObservation()));
+    }
     return client
         .withScope(contextScope)
-        .post(ServicesAPI.RESOLVER.RESOLVE_OBSERVATION, request, Dataflow.class);
+        .postAsync(ServicesAPI.RESOLVER.RESOLVE_OBSERVATION, request, Dataflow.class);
   }
 
   @Override
