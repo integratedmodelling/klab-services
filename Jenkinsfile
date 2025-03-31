@@ -18,8 +18,11 @@ pipeline {
         RESOURCES_CONTAINER = "resources-service-21"
         RESOURCE_SERVICE = "resources"
         RUNTIME_CONTAINER = "runtime-service-21"
+        RUNTIME_SERVICE = "runtime"
         RESOLVER_CONTAINER = "resolver-service-21"
+        RESOLVER_SERVICE = "resolver"
         REASONER_CONTAINER = "reasoner-service-21"
+        REASONER_SERVICE = "reasoner"
         BASE_CONTAINER = "klab-base-21:dd2b778c852f20ad9c82fe6e12d5723e23e3dd19"
         DOCKER_HOST = "192.168.250.215"
         DOCKER_STACK = "klab"
@@ -67,6 +70,7 @@ pipeline {
             steps {
                 sshagent(["bc3-im-services"]) {
                     sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${RESOURCE_SERVICE} --image ${REGISTRY}/${RESOURCES_CONTAINER}:${TAG} --with-registry-auth"
+                    sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${REASONER_SERVICE} --image ${REGISTRY}/${REASONER_CONTAINER}:${TAG} --with-registry-auth"
                 }
             }
         }
