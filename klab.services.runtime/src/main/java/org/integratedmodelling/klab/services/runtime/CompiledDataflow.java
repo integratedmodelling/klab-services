@@ -5,7 +5,6 @@ import java.util.*;
 import java.util.function.BiFunction;
 
 import org.integratedmodelling.common.runtime.ActuatorImpl;
-import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -13,6 +12,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -49,14 +49,14 @@ public class CompiledDataflow {
   private boolean empty;
   private Throwable cause;
   private List<Pair<Actuator, Integer>> computation = new ArrayList<>();
-  private Map<Long, ExecutorOperation> operations = new HashMap<>();
+  private Map<Long, ExecutorImpl> operations = new HashMap<>();
   private Map<Long, Observation> observations = new HashMap<>();
   private Graph<Actuator, DependencyEdge> dependencyGraph;
   private Observation rootObservation;
+  private Actuator rootActuator;
 
   public CompiledDataflow(
       RuntimeService runtimeService,
-      //      Dataflow dataflow,
       Observation rootObservation,
       ServiceContextScope contextScope) {
     this.runtimeService = runtimeService;
@@ -87,12 +87,13 @@ public class CompiledDataflow {
   public boolean compile(Actuator rootActuator) {
 
     this.computation = sortComputation(rootActuator);
+    this.rootActuator = rootActuator;
 
     // build the observations as required
     requireObservations(rootActuator);
 
     for (var pair : this.computation) {
-      var operation = new ExecutorOperation(pair.getFirst());
+      var operation = new ExecutorImpl(pair.getFirst());
       if (!operation.isOperational()) {
         return false;
       }
@@ -139,6 +140,8 @@ public class CompiledDataflow {
   public boolean store(DigitalTwinImpl.TransactionImpl transaction) {
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
+
+    transaction.link(transaction.getActivity(), rootObservation, GraphModel.Relationship.RESOLVED);
 
     /* Add all missing and unresolved observations. The unresolved ones will be automatically added. */
     observations
@@ -208,18 +211,24 @@ public class CompiledDataflow {
       }
     }
 
+    transaction.link(knowledgeGraph.dataflow(), rootActuator, GraphModel.Relationship.HAS_CHILD);
+
     for (var edge : dependencyGraph.edgeSet()) {
-      var source = allObservations.get(dependencyGraph.getEdgeSource(edge).getId());
-      var target = allObservations.get(dependencyGraph.getEdgeTarget(edge).getId());
+      var aSource = dependencyGraph.getEdgeSource(edge);
+      var aTarget = dependencyGraph.getEdgeTarget(edge);
+      var source = allObservations.get(aSource.getId());
+      var target = allObservations.get(aTarget.getId());
       // TODO geometry?
       transaction.link(source, target, GraphModel.Relationship.AFFECTS, "rank", edge.order);
+      // TODO the geometry should probably be here if coverage is not full
+      transaction.link(aTarget, aSource, GraphModel.Relationship.HAS_CHILD);
     }
 
     return true;
   }
 
   /** One operation per observation. Successful execution will update the observation in the DT. */
-  class ExecutorOperation implements DigitalTwin.Contextualizer {
+  class ExecutorImpl implements DigitalTwin.Executor {
 
     private final Observation observation;
     protected List<BiFunction<Geometry, ContextScope, Boolean>> executors = new ArrayList<>();
@@ -227,7 +236,7 @@ public class CompiledDataflow {
     private final boolean operational;
     private final List<ServiceCall> serviceCalls = new ArrayList<>();
 
-    public ExecutorOperation(Actuator actuator) {
+    public ExecutorImpl(Actuator actuator) {
       this.observation =
           actuator.getId() == rootObservation.getId()
               ? rootObservation
@@ -470,7 +479,7 @@ public class CompiledDataflow {
     }
 
     @Override
-    public boolean run(Geometry geometry, ContextScope scope) {
+    public boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
       scope.send(
           Message.create(

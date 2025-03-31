@@ -101,8 +101,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           // TODO
         }
         case ActuatorImpl actuator -> {
-          ret.put("observationId", actuator.getId());
-          ret.put("id", actuator.getInternalId());
           ret.put("semantics", actuator.getObservable().getUrn());
           ret.put(
               "computation",

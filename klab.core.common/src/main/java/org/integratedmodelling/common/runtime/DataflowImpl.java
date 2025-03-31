@@ -21,7 +21,7 @@ public class DataflowImpl implements Dataflow {
     private ResourceSet requirements;
     private Coverage coverage;
     private List<Actuator> computation = new ArrayList<>();
-    private Observation target;
+//    private Observation target;
     private double resolvedCoverage;
     @Deprecated private long id;
 
@@ -107,14 +107,14 @@ public class DataflowImpl implements Dataflow {
         // TODO Auto-generated method stub
     }
 
-    @Override
-    public Observation getTarget() {
-        return target;
-    }
-
-    public void setTarget(Observation target) {
-        this.target = target;
-    }
+//    @Override
+//    public Observation getTarget() {
+//        return target;
+//    }
+//
+//    public void setTarget(Observation target) {
+//        this.target = target;
+//    }
 
     @Override
     public long getId() {

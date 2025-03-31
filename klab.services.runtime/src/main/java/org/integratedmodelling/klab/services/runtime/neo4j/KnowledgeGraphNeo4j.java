@@ -752,7 +752,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     Object ret =
         switch (asset) {
-          case ActuatorImpl actuator -> actuator.getInternalId();
+          case ActuatorImpl actuator -> actuator.getId();
           case ActivityImpl activity -> activity.getId();
           case ObservationImpl observation -> observation.getId();
           case Agent agent -> agent.getName();
@@ -779,7 +779,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         observation.setId(id);
         observation.setUrn(scope.getId() + "." + id);
       }
-      case ActuatorImpl actuator -> actuator.setInternalId(id);
+      case ActuatorImpl actuator -> actuator.setId(id);
       case BufferImpl buffer -> buffer.setInternalId(id);
       case ActivityImpl activity -> activity.setId(id);
       case AgentImpl agent -> agent.setId(id);
@@ -902,13 +902,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         query(
             transaction,
             Queries.UPDATE_PROPERTIES.replace("{type}", getLabel(runtimeAsset)),
-            Map.of(
-                "id",
-                (runtimeAsset instanceof ActuatorImpl actuator
-                    ? actuator.getInternalId()
-                    : runtimeAsset.getId()),
-                "properties",
-                props),
+            Map.of("id", runtimeAsset.getId(), "properties", props),
             scope);
   }
 
@@ -919,13 +913,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var result =
         query(
             Queries.UPDATE_PROPERTIES.replace("{type}", getLabel(runtimeAsset)),
-            Map.of(
-                "id",
-                (runtimeAsset instanceof ActuatorImpl actuator
-                    ? actuator.getInternalId()
-                    : runtimeAsset.getId()),
-                "properties",
-                props),
+            Map.of("id", runtimeAsset.getId(), "properties", props),
             scope);
   }
 

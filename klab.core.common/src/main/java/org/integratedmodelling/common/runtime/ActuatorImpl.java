@@ -17,7 +17,6 @@ import java.util.List;
 public class ActuatorImpl implements Actuator {
 
   @Serial private static final long serialVersionUID = 2500101522003062757L;
-  private long id;
   private String name;
   private Artifact.Type type;
   private Observable observable;
@@ -28,14 +27,9 @@ public class ActuatorImpl implements Actuator {
   private Parameters<String> data = Parameters.create();
   private Geometry resolvedGeometry = Geometry.EMPTY;
   private Actuator.Type actuatorType;
-  private long internalId; // ID within the graph, can't be the same as the observation
+  private long id;
   private double resolvedCoverage;
   private List<Annotation> annotations = new ArrayList<>();
-
-  @Override
-  public long getId() {
-    return this.id;
-  }
 
   @Override
   public String getName() {
@@ -81,10 +75,6 @@ public class ActuatorImpl implements Actuator {
     return this.data;
   }
 
-  public void setId(long id) {
-    this.id = id;
-  }
-
   public void setName(String name) {
     this.name = name;
   }
@@ -122,20 +112,12 @@ public class ActuatorImpl implements Actuator {
     this.actuatorType = actuatorType;
   }
 
-  public long getInternalId() {
-    return internalId;
-  }
-
   public double getResolvedCoverage() {
     return resolvedCoverage;
   }
 
   public void setResolvedCoverage(double resolvedCoverage) {
     this.resolvedCoverage = resolvedCoverage;
-  }
-
-  public void setInternalId(long internalId) {
-    this.internalId = internalId;
   }
 
   @Override
@@ -156,7 +138,16 @@ public class ActuatorImpl implements Actuator {
   }
 
   @Override
+  public long getId() {
+    return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
+  }
+
+  @Override
   public String toString() {
-    return "A(" + this.id + ", " + this.observable + ")";
+    return "A(" + this.getId() + ", " + this.observable + ")";
   }
 }

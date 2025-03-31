@@ -1,22 +1,36 @@
 package org.integratedmodelling.klab.runtime.storage;
 
+import com.dynatrace.dynahist.layout.Layout;
+import com.dynatrace.dynahist.layout.OpenTelemetryExponentialBucketsLayout;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.ojalgo.array.BufferArray;
 
 public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer {
 
   private final BufferArray data;
 
-  protected DoubleBufferImpl(Geometry geometry,
-                             StorageImpl doubleStorage, long size, Data.SpaceFillingCurve spaceFillingCurve, long offsets) {
-    super(geometry, doubleStorage, size, spaceFillingCurve, offsets);
+  protected DoubleBufferImpl(
+      Geometry geometry,
+      Observable observable,
+      StorageImpl doubleStorage,
+      long size,
+      Data.SpaceFillingCurve spaceFillingCurve,
+      long offsets) {
+    super(geometry, observable, doubleStorage, size, spaceFillingCurve, offsets);
     this.data = doubleStorage.stateStorage.getDoubleBuffer(doubleStorage.geometry.size());
   }
 
   public BufferArray data() {
     return data;
+  }
+
+  @Override
+  protected Layout histogramLayout(Observable observable) {
+    // TODO if the observable has numeric boundaries, use those for a predefined layout
+    return OpenTelemetryExponentialBucketsLayout.create(10);
   }
 
   public DoubleScanner scan() {
@@ -37,7 +51,7 @@ public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer
       @Override
       public void add(double value) {
         if (histogram != null) {
-          histogram.insert(value);
+          histogram.addValue(value);
         }
         data.set(next++, value);
       }
@@ -55,7 +69,9 @@ public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer
   }
 
   @Override
-  public double get(long offset) { return 0; }
+  public double get(long offset) {
+    return 0;
+  }
 
   @Override
   public void set(double value, long offset) {
@@ -66,5 +82,4 @@ public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer
   public void fill(double value) {
     data.fillAll(value);
   }
-
 }

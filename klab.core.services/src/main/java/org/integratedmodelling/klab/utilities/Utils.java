@@ -41,6 +41,8 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
+import org.integratedmodelling.klab.api.data.Histogram;
+import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -83,6 +85,25 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         "FETCHATO: MO' PROVO CON L'ALTRO: "
             + Maven.synchronizeArtifact(
                 "org" + ".integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT", true));
+  }
+
+  public static class Data extends org.integratedmodelling.klab.api.utils.Utils.Data {
+
+    public static Histogram adaptHistogram(com.dynatrace.dynahist.Histogram histogram) {
+      var ret = new HistogramImpl();
+      ret.setMin(histogram.getMin());
+      ret.setMax(histogram.getMax());
+      for (var bin : histogram.nonEmptyBinsAscending()) {
+        var hBin = new HistogramImpl.BinImpl();
+        hBin.setCount(bin.getBinCount());
+        hBin.setMax(bin.getUpperBound());
+        hBin.setMin(bin.getLowerBound());
+        ret.getBins().add(hBin);
+      }
+      return ret;
+    }
+
+
   }
 
   /** Functions to access Maven artifacts */

@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.runtime.storage;
 
 import java.util.*;
-
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
@@ -9,13 +8,13 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.Persistence;
-import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.integratedmodelling.klab.utilities.Utils;
 
 /**
  * Abstract storage class providing geometry and buffer indexing, histograms, merging and splitting.
@@ -98,22 +97,24 @@ public class StorageImpl implements Storage {
    *
    * @return
    */
-  public SPDTHistogram<?> histogram() {
+  public com.dynatrace.dynahist.Histogram histogram() {
 
     var allBuffers = allBuffers();
     if (allBuffers.size() == 1) {
       return ((BufferImpl) allBuffers.getFirst()).histogram;
     } else if (allBuffers.size() > 1) {
-      SPDTHistogram ret = new SPDTHistogram<>(20);
-      for (var buffer : allBuffers) {
-        if (((BufferImpl) buffer).histogram != null) {
-          ret.merge(((BufferImpl) buffer).histogram);
+      com.dynatrace.dynahist.Histogram ret = null;
+      var first = ((BufferImpl) allBuffers.getFirst()).histogram;
+      if (first != null) {
+        ret = com.dynatrace.dynahist.Histogram.createDynamic(first.getLayout());
+        for (var buffer : allBuffers) {
+          if (((BufferImpl) buffer).histogram != null) {
+            ret.addHistogram(((BufferImpl) buffer).histogram);
+          }
         }
       }
-      // TODO cache if storage is finalized
-      return ret;
     }
-    return new SPDTHistogram<>(20);
+    return null;
   }
 
   @Override
@@ -133,13 +134,14 @@ public class StorageImpl implements Storage {
 
     long timeStart = time.is(Time.Type.INITIALIZATION) ? 0 : time.getStart().getMilliseconds();
     return buffers
-        .computeIfAbsent(timeStart, k -> new ArrayList<>(createBuffers(geometry)))
+        .computeIfAbsent(
+            timeStart, k -> new ArrayList<>(createBuffers(geometry, observation.getObservable())))
         .stream()
         .map(b -> adaptBuffer(b, fillingCurve))
         .toList();
   }
 
-  private List<BufferImpl> createBuffers(Geometry geometry) {
+  private List<BufferImpl> createBuffers(Geometry geometry, Observable observable) {
 
     var ret = new ArrayList<BufferImpl>();
     long[] splitSizes = new long[splits];
@@ -153,7 +155,8 @@ public class StorageImpl implements Storage {
       ret.add(
           switch (type) {
             case BOXING -> null;
-            case DOUBLE -> new DoubleBufferImpl(geometry, this, bs, spaceFillingCurve, offset);
+            case DOUBLE ->
+                new DoubleBufferImpl(geometry, observable, this, bs, spaceFillingCurve, offset);
             case FLOAT -> null;
             case INTEGER -> null;
             case LONG -> null;
@@ -193,7 +196,7 @@ public class StorageImpl implements Storage {
 
   @Override
   public Histogram getHistogram() {
-    return histogram().asHistogram();
+    return Utils.Data.adaptHistogram(histogram());
   }
 
   @Override
