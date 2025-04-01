@@ -209,6 +209,7 @@ public class CompiledDataflow {
       }
     }
 
+    transaction.link(transaction.getActivity(), rootActuator, GraphModel.Relationship.HAS_PLAN);
     transaction.link(knowledgeGraph.dataflow(), rootActuator, GraphModel.Relationship.HAS_CHILD);
     transaction.link(transaction.getActivity(), rootObservation, GraphModel.Relationship.RESOLVED);
 

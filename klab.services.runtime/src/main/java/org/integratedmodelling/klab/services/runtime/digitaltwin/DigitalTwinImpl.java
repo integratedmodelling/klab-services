@@ -86,7 +86,7 @@ public class DigitalTwinImpl implements DigitalTwin {
           } else if (datum instanceof Activity activity1) {
             this.graph.addVertex(activity1);
             this.graph.addEdge(
-                activity, activity1, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
+                activity1, activity, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
             primary = false;
           } else if (datum instanceof Observation observation) {
             setTarget(observation);
@@ -145,13 +145,16 @@ public class DigitalTwinImpl implements DigitalTwin {
         activity1.setEnd(System.currentTimeMillis());
       }
 
+      // if nothing was done, we just store the HAS_CHILD relationships that point to observations
+      boolean trivial = contextualizers.isEmpty();
+
       /*
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
        */
       try (var kgTransaction = knowledgeGraph.createTransaction()) {
 
         for (var asset : graph.vertexSet()) {
-          if (setupForStorage(asset)) {
+          if (setupForStorage(asset, trivial)) {
             kgTransaction.store(asset);
           }
         }
@@ -159,10 +162,15 @@ public class DigitalTwinImpl implements DigitalTwin {
         for (var edge : graph.edgeSet()) {
           var source = graph.getEdgeSource(edge);
           var target = graph.getEdgeTarget(edge);
+          if (trivial
+              && !(target instanceof Observation)
+              && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
+            continue;
+          }
           kgTransaction.link(source, target, edge.relationship, getRelationshipData(edge));
         }
 
-        if (primary) {
+        if (primary && !trivial) {
           kgTransaction.link(
               knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD);
         }
@@ -202,11 +210,11 @@ public class DigitalTwinImpl implements DigitalTwin {
       return ret.toArray();
     }
 
-    private boolean setupForStorage(RuntimeAsset asset) {
+    private boolean setupForStorage(RuntimeAsset asset, boolean trivial) {
       return switch (asset) {
         case Observation observation -> observation.getId() < 0;
-        case Actuator actuator -> true;
-        case Activity activity -> activity.getId() < 0;
+        case Actuator actuator -> !trivial;
+        case Activity activity -> activity.getId() < 0 && !trivial;
         default -> false;
       };
     }

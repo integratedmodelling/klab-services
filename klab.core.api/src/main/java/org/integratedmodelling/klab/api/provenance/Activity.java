@@ -66,6 +66,7 @@ public interface Activity extends Provenance.Node {
   String getUrn();
 
   enum Type {
+    CONTEXT_INITIALIZATION,
     INITIALIZATION,
     RESOLUTION,
     CONTEXTUALIZATION,

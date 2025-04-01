@@ -193,6 +193,8 @@ public class SchedulerImpl implements Scheduler {
               .between(affected, observation, GraphModel.Relationship.AFFECTS)
               .peek(scope);
 
+      transaction.link(transaction.getActivity(), affected, GraphModel.Relationship.CONTEXTUALIZED);
+
       var sequence = 0;
       if (relationship.isPresent()) {
         sequence =
