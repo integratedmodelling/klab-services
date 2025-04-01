@@ -32,6 +32,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -1239,6 +1240,7 @@ public class ComponentRegistry {
     public boolean encode(
         Resource resource,
         Geometry geometry,
+        Scheduler.Event event,
         Data.Builder builder,
         Observation observation,
         Observable observable,
@@ -1268,6 +1270,7 @@ public class ComponentRegistry {
                 null,
                 null,
                 null,
+                event,
                 scope);
 
         if (ret instanceof Throwable) {
@@ -1465,6 +1468,7 @@ public class ComponentRegistry {
       LookupTable lookupTable,
       Data inputData,
       org.integratedmodelling.klab.api.lang.Annotation storageAnnotation,
+      Scheduler.Event schedulerEvent,
       Scope scope) {
 
     var arguments =
@@ -1483,6 +1487,7 @@ public class ComponentRegistry {
             lookupTable,
             inputData,
             storageAnnotation,
+            schedulerEvent,
             scope);
     if (arguments == null) {
       return new KlabCompilationError(
@@ -1511,6 +1516,7 @@ public class ComponentRegistry {
    * @param storage
    * @param expression
    * @param lookupTable
+   * @param schedulerEvent
    * @param scope
    * @return
    */
@@ -1529,6 +1535,7 @@ public class ComponentRegistry {
       LookupTable lookupTable,
       Data inputData,
       org.integratedmodelling.klab.api.lang.Annotation storageAnnotation,
+      Scheduler.Event schedulerEvent,
       Scope scope) {
     List<Object> runArguments = new ArrayList<>();
     DigitalTwin digitalTwin = null;
@@ -1623,10 +1630,14 @@ public class ComponentRegistry {
           }
           runArguments.add(scale == null ? null : scale.getSpace());
         } else if (Time.class.isAssignableFrom(argument)) {
-          if (scale == null && geometry != null) {
+          if (schedulerEvent != null) {
+            runArguments.add(schedulerEvent.getTime());
+          } else if (scale == null && geometry != null) {
             scale = GeometryRepository.INSTANCE.scale(geometry);
           }
           runArguments.add(scale == null ? null : scale.getTime());
+        } else if (Scheduler.Event.class.isAssignableFrom(argument)) {
+          runArguments.add(schedulerEvent);
         } else if (Resource.class.isAssignableFrom(argument) && resource != null) {
           runArguments.add(resource);
         } else if (Expression.class.isAssignableFrom(argument) && expression != null) {

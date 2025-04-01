@@ -5,6 +5,8 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.SchedulerEventImpl;
 import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -70,12 +72,27 @@ public interface Scheduler {
       EVENT
     }
 
-    long getStart();
+    /**
+     * If {@link #getEvent()} returns null, the time reflects the geometry of either the observation
+     * (if {@link #getType()} returns INITIALIZATION, which will also be the {@link
+     * Time#getTimeType()}) or the temporal transition, in which case the time will be a standard
+     * period with the appropriate resolution. If an event was observed, the time is taken from the
+     * geometry of the event.
+     *
+     * @return a temporal span, never null.
+     */
+    Time getTime();
 
-    long getEnd();
-
+    /**
+     * @return
+     */
     Type getType();
 
+    /**
+     * Not null only when an event observation was posted after resolution.
+     *
+     * @return
+     */
     Observation getEvent();
   }
 
@@ -107,7 +124,8 @@ public interface Scheduler {
    * @param executor
    */
   void registerExecutor(
-          Observation observation, TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor);
+      Observation observation,
+      TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor);
 
   /**
    * The scheduler keeps the first time instant seen in the DT. This can change during the lifetime
@@ -132,4 +150,18 @@ public interface Scheduler {
    * @return
    */
   Time.Resolution resolution();
+
+  /**
+   * Events are normally created internally by the scheduler. This method produces a simple temporal
+   * event between two timesteps and is used only by remote contextualizers.
+   *
+   * @param startTime
+   * @param endTime
+   * @return
+   */
+  static Event event(long startTime, long endTime) {
+    var ret = new SchedulerEventImpl();
+    ret.setTime(TimePeriod.create(startTime, endTime));
+    return ret;
+  }
 }

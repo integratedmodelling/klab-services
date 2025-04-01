@@ -461,13 +461,5 @@ public interface Time extends Extent<Time>, Encodeable {
      */
     TimeInstant getFocus();
 
-//    /**
-//     * Time extents record the actual changes in the observations they describe. This method checks if there have been
-//     * one or more changes in the artifact's state during the time passed.
-//     *
-//     * @param time
-//     * @return
-//     */
-//    boolean hasChangeDuring(Time time);
 
 }

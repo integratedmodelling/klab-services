@@ -13,13 +13,16 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
 import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -82,13 +85,15 @@ public class SchedulerImpl implements Scheduler {
   private void initializeScheduler() {
     // The INIT event is created before anything happens and applies to every new observation
     // registered.
-    post(this.initializationEvent = new EventImpl());
+    post(this.initializationEvent = new EventImpl(), rootScope);
     // TODO read the existing context state from the knowledge graph and rebuild all relevant past
     //  events
   }
 
   @Override
   public void submit(Observation observation, Activity triggeringActivity) {
+
+    // TODO we should not register observations that are unaffected by others unless they're events
 
     if (observation.isEmpty()) {
       return;
@@ -332,7 +337,6 @@ public class SchedulerImpl implements Scheduler {
       event = null;
     }
 
-    @Override
     public long getStart() {
       return start;
     }
@@ -341,13 +345,20 @@ public class SchedulerImpl implements Scheduler {
       this.start = start;
     }
 
-    @Override
     public long getEnd() {
       return end;
     }
 
     public void setEnd(long end) {
       this.end = end;
+    }
+
+    @Override
+    public Time getTime() {
+      return TimePeriod.create(
+          start,
+          end,
+          this.type == Type.INITIALIZATION ? Time.Type.INITIALIZATION : Time.Type.PHYSICAL);
     }
 
     @Override
@@ -366,12 +377,14 @@ public class SchedulerImpl implements Scheduler {
     }
   }
 
-  public void post(EventImpl event) {
+  private void post(EventImpl event, Scope scope) {
     processor.emitNext(
         event,
         new Sinks.EmitFailureHandler() {
           @Override
           public boolean onEmitFailure(SignalType signalType, Sinks.EmitResult emitResult) {
+            scope.error(
+                "Scheduler: internal: failed to emit event " + event + ": result is " + emitResult);
             return false;
           }
         });

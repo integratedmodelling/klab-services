@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.services.resources.adapters;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -161,6 +162,7 @@ public interface Adapter {
   boolean encode(
       Resource resource,
       Geometry geometry,
+      Scheduler.Event event,
       Data.Builder builder,
       Observation observation,
       Observable observable,

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.computation
 
 import org.integratedmodelling.klab.api.data.Storage
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler
 import org.integratedmodelling.klab.api.geometry.Geometry
 import org.integratedmodelling.klab.api.knowledge.Observable
 import org.integratedmodelling.klab.api.knowledge.observation.Observation
@@ -39,7 +40,7 @@ class TestExpression extends ExpressionBase {
     }
 
     @Override
-    boolean run(Geometry geometry, ContextScope scope) {
+    boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
         /* TODO need to build the buffers here based on the geometry */
         def selfBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__self).buffers(geometry)

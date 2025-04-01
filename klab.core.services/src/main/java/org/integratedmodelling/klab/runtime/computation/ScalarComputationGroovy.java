@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -245,9 +246,9 @@ public class ScalarComputationGroovy implements ScalarComputation {
   }
 
   @Override
-  public boolean execute(Geometry geometry, ContextScope scope) {
+  public boolean execute(Geometry geometry, Scheduler.Event event, ContextScope scope) {
     try {
-      return script.run(geometry, scope);
+      return script.run(geometry, event, scope);
     } catch (Throwable t) {
       System.out.println("Scalar code fucked up: " + Utils.Exceptions.stackTrace(t));
       scope.error(t, sourceCode);

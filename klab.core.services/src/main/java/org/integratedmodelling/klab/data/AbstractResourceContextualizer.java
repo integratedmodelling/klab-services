@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.data;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -29,8 +30,8 @@ public abstract class AbstractResourceContextualizer {
     this.observable = observation.getObservable();
   }
 
-  public boolean contextualize(Observation observation, ContextScope scope) {
-    var data = getData(observation.getGeometry(), scope);
+  public boolean contextualize(Observation observation, Scheduler.Event event, ContextScope scope) {
+    var data = getData(observation.getGeometry(), event, scope);
     if (data == null || data.empty()) {
       return false;
     }
@@ -48,5 +49,5 @@ public abstract class AbstractResourceContextualizer {
     return null;
   }
 
-  protected abstract Data getData(Geometry geometry, ContextScope scope);
+  protected abstract Data getData(Geometry geometry, Scheduler.Event event, ContextScope scope);
 }

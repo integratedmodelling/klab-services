@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -47,5 +48,5 @@ public interface ScalarComputation {
    * Run sequentially or map over the buffer. This may be called on partial buffers or an entire
    * state.
    */
-  boolean execute(Geometry geometry, ContextScope scope);
+  boolean execute(Geometry geometry, Scheduler.Event event, ContextScope scope);
 }

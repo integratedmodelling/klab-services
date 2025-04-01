@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.data.*;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -271,7 +272,7 @@ public interface ResourcesService extends KlabService {
    * @return
    */
   Data contextualize(
-          Resource contextualizedResource, Observation observation, Data input, Scope scope);
+          Resource contextualizedResource, Observation observation, Scheduler.Event event, Data input, Scope scope);
 
   /**
    * @param urn
