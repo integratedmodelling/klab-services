@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.PrimitiveIterator;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.Persistence;
 
@@ -91,7 +92,6 @@ public interface Storage extends RuntimeAsset {
        * @param value
        */
       void add(double value);
-
     }
 
     @Override
@@ -189,42 +189,48 @@ public interface Storage extends RuntimeAsset {
   Data.SpaceFillingCurve spaceFillCurve();
 
   /**
-   * Return the buffers that cover the passed geometry. Implementations may constrain this to only
-   * work with geometries that are "in phase" with the existing buffers, throwing an exception if
-   * not. Buffers should be created as required. The type, amount and filling curve of the buffers
-   * will reflect the defaults from service configuration, possibly overridden through the
-   * annotations passed at the moment of creating the storage. The service MUST ensure that the
+   * Return the buffers that cover the passed geometry at the passed time. The time in the geometry
+   * is considered only if the specific time transition is null. Implementations may constrain this
+   * to only work with geometries that are "in phase" with the existing buffers, throwing an
+   * exception if not. Buffers should be created as required. The type, amount and filling curve of
+   * the buffers will reflect the defaults from service configuration, possibly overridden through
+   * the annotations passed at the moment of creating the storage. The service MUST ensure that the
    * buffer splits are identical across all the qualities within the same subject.
    *
    * @param geometry
+   * @param transition the time from the event being contextualized.
    * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
    *     parameters cause non-resolvable geometry conflicts with the underlying implementation.
    * @return
    */
-  List<? extends Storage.Buffer> buffers(Geometry geometry);
+  List<? extends Storage.Buffer> buffers(Geometry geometry, Time transition);
 
   /**
-   * Return the buffers that cover the passed geometry. Like {@link #buffers(Geometry)} but enables
-   * some degree of recontextualization so that contextualizers can establish the fill curve they
-   * expect to use. The returned buffers must be capable of adapting to the requested parameters,
-   * which would normally come as <code>@storage</code> annotations built from the contextualizer's
-   * declaration.
+   * Return the buffers that cover the passed geometry at the passed time. The time in the geometry
+   * * is considered only if the specific time transition is null. Like {@link #buffers(Geometry,
+   * Time)} but enables some degree of recontextualization so that contextualizers can establish the
+   * fill curve they expect to use. The returned buffers must be capable of adapting to the
+   * requested parameters, which would normally come as <code>@storage</code> annotations built from
+   * the contextualizer's declaration.
    *
    * @param geometry
+   * @param transition the time from the event being contextualized.
    * @param storageAnnotation
    * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
    *     parameters cause non-resolvable conflicts with the underlying implementation.
    * @return
    */
-  List<? extends Storage.Buffer> buffers(Geometry geometry, Annotation storageAnnotation);
+  List<? extends Storage.Buffer> buffers(
+      Geometry geometry, Time transition, Annotation storageAnnotation);
 
   /**
-   * Retrieve all buffers that cover the passed geometry, which must be in phase with the overall
-   * geometry. Implementations may provide support for partial geometries within a single extent but
-   * this is not expected in general. There may be multiple buffers even with a single time extent,
-   * and they should be usable in parallel as needed. This one is called by contextualizers to
-   * obtain, and according to implementation possibly create, the needed buffer(s) for reading and
-   * writing according to the contextualization stage.
+   * Retrieve all buffers that cover the passed geometry at the passed time. The time in the
+   * geometry is considered only if the specific time transition is null, The geometry must be in
+   * phase with the overall geometry. Implementations may provide support for partial geometries
+   * within a single extent but this is not expected in general. There may be multiple buffers even
+   * with a single time extent, and they should be usable in parallel as needed. This one is called
+   * by contextualizers to obtain, and according to implementation possibly create, the needed
+   * buffer(s) for reading and writing according to the contextualization stage.
    *
    * <p>The buffers are allocated using the default fill curve and an implementation-dependent
    * strategy unless a <code>@split</code> annotation is present on the model to define the split
@@ -232,6 +238,7 @@ public interface Storage extends RuntimeAsset {
    *
    * @param geometry the (sub)-geometry that covers the buffers. According to implementation, the
    *     geometry's coverage of the overall geometry may be more or less constrained.
+   * @param transition the time from the event being contextualized.
    * @param bufferClass the class of the buffer, which is needed to access the non-boxing add, set
    *     and get methods exposed by the different {@link Buffer} subclasses. If a class is asked for
    *     that does not match the existing buffers, a mediating buffer should be produced. The native
@@ -240,7 +247,8 @@ public interface Storage extends RuntimeAsset {
    *     parameters cause non-resolvable type or geometry conflicts with the underlying
    *     implementation.
    */
-  <T extends Storage.Buffer> List<T> buffers(Geometry geometry, Class<T> bufferClass);
+  <T extends Storage.Buffer> List<T> buffers(
+      Geometry geometry, Time transition, Class<T> bufferClass);
 
   /**
    * After the contextualization is finished, the storage will contain one or more buffers with the

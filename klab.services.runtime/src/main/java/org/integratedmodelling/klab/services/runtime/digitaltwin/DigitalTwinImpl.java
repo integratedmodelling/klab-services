@@ -255,7 +255,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   }
 
   @Override
-  public boolean ingest(Data data, Observation target, ContextScope scope) {
+  public boolean ingest(Data data, Observation target, Scheduler.Event event, ContextScope scope) {
 
     if (target.getObservable().is(SemanticType.COUNTABLE)) {
       // scope contextualized to the collective observation
@@ -275,7 +275,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                                 (obs -> {
                                   // resolve any child observations, states or instances
                                   if (instance.hasStates() || instance.size() > 0) {
-                                    ingest(instance, observation, observationScope);
+                                    ingest(instance, observation, event, observationScope);
                                   }
                                 }));
                   },
@@ -306,7 +306,11 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       if (data instanceof DoubleDataImpl doubleData) {
 
-        var buffers = storage.buffers(data.geometry(), Storage.DoubleBuffer.class);
+        var buffers =
+            storage.buffers(
+                data.geometry(),
+                event == null ? null : event.getTime(),
+                Storage.DoubleBuffer.class);
 
         /* all buffers run in parallel */
         return Utils.Java.distributeComputation(

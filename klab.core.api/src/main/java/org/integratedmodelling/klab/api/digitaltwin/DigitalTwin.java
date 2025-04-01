@@ -171,7 +171,7 @@ public interface DigitalTwin {
    * @param target
    * @return
    */
-  boolean ingest(Data data, Observation target, ContextScope scope);
+  boolean ingest(Data data, Observation target, Scheduler.Event event, ContextScope scope);
 
   /**
    * Dispose of all storage and data, either in memory only or also on any attached storage. Whether

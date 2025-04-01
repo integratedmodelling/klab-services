@@ -1567,7 +1567,11 @@ public class ComponentRegistry {
                   ? null
                   : digitalTwin.getStorageManager().getStorage(observation, storageAnnotation);
           if (storage != null) {
-            var buffers = storage.buffers(geometry, argument.asSubclass(Storage.Buffer.class));
+            var buffers =
+                storage.buffers(
+                    geometry,
+                    schedulerEvent == null ? null : schedulerEvent.getTime(),
+                    argument.asSubclass(Storage.Buffer.class));
             if (buffers.size() != 1) {
               throw new KlabInternalErrorException(
                   "Wrong buffer numerosity for single-buffer parameter: review configuration");

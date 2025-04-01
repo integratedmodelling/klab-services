@@ -182,6 +182,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
       scalarBuffers.put("self", new VarInfo("self", getTypeDeclaration(selfStorage), 0));
 
       // buffer creation
+      codeInfo.getBodyInitializationStatements().add("def eventTime = event == null ? null : event.time");
       StringBuilder bufferDeclaration =
           new StringBuilder("def bufferSets = Utils.Collections.transpose(selfBuffers");
       for (String var : scalarBuffers.keySet()) {
@@ -193,7 +194,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
                     + info.name
                     + "Buffers = scope.getDigitalTwin().getStorageManager().getStorage(__"
                     + info.name
-                    + ").buffers(geometry)");
+                    + ").buffers(geometry, eventTime)");
 
         if (info.index > 0) {
           bufferDeclaration.append(", ").append(info.name).append("Buffers");

@@ -5,6 +5,7 @@ import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -63,17 +64,19 @@ public class StorageImpl implements Storage {
    * @param geometry
    * @return
    */
-  public List<Buffer> buffers(Geometry geometry) {
-    return buffersCovering(geometry, this.spaceFillingCurve, this.type);
+  public List<Buffer> buffers(Geometry geometry, Time eventTime) {
+    return buffersCovering(geometry, eventTime, this.spaceFillingCurve, this.type);
   }
 
   @Override
-  public List<? extends Buffer> buffers(Geometry geometry, Annotation storageAnnotation) {
+  public List<? extends Buffer> buffers(
+      Geometry geometry, Time eventTime, Annotation storageAnnotation) {
     return List.of();
   }
 
   @Override
-  public <T extends Buffer> List<T> buffers(Geometry geometry, Class<T> bufferClass) {
+  public <T extends Buffer> List<T> buffers(
+      Geometry geometry, Time eventTime, Class<T> bufferClass) {
 
     var nVaryingDimensions = geometry.getDimensions().stream().filter(d -> d.size() > 1).count();
     if (nVaryingDimensions > 1) {
@@ -81,7 +84,7 @@ public class StorageImpl implements Storage {
           "Cannot create or retrieve buffers for more than one varying geometry extent at a time");
     }
 
-    return (List<T>) buffersCovering(geometry, this.spaceFillingCurve, this.type);
+    return (List<T>) buffersCovering(geometry, eventTime, this.spaceFillingCurve, this.type);
   }
 
   /*
@@ -123,10 +126,10 @@ public class StorageImpl implements Storage {
   }
 
   protected List<Buffer> buffersCovering(
-      Geometry geometry, Data.SpaceFillingCurve fillingCurve, Type dataType) {
+      Geometry geometry, Time eventTime, Data.SpaceFillingCurve fillingCurve, Type dataType) {
 
     var scale = GeometryRepository.INSTANCE.scale(geometry);
-    var time = scale.getTime();
+    var time = eventTime == null ? scale.getTime() : eventTime;
     if (time.size() != 1) {
       throw new KlabUnimplementedException(
           "Multiple time steps for a buffer request during contextualization");

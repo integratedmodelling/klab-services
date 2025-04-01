@@ -35,7 +35,7 @@ public abstract class AbstractResourceContextualizer {
     if (data == null || data.empty()) {
       return false;
     }
-    return scope.getDigitalTwin().ingest(data,observation, scope);
+    return scope.getDigitalTwin().ingest(data,observation, event, scope);
   }
 
   /**
