@@ -30,7 +30,7 @@ class ${codeInfo.getClassName()} extends ExpressionBase {
   }
 
 @Override
-boolean run(Geometry geometry, Scheduler.Event event ContextScope scope) {
+boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
   <%-- body initialization. Must include all buffer creation + the bufferSets as a transposed list of buffers, \
        ensuring that each thread has the same topology--%>
