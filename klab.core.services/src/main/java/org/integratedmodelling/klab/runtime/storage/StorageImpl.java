@@ -138,13 +138,14 @@ public class StorageImpl implements Storage {
     long timeStart = time.is(Time.Type.INITIALIZATION) ? 0 : time.getStart().getMilliseconds();
     return buffers
         .computeIfAbsent(
-            timeStart, k -> new ArrayList<>(createBuffers(geometry, observation.getObservable())))
+            timeStart, k -> new ArrayList<>(createBuffers(geometry, observation, timeStart)))
         .stream()
         .map(b -> adaptBuffer(b, fillingCurve))
         .toList();
   }
 
-  private List<BufferImpl> createBuffers(Geometry geometry, Observable observable) {
+  private List<BufferImpl> createBuffers(
+      Geometry geometry, Observation observation, long timestamp) {
 
     var ret = new ArrayList<BufferImpl>();
     long[] splitSizes = new long[splits];
@@ -159,7 +160,8 @@ public class StorageImpl implements Storage {
           switch (type) {
             case BOXING -> null;
             case DOUBLE ->
-                new DoubleBufferImpl(geometry, observable, this, bs, spaceFillingCurve, offset);
+                new DoubleBufferImpl(
+                    geometry, observation, this, bs, spaceFillingCurve, offset, timestamp);
             case FLOAT -> null;
             case INTEGER -> null;
             case LONG -> null;

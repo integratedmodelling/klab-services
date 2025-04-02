@@ -137,6 +137,9 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("type", buffer.getDataType().name());
           ret.put("fillCurve", buffer.getFillingCurve().name());
           ret.put("size", buffer.size());
+          ret.put("offset", buffer.offset());
+          ret.put("timestamp", buffer.getTimestamp());
+          ret.put("urn", buffer.getUrn());
           ret.put(
               "histogram",
               org.integratedmodelling.common.utils.Utils.Json.asString(buffer.histogram()));

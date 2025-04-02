@@ -145,8 +145,11 @@ public class DigitalTwinImpl implements DigitalTwin {
         activity1.setEnd(System.currentTimeMillis());
       }
 
-      // if nothing was done, we just store the HAS_CHILD relationships that point to observations
-      boolean trivial = contextualizers.isEmpty();
+      // if nothing was done, we just store the HAS_CHILD relationships that point to observations.
+      // TODO/CHECK the logics here may require some attention
+      boolean trivial =
+          contextualizers.isEmpty()
+              && graph.vertexSet().stream().noneMatch(a -> a instanceof Storage.Buffer);
 
       /*
       Open transaction in the knowledge graph and store everything that needs to, then make all connections

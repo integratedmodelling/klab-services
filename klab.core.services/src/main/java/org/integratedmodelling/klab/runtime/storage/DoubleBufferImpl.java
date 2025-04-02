@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.ojalgo.array.BufferArray;
 
 public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer {
@@ -14,12 +15,13 @@ public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer
 
   protected DoubleBufferImpl(
       Geometry geometry,
-      Observable observable,
+      Observation observation,
       StorageImpl doubleStorage,
       long size,
       Data.SpaceFillingCurve spaceFillingCurve,
-      long offsets) {
-    super(geometry, observable, doubleStorage, size, spaceFillingCurve, offsets);
+      long offsets,
+      long timestamp) {
+    super(geometry, observation, doubleStorage, size, spaceFillingCurve, offsets, timestamp);
     this.data = doubleStorage.stateStorage.getDoubleBuffer(doubleStorage.geometry.size());
   }
 

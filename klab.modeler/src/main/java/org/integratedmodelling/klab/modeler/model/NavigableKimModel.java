@@ -15,11 +15,6 @@ public class NavigableKimModel extends NavigableKlabStatement<KimModel> implemen
         super(asset, parent);
     }
 
-//    @Override
-//    public String getName() {
-//        return delegate.getName();
-//    }
-
     @Override
     public List<KimObservable> getDependencies() {
         return delegate.getDependencies();

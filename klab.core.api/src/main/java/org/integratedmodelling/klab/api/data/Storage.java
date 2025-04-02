@@ -65,6 +65,10 @@ public interface Storage extends RuntimeAsset {
      * @return
      */
     long offset();
+
+    String getUrn();
+
+    long getTimestamp();
   }
 
   interface DoubleBuffer extends Buffer {

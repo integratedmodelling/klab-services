@@ -36,10 +36,6 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableFolder;
-//import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
-//import org.integratedmodelling.klab.ide.Activator;
-//import org.integratedmodelling.klab.ide.KlabAdapterFactory;
-//import org.integratedmodelling.klab.ide.KlabAdapterFactory;
 
 /**
  * Adaptable wrappers for the knowledge tree. Their equality is assessed in terms of their navigational

@@ -732,11 +732,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     var ret =
         switch (asset) {
-          case Activity activity -> name + ".id = $" + queryVariable;
-          case Observation observation -> name + ".id = $" + queryVariable;
-          case Actuator actuator -> name + ".id = $" + queryVariable;
-          case Storage.Buffer actuator -> name + ".id = $" + queryVariable;
-          case Agent agent -> name + ".name = $" + queryVariable;
+          case Activity ignored3 -> name + ".id = $" + queryVariable;
+          case Observation ignored2 -> name + ".id = $" + queryVariable;
+          case Actuator ignored1 -> name + ".id = $" + queryVariable;
+          case Storage.Buffer ignored -> name + ".id = $" + queryVariable;
+          case Agent ignored -> name + ".name = $" + queryVariable;
           default -> null;
         };
 
@@ -759,7 +759,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           case ActivityImpl activity -> activity.getId();
           case ObservationImpl observation -> observation.getId();
           case Agent agent -> agent.getName();
-          case BufferImpl buffer -> buffer.getInternalId();
+          case BufferImpl buffer -> buffer.getId();
           default -> null;
         };
 
@@ -783,7 +783,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         observation.setUrn(scope.getId() + "." + id);
       }
       case ActuatorImpl actuator -> actuator.setId(id);
-      case BufferImpl buffer -> buffer.setInternalId(id);
+      case BufferImpl buffer -> buffer.setId(id);
       case ActivityImpl activity -> {
         activity.setId(id);
         activity.setUrn(scope.getId() + "." + id);
