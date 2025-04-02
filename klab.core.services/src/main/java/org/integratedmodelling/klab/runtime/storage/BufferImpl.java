@@ -17,7 +17,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   private final Persistence persistence;
   private final Storage.Type dataType;
   private final long offset;
-  private final long id;
+  private long id;
   private final StorageImpl storage;
   private long internalId;
   protected com.dynatrace.dynahist.Histogram histogram;
@@ -39,6 +39,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
     super(geometry, spaceFillingCurve);
     this.storage = stateStorage;
     this.dataType = stateStorage.getType();
+    // TODO make this an immutable URN, the ID is managed by the knowledge graph as RuntimeAsset
     this.id = stateStorage.stateStorage.nextBufferId();
     this.persistence = Persistence.SERVICE_SHUTDOWN;
     this.offset = offsets;
@@ -53,6 +54,10 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   @Override
   public long getId() {
     return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
   }
 
   @Override
