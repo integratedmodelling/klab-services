@@ -246,10 +246,37 @@ public class SchedulerImpl implements Scheduler {
      */
     var executor = executors.getIfPresent(observation.getId());
     if (executor != null) {
-      executor.apply(geometry, causingEvent, scope);
+      return execute(executor, observation, geometry, causingEvent, scope, transaction);
     }
-
     return true;
+  }
+
+  private boolean execute(
+      TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor,
+      Observation observation,
+      Geometry geometry,
+      Scheduler.Event event,
+      ServiceContextScope scope,
+      DigitalTwin.Transaction transaction) {
+    if (executor.apply(geometry, event, scope)) {
+      if (observation.getObservable().is(SemanticType.QUALITY)) {
+        var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
+        if (storage != null) {
+          for (var buffer : storage.buffers(geometry, event.getTime())) {
+            transaction.link(observation, buffer, GraphModel.Relationship.HAS_DATA);
+          }
+        }
+      }
+
+      /**
+       * TODO set up the timestamps in the observation - if INIT or first, -1 to end for
+       *  substantials & their qualities, start to end for occurrents and their qualities. Otherwise
+       *  add the end (and maybe also log the black area of no/unknown change between the previous
+       *  end and the new start).
+       */
+      return true;
+    }
+    return false;
   }
 
   /**

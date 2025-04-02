@@ -215,6 +215,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         case Observation observation -> observation.getId() < 0;
         case Actuator actuator -> !trivial;
         case Activity activity -> activity.getId() < 0 && !trivial;
+        case Storage.Buffer ignored -> true;
         default -> false;
       };
     }
