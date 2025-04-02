@@ -50,6 +50,19 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
 
   long UNASSIGNED_ID = -1;
 
+  /**
+   * The role played by an observation in a dependency hierarchy. This depends solely on the
+   * observable's semantics so it's redundant, but being able to classify it streamlines and
+   * clarifies the code and any API use.
+   */
+  enum Role {
+    COLLECTIVE_SUBSTANTIAL,
+    INDIVIDUAL_SUBSTANTIAL,
+    RELATIONAL,
+    DEPENDENT
+    // TODO classifications and categorizations
+  }
+
   default RuntimeAsset.Type classify() {
     return RuntimeAsset.Type.OBSERVATION;
   }
@@ -102,4 +115,18 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
    * @return
    */
   double getResolvedCoverage();
+
+  static Role classifyRole(Observation observation) {
+
+    // TODO check classifications and categorizations
+    if (observation.getObservable().is(SemanticType.QUALITY)
+        || observation.getObservable().is(SemanticType.PROCESS)) {
+      return Role.DEPENDENT;
+    } else if (observation.getObservable().is(SemanticType.RELATIONSHIP)) {
+      return Role.RELATIONAL;
+    } else if (observation.getObservable().getSemantics().isCollective()) {
+      return Role.COLLECTIVE_SUBSTANTIAL;
+    }
+    return Role.INDIVIDUAL_SUBSTANTIAL;
+  }
 }

@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.services.runtime;
 
 import com.google.common.collect.ImmutableList;
 import java.util.*;
-import java.util.function.BiFunction;
 
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.Klab;
@@ -51,7 +50,7 @@ public class CompiledDataflow {
   private Throwable cause;
   private List<Pair<Actuator, Integer>> computation = new ArrayList<>();
   private Map<Long, ExecutorImpl> operations = new HashMap<>();
-  private Map<Long, Observation> observations = new HashMap<>();
+  private Map<Long, Observation> dependentObservations = new HashMap<>();
   private Graph<Actuator, DependencyEdge> dependencyGraph;
   private Observation rootObservation;
   private Actuator rootActuator;
@@ -106,7 +105,7 @@ public class CompiledDataflow {
   private void requireObservations(Actuator rootActuator) {
     Map<Long, Observation> observationMap = new HashMap<>();
     requireObservation(rootActuator, observationMap);
-    observations.putAll(observationMap);
+    dependentObservations.putAll(observationMap);
   }
 
   private void requireObservation(Actuator actuator, Map<Long, Observation> observationMap) {
@@ -142,22 +141,97 @@ public class CompiledDataflow {
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
 
+    /*
+    The links to be made depend on the reciprocal nature of the root and its dependents
+     */
+    var rootRole = Observation.classifyRole(rootObservation);
+
+    // TODO do we need a collective if the root observation is an individual and we're not in a
+    //  collective scope? Probably - which means we have a manually instantiated collective and
+    //  resolution is user-driven (activity and plan should be stored as such). If the collective
+    //  is already there, we may need criteria for collision - probably based on identities - and
+    // resolution
+    //  of new collectives for that observable will return the reference to the existing collective.
+
     /* Add all missing and unresolved observations. The unresolved ones will be automatically added. */
-    observations
+    dependentObservations
         .values()
         .forEach(
-            o -> {
-              transaction.add(o);
-              if (o.getObservable().is(SemanticType.QUALITY)
-                  || o.getObservable().is(SemanticType.PROCESS)) {
-                transaction.link(rootObservation, o, GraphModel.Relationship.HAS_CHILD);
-              } else {
-                transaction.link(knowledgeGraph.scope(), o, GraphModel.Relationship.HAS_CHILD);
+            dependent -> {
+              transaction.add(dependent);
+
+              var dependentRole = Observation.classifyRole(dependent);
+
+              if (rootRole == Observation.Role.DEPENDENT) {
+                switch (dependentRole) {
+                  case DEPENDENT -> {
+                    transaction.link(
+                        scope.getContextObservation(),
+                        dependent,
+                        GraphModel.Relationship.HAS_CHILD);
+                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS);
+                  }
+                  case COLLECTIVE_SUBSTANTIAL -> {
+                    // dependency to observe a quality = link to scope, add AFFECTS
+                    transaction.link(
+                        knowledgeGraph.scope(), dependent, GraphModel.Relationship.HAS_CHILD);
+                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS);
+                  }
+                  default ->
+                      throw new KlabInternalErrorException(
+                          "unexpected relationship between dependent and dependency observation");
+                }
+              } else if (rootRole == Observation.Role.INDIVIDUAL_SUBSTANTIAL
+                  || rootRole == Observation.Role.RELATIONAL
+                  || rootRole == Observation.Role.COLLECTIVE_SUBSTANTIAL) {
+
+                if (rootRole == Observation.Role.RELATIONAL) {
+                  // TODO! Add source and target nodes
+                }
+
+                switch (dependentRole) {
+                  case COLLECTIVE_SUBSTANTIAL -> {
+                    // link to the scope but add the AFFECTS relationship to the root substantial
+                    transaction.link(
+                        knowledgeGraph.scope(), dependent, GraphModel.Relationship.HAS_CHILD);
+                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS);
+                  }
+                  case INDIVIDUAL_SUBSTANTIAL, RELATIONAL -> {
+                    if (dependentRole == Observation.Role.RELATIONAL) {
+                      // TODO source and target
+                    }
+
+                    if (scope
+                        .getContextObservation()
+                        .getObservable()
+                        .getSemantics()
+                        .isCollective()) {
+                      transaction.link(
+                          scope.getContextObservation(),
+                          dependent,
+                          GraphModel.Relationship.HAS_CHILD);
+                    } else {
+                      // TODO - a single individual substantial outside its collective scope should
+                      //  probably be added to a (possibly ad-hoc) collective upstream as discussed
+                      // above.
+                      transaction.link(
+                          knowledgeGraph.scope(), dependent, GraphModel.Relationship.HAS_CHILD);
+                    }
+                  }
+                  case DEPENDENT -> {
+                    // AFFECTS and HAS_CHILD
+                    transaction.link(rootObservation, dependent, GraphModel.Relationship.HAS_CHILD);
+                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS);
+                  }
+                  default ->
+                      throw new KlabInternalErrorException(
+                          "unexpected relationship between dependent and dependency observation");
+                }
               }
             });
 
     // now add the root to a temporary map so that we can properly set up the links
-    var allObservations = new HashMap<>(observations);
+    var allObservations = new HashMap<>(dependentObservations);
     allObservations.put(rootObservation.getId(), rootObservation);
 
     /*
@@ -214,6 +288,7 @@ public class CompiledDataflow {
     transaction.link(knowledgeGraph.dataflow(), rootActuator, GraphModel.Relationship.HAS_CHILD);
     transaction.link(transaction.getActivity(), rootObservation, GraphModel.Relationship.RESOLVED);
 
+    /* Record and link actuators */
     for (var edge : dependencyGraph.edgeSet()) {
       var aSource = dependencyGraph.getEdgeSource(edge);
       var aTarget = dependencyGraph.getEdgeTarget(edge);
@@ -242,7 +317,7 @@ public class CompiledDataflow {
       this.observation =
           actuator.getId() == rootObservation.getId()
               ? rootObservation
-              : observations.get(actuator.getId());
+              : dependentObservations.get(actuator.getId());
       this.operational = compile(actuator);
     }
 
