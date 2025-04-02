@@ -1,5 +1,12 @@
 package org.integratedmodelling.klab.modeler;
 
+import java.io.File;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
@@ -45,14 +52,6 @@ import org.integratedmodelling.klab.modeler.panels.controllers.DocumentEditorCon
 import org.integratedmodelling.klab.modeler.views.controllers.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-
-import java.io.File;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * A {@link UIController} specialized to provide and orchestrate the views and panels that compose
@@ -214,7 +213,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       throw new KlabAuthorizationException("Cannot make observations with an invalid user");
     }
 
-    /**
+    /*
      * Use cases:
      *
      * <p>Admitted with a current context or focal scale
@@ -310,92 +309,50 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     final boolean observering = isObserver;
 
-    // FIXME this is obsolete. Resolution is a normal future and contextualization happens
-    // asynchronously
-    /* one-time event handlers */
-    currentContext
-        .onEvent(
-            Message.MessageClass.DigitalTwin,
-            Message.MessageType.ResolutionSuccessful,
-            (message) -> {
-              var obs = message.getPayload(Observation.class);
-              if (observering) {
-                setCurrentContext(currentContext.withObserver(obs));
-                currentContext.ui(
-                    Message.create(
-                        currentContext,
-                        Message.MessageClass.UserInterface,
-                        Message.MessageType.CurrentContextModified));
-                currentContext.info(obs + " is now the current observer");
-              } else if (currentContext.getContextObservation() == null
-                  && obs.getObservable().is(SemanticType.SUBJECT)) {
-                setCurrentContext(currentContext.within(obs));
-                currentContext.ui(
-                    Message.create(
-                        currentContext,
-                        Message.MessageClass.UserInterface,
-                        Message.MessageType.CurrentContextModified));
-                currentContext.info(obs + " is now the current context observation");
-              } else {
-                currentContext.info("Observation of " + obs + " completed successfully");
-              }
-            },
-            observation)
-        .onEvent(
-            Message.MessageClass.DigitalTwin,
-            Message.MessageType.ResolutionAborted,
-            (message) -> {
+    return currentContext
+        .withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new))
+        .observe(observation)
+        .exceptionally(
+            t -> {
               currentContext.error(
                   "Resolution of observation "
                       + observation
                       + " was aborted"
                       + " due to errors: "
-                      + message.getPayload(Object.class));
-            },
-            observation)
-        .onEvent(
-            Message.MessageClass.DigitalTwin,
-            Message.MessageType.ResolutionUnsuccessful,
-            (message) -> {
-              var obs = message.getPayload(Observation.class);
-              if (observering) {
-                setCurrentContext(currentContext.withObserver(obs));
-                // send UI event
-                currentContext.ui(
-                    Message.create(
-                        currentContext,
-                        Message.MessageClass.UserInterface,
-                        Message.MessageType.CurrentContextModified));
-                currentContext.info(obs + " is now the current observer (unresolved)");
-              } else if (currentContext.getContextObservation() == null
-                  && obs.getObservable().is(SemanticType.SUBJECT)) {
-                setCurrentContext(currentContext.within(obs));
-                currentContext.ui(
-                    Message.create(
-                        currentContext,
-                        Message.MessageClass.UserInterface,
-                        Message.MessageType.CurrentContextModified));
-                currentContext.info(obs + " is now the current context observation (unresolved)");
-              } else if (obs.getObservable().is(SemanticType.COUNTABLE)) {
-                currentContext.info(
-                    "Observation "
-                        + observation
-                        + " accepted in unresolved state as an acknowledged substantial");
-              } else {
-                // unresolved dependent: context is now inconsistent
-                currentContext.error(
-                    "Dependent observation "
-                        + observation
-                        + " did not resolve and was rejected. Context is now inconsistent.");
-              }
-            },
-            observation);
+                      + Utils.Exceptions.stackTrace(t));
 
-    return currentContext
-        .withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new))
-        .observe(observation)
-        .exceptionally(t -> observation) // TODO
-        .thenApply(observation1 -> /* TODO logics here */ observation);
+              return observation;
+            })
+        .thenApply(
+            obs -> {
+              if (obs.isEmpty()) {
+                currentContext.error(
+                    "Observation " + observation + " was not resolved due to errors");
+              } else {
+                if (observering) {
+                  setCurrentContext(currentContext.withObserver(obs));
+                  currentContext.ui(
+                      Message.create(
+                          currentContext,
+                          Message.MessageClass.UserInterface,
+                          Message.MessageType.CurrentContextModified));
+                  currentContext.info(obs + " is now the current observer");
+                } else if (currentContext.getContextObservation() == null
+                    && obs.getObservable().is(SemanticType.SUBJECT)
+                    && !obs.getObservable().getSemantics().isCollective()) {
+                  setCurrentContext(currentContext.within(obs));
+                  currentContext.ui(
+                      Message.create(
+                          currentContext,
+                          Message.MessageClass.UserInterface,
+                          Message.MessageType.CurrentContextModified));
+                  currentContext.info(obs + " is now the current context observation");
+                } else {
+                  currentContext.info("Observation of " + obs + " resolved successfully");
+                }
+              }
+              return obs;
+            });
   }
 
   @Override

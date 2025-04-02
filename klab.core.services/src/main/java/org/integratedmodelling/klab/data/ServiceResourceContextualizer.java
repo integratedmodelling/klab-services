@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.data;
 
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -29,7 +30,7 @@ public class ServiceResourceContextualizer extends AbstractResourceContextualize
   }
 
   @Override
-  protected Data getData(Geometry geometry, ContextScope scope) {
+  protected Data getData(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
     var name =
         observation.getObservable().getStatedName() == null
@@ -43,7 +44,16 @@ public class ServiceResourceContextualizer extends AbstractResourceContextualize
     //  storage and anything the adapter may want.
     var inputData = getInputData(scope);
     adapter.encode(
-        resource, geometry, builder, observation, observable, urn, urnParameters, inputData, scope);
+        resource,
+        geometry,
+        event,
+        builder,
+        observation,
+        observable,
+        urn,
+        urnParameters,
+        inputData,
+        scope);
     return builder.build();
   }
 }

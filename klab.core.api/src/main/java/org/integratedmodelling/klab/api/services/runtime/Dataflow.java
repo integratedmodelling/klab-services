@@ -91,15 +91,7 @@ public interface Dataflow extends Serializable, RuntimeAsset {
   List<Actuator> getComputation();
 
   /**
-   * A dataflow that resolves a specific observation includes the observation itself as a target.
-   * The root dataflow has a null here.
-   *
-   * @return
-   */
-  Observation getTarget();
-
-  /**
-   * Return a new empty dataflow.
+   * Return a new empty dataflow, signaling failure of a mandatory resolution.
    *
    * @return
    */
@@ -132,14 +124,16 @@ public interface Dataflow extends Serializable, RuntimeAsset {
       public List<Actuator> getComputation() {
         return Collections.emptyList();
       }
-
-      @Override
-      public Observation getTarget() {
-        return null;
-      }
     };
   }
 
+  /**
+   * A trivial dataflow with no computations but whose {@link #isEmpty()} returns false. Used as the
+   * resolution outcome of unresolved substantials that can exist unexplained, i.e. whose mere
+   * existence is a valid observation.
+   *
+   * @return
+   */
   static Dataflow trivial() {
     return new Dataflow() {
 
@@ -168,11 +162,6 @@ public interface Dataflow extends Serializable, RuntimeAsset {
       @Override
       public List<Actuator> getComputation() {
         return Collections.emptyList();
-      }
-
-      @Override
-      public Observation getTarget() {
-        return null;
       }
     };
   }

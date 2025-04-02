@@ -18,6 +18,7 @@ import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.*;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -428,7 +429,11 @@ public class ResourcesClient extends ServiceClient
 
   @Override
   public Data contextualize(
-      Resource contextualizedResource, Observation observation, @Nullable Data data, Scope scope) {
+      Resource contextualizedResource,
+      Observation observation,
+      Scheduler.Event event,
+      @Nullable Data data,
+      Scope scope) {
 
     DataRequest request =
         DataRequest.newBuilder()
@@ -436,6 +441,8 @@ public class ResourcesClient extends ServiceClient
             // .setObservable(observation.getObservable().getUrn())
             .setGeometry(observation.getGeometry().encode())
             .setResourceUrns(List.of(contextualizedResource.getUrn()))
+            .setStartTime(event == null ? 0 : event.getTime().getStart().getMilliseconds())
+            .setEndTime(event == null ? 0 : event.getTime().getEnd().getMilliseconds())
             .build();
 
     return client.postData(request);

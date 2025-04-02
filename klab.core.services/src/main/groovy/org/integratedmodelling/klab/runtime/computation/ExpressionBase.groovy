@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.computation
 
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler
 import org.integratedmodelling.klab.api.geometry.Geometry
 import org.integratedmodelling.klab.api.knowledge.observation.Observation
 import org.integratedmodelling.klab.api.scope.ContextScope
@@ -37,6 +38,6 @@ abstract class ExpressionBase extends GroovyObjectSupport implements MathOps, Ob
         this.__self = observation
     }
 
-    abstract boolean run(Geometry geometry, ContextScope scope);
+    abstract boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope);
 
 }

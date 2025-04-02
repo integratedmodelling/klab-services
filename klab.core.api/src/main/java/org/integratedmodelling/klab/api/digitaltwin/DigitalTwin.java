@@ -8,7 +8,6 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.exceptions.KlabCompilationError;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -35,26 +34,22 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 public interface DigitalTwin {
 
   /**
-   * A contextualizer is a runnable operation linked to an observation, compiled from an actuator in
-   * the dataflow. It can be serialized in the KnowledgeGraph as a sequence of {@link ServiceCall}s
-   * and reconstructed from them. Contextualizers, like actuators, may cover partial geometries so
-   * more than one can coexist for the same observation.
+   * An executor is a runnable operation linked to an observation, compiled from an actuator in the
+   * dataflow. It can be serialized in the KnowledgeGraph as a sequence of {@link ServiceCall}s and
+   * reconstructed from them. Executors, like actuators, may cover partial geometries so more than
+   * one can coexist for the same observation.
    */
-  interface Contextualizer {
+  interface Executor {
 
     List<ServiceCall> serialized();
 
     /**
-     * TODO this should probably receive a DigitalTwin.Transaction to update the state of the
-     * observation and potentially the activity, which may be optional. The scheduler should send
-     * the transaction when the task is called upon with the rationale for the call -
-     * initialization, behavior action, debug, dependency change etc
-     *
      * @param geometry
+     * @param event
      * @param scope
      * @return
      */
-    boolean run(Geometry geometry, ContextScope scope);
+    boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope);
   }
 
   /**
@@ -94,7 +89,7 @@ public interface DigitalTwin {
         GraphModel.Relationship relationship,
         Object... data);
 
-    void resolveWith(Observation observation, Contextualizer contextualizer);
+    void resolveWith(Observation observation, Executor executor);
 
     /**
      * Commit the transaction and return true if it was successful.
@@ -176,7 +171,7 @@ public interface DigitalTwin {
    * @param target
    * @return
    */
-  boolean ingest(Data data, Observation target, ContextScope scope);
+  boolean ingest(Data data, Observation target, Scheduler.Event event, ContextScope scope);
 
   /**
    * Dispose of all storage and data, either in memory only or also on any attached storage. Whether

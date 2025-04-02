@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -282,7 +283,7 @@ public class ResourcesProviderController {
                 .serviceScope()
                 .getService(Reasoner.class)
                 .resolveObservable(request.getObservable().toString());
-
+        var event = Scheduler.event(request.getStartTime(), request.getEndTime());
         var geometry =
             GeometryRepository.INSTANCE.get(request.getGeometry().toString(), Geometry.class);
 
@@ -297,6 +298,7 @@ public class ResourcesProviderController {
                 .contextualize(
                     resource,
                     DigitalTwin.createObservation(scope, observable, geometry),
+                    event, // FIXME FIXME FIXME take the event from the request
                     input,
                     scope);
 

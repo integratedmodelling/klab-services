@@ -1,6 +1,9 @@
 package org.integratedmodelling.klab.runtime.scale;
 
 import com.google.common.primitives.Longs;
+import java.io.Serial;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.*;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type;
@@ -15,10 +18,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.runtime.scale.space.SpaceImpl;
 import org.integratedmodelling.klab.runtime.scale.time.TimeImpl;
-
-import java.io.Serial;
-import java.util.*;
-import java.util.stream.Collectors;
 
 public class ScaleImpl implements Scale {
 
@@ -232,14 +231,14 @@ public class ScaleImpl implements Scale {
   @SuppressWarnings("unchecked")
   @Override
   public <T extends Locator> T as(Class<T> cls) {
-    if (DimensionScanner2D.class.isAssignableFrom(cls)) {
-      /*
+    /*if (DimensionScanner2D.class.isAssignableFrom(cls)) {
+      *//*
       must have a single extent with size() > 1 and dimensionality = 2, or be a singleton
-       */
+       *//*
       return (T) new DimensionScanner2DImpl(this);
     } else if (DimensionScanner1D.class.isAssignableFrom(cls)) {
       return (T) new DimensionScanner1DImpl(this);
-    } else if (Geometry.class.equals(cls)) {
+    } else */if (Geometry.class.equals(cls)) {
       return (T) Geometry.create(encode());
     } else if (Coverage.class.equals(cls)) {
       return (T) new CoverageImpl(this, 1.0);

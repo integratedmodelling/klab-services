@@ -33,6 +33,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.*;
@@ -408,9 +409,10 @@ public class RuntimeService extends BaseService
         }
       }
 
+      var agent = serviceContextScope.getConstraint(ResolutionConstraint.Type.Provenance, Agent.class);
       var contextScope = serviceContextScope.initializeResolution();
       var resolver = scope.getService(Resolver.class);
-      var resolution = Activity.of("Resolution of " + observation, Activity.Type.RESOLUTION, this);
+      var resolution = Activity.of("Resolution of " + observation, Activity.Type.RESOLUTION, this, agent);
 
       return resolver
           /* resolve asynchronously */
@@ -423,11 +425,12 @@ public class RuntimeService extends BaseService
                    * Compile an atomic transaction from the dataflow, adding new observations if the digital twin does not have them.
                    */
                   var transaction =
-                      scope.getDigitalTwin().transaction(resolution, scope, dataflow, observation);
+                      scope.getDigitalTwin().transaction(resolution, scope, dataflow, observation, agent);
 
-                  if (compile(observation, dataflow, contextScope, transaction)
-                      && transaction.commit()) {
-                    return observation;
+                  if (compile(observation, dataflow, contextScope, transaction)) {
+                    if (transaction.commit()) {
+                      return observation;
+                    }
                   }
                 }
                 return Observation.empty();
@@ -525,15 +528,15 @@ public class RuntimeService extends BaseService
       intersect coverage from dataflow with contextualization scale
        */
 
-      if (dataflow instanceof DataflowImpl df
-          && dataflow.getTarget() instanceof ObservationImpl obs) {
-        obs.setResolvedCoverage(df.getResolvedCoverage());
-      }
+//      if (dataflow instanceof DataflowImpl df
+//          && dataflow.getTarget() instanceof ObservationImpl obs) {
+//        obs.setResolvedCoverage(df.getResolvedCoverage());
+//      }
 
       //      contextualization.success(contextScope, dataflow.getTarget(), dataflow);
     }
 
-    return dataflow.getTarget();
+    return null; // dataflow.getTarget();
   }
 
   @Override

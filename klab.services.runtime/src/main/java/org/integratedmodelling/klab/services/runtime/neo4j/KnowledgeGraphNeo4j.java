@@ -102,8 +102,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               + "\t(prov)-[:HAS_AGENT]->(user),\n"
               + "\t(prov)-[:HAS_AGENT]->(klab),\n"
               + "\t// ACTIVITY that created the whole thing\n"
-              + "\t(creation:Activity {start: $timestamp, end: $timestamp, name: "
-              + "'INITIALIZATION', id: $activityId}),\n"
+              + "\t(creation:Activity {start: $timestamp, end: $timestamp, type: "
+              + "'CONTEXT_INITIALIZATION', id: $activityId}),\n"
               + "\t// created by user\n"
               + "\t(creation)-[:BY_AGENT]->(user),\n"
               + "\t(ctx)<-[:CREATED]-(creation),\n"
@@ -550,7 +550,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var props = asParameters(asset, additionalProperties);
     var ret = nextKey();
     props.put("id", ret);
-    if (asset instanceof Observation) {
+    if (asset instanceof Observation || asset instanceof Activity) {
       props.put("urn", this.scope.getId() + "." + ret);
     }
     var result =
@@ -614,20 +614,23 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     // This guarantees processed, stable geometry representation with WBT
     var encoded = GeometryRepository.INSTANCE.scale(geometry).encode();
+    var relationship = asset instanceof Actuator ? "HAS_COVERAGE" : "HAS_GEOMETRY";
 
     // Must be called after update() and this may happen more than once, so we must check to avoid
     // multiple relationships.
     var exists =
         transaction == null
             ? query(
-                "MATCH (n:{assetLabel} {id: $assetId})-[:HAS_GEOMETRY]->(g:Geometry) RETURN g"
-                    .replace("{assetLabel}", getLabel(asset)),
+                "MATCH (n:{assetLabel} {id: $assetId})-[:{relationship}]->(g:Geometry) RETURN g"
+                    .replace("{assetLabel}", getLabel(asset))
+                    .replace("{relationship}", relationship),
                 Map.of("assetId", getId(asset)),
                 scope)
             : query(
                 transaction,
-                "MATCH (n:{assetLabel} {id: $assetId})-[:HAS_GEOMETRY]->(g:Geometry) RETURN g"
-                    .replace("{assetLabel}", getLabel(asset)),
+                "MATCH (n:{assetLabel} {id: $assetId})-[:{relationship}]->(g:Geometry) RETURN g"
+                    .replace("{assetLabel}", getLabel(asset))
+                    .replace("{relationship}", relationship),
                 Map.of("assetId", getId(asset)),
                 scope);
 
@@ -752,7 +755,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     Object ret =
         switch (asset) {
-          case ActuatorImpl actuator -> actuator.getInternalId();
+          case ActuatorImpl actuator -> actuator.getId();
           case ActivityImpl activity -> activity.getId();
           case ObservationImpl observation -> observation.getId();
           case Agent agent -> agent.getName();
@@ -779,9 +782,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         observation.setId(id);
         observation.setUrn(scope.getId() + "." + id);
       }
-      case ActuatorImpl actuator -> actuator.setInternalId(id);
+      case ActuatorImpl actuator -> actuator.setId(id);
       case BufferImpl buffer -> buffer.setInternalId(id);
-      case ActivityImpl activity -> activity.setId(id);
+      case ActivityImpl activity -> {
+        activity.setId(id);
+        activity.setUrn(scope.getId() + "." + id);
+      }
       case AgentImpl agent -> agent.setId(id);
       default -> {}
     }
@@ -902,13 +908,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         query(
             transaction,
             Queries.UPDATE_PROPERTIES.replace("{type}", getLabel(runtimeAsset)),
-            Map.of(
-                "id",
-                (runtimeAsset instanceof ActuatorImpl actuator
-                    ? actuator.getInternalId()
-                    : runtimeAsset.getId()),
-                "properties",
-                props),
+            Map.of("id", runtimeAsset.getId(), "properties", props),
             scope);
   }
 
@@ -919,13 +919,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var result =
         query(
             Queries.UPDATE_PROPERTIES.replace("{type}", getLabel(runtimeAsset)),
-            Map.of(
-                "id",
-                (runtimeAsset instanceof ActuatorImpl actuator
-                    ? actuator.getInternalId()
-                    : runtimeAsset.getId()),
-                "properties",
-                props),
+            Map.of("id", runtimeAsset.getId(), "properties", props),
             scope);
   }
 

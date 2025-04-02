@@ -2,6 +2,7 @@
 @import gg.jte.support.ForSupport
 @param TemplateCodeInfo codeInfo
 
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.runtime.computation.ExpressionBase
@@ -29,7 +30,7 @@ class ${codeInfo.getClassName()} extends ExpressionBase {
   }
 
 @Override
-boolean run(Geometry geometry, ContextScope scope) {
+boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
   <%-- body initialization. Must include all buffer creation + the bufferSets as a transposed list of buffers, \
        ensuring that each thread has the same topology--%>

@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -181,6 +182,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
       scalarBuffers.put("self", new VarInfo("self", getTypeDeclaration(selfStorage), 0));
 
       // buffer creation
+      codeInfo.getBodyInitializationStatements().add("def eventTime = event == null ? null : event.time");
       StringBuilder bufferDeclaration =
           new StringBuilder("def bufferSets = Utils.Collections.transpose(selfBuffers");
       for (String var : scalarBuffers.keySet()) {
@@ -192,7 +194,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
                     + info.name
                     + "Buffers = scope.getDigitalTwin().getStorageManager().getStorage(__"
                     + info.name
-                    + ").buffers(geometry)");
+                    + ").buffers(geometry, eventTime)");
 
         if (info.index > 0) {
           bufferDeclaration.append(", ").append(info.name).append("Buffers");
@@ -245,9 +247,9 @@ public class ScalarComputationGroovy implements ScalarComputation {
   }
 
   @Override
-  public boolean execute(Geometry geometry, ContextScope scope) {
+  public boolean execute(Geometry geometry, Scheduler.Event event, ContextScope scope) {
     try {
-      return script.run(geometry, scope);
+      return script.run(geometry, event, scope);
     } catch (Throwable t) {
       System.out.println("Scalar code fucked up: " + Utils.Exceptions.stackTrace(t));
       scope.error(t, sourceCode);

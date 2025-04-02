@@ -65,7 +65,7 @@ public class DataflowCompiler {
 
     Map<Observable, String> catalog = new HashMap<>();
     var ret = new DataflowImpl();
-    ret.setTarget(observation);
+//    ret.setTarget(observation);
     ret.setResolvedCoverage(resolutionGraph.getResolvedCoverage());
     for (var node : resolutionGraph.rootNodes()) {
       /*
@@ -78,11 +78,8 @@ public class DataflowCompiler {
           .addAll(compileObservation(observation, GeometryRepository.INSTANCE.scale(observation.getGeometry()), null));
     }
 
-    var out = new StringWriter();
-    var dioCan = new PrintWriter(out);
-    new DataflowEncoder(ret, scope).encode(dioCan);
-
-    System.out.println(out.toString());
+    // TODO remove
+    System.out.println(Utils.Dataflows.encode(ret, scope));
 
     return ret;
   }

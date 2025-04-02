@@ -5,7 +5,6 @@ import java.util.*;
 import java.util.function.BiFunction;
 
 import org.integratedmodelling.common.runtime.ActuatorImpl;
-import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -13,11 +12,13 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -49,14 +50,14 @@ public class CompiledDataflow {
   private boolean empty;
   private Throwable cause;
   private List<Pair<Actuator, Integer>> computation = new ArrayList<>();
-  private Map<Long, ExecutorOperation> operations = new HashMap<>();
+  private Map<Long, ExecutorImpl> operations = new HashMap<>();
   private Map<Long, Observation> observations = new HashMap<>();
   private Graph<Actuator, DependencyEdge> dependencyGraph;
   private Observation rootObservation;
+  private Actuator rootActuator;
 
   public CompiledDataflow(
       RuntimeService runtimeService,
-      //      Dataflow dataflow,
       Observation rootObservation,
       ServiceContextScope contextScope) {
     this.runtimeService = runtimeService;
@@ -87,12 +88,13 @@ public class CompiledDataflow {
   public boolean compile(Actuator rootActuator) {
 
     this.computation = sortComputation(rootActuator);
+    this.rootActuator = rootActuator;
 
     // build the observations as required
     requireObservations(rootActuator);
 
     for (var pair : this.computation) {
-      var operation = new ExecutorOperation(pair.getFirst());
+      var operation = new ExecutorImpl(pair.getFirst());
       if (!operation.isOperational()) {
         return false;
       }
@@ -208,26 +210,35 @@ public class CompiledDataflow {
       }
     }
 
+    transaction.link(transaction.getActivity(), rootActuator, GraphModel.Relationship.HAS_PLAN);
+    transaction.link(knowledgeGraph.dataflow(), rootActuator, GraphModel.Relationship.HAS_CHILD);
+    transaction.link(transaction.getActivity(), rootObservation, GraphModel.Relationship.RESOLVED);
+
     for (var edge : dependencyGraph.edgeSet()) {
-      var source = allObservations.get(dependencyGraph.getEdgeSource(edge).getId());
-      var target = allObservations.get(dependencyGraph.getEdgeTarget(edge).getId());
+      var aSource = dependencyGraph.getEdgeSource(edge);
+      var aTarget = dependencyGraph.getEdgeTarget(edge);
+      var source = allObservations.get(aSource.getId());
+      var target = allObservations.get(aTarget.getId());
       // TODO geometry?
       transaction.link(source, target, GraphModel.Relationship.AFFECTS, "rank", edge.order);
+      // TODO the geometry should probably be here if coverage is not full
+      transaction.link(aTarget, aSource, GraphModel.Relationship.HAS_CHILD);
     }
 
     return true;
   }
 
   /** One operation per observation. Successful execution will update the observation in the DT. */
-  class ExecutorOperation implements DigitalTwin.Contextualizer {
+  class ExecutorImpl implements DigitalTwin.Executor {
 
     private final Observation observation;
-    protected List<BiFunction<Geometry, ContextScope, Boolean>> executors = new ArrayList<>();
+    protected List<TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean>> executors =
+        new ArrayList<>();
     private boolean scalar;
     private final boolean operational;
     private final List<ServiceCall> serviceCalls = new ArrayList<>();
 
-    public ExecutorOperation(Actuator actuator) {
+    public ExecutorImpl(Actuator actuator) {
       this.observation =
           actuator.getId() == rootObservation.getId()
               ? rootObservation
@@ -290,10 +301,10 @@ public class CompiledDataflow {
                 final var contextualizer =
                     new ServiceResourceContextualizer(adapter, resource, observation);
                 executors.add(
-                    (geometry, scope) ->
+                    (geometry, event, scope) ->
                         contextualizer.contextualize(
                             // pass the operation for provenance recording
-                            observation, scope));
+                            observation, event, scope));
                 continue;
 
               } else {
@@ -329,7 +340,8 @@ public class CompiledDataflow {
                 final var contextualizer =
                     new ClientResourceContextualizer(service.get(), resource, observation);
                 executors.add(
-                    (geometry, scope) -> contextualizer.contextualize(observation, scope));
+                    (geometry, event, scope) ->
+                        contextualizer.contextualize(observation, event, scope));
                 continue;
               }
             }
@@ -380,40 +392,52 @@ public class CompiledDataflow {
          */
         if (componentRegistry.implementation(currentDescriptor).method != null) {
 
-          var runArguments =
-              ComponentRegistry.matchArguments(
-                  componentRegistry.implementation(currentDescriptor).method,
-                  resource,
-                  observation.getGeometry(),
-                  null,
-                  observation,
-                  observation.getObservable(),
-                  urn,
-                  call.getParameters(),
-                  call,
-                  storage,
-                  expression,
-                  lookupTable,
-                  null,
-                  storageAnnotation,
-                  scope);
-
-          if (runArguments == null) {
-            return false;
-          }
+          //          var runArguments =
+          //              ;
+          //
+          //          if (runArguments == null) {
+          //            return false;
+          //          }
 
           if (currentDescriptor.staticMethod) {
             Extensions.FunctionDescriptor finalDescriptor1 = currentDescriptor;
+            var implementation = componentRegistry.implementation(currentDescriptor);
+            var resource1 = resource;
+            if (implementation == null) {
+              return false;
+            }
             executors.add(
-                (geometry, scope) -> {
+                (geometry, event, scope) -> {
                   try {
+                    var arguments =
+                        ComponentRegistry.matchArguments(
+                            implementation.method,
+                            resource1,
+                            observation.getGeometry(),
+                            null,
+                            observation,
+                            observation.getObservable(),
+                            urn,
+                            call.getParameters(),
+                            call,
+                            storage,
+                            expression,
+                            lookupTable,
+                            null,
+                            storageAnnotation,
+                            event,
+                            scope);
+
+                    if (arguments == null) {
+                      return false;
+                    }
+
                     var context =
                         componentRegistry
                             .implementation(finalDescriptor1)
                             .method
-                            .invoke(null, runArguments.toArray());
-                    //                      setExecutionContext(context == null ? observation :
-                    // context);
+                            .invoke(null, arguments.toArray());
+
                     return true;
                   } catch (Exception e) {
                     cause = e;
@@ -423,19 +447,42 @@ public class CompiledDataflow {
                 });
           } else if (componentRegistry.implementation(currentDescriptor).mainClassInstance
               != null) {
+            var implementation = componentRegistry.implementation(currentDescriptor);
+            var resource1 = resource;
             Extensions.FunctionDescriptor finalDescriptor = currentDescriptor;
             executors.add(
-                (geometry, scope) -> {
+                (geometry, event, scope) -> {
                   try {
+                    var arguments =
+                        ComponentRegistry.matchArguments(
+                            implementation.method,
+                            resource1,
+                            observation.getGeometry(),
+                            null,
+                            observation,
+                            observation.getObservable(),
+                            urn,
+                            call.getParameters(),
+                            call,
+                            storage,
+                            expression,
+                            lookupTable,
+                            null,
+                            storageAnnotation,
+                            event,
+                            scope);
+
+                    if (arguments == null) {
+                      return false;
+                    }
+
                     var context =
                         componentRegistry
                             .implementation(finalDescriptor)
                             .method
                             .invoke(
                                 componentRegistry.implementation(finalDescriptor).mainClassInstance,
-                                runArguments.toArray());
-                    //                      setExecutionContext(context == null ? observation :
-                    // context);
+                                arguments.toArray());
                     return true;
                   } catch (Exception e) {
                     cause = e;
@@ -450,9 +497,9 @@ public class CompiledDataflow {
       if (scalarBuilder != null) {
         var scalarMapper = scalarBuilder.build();
         executors.add(
-            (geometry, scope) -> {
+            (geometry, event, scope) -> {
               try {
-                return scalarMapper.execute(geometry, scope);
+                return scalarMapper.execute(geometry, event, scope);
               } catch (Throwable e) {
                 cause = e;
                 scope.error(e /* TODO tracing parameters */);
@@ -470,7 +517,7 @@ public class CompiledDataflow {
     }
 
     @Override
-    public boolean run(Geometry geometry, ContextScope scope) {
+    public boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
       scope.send(
           Message.create(
@@ -480,7 +527,7 @@ public class CompiledDataflow {
               observation));
 
       for (var executor : executors) {
-        if (!executor.apply(geometry, scope)) {
+        if (!executor.apply(geometry, event, scope)) {
           scope.send(
               Message.create(
                   scope,

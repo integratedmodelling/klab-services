@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -69,22 +70,31 @@ public class DigitalTwinImpl implements DigitalTwin {
     private List<Throwable> failures = new ArrayList<>();
     private Graph<RuntimeAsset, RelationshipEdge> graph =
         new DefaultDirectedGraph<>(RelationshipEdge.class);
-    private Map<Observation, Contextualizer> contextualizers = new HashMap<>();
+    private Map<Observation, Executor> contextualizers = new HashMap<>();
+    private boolean primary = true; // activity isn't triggered by another
 
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
       this.activity = activity;
       this.scope = scope;
       this.graph.addVertex(activity);
       if (data != null) {
-        for (int i = 0; i < data.length; i++) {
-          if (data[i] instanceof Agent agent) {
+        for (Object datum : data) {
+          if (datum instanceof Agent agent) {
             this.graph.addVertex(agent);
             this.graph.addEdge(
                 activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));
-          } else if (data[i] instanceof Activity activity1) {
+          } else if (datum instanceof Activity activity1) {
             this.graph.addVertex(activity1);
             this.graph.addEdge(
-                activity, activity1, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
+                activity1, activity, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
+            primary = false;
+          } else if (datum instanceof Observation observation) {
+            setTarget(observation);
+          } else if (datum instanceof Dataflow dataflow) {
+            // serialize and record the dataflow with the activity
+            if (activity instanceof ActivityImpl activity1) {
+              activity1.setDescription(Utils.Dataflows.encode(dataflow, scope));
+            }
           }
         }
       }
@@ -119,8 +129,8 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     @Override
-    public void resolveWith(Observation observation, Contextualizer contextualizer) {
-      this.contextualizers.put(observation, contextualizer);
+    public void resolveWith(Observation observation, Executor executor) {
+      this.contextualizers.put(observation, executor);
     }
 
     @Override
@@ -131,13 +141,20 @@ public class DigitalTwinImpl implements DigitalTwin {
         return false;
       }
 
+      if (activity instanceof ActivityImpl activity1) {
+        activity1.setEnd(System.currentTimeMillis());
+      }
+
+      // if nothing was done, we just store the HAS_CHILD relationships that point to observations
+      boolean trivial = contextualizers.isEmpty();
+
       /*
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
        */
       try (var kgTransaction = knowledgeGraph.createTransaction()) {
 
         for (var asset : graph.vertexSet()) {
-          if (setupForStorage(asset)) {
+          if (setupForStorage(asset, trivial)) {
             kgTransaction.store(asset);
           }
         }
@@ -145,11 +162,18 @@ public class DigitalTwinImpl implements DigitalTwin {
         for (var edge : graph.edgeSet()) {
           var source = graph.getEdgeSource(edge);
           var target = graph.getEdgeTarget(edge);
+          if (trivial
+              && !(target instanceof Observation)
+              && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
+            continue;
+          }
           kgTransaction.link(source, target, edge.relationship, getRelationshipData(edge));
         }
 
-        kgTransaction.link(
-            knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD);
+        if (primary && !trivial) {
+          kgTransaction.link(
+              knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD);
+        }
 
       } catch (Exception e) {
         scope.error(e);
@@ -158,7 +182,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       for (var observation : contextualizers.keySet()) {
         scheduler.registerExecutor(
-            observation, (g, s) -> contextualizers.get(observation).run(g, s));
+            observation, (g, e, s) -> contextualizers.get(observation).run(g, e, s));
       }
 
       /* Upon successful commit, establish the ID for any target that was passed in the initialization
@@ -186,11 +210,11 @@ public class DigitalTwinImpl implements DigitalTwin {
       return ret.toArray();
     }
 
-    private boolean setupForStorage(RuntimeAsset asset) {
+    private boolean setupForStorage(RuntimeAsset asset, boolean trivial) {
       return switch (asset) {
         case Observation observation -> observation.getId() < 0;
-        case Actuator actuator -> true;
-        case Activity activity -> true;
+        case Actuator actuator -> !trivial;
+        case Activity activity -> activity.getId() < 0 && !trivial;
         default -> false;
       };
     }
@@ -212,17 +236,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
   @Override
   public Transaction transaction(Activity activity, ContextScope scope, Object... runtimeAssets) {
-    var ret = new TransactionImpl(activity, (ServiceContextScope) scope);
-    if (runtimeAssets != null) {
-      for (var asset : runtimeAssets) {
-        if (asset instanceof Observation observation) {
-          ret.setTarget(observation);
-        } else if (asset instanceof Dataflow dataflow) {
-          // TODO serialize and record with the activity
-        }
-      }
-    }
-    return ret;
+    return new TransactionImpl(activity, (ServiceContextScope) scope, runtimeAssets);
   }
 
   @Override
@@ -241,7 +255,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   }
 
   @Override
-  public boolean ingest(Data data, Observation target, ContextScope scope) {
+  public boolean ingest(Data data, Observation target, Scheduler.Event event, ContextScope scope) {
 
     if (target.getObservable().is(SemanticType.COUNTABLE)) {
       // scope contextualized to the collective observation
@@ -261,7 +275,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                                 (obs -> {
                                   // resolve any child observations, states or instances
                                   if (instance.hasStates() || instance.size() > 0) {
-                                    ingest(instance, observation, observationScope);
+                                    ingest(instance, observation, event, observationScope);
                                   }
                                 }));
                   },
@@ -292,7 +306,11 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       if (data instanceof DoubleDataImpl doubleData) {
 
-        var buffers = storage.buffers(data.geometry(), Storage.DoubleBuffer.class);
+        var buffers =
+            storage.buffers(
+                data.geometry(),
+                event == null ? null : event.getTime(),
+                Storage.DoubleBuffer.class);
 
         /* all buffers run in parallel */
         return Utils.Java.distributeComputation(

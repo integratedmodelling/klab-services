@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -509,7 +510,7 @@ public class ResourcesProvider extends BaseService
 
   @Override
   public Data contextualize(
-      Resource resource, Observation observation, @Nullable Data input, Scope scope) {
+          Resource resource, Observation observation, Scheduler.Event event, @Nullable Data input, Scope scope) {
     var adapter =
         getComponentRegistry().getAdapter(resource.getAdapterType(), resource.getVersion(), scope);
     if (adapter == null) {
@@ -525,6 +526,7 @@ public class ResourcesProvider extends BaseService
     if (!adapter.encode(
         resource,
         observation.getGeometry(),
+        event,
         builder,
         observation,
         observation.getObservable(),

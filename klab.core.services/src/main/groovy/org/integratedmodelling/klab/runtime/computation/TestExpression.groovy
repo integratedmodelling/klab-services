@@ -1,8 +1,8 @@
 package org.integratedmodelling.klab.runtime.computation
 
-import org.integratedmodelling.klab.api.data.Storage
+
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler
 import org.integratedmodelling.klab.api.geometry.Geometry
-import org.integratedmodelling.klab.api.knowledge.Observable
 import org.integratedmodelling.klab.api.knowledge.observation.Observation
 import org.integratedmodelling.klab.api.scope.ContextScope
 import org.integratedmodelling.klab.api.utils.Utils
@@ -39,12 +39,13 @@ class TestExpression extends ExpressionBase {
     }
 
     @Override
-    boolean run(Geometry geometry, ContextScope scope) {
+    boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
         /* TODO need to build the buffers here based on the geometry */
-        def selfBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__self).buffers(geometry)
-        def elevationBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__elevation).buffers(geometry)
-        def slopeBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__slope).buffers(geometry)
+        def eventTime = event == null ? null : event.time
+        def selfBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__self).buffers(geometry, eventTime)
+        def elevationBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__elevation).buffers(geometry, eventTime)
+        def slopeBuffers = scope.getDigitalTwin().getStorageManager().getStorage(__slope).buffers(geometry, eventTime)
 
         def bufferSets = Utils.Collections.transpose(selfBuffers, elevationBuffers, slopeBuffers)
 

@@ -60,29 +60,4 @@ public class KlabGroovyShell extends GroovyShell {
     return getClassLoader().parseClass(gcs);
   }
 
-//  public ExpressionBase createFromClass(Class<?> script, Binding context) throws Exception {
-//    ExpressionBase runnable = null;
-//    try {
-//      Constructor<?> constructor = script.getConstructor(Binding.class);
-//      runnable = (ExpressionBase) constructor.newInstance(context);
-//    } catch (NoSuchMethodException e) {
-//      // Fallback for non-standard "Script" classes.
-//      runnable = (ExpressionBase) script.getConstructor().newInstance();
-//      runnable.setBinding(context);
-//    }
-//    return runnable;
-//  }
-//
-//  public Object runClass(Class<?> script, Binding context) throws Exception {
-//    ExpressionBase runnable = null;
-//    try {
-//      Constructor<?> constructor = script.getConstructor(Binding.class);
-//      runnable = (ExpressionBase) constructor.newInstance(context);
-//    } catch (NoSuchMethodException e) {
-//      // Fallback for non-standard "Script" classes.
-//      runnable = (ExpressionBase) script.getConstructor().newInstance();
-//      runnable.setBinding(context);
-//    }
-//    return runnable.run();
-//  }
 }

@@ -15,7 +15,6 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     private long credits;
     private Activity.Type type;
     private String description;
-    private long id;
     private Outcome outcome;
     private String stackTrace;
     private String serviceId;
@@ -84,14 +83,6 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
     }
 
     @Override

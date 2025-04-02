@@ -44,6 +44,8 @@ protocol KlabData {
 	record DataRequest {
 		string observable;
 		string geometry;
+		long startTime;
+		long endTime;
 		array<string> resourceUrns;
 		Instance? inputData;
 	}
