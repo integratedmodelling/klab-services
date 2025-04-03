@@ -113,10 +113,11 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
 
   /**
    * The observation records the timestamps of last update due to any event that required its
-   * contextualization. Qualities of substantials have an initial 0 value to represent the "past"
-   * because substantials exists besides simulated time, so that their first state is represented by
-   * the period 0-(beginning re: time in geometry of context observation). If this is null or empty
-   * the observation hasn't been resolved yet.
+   * contextualization. Substantials and their qualities have an initial 0 value to represent the
+   * "past" - that's because substantials exists besides simulated time, so that their first state
+   * (computed when the INITIALIZATION event is received) is represented by the period 0-(beginning
+   * re: time in geometry of context observation). If this is empty the observation hasn't been
+   * resolved yet.
    *
    * @return
    */

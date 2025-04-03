@@ -89,6 +89,14 @@ public interface DigitalTwin {
         GraphModel.Relationship relationship,
         Object... data);
 
+    /**
+     * Register the current state of an asset so that it will be updated in the knowledge graph at
+     * commit.
+     *
+     * @param asset
+     */
+    void update(RuntimeAsset asset);
+
     void resolveWith(Observation observation, Executor executor);
 
     /**

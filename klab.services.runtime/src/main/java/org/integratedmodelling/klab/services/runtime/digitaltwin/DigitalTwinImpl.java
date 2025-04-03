@@ -32,12 +32,12 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
+/**
+ * TODO each digital twin should have its own logger
+ */
 public class DigitalTwinImpl implements DigitalTwin {
 
   private final KnowledgeGraphNeo4j knowledgeGraph;
@@ -64,6 +64,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
     }
 
+    private Set<RuntimeAsset> modified = new HashSet<>();
     private Observation target;
     private Activity activity;
     private ServiceContextScope scope;
@@ -129,6 +130,11 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     @Override
+    public void update(RuntimeAsset asset) {
+      modified.add(asset);
+    }
+
+    @Override
     public void resolveWith(Observation observation, Executor executor) {
       this.contextualizers.put(observation, executor);
     }
@@ -160,6 +166,10 @@ public class DigitalTwinImpl implements DigitalTwin {
           if (setupForStorage(asset, trivial)) {
             kgTransaction.store(asset);
           }
+        }
+
+        for (var asset : modified) {
+          kgTransaction.update(asset);
         }
 
         for (var edge : graph.edgeSet()) {
