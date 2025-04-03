@@ -159,7 +159,13 @@ public class CompiledDataflow {
         .values()
         .forEach(
             dependent -> {
+
               transaction.add(dependent);
+
+              if (dependent.getId() > 0) {
+                // only do this for new observations
+                return;
+              }
 
               var dependentRole = Observation.classifyRole(dependent);
 
