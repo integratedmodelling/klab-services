@@ -23,7 +23,7 @@ public class ServiceReference {
     }
     
     private boolean primary = false;
-    private KlabService.Type serviceType = KlabService.Type.LEGACY_NODE;
+    private KlabService.Type identityType = KlabService.Type.LEGACY_NODE;
     private String id;
     private Set<Permission> permissions = new HashSet<>();
     private IdentityReference partner;
@@ -237,12 +237,12 @@ public class ServiceReference {
         this.catalogs = catalogs;
     }
 
-    public KlabService.Type getServiceType() {
-        return serviceType;
+    public KlabService.Type getIdentityType() {
+        return identityType;
     }
 
-    public void setServiceType(KlabService.Type serviceType) {
-        this.serviceType = serviceType;
+    public void setIdentityType(KlabService.Type serviceType) {
+        this.identityType = serviceType;
     }
 
     /**
