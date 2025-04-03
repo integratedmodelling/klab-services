@@ -45,7 +45,7 @@ pipeline {
                 }
                 echo "${env.BRANCH_NAME} build with container tag: ${env.TAG} ${(env.DOCKER_BUILD == 0)?' with jib':''}"
                 withCredentials([usernamePassword(credentialsId: "${env.REGISTRY_CREDENTIALS}", passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
-                    sh './mvnw clean source:jar install -DskipTests -U ${env.JIB}'
+                    sh "./mvnw clean source:jar install -DskipTests -U ${env.JIB}"
                 }
             }
         }
