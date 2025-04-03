@@ -11,9 +11,11 @@ import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.branding.Branding;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -98,8 +100,15 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
      * identity. Otherwise proceed as per default. If service is certified, record the privileges
      * and adjust the service scope.
      */
-    File config = BaseService.getConfigurationDirectory(getStartupOptions());
-    config = new File(config + File.separator + "klab.cert");
+    File cert = getStartupOptions().getCertificateFile();
+    if (cert != null) {
+        KlabCertificate certificate = KlabCertificateImpl.createFromFile(cert);
+        if (!certificate.isValid()) {
+            throw new KlabAuthorizationException("Certificate is invalid: " + certificate.getInvalidityCause());
+        }
+        return authorizationManager.authenticateService(certificate, getStartupOptions());
+    }
+    File config = new File(BaseService.getConfigurationDirectory(getStartupOptions()) + File.separator + KlabCertificate.DEFAULT_SERVICE_CERTIFICATE_FILENAME);
     if (config.isFile()) {
       return authorizationManager.authenticateService(
           KlabCertificateImpl.createFromFile(config), getStartupOptions());
@@ -142,41 +151,41 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
             logDirectory + File.separator + options.getServiceType().name().toLowerCase() + ".log");
 
     try {
-      SpringApplication app = new SpringApplication(cls);
-      Map<String, Object> props = new HashMap<>();
-      props.put("klab.service.options", options);
-      props.put("server.port", "" + options.getPort());
-      props.put("spring.main.banner-mode", "off");
-      props.put("logging.file.name", logFile.toPath().toString());
-      props.put("server.servlet.contextPath", options.getContextPath());
-      props.put("spring.servlet.multipart.max-file-size", options.getMaxMultipartFileSize());
-      props.put("spring.servlet.multipart.max-request-size", options.getMaxMultipartRequestSize());
-      props.put("spring.jmx.enabled", "true");
-      props.put("management.endpoints.web.exposure.include", "hawtio,jolokia");
-      props.put("hawtio.authenticationEnabled", "false"); // FIXME FOR TESTING ONLY
-      app.setDefaultProperties(props);
-      app.run(options.getArguments());
-      //            Environment environment = this.context.getEnvironment();
-      //            setPropertiesFromEnvironment(environment);
-      System.out.println("\n" + Branding.NODE_BANNER);
-      System.out.println(
-          "\nStartup successful: "
-              + "k.LAB service "
-              + options.getContextPath().toUpperCase()
-              + " v"
-              + Version.CURRENT
-              + " on "
-              + new Date());
-      System.out.println(
-          "Capabilities: "
-              + options.getServiceHostUrl()
-              + ":"
-              + options.getPort()
-              + options.getContextPath()
-              + ServicesAPI.CAPABILITIES);
+        SpringApplication app = new SpringApplication(cls);
+        Map<String, Object> props = new HashMap<>();
+        props.put("klab.service.options", options);
+        props.put("server.port", "" + options.getPort());
+        props.put("spring.main.banner-mode", "off");
+        props.put("logging.file.name", logFile.toPath().toString());
+        props.put("server.servlet.contextPath", options.getContextPath());
+        props.put("spring.servlet.multipart.max-file-size", options.getMaxMultipartFileSize());
+        props.put("spring.servlet.multipart.max-request-size", options.getMaxMultipartRequestSize());
+        props.put("spring.jmx.enabled", "true");
+        props.put("management.endpoints.web.exposure.include", "hawtio,jolokia");
+        props.put("hawtio.authenticationEnabled", "false"); // FIXME FOR TESTING ONLY
+        app.setDefaultProperties(props);
+        app.run(options.getArguments());
+        // Environment environment = this.context.getEnvironment();
+        // setPropertiesFromEnvironment(environment);
+        System.out.println("\n" + Branding.SERVICE_BANNER);
+        System.out.println(
+                "\nStartup successful: "
+                        + "k.LAB service "
+                        + options.getContextPath().toUpperCase()
+                        + " v"
+                        + Version.CURRENT
+                        + " on "
+                        + new Date());
+        System.out.println(
+                "Capabilities: "
+                        + options.getServiceHostUrl()
+                        + ":"
+                        + options.getPort()
+                        + options.getContextPath()
+                        + ServicesAPI.CAPABILITIES);
     } catch (Throwable e) {
-      Logging.INSTANCE.error(e);
-      return false;
+        Logging.INSTANCE.error(e);
+        return false;
     }
     return true;
   }

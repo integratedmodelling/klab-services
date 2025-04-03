@@ -2,13 +2,8 @@ package org.integratedmodelling.klab.rest;
 
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 
-public class EngineAuthenticationRequest {
+public class EngineAuthenticationRequest extends AuthenticationRequest {
 
-    private String name;
-    private String email;
-    private String certificate;
-    private String key;
-    private KlabCertificate.Level level;
     private String idAgreement;
 
     private String userType;
@@ -24,24 +19,8 @@ public class EngineAuthenticationRequest {
         this.idAgreement = idAgreement;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
     public EngineAuthenticationRequest() {
         this.setLevel(KlabCertificate.Level.USER);
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
     }
 
     public String getUserType() {
@@ -50,22 +29,6 @@ public class EngineAuthenticationRequest {
 
     public void setUserType(String userType) {
         this.userType = userType;
-    }
-
-    public String getCertificate() {
-        return certificate;
-    }
-
-    public void setCertificate(String certificate) {
-        this.certificate = certificate;
-    }
-
-    public KlabCertificate.Level getLevel() {
-        return level;
-    }
-
-    public void setLevel(KlabCertificate.Level level) {
-        this.level = level;
     }
 
     @Override
@@ -115,14 +78,6 @@ public class EngineAuthenticationRequest {
         } else if (!idAgreement.equals(other.idAgreement))
             return false;
         return true;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getIdAgreement() {

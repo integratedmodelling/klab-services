@@ -9,6 +9,7 @@ public class EngineAuthenticationResponse {
 	private AuthenticatedIdentityImpl userData;
 	private HubReference hub;
 	private List<ServiceReference> nodes = new ArrayList<>();
+    private List<ServiceReference> services = new ArrayList<>();
 	private ArrayList<HubNotificationMessage> messages;
 	private String authentication; 
 
@@ -48,11 +49,12 @@ public class EngineAuthenticationResponse {
 	}
 
 	public EngineAuthenticationResponse(AuthenticatedIdentityImpl userData, HubReference hub,
-                                        Collection<ServiceReference> nodes) {
+                                        Collection<ServiceReference> nodes, Collection<ServiceReference> services) {
 		super();
 		this.userData = userData;
 		this.hub = hub;
 		this.nodes.addAll(nodes);
+        this.services.addAll(services);
 	}
 	
 	public ArrayList<HubNotificationMessage> getMessages() {
@@ -65,8 +67,8 @@ public class EngineAuthenticationResponse {
 
     @Override
     public String toString() {
-        return "EngineAuthenticationResponse [userData=" + userData + ", hub=" + hub + ", nodes=" + nodes + ", messages="
-                + messages + ", authentication=" + authentication + "]";
+        return "EngineAuthenticationResponse [userData=" + userData + ", hub=" + hub + ", nodes=" + nodes
+                + ", services=" + services + ", messages=" + messages + ", authentication=" + authentication + "]";
     }
 
     @Override
@@ -77,6 +79,7 @@ public class EngineAuthenticationResponse {
         result = prime * result + ((hub == null) ? 0 : hub.hashCode());
         result = prime * result + ((messages == null) ? 0 : messages.hashCode());
         result = prime * result + ((nodes == null) ? 0 : nodes.hashCode());
+        result = prime * result + ((services == null) ? 0 : services.hashCode());
         result = prime * result + ((userData == null) ? 0 : userData.hashCode());
         return result;
     }
@@ -110,6 +113,11 @@ public class EngineAuthenticationResponse {
                 return false;
         } else if (!nodes.equals(other.nodes))
             return false;
+        if (services == null) {
+            if (other.services != null)
+                return false;
+        } else if (!services.equals(other.services))
+            return false;
         if (userData == null) {
             if (other.userData != null)
                 return false;
@@ -119,4 +127,11 @@ public class EngineAuthenticationResponse {
     }
 
 
+    public List<ServiceReference> getServices() {
+        return services;
+    }
+
+    public void setServices(List<ServiceReference> services) {
+        this.services = services;
+    }
 }

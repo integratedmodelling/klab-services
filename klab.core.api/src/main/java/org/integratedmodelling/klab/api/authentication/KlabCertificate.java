@@ -52,10 +52,37 @@ public interface KlabCertificate {
          */
         ENGINE,
         /**
-         * This certificate authorizes a node. The only allowed level is {@link Level#INSTITUTIONAL} or
+         * This certificate authorizes a legacy node (maintained for backward compatibility).
+         * The only allowed level is {@link Level#INSTITUTIONAL} or
          * {@link Level#TEST}.
          */
         NODE,
+        /**
+         * This certificate authorizes a legacy node. The only allowed level is {@link Level#INSTITUTIONAL} or
+         * {@link Level#TEST}.
+         */
+        LEGACY_NODE,
+        /**
+         * This certificate authorizes a resources service. The only allowed level is {@link Level#INSTITUTIONAL} or
+         * {@link Level#TEST}.
+         */
+        RESOURCES,
+        /**
+         * This certificate authorizes a reasoner service. The only allowed level is {@link Level#INSTITUTIONAL} or
+         * {@link Level#TEST}.
+         */
+        REASONER,
+        /**
+         * This certificate authorizes a resolver service. The only allowed level is {@link Level#INSTITUTIONAL} or
+         * {@link Level#TEST}.
+         */
+        RESOLVER,
+        /**
+         * This certificate authorizes a runtime service. The only allowed level is {@link Level#INSTITUTIONAL} or
+         * {@link Level#TEST}.
+         */
+        RUNTIME,
+
         /**
          * This certificate authorizes a hub. The only allowed level is {@link Level#INSTITUTIONAL} or
          * {@link Level#TEST}.
@@ -71,6 +98,7 @@ public interface KlabCertificate {
 
     public static final String DEFAULT_ENGINE_CERTIFICATE_FILENAME = "klab.cert";
     public static final String DEFAULT_NODE_CERTIFICATE_FILENAME = "node.cert";
+    public static final String DEFAULT_SERVICE_CERTIFICATE_FILENAME = "service.cert";
     public static final String DEFAULT_SEMANTIC_SERVER_CERTIFICATE_FILENAME = "semantic.cert";
     public static final String DEFAULT_HUB_CERTIFICATE_FILENAME = "hub.cert";
     public static final String DEFAULT_LEVER_CERTIFICATE_FILENAME = "lever.cert";

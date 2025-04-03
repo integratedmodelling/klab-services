@@ -217,16 +217,23 @@ public enum Authentication {
                 // TODO services
                 Logging.INSTANCE.info("The following services are available to " + ret.getUsername() + ":");
 
-                for (var service : authentication.getNodes()) {
-                    if (service.getServiceType() == KlabService.Type.LEGACY_NODE) {
+                //for (var service : authentication.getNodes()) {
+                    // if (service.getServiceType() == KlabService.Type.LEGACY_NODE) {
+                    // getNodes() return only legacy nodes
                         // TODO see if we need to adapt
                         //                        Logging.INSTANCE.info("Legacy service " + service.getId()
                         //                        + " from hub " + hubNode.getId()
                         //                                + " authorized, ignored");
-                    } else {
-                        services.add(service);
-                    }
+                 //   } else {
+                 //       services.add(service);
+                 //   }
+                for (var service : authentication.getServices()) {
+                    Logging.INSTANCE.info("   " + service.getId() + " online");
+                    Logging.INSTANCE.info("      " + service.getPartner().getId() + " (" + service.getPartner().getEmail() + ")");
+                    Logging.INSTANCE.info("      " + "type: " + service.getServiceType());
+                    services.add(service);
                 }
+
                 return Pair.of(ret, services);
             }
 

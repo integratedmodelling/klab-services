@@ -41,6 +41,56 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <!-- The actual configuration is meant to be used locally. To move to JENKINS,
+                 the TAG must be added with commit and env.USERNAME. -->
+                <configuration>
+                    <from>
+                        <image>${env.REGISTRY}/${env.BASE_CONTAINER}</image>
+                        <auth>
+                            <username>${env.USERNAME}</username>
+                            <password>${env.PASSWORD}</password>
+                        </auth>
+                    </from>
+                    <to>
+                        <image>${env.REGISTRY}/${env.RESOURCES_CONTAINER}</image>
+                        <tags>
+                            <tag>${env.TAG}</tag>
+                            <tag>${env.GIT_COMMIT}</tag>
+                        </tags>
+                        <auth>
+                            <username>${env.USERNAME}</username>
+                            <password>${env.PASSWORD}</password>
+                        </auth>
+                    </to>
+                    <container>
+                        <!-- <expandClasspathDependencies>true</expandClasspathDependencies> -->
+                        <user>klab:klab</user>
+                        <jvmFlags>${jib.jvmFlags}</jvmFlags>
+                        <mainClass>org.integratedmodelling.resources.server.ResourcesServer</mainClass>
+                        <args/>
+                        <labels/>
+                    </container>
+                </configuration>
+            </plugin>
+            <!--<plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <configuration>
+                    <fork>true</fork>
+                    <mainClass>org.integratedmodelling.klab.node.NodeApplication</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>-->
         </plugins>
     </build>
     <dependencies>

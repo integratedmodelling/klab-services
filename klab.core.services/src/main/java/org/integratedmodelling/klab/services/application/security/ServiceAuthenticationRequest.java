@@ -1,65 +1,20 @@
 package org.integratedmodelling.klab.services.application.security;
 
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
+import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.rest.AuthenticationRequest;
 
-public class ServiceAuthenticationRequest {
+public class ServiceAuthenticationRequest extends AuthenticationRequest {
 
-  protected String name;
-  protected String email;
-  protected String certificate;
-  protected String key;
-  protected KlabCertificate.Level level;
-  protected String idAgreement;
+  KlabService.Type type;
 
-  public ServiceAuthenticationRequest() {
+  public ServiceAuthenticationRequest(KlabService.Type type) {
     this.setLevel(KlabCertificate.Level.INSTITUTIONAL);
+    this.type = type;
   }
 
-  public String getName() {
-    return name;
+  public KlabService.Type getType() {
+    return type;
   }
 
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public String getEmail() {
-    return email;
-  }
-
-  public void setEmail(String email) {
-    this.email = email;
-  }
-
-  public String getCertificate() {
-    return certificate;
-  }
-
-  public void setCertificate(String certificate) {
-    this.certificate = certificate;
-  }
-
-  public String getKey() {
-    return key;
-  }
-
-  public void setKey(String key) {
-    this.key = key;
-  }
-
-  public KlabCertificate.Level getLevel() {
-    return level;
-  }
-
-  public void setLevel(KlabCertificate.Level level) {
-    this.level = level;
-  }
-
-  public String getIdAgreement() {
-    return idAgreement;
-  }
-
-  public void setIdAgreement(String idAgreement) {
-    this.idAgreement = idAgreement;
-  }
 }

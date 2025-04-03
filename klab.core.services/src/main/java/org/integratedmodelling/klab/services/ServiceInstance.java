@@ -220,7 +220,7 @@ public abstract class ServiceInstance<T extends BaseService> {
             yield cs == null ? Collections.emptyList() : (Collection<T>) List.of(cs);
           }
           case ENGINE -> Collections.emptyList();
-          case LEGACY_NODE, DISCOVERY ->
+          case LEGACY_NODE, NODE, DISCOVERY ->
               throw new KlabIllegalArgumentException(
                   "Cannot ask a scope for a legacy " + "service" + " ");
         };

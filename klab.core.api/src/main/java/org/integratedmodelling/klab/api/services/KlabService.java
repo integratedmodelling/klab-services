@@ -96,7 +96,12 @@ public interface KlabService extends Service {
         /**
          * These are the pre-1.0 nodes and may or may not be used at some point in the transition to 1.0.
          */
-        LEGACY_NODE(8287);
+        LEGACY_NODE(8287),
+        /**
+         * TODO: change to LEGACY_NODE
+         * To do it, all actual node certificate must change
+         */
+        NODE(8287);
 
         public int defaultPort;
         public String defaultServicePath;
@@ -123,8 +128,7 @@ public interface KlabService extends Service {
                 case RUNTIME -> RuntimeService.class;
                 case COMMUNITY -> Community.class;
                 case ENGINE -> Engine.class;
-                case DISCOVERY -> null;
-                case LEGACY_NODE -> null;
+                case DISCOVERY, LEGACY_NODE, NODE -> null;
             };
         }
 

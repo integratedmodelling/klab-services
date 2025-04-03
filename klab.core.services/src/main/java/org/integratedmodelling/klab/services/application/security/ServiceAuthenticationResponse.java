@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.rest.AuthenticatedIdentity;
+import org.integratedmodelling.klab.rest.AuthenticatedIdentityImpl;
+import org.integratedmodelling.klab.rest.GroupImpl;
 
 /**
  * Sent by a hub to a node upon authentication. Communicates all groups and the public key for JWT
@@ -14,16 +16,16 @@ import org.integratedmodelling.klab.rest.AuthenticatedIdentity;
  */
 public class ServiceAuthenticationResponse {
 
-  private AuthenticatedIdentity userData;
+  private AuthenticatedIdentityImpl userData;
   private String authenticatingHub;
   private String publicKey;
-  private Set<Group> groups = new HashSet<>();
+  private Set<GroupImpl> groups = new HashSet<>();
 
-  public AuthenticatedIdentity getUserData() {
+  public AuthenticatedIdentityImpl getUserData() {
     return userData;
   }
 
-  public void setUserData(AuthenticatedIdentity userData) {
+  public void setUserData(AuthenticatedIdentityImpl userData) {
     this.userData = userData;
   }
 
@@ -43,20 +45,20 @@ public class ServiceAuthenticationResponse {
     this.publicKey = publicKey;
   }
 
-  public Set<Group> getGroups() {
+  public Set<GroupImpl> getGroups() {
     return groups;
   }
 
-  public void setGroups(Set<Group> groups) {
+  public void setGroups(Set<GroupImpl> groups) {
     this.groups = groups;
   }
 
   public ServiceAuthenticationResponse() {}
 
   public ServiceAuthenticationResponse(
-      AuthenticatedIdentity userData,
+          AuthenticatedIdentityImpl userData,
       String authenticatingNodeId,
-      Collection<Group> groups,
+      Collection<GroupImpl> groups,
       String publicKey) {
     super();
     this.userData = userData;
