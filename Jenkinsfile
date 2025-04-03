@@ -41,6 +41,7 @@ pipeline {
                 script {
                     jibBuild = 'jib:build -Djib.httpTimeout=180000'
                     env.DOCKER_BUILD = sh(script: "git log -1 --pretty=%B | grep -qi '\\[docker build\\]'", returnStatus: true)
+                    echo "RESULT: ${env.DOCKER_BUILD}"
                     env.JIB = (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'develop' || env.DOCKER_BUILD == 0) ? jibBuild : ''
                 }
                 echo "${env.BRANCH_NAME} build with container tag: ${env.TAG} ${(env.DOCKER_BUILD == 0)?' with jib':''}"
