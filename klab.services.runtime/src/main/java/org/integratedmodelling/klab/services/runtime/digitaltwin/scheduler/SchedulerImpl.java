@@ -270,9 +270,12 @@ public class SchedulerImpl implements Scheduler {
 
       /**
        * TODO set up the timestamps in the observation - if INIT or first, -1 to end for
-       *  substantials & their qualities, start to end for occurrents and their qualities. Otherwise
-       *  add the end (and maybe also log the black area of no/unknown change between the previous
-       *  end and the new start).
+       * substantials & their qualities, start to end for occurrents and their qualities. Otherwise
+       * add the end (and maybe also log the black area of no/unknown change between the previous
+       * end and the new start).
+       *
+       * <p>TODO also qualities may be flagged with the occurrent nature of their inherency so that
+       * the scheduler can filter the INIT event.
        */
       return true;
     }
