@@ -38,18 +38,15 @@ pipeline {
         }
         stage('Install') {
             steps {
-                script {
-                    jibBuild = 'jib:build -Djib.httpTimeout=180000'
-                    env.DOCKER_BUILD = sh(script: "git log -1 --pretty=%B | grep -qi '\\[docker build\\]'", returnStatus: true)
-                    gitlogsh = sh(script: "git log -1 --pretty=%B")
-                    echo "RESULT: ${env.DOCKER_BUILD}"
-                    echo "${gitlogsh}"
-                    env.JIB = (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'develop' || env.DOCKER_BUILD == 0) ? jibBuild : ''
-                }
-                echo "${env.BRANCH_NAME} build with container tag: ${env.TAG} ${(env.DOCKER_BUILD == 0)?' with jib':''}"
-                withCredentials([usernamePassword(credentialsId: "${env.REGISTRY_CREDENTIALS}", passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
-                    sh "./mvnw clean source:jar install -DskipTests -U ${env.JIB}"
-                }
+               script {
+                   jibBuild = 'jib:build -Djib.httpTimeout=180000'
+                   dockerBuild = sh(script: "git log -1 --pretty=%B | grep -qi '\\[docker build\\]'", returnStatus: true)
+                   env.JIB = (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'develop' || dockerBuild == 0) ? jibBuild : ''
+               }
+               echo "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
+               withCredentials([usernamePassword(credentialsId: "${env.REGISTRY_CREDENTIALS}", passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                   sh "./mvnw clean source:jar install -DskipTests -U ${env.JIB}"
+               }
             }
         }
         stage('Deploy artifacts') {
@@ -76,7 +73,7 @@ pipeline {
         }
         stage('Update services') {
             when {
-                expression { env.DOCKER_BUILD == 0 }
+                expression { env.JIB != '' }
             }
             steps {
                 sshagent(["bc3-im-services"]) {
