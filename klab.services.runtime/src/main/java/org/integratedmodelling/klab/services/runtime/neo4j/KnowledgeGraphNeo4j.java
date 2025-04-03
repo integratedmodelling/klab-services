@@ -386,7 +386,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setName(node.get("name").asString());
         instance.setObservable(reasoner.resolveObservable(node.get("observable").asString()));
         instance.setId(node.get("id").asLong());
-
+        instance.setEventTimestamps(node.get("eventTimestamps").asList(value -> value.asLong()));
+        instance.setSubstantialQuality(node.get("substantial").asBoolean(false));
+        
         var gResult =
             query(
                 "MATCH (o:Observation)-[:HAS_GEOMETRY]->(g:Geometry) WHERE o.id"

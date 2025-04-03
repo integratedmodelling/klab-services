@@ -24,6 +24,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.Scope;
 
+import java.util.List;
+
 /**
  * The interface Observation, which is the semantic equivalent of an Artifact and represents an
  * observable in the observation graph of a k.LAB context. Once created in a k.LAB session, it can
@@ -108,6 +110,17 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
   }
 
   Object getValue();
+
+  /**
+   * The observation records the timestamps of last update due to any event that required its
+   * contextualization. Qualities of substantials have an initial 0 value to represent the "past"
+   * because substantials exists besides simulated time, so that their first state is represented by
+   * the period 0-(beginning re: time in geometry of context observation). If this is null or empty
+   * the observation hasn't been resolved yet.
+   *
+   * @return
+   */
+  List<Long> getEventTimestamps();
 
   /**
    * After resolution, this will report the 0-1 coverage resolved. Before resolution this will be 0.

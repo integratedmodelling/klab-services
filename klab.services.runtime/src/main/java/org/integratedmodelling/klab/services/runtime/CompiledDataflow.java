@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -219,6 +220,12 @@ public class CompiledDataflow {
                     }
                   }
                   case DEPENDENT -> {
+
+                    if (dependent.getObservable().is(SemanticType.QUALITY)
+                        && dependent instanceof ObservationImpl obs) {
+                      obs.setSubstantialQuality(true);
+                    }
+
                     // AFFECTS and HAS_CHILD
                     transaction.link(rootObservation, dependent, GraphModel.Relationship.HAS_CHILD);
                     transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS);

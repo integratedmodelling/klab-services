@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -86,7 +87,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
               observation.getName() == null
                   ? observation.getObservable().codeName()
                   : observation.getName());
-          ret.put("updated", observation.getLastUpdate());
           ret.put("type", observation.getType().name());
           ret.put("urn", observation.getUrn());
           ret.put(
@@ -96,6 +96,10 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("semantics", observation.getObservable().getSemantics().getUrn());
           ret.put("observable", observation.getObservable().getUrn());
           ret.put("id", observation.getId());
+          ret.put("eventTimestamps", observation.getEventTimestamps());
+          if (observation instanceof ObservationImpl observation1) {
+            ret.put("substantial", observation1.isSubstantialQuality());
+          }
         }
         case Agent agent -> {
           // TODO

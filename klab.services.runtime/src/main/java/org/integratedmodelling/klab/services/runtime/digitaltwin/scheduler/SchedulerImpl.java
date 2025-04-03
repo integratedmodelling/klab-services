@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
@@ -185,30 +186,35 @@ public class SchedulerImpl implements Scheduler {
 
     // follow the dependency chain first, then execute self
     Map<Integer, List<Callable<Boolean>>> tasks = new HashMap<>();
-    for (var affected :
+    for (var affecting :
         knowledgeGraph
             .query(Observation.class, scope)
             .target(observation)
             .along(GraphModel.Relationship.AFFECTS)
             .run(scope)) {
 
+      if (checkEvent(observation, causingEvent)) {
+        continue;
+      }
+
       var relationship =
           knowledgeGraph
               .query(KnowledgeGraph.Link.class, scope)
-              .between(affected, observation, GraphModel.Relationship.AFFECTS)
+              .between(affecting, observation, GraphModel.Relationship.AFFECTS)
               .peek(scope);
 
-      transaction.link(transaction.getActivity(), affected, GraphModel.Relationship.CONTEXTUALIZED);
+      transaction.link(
+          transaction.getActivity(), affecting, GraphModel.Relationship.CONTEXTUALIZED);
 
       var sequence = 0;
-      if (relationship.isPresent()) {
+      if (relationship.isPresent()) { // it must be
         sequence =
             relationship.get().properties().get(/* TODO use formal property */ "sequence", 0);
       }
 
       tasks
           .computeIfAbsent(sequence, n -> new ArrayList<>())
-          .add(() -> contextualize(affected, geometry, scope, causingEvent, transaction));
+          .add(() -> contextualize(affecting, geometry, scope, causingEvent, transaction));
     }
 
     var sortedTasks =
@@ -268,6 +274,8 @@ public class SchedulerImpl implements Scheduler {
         }
       }
 
+      recordEvent(observation, event, transaction);
+
       /**
        * TODO set up the timestamps in the observation - if INIT or first, -1 to end for
        * substantials & their qualities, start to end for occurrents and their qualities. Otherwise
@@ -280,6 +288,25 @@ public class SchedulerImpl implements Scheduler {
       return true;
     }
     return false;
+  }
+
+  private boolean checkEvent(Observation observation, Event event) {
+    var timestamps = observation.getEventTimestamps();
+    if (event.getType() == Event.Type.INITIALIZATION
+        && observation instanceof ObservationImpl observation1
+        && observation1.isSubstantialQuality()) {
+      return !timestamps.isEmpty() && timestamps.getFirst() == 0;
+    }
+    return timestamps.getLast() >= event.getTime().getEnd().getMilliseconds();
+  }
+
+  private void recordEvent(
+      Observation observation, Event event, DigitalTwin.Transaction transaction) {
+    var timestamps = observation.getEventTimestamps();
+    if (event.getType() == Event.Type.INITIALIZATION) {
+      timestamps.add(0L);
+    }
+    timestamps.add(event.getTime().getEnd().getMilliseconds());
   }
 
   /**

@@ -451,12 +451,6 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      */
     boolean isArchetype();
 
-    /**
-     * Get the last update time in <em>context</em> time, or 0 if the context is not temporal.
-     *
-     * @return
-     */
-    long getLastUpdate();
 
     /**
      * Checks if the artifact has changed in any way during the passed temporal transition. Will
