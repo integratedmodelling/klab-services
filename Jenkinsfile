@@ -36,11 +36,16 @@ pipeline {
                 sh './mvnw clean source:jar package'
             }
         }
-        stage('Install with JIB') {
+        stage('Install') {
             steps {
-                echo "${env.BRANCH_NAME} build with container tag: ${env.TAG}"
+                script {
+                    jibBuild = 'jib:build -Djib.httpTimeout=180000'
+                    env.DOCKER_BUILD = sh(script: "git log -1 --pretty=%B | grep -qi '\\[docker build\\]'", returnStatus: true)
+                    env.JIB = (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'develop' || env.DOCKER_BUILD == 0) ? jibBuild : ''
+                }
+                echo "${env.BRANCH_NAME} build with container tag: ${env.TAG} ${(env.DOCKER_BUILD == 0)?' with jib':''}"
                 withCredentials([usernamePassword(credentialsId: "${env.REGISTRY_CREDENTIALS}", passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
-                    sh './mvnw clean source:jar install -DskipTests -U jib:build -Djib.httpTimeout=180000'
+                    sh './mvnw clean source:jar install -DskipTests -U ${env.JIB}'
                 }
             }
         }
@@ -67,10 +72,15 @@ pipeline {
             }
         }
         stage('Update services') {
+            when {
+                expression { env.DOCKER_BUILD == 0 }
+            }
             steps {
                 sshagent(["bc3-im-services"]) {
-                    sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${RESOURCE_SERVICE} --image ${REGISTRY}/${RESOURCES_CONTAINER}:${TAG} --with-registry-auth"
                     sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${REASONER_SERVICE} --image ${REGISTRY}/${REASONER_CONTAINER}:${TAG} --with-registry-auth"
+                    sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${RESOLVER_SERVICE} --image ${REGISTRY}/${RESOLVER_CONTAINER}:${TAG} --with-registry-auth"
+                    sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${RUNTIME_SERVICE} --image ${REGISTRY}/${RUNTIME_CONTAINER}:${TAG} --with-registry-auth"
+                    sh "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l bc3 ${DOCKER_HOST} docker service update ${DOCKER_STACK}_${RESOURCE_SERVICE} --image ${REGISTRY}/${RESOURCES_CONTAINER}:${TAG} --with-registry-auth"
                 }
             }
         }
