@@ -57,6 +57,7 @@ import org.integratedmodelling.klab.services.resources.lang.WorldviewValidationS
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.languages.*;
 import org.integratedmodelling.languages.api.*;
+import org.integratedmodelling.languages.kActors.Behavior;
 import org.integratedmodelling.languages.kim.Model;
 import org.integratedmodelling.languages.observable.ConceptExpression;
 import org.integratedmodelling.languages.observable.ObservableSemantics;
@@ -447,6 +448,60 @@ public class WorkspaceManager {
     }
   }
 
+  class BehaviorParser extends Parser<Behavior> {
+
+    @Inject ObservableGrammarAccess grammarAccess;
+
+    @Override
+    protected Injector createInjector() {
+      return new KActorsStandaloneSetup().createInjectorAndDoEMFRegistration();
+    }
+
+    /**
+     * Parse a concept definition into its syntactic peer, which should be inspected for errors
+     * before turning into semantics.
+     *
+     * @param conceptDefinition
+     * @return the parsed semantic expression, or null if the parser cannot make sense of it.
+     */
+    public BehaviorSyntax parseBehavior(String conceptDefinition) {
+      var result =
+              parser.parse(
+                      grammarAccess.getConceptExpressionRule(), new StringReader(conceptDefinition));
+      var ret = result.getRootASTElement();
+      if (ret instanceof Behavior parsed) {
+        return new BehaviorSyntaxImpl(
+                parsed,  languageValidationScope) {
+
+          List<String> errors = new ArrayList<>();
+
+          @Override
+          protected void logWarning(
+                  ParsedObject target, EObject object, EStructuralFeature feature, String message) {
+            getNotifications()
+                    .add(
+                            new Notification(
+                                    object,
+                                    new LanguageValidationScope.ValidationMessage(
+                                            message, -1, LanguageValidationScope.Level.WARNING)));
+          }
+
+          @Override
+          protected void logError(
+                  ParsedObject target, EObject object, EStructuralFeature feature, String message) {
+            getNotifications()
+                    .add(
+                            new Notification(
+                                    object,
+                                    new LanguageValidationScope.ValidationMessage(
+                                            message, -1, LanguageValidationScope.Level.ERROR)));
+          }
+        };
+      }
+      return null;
+    }
+  }
+
   class ObservableParser extends Parser<ObservableSequence> {
 
     @Inject ObservableGrammarAccess grammarAccess;
@@ -546,9 +601,10 @@ public class WorkspaceManager {
 
   private ObservableParser observableParser = new ObservableParser();
   private StrategyParser strategyParser = new StrategyParser();
+  private BehaviorParser behaviorParser = new BehaviorParser();
 
   private Parser<Ontology> ontologyParser =
-      new Parser<Ontology>() {
+      new Parser<>() {
         @Override
         protected Injector createInjector() {
           return new WorldviewStandaloneSetup().createInjectorAndDoEMFRegistration();
@@ -556,7 +612,7 @@ public class WorkspaceManager {
       };
 
   private Parser<Model> namespaceParser =
-      new Parser<Model>() {
+      new Parser<>() {
         @Override
         protected Injector createInjector() {
           return new KimStandaloneSetup().createInjectorAndDoEMFRegistration();
@@ -1028,6 +1084,33 @@ public class WorkspaceManager {
       _behaviorMap = new HashMap<>();
       // TODO load them from all projects in dependency order, same as ontologies; fill in the URL
       //  cache and everything
+      for (var pd : projectDescriptors.values()) {
+        if (pd.externalProject == null) {
+
+          for (var behaviorUrl :
+              pd.storage.listResources(
+                  ProjectStorage.ResourceType.APPLICATION,
+                  ProjectStorage.ResourceType.BEHAVIOR_COMPONENT,
+                  ProjectStorage.ResourceType.TESTCASE,
+                  ProjectStorage.ResourceType.BEHAVIOR)) {
+
+            try (var input = behaviorUrl.openStream()) {
+
+
+              var errors = new AtomicBoolean(false);
+              var notams = new ArrayList<Notification>();
+              var parsed = behaviorParser.parse(input, notams);
+
+            } catch (IOException e) {
+              // log error and return failure
+              scope.error(
+                      "Error loading k.Actors behavior " + behaviorUrl,
+                      Klab.ErrorCode.READ_FAILED,
+                      Klab.ErrorContext.ONTOLOGY);
+            }
+          }
+        }
+      }
     }
     return _behaviorOrder;
   }

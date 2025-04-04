@@ -44,27 +44,6 @@ public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider>
         return new ResourcesProvider(serviceScope, options);
     }
 
-    @Bean
-    public TomcatServletWebServerFactory servletContainerFactory() {
-        return new TomcatServletWebServerFactory() {
-
-            @Override
-            protected TomcatWebServer getTomcatWebServer(Tomcat tomcat) {
-
-                // TODO add the WARs for the language servers at appropriate context paths
-
-//                // webapps directory does not exist by default, needs to be created
-//                new File(tomcat.getServer().getCatalinaBase(), "webapps").mkdirs();
-//
-//                // Add a war with given context path
-//                // Can add multiple wars this way with different context paths
-//                tomcat.addWebapp("context-path", "path-to-your-war.war");
-//
-                return super.getTomcatWebServer(tomcat);
-            }
-
-        };
-    }
     public static void main(String[] args) {
         ServiceNetworkedInstance.start(ResourcesServer.class,
                 ServiceStartupOptions.create(KlabService.Type.RESOURCES, args));

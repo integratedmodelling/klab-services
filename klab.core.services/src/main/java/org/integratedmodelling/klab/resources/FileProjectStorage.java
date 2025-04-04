@@ -379,7 +379,7 @@ public class FileProjectStorage implements ProjectStorage {
                     collectResources(".kactors", "scripts", false, ret);
                 }
                 case TESTCASE -> {
-                    collectResources(".kactors", "tests", false, ret);
+                    collectResources(".kactors", "testcases", false, ret);
                 }
                 case BEHAVIOR_COMPONENT -> {
                     collectResources(".kactors", "components", false, ret);

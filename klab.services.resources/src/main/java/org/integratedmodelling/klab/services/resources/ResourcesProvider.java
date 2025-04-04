@@ -14,6 +14,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+
+import org.eclipse.xtext.ide.server.ServerLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -145,6 +147,7 @@ public class ResourcesProvider extends BaseService
    * "fair" read/write lock to ensure no reading during updates
    */
   private final ReadWriteLock updateLock = new ReentrantReadWriteLock(true);
+  private Thread lspThread;
 
   @SuppressWarnings("unchecked")
   public ResourcesProvider(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
@@ -237,6 +240,27 @@ public class ResourcesProvider extends BaseService
     if (Utils.URLs.isLocalHost(this.getUrl())
         && workspaceManager.getConfiguration().getBrokerURI() == null) {
       this.embeddedBroker = new EmbeddedBroker();
+    }
+
+    if (Utils.URLs.isLocalHost(this.getUrl())) {
+      /*
+       * TODO if local, at this point it should be enough to launch
+       *  org.eclipse.xtext.ide.server.ServerLauncher to start the LSP server for all languages on the
+       *  classpath.
+       */
+      Logging.INSTANCE.info("Starting language services for k.LAB language editors");
+      this.lspThread =
+          new Thread(
+              () -> {
+                try {
+                  ServerLauncher.main(new String[0]);
+                } catch (Throwable t) {
+                  Logging.INSTANCE.error(
+                      "Error launching LSP server: language services not available", t);
+                }
+              });
+
+      this.lspThread.start();
     }
 
     serviceScope()
@@ -510,7 +534,11 @@ public class ResourcesProvider extends BaseService
 
   @Override
   public Data contextualize(
-          Resource resource, Observation observation, Scheduler.Event event, @Nullable Data input, Scope scope) {
+      Resource resource,
+      Observation observation,
+      Scheduler.Event event,
+      @Nullable Data input,
+      Scope scope) {
     var adapter =
         getComponentRegistry().getAdapter(resource.getAdapterType(), resource.getVersion(), scope);
     if (adapter == null) {
@@ -709,6 +737,10 @@ public class ResourcesProvider extends BaseService
             Message.MessageClass.ServiceLifecycle,
             Message.MessageType.ServiceUnavailable,
             capabilities(serviceScope()));
+
+    if (this.lspThread != null) {
+      this.lspThread.interrupt();
+    }
 
     // try {
     // projectLoader.awaitTermination(secondsToWait, TimeUnit.SECONDS);
@@ -1439,10 +1471,10 @@ public class ResourcesProvider extends BaseService
        */
       if (contextScope.getHostServiceId() != null) {
         serviceContextScope.setDigitalTwin(
-                new ClientDigitalTwin(contextScope, serviceContextScope.getId()));
+            new ClientDigitalTwin(contextScope, serviceContextScope.getId()));
       } else {
         scope.warn(
-                "Registering context scope without service ID: digital twin will be inoperative");
+            "Registering context scope without service ID: digital twin will be inoperative");
       }
 
       getScopeManager()
