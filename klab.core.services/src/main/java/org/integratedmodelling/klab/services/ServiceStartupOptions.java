@@ -38,12 +38,6 @@ public class ServiceStartupOptions implements StartupOptions {
             metaVar = "<SIMPLE_STRING>")
     String nodeName = null;
 
-    //    @Option(
-    //            name = "-config",
-    //            usage = "subdirectory of standard dataDir containing configuration files",
-    //            metaVar = "<SIMPLE_STRING>")
-    //    String configurationPath = null;
-
     @Option(
             name = "-url",
             usage = "the host URL without port or context path. Communicated to clients so it must be right" +
@@ -101,12 +95,6 @@ public class ServiceStartupOptions implements StartupOptions {
      */
     private ServiceStartupOptions() {
     }
-
-    //    public static ServiceStartupOptions create(String[] args) {
-    //        var ret = new ServiceStartupOptions();
-    //        ret.initialize(args);
-    //        return ret;
-    //    }
 
     public static ServiceStartupOptions create(KlabService.Type serviceType, String[] args) {
         var ret = defaultOptions(serviceType);
@@ -217,10 +205,6 @@ public class ServiceStartupOptions implements StartupOptions {
         return port;
     }
 
-    //    public String getConfigurationPath() {
-    //        return configurationPath;
-    //    }
-
     @Override
     public boolean isHelp() {
         return help;
@@ -295,10 +279,6 @@ public class ServiceStartupOptions implements StartupOptions {
     public void setNodeName(String nodeName) {
         this.nodeName = nodeName;
     }
-
-    //    public void setConfigurationPath(String configurationPath) {
-    //        this.configurationPath = configurationPath;
-    //    }
 
     public void setServiceSecret(String serviceSecret) {
         this.serviceSecret = serviceSecret;

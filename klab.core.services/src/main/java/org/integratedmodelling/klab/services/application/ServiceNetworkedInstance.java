@@ -101,7 +101,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
      * and adjust the service scope.
      */
     File cert = getStartupOptions().getCertificateFile();
-    if (cert != null) {
+    if (cert.isFile()) {
         KlabCertificate certificate = KlabCertificateImpl.createFromFile(cert);
         if (!certificate.isValid()) {
             throw new KlabAuthorizationException("Certificate is invalid: " + certificate.getInvalidityCause());
