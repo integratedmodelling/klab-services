@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
@@ -572,6 +574,59 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
           .warn(
               "Modeler: request to set default service wasn't honored "
                   + "because the engine implementation is overridden");
+    }
+  }
+
+  @Override
+  public void shutdown(boolean shutdownLocalServices) {
+
+    engine().shutdown();
+
+    if (shutdownLocalServices) {
+      List<ServiceClient> services = new ArrayList<>();
+      for (var serviceType : List.of(KlabService.Type.RESOURCES)) {
+        for (var service : engine().serviceScope().getServices(serviceType.classify())) {
+          if (service instanceof ServiceClient serviceClient && serviceClient.isLocal()) {
+            services.add(serviceClient);
+          }
+        }
+      }
+
+      // 10 sec timeout
+      final long timeout = 10000L;
+      var ns = services.size();
+      if (ns > 0) {
+
+        Logging.INSTANCE.warn("Waiting for " + services.size() + " local services to exit");
+
+        long time = System.currentTimeMillis();
+        while (true) {
+
+          int n = 0;
+          for (var client : services) {
+            if (!client.getHttpClient().isAlive()) {
+              n++;
+            }
+          }
+
+          if (n == services.size()) {
+            Logging.INSTANCE.warn("@|green All local services have shut" + " down: exiting");
+            System.exit(0);
+          }
+
+          if ((System.currentTimeMillis() - time) > timeout) {
+            Logging.INSTANCE.error("Timeout reached: shutdown unsuccessful, continuing");
+            break;
+          }
+
+          try {
+            Thread.sleep(300);
+          } catch (InterruptedException e) {
+            Logging.INSTANCE.error("Thread exception: shutdown unsuccessful, continuing");
+            break;
+          }
+        }
+      }
     }
   }
 

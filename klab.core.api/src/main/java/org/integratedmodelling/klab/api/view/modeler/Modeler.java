@@ -145,6 +145,8 @@ public interface Modeler extends UIController {
    */
   void setCurrentContext(ContextScope context);
 
+  void shutdown(boolean shutdownLocalServices);
+
   @UIActionHandler(
       value = UIReactor.UIAction.ImportProject,
       label = "New project",

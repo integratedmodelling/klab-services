@@ -73,6 +73,7 @@ import picocli.shell.jline3.PicocliCommands.PicocliCommandsFactory;
  * <p>resources, services, statistics, report, distribution, knowledge, events, debug and context.
  */
 public enum KlabCLI {
+
   INSTANCE;
 
   private String prompt = "k.LAB> ";
