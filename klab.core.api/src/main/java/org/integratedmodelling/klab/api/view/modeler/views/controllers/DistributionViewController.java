@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.view.modeler.panels.controllers;
+package org.integratedmodelling.klab.api.view.modeler.views.controllers;
 
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.view.UIReactor;
@@ -23,7 +23,7 @@ public interface DistributionViewController extends ViewController<DistributionV
      *
      * @param distribution
      */
-    @UIEventHandler
+    @UIEventHandler(value = UIEvent.DistributionAvailable)
     void distributionAvailable(Distribution distribution);
 
     /**

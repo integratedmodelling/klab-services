@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -72,6 +73,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   private Worldview worldview;
   private AtomicReference<Status> status = new AtomicReference<>(EngineStatusImpl.inop());
   private Parameters<Setting> settings = Parameters.createSynchronized();
+  private Distribution distribution;
 
   public EngineImpl() {
     settings.put(Setting.POLLING, "on");
@@ -278,6 +280,15 @@ public class EngineImpl implements Engine, PropertyHolder {
         service =
             Authentication.INSTANCE.findService(
                 type, getUser(), authData.getFirst(), authData.getSecond(), settings);
+        var previousDistribution = this.distribution;
+        this.distribution = Authentication.INSTANCE.getDistribution();
+        if (previousDistribution == null && this.distribution != null) {
+          serviceScope()
+              .send(
+                  Message.MessageClass.EngineLifecycle,
+                  Message.MessageType.UsingDistribution,
+                  this.distribution);
+        }
       }
       if (service == null && serviceIsEssential(type)) {
         ok = false;
@@ -391,6 +402,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
 
     engineStatus.setOperational(noperational == 4);
+    engineStatus.setAvailable(noperational > 0);
 
     // if state has changed, swap and send message
     if (changes) {

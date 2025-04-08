@@ -100,6 +100,10 @@ public class Settings {
   private Setting<String> authenticationEndpoint = new Setting<String>();
   private Setting<Integer> debugPort = new Setting<>();
 
+  public Settings() {
+    this(null);
+  }
+
   public Settings(Release release) {
     startWithCLI.setValue(Boolean.TRUE);
     detectLocalHub.setValue(Boolean.FALSE);
@@ -185,7 +189,7 @@ public class Settings {
     // not used on window
 
     //        releaseUrl.setValue(Release.DEFAULT_RELEASE_URL);
-    releasePolicy.setValue(release.getName());
+    releasePolicy.setValue(release == null ? "NONE" : release.getName());
     //        selectedRelease.setValue(null);
   }
 

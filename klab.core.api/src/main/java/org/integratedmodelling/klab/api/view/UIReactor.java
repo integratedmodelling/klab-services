@@ -230,6 +230,7 @@ public interface UIReactor {
         NewProjectRequest(EventDirection.ViewToEngine, String.class),
         ImportProjectRequest(EventDirection.ViewToEngine, String.class),
         Notification(EventDirection.Bidirectional, Notification.class),
+        DistributionAvailable(EventDirection.EngineToView, Distribution.class),
         DistributionSelected(EventDirection.ViewToView, Distribution.class),
 //        ReasoningAvailable(EventDirection.EngineToView, Reasoner.Capabilities.class),
         UserAuthenticated(EventDirection.Bidirectional, UserIdentity.class),

@@ -245,7 +245,7 @@ public abstract class AbstractUIController implements UIController {
           case UsingDistribution -> {
             dispatch(
                 this,
-                UIReactor.UIEvent.DistributionSelected,
+                UIEvent.DistributionAvailable,
                 message.getPayload(Distribution.class));
           }
           //                    case ReasoningAvailable -> {
