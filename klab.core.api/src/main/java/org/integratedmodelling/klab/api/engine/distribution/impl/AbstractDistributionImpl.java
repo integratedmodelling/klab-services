@@ -19,7 +19,7 @@ import java.util.Collection;
  */
 public abstract class AbstractDistributionImpl extends PropertyBean implements Distribution {
 
-  protected static class StatusImpl implements Status {
+  public static class StatusImpl implements Status {
 
     private Product.Status developmentStatus = Product.Status.UNAVAILABLE;
     private Product.Status downloadedStatus = Product.Status.UNAVAILABLE;
@@ -68,7 +68,6 @@ public abstract class AbstractDistributionImpl extends PropertyBean implements D
   }
 
   private Collection<Product> products = new ArrayList<>();
-  protected Status status = new StatusImpl();
 
   @Override
   public Collection<Product> getProducts() {

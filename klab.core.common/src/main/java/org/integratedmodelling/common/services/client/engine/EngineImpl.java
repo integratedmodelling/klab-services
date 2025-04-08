@@ -73,7 +73,6 @@ public class EngineImpl implements Engine, PropertyHolder {
   private Worldview worldview;
   private AtomicReference<Status> status = new AtomicReference<>(EngineStatusImpl.inop());
   private Parameters<Setting> settings = Parameters.createSynchronized();
-  private Distribution distribution;
 
   public EngineImpl() {
     settings.put(Setting.POLLING, "on");
@@ -247,6 +246,14 @@ public class EngineImpl implements Engine, PropertyHolder {
         authData.getFirst());
     scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 15, TimeUnit.SECONDS);
     booted.set(true);
+
+    var distribution = Authentication.INSTANCE.getDistribution();
+    if (distribution != null) {
+      this.defaultUser.send(
+          Message.MessageClass.EngineLifecycle,
+          Message.MessageType.UsingDistribution,
+          distribution);
+    }
   }
 
   protected UserScope authenticate() {
@@ -280,15 +287,6 @@ public class EngineImpl implements Engine, PropertyHolder {
         service =
             Authentication.INSTANCE.findService(
                 type, getUser(), authData.getFirst(), authData.getSecond(), settings);
-        var previousDistribution = this.distribution;
-        this.distribution = Authentication.INSTANCE.getDistribution();
-        if (previousDistribution == null && this.distribution != null) {
-          serviceScope()
-              .send(
-                  Message.MessageClass.EngineLifecycle,
-                  Message.MessageType.UsingDistribution,
-                  this.distribution);
-        }
       }
       if (service == null && serviceIsEssential(type)) {
         ok = false;
@@ -407,6 +405,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     // if state has changed, swap and send message
     if (changes) {
       this.status.set(engineStatus);
+
       serviceScope()
           .send(
               Message.MessageClass.EngineLifecycle,
@@ -449,14 +448,6 @@ public class EngineImpl implements Engine, PropertyHolder {
             return EngineImpl.this.getServices(KlabService.Type.classify(serviceClass));
           }
         };
-
-    if (Authentication.INSTANCE.getDistribution() != null) {
-      serviceScope()
-          .send(
-              Message.MessageClass.EngineLifecycle,
-              Message.MessageType.UsingDistribution,
-              Authentication.INSTANCE.getDistribution());
-    }
 
     return ret;
   }

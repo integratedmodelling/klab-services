@@ -23,9 +23,11 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
+import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.identities.Group;
@@ -62,6 +64,9 @@ public enum Authentication {
   private final AtomicReference<Collection<String>> sshHosts = new AtomicReference<>();
   private final Set<KlabService.Type> started = EnumSet.noneOf(KlabService.Type.class);
   private DistributionImpl distribution;
+  private DistributionImpl developmentDistribution;
+  private DistributionImpl downloadedDistribution;
+  private Distribution.Status distributionStatus;
 
   /** any external credentials taken from the .klab/credentials.json file if any. */
   private Utils.FileCatalog<ExternalAuthenticationCredentials> externalCredentials;
@@ -72,8 +77,31 @@ public enum Authentication {
             Configuration.INSTANCE.getFileWithTemplate("credentials.json", "{}"),
             ExternalAuthenticationCredentials.class,
             ExternalAuthenticationCredentials.class);
+
     this.sshHosts.set(Utils.SSH.readHostFile());
-    // TODO re-read the file at regular intervals
+
+    if (DistributionImpl.isDevelopmentDistributionAvailable()) {
+      this.developmentDistribution = new DevelopmentDistributionImpl();
+    }
+
+    this.downloadedDistribution = new DistributionImpl();
+    this.distribution =
+        this.developmentDistribution == null
+            ? this.downloadedDistribution
+            : this.developmentDistribution;
+
+    var status = new AbstractDistributionImpl.StatusImpl();
+    status.setAvailableDevelopmentVersion(
+        // TODO should use the Git status
+        this.developmentDistribution == null ? Version.EMPTY_VERSION : Version.CURRENT_VERSION);
+    status.setDevelopmentStatus(
+        this.developmentDistribution == null
+            ? Product.Status.UNAVAILABLE
+            : Product.Status.UP_TO_DATE);
+
+    // TODO -- no handling for now; the downloaded distro should carry the latest version available
+
+    this.distributionStatus = status;
   }
 
   /**
@@ -253,8 +281,6 @@ public enum Authentication {
               .incrementAndGet();
         }
 
-
-
         return Pair.of(ret, services);
       }
 
@@ -331,19 +357,7 @@ public enum Authentication {
               listeners);
     }
 
-    // if we got here, we need to launch the service ourselves. We may be using a remote
-    // distribution or
-    // a development one, which takes priority. TODO use options to influence the priority here.
-    var distribution =
-        this.distribution == null
-            ? (DistributionImpl.isDevelopmentDistributionAvailable()
-                ? new DevelopmentDistributionImpl()
-                : new DistributionImpl())
-            : this.distribution;
-
     if (distribution.isAvailable() && settings.get(Engine.Setting.LAUNCH_PRODUCT, Boolean.class)) {
-
-      this.distribution = distribution;
 
       var product = distribution.findProduct(Product.ProductType.forService(serviceType));
       if (settings.get(Engine.Setting.LOG_EVENTS, Boolean.class)) {
