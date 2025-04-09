@@ -51,6 +51,13 @@
     </properties>
     <dependencies>
 
+        <!-- for TOML settings (modeler and user-level applications) -->
+        <dependency>
+            <groupId>com.electronwill.night-config</groupId>
+            <artifactId>toml</artifactId>
+            <version>3.6.0</version>
+        </dependency>
+
         <!-- this is used for testing and debugging only -->
         <dependency>
             <groupId>com.github.vlsi.mxgraph</groupId>

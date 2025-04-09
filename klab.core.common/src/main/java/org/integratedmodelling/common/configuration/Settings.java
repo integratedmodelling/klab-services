@@ -1,13 +1,17 @@
-package org.integratedmodelling.klab.api.engine.distribution;
+package org.integratedmodelling.common.configuration;
 
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.engine.distribution.Release;
 import org.integratedmodelling.klab.api.engine.distribution.impl.ProductImpl;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.util.Properties;
 
-/** FIXME straight port from ControlCenter. This is for the Engine product. */
+/**
+ * FIXME straight port from ControlCenter. This is for the Engine product. Revise for generality,
+ *  add "chapters" for services and applications, implement persistence using TOML or something
+ *  readable, and use key constants for extensibility.
+ */
 public class Settings {
 
   // Keys for customizable parameters in k.LAB properties, prefixed by lowercase product type
@@ -22,18 +26,18 @@ public class Settings {
       this.engineParameter = UNSET;
     }
 
-    Setting(String engineParameter) {
-      this(engineParameter, null);
-    }
+    //    Setting(String engineParameter) {
+    //      this(engineParameter, null);
+    //    }
 
-    Setting(String engineParameter, T value) {
+    public Setting(String engineParameter, T value) {
       this.engineParameter = engineParameter;
       this.value = value;
     }
 
-    Setting(T value) {
-      this(UNSET, value);
-    }
+    //    Setting(T value) {
+    //      this(UNSET, value);
+    //    }
 
     public void setValue(T value) {
       this.value = value;
@@ -101,9 +105,17 @@ public class Settings {
   private Setting<Integer> debugPort = new Setting<>();
 
   public Settings() {
-    this(null);
+    this((Release) null);
   }
 
+  public Settings(File settingsFile) {
+    // TODO read the file; if not existing or properties are missing, add all properties with their
+    // defaults
+  }
+
+  // TODO move to general settings with save/restore from configured file, and separate per service
+  // into chapters
+  @Deprecated
   public Settings(Release release) {
     startWithCLI.setValue(Boolean.TRUE);
     detectLocalHub.setValue(Boolean.FALSE);
@@ -113,7 +125,8 @@ public class Settings {
     resetKnowledge.setValue(Boolean.FALSE);
     resetModelerWorkspace.setValue(Boolean.FALSE);
     buildsToKeep.setValue(3);
-    maxEngineMemory.setValue(release.getProduct().getProductType().defaultMaxMemoryLimitMB());
+    maxEngineMemory.setValue(
+        release == null ? 2048 : release.getProduct().getProductType().defaultMaxMemoryLimitMB());
     productUpdateInterval.setValue(1);
     sessionIdleMaximum.setValue(7);
     maxLocalSessions.setValue(10);

@@ -104,6 +104,10 @@ public enum Authentication {
     this.distributionStatus = status;
   }
 
+  public Distribution.Status getDistributionStatus() {
+    return this.distributionStatus;
+  }
+
   /**
    * Authenticate using the default certificate if present on the filesystem, or anonymously if not.
    *

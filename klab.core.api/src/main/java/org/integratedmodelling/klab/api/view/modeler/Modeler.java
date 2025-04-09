@@ -33,7 +33,7 @@ public interface Modeler extends UIController {
 
   URL serviceUrl(String serviceId);
 
-  /** TODO move into {@link org.integratedmodelling.klab.api.engine.distribution.Settings} */
+  /** TODO move into Settings */
   public enum Option {
     UseAnsiEscapeSequences(Boolean.class);
 

@@ -2,12 +2,11 @@ package org.integratedmodelling.common.distribution;
 
 import org.apache.commons.exec.*;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.distribution.Build;
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
-import org.integratedmodelling.klab.api.engine.distribution.Settings;
+import org.integratedmodelling.common.configuration.Settings;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -17,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 public class RunningInstanceImpl implements RunningInstance {
 
