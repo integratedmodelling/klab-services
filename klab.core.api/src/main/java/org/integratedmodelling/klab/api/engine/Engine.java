@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.engine;
 
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 
@@ -114,6 +115,18 @@ public interface Engine extends KlabService {
   }
 
   /**
+   * The engine must be authenticated and have a "default" user, even if more users are created
+   * afterwards. This can be called explicitly before {@link #boot()} if the API user wants to
+   * screen the default user. If it was not called, {@link #boot()} must invoke it before anything
+   * else is done.
+   *
+   * <p>This should be callable more than once without consequences.
+   *
+   * @return
+   */
+  UserScope authenticate();
+
+  /**
    * The engine is available to boot.
    *
    * @return
@@ -127,6 +140,8 @@ public interface Engine extends KlabService {
    */
   boolean isOnline();
 
+  Distribution.Status getDistributionStatus();
+
   /**
    * Return all the user scopes currently connected to the engine.
    *
@@ -134,7 +149,21 @@ public interface Engine extends KlabService {
    */
   List<UserScope> getUsers();
 
-  // TODO UserScope login(...)
+  /**
+   * Stop any local services that were started by calling {@link #startLocalServices()} and remove
+   * them from the available services for the scopes.
+   *
+   * @return the number of services actually stopped
+   */
+  int stopLocalServices();
+
+  /**
+   * Start all available local services and return them categorized by type. The services are added
+   * to the available for the scopes.
+   *
+   * @return
+   */
+  Map<Type, KlabService> startLocalServices();
 
   /**
    * To facilitate implementations, we expose the boot and shutdown as explicitly called phases.

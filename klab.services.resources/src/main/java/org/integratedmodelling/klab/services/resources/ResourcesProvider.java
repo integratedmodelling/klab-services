@@ -242,26 +242,29 @@ public class ResourcesProvider extends BaseService
       this.embeddedBroker = new EmbeddedBroker();
     }
 
-    if (Utils.URLs.isLocalHost(this.getUrl())) {
-      /*
-       * TODO if local, at this point it should be enough to launch
-       *  org.eclipse.xtext.ide.server.ServerLauncher to start the LSP server for all languages on the
-       *  classpath.
-       */
-      Logging.INSTANCE.info("Starting language services for k.LAB language editors");
-      this.lspThread =
-          new Thread(
-              () -> {
-                try {
-                  ServerLauncher.main(new String[0]);
-                } catch (Throwable t) {
-                  Logging.INSTANCE.error(
-                      "Error launching LSP server: language services not available", t);
-                }
-              });
-
-      this.lspThread.start();
-    }
+    /*
+     * If we want the local resources service to provide LSP functionalities, uncomment this. For now it is
+     * in the Java-based modeler, but if the modeler moves to a web version this can be added.
+     */
+//    if (Utils.URLs.isLocalHost(this.getUrl())) {
+//      /*
+//       *  org.eclipse.xtext.ide.server.ServerLauncher to start the LSP server for all languages on the
+//       *  classpath.
+//       */
+//      Logging.INSTANCE.info("Starting language services for k.LAB language editors");
+//      this.lspThread =
+//          new Thread(
+//              () -> {
+//                try {
+//                  ServerLauncher.main(new String[0]);
+//                } catch (Throwable t) {
+//                  Logging.INSTANCE.error(
+//                      "Error launching LSP server: language services not available", t);
+//                }
+//              });
+//
+//      this.lspThread.start();
+//    }
 
     serviceScope()
         .send(

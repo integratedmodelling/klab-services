@@ -20,7 +20,7 @@
         <module>klab.services.runtime.server</module>
         <module>klab.services.runtime</module>
         <module>klab.services.resolver</module>
-        <module>p2</module>
+<!--        <module>p2</module>-->
         <module>klab.cli</module>
         <module>klab.modeler</module>
         <module>klab.distribution</module>

@@ -1,11 +1,13 @@
 package org.integratedmodelling.klab.api.view.modeler;
 
 import org.integratedmodelling.klab.api.data.RepositoryState;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
@@ -43,6 +45,17 @@ public interface Modeler extends UIController {
       this.payloadClass = payloadClass;
     }
   }
+
+  /**
+   * Authentication is necessary for the engine to operate. This can be called before {@link
+   * #boot()} if needed by an application's logic. If not called, the engine will be authenticated
+   * automatically on boot.
+   *
+   * @return
+   */
+  UserScope authenticate();
+
+  Distribution.Status getDistributionStatus();
 
   /**
    * Set any of the options above with passed payload, which should be validated before use.
@@ -145,7 +158,7 @@ public interface Modeler extends UIController {
    */
   void setCurrentContext(ContextScope context);
 
-  void shutdown(boolean shutdownLocalServices);
+  boolean shutdown(boolean shutdownLocalServices);
 
   @UIActionHandler(
       value = UIReactor.UIAction.ImportProject,

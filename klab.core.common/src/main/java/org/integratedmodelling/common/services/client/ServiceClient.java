@@ -1,6 +1,15 @@
 package org.integratedmodelling.common.services.client;
 
-import org.integratedmodelling.common.authentication.Authentication;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
@@ -9,7 +18,6 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -29,32 +37,17 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-
 /**
  * Common implementation of a service client, to be specialized for all service types and APIs.
  * Manages the scope and automatically enables messaging with local services.
  */
 public abstract class ServiceClient implements KlabService {
 
-  private BiConsumer<Channel, Message>[] scopeListeners;
+  private Identity identity;
   private Type serviceType;
-  private Pair<Identity, List<ServiceReference>> authentication;
   private AtomicBoolean connected = new AtomicBoolean(false);
-  //    private AtomicBoolean authorized = new AtomicBoolean(false);
   private AtomicBoolean authenticated = new AtomicBoolean(false);
   private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-  private boolean usingLocalSecret;
   private AtomicReference<ServiceStatus> status = new AtomicReference<>(ServiceStatus.offline());
   private AbstractServiceDelegatingScope scope;
   private URL url;
@@ -66,21 +59,8 @@ public abstract class ServiceClient implements KlabService {
   // should be
   // added to scope requests for talkback.
   private KlabService ownerService;
-  //    // these can be installed from the outside. TODO these should go in the scope and only there
-  //    @Deprecated
-  //    protected List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
   private boolean local;
   private Parameters<Engine.Setting> settings;
-
-  protected ServiceClient(KlabService.Type serviceType, Parameters<Engine.Setting> settings) {
-    this.settings = settings;
-    this.authentication = Authentication.INSTANCE.authenticate(settings);
-    this.serviceType = serviceType;
-    this.url = discoverService(authentication.getFirst(), authentication.getSecond(), serviceType);
-    if (this.url != null) {
-      establishConnection();
-    }
-  }
 
   public Utils.Http.Client getHttpClient() {
     return client;
@@ -96,7 +76,6 @@ public abstract class ServiceClient implements KlabService {
    *
    * @param serviceType
    * @param identity
-   * @param services
    * @param settings
    * @param ownerService
    */
@@ -104,11 +83,10 @@ public abstract class ServiceClient implements KlabService {
       KlabService.Type serviceType,
       URL url,
       Identity identity,
-      List<ServiceReference> services,
       Parameters<Engine.Setting> settings,
       KlabService ownerService) {
     this.settings = settings;
-    this.authentication = Pair.of(identity, List.of());
+    this.identity = identity;
     this.ownerService = ownerService;
     this.serviceType = serviceType;
     this.url = url;
@@ -119,32 +97,14 @@ public abstract class ServiceClient implements KlabService {
 
   protected ServiceClient(
       KlabService.Type serviceType,
-      Identity identity,
-      List<ServiceReference> services,
-      Parameters<Engine.Setting> settings) {
-    this.settings = settings;
-    this.authentication = Authentication.INSTANCE.authenticate(settings);
-    this.serviceType = serviceType;
-    this.url = discoverService(authentication.getFirst(), authentication.getSecond(), serviceType);
-    if (this.url != null) {
-      establishConnection();
-    }
-  }
-
-  @SafeVarargs
-  protected ServiceClient(
-      KlabService.Type serviceType,
       URL url,
       Identity identity,
-      Parameters<Engine.Setting> settings,
-      List<ServiceReference> services,
-      BiConsumer<Channel, Message>... listeners) {
+      Parameters<Engine.Setting> settings) {
     this.settings = settings;
-    this.authentication = Pair.of(identity, services);
+    this.identity = identity;
     this.serviceType = serviceType;
     this.url = url;
     this.local = Utils.URLs.isLocalHost(url);
-    this.scopeListeners = listeners;
     establishConnection();
   }
 
@@ -240,7 +200,7 @@ public abstract class ServiceClient implements KlabService {
    */
   protected String establishConnection() {
 
-    this.token = this.authentication.getFirst().getId();
+    this.token = this.identity.getId();
     String ret = null;
     this.client = Utils.Http.getServiceClient(token, this);
     var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
@@ -262,12 +222,12 @@ public abstract class ServiceClient implements KlabService {
     Channel channel =
         local
             ? new MessagingChannelImpl(
-                this.authentication.getFirst(), false, ownerService != null) {
+                this.identity, false, ownerService != null) {
               public String getId() {
                 return serviceId();
               }
             }
-            : new ChannelImpl(this.authentication.getFirst());
+            : new ChannelImpl(this.identity);
 
     this.scope =
         new AbstractServiceDelegatingScope(channel) {
@@ -292,11 +252,11 @@ public abstract class ServiceClient implements KlabService {
           }
         };
 
-    if (this.scopeListeners != null) {
-      for (var listener : scopeListeners) {
-        this.scope.addListener(listener);
-      }
-    }
+//    if (this.scopeListeners != null) {
+//      for (var listener : scopeListeners) {
+//        this.scope.addListener(listener);
+//      }
+//    }
 
     scheduler.scheduleAtFixedRate(this::timedTasks, 2, pollCycleSeconds, TimeUnit.SECONDS);
 

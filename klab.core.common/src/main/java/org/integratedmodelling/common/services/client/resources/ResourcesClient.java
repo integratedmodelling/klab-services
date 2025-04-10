@@ -82,16 +82,15 @@ public class ResourcesClient extends ServiceClient
 
   public ResourcesClient(
       URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
-    super(Type.RESOURCES, url, identity, List.of(), settings, owner);
+    super(Type.RESOURCES, url, identity, settings, owner);
   }
 
   public ResourcesClient(
       URL url,
       Identity identity,
-      List<ServiceReference> services,
-      Parameters<Engine.Setting> settings,
-      BiConsumer<Channel, Message>... listeners) {
-    super(Type.RESOURCES, url, identity, settings, services, listeners);
+      //      List<ServiceReference> services,
+      Parameters<Engine.Setting> settings) {
+    super(Type.RESOURCES, url, identity, settings);
   }
 
   @Override

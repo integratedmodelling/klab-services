@@ -1,22 +1,33 @@
 package org.integratedmodelling.common.services.client.engine;
 
+import java.io.InputStream;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
+import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
+import org.integratedmodelling.common.distribution.DistributionImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
+import org.integratedmodelling.common.services.client.resolver.ResolverClient;
+import org.integratedmodelling.common.services.client.resources.ResourcesClient;
+import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.engine.distribution.Product;
+import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.Urn;
-import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -29,16 +40,6 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.rest.ServiceReference;
-
-import java.io.InputStream;
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 
 /**
  * The engine runs under a user scope and uses clients for all services and in local configurations
@@ -55,30 +56,58 @@ public class EngineImpl implements Engine, PropertyHolder {
   AtomicBoolean available = new AtomicBoolean(false);
   AtomicBoolean booted = new AtomicBoolean(false);
   AtomicBoolean stopped = new AtomicBoolean(false);
-  Map<KlabService.Type, KlabService> currentServices = new HashMap<>();
-  Set<Resolver> availableResolvers = new HashSet<>();
-  Set<RuntimeService> availableRuntimeServices = new HashSet<>();
-  Set<ResourcesService> availableResourcesServices = new HashSet<>();
-  Set<Reasoner> availableReasoners = new HashSet<>();
+  Map<KlabService.Type, KlabService> currentService = new HashMap<>();
+  Map<KlabService.Type, List<KlabService>> currentServices =
+      Collections.synchronizedMap(new HashMap<>());
   UserScope defaultUser;
-  // park any listeners here before boot() to install them in the default scope.
   List<BiConsumer<Channel, Message>> scopeListeners = new ArrayList<>();
   private Pair<Identity, List<ServiceReference>> authData;
   List<UserScope> users = new ArrayList<>();
   ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-  private boolean firstCall = true;
+  //  private boolean firstCall = true;
   String serviceId = Utils.Names.shortUUID();
-  //    private boolean reasoningAvailable;
-  //    private boolean reasonerDisabled;
-  private Worldview worldview;
+  //  private Worldview worldview;
   private AtomicReference<Status> status = new AtomicReference<>(EngineStatusImpl.inop());
   private Parameters<Setting> settings = Parameters.createSynchronized();
+
+  private DistributionImpl distribution;
+  private DistributionImpl developmentDistribution;
+  private DistributionImpl downloadedDistribution;
+  private Distribution.Status distributionStatus;
 
   public EngineImpl() {
     settings.put(Setting.POLLING, "on");
     settings.put(Setting.POLLING_INTERVAL, 5);
     settings.put(Setting.LOG_EVENTS, false);
     settings.put(Setting.LAUNCH_PRODUCT, true);
+
+    if (DistributionImpl.isDevelopmentDistributionAvailable()) {
+      this.developmentDistribution = new DevelopmentDistributionImpl();
+    }
+
+    this.downloadedDistribution = new DistributionImpl();
+    this.distribution =
+        this.developmentDistribution == null
+            ? this.downloadedDistribution
+            : this.developmentDistribution;
+
+    var status = new AbstractDistributionImpl.StatusImpl();
+    status.setAvailableDevelopmentVersion(
+        // TODO should use the Git status
+        this.developmentDistribution == null ? Version.EMPTY_VERSION : Version.CURRENT_VERSION);
+    status.setDevelopmentStatus(
+        this.developmentDistribution == null
+            ? Product.Status.UNAVAILABLE
+            : Product.Status.UP_TO_DATE);
+
+    // TODO -- no handling for now; the downloaded distro should carry the latest version available
+
+    this.distributionStatus = status;
+  }
+
+  @Override
+  public Distribution.Status getDistributionStatus() {
+    return this.distributionStatus;
   }
 
   public UserScope getUser() {
@@ -88,14 +117,6 @@ public class EngineImpl implements Engine, PropertyHolder {
   @Override
   public List<UserScope> getUsers() {
     return users;
-  }
-
-  public SessionScope getCurrentSession(UserScope userScope) {
-    return null;
-  }
-
-  public ContextScope getCurrentContext(UserScope userScope) {
-    return null;
   }
 
   @Override
@@ -149,14 +170,71 @@ public class EngineImpl implements Engine, PropertyHolder {
           KlabService.Type.REASONER,
           KlabService.Type.RESOURCES
         }) {
-      for (var service : getServices(type)) {
+      for (var service : currentServices.computeIfAbsent(type, t -> new ArrayList<>())) {
         if (service instanceof ServiceClient client && client.isLocal()) {
           client.shutdown();
         }
       }
     }
+
     stopped.set(true);
+    booted.set(false);
+
     return true;
+  }
+
+  @Override
+  public int stopLocalServices() {
+    int ret = 0;
+    Map<KlabService.Type, KlabService> removed = new HashMap<>();
+    for (var type : currentServices.keySet()) {
+      for (var service : currentServices.get(type)) {
+        if (Utils.URLs.isLocalHost(service.getUrl())) {
+          if (service.shutdown()) {
+            ret++;
+          }
+          removed.put(type, service);
+        }
+      }
+    }
+    for (var type : removed.keySet()) {
+      currentServices.get(type).remove(removed.get(type));
+    }
+    return ret;
+  }
+
+  @Override
+  public Map<KlabService.Type, KlabService> startLocalServices() {
+
+    var ret = new HashMap<KlabService.Type, KlabService>();
+
+    if (distribution != null && distribution.isAvailable()) {
+
+      for (var serviceType :
+          new KlabService.Type[] {Type.RESOURCES, Type.REASONER, Type.RUNTIME, Type.RESOLVER}) {
+        var product = distribution.findProduct(Product.ProductType.forService(serviceType));
+        if (product != null) {
+          var instance = product.getInstance(defaultUser);
+          if (instance.start()) {
+            serviceScope()
+                .info(
+                    "Service is starting: will be attempting connection to locally running "
+                        + serviceType);
+            var service =
+                createLocalServiceClient(
+                    serviceType,
+                    serviceType.localServiceUrl(),
+                    serviceScope(),
+                    defaultUser.getIdentity(),
+                    settings);
+            ret.put(serviceType, service);
+            registerService(serviceType, service);
+          }
+        }
+      }
+    }
+
+    return ret;
   }
 
   @Override
@@ -175,7 +253,7 @@ public class EngineImpl implements Engine, PropertyHolder {
 
     var contextId = getUser().getService(RuntimeService.class).registerContext(contextScope);
     if (contextId != null) {
-      // TODO advertise the session to all other services that will use it. Keep only the
+      // TODO advertise the context to all other services that will use it. Keep only the
       // services that accept it.
 
     }
@@ -201,53 +279,22 @@ public class EngineImpl implements Engine, PropertyHolder {
   @Override
   public void boot() {
 
-    this.defaultUser = authenticate();
-    this.scopeListeners.add(
-        (channel, message) -> {
+    if (this.defaultUser == null) {
+      this.defaultUser = authenticate();
+    }
 
-          // basic listener for knowledge management
-          if (message.is(
-              Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorkspaceChanged)) {
-            var changes = message.getPayload(ResourceSet.class);
-            var reasoner = defaultUser.getService(Reasoner.class);
-            if (reasoner.status().isAvailable()
-                && reasoner.isExclusive()
-                && reasoner instanceof Reasoner.Admin admin) {
-              var notifications = admin.updateKnowledge(changes, getUser());
-              // send the notifications around for display
-              serviceScope()
-                  .send(
-                      Message.MessageClass.KnowledgeLifecycle,
-                      Message.MessageType.LogicalValidation,
-                      notifications);
-              if (Utils.Resources.hasErrors(notifications)) {
-                defaultUser.warn(
-                    "Worldview update caused logical" + " errors in the reasoner",
-                    UI.Interactivity.DISPLAY);
-              } else {
-                defaultUser.info("Worldview was updated in the reasoner", UI.Interactivity.DISPLAY);
-              }
-            }
-          }
-        });
     if (this.defaultUser instanceof ChannelImpl channel) {
       for (var listener : scopeListeners) {
         channel.addListener(listener);
       }
     }
-    this.users.add(this.defaultUser);
     this.defaultUser.send(
         Message.MessageClass.EngineLifecycle,
         Message.MessageType.ServiceInitializing,
         capabilities(serviceScope()));
-    this.defaultUser.send(
-        Message.MessageClass.Authorization,
-        Message.MessageType.UserAuthorized,
-        authData.getFirst());
-    scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 15, TimeUnit.SECONDS);
+    scheduler.scheduleAtFixedRate(this::timedTasks, 0, 15, TimeUnit.SECONDS);
     booted.set(true);
 
-    var distribution = Authentication.INSTANCE.getDistribution();
     if (distribution != null) {
       this.defaultUser.send(
           Message.MessageClass.EngineLifecycle,
@@ -256,9 +303,50 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
   }
 
-  protected UserScope authenticate() {
-    this.authData = Authentication.INSTANCE.authenticate(settings);
-    return createUserScope(authData);
+  @Override
+  public UserScope authenticate() {
+
+    if (this.defaultUser == null) {
+
+      this.authData = Authentication.INSTANCE.authenticate(settings);
+      this.defaultUser = createUserScope(authData);
+      this.defaultUser.send(
+          Message.MessageClass.Authorization,
+          Message.MessageType.UserAuthorized,
+          authData.getFirst());
+      this.scopeListeners.add(
+          (channel, message) -> {
+
+            // basic listener for knowledge management
+            if (message.is(
+                Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorkspaceChanged)) {
+              var changes = message.getPayload(ResourceSet.class);
+              var reasoner = defaultUser.getService(Reasoner.class);
+              if (reasoner.status().isAvailable()
+                  && reasoner.isExclusive()
+                  && reasoner instanceof Reasoner.Admin admin) {
+                var notifications = admin.updateKnowledge(changes, getUser());
+                // send the notifications around for display
+                serviceScope()
+                    .send(
+                        Message.MessageClass.KnowledgeLifecycle,
+                        Message.MessageType.LogicalValidation,
+                        notifications);
+                if (Utils.Resources.hasErrors(notifications)) {
+                  defaultUser.warn(
+                      "Worldview update caused logical" + " errors in the reasoner",
+                      UI.Interactivity.DISPLAY);
+                } else {
+                  defaultUser.info(
+                      "Worldview was updated in the reasoner", UI.Interactivity.DISPLAY);
+                }
+              }
+            }
+          });
+      this.users.add(this.defaultUser);
+    }
+
+    return this.defaultUser;
   }
 
   private void timedTasks() {
@@ -266,8 +354,6 @@ public class EngineImpl implements Engine, PropertyHolder {
     if ("off".equals(settings.get(Engine.Setting.POLLING, String.class))) {
       return;
     }
-
-    boolean wasAvailable = available.get();
 
     /*
     check all needed services; put self offline if not available or not there, online otherwise; if
@@ -279,76 +365,16 @@ public class EngineImpl implements Engine, PropertyHolder {
             KlabService.Type.RESOURCES,
             KlabService.Type.REASONER,
             KlabService.Type.RUNTIME,
-            KlabService.Type.RESOLVER,
-            KlabService.Type.COMMUNITY)) {
+            KlabService.Type.RESOLVER)) {
 
-      var service = currentServices.get(type);
-      if (service == null) {
-        service =
-            Authentication.INSTANCE.findService(
-                type, getUser(), authData.getFirst(), authData.getSecond(), settings);
-      }
-      if (service == null && serviceIsEssential(type)) {
+      var services = currentServices.computeIfAbsent(type, t -> new ArrayList<>());
+      if (services.isEmpty()) {
         ok = false;
       }
-      if (service != null) {
-        registerService(type, service);
-      }
-      firstCall = false;
+      //      firstCall = false;
     }
 
     recomputeEngineStatus();
-
-    /** Check if we have reasoning until we do */
-    /* if (!reasoningAvailable && !reasonerDisabled) {
-
-    var reasoner = serviceScope().getService(Reasoner.class);
-
-    if (reasoner != null && reasoner.status().isAvailable() && reasoner.capabilities(serviceScope()
-    ).getWorldviewId() != null) {
-
-        // reasoner is online and able
-        reasoningAvailable = true;
-        serviceScope().send(Message.MessageClass.EngineLifecycle,
-                Message.MessageType.ReasoningAvailable, reasoner.capabilities(serviceScope()));
-
-    } else if (reasoner != null && reasoner.isExclusive() && reasoner.status().isAvailable() &&
-    reasoner.capabilities(serviceScope()).getWorldviewId() == null) {
-
-        var resources = serviceScope().getService(ResourcesService.class);
-        if (resources != null && resources.status().isAvailable() && resources.capabilities
-        (serviceScope()).isWorldviewProvider() && reasoner instanceof Reasoner.Admin admin) {
-
-            var notifications = admin.loadKnowledge(this.worldview = resources.getWorldview(),
-            getUser());
-
-            serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType
-            .LogicalValidation, notifications);
-
-            if (Utils.Resources.hasErrors(notifications)) {
-                reasonerDisabled = true;
-                serviceScope().warn("Worldview loading failed: reasoner is disabled");
-            } else {
-                reasoningAvailable = true;
-                serviceScope().send(Message.MessageClass.EngineLifecycle,
-                        Message.MessageType.ReasoningAvailable,
-                        reasoner.capabilities(serviceScope()));
-                serviceScope().info("Worldview loaded into local reasoner");
-            }
-        }
-    }*/
-    //        }
-
-    // inform listeners
-    //        if (wasAvailable != ok) {
-    //            if (ok) {
-    //                serviceScope().send(Message.MessageClass.EngineLifecycle,
-    //                        Message.MessageType.ServiceAvailable, capabilities(serviceScope()));
-    //            } else {
-    //                serviceScope().send(Message.MessageClass.EngineLifecycle,
-    //                        Message.MessageType.ServiceUnavailable, capabilities(serviceScope()));
-    //            }
-    //        }
 
     available.set(ok);
   }
@@ -415,21 +441,20 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   private void registerService(KlabService.Type serviceType, KlabService service) {
-    if (!currentServices.containsKey(serviceType)) {
-      currentServices.put(serviceType, service);
-    }
-    getServices(serviceType).add(service);
+    currentServices.computeIfAbsent(serviceType, type -> new ArrayList<>()).add(service);
+    currentService.putIfAbsent(serviceType, service);
   }
 
-  /**
-   * Override to define which services must be there for the engine client to report as available.
-   * TODO currently set up for testing, default should be everything except COMMUNITY
-   */
-  protected boolean serviceIsEssential(KlabService.Type type) {
-    return type == KlabService.Type.REASONER || type == KlabService.Type.RESOURCES;
-  }
+  //  /**
+  //   * Override to define which services must be there for the engine client to report as
+  // available.
+  //   * TODO currently set up for testing, default should be everything except COMMUNITY
+  //   */
+  //  protected boolean serviceIsEssential(KlabService.Type type) {
+  //    return type == KlabService.Type.REASONER || type == KlabService.Type.RESOURCES;
+  //  }
 
-  private UserScope createUserScope(Pair<Identity, List<ServiceReference>> authData) {
+  private UserScope createUserScope(Pair<Identity, List<ServiceReference>> availableServices) {
 
     var ret =
         new ClientUserScope(
@@ -440,45 +465,100 @@ public class EngineImpl implements Engine, PropertyHolder {
                 : new BiConsumer[] {}) {
           @Override
           public <T extends KlabService> T getService(Class<T> serviceClass) {
-            return (T) currentServices.get(KlabService.Type.classify(serviceClass));
+            return (T) currentService.get(KlabService.Type.classify(serviceClass));
           }
 
           @Override
           public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-            return EngineImpl.this.getServices(KlabService.Type.classify(serviceClass));
+            return (Collection<T>)
+                currentServices.computeIfAbsent(
+                    KlabService.Type.classify(serviceClass), s -> new ArrayList<>());
           }
         };
+
+    for (var service : availableServices.getSecond()) {
+      for (var url : service.getUrls()) {
+        if (ServiceClient.readServiceStatus(url, ret) != null) {
+          ret.info(
+              "Using authenticated "
+                  + service.getIdentityType()
+                  + " service from "
+                  + service.getPartner().getId());
+          var client =
+              createLocalServiceClient(
+                  service.getIdentityType(), url, ret, availableServices.getFirst(), settings);
+          if (client != null) {
+            registerService(service.getIdentityType(), client);
+          }
+        }
+      }
+    }
 
     return ret;
   }
 
-  private <T extends KlabService> Collection<T> getServices(KlabService.Type serviceType) {
+  public final <T extends KlabService> T createLocalServiceClient(
+      KlabService.Type serviceType,
+      URL url,
+      Scope scope,
+      Identity identity,
+      //      List<ServiceReference> services,
+      Parameters<Engine.Setting> settings) {
+    T ret =
+        switch (serviceType) {
+          case REASONER -> {
+            yield (T) new ReasonerClient(url, identity, settings);
+          }
+          case RESOURCES -> {
+            yield (T) new ResourcesClient(url, identity, settings);
+          }
+          case RESOLVER -> {
+            yield (T) new ResolverClient(url, identity, settings);
+          }
+          case RUNTIME -> {
+            yield (T) new RuntimeClient(url, identity, settings);
+          }
+          //          case COMMUNITY -> {
+          //            yield (T) new CommunityClient(url, identity, services, settings, listeners);
+          //          }
+          default -> throw new IllegalStateException("Unexpected value: " + serviceType);
+        };
 
-    switch (serviceType) {
-      case REASONER -> {
-        return (Collection<T>) availableReasoners;
-      }
-      case RESOURCES -> {
-        return (Collection<T>) availableResourcesServices;
-      }
-      case RESOLVER -> {
-        return (Collection<T>) availableResolvers;
-      }
-      case RUNTIME -> {
-        return (Collection<T>) availableRuntimeServices;
-      }
-      case COMMUNITY -> {
-        var ret = currentServices.get(KlabService.Type.COMMUNITY);
-        if (ret != null) {
-          return (Collection<T>) List.of(ret);
-        }
-      }
-      case ENGINE -> {
-        return List.of((T) EngineImpl.this);
-      }
-    }
-    return Collections.emptyList();
+    scope.send(
+        Message.MessageClass.ServiceLifecycle,
+        Message.MessageType.ServiceInitializing,
+        serviceType + " service at " + serviceType.localServiceUrl());
+
+    return ret;
   }
+
+  //  private <T extends KlabService> Collection<T> getServices(KlabService.Type serviceType) {
+  //
+  //    switch (serviceType) {
+  //      case REASONER -> {
+  //        return (Collection<T>) availableReasoners;
+  //      }
+  //      case RESOURCES -> {
+  //        return (Collection<T>) availableResourcesServices;
+  //      }
+  //      case RESOLVER -> {
+  //        return (Collection<T>) availableResolvers;
+  //      }
+  //      case RUNTIME -> {
+  //        return (Collection<T>) availableRuntimeServices;
+  //      }
+  //      case COMMUNITY -> {
+  //        var ret = currentServices.get(KlabService.Type.COMMUNITY);
+  //        if (ret != null) {
+  //          return (Collection<T>) List.of(ret);
+  //        }
+  //      }
+  //      case ENGINE -> {
+  //        return List.of((T) EngineImpl.this);
+  //      }
+  //    }
+  //    return Collections.emptyList();
+  //  }
 
   @Override
   public boolean isAvailable() {
@@ -524,13 +604,13 @@ public class EngineImpl implements Engine, PropertyHolder {
   public void setDefaultService(ServiceCapabilities service) {
 
     boolean found = false;
-    var currentService = currentServices.get(service.getType());
-    if (currentService == null
-        || currentService.serviceId() == null
-        || !currentService.serviceId().equals(service.getServiceId())) {
-      for (var s : getServices(service.getType())) {
+    var current = currentService.get(service.getType());
+    if (current == null
+        || current.serviceId() == null
+        || !current.serviceId().equals(service.getServiceId())) {
+      for (var s : currentServices.computeIfAbsent(service.getType(), t -> new ArrayList<>())) {
         if (s.serviceId() != null && s.serviceId().equals(service.getServiceId())) {
-          currentServices.put(service.getType(), s);
+          currentService.put(service.getType(), s);
           found = true;
           break;
         }

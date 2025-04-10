@@ -6,6 +6,10 @@ import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
+import org.integratedmodelling.common.services.client.resolver.ResolverClient;
+import org.integratedmodelling.common.services.client.resources.ResourcesClient;
+import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -23,6 +27,7 @@ import org.integratedmodelling.klab.services.application.ServiceNetworkedInstanc
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.springframework.security.core.parameters.P;
 
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -136,10 +141,36 @@ public abstract class ServiceInstance<T extends BaseService> {
    */
   protected KlabService createDefaultService(
       KlabService.Type serviceType, Scope scope, long timeUnavailable) {
-    return Authentication.INSTANCE.findService(
-        serviceType, scope, identity.getFirst(), identity.getSecond(), settings);
+    return null;/* Authentication.INSTANCE.findService(
+        serviceType, scope, identity.getFirst(), identity.getSecond(), settings)*/
   }
 
+  private <T extends KlabService> T createLocalServiceClient(
+          KlabService.Type serviceType,
+          URL url,
+          Scope scope,
+          Identity identity,
+          Parameters<Engine.Setting> settings) {
+    return
+            switch (serviceType) {
+              case REASONER -> {
+                yield (T) new ReasonerClient(url, identity, settings);
+              }
+              case RESOURCES -> {
+                yield (T) new ResourcesClient(url, identity, settings);
+              }
+              case RESOLVER -> {
+                yield (T) new ResolverClient(url, identity, settings);
+              }
+              case RUNTIME -> {
+                yield (T) new RuntimeClient(url, identity, settings);
+              }
+              //          case COMMUNITY -> {
+              //            yield (T) new CommunityClient(url, identity, services, settings, listeners);
+              //          }
+              default -> throw new IllegalStateException("Unexpected value: " + serviceType);
+            };
+  }
   /**
    * Wait for available (online) status until the passed timeout. If the service hasn't been
    * started, this will time out without effect.

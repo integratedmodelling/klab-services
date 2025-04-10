@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
@@ -19,6 +20,8 @@ import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -93,6 +96,13 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   @Override
+  public Distribution.Status getDistributionStatus() {
+    return engine() == null
+        ? new AbstractDistributionImpl.StatusImpl()
+        : engine().getDistributionStatus();
+  }
+
+  @Override
   public void dispatch(UIReactor sender, UIEvent event, Object... payload) {
 
     // intercept some messages for bookkeeping
@@ -153,7 +163,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   @Override
   public Engine createEngine() {
-    // TODO first should locate and set the distribution
     return new EngineImpl();
   }
 
@@ -577,57 +586,76 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
   }
 
-  @Override
-  public void shutdown(boolean shutdownLocalServices) {
+  public Future<Boolean> startLocalServices() {
+    return CompletableFuture.completedFuture(false);
+  }
 
-    engine().shutdown();
+  public CompletableFuture<Boolean> shutdownLocalServices() {
 
-    if (shutdownLocalServices) {
-      List<ServiceClient> services = new ArrayList<>();
-      for (var serviceType : List.of(KlabService.Type.RESOURCES)) {
-        for (var service : engine().serviceScope().getServices(serviceType.classify())) {
-          if (service instanceof ServiceClient serviceClient && serviceClient.isLocal()) {
-            services.add(serviceClient);
-          }
-        }
-      }
-
-      // 10 sec timeout
-      final long timeout = 10000L;
-      var ns = services.size();
-      if (ns > 0) {
-
-        Logging.INSTANCE.warn("Waiting for " + services.size() + " local services to exit");
-
-        long time = System.currentTimeMillis();
-        while (true) {
-
-          int n = 0;
-          for (var client : services) {
-            if (!client.getHttpClient().isAlive()) {
-              n++;
-            }
-          }
-
-          if (n == services.size()) {
-            Logging.INSTANCE.warn("@|green All local services have shut" + " down: exiting");
-            System.exit(0);
-          }
-
-          if ((System.currentTimeMillis() - time) > timeout) {
-            Logging.INSTANCE.error("Timeout reached: shutdown unsuccessful, continuing");
-            break;
-          }
-
-          try {
-            Thread.sleep(300);
-          } catch (InterruptedException e) {
-            Logging.INSTANCE.error("Thread exception: shutdown unsuccessful, continuing");
-            break;
-          }
+    List<ServiceClient> services = new ArrayList<>();
+    for (var serviceType : List.of(KlabService.Type.RESOURCES)) {
+      for (var service : engine().serviceScope().getServices(serviceType.classify())) {
+        if (service instanceof ServiceClient serviceClient && serviceClient.isLocal()) {
+          services.add(serviceClient);
         }
       }
     }
+
+    return CompletableFuture.supplyAsync(
+        () -> {
+          // 10 sec timeout
+          final long timeout = 10000L;
+          var ns = services.size();
+          if (ns > 0) {
+
+            Logging.INSTANCE.warn("Waiting for " + services.size() + " local services to exit");
+
+            long time = System.currentTimeMillis();
+            while (true) {
+
+              int n = 0;
+              for (var client : services) {
+                if (!client.getHttpClient().isAlive()) {
+                  n++;
+                }
+              }
+
+              if (n == services.size()) {
+                Logging.INSTANCE.warn("All local services have shut down");
+                return true;
+              }
+
+              if ((System.currentTimeMillis() - time) > timeout) {
+                Logging.INSTANCE.error("Timeout reached: shutdown unsuccessful, continuing");
+                break;
+              }
+
+              try {
+                Thread.sleep(300);
+              } catch (InterruptedException e) {
+                Logging.INSTANCE.error("Thread exception: shutdown unsuccessful, continuing");
+                break;
+              }
+            }
+          }
+
+          return false;
+        });
+  }
+
+  @Override
+  public boolean shutdown(boolean shutdownLocalServices) {
+
+    if (shutdownLocalServices) {
+      try {
+        return shutdownLocalServices().thenApply(b -> engine().shutdown()).get();
+      } catch (Exception e) {
+        Logging.INSTANCE.error("Shutdown procedure terminated with errors", e);
+        return false;
+      }
+    }
+
+    return engine().shutdown();
   }
 
   @Override

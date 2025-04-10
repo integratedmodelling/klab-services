@@ -39,18 +39,14 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
   private GraphQLClient graphClient;
 
-  public RuntimeClient(
-      URL url,
-      Identity identity,
-      List<ServiceReference> services,
-      Parameters<Engine.Setting> settings,
-      BiConsumer<Channel, Message>... listeners) {
-    super(Type.RUNTIME, url, identity, settings, services, listeners);
+  public RuntimeClient(URL url, Identity identity, Parameters<Engine.Setting> settings /*,
+      BiConsumer<Channel, Message>... listeners*/) {
+    super(Type.RUNTIME, url, identity, settings);
   }
 
   public RuntimeClient(
       URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
-    super(Type.RUNTIME, url, identity, List.of(), settings, owner);
+    super(Type.RUNTIME, url, identity, settings, owner);
   }
 
   @Override

@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
@@ -151,19 +152,28 @@ public abstract class AbstractUIController implements UIController {
     return engine;
   }
 
+  public UserScope authenticate() {
+    if (engine == null) {
+      engine = createEngine();
+      if (engine instanceof EngineImpl engineClient) {
+        engineClient.addScopeListener(this::processMessage);
+      } else {
+        engine
+            .serviceScope()
+            .warn("Unrecognized engine implementation: will not communicate engine messages");
+      }
+    }
+    return engine.authenticate();
+  }
+
   /**
    * Boot the engine asynchronously after installing the needed listeners. Must be called by
    * implementors after creation.
+   *
+   * TODO this should return a future for the booted engine status
    */
   public void boot() {
-    engine = createEngine();
-    if (engine instanceof EngineImpl engineClient) {
-      engineClient.addScopeListener(this::processMessage);
-    } else {
-      engine
-          .serviceScope()
-          .warn("Engine is not default: will not communicate engine messages to UI");
-    }
+    authenticate();
     engine.boot();
   }
 
@@ -243,10 +253,7 @@ public abstract class AbstractUIController implements UIController {
             dispatch(this, UIEvent.EngineStatusChanged, message.getPayload(Engine.Status.class));
           }
           case UsingDistribution -> {
-            dispatch(
-                this,
-                UIEvent.DistributionAvailable,
-                message.getPayload(Distribution.class));
+            dispatch(this, UIEvent.DistributionAvailable, message.getPayload(Distribution.class));
           }
           //                    case ReasoningAvailable -> {
           //                        dispatch(this, UIReactor.UIEvent.ReasoningAvailable,
