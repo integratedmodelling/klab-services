@@ -659,6 +659,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   @Override
+  public Distribution getDistribution() {
+    return engine() instanceof EngineImpl engine ? engine.getDistribution() : null;
+  }
+
+  @Override
   protected Scope scope() {
     return user();
   }

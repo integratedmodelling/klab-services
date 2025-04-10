@@ -203,6 +203,10 @@ public class EngineImpl implements Engine, PropertyHolder {
     return ret;
   }
 
+  public Distribution getDistribution() {
+    return distribution;
+  }
+
   @Override
   public Map<KlabService.Type, KlabService> startLocalServices() {
 

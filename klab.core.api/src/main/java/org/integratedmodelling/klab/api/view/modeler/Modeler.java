@@ -33,7 +33,6 @@ import java.util.concurrent.Future;
  */
 public interface Modeler extends UIController {
 
-  URL serviceUrl(String serviceId);
 
   /** TODO move into Settings */
   public enum Option {
@@ -57,6 +56,14 @@ public interface Modeler extends UIController {
 
   Distribution.Status getDistributionStatus();
 
+  /**
+   * If the associated engine has a k.LAB distribution available, return it.
+   *
+   * @return the available distribution or null
+   */
+  Distribution getDistribution();
+
+  URL serviceUrl(String serviceId);
   /**
    * Set any of the options above with passed payload, which should be validated before use.
    *
