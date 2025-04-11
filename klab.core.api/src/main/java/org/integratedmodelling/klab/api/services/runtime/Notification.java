@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.api.view.UI;
+import org.integratedmodelling.klab.api.view.UIView;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -99,7 +99,7 @@ public interface Notification extends Serializable {
    *
    * @return
    */
-  UI.Interactivity getInteractivity();
+  UIView.Interactivity getInteractivity();
 
   /**
    * The document context or null.
@@ -141,7 +141,7 @@ public interface Notification extends Serializable {
     LexicalContext lexicalContext = null;
     long timestamp = System.currentTimeMillis();
     Mode mode = Mode.Normal;
-    UI.Interactivity interactivity = UI.Interactivity.BATCH;
+    UIView.Interactivity interactivity = UIView.Interactivity.BATCH;
     //        Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
 
     if (objects != null) {
@@ -151,7 +151,7 @@ public interface Notification extends Serializable {
           level = Level.Error;
         } else if (o instanceof String string) {
           message = string;
-        } else if (o instanceof UI.Interactivity inter) {
+        } else if (o instanceof UIView.Interactivity inter) {
           interactivity = inter;
         } else if (o instanceof Instant instant) {
           timestamp = instant.toEpochMilli();

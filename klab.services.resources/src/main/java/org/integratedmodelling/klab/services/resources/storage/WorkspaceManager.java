@@ -46,7 +46,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
-import org.integratedmodelling.klab.api.view.UI;
+import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -349,7 +349,7 @@ public class WorkspaceManager {
         }
       } else {
         if (notifications.isEmpty()) {
-          notifications.add(Notification.info("No repository changes", UI.Interactivity.DISPLAY));
+          notifications.add(Notification.info("No repository changes", UIView.Interactivity.DISPLAY));
         }
         var result = ResourceSet.empty();
         result.getNotifications().addAll(notifications);

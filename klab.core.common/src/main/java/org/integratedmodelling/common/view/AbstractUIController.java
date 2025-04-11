@@ -1,6 +1,5 @@
 package org.integratedmodelling.common.view;
 
-import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -37,7 +36,7 @@ import java.util.concurrent.LinkedBlockingDeque;
  */
 public abstract class AbstractUIController implements UIController {
 
-  private final UI ui;
+  private final UIView uiView;
 
   /**
    * All events that the UI reacts to. Used to filter the engine events so they are not dispatched
@@ -91,7 +90,7 @@ public abstract class AbstractUIController implements UIController {
       /*
          this would be fun
       */
-      if (sender == reactor || (sender == AbstractUIController.this && reactor == ui)) {
+      if (sender == reactor || (sender == AbstractUIController.this && reactor == uiView)) {
         return null;
       }
 
@@ -131,8 +130,8 @@ public abstract class AbstractUIController implements UIController {
     this(null);
   }
 
-  protected AbstractUIController(UI mainApplication) {
-    this.ui = mainApplication;
+  protected AbstractUIController(UIView mainApplication) {
+    this.uiView = mainApplication;
     if (mainApplication != null) {
       registerViewController(mainApplication);
     }
@@ -155,22 +154,15 @@ public abstract class AbstractUIController implements UIController {
   public UserScope authenticate() {
     if (engine == null) {
       engine = createEngine();
-      if (engine instanceof EngineImpl engineClient) {
-        engineClient.addScopeListener(this::processMessage);
-      } else {
-        engine
-            .serviceScope()
-            .warn("Unrecognized engine implementation: will not communicate engine messages");
-      }
     }
-    return engine.authenticate();
+    return (UserScope) engine.authenticate().onMessage(this::processMessage);
   }
 
   /**
    * Boot the engine asynchronously after installing the needed listeners. Must be called by
    * implementors after creation.
    *
-   * TODO this should return a future for the booted engine status
+   * <p>TODO this should return a future for the booted engine status
    */
   public void boot() {
     authenticate();
@@ -586,8 +578,8 @@ public abstract class AbstractUIController implements UIController {
       UIReactor requestingReactor, NavigableDocument document, boolean shown) {}
 
   @Override
-  public UI getUI() {
-    return ui;
+  public UIView getUI() {
+    return uiView;
   }
 
   /**

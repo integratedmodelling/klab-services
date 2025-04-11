@@ -141,36 +141,25 @@ public abstract class ServiceInstance<T extends BaseService> {
    */
   protected KlabService createDefaultService(
       KlabService.Type serviceType, Scope scope, long timeUnavailable) {
-    return null;/* Authentication.INSTANCE.findService(
-        serviceType, scope, identity.getFirst(), identity.getSecond(), settings)*/
+    return createLocalServiceClient(
+        serviceType, serviceType.localServiceUrl(), scope, serviceScope.getIdentity(), settings);
   }
 
   private <T extends KlabService> T createLocalServiceClient(
-          KlabService.Type serviceType,
-          URL url,
-          Scope scope,
-          Identity identity,
-          Parameters<Engine.Setting> settings) {
-    return
-            switch (serviceType) {
-              case REASONER -> {
-                yield (T) new ReasonerClient(url, identity, settings);
-              }
-              case RESOURCES -> {
-                yield (T) new ResourcesClient(url, identity, settings);
-              }
-              case RESOLVER -> {
-                yield (T) new ResolverClient(url, identity, settings);
-              }
-              case RUNTIME -> {
-                yield (T) new RuntimeClient(url, identity, settings);
-              }
-              //          case COMMUNITY -> {
-              //            yield (T) new CommunityClient(url, identity, services, settings, listeners);
-              //          }
-              default -> throw new IllegalStateException("Unexpected value: " + serviceType);
-            };
+      KlabService.Type serviceType,
+      URL url,
+      Scope scope,
+      Identity identity,
+      Parameters<Engine.Setting> settings) {
+    return switch (serviceType) {
+      case REASONER -> (T) new ReasonerClient(url, identity, settings);
+      case RESOURCES -> (T) new ResourcesClient(url, identity, settings);
+      case RESOLVER -> (T) new ResolverClient(url, identity, settings);
+      case RUNTIME -> (T) new RuntimeClient(url, identity, settings);
+      default -> throw new IllegalStateException("Unexpected value: " + serviceType);
+    };
   }
+
   /**
    * Wait for available (online) status until the passed timeout. If the service hasn't been
    * started, this will time out without effect.

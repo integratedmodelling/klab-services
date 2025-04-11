@@ -224,7 +224,7 @@ public interface KlabService extends Service {
 
         Metadata getMetadata();
 
-        public static ServiceStatus offline() {
+        static ServiceStatus offline() {
             return new ServiceStatusImpl();
         }
 

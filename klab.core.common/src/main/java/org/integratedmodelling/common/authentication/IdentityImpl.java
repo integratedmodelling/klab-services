@@ -7,7 +7,7 @@ public class IdentityImpl implements Identity {
     private Parameters<String> data = Parameters.create();
     private Type identityType;
     private String id;
-    private Identity parentIdentity;
+//    private Identity parentIdentity;
     private boolean authenticated;
 
     @Override
@@ -20,10 +20,10 @@ public class IdentityImpl implements Identity {
         return this.id;
     }
 
-    @Override
-    public Identity getParentIdentity() {
-        return this.parentIdentity;
-    }
+//    @Override
+//    public Identity getParentIdentity() {
+//        return this.parentIdentity;
+//    }
 
     @Override
     public boolean is(Type type) {
@@ -35,26 +35,26 @@ public class IdentityImpl implements Identity {
         return this.data;
     }
 
-    @Override
-    public <T extends Identity> T getParentIdentity(Class<T> type) {
-        return null;
-    }
+//    @Override
+//    public <T extends Identity> T getParentIdentity(Class<T> type) {
+//        return null;
+//    }
 
     public void setData(Parameters<String> data) {
         this.data = data;
     }
 
-    public void setIdentityType(Type identityType) {
-        this.identityType = identityType;
-    }
+//    public void setIdentityType(Type identityType) {
+//        this.identityType = identityType;
+//    }
 
     public void setId(String id) {
         this.id = id;
     }
 
-    public void setParentIdentity(Identity parentIdentity) {
-        this.parentIdentity = parentIdentity;
-    }
+//    public void setParentIdentity(Identity parentIdentity) {
+//        this.parentIdentity = parentIdentity;
+//    }
 
     @Override
     public boolean isAuthenticated() {

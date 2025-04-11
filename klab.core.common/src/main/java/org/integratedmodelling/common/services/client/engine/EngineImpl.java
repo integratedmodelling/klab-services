@@ -6,9 +6,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
+
 import org.integratedmodelling.common.authentication.Authentication;
-import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
 import org.integratedmodelling.common.distribution.DistributionImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
@@ -33,22 +32,13 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 /**
- * The engine runs under a user scope and uses clients for all services and in local configurations
- * can use a local distribution and deploy local services as needed (downloading products from a
- * transparently maintained {@link
- * org.integratedmodelling.klab.api.engine.distribution.Distribution}) if so desired or if online
- * services are not available. The local configuration is usable even if the engine runs in
- * anonymous scope. This implementation is lightweight (depending only on the API and commons
- * packages) and can be embedded into applications such as command-line or graphical IDEs.
+
  */
 public class EngineImpl implements Engine, PropertyHolder {
 
@@ -60,7 +50,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   Map<KlabService.Type, List<KlabService>> currentServices =
       Collections.synchronizedMap(new HashMap<>());
   UserScope defaultUser;
-  List<BiConsumer<Channel, Message>> scopeListeners = new ArrayList<>();
+  //  List<BiConsumer<Channel, Message>> scopeListeners = new ArrayList<>();
   private Pair<Identity, List<ServiceReference>> authData;
   List<UserScope> users = new ArrayList<>();
   ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
@@ -149,9 +139,9 @@ public class EngineImpl implements Engine, PropertyHolder {
     return defaultUser;
   }
 
-  public void addScopeListener(BiConsumer<Channel, Message> listener) {
-    this.scopeListeners.add(listener);
-  }
+  //  public void addScopeListener(BiConsumer<Channel, Message> listener) {
+  //    this.scopeListeners.add(listener);
+  //  }
 
   @Override
   public boolean shutdown() {
@@ -226,9 +216,9 @@ public class EngineImpl implements Engine, PropertyHolder {
                         + serviceType);
             var service =
                 createLocalServiceClient(
-                    serviceType,
+                    ServiceReference.local(serviceType, defaultUser),
                     serviceType.localServiceUrl(),
-                    serviceScope(),
+                    defaultUser,
                     defaultUser.getIdentity(),
                     settings);
             ret.put(serviceType, service);
@@ -287,11 +277,11 @@ public class EngineImpl implements Engine, PropertyHolder {
       this.defaultUser = authenticate();
     }
 
-    if (this.defaultUser instanceof ChannelImpl channel) {
-      for (var listener : scopeListeners) {
-        channel.addListener(listener);
-      }
-    }
+    //    if (this.defaultUser instanceof ChannelImpl channel) {
+    //      for (var listener : scopeListeners) {
+    //        channel.addListener(listener);
+    //      }
+    //    }
     this.defaultUser.send(
         Message.MessageClass.EngineLifecycle,
         Message.MessageType.ServiceInitializing,
@@ -318,35 +308,35 @@ public class EngineImpl implements Engine, PropertyHolder {
           Message.MessageClass.Authorization,
           Message.MessageType.UserAuthorized,
           authData.getFirst());
-      this.scopeListeners.add(
-          (channel, message) -> {
-
-            // basic listener for knowledge management
-            if (message.is(
-                Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorkspaceChanged)) {
-              var changes = message.getPayload(ResourceSet.class);
-              var reasoner = defaultUser.getService(Reasoner.class);
-              if (reasoner.status().isAvailable()
-                  && reasoner.isExclusive()
-                  && reasoner instanceof Reasoner.Admin admin) {
-                var notifications = admin.updateKnowledge(changes, getUser());
-                // send the notifications around for display
-                serviceScope()
-                    .send(
-                        Message.MessageClass.KnowledgeLifecycle,
-                        Message.MessageType.LogicalValidation,
-                        notifications);
-                if (Utils.Resources.hasErrors(notifications)) {
-                  defaultUser.warn(
-                      "Worldview update caused logical" + " errors in the reasoner",
-                      UI.Interactivity.DISPLAY);
-                } else {
-                  defaultUser.info(
-                      "Worldview was updated in the reasoner", UI.Interactivity.DISPLAY);
-                }
-              }
-            }
-          });
+//      this.scopeListeners.add(
+//          (channel, message) -> {
+//
+//            // basic listener for knowledge management
+//            if (message.is(
+//                Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorkspaceChanged)) {
+//              var changes = message.getPayload(ResourceSet.class);
+//              var reasoner = defaultUser.getService(Reasoner.class);
+//              if (reasoner.status().isAvailable()
+//                  && reasoner.isExclusive()
+//                  && reasoner instanceof Reasoner.Admin admin) {
+//                var notifications = admin.updateKnowledge(changes, getUser());
+//                // send the notifications around for display
+//                serviceScope()
+//                    .send(
+//                        Message.MessageClass.KnowledgeLifecycle,
+//                        Message.MessageType.LogicalValidation,
+//                        notifications);
+//                if (Utils.Resources.hasErrors(notifications)) {
+//                  defaultUser.warn(
+//                      "Worldview update caused logical" + " errors in the reasoner",
+//                      UI.Interactivity.DISPLAY);
+//                } else {
+//                  defaultUser.info(
+//                      "Worldview was updated in the reasoner", UI.Interactivity.DISPLAY);
+//                }
+//              }
+//            }
+//          });
       this.users.add(this.defaultUser);
     }
 
@@ -447,6 +437,8 @@ public class EngineImpl implements Engine, PropertyHolder {
   private void registerService(KlabService.Type serviceType, KlabService service) {
     currentServices.computeIfAbsent(serviceType, type -> new ArrayList<>()).add(service);
     currentService.putIfAbsent(serviceType, service);
+    // HERE install the service listener that will send any message with <serviceReference, message> to us. We in turn dispatch it to the
+    // service scope.
   }
 
   //  /**
@@ -458,15 +450,14 @@ public class EngineImpl implements Engine, PropertyHolder {
   //    return type == KlabService.Type.REASONER || type == KlabService.Type.RESOURCES;
   //  }
 
+  @SuppressWarnings("unchecked")
   private UserScope createUserScope(Pair<Identity, List<ServiceReference>> availableServices) {
 
     var ret =
-        new ClientUserScope(
-            authData.getFirst(),
-            this,
+        new ClientUserScope(authData.getFirst(), this /*,
             (serviceScope() instanceof ChannelImpl channel)
                 ? channel.listeners().toArray(new BiConsumer[] {})
-                : new BiConsumer[] {}) {
+                : new BiConsumer[] {}*/) {
           @Override
           public <T extends KlabService> T getService(Class<T> serviceClass) {
             return (T) currentService.get(KlabService.Type.classify(serviceClass));
@@ -489,11 +480,8 @@ public class EngineImpl implements Engine, PropertyHolder {
                   + " service from "
                   + service.getPartner().getId());
           var client =
-              createLocalServiceClient(
-                  service.getIdentityType(), url, ret, availableServices.getFirst(), settings);
-          if (client != null) {
-            registerService(service.getIdentityType(), client);
-          }
+              createLocalServiceClient(service, url, ret, availableServices.getFirst(), settings);
+          registerService(service.getIdentityType(), client);
         }
       }
     }
@@ -501,68 +489,36 @@ public class EngineImpl implements Engine, PropertyHolder {
     return ret;
   }
 
+  @SuppressWarnings("unchecked")
   public final <T extends KlabService> T createLocalServiceClient(
-      KlabService.Type serviceType,
+      ServiceReference serviceReference,
       URL url,
       Scope scope,
       Identity identity,
       //      List<ServiceReference> services,
       Parameters<Engine.Setting> settings) {
     T ret =
-        switch (serviceType) {
-          case REASONER -> {
-            yield (T) new ReasonerClient(url, identity, settings);
-          }
-          case RESOURCES -> {
-            yield (T) new ResourcesClient(url, identity, settings);
-          }
-          case RESOLVER -> {
-            yield (T) new ResolverClient(url, identity, settings);
-          }
-          case RUNTIME -> {
-            yield (T) new RuntimeClient(url, identity, settings);
-          }
-          //          case COMMUNITY -> {
-          //            yield (T) new CommunityClient(url, identity, services, settings, listeners);
-          //          }
-          default -> throw new IllegalStateException("Unexpected value: " + serviceType);
+        switch (serviceReference.getIdentityType()) {
+          case REASONER -> (T) new ReasonerClient(url, identity, settings);
+          case RESOURCES -> (T) new ResourcesClient(url, identity, settings);
+          case RESOLVER -> (T) new ResolverClient(url, identity, settings);
+          case RUNTIME -> (T) new RuntimeClient(url, identity, settings);
+          default ->
+              throw new IllegalStateException(
+                  "Unexpected value: " + serviceReference.getIdentityType());
         };
+
+    ((ServiceClient) ret).setProperties(serviceReference);
 
     scope.send(
         Message.MessageClass.ServiceLifecycle,
         Message.MessageType.ServiceInitializing,
-        serviceType + " service at " + serviceType.localServiceUrl());
+        serviceReference.getIdentityType()
+            + " service at "
+            + serviceReference.getIdentityType().localServiceUrl());
 
     return ret;
   }
-
-  //  private <T extends KlabService> Collection<T> getServices(KlabService.Type serviceType) {
-  //
-  //    switch (serviceType) {
-  //      case REASONER -> {
-  //        return (Collection<T>) availableReasoners;
-  //      }
-  //      case RESOURCES -> {
-  //        return (Collection<T>) availableResourcesServices;
-  //      }
-  //      case RESOLVER -> {
-  //        return (Collection<T>) availableResolvers;
-  //      }
-  //      case RUNTIME -> {
-  //        return (Collection<T>) availableRuntimeServices;
-  //      }
-  //      case COMMUNITY -> {
-  //        var ret = currentServices.get(KlabService.Type.COMMUNITY);
-  //        if (ret != null) {
-  //          return (Collection<T>) List.of(ret);
-  //        }
-  //      }
-  //      case ENGINE -> {
-  //        return List.of((T) EngineImpl.this);
-  //      }
-  //    }
-  //    return Collections.emptyList();
-  //  }
 
   @Override
   public boolean isAvailable() {
@@ -577,19 +533,6 @@ public class EngineImpl implements Engine, PropertyHolder {
   @Override
   public String configurationPath() {
     return "engine/client";
-  }
-
-  public static void main(String[] args) {
-
-    var client = new EngineImpl();
-    client.boot();
-    while (!client.isStopped()) {
-      try {
-        Thread.sleep(200);
-      } catch (InterruptedException e) {
-        return;
-      }
-    }
   }
 
   private boolean isStopped() {

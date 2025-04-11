@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.rest;
 
+import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 
 import java.net.URL;
@@ -244,5 +248,24 @@ public class ServiceReference {
 
   public void setPrimary(boolean primary) {
     this.primary = primary;
+  }
+
+  /**
+   * Produce a descriptor for a local service running on the default local URL,
+   *
+   * @param serviceType the type of service
+   * @param identity the identity owning it.
+   * @return a new descriptor
+   */
+  public static ServiceReference local(KlabService.Type serviceType, UserScope identity) {
+    var ret = new ServiceReference();
+    ret.setIdentityType(serviceType);
+    ret.setUrls(List.of(serviceType.localServiceUrl()));
+    ret.setPartner(
+        new IdentityReference(
+            identity.getUser().getUsername(),
+            identity.getUser().getUsername(),
+            TimeInstant.create().toRFC3339String()));
+    return ret;
   }
 }

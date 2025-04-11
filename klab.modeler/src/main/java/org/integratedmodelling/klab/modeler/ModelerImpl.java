@@ -43,7 +43,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.view.UI;
+import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.modeler.Modeler;
@@ -90,8 +90,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     this.workbench = Utils.YAML.load(workbenchDefinition, EngineConfiguration.class);
   }
 
-  public ModelerImpl(UI ui) {
-    super(ui);
+  public ModelerImpl(UIView uiView) {
+    super(uiView);
     // TODO read the workbench config - NAH this probably pertains to the IDE
   }
 
@@ -255,7 +255,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
 
     if (currentContext == null) {
-      user().error("cannot create an observation context: aborting", UI.Interactivity.DISPLAY);
+      user().error("cannot create an observation context: aborting", UIView.Interactivity.DISPLAY);
       return CompletableFuture.completedFuture(Observation.empty());
     }
 

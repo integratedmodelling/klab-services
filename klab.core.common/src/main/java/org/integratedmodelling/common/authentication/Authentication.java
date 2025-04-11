@@ -203,7 +203,7 @@ public enum Authentication {
 
         UserIdentityImpl ret = new UserIdentityImpl();
         ret.setId(authentication.getUserData().getToken());
-        ret.setParentIdentity(hub);
+//        ret.setParentIdentity(hub);
         ret.setEmailAddress(authentication.getUserData().getIdentity().getEmail());
         ret.setUsername(authentication.getUserData().getIdentity().getId());
         ret.setAuthenticated(true);
