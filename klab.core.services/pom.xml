@@ -150,10 +150,12 @@
             <artifactId>klab.core.common</artifactId>
             <version>${klab.version}</version>
             <exclusions>
+<!--
                 <exclusion>
                     <groupId>commons-logging</groupId>
                     <artifactId>commons-logging</artifactId>
                 </exclusion>
+-->
             </exclusions>
         </dependency>
         <dependency>
@@ -326,6 +328,7 @@
             <version>0.13.0</version>
         </dependency>
 
+<!--
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
@@ -336,11 +339,14 @@
             <artifactId>log4j-core</artifactId>
             <version>2.20.0</version>
         </dependency>
+-->
+<!--
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
             <version>2.20.0</version>
         </dependency>
+-->
 
         <!-- hns ttps://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
         <dependency>
@@ -348,13 +354,20 @@
             <artifactId>spring-boot-starter-security</artifactId>
             <exclusions>
                 <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-to-slf4j</artifactId>
-                </exclusion>
+
+                <!--
+                                <exclusion>
+                                    <groupId>ch.qos.logback</groupId>
+                                    <artifactId>logback-classic</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                    <groupId>org.apache.logging.log4j</groupId>
+                                    <artifactId>log4j-to-slf4j</artifactId>
+                                </exclusion>
+                -->
             </exclusions>
             <version>${spring-boot.version}</version>
         </dependency>
@@ -363,6 +376,11 @@
             <artifactId>spring-boot-starter-websocket</artifactId>
             <version>${spring-boot.version}</version>
             <exclusions>
+                    <exclusion>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-logging</artifactId>
+                    </exclusion>
+<!--
                 <exclusion>
                     <groupId>ch.qos.logback</groupId>
                     <artifactId>logback-classic</artifactId>
@@ -371,6 +389,7 @@
                     <groupId>org.apache.logging.log4j</groupId>
                     <artifactId>log4j-to-slf4j</artifactId>
                 </exclusion>
+-->
             </exclusions>
         </dependency>
         <dependency>
@@ -379,6 +398,11 @@
             <version>${spring-boot.version}</version>
             <exclusions>
                 <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+<!--
+                <exclusion>
                     <groupId>ch.qos.logback</groupId>
                     <artifactId>logback-classic</artifactId>
                 </exclusion>
@@ -386,14 +410,26 @@
                     <groupId>org.apache.logging.log4j</groupId>
                     <artifactId>log4j-to-slf4j</artifactId>
                 </exclusion>
+-->
             </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
             <version>${spring-boot.version}</version>
+            <exclusions>
+            <exclusion>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-logging</artifactId>
+            </exclusion>
+            </exclusions>
         </dependency>
-
+<!--
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+        </dependency>
+-->
         <!-- GEOTOOLS mess starts -->
         <!-- <dependency> <groupId>org.geotools</groupId> <artifactId>gt-metadata</artifactId>
             <version>${geotools.version}</version> </dependency> -->
@@ -566,6 +602,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-tomcat</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.pf4j</groupId>
