@@ -190,9 +190,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     private Map<Observable, Observation> makeObservationCatalog(ContextScope scope) {
       Map<Observable, Observation> ret = new HashMap<>();
-//      for (var observation : scope.query(Observation.class)) {
-//        ret.put(observation.getObservable(), observation);
-//      }
+      //      for (var observation : scope.query(Observation.class)) {
+      //        ret.put(observation.getObservable(), observation);
+      //      }
       return ret;
     }
 
@@ -402,7 +402,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public ServiceStatus status() {
     var ret = super.status();
     if (ret instanceof ServiceStatusImpl serviceStatus) {
-      serviceStatus.setConsistent(this.consistent.get());
+      serviceStatus
+          .getAdvisories()
+          .add(Notification.error("Reasoner knowledge base is inconsistent"));
     }
     return ret;
   }
@@ -3050,10 +3052,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
        */
       if (contextScope.getHostServiceId() != null) {
         serviceContextScope.setDigitalTwin(
-                new ClientDigitalTwin(contextScope, serviceContextScope.getId()));
+            new ClientDigitalTwin(contextScope, serviceContextScope.getId()));
       } else {
         scope.warn(
-                "Registering context scope without service ID: digital twin will be inoperative");
+            "Registering context scope without service ID: digital twin will be inoperative");
       }
 
       getScopeManager()

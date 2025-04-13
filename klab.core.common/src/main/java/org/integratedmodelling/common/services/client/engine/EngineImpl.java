@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.integratedmodelling.common.authentication.Authentication;
@@ -37,9 +38,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
-/**
-
- */
+/** */
 public class EngineImpl implements Engine, PropertyHolder {
 
   AtomicBoolean online = new AtomicBoolean(false);
@@ -173,24 +172,45 @@ public class EngineImpl implements Engine, PropertyHolder {
     return true;
   }
 
+  /**
+   * FIXME blocks until all services have ended. Should do better and just report better info
+   * through the engine status.
+   *
+   * @return
+   */
   @Override
   public int stopLocalServices() {
-    int ret = 0;
-    Map<KlabService.Type, KlabService> removed = new HashMap<>();
+
+    AtomicInteger ret = new AtomicInteger(0);
+    List<Callable<Boolean>> tasks = new ArrayList<>();
     for (var type : currentServices.keySet()) {
       for (var service : currentServices.get(type)) {
         if (Utils.URLs.isLocalHost(service.getUrl())) {
-          if (service.shutdown()) {
-            ret++;
-          }
-          removed.put(type, service);
+          tasks.add(
+              () -> {
+                if (service.shutdown()) {
+                  currentServices.get(type).remove(service);
+                  ret.incrementAndGet();
+                  return true;
+                }
+                return false;
+              });
         }
       }
     }
-    for (var type : removed.keySet()) {
-      currentServices.get(type).remove(removed.get(type));
+
+    if (!tasks.isEmpty()) {
+      try (var executor = Executors.newFixedThreadPool(tasks.size())) {
+        // FIXME just use submit and add the maintenance logic on future termination. Return the
+        //  number of services BEING STOPPED. The status will inform as the shutdown proceeds.
+        executor.invokeAll(tasks);
+        // TODO redefine the current service
+      } catch (InterruptedException e) {
+        return -1;
+      }
     }
-    return ret;
+
+    return ret.get();
   }
 
   public Distribution getDistribution() {
@@ -308,35 +328,36 @@ public class EngineImpl implements Engine, PropertyHolder {
           Message.MessageClass.Authorization,
           Message.MessageType.UserAuthorized,
           authData.getFirst());
-//      this.scopeListeners.add(
-//          (channel, message) -> {
-//
-//            // basic listener for knowledge management
-//            if (message.is(
-//                Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorkspaceChanged)) {
-//              var changes = message.getPayload(ResourceSet.class);
-//              var reasoner = defaultUser.getService(Reasoner.class);
-//              if (reasoner.status().isAvailable()
-//                  && reasoner.isExclusive()
-//                  && reasoner instanceof Reasoner.Admin admin) {
-//                var notifications = admin.updateKnowledge(changes, getUser());
-//                // send the notifications around for display
-//                serviceScope()
-//                    .send(
-//                        Message.MessageClass.KnowledgeLifecycle,
-//                        Message.MessageType.LogicalValidation,
-//                        notifications);
-//                if (Utils.Resources.hasErrors(notifications)) {
-//                  defaultUser.warn(
-//                      "Worldview update caused logical" + " errors in the reasoner",
-//                      UI.Interactivity.DISPLAY);
-//                } else {
-//                  defaultUser.info(
-//                      "Worldview was updated in the reasoner", UI.Interactivity.DISPLAY);
-//                }
-//              }
-//            }
-//          });
+      //      this.scopeListeners.add(
+      //          (channel, message) -> {
+      //
+      //            // basic listener for knowledge management
+      //            if (message.is(
+      //                Message.MessageClass.KnowledgeLifecycle,
+      // Message.MessageType.WorkspaceChanged)) {
+      //              var changes = message.getPayload(ResourceSet.class);
+      //              var reasoner = defaultUser.getService(Reasoner.class);
+      //              if (reasoner.status().isAvailable()
+      //                  && reasoner.isExclusive()
+      //                  && reasoner instanceof Reasoner.Admin admin) {
+      //                var notifications = admin.updateKnowledge(changes, getUser());
+      //                // send the notifications around for display
+      //                serviceScope()
+      //                    .send(
+      //                        Message.MessageClass.KnowledgeLifecycle,
+      //                        Message.MessageType.LogicalValidation,
+      //                        notifications);
+      //                if (Utils.Resources.hasErrors(notifications)) {
+      //                  defaultUser.warn(
+      //                      "Worldview update caused logical" + " errors in the reasoner",
+      //                      UI.Interactivity.DISPLAY);
+      //                } else {
+      //                  defaultUser.info(
+      //                      "Worldview was updated in the reasoner", UI.Interactivity.DISPLAY);
+      //                }
+      //              }
+      //            }
+      //          });
       this.users.add(this.defaultUser);
     }
 
@@ -365,7 +386,6 @@ public class EngineImpl implements Engine, PropertyHolder {
       if (services.isEmpty()) {
         ok = false;
       }
-      //      firstCall = false;
     }
 
     recomputeEngineStatus();
@@ -437,7 +457,8 @@ public class EngineImpl implements Engine, PropertyHolder {
   private void registerService(KlabService.Type serviceType, KlabService service) {
     currentServices.computeIfAbsent(serviceType, type -> new ArrayList<>()).add(service);
     currentService.putIfAbsent(serviceType, service);
-    // HERE install the service listener that will send any message with <serviceReference, message> to us. We in turn dispatch it to the
+    // HERE install the service listener that will send any message with <serviceReference, message>
+    // to us. We in turn dispatch it to the
     // service scope.
   }
 

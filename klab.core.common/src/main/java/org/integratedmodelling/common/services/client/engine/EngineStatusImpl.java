@@ -47,4 +47,14 @@ public class EngineStatusImpl extends ServiceStatusImpl implements Engine.Status
   public void setConnectedUsernames(Set<String> connectedUsernames) {
     this.connectedUsernames = connectedUsernames;
   }
+
+  @Override
+  public String toString() {
+
+    var ret = "[ENGINE available=" + isAvailable() + ", busy=" + isBusy();
+    for (var status : servicesStatus.keySet()) {
+      ret += "\n  " + status + "=" + servicesStatus.get(status);
+    }
+    return ret + "\n]";
+  }
 }

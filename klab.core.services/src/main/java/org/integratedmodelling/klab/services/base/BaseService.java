@@ -69,6 +69,7 @@ public abstract class BaseService implements KlabService {
   private boolean operational;
   private ComponentRegistry componentRegister;
   private String instanceKey = Utils.Names.newName();
+  private long bootTime = System.currentTimeMillis();
 
   protected Parameters<Engine.Setting> settingsForSlaveServices = Parameters.createSynchronized();
 
@@ -213,8 +214,8 @@ public abstract class BaseService implements KlabService {
     ret.setServiceType(serviceType());
     ret.setAvailable(initialized && serviceScope().isAvailable());
     ret.setBusy(serviceScope().isBusy());
-    ret.setLocality(serviceScope().getLocality());
     ret.setOperational(operational);
+    ret.setUptimeMs(System.currentTimeMillis() - this.bootTime);
     return ret;
   }
 

@@ -400,6 +400,7 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
 
     @Override
     public void run() {
+      // FIXME should just call it because the stop call should be asynchronous.
       Thread.ofPlatform().start(() -> KlabCLI.INSTANCE.engine().stopLocalServices());
     }
   }

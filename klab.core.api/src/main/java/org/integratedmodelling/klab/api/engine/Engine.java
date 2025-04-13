@@ -88,10 +88,10 @@ public interface Engine extends KlabService {
   }
 
   /**
-   * Comprehensive engine status is kept up to date by polling or listening to services. Whenever
-   * the status changes, either because of service lifecycle or because of the user choosing a
-   * different service as the current one, a message is sent (intercepted by the modeler and also
-   * sent to the UI).
+   * Comprehensive engine status is kept up to date by polling or listening to local services.
+   * Whenever the status changes, either because of service lifecycle or because of the user
+   * choosing a different service as the current one, a message is sent (intercepted by the modeler
+   * and also sent to the UI).
    */
   interface Status extends ServiceStatus {
 
@@ -118,6 +118,7 @@ public interface Engine extends KlabService {
      * @return
      */
     Map<Type, ServiceCapabilities> getServicesCapabilities();
+
   }
 
   /**

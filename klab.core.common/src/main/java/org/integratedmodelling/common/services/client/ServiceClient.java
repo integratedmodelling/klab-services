@@ -46,7 +46,7 @@ public abstract class ServiceClient implements KlabService {
   private Identity identity;
   private Type serviceType;
   private AtomicBoolean connected = new AtomicBoolean(false);
-  private AtomicBoolean authenticated = new AtomicBoolean(false);
+  private AtomicBoolean shutdown = new AtomicBoolean(false);
   private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
   private AtomicReference<ServiceStatus> status = new AtomicReference<>(ServiceStatus.offline());
   private AbstractServiceDelegatingScope scope;
@@ -108,64 +108,66 @@ public abstract class ServiceClient implements KlabService {
     establishConnection();
   }
 
-//  /**
-//   * After this is run, we may have any combination of {no URL, local URL, remote URL} * {no token,
-//   * local secret, validated remote token}.
-//   *
-//   * @param identity
-//   * @param services
-//   * @param serviceType
-//   * @return
-//   */
-//  private URL discoverService(
-//      Identity identity, List<ServiceReference> services, Type serviceType) {
-//
-//    URL ret = null;
-//
-//    /*
-//    Connect to the default service of the passed type; if none is available, try the default local URL
-//     */
-//    if (identity instanceof UserIdentity user) {
-//      token = user.isAnonymous() ? ServicesAPI.ANONYMOUS_TOKEN : identity.getId();
-//      if (!user.isAnonymous()) {
-//        authenticated.set(true);
-//      }
-//    }
-//
-//    for (var service : services) {
-//      if (service.getIdentityType() == serviceType
-//          && service.isPrimary()
-//          && !service.getUrls().isEmpty()) {
-//        for (var url : service.getUrls()) {
-//          var status = readServiceStatus(url, scope);
-//          if (status != null) {
-//            ret = url;
-//            // we are connected but we leave setting the connected flag to the timed task
-//            this.status.set(status);
-//            break;
-//          }
-//        }
-//      }
-//      if (ret != null) {
-//        break;
-//      }
-//    }
-//
-//    if (ret == null) {
-//
-//      url = serviceType.localServiceUrl();
-//      var status = readServiceStatus(url, scope);
-//
-//      if (status != null) {
-//        ret = url;
-//        // we are connected but we leave setting the connected flag to the timed task
-//        this.status.set(status);
-//        this.local = true;
-//      }
-//    }
-//
-//    return ret;
-//  }
+  //  /**
+  //   * After this is run, we may have any combination of {no URL, local URL, remote URL} * {no
+  // token,
+  //   * local secret, validated remote token}.
+  //   *
+  //   * @param identity
+  //   * @param services
+  //   * @param serviceType
+  //   * @return
+  //   */
+  //  private URL discoverService(
+  //      Identity identity, List<ServiceReference> services, Type serviceType) {
+  //
+  //    URL ret = null;
+  //
+  //    /*
+  //    Connect to the default service of the passed type; if none is available, try the default
+  // local URL
+  //     */
+  //    if (identity instanceof UserIdentity user) {
+  //      token = user.isAnonymous() ? ServicesAPI.ANONYMOUS_TOKEN : identity.getId();
+  //      if (!user.isAnonymous()) {
+  //        authenticated.set(true);
+  //      }
+  //    }
+  //
+  //    for (var service : services) {
+  //      if (service.getIdentityType() == serviceType
+  //          && service.isPrimary()
+  //          && !service.getUrls().isEmpty()) {
+  //        for (var url : service.getUrls()) {
+  //          var status = readServiceStatus(url, scope);
+  //          if (status != null) {
+  //            ret = url;
+  //            // we are connected but we leave setting the connected flag to the timed task
+  //            this.status.set(status);
+  //            break;
+  //          }
+  //        }
+  //      }
+  //      if (ret != null) {
+  //        break;
+  //      }
+  //    }
+  //
+  //    if (ret == null) {
+  //
+  //      url = serviceType.localServiceUrl();
+  //      var status = readServiceStatus(url, scope);
+  //
+  //      if (status != null) {
+  //        ret = url;
+  //        // we are connected but we leave setting the connected flag to the timed task
+  //        this.status.set(status);
+  //        this.local = true;
+  //      }
+  //    }
+  //
+  //    return ret;
+  //  }
 
   protected ServiceClient(URL url, Parameters<Engine.Setting> settings) {
     this.url = url;
@@ -289,6 +291,9 @@ public abstract class ServiceClient implements KlabService {
             this.capabilities = capabilities(scope);
           }
         }
+
+        ((ServiceStatusImpl) status.get()).setShutdown(this.shutdown.get());
+
       } finally {
 
         boolean connectionHasChanged = connected.get() != connectedBeforeChecking;
@@ -367,8 +372,7 @@ public abstract class ServiceClient implements KlabService {
 
   @Override
   public final boolean shutdown() {
-    //        scope.disconnect(this);
-    this.scheduler.shutdown();
+    this.shutdown.set(false);
     if (local) {
       return client.put(ServicesAPI.ADMIN.SHUTDOWN);
     }
