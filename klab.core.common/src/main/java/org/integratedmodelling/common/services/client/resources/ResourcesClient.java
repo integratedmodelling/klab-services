@@ -15,6 +15,7 @@ import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.resolver.ResolverClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.*;
@@ -74,23 +75,39 @@ public class ResourcesClient extends ServiceClient
           .maximumSize(500)
           // .expireAfterAccess(10, TimeUnit.MINUTES)
           .build(
-              new CacheLoader<String, KimObservable>() {
+              new CacheLoader<>() {
                 public KimObservable load(String key) {
                   return resolveObservableInternal(key);
                 }
               });
+
+  public static ResourcesClient create(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new ResourcesClient(url, identity, settings);
+  }
+
+  public static ResourcesClient createLocal(
+      Identity identity, Parameters<Engine.Setting> settings) {
+    return new ResourcesClient(Type.RESOURCES.localServiceUrl(), identity, settings);
+  }
+
+  public static ResourcesClient createLocalOffline(
+      Identity identity, Parameters<Engine.Setting> settings) {
+    return new ResourcesClient(Type.RESOURCES.localServiceUrl(), identity, settings, false);
+  }
 
   public ResourcesClient(
       URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
     super(Type.RESOURCES, url, identity, settings, owner);
   }
 
-  public ResourcesClient(
-      URL url,
-      Identity identity,
-      //      List<ServiceReference> services,
-      Parameters<Engine.Setting> settings) {
-    super(Type.RESOURCES, url, identity, settings);
+  public ResourcesClient(URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    super(Type.RESOURCES, url, identity, settings, true);
+  }
+
+  private ResourcesClient(
+      URL url, Identity identity, Parameters<Engine.Setting> settings, boolean connect) {
+    super(Type.RESOURCES, url, identity, settings, connect);
   }
 
   @Override

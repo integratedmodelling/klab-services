@@ -149,6 +149,7 @@ public interface Message extends Serializable {
 
     /** UI selections */
     WorkspaceSelected(Queue.UI, String.class),
+    ServiceSwitched(Queue.UI, KlabService.ServiceCapabilities.class),
 
     /**
      * Sent whenever a file modification (external or through the API) implies a change in a

@@ -202,56 +202,49 @@ public abstract class AbstractUIController implements UIController {
       case UserContextDefinition -> {}
       case ServiceLifecycle -> {
         switch (message.getMessageType()) {
-//                              case ServiceUnavailable -> dispatch(this,
-//           UIReactor.UIEvent.ServiceUnavailable,
-//                                      message.getPayload(Object.class));
-//                              case ServiceAvailable ->  dispatch(this,
-//           UIReactor.UIEvent.ServiceAvailable,
-//                                      message.getPayload(Object.class));
-//                              case ServiceInitializing -> dispatch(this,
-//           UIReactor.UIEvent.ServiceStarting,
-//                                      message.getPayload(Object.class));
-          case ServiceStatus ->
-              dispatch(
-                  this,
-                  UIReactor.UIEvent.ServiceStatus,
-                  message.getPayload(KlabService.ServiceStatus.class));
+          //                              case ServiceUnavailable -> dispatch(this,
+          //           UIReactor.UIEvent.ServiceUnavailable,
+          //                                      message.getPayload(Object.class));
+          //                              case ServiceAvailable ->  dispatch(this,
+          //           UIReactor.UIEvent.ServiceAvailable,
+          //                                      message.getPayload(Object.class));
+          //                              case ServiceInitializing -> dispatch(this,
+          //           UIReactor.UIEvent.ServiceStarting,
+          //                                      message.getPayload(Object.class));
+          case ServiceStatus -> {
+            System.out.println("ZIO PINOLO " + message);
+            dispatch(
+                this,
+                UIReactor.UIEvent.ServiceStatus,
+                message.getPayload(KlabService.ServiceStatus.class));
+          }
+          case ServiceSwitched -> {
+            System.out.println("ZIO BEFFARDO " + message);
+            dispatch(
+                    this,
+                    UIEvent.ServiceFocused,
+                    message.getPayload(KlabService.ServiceCapabilities.class));
+          }
           default -> {}
         }
       }
       case EngineLifecycle -> {
         // TODO engine ready event and status
         switch (message.getMessageType()) {
-          //                    case ServiceUnavailable -> {
-          //                        dispatch(this, UIReactor.UIEvent.EngineUnavailable,
-          // message.getPayload(Object.class));
-          //                    }
-          //                    case ServiceAvailable -> {
-          //                        dispatch(this, UIReactor.UIEvent.EngineAvailable,
-          // message.getPayload(Object.class));
-          //                    }
-          //                    case ServiceInitializing -> {
-          //                        dispatch(this, UIReactor.UIEvent.EngineStarting,
-          // message.getPayload(Object.class));
-          //                    }
           case ServiceStatus -> {
-            //                        recomputeStatus(message);
+            System.out.println("STATO SERVIZIO " + message);
             dispatch(
                 this,
                 UIReactor.UIEvent.ServiceStatus,
                 message.getPayload(KlabService.ServiceStatus.class));
           }
           case EngineStatusChanged -> {
+            System.out.println("STATO MOTORINO " + message);
             dispatch(this, UIEvent.EngineStatusChanged, message.getPayload(Engine.Status.class));
           }
           case UsingDistribution -> {
             dispatch(this, UIEvent.DistributionAvailable, message.getPayload(Distribution.class));
           }
-          //                    case ReasoningAvailable -> {
-          //                        dispatch(this, UIReactor.UIEvent.ReasoningAvailable,
-          //                                message.getPayload(Reasoner.Capabilities.class));
-          //                    }
-
           default -> {}
         }
       }

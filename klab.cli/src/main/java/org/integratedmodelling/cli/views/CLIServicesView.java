@@ -379,16 +379,7 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
         return;
       }
 
-      Thread.ofPlatform()
-          .start(
-              () -> {
-                var services = KlabCLI.INSTANCE.engine().startLocalServices();
-                if (makeDefault) {
-                  for (var service : services.values()) {
-                    KlabCLI.INSTANCE.modeler().setCurrentService(service);
-                  }
-                }
-              });
+      KlabCLI.INSTANCE.engine().startLocalServices();
     }
   }
 
@@ -400,8 +391,7 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
 
     @Override
     public void run() {
-      // FIXME should just call it because the stop call should be asynchronous.
-      Thread.ofPlatform().start(() -> KlabCLI.INSTANCE.engine().stopLocalServices());
+      KlabCLI.INSTANCE.engine().stopLocalServices();
     }
   }
 
@@ -410,6 +400,11 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
 
   @Override
   public void notifyServiceStatus(KlabService.ServiceStatus status) {}
+
+  @Override
+  public void serviceFocusChanged(KlabService.ServiceCapabilities serviceCapabilities) {
+
+  }
 
   @Override
   public void engineStatusChanged(Engine.Status status) {

@@ -2,35 +2,23 @@ package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
-import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.function.Function;
 
 /**
  * Services may be locally implemented or clients to remote services: each service implementation
@@ -199,8 +187,11 @@ public interface KlabService extends Service {
 
     Metadata getMetadata();
 
-    static ServiceStatus offline() {
-      return new ServiceStatusImpl();
+    static ServiceStatus offline(Type serviceType, String s) {
+      var ret = new ServiceStatusImpl();
+      ret.setServiceType(serviceType);
+      ret.setServiceId(s);
+      return ret;
     }
 
     default boolean hasChangedComparedTo(ServiceStatus statusBeforeChecking) {

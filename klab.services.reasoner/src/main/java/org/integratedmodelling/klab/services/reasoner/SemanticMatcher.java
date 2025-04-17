@@ -192,7 +192,7 @@ public class SemanticMatcher {
 
         if (ourInherent != null && ourInherent.isAbstract()) {
           component = distance(ourInherent, itsInherent, false);
-        } else if (ourInherent == null && itsInherent != null && context != null) {
+        } else if (ourInherent == null && context != null) {
           /*
            * Situations like: does XXX resolve YYY of ZZZ when ZZZ is the context.
            */
@@ -343,7 +343,7 @@ public class SemanticMatcher {
       ret = acceptAbsent ? 50 : -50;
     } else if (from != null && to == null) {
       ret = -50;
-    } else if (from != null && to != null) {
+    } else if (from != null) {
       ret = reasonerService.is(to, from) ? assertedDistance(to, from) : -100;
       if (ret >= 0) {
         for (Concept t : reasonerService.traits(from)) {
@@ -360,7 +360,7 @@ public class SemanticMatcher {
       }
     }
 
-    return ret > 100 ? 100 : ret;
+    return Math.min(ret, 100);
   }
 
   public int assertedDistance(Semantics from, Semantics to) {

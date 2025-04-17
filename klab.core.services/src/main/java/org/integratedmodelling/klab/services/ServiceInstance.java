@@ -337,6 +337,13 @@ public abstract class ServiceInstance<T extends BaseService> {
 
       boolean wasAvailable = serviceScope.isAvailable();
 
+      /**
+       * TODO if we start with remote services and we are local (starting with a user certificate), we MUST
+       *  switch the default service to a local service as soon as one comes online. So here we must detect
+       *  local services for all the needed ones and keep checking their status. Keep a map of local clients
+       *  and fill it if we are local.
+       */
+
       // create all clients that we may need and know how to create
       for (var serviceType : allservices) {
         var service = currentServices.get(serviceType);

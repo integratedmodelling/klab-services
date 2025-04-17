@@ -7,6 +7,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
@@ -17,6 +18,7 @@ import org.integratedmodelling.common.services.client.resolver.ResolverClient;
 import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -38,27 +40,25 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
+import static org.integratedmodelling.klab.api.identities.EngineIdentity.type;
+
 /** */
 public class EngineImpl implements Engine, PropertyHolder {
 
-  AtomicBoolean online = new AtomicBoolean(false);
-  AtomicBoolean available = new AtomicBoolean(false);
-  AtomicBoolean booted = new AtomicBoolean(false);
-  AtomicBoolean stopped = new AtomicBoolean(false);
-  Map<KlabService.Type, KlabService> currentService = new HashMap<>();
-  Map<KlabService.Type, List<KlabService>> currentServices =
+  private AtomicBoolean online = new AtomicBoolean(false);
+  private AtomicBoolean booted = new AtomicBoolean(false);
+  private AtomicBoolean stopped = new AtomicBoolean(false);
+  private Map<KlabService.Type, KlabService> currentServices =
       Collections.synchronizedMap(new HashMap<>());
-  UserScope defaultUser;
-  //  List<BiConsumer<Channel, Message>> scopeListeners = new ArrayList<>();
+  private Map<KlabService.Type, List<KlabService>> availableServices =
+      Collections.synchronizedMap(new HashMap<>());
+  private UserScope defaultUser;
   private Pair<Identity, List<ServiceReference>> authData;
-  List<UserScope> users = new ArrayList<>();
-  ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-  //  private boolean firstCall = true;
-  String serviceId = Utils.Names.shortUUID();
-  //  private Worldview worldview;
+  private List<UserScope> users = new ArrayList<>();
+  private String serviceId = Utils.Names.shortUUID();
   private AtomicReference<Status> status = new AtomicReference<>(EngineStatusImpl.inop());
   private Parameters<Setting> settings = Parameters.createSynchronized();
-
+  private LocalServiceMonitor localServiceMonitor;
   private DistributionImpl distribution;
   private DistributionImpl developmentDistribution;
   private DistributionImpl downloadedDistribution;
@@ -138,12 +138,10 @@ public class EngineImpl implements Engine, PropertyHolder {
     return defaultUser;
   }
 
-  //  public void addScopeListener(BiConsumer<Channel, Message> listener) {
-  //    this.scopeListeners.add(listener);
-  //  }
-
   @Override
   public boolean shutdown() {
+
+    // TODO see what to do with the local services - should depend on options
 
     serviceScope()
         .send(
@@ -151,49 +149,24 @@ public class EngineImpl implements Engine, PropertyHolder {
             Message.MessageType.ServiceUnavailable,
             capabilities(serviceScope()));
 
-    /* shutdown all services that were launched in our scope */
-    for (KlabService.Type type :
-        new KlabService.Type[] {
-          KlabService.Type.RUNTIME,
-          KlabService.Type.RESOLVER,
-          KlabService.Type.REASONER,
-          KlabService.Type.RESOURCES
-        }) {
-      for (var service : currentServices.computeIfAbsent(type, t -> new ArrayList<>())) {
-        if (service instanceof ServiceClient client && client.isLocal()) {
-          client.shutdown();
-        }
-      }
-    }
-
     stopped.set(true);
     booted.set(false);
 
     return true;
   }
 
-  /**
-   * FIXME blocks until all services have ended. Should do better and just report better info
-   * through the engine status.
-   *
-   * @return
-   */
   @Override
   public int stopLocalServices() {
 
     AtomicInteger ret = new AtomicInteger(0);
-    List<Callable<Boolean>> tasks = new ArrayList<>();
-    for (var type : currentServices.keySet()) {
-      for (var service : currentServices.get(type)) {
+    List<Supplier<KlabService>> tasks = new ArrayList<>();
+    for (var type : availableServices.keySet()) {
+      for (var service : availableServices.get(type)) {
         if (Utils.URLs.isLocalHost(service.getUrl())) {
           tasks.add(
               () -> {
-                if (service.shutdown()) {
-                  currentServices.get(type).remove(service);
-                  ret.incrementAndGet();
-                  return true;
-                }
-                return false;
+                service.shutdown();
+                return service;
               });
         }
       }
@@ -201,14 +174,43 @@ public class EngineImpl implements Engine, PropertyHolder {
 
     if (!tasks.isEmpty()) {
       try (var executor = Executors.newFixedThreadPool(tasks.size())) {
-        // FIXME just use submit and add the maintenance logic on future termination. Return the
-        //  number of services BEING STOPPED. The status will inform as the shutdown proceeds.
-        executor.invokeAll(tasks);
-        // TODO redefine the current service
-      } catch (InterruptedException e) {
+        for (var task : tasks) {
+          CompletableFuture.supplyAsync(task)
+              .thenApply(
+                  service -> {
+                    var type = KlabService.Type.classify(service);
+                    availableServices.get(type).remove(service);
+
+                    this.defaultUser.send(
+                        Message.MessageClass.ServiceLifecycle,
+                        Message.MessageType.ServiceUnavailable,
+                        currentServices.get(type).capabilities(this.defaultUser));
+
+                    currentServices.remove(type);
+
+                    if (currentServices.get(type) != null
+                        && currentServices.get(type).serviceId().equals(service.serviceId())) {
+                      if (!availableServices.get(type).isEmpty()) {
+                        currentServices.put(type, availableServices.get(type).getFirst());
+                        this.defaultUser.send(
+                            Message.MessageClass.ServiceLifecycle,
+                            Message.MessageType.ServiceSwitched,
+                            currentServices.get(type).capabilities(this.defaultUser));
+                      }
+                    }
+                    ret.incrementAndGet();
+                    return service;
+                  });
+        }
+      } catch (Exception e) {
         return -1;
       }
     }
+
+    this.defaultUser.send(
+        Message.MessageClass.EngineLifecycle,
+        Message.MessageType.EngineStatusChanged,
+        computeEngineStatus(currentServices));
 
     return ret.get();
   }
@@ -234,15 +236,6 @@ public class EngineImpl implements Engine, PropertyHolder {
                 .info(
                     "Service is starting: will be attempting connection to locally running "
                         + serviceType);
-            var service =
-                createLocalServiceClient(
-                    ServiceReference.local(serviceType, defaultUser),
-                    serviceType.localServiceUrl(),
-                    defaultUser,
-                    defaultUser.getIdentity(),
-                    settings);
-            ret.put(serviceType, service);
-            registerService(serviceType, service);
           }
         }
       }
@@ -297,16 +290,11 @@ public class EngineImpl implements Engine, PropertyHolder {
       this.defaultUser = authenticate();
     }
 
-    //    if (this.defaultUser instanceof ChannelImpl channel) {
-    //      for (var listener : scopeListeners) {
-    //        channel.addListener(listener);
-    //      }
-    //    }
     this.defaultUser.send(
         Message.MessageClass.EngineLifecycle,
         Message.MessageType.ServiceInitializing,
         capabilities(serviceScope()));
-    scheduler.scheduleAtFixedRate(this::timedTasks, 0, 15, TimeUnit.SECONDS);
+    //    scheduler.scheduleAtFixedRate(this::timedTasks, 0, 2, TimeUnit.SECONDS);
     booted.set(true);
 
     if (distribution != null) {
@@ -314,6 +302,40 @@ public class EngineImpl implements Engine, PropertyHolder {
           Message.MessageClass.EngineLifecycle,
           Message.MessageType.UsingDistribution,
           distribution);
+    }
+  }
+
+  private void notifyLocalEngine(Map<Type, KlabService> serviceMap, Boolean online) {
+    var status = computeEngineStatus(serviceMap);
+    this.defaultUser.send(
+        Message.MessageClass.EngineLifecycle, Message.MessageType.EngineStatusChanged, status);
+  }
+
+  private void notifyLocalService(KlabService klabService, ServiceStatus serviceStatus) {
+    boolean local = Utils.URLs.isLocalHost(klabService.getUrl());
+    if (serviceStatus.getServiceId() == null) {
+      return;
+    }
+    var exist =
+        availableServices
+            .computeIfAbsent(serviceStatus.getServiceType(), s -> new ArrayList<>())
+            .stream()
+            .anyMatch(s -> serviceStatus.getServiceId().equals(s.serviceId()));
+    if (!exist) {
+      availableServices.get(serviceStatus.getServiceType()).add(klabService);
+    }
+    if (local) {
+      if (currentServices.get(serviceStatus.getServiceType()) == null
+          || !currentServices
+              .get(serviceStatus.getServiceType())
+              .serviceId()
+              .equals(klabService.serviceId())) {
+        currentServices.put(serviceStatus.getServiceType(), klabService);
+        this.defaultUser.send(
+            Message.MessageClass.ServiceLifecycle,
+            Message.MessageType.ServiceSwitched,
+            klabService.capabilities(this.defaultUser));
+      }
     }
   }
 
@@ -328,110 +350,42 @@ public class EngineImpl implements Engine, PropertyHolder {
           Message.MessageClass.Authorization,
           Message.MessageType.UserAuthorized,
           authData.getFirst());
-      //      this.scopeListeners.add(
-      //          (channel, message) -> {
-      //
-      //            // basic listener for knowledge management
-      //            if (message.is(
-      //                Message.MessageClass.KnowledgeLifecycle,
-      // Message.MessageType.WorkspaceChanged)) {
-      //              var changes = message.getPayload(ResourceSet.class);
-      //              var reasoner = defaultUser.getService(Reasoner.class);
-      //              if (reasoner.status().isAvailable()
-      //                  && reasoner.isExclusive()
-      //                  && reasoner instanceof Reasoner.Admin admin) {
-      //                var notifications = admin.updateKnowledge(changes, getUser());
-      //                // send the notifications around for display
-      //                serviceScope()
-      //                    .send(
-      //                        Message.MessageClass.KnowledgeLifecycle,
-      //                        Message.MessageType.LogicalValidation,
-      //                        notifications);
-      //                if (Utils.Resources.hasErrors(notifications)) {
-      //                  defaultUser.warn(
-      //                      "Worldview update caused logical" + " errors in the reasoner",
-      //                      UI.Interactivity.DISPLAY);
-      //                } else {
-      //                  defaultUser.info(
-      //                      "Worldview was updated in the reasoner", UI.Interactivity.DISPLAY);
-      //                }
-      //              }
-      //            }
-      //          });
+      if (distribution != null) {
+        this.localServiceMonitor =
+            new LocalServiceMonitor(
+                defaultUser.getIdentity(),
+                settings,
+                this::notifyLocalService,
+                this::notifyLocalEngine);
+      }
+
       this.users.add(this.defaultUser);
     }
 
     return this.defaultUser;
   }
 
-  private void timedTasks() {
-
-    if ("off".equals(settings.get(Engine.Setting.POLLING, String.class))) {
-      return;
-    }
-
-    /*
-    check all needed services; put self offline if not available or not there, online otherwise; if
-    there's a change in online status, report it through the service scope
-     */
-    var ok = true;
-    for (var type :
-        List.of(
-            KlabService.Type.RESOURCES,
-            KlabService.Type.REASONER,
-            KlabService.Type.RUNTIME,
-            KlabService.Type.RESOLVER)) {
-
-      var services = currentServices.computeIfAbsent(type, t -> new ArrayList<>());
-      if (services.isEmpty()) {
-        ok = false;
-      }
-    }
-
-    recomputeEngineStatus();
-
-    available.set(ok);
-  }
-
   /**
    * TODO remove the polling from the clients, put it here explicitly, check status and update
    * capablities if not available previously
    */
-  private synchronized void recomputeEngineStatus() {
+  private EngineStatusImpl computeEngineStatus(Map<KlabService.Type, KlabService> map) {
 
-    // explore state of all services, determine what we
     EngineStatusImpl engineStatus = new EngineStatusImpl();
 
-    var changes = false;
-    var noperational = 0;
-    for (var scl :
-        List.of(Reasoner.class, ResourcesService.class, Resolver.class, RuntimeService.class)) {
-      var service = serviceScope().getService(scl);
-      var sertype = KlabService.Type.classify(scl);
-      if (service != null) {
-        var newStatus = service.status();
-        if (newStatus != null) {
-          if (newStatus.isOperational()) {
-            noperational++;
-          }
-          var oldStatus = status.get().getServicesStatus().get(sertype);
-          if (oldStatus == null || newStatus.hasChangedComparedTo(oldStatus)) {
-            changes = true;
-            engineStatus.getServicesStatus().put(sertype, newStatus);
-          } else {
-            engineStatus.getServicesStatus().put(sertype, oldStatus);
-          }
-          if (status.get().getServicesCapabilities().get(sertype) == null) {
-            var capabilities = service.capabilities(getUser());
-            if (capabilities != null) {
-              engineStatus.getServicesCapabilities().put(sertype, capabilities);
-            }
-          }
-        }
-      } else if (status.get().getServicesStatus() != null) {
-        changes = true;
-      }
-    }
+    currentServices
+        .values()
+        .forEach(
+            s -> engineStatus.getServicesStatus().put(KlabService.Type.classify(s), s.status()));
+
+    var nOperational =
+        engineStatus.getServicesStatus().values().stream()
+            .filter(ServiceStatus::isOperational)
+            .count();
+    var nAvailable =
+        engineStatus.getServicesStatus().values().stream()
+            .filter(ServiceStatus::isAvailable)
+            .count();
 
     if (users.size() != status.get().getConnectedUsernames().size()) {
       engineStatus
@@ -439,55 +393,32 @@ public class EngineImpl implements Engine, PropertyHolder {
           .addAll(users.stream().map(userScope -> userScope.getUser().getUsername()).toList());
     }
 
-    engineStatus.setOperational(noperational == 4);
-    engineStatus.setAvailable(noperational > 0);
+    engineStatus.setOperational(nOperational == 4);
+    engineStatus.setAvailable(nAvailable > 0);
+    this.online.set(nOperational == 4);
 
-    // if state has changed, swap and send message
-    if (changes) {
-      this.status.set(engineStatus);
-
-      serviceScope()
-          .send(
-              Message.MessageClass.EngineLifecycle,
-              Message.MessageType.EngineStatusChanged,
-              engineStatus);
-    }
+    return engineStatus;
   }
 
   private void registerService(KlabService.Type serviceType, KlabService service) {
-    currentServices.computeIfAbsent(serviceType, type -> new ArrayList<>()).add(service);
-    currentService.putIfAbsent(serviceType, service);
-    // HERE install the service listener that will send any message with <serviceReference, message>
-    // to us. We in turn dispatch it to the
-    // service scope.
+    availableServices.computeIfAbsent(serviceType, type -> new ArrayList<>()).add(service);
+    currentServices.putIfAbsent(serviceType, service);
   }
-
-  //  /**
-  //   * Override to define which services must be there for the engine client to report as
-  // available.
-  //   * TODO currently set up for testing, default should be everything except COMMUNITY
-  //   */
-  //  protected boolean serviceIsEssential(KlabService.Type type) {
-  //    return type == KlabService.Type.REASONER || type == KlabService.Type.RESOURCES;
-  //  }
 
   @SuppressWarnings("unchecked")
   private UserScope createUserScope(Pair<Identity, List<ServiceReference>> availableServices) {
 
     var ret =
-        new ClientUserScope(authData.getFirst(), this /*,
-            (serviceScope() instanceof ChannelImpl channel)
-                ? channel.listeners().toArray(new BiConsumer[] {})
-                : new BiConsumer[] {}*/) {
+        new ClientUserScope(authData.getFirst(), this) {
           @Override
           public <T extends KlabService> T getService(Class<T> serviceClass) {
-            return (T) currentService.get(KlabService.Type.classify(serviceClass));
+            return (T) currentServices.get(KlabService.Type.classify(serviceClass));
           }
 
           @Override
           public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
             return (Collection<T>)
-                currentServices.computeIfAbsent(
+                EngineImpl.this.availableServices.computeIfAbsent(
                     KlabService.Type.classify(serviceClass), s -> new ArrayList<>());
           }
         };
@@ -516,7 +447,6 @@ public class EngineImpl implements Engine, PropertyHolder {
       URL url,
       Scope scope,
       Identity identity,
-      //      List<ServiceReference> services,
       Parameters<Engine.Setting> settings) {
     T ret =
         switch (serviceReference.getIdentityType()) {
@@ -539,11 +469,6 @@ public class EngineImpl implements Engine, PropertyHolder {
             + serviceReference.getIdentityType().localServiceUrl());
 
     return ret;
-  }
-
-  @Override
-  public boolean isAvailable() {
-    return this.available.get();
   }
 
   @Override
@@ -572,13 +497,13 @@ public class EngineImpl implements Engine, PropertyHolder {
   public void setDefaultService(ServiceCapabilities service) {
 
     boolean found = false;
-    var current = currentService.get(service.getType());
+    var current = currentServices.get(service.getType());
     if (current == null
         || current.serviceId() == null
         || !current.serviceId().equals(service.getServiceId())) {
-      for (var s : currentServices.computeIfAbsent(service.getType(), t -> new ArrayList<>())) {
+      for (var s : availableServices.computeIfAbsent(service.getType(), t -> new ArrayList<>())) {
         if (s.serviceId() != null && s.serviceId().equals(service.getServiceId())) {
-          currentService.put(service.getType(), s);
+          currentServices.put(service.getType(), s);
           found = true;
           break;
         }

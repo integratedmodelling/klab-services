@@ -134,13 +134,6 @@ public interface Engine extends KlabService {
   UserScope authenticate();
 
   /**
-   * The engine is available to boot.
-   *
-   * @return
-   */
-  boolean isAvailable();
-
-  /**
    * The engine has booted successfully and it's available for use.
    *
    * @return

@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
@@ -18,6 +19,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.engine.LocalServiceMonitor;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -70,6 +72,7 @@ public abstract class BaseService implements KlabService {
   private ComponentRegistry componentRegister;
   private String instanceKey = Utils.Names.newName();
   private long bootTime = System.currentTimeMillis();
+  private LocalServiceMonitor localServiceMonitor;
 
   protected Parameters<Engine.Setting> settingsForSlaveServices = Parameters.createSynchronized();
 
@@ -94,7 +97,19 @@ public abstract class BaseService implements KlabService {
     }
     createServiceSecret();
     componentRegister = new ComponentRegistry(this, options);
+    if (Utils.URLs.isLocalHost(this.url)) {
+      localServiceMonitor =
+          new LocalServiceMonitor(
+              scope.getIdentity(),
+              settingsForSlaveServices,
+              this::notifyLocalService,
+              this::notifyLocalEngine);
+    }
   }
+
+  private void notifyLocalEngine(Map<Type, KlabService> typeKlabServiceMap, Boolean aBoolean) {}
+
+  private void notifyLocalService(KlabService service, ServiceStatus status) {}
 
   public ComponentRegistry getComponentRegistry() {
     return componentRegister;
