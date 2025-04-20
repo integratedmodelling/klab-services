@@ -41,6 +41,11 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     return new RuntimeClient(url, identity, settings);
   }
 
+  public static RuntimeClient createOffline(
+          URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new RuntimeClient(url, identity, settings, false);
+  }
+
   public static RuntimeClient createLocal(Identity identity, Parameters<Engine.Setting> settings) {
     return new RuntimeClient(Type.RUNTIME.localServiceUrl(), identity, settings);
   }

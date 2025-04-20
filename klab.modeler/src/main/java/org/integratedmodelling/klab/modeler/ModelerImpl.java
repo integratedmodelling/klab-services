@@ -110,40 +110,40 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
       Engine.Status status = (Engine.Status) payload[0];
 
-      for (var capabilities : status.getServicesCapabilities().values()) {
-
-        if (capabilities == null) {
-          continue;
-        }
-
-        if (capabilities.getUrl() != null) {
-          serviceUrls.put(capabilities.getServiceId(), capabilities.getUrl());
-        }
-        if (capabilities.getBrokerURI() != null
-            && scope() instanceof AbstractReactiveScopeImpl serviceClient) {
-          /*
-           * Instrument the service client for messaging. This is pretty involved alas, but the
-           * whole
-           * matter isn't exactly trivial.
-           */
-          var client = serviceClient.getService(capabilities.getServiceId());
-          if (client != null
-              && client.serviceScope() instanceof AbstractServiceDelegatingScope delegatingScope
-              && delegatingScope.getDelegateChannel()
-                  instanceof MessagingChannel messagingChannel) {
-            /*
-             * If the scope delegates to a messaging channel, set up messaging and link the
-             * available  service queues to service message dispatchers.
-             */
-            if (!messagingChannel.isConnected()) {
-              messagingChannel.connectToService(
-                  capabilities,
-                  (UserIdentity) user().getIdentity(),
-                  (message) -> dispatchServerMessage(capabilities, message));
-            }
-          }
-        }
-      }
+//      for (var capabilities : status.getServicesCapabilities().values()) {
+//
+//        if (capabilities == null) {
+//          continue;
+//        }
+//
+//        if (capabilities.getUrl() != null) {
+//          serviceUrls.put(capabilities.getServiceId(), capabilities.getUrl());
+//        }
+//        if (capabilities.getBrokerURI() != null
+//            && scope() instanceof AbstractReactiveScopeImpl serviceClient) {
+//          /*
+//           * Instrument the service client for messaging. This is pretty involved alas, but the
+//           * whole
+//           * matter isn't exactly trivial.
+//           */
+//          var client = serviceClient.getService(capabilities.getServiceId());
+//          if (client != null
+//              && client.serviceScope() instanceof AbstractServiceDelegatingScope delegatingScope
+//              && delegatingScope.getDelegateChannel()
+//                  instanceof MessagingChannel messagingChannel) {
+//            /*
+//             * If the scope delegates to a messaging channel, set up messaging and link the
+//             * available  service queues to service message dispatchers.
+//             */
+//            if (!messagingChannel.isConnected()) {
+//              messagingChannel.connectToService(
+//                  capabilities,
+//                  (UserIdentity) user().getIdentity(),
+//                  (message) -> dispatchServerMessage(capabilities, message));
+//            }
+//          }
+//        }
+//      }
     }
 
     super.dispatch(sender, event, payload);
@@ -571,19 +571,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   @Override
   public UserScope user() {
     return ((EngineImpl) engine()).getUser();
-  }
-
-  @Override
-  public void setDefaultService(KlabService.ServiceCapabilities service) {
-    if (engine() instanceof EngineImpl engine) {
-      engine.setDefaultService(service);
-    } else {
-      engine()
-          .serviceScope()
-          .warn(
-              "Modeler: request to set default service wasn't honored "
-                  + "because the engine implementation is overridden");
-    }
   }
 
   public Future<Boolean> startLocalServices() {

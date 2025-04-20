@@ -218,13 +218,13 @@ public abstract class AbstractUIController implements UIController {
                 UIReactor.UIEvent.ServiceStatus,
                 message.getPayload(KlabService.ServiceStatus.class));
           }
-          case ServiceSwitched -> {
-            System.out.println("ZIO BEFFARDO " + message);
-            dispatch(
-                    this,
-                    UIEvent.ServiceFocused,
-                    message.getPayload(KlabService.ServiceCapabilities.class));
-          }
+//          case ServiceSwitched -> {
+//            System.out.println("ZIO BEFFARDO " + message);
+//            dispatch(
+//                    this,
+//                    UIEvent.ServiceFocused,
+//                    message.getPayload(KlabService.ServiceCapabilities.class));
+//          }
           default -> {}
         }
       }

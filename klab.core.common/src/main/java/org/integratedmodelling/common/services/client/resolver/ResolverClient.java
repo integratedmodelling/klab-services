@@ -33,6 +33,11 @@ public class ResolverClient extends ServiceClient implements Resolver {
     return new ResolverClient(url, identity, settings);
   }
 
+  public static ResolverClient createOffline(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new ResolverClient(url, identity, settings, false);
+  }
+
   public static ResolverClient createLocal(Identity identity, Parameters<Engine.Setting> settings) {
     return new ResolverClient(Type.RESOLVER.localServiceUrl(), identity, settings);
   }

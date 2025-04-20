@@ -46,13 +46,12 @@ public abstract class ServiceClient implements KlabService {
 
   private Identity identity;
   private Type serviceType;
-  private AtomicBoolean connected = new AtomicBoolean(false);
-  private AtomicBoolean shutdown = new AtomicBoolean(false);
-  private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-  private AtomicReference<ServiceStatus> status =
-      new AtomicReference<>(ServiceStatus.offline(serviceType, null));
+  private final AtomicBoolean connected = new AtomicBoolean(false);
+  private final AtomicBoolean shutdown = new AtomicBoolean(false);
+  private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+  private final AtomicReference<ServiceStatus> status = new AtomicReference<>(null);
   private AbstractServiceDelegatingScope scope;
-  private URL url;
+  private final URL url;
   private String token;
   private long pollCycleSeconds = 5;
   protected Utils.Http.Client client;
@@ -126,12 +125,14 @@ public abstract class ServiceClient implements KlabService {
    * @param url
    * @return
    */
-  public static ServiceStatus readServiceStatus(URL url, Scope scope) {
-    try (var client = Utils.Http.getClient(url, scope)) {
-      return client.get(ServicesAPI.STATUS, ServiceStatusImpl.class, Notification.Mode.Silent);
+  public ServiceStatus readServiceStatus(URL url, Scope scope) {
+    ServiceStatus ret = null;
+    try {
+      ret = client.get(ServicesAPI.STATUS, ServiceStatusImpl.class, Notification.Mode.Silent);
     } catch (Throwable t) {
-      return null;
+      /* service is or has gone offline, do nothing */
     }
+    return ret == null ? ServiceStatus.offline(serviceType, serviceId) : ret;
   }
 
   /**
@@ -252,54 +253,47 @@ public abstract class ServiceClient implements KlabService {
 
       } finally {
 
-        boolean connectionHasChanged = connected.get() != connectedBeforeChecking;
+        //        boolean connectionHasChanged = connected.get() != connectedBeforeChecking;
         boolean statusHasChanged =
-            statusBeforeChecking == null && status.get() != null
-                || statusBeforeChecking != null && status.get() == null
-                || status.get().hasChangedComparedTo(statusBeforeChecking);
+            (statusBeforeChecking == null && status.get() != null)
+                || (statusBeforeChecking != null && status.get() == null)
+                || (status.get() != null
+                    && statusBeforeChecking != null
+                    && status.get().hasChangedComparedTo(statusBeforeChecking));
 
-        if (connectionHasChanged) {
+        if (connected.get()) {
 
-          // add the URL to the capabilities.
-          if (this.capabilities instanceof AbstractServiceCapabilities asc) {
-            asc.setUrl(this.url);
-          }
-
-          if (connected.get()) {
-
-            // see if we have a local service and change the token
-            if ((token == null || token.isEmpty()) && Utils.URLs.isLocalHost(getUrl())) {
-              // may have gotten lost if the service was starting when we booted
-              var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
-              if (secret != null) {
-                token = secret;
-                client.setAuthorization(token);
-                local = true;
-              }
+          // see if we have a local service and change the token
+          if ((token == null || token.isEmpty()) && Utils.URLs.isLocalHost(getUrl())) {
+            // may have gotten lost if the service was starting when we booted
+            var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
+            if (secret != null) {
+              token = secret;
+              client.setAuthorization(token);
+              local = true;
             }
           }
         }
 
-        if (statusHasChanged || connectionHasChanged) {
-
-          var message =
-              (!connected.get() || status.get() == null)
-                  ? Message.MessageType.ServiceUnavailable
-                  : (status.get().isAvailable()
-                      ? Message.MessageType.ServiceAvailable
-                      : Message.MessageType.ServiceInitializing);
+        // send specific message if status has changed
+        if (statusHasChanged) {
 
           // refresh the capabilities after change
           this.capabilities = capabilities(scope);
 
-          scope.send(Message.MessageClass.ServiceLifecycle, message, capabilities);
+          scope.send(
+              Message.MessageClass.ServiceLifecycle,
+              Message.MessageType.ServiceStatusChanged,
+              status.get() == null ? ServiceStatus.offline(serviceType, null) : status.get());
         }
       }
 
-      // send the status
+      // send the status for monitoring
       if (connected.get() && status.get() != null) {
         scope.send(
-            Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceStatus, status.get());
+            Message.MessageClass.ServiceLifecycle,
+            Message.MessageType.ServiceStatus,
+            status.get() == null ? ServiceStatus.offline(serviceType, null) : status.get());
       }
 
     } catch (Throwable t) {
@@ -318,7 +312,7 @@ public abstract class ServiceClient implements KlabService {
   }
 
   public final ServiceStatus status() {
-    return status.get();
+    return status.get() == null ? ServiceStatus.offline(serviceType, serviceId) : status.get();
   }
 
   @Override

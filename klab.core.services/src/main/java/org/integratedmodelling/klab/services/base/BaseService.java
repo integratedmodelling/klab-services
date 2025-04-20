@@ -19,7 +19,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.services.client.engine.LocalServiceMonitor;
+import org.integratedmodelling.common.services.client.engine.ServiceMonitor;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -72,7 +72,7 @@ public abstract class BaseService implements KlabService {
   private ComponentRegistry componentRegister;
   private String instanceKey = Utils.Names.newName();
   private long bootTime = System.currentTimeMillis();
-  private LocalServiceMonitor localServiceMonitor;
+  private ServiceMonitor serviceMonitor;
 
   protected Parameters<Engine.Setting> settingsForSlaveServices = Parameters.createSynchronized();
 
@@ -97,17 +97,17 @@ public abstract class BaseService implements KlabService {
     }
     createServiceSecret();
     componentRegister = new ComponentRegistry(this, options);
-    if (Utils.URLs.isLocalHost(this.url)) {
-      localServiceMonitor =
-          new LocalServiceMonitor(
+      serviceMonitor =
+          new ServiceMonitor(
               scope.getIdentity(),
               settingsForSlaveServices,
+              Utils.URLs.isLocalHost(this.url),
+              List.of(),
               this::notifyLocalService,
               this::notifyLocalEngine);
-    }
   }
 
-  private void notifyLocalEngine(Map<Type, KlabService> typeKlabServiceMap, Boolean aBoolean) {}
+  private void notifyLocalEngine(Engine.Status status) {}
 
   private void notifyLocalService(KlabService service, ServiceStatus status) {}
 

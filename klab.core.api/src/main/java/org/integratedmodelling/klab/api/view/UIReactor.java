@@ -132,8 +132,8 @@ public interface UIReactor {
         ReportChangeOfPositionInDocument(Integer.class),
         RequestChangeOfPositionInDocument(Integer.class),
         SelectDistribution(Distribution.class),
-        FocusService(KlabService.ServiceCapabilities.class),
-        SelectService(KlabService.ServiceCapabilities.class);
+        FocusService(KlabService.ServiceCapabilities.class);
+//        SelectService(KlabService.ServiceCapabilities.class);
 
         List<Class<?>> targetClasses = new ArrayList<>();
 

@@ -140,15 +140,21 @@ public interface Message extends Serializable {
     /*
      * Service messages, coming with service capabilities
      */
+    @Deprecated
     ServiceInitializing(Queue.Events, KlabService.ServiceCapabilities.class),
     //        ReasoningAvailable(Queue.Events, Reasoner.Capabilities.class),
+    @Deprecated
     ServiceAvailable(Queue.Events, KlabService.ServiceCapabilities.class),
+    @Deprecated
     ServiceUnavailable(Queue.Events, KlabService.ServiceCapabilities.class),
     ServiceStatus(Queue.Events, KlabService.ServiceStatus.class),
+    ServiceStatusChanged(Queue.Events, KlabService.ServiceStatus.class),
     ConnectScope(Queue.Events, ScopeOptions.class),
 
     /** UI selections */
+    @Deprecated
     WorkspaceSelected(Queue.UI, String.class),
+    @Deprecated
     ServiceSwitched(Queue.UI, KlabService.ServiceCapabilities.class),
 
     /**
@@ -158,6 +164,7 @@ public interface Message extends Serializable {
      */
     WorkspaceChanged(Queue.UI, ResourceSet.class),
 
+    @Deprecated
     DocumentSelected(Queue.UI, KlabDocument.class),
     UserAuthorized(Queue.Events, UserIdentity.class),
     UserDisconnected(Queue.UI, UserIdentity.class),
@@ -180,6 +187,7 @@ public interface Message extends Serializable {
     /*
      * --- reasoning-related messages
      */
+    @Deprecated
     LogicalValidation(Queue.Events, ResourceSet.class),
 
     /** Runtime event messages */
@@ -194,9 +202,13 @@ public interface Message extends Serializable {
     Fire,
 
     /** Resolver event messages. FIXME these are obsolete */
+    @Deprecated
     ResolutionUnsuccessful(Queue.Events, Observation.class),
+    @Deprecated
     ResolutionSuccessful(Queue.Events, Observation.class),
+    @Deprecated
     ResolutionAborted(Queue.Events, Observation.class),
+    @Deprecated
     ResolutionStarted(Queue.Events, Observation.class),
 
     ContextualizationSuccessful(Queue.Events, Observation.class),

@@ -12,11 +12,9 @@ import java.util.Set;
 public class EngineStatusImpl extends ServiceStatusImpl implements Engine.Status {
 
   private Map<KlabService.Type, KlabService.ServiceStatus> servicesStatus = new HashMap<>();
-  private Map<KlabService.Type, KlabService.ServiceCapabilities> servicesCapabilities =
-      new HashMap<>();
   private Set<String> connectedUsernames = new HashSet<>();
 
-  public static Engine.Status inop() {
+  public static EngineStatusImpl inop() {
     return new EngineStatusImpl();
   }
 
@@ -27,16 +25,6 @@ public class EngineStatusImpl extends ServiceStatusImpl implements Engine.Status
 
   public void setServicesStatus(Map<KlabService.Type, KlabService.ServiceStatus> servicesStatus) {
     this.servicesStatus = servicesStatus;
-  }
-
-  @Override
-  public Map<KlabService.Type, KlabService.ServiceCapabilities> getServicesCapabilities() {
-    return servicesCapabilities;
-  }
-
-  public void setServicesCapabilities(
-      Map<KlabService.Type, KlabService.ServiceCapabilities> servicesCapabilities) {
-    this.servicesCapabilities = servicesCapabilities;
   }
 
   @Override

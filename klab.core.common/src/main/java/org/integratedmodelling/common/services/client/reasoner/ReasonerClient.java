@@ -76,15 +76,22 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
                 }
               });
 
-  public static ReasonerClient create(URL url, Identity identity, Parameters<Engine.Setting> settings) {
+  public static ReasonerClient create(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
     return new ReasonerClient(url, identity, settings);
+  }
+
+  public static ReasonerClient createOffline(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new ReasonerClient(url, identity, settings, false);
   }
 
   public static ReasonerClient createLocal(Identity identity, Parameters<Engine.Setting> settings) {
     return new ReasonerClient(Type.REASONER.localServiceUrl(), identity, settings);
   }
 
-  public static ReasonerClient createLocalOffline(Identity identity, Parameters<Engine.Setting> settings) {
+  public static ReasonerClient createLocalOffline(
+      Identity identity, Parameters<Engine.Setting> settings) {
     return new ReasonerClient(Type.REASONER.localServiceUrl(), identity, settings, false);
   }
 
@@ -93,17 +100,12 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     super(Type.REASONER, url, identity, settings, owner);
   }
 
-  public ReasonerClient(
-      URL url,
-      Identity identity,
-      Parameters<Engine.Setting> settings) {
+  public ReasonerClient(URL url, Identity identity, Parameters<Engine.Setting> settings) {
     super(Type.REASONER, url, identity, settings, true);
   }
 
   public ReasonerClient(
-          URL url,
-          Identity identity,
-          Parameters<Engine.Setting> settings, boolean connect) {
+      URL url, Identity identity, Parameters<Engine.Setting> settings, boolean connect) {
     super(Type.REASONER, url, identity, settings, connect);
   }
 

@@ -187,14 +187,14 @@ public interface UIController extends UIReactor {
      */
     void storeView(Object... changedElements);
 
-    /**
-     * Set the passed service into the engine as the "current" service to serve requests for the engine scope.
-     * This comes from the UI, defaulting at a previously selected service if that is remembered or
-     * configured, or, lacking that, the first service that reaches the controller.
-     *
-     * @param service
-     */
-    void setDefaultService(KlabService.ServiceCapabilities service);
+//    /**
+//     * Set the passed service into the engine as the "current" service to serve requests for the engine scope.
+//     * This comes from the UI, defaulting at a previously selected service if that is remembered or
+//     * configured, or, lacking that, the first service that reaches the controller.
+//     *
+//     * @param service
+//     */
+//    void setDefaultService(KlabService.ServiceCapabilities service);
 
     /**
      * If a panel of the requested class is handling the passed payload, return its controller.

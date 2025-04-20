@@ -111,14 +111,6 @@ public interface Engine extends KlabService {
      */
     Collection<String> getConnectedUsernames();
 
-    /**
-     * Return service capabilities for all known current services. Capabilities may be filtered
-     * according to who's asking.
-     *
-     * @return
-     */
-    Map<Type, ServiceCapabilities> getServicesCapabilities();
-
   }
 
   /**
@@ -150,10 +142,10 @@ public interface Engine extends KlabService {
   List<UserScope> getUsers();
 
   /**
-   * Stop any local services that were started by calling {@link #startLocalServices()} and remove
-   * them from the available services for the scopes.
+   * Stop any local services that were started by calling {@link #startLocalServices()}. This does
+   * not wait for the services to stop.
    *
-   * @return the number of services actually stopped
+   * @return the number of service shutdowns initiated
    */
   int stopLocalServices();
 

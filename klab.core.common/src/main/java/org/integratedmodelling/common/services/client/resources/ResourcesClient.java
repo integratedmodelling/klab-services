@@ -86,6 +86,11 @@ public class ResourcesClient extends ServiceClient
     return new ResourcesClient(url, identity, settings);
   }
 
+  public static ResourcesClient createOffline(
+          URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new ResourcesClient(url, identity, settings, false);
+  }
+
   public static ResourcesClient createLocal(
       Identity identity, Parameters<Engine.Setting> settings) {
     return new ResourcesClient(Type.RESOURCES.localServiceUrl(), identity, settings);
