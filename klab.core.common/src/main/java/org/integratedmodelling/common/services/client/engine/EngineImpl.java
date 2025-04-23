@@ -241,10 +241,9 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   private void notifyLocalService(KlabService klabService, ServiceStatus serviceStatus) {
-
     this.defaultUser.send(
         Message.MessageClass.EngineLifecycle, Message.MessageType.ServiceStatus, serviceStatus);
-    Logging.INSTANCE.info("GOT SERVICE STATUS " + serviceStatus);
+//    Logging.INSTANCE.info("GOT SERVICE STATUS " + serviceStatus);
   }
 
   @Override

@@ -2,18 +2,25 @@ package org.integratedmodelling.klab.services.resources.persistence;
 
 import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.common.mapper.JacksonMapperModule;
+import org.dizitart.no2.index.IndexType;
+import org.dizitart.no2.repository.EntityDecorator;
+import org.dizitart.no2.repository.EntityId;
+import org.dizitart.no2.repository.EntityIndex;
+import org.dizitart.no2.repository.ObjectRepository;
 import org.dizitart.no2.rocksdb.RocksDBModule;
 import org.dizitart.no2.spatial.SpatialModule;
 import org.dizitart.no2.spatial.jackson.GeometryModule;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
+import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * Nitrite-based noSQL embedded storage for observables, resources, models and permissions. The URN
@@ -25,6 +32,8 @@ public class ResourcesKBox {
   private final Nitrite db;
   private final File databaseFile;
   private final ResourcesProvider resourcesProvider;
+  private ObjectRepository<ResourceInfo> resourceMetadata;
+  private ObjectRepository<ResourceImpl> resources;
 
   public ResourcesKBox(Scope scope, ServiceStartupOptions options, ResourcesProvider service) {
 
@@ -38,6 +47,9 @@ public class ResourcesKBox {
             .loadModule(new SpatialModule())
             .loadModule(new JacksonMapperModule(new GeometryModule()))
             .openOrCreate();
+
+    this.resourceMetadata = db.getRepository(new ResourceMetadataDecorator());
+    this.resources = db.getRepository(new ResourceDecorator());
   }
 
   public void shutdown() {
@@ -55,7 +67,8 @@ public class ResourcesKBox {
    * @return the resource or null
    */
   public Resource getResource(String urn, Version version) {
-    return null;
+    // TODO handle version
+    return resources.getById(urn);
   }
 
   /**
@@ -66,6 +79,10 @@ public class ResourcesKBox {
    * @return
    */
   public boolean putResource(Resource resource) {
+    if (resource instanceof ResourceImpl resource1) {
+      var result = resources.update(resource1, true);
+      return result.getAffectedCount() == 1;
+    }
     return false;
   }
 
@@ -76,11 +93,59 @@ public class ResourcesKBox {
    * @param version same as in {@link #getResource(String, Version)}
    * @return status or null
    */
-  public ResourceStatus getStatus(String urn, Version version) {
-    return null;
+  public ResourceInfo getStatus(String urn, Version version) {
+    // TODO handle version
+    return resourceMetadata.getById(urn);
   }
 
-  public boolean putStatus(String urn, Version version, ResourceStatus status) {
-    return false;
+  public boolean putStatus(ResourceInfo status) {
+    var result = resourceMetadata.update(status, true);
+    return result.getAffectedCount() == 1;
+  }
+
+  private static class ResourceMetadataDecorator implements EntityDecorator<ResourceInfo> {
+
+    @Override
+    public Class<ResourceInfo> getEntityType() {
+      return ResourceInfo.class;
+    }
+
+    @Override
+    public EntityId getIdField() {
+      return new EntityId("urn");
+    }
+
+    @Override
+    public List<EntityIndex> getIndexFields() {
+      return List.of(new EntityIndex(IndexType.UNIQUE, "urn"));
+    }
+
+    @Override
+    public String getEntityName() {
+      return "resourceInfo";
+    }
+  }
+
+  private static class ResourceDecorator implements EntityDecorator<ResourceImpl> {
+
+    @Override
+    public Class<ResourceImpl> getEntityType() {
+      return ResourceImpl.class;
+    }
+
+    @Override
+    public EntityId getIdField() {
+      return new EntityId("urn");
+    }
+
+    @Override
+    public List<EntityIndex> getIndexFields() {
+      return List.of(new EntityIndex(IndexType.UNIQUE, "urn"));
+    }
+
+    @Override
+    public String getEntityName() {
+      return "resourceInfo";
+    }
   }
 }

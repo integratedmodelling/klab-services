@@ -130,7 +130,8 @@ public interface GraphModel {
       ValueType valueType,
       long offset,
       String histogramJson,
-      Persistence persistence) {}
+      Persistence persistence,
+      boolean offloaded) {}
 
   record Geometry(long id, String definition, long size) {}
 

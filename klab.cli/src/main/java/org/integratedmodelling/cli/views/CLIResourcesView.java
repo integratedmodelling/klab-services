@@ -3,6 +3,7 @@ package org.integratedmodelling.cli.views;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import org.integratedmodelling.cli.KlabCLI;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -21,6 +22,7 @@ import picocli.CommandLine;
       CLIResourcesView.Rights.class,
       CLIResourcesView.Components.class,
       CLIResourcesView.List.class,
+      CLIResourcesView.Info.class,
       CLIResourcesView.Project.class,
       CLIResourcesView.Workspace.class
     })
@@ -81,6 +83,34 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
       3. If arguments, set rights and report
        */
       System.out.println("list rights");
+    }
+  }
+
+
+  @CommandLine.Command(
+          name = "info",
+          mixinStandardHelpOptions = true,
+          version = Version.CURRENT,
+          description = {"List and describe all the available resource services.", ""},
+          subcommands = {})
+  public static class Info implements Runnable {
+
+    @CommandLine.Option(
+            names = {"-s", "--service"},
+            defaultValue = "local" /* TODO initialize at null */,
+            description = {"Resource service to connect to"},
+            required = false)
+    private String service;
+
+    @CommandLine.Parameters(
+            description = "The URN of the resource that we inquire or assign rights for")
+    private String urn;
+
+    @Override
+    public void run() {
+      var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
+      var info = service.resourceInfo(urn, KlabCLI.INSTANCE.user());
+      System.out.println(Utils.Json.printAsJson(info));
     }
   }
 

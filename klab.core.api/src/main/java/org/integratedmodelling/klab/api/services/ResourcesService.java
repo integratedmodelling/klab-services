@@ -18,7 +18,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 
@@ -241,7 +241,18 @@ public interface ResourcesService extends KlabService {
    * @param scope
    * @return
    */
-  ResourceStatus resourceStatus(String urn, Scope scope);
+  ResourceInfo resourceInfo(String urn, Scope scope);
+
+  /**
+   * Set all the asset metadata in one shot. Applies to all kinds of assets that deserve their own resource
+   * metadata - i.e. workspaces, projects, components and resources.
+   *
+   * @param urn
+   * @param info the new resource status from now on
+   * @param scope
+   * @return
+   */
+  boolean setResourceInfo(String urn, ResourceInfo info, Scope scope);
 
   /**
    * @param definition
@@ -390,7 +401,7 @@ public interface ResourcesService extends KlabService {
    * @deprecated should be non-API, part of the import mechanism
    * @return
    */
-  ResourceStatus registerResource(
+  ResourceInfo registerResource(
       String urn, KnowledgeClass knowledgeClass, File fileLocation, Scope submittingScope);
 
   /**

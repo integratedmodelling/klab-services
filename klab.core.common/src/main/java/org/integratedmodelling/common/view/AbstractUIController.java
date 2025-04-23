@@ -232,14 +232,12 @@ public abstract class AbstractUIController implements UIController {
         // TODO engine ready event and status
         switch (message.getMessageType()) {
           case ServiceStatus -> {
-            System.out.println("STATO SERVIZIO " + message);
             dispatch(
                 this,
                 UIReactor.UIEvent.ServiceStatus,
                 message.getPayload(KlabService.ServiceStatus.class));
           }
           case EngineStatusChanged -> {
-            System.out.println("STATO MOTORINO " + message);
             dispatch(this, UIEvent.EngineStatusChanged, message.getPayload(Engine.Status.class));
           }
           case UsingDistribution -> {
