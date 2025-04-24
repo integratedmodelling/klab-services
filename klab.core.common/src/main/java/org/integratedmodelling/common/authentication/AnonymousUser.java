@@ -110,7 +110,7 @@ public class AnonymousUser implements UserIdentity {
 	}
 	
 	public String toString() {
-		return "anonymous (invalid.email@noservice.com)";
+		return "anonymous user (invalid.email@noservice.com)";
 	}
 
 }

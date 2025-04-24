@@ -184,10 +184,9 @@ public class ResourcesProvider extends BaseService
         Instance.class);
 
     this.kbox = ModelKbox.create(this);
+    this.resourcesKbox = new ResourcesKBox(scope, options, this);
     this.workspaceManager =
         new WorkspaceManager(scope, getStartupOptions(), this, this::resolveRemoteProject);
-
-    this.resourcesKbox = new ResourcesKBox(scope, options, this);
 
     //    // FIXME remove along with MapDB and catalog, use Nitrite instead
     //    this.db =
@@ -1500,5 +1499,9 @@ public class ResourcesProvider extends BaseService
     }
 
     throw new KlabIllegalArgumentException("unexpected scope class");
+  }
+
+  public ResourcesKBox getResourcesKbox() {
+    return this.resourcesKbox;
   }
 }

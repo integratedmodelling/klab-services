@@ -1549,7 +1549,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           new ObjectMapper()
               .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
               .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
-              .enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
+              .enable(SerializationFeature.WRITE_NULL_MAP_VALUES)
+              .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
       defaultMapper.getSerializerProvider().setNullKeySerializer(new NullKeySerializer());
       JacksonConfiguration.configureObjectMapperForKlabTypes(defaultMapper);
     }
@@ -1559,7 +1560,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           new ObjectMapper()
               .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
               .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
-              .enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
+              .enable(SerializationFeature.WRITE_NULL_MAP_VALUES)
+              .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
       ret.getSerializerProvider().setNullKeySerializer(new NullKeySerializer());
       JacksonConfiguration.configureObjectMapperForKlabTypes(ret);
       return ret;

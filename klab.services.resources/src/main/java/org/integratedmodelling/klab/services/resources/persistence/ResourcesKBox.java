@@ -1,7 +1,14 @@
 package org.integratedmodelling.klab.services.resources.persistence;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.util.List;
 import org.dizitart.no2.Nitrite;
-import org.dizitart.no2.common.mapper.JacksonMapperModule;
+import org.dizitart.no2.common.mapper.JacksonMapper;
+import org.dizitart.no2.common.module.NitriteModule;
 import org.dizitart.no2.index.IndexType;
 import org.dizitart.no2.repository.EntityDecorator;
 import org.dizitart.no2.repository.EntityId;
@@ -9,7 +16,7 @@ import org.dizitart.no2.repository.EntityIndex;
 import org.dizitart.no2.repository.ObjectRepository;
 import org.dizitart.no2.rocksdb.RocksDBModule;
 import org.dizitart.no2.spatial.SpatialModule;
-import org.dizitart.no2.spatial.jackson.GeometryModule;
+import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -18,9 +25,6 @@ import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
-
-import java.io.File;
-import java.util.List;
 
 /**
  * Nitrite-based noSQL embedded storage for observables, resources, models and permissions. The URN
@@ -35,17 +39,44 @@ public class ResourcesKBox {
   private ObjectRepository<ResourceInfo> resourceMetadata;
   private ObjectRepository<ResourceImpl> resources;
 
+  /** Take over the mapper so we can use interfaces */
+  private static class KlabJacksonMapper extends JacksonMapper {
+
+    ObjectMapper om;
+
+    @Override
+    public ObjectMapper getObjectMapper() {
+      if (om == null) {
+        this.om = new ObjectMapper();
+        JacksonConfiguration.configureObjectMapperForKlabTypes(this.om);
+        this.om.setVisibility(
+            this.om
+                .getSerializationConfig()
+                .getDefaultVisibilityChecker()
+                .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
+                .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE));
+        this.om.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+        this.om.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+        this.om.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        this.om.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+      }
+      return this.om;
+    }
+  }
+
   public ResourcesKBox(Scope scope, ServiceStartupOptions options, ResourcesProvider service) {
 
     this.resourcesProvider = service;
     this.databaseFile =
         BaseService.getFileInConfigurationSubdirectory(options, "data", "resources.db");
     RocksDBModule storeModule = RocksDBModule.withConfig().filePath(databaseFile.getPath()).build();
+
     this.db =
         Nitrite.builder()
             .loadModule(storeModule)
             .loadModule(new SpatialModule())
-            .loadModule(new JacksonMapperModule(new GeometryModule()))
+            .loadModule(NitriteModule.module(new KlabJacksonMapper()))
             .openOrCreate();
 
     this.resourceMetadata = db.getRepository(new ResourceMetadataDecorator());

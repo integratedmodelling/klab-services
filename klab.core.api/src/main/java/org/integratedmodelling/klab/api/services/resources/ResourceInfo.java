@@ -3,10 +3,10 @@ package org.integratedmodelling.klab.api.services.resources;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-
+import java.util.Map;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -65,7 +65,7 @@ public class ResourceInfo implements Serializable {
   private File fileLocation;
   private boolean legacy;
   private KnowledgeClass knowledgeClass;
-  private Metadata metadata = Metadata.create();
+  private Map<String, String> metadata = new LinkedHashMap<>();
   private String serviceId;
 
   public List<String> getChildResourceUrns() {
@@ -187,11 +187,11 @@ public class ResourceInfo implements Serializable {
     this.rights = rights;
   }
 
-  public Metadata getMetadata() {
+  public Map<String, String> getMetadata() {
     return metadata;
   }
 
-  public void setMetadata(Metadata metadata) {
+  public void setMetadata(Map<String, String> metadata) {
     this.metadata = metadata;
   }
 

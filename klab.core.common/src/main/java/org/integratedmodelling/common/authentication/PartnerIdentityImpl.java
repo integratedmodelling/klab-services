@@ -8,74 +8,79 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class PartnerIdentityImpl extends IdentityImpl implements PartnerIdentity {
-    private String name;
-    private String emailAddress;
-    private String address;
-    private UserIdentity contactPerson;
-    private Set<Group> groups = new HashSet<>();
-    private String authenticatingHub;
-    private String publicKey;
+  private String name;
+  private String emailAddress;
+  private String address;
+  private UserIdentity contactPerson;
+  private Set<Group> groups = new HashSet<>();
+  private String authenticatingHub;
+  private String publicKey;
 
-    @Override
-    public String getName() {
-        return name;
-    }
+  @Override
+  public String getName() {
+    return name;
+  }
 
-    @Override
-    public String getEmailAddress() {
-        return emailAddress;
-    }
+  @Override
+  public String getEmailAddress() {
+    return emailAddress;
+  }
 
-    @Override
-    public Set<Group> getGroups() {
-        return groups;
-    }
+  @Override
+  public Set<Group> getGroups() {
+    return groups;
+  }
 
-    public void setGroups(Set<Group> groups) {
-        this.groups = groups;
-    }
+  public void setGroups(Set<Group> groups) {
+    this.groups = groups;
+  }
 
-    @Override
-    public String getAddress() {
-        return address;
-    }
+  @Override
+  public String getAddress() {
+    return address;
+  }
 
-    @Override
-    public UserIdentity getContactPerson() {
-        return contactPerson;
-    }
+  @Override
+  public UserIdentity getContactPerson() {
+    return contactPerson;
+  }
 
-    @Override
-    public String getAuthenticatingHub() {
-        return authenticatingHub;
-    }
+  @Override
+  public String getAuthenticatingHub() {
+    return authenticatingHub;
+  }
 
-    @Override
-    public String getPublicKey() {
-        return publicKey;
-    }
+  @Override
+  public String getPublicKey() {
+    return publicKey;
+  }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+  public void setName(String name) {
+    this.name = name;
+  }
 
-    public void setEmailAddress(String emailAddress) {
-        this.emailAddress = emailAddress;
-    }
+  public void setEmailAddress(String emailAddress) {
+    this.emailAddress = emailAddress;
+  }
 
-    public void setAddress(String address) {
-        this.address = address;
-    }
+  public void setAddress(String address) {
+    this.address = address;
+  }
 
-    public void setContactPerson(UserIdentity contactPerson) {
-        this.contactPerson = contactPerson;
-    }
+  public void setContactPerson(UserIdentity contactPerson) {
+    this.contactPerson = contactPerson;
+  }
 
-    public void setAuthenticatingHub(String authenticatingHub) {
-        this.authenticatingHub = authenticatingHub;
-    }
+  public void setAuthenticatingHub(String authenticatingHub) {
+    this.authenticatingHub = authenticatingHub;
+  }
 
-    public void setPublicKey(String publicKey) {
-        this.publicKey = publicKey;
-    }
+  public void setPublicKey(String publicKey) {
+    this.publicKey = publicKey;
+  }
+
+  @Override
+  public String toString() {
+    return name + " (" + emailAddress + ')';
+  }
 }
