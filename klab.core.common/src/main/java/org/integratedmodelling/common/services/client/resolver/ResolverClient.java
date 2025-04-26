@@ -76,6 +76,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
                     ServicesAPI.CAPABILITIES,
                     ResolverCapabilitiesImpl.class,
                     Notification.Mode.Silent);
+
       } catch (Throwable t) {
         // not ready yet
         return null;

@@ -1,12 +1,14 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
-
 import java.util.List;
 
 /**
- * Holds the types and field constants for the digital twin graph model and the correspondent
- * GraphQL schema. All enums are local and they correspond to those actually used in the models so
+ * Holds the types and field constants for the digital twin graph model (*and the correspondent
+ * GraphQL schema). All enums are local and they correspond to those actually used in the models so
  * that the schema is internally consistent and has no dependency.
+ *
+ * <p>All graphs retrieved from the runtime API follow this schema and the relationship types can be
+ * used to filter graph requests.
  *
  * <p>TODO use this in the KnowledgeGraph implementation
  */
@@ -86,34 +88,34 @@ public interface GraphModel {
     SERVICE_SHUTDOWN
   }
 
-    /**
-     * The type of relationships in the graph. All relationship carry further information, to be fully
-     * defined.
-     */
-    enum Relationship {
-      HAS_PARENT,
-      AFFECTS,
-      CONTEXTUALIZED_BY,
-      CONTEXTUALIZED,
-      EMERGED_FROM,
-      HAS_OBSERVER,
-      HAS_SIBLING,
-      HAS_RELATIONSHIP_TARGET,
-      HAS_PLAN,
-      BY_AGENT,
-      HAS_GEOMETRY,
-      HAS_COVERAGE,
-      CREATED,
-      HAS_DATAFLOW,
-      HAS_PROVENANCE,
-      HAS_ACTIVITY,
-      HAS_DATA,
-      HAS_CHILD,
-      TRIGGERED,
-      RESOLVED;
-    }
+  /**
+   * The type of relationships in the graph. All relationship carry further information, to be fully
+   * defined.
+   */
+  enum Relationship {
+    HAS_PARENT,
+    AFFECTS,
+    CONTEXTUALIZED_BY,
+    CONTEXTUALIZED,
+    EMERGED_FROM,
+    HAS_OBSERVER,
+    HAS_SIBLING,
+    HAS_RELATIONSHIP_TARGET,
+    HAS_PLAN,
+    BY_AGENT,
+    HAS_GEOMETRY,
+    HAS_COVERAGE,
+    CREATED,
+    HAS_DATAFLOW,
+    HAS_PROVENANCE,
+    HAS_ACTIVITY,
+    HAS_DATA,
+    HAS_CHILD,
+    TRIGGERED,
+    RESOLVED;
+  }
 
-    record Link(long sourceId, long targetId, LinkType type) {}
+  record Link(long sourceId, long targetId, LinkType type) {}
 
   record Context(long id, long created, String name, Persistence expiration, String user) {
     public static final String ID_FIELD = "id";
