@@ -645,8 +645,8 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public URL lockProject(String urn, UserScope scope) {
-    return client.get(ServicesAPI.RESOURCES.ADMIN.LOCK_PROJECT, URL.class, "urn", urn);
+  public boolean lockProject(String urn, UserScope scope) {
+    return client.get(ServicesAPI.RESOURCES.ADMIN.LOCK_PROJECT, Boolean.class, "urn", urn);
   }
 
   @Override

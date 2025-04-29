@@ -607,8 +607,9 @@ public interface ResourcesService extends KlabService {
      * @param urn the URN of the project to lock
      * @throws org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException if the
      *     project is already locked or isn't accessible for any other reason
+     * @return true if lock was successful
      */
-    URL lockProject(String urn, UserScope scope);
+    boolean lockProject(String urn, UserScope scope);
 
     /**
      * Unlock a previously locked project.

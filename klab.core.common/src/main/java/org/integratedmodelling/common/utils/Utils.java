@@ -1952,6 +1952,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       return ret;
     }
 
+    public static <T> List<T> flatList(List<List<T>> lists){
+      List<T> ret = new ArrayList<>();
+      for (List<T> list : lists) {
+        ret.addAll(list);
+      }
+      return ret;
+    }
+
     @SuppressWarnings("unchecked")
     private static <T> void addToCollection(List<T> ret, T... objects) {
       for (T o : objects) {

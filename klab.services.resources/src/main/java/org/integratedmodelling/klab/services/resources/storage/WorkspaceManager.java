@@ -226,30 +226,24 @@ public class WorkspaceManager {
     return _behaviorMap == null ? Collections.emptySet() : _behaviorMap.keySet();
   }
 
-  public URL lockProject(String urn, String token, boolean isLocal) {
+  public boolean lockProject(String urn, String token, boolean isLocal) {
 
     var descriptor = projectDescriptors.get(urn);
     if (descriptor == null || !(descriptor.storage instanceof FileProjectStorage)) {
-      return null;
+      return false;
     }
 
     // check and record lock
     if (projectLocks.containsKey(urn) && !projectLocks.get(urn).equals(token)) {
       scope.info("Lock attempt failed: project " + urn + " is already locked");
-      return null;
+      return false;
     }
 
     projectLocks.put(urn, token);
     ((FileProjectStorage) descriptor.storage).lock(true);
     scope.info("Project " + urn + " is locked");
 
-    if (isLocal) {
-      return descriptor.storage.getUrl();
-    } else {
-      // TODO prepare a zip file and make it available through download area, return public URL
-    }
-
-    return null;
+    return true;
   }
 
   public boolean unlockProject(String urn, String token) {
@@ -2623,14 +2617,17 @@ public class WorkspaceManager {
 
     if (lockingAuthorization == null
         || !lockingAuthorization.equals(projectLocks.get(projectName))) {
-      throw new KlabAuthorizationException(
-          "cannot update project " + projectName + " without " + "locking" + " it first");
+      return List.of(
+          ResourceSet.empty(
+              Notification.error("Project " + projectName + " is not locked. Update ignored.")));
     }
 
     var pd = projectDescriptors.get(projectName);
     if (pd == null || !(pd.storage instanceof FileProjectStorage)) {
-      throw new KlabIllegalStateException(
-          "Cannot update a document that is not stored on the " + "service's filesystem");
+      return List.of(
+          ResourceSet.empty(
+              Notification.error(
+                  "Project " + projectName + " is not handled by this service. Update ignored.")));
     }
 
     /*
@@ -2696,17 +2693,17 @@ public class WorkspaceManager {
 
     if (lockingAuthorization == null
         || !lockingAuthorization.equals(projectLocks.get(projectName))) {
-      throw new KlabAuthorizationException(
-          "cannot update project " + projectName + " without " + "locking" + " it first");
+      return List.of(
+          ResourceSet.empty(
+              Notification.error("Project " + projectName + " is not locked. Update ignored.")));
     }
 
     var pd = projectDescriptors.get(projectName);
     if (pd == null || !(pd.storage instanceof FileProjectStorage fileProjectStorage)) {
-      throw new KlabIllegalStateException(
-          "Cannot create a document within a project not stored "
-              + "on "
-              + "the "
-              + "service's filesystem");
+      return List.of(
+          ResourceSet.empty(
+              Notification.error(
+                  "Project " + projectName + " is not handled by this service. Update ignored.")));
     }
 
     var document = fileProjectStorage.create(documentUrn, documentType);

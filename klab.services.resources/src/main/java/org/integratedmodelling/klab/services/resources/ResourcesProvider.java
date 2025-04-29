@@ -1311,7 +1311,7 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public URL lockProject(String urn, UserScope scope) {
+  public boolean lockProject(String urn, UserScope scope) {
     String token = scope.getIdentity().getId();
     boolean local =
         scope instanceof ServiceScope

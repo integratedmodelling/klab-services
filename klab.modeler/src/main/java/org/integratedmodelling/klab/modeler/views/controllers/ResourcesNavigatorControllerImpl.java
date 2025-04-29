@@ -60,7 +60,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     if (!changes.isEmpty()) {
       container = assetMap.get(changes.getWorkspace());
       if (container != null) {
-        if (container.mergeChanges(changes, getController().engine().serviceScope())) {
+        if (!container.mergeChanges(changes, getController().engine().serviceScope()).isEmpty()) {
           if (!changes.getObservationStrategies().isEmpty() || !changes.getOntologies().isEmpty()) {
             // send resource set to reasoner to update the knowledge if there are relevant changes
             var reasoner = getController().user().getService(Reasoner.class);
@@ -177,21 +177,21 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
       for (var asset : workspace.children()) {
         if (asset instanceof NavigableProject project && !project.isLocked()) {
           // attempt locking
-          var url = admin.lockProject(project.getUrn(), getController().user());
-          if (url != null) {
-            if (url.getProtocol().equals("file")) {
-              var file = new File(url.getFile());
-              if (file.isDirectory()) {
-                project.setLocked(true);
-                project.setRootDirectory(file);
-                anythingLocked = true;
-              }
-            } else {
-              // TODO download contents from zip
-              throw new KlabUnimplementedException(
-                  "locked project synchronization from " + "services");
-            }
-          }
+          anythingLocked = admin.lockProject(project.getUrn(), getController().user());
+          //          if (url != null) {
+          //            if (url.getProtocol().equals("file")) {
+          //              var file = new File(url.getFile());
+          //              if (file.isDirectory()) {
+          //                project.setLocked(true);
+          //                project.setRootDirectory(file);
+          //                anythingLocked = true;
+          //              }
+          //            } else {
+          //              // TODO download contents from zip
+          //              throw new KlabUnimplementedException(
+          //                  "locked project synchronization from " + "services");
+          //            }
+          //          }
         }
       }
     }
@@ -251,7 +251,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
      * TODO we could ingest the notifications into the assets
      */
     for (var asset : assetMap.values()) {
-      if (asset.mergeChanges(notifications, getController().engine().serviceScope())) {
+      if (!asset.mergeChanges(notifications, getController().engine().serviceScope()).isEmpty()) {
         view().resetValidationNotifications(asset);
       }
     }
