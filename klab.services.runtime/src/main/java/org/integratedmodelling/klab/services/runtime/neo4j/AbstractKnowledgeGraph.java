@@ -22,8 +22,6 @@ import java.util.Map;
 
 public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
-  protected static int MAX_CACHED_OBSERVATIONS = 400;
-
   protected ContextScope scope;
 
   protected abstract long nextKey();
