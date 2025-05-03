@@ -28,6 +28,8 @@ public interface ServicesView extends View {
      */
     void notifyServiceStatus(KlabService.ServiceStatus status);
 
+    void serviceFocusChanged(KlabService.ServiceCapabilities serviceCapabilities);
+
     /**
      * Called when the state of any services has changed to the point of making the engine configuration
      * different. Other service notification methods should be called independently of this one.

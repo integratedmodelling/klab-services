@@ -12,26 +12,37 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class ReasonerCapabilitiesImpl extends AbstractServiceCapabilities implements Reasoner.Capabilities {
+public class ReasonerCapabilitiesImpl extends AbstractServiceCapabilities
+    implements Reasoner.Capabilities {
 
-    private KlabService.Type type;
-    private String worldviewId;
+  private KlabService.Type type;
+  private String worldviewId;
+  private boolean consistent;
 
-    @Override
-    public KlabService.Type getType() {
-        return type;
-    }
+  @Override
+  public KlabService.Type getType() {
+    return type;
+  }
 
-    public void setType(KlabService.Type type) {
-        this.type = type;
-    }
+  public void setType(KlabService.Type type) {
+    this.type = type;
+  }
 
-    @Override
-    public String getWorldviewId() {
-        return worldviewId;
-    }
+  @Override
+  public String getWorldviewId() {
+    return worldviewId;
+  }
 
-    public void setWorldviewId(String worldviewId) {
-        this.worldviewId = worldviewId;
-    }
+  public void setWorldviewId(String worldviewId) {
+    this.worldviewId = worldviewId;
+  }
+
+  @Override
+  public boolean isConsistent() {
+    return consistent;
+  }
+
+  public void setConsistent(boolean consistent) {
+    this.consistent = consistent;
+  }
 }

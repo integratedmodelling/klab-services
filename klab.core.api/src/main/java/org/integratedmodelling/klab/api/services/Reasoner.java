@@ -33,6 +33,13 @@ public interface Reasoner extends KlabService {
   interface Capabilities extends ServiceCapabilities {
 
     /**
+     * If this returns true, the reasoner has loaded inconsistent axioms and should not be used.
+     *
+     * @return
+     */
+    boolean isConsistent();
+
+    /**
      * Get the unique ID of the worldview loaded in this service. If this is null, the service knows
      * nothing and is unusable for reasoning.
      *
@@ -69,6 +76,7 @@ public interface Reasoner extends KlabService {
    * @return
    */
   boolean resolves(Semantics toResolve, Semantics candidate, Semantics context);
+
   /**
    * Basic reasoning operation for subsumption between concepts.
    *
@@ -728,15 +736,16 @@ public interface Reasoner extends KlabService {
    */
   SemanticSearchResponse semanticSearch(SemanticSearchRequest request);
 
-//  /**
-//   * Replace conceptual components as requested in the conceptual expression defining the concept
-//   * and return the result.
-//   *
-//   * @param original
-//   * @param replacements
-//   * @return
-//   */
-//  Concept replaceComponent(Concept original, Map<Concept, Concept> replacements);
+  //  /**
+  //   * Replace conceptual components as requested in the conceptual expression defining the
+  // concept
+  //   * and return the result.
+  //   *
+  //   * @param original
+  //   * @param replacements
+  //   * @return
+  //   */
+  //  Concept replaceComponent(Concept original, Map<Concept, Concept> replacements);
 
   /**
    * Send a build strategy constructed through a builder and return the result as a concept.

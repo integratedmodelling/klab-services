@@ -19,51 +19,11 @@ import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
 @UIViewController(value = UIReactor.Type.ServiceChooser, viewType = ServicesView.class, target = Engine.class)
 public interface ServicesViewController extends ViewController<ServicesView> {
 
-//    /**
-//     * Service exists - may be on, off or in error. If no other services are available for its type, the view
-//     * should focus it unless there are configuration options to that extent.
-//     *
-//     * @param service
-//     */
-    //    @UIEventHandler(UIEvent.ServiceAvailable)
-    //    void serviceAvailable(KlabService.ServiceCapabilities service);
-    //
-    //    @UIEventHandler(UIEvent.ServiceUnavailable)
-    //    void serviceUnavailable(KlabService.ServiceCapabilities service);
-    //
-    //    @UIEventHandler(UIEvent.ServiceStarting)
-    //    void serviceStarting(KlabService.ServiceCapabilities service);
-    //
-    //    /**
-    //     * Will be called at least once to report on service status, and possibly at regular intervals
-    //     depending
-    //     * on the engine implementation. This may make the service available, unavailable, busy, and
-    //     report on
-    //     * current load factor and state.
-    //     *
-    //     * @param status
-    //     */
-    //    @UIEventHandler(UIEvent.ServiceStatus)
-    //    void serviceStatus(KlabService.ServiceStatus status);
-
-    //    @UIEventHandler(UIEvent.ReasoningAvailable)
-    //    void reasoningAvailable(Reasoner.Capabilities capabilities);
     @UIEventHandler(UIEvent.EngineStatusChanged)
     void engineStatusChanged(Engine.Status status);
 
     @UIEventHandler(UIEvent.ServiceStatus)
     void serviceStatusNotified(KlabService.ServiceStatus status);
-
-    /**
-     * User action choosing a service to focus on. The view handles all the UI implications and then calls
-     * this so that the engine connected to the main controller is set to use THAT service as default, then a
-     * {@link org.integratedmodelling.klab.api.view.UIReactor.UIEvent#ServiceSelected} message gets to all
-     * views that care for it. This should be also be done automatically upon "default" service availability.
-     *
-     * @param service the capabilities of the service selected
-     */
-    @UIActionHandler(value = UIReactor.UIAction.SelectService, sends = UIEvent.ServiceSelected)
-    void selectService(KlabService.ServiceCapabilities service);
 
     @UIActionHandler(value = UIReactor.UIAction.FocusService, sends = UIEvent.ServiceFocused)
     void focusService(KlabService.ServiceCapabilities service);

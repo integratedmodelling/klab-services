@@ -1,6 +1,17 @@
 package org.integratedmodelling.common.services.client;
 
-import org.integratedmodelling.common.authentication.Authentication;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
@@ -9,13 +20,11 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -29,35 +38,20 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-
 /**
  * Common implementation of a service client, to be specialized for all service types and APIs.
  * Manages the scope and automatically enables messaging with local services.
  */
 public abstract class ServiceClient implements KlabService {
 
-  private BiConsumer<Channel, Message>[] scopeListeners;
+  private Identity identity;
   private Type serviceType;
-  private Pair<Identity, List<ServiceReference>> authentication;
-  private AtomicBoolean connected = new AtomicBoolean(false);
-  //    private AtomicBoolean authorized = new AtomicBoolean(false);
-  private AtomicBoolean authenticated = new AtomicBoolean(false);
-  private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-  private boolean usingLocalSecret;
-  private AtomicReference<ServiceStatus> status = new AtomicReference<>(ServiceStatus.offline());
+  private final AtomicBoolean connected = new AtomicBoolean(false);
+  private final AtomicBoolean shutdown = new AtomicBoolean(false);
+  private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+  private final AtomicReference<ServiceStatus> status = new AtomicReference<>(null);
   private AbstractServiceDelegatingScope scope;
-  private URL url;
+  private final URL url;
   private String token;
   private long pollCycleSeconds = 5;
   protected Utils.Http.Client client;
@@ -66,21 +60,9 @@ public abstract class ServiceClient implements KlabService {
   // should be
   // added to scope requests for talkback.
   private KlabService ownerService;
-  //    // these can be installed from the outside. TODO these should go in the scope and only there
-  //    @Deprecated
-  //    protected List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
   private boolean local;
   private Parameters<Engine.Setting> settings;
-
-  protected ServiceClient(KlabService.Type serviceType, Parameters<Engine.Setting> settings) {
-    this.settings = settings;
-    this.authentication = Authentication.INSTANCE.authenticate(settings);
-    this.serviceType = serviceType;
-    this.url = discoverService(authentication.getFirst(), authentication.getSecond(), serviceType);
-    if (this.url != null) {
-      establishConnection();
-    }
-  }
+  private String serviceId;
 
   public Utils.Http.Client getHttpClient() {
     return client;
@@ -96,7 +78,6 @@ public abstract class ServiceClient implements KlabService {
    *
    * @param serviceType
    * @param identity
-   * @param services
    * @param settings
    * @param ownerService
    */
@@ -104,112 +85,37 @@ public abstract class ServiceClient implements KlabService {
       KlabService.Type serviceType,
       URL url,
       Identity identity,
-      List<ServiceReference> services,
       Parameters<Engine.Setting> settings,
       KlabService ownerService) {
     this.settings = settings;
-    this.authentication = Pair.of(identity, List.of());
+    this.identity = identity;
     this.ownerService = ownerService;
     this.serviceType = serviceType;
     this.url = url;
     if (this.url != null) {
-      establishConnection();
+      connect();
     }
   }
 
-  protected ServiceClient(
-      KlabService.Type serviceType,
-      Identity identity,
-      List<ServiceReference> services,
-      Parameters<Engine.Setting> settings) {
-    this.settings = settings;
-    this.authentication = Authentication.INSTANCE.authenticate(settings);
-    this.serviceType = serviceType;
-    this.url = discoverService(authentication.getFirst(), authentication.getSecond(), serviceType);
-    if (this.url != null) {
-      establishConnection();
-    }
-  }
-
-  @SafeVarargs
   protected ServiceClient(
       KlabService.Type serviceType,
       URL url,
       Identity identity,
       Parameters<Engine.Setting> settings,
-      List<ServiceReference> services,
-      BiConsumer<Channel, Message>... listeners) {
+      boolean connect) {
     this.settings = settings;
-    this.authentication = Pair.of(identity, services);
+    this.identity = identity;
     this.serviceType = serviceType;
     this.url = url;
     this.local = Utils.URLs.isLocalHost(url);
-    this.scopeListeners = listeners;
-    establishConnection();
-  }
-
-  /**
-   * After this is run, we may have any combination of {no URL, local URL, remote URL} * {no token,
-   * local secret, validated remote token}.
-   *
-   * @param identity
-   * @param services
-   * @param serviceType
-   * @return
-   */
-  private URL discoverService(
-      Identity identity, List<ServiceReference> services, Type serviceType) {
-
-    URL ret = null;
-
-    /*
-    Connect to the default service of the passed type; if none is available, try the default local URL
-     */
-    if (identity instanceof UserIdentity user) {
-      token = user.isAnonymous() ? ServicesAPI.ANONYMOUS_TOKEN : identity.getId();
-      if (!user.isAnonymous()) {
-        authenticated.set(true);
-      }
+    if (connect) {
+      connect();
     }
-
-    for (var service : services) {
-      if (service.getIdentityType() == serviceType
-          && service.isPrimary()
-          && !service.getUrls().isEmpty()) {
-        for (var url : service.getUrls()) {
-          var status = readServiceStatus(url, scope);
-          if (status != null) {
-            ret = url;
-            // we are connected but we leave setting the connected flag to the timed task
-            this.status.set(status);
-            break;
-          }
-        }
-      }
-      if (ret != null) {
-        break;
-      }
-    }
-
-    if (ret == null) {
-
-      url = serviceType.localServiceUrl();
-      var status = readServiceStatus(url, scope);
-
-      if (status != null) {
-        ret = url;
-        // we are connected but we leave setting the connected flag to the timed task
-        this.status.set(status);
-        this.local = true;
-      }
-    }
-
-    return ret;
   }
 
   protected ServiceClient(URL url, Parameters<Engine.Setting> settings) {
     this.url = url;
-    establishConnection();
+    connect();
   }
 
   /**
@@ -219,12 +125,14 @@ public abstract class ServiceClient implements KlabService {
    * @param url
    * @return
    */
-  public static ServiceStatus readServiceStatus(URL url, Scope scope) {
-    try (var client = Utils.Http.getClient(url, scope)) {
-      return client.get(ServicesAPI.STATUS, ServiceStatusImpl.class, Notification.Mode.Silent);
+  public ServiceStatus readServiceStatus(URL url, Scope scope) {
+    ServiceStatus ret = null;
+    try {
+      ret = client.get(ServicesAPI.STATUS, ServiceStatusImpl.class, Notification.Mode.Silent);
     } catch (Throwable t) {
-      return null;
+      /* service is or has gone offline, do nothing */
     }
+    return ret == null ? ServiceStatus.offline(serviceType, serviceId) : ret;
   }
 
   /**
@@ -238,9 +146,10 @@ public abstract class ServiceClient implements KlabService {
    *     a local server; in that case, the return value is the value for {@link
    *     ServicesAPI#SERVER_KEY_HEADER}.
    */
-  protected String establishConnection() {
+  @SuppressWarnings("unchecked")
+  public String connect(BiConsumer<Channel, Message>... messageBiConsumers) {
 
-    this.token = this.authentication.getFirst().getId();
+    this.token = this.identity.getId();
     String ret = null;
     this.client = Utils.Http.getServiceClient(token, this);
     var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
@@ -261,13 +170,12 @@ public abstract class ServiceClient implements KlabService {
      */
     Channel channel =
         local
-            ? new MessagingChannelImpl(
-                this.authentication.getFirst(), false, ownerService != null) {
+            ? new MessagingChannelImpl(this.identity, false, ownerService != null) {
               public String getId() {
                 return serviceId();
               }
             }
-            : new ChannelImpl(this.authentication.getFirst());
+            : new ChannelImpl(this.identity);
 
     this.scope =
         new AbstractServiceDelegatingScope(channel) {
@@ -292,9 +200,9 @@ public abstract class ServiceClient implements KlabService {
           }
         };
 
-    if (this.scopeListeners != null) {
-      for (var listener : scopeListeners) {
-        this.scope.addListener(listener);
+    if (messageBiConsumers != null) {
+      for (var messageConsumer : messageBiConsumers) {
+        this.scope.onMessage(messageConsumer);
       }
     }
 
@@ -306,6 +214,14 @@ public abstract class ServiceClient implements KlabService {
   private void timedTasks() {
 
     if ("off".equals(settings.get(Engine.Setting.POLLING, String.class))) {
+      return;
+    }
+
+    if (this.shutdown.get()) {
+      scope.send(
+          Message.MessageClass.ServiceLifecycle,
+          Message.MessageType.ServiceStatus,
+          ServiceStatus.offline(serviceType, this.serviceId()));
       return;
     }
 
@@ -321,7 +237,10 @@ public abstract class ServiceClient implements KlabService {
         var currentServiceStatus = readServiceStatus(this.url, scope);
         if (currentServiceStatus == null) {
           connected.set(false);
-          status.set(ServiceStatus.offline());
+          status.set(
+              ServiceStatus.offline(
+                  serviceType,
+                  this.capabilities == null ? null : this.capabilities.getServiceId()));
         } else {
           status.set(currentServiceStatus);
           connected.set(true);
@@ -329,56 +248,52 @@ public abstract class ServiceClient implements KlabService {
             this.capabilities = capabilities(scope);
           }
         }
+
+        ((ServiceStatusImpl) status.get()).setShutdown(this.shutdown.get());
+
       } finally {
 
-        boolean connectionHasChanged = connected.get() != connectedBeforeChecking;
+        //        boolean connectionHasChanged = connected.get() != connectedBeforeChecking;
         boolean statusHasChanged =
-            statusBeforeChecking == null && status.get() != null
-                || statusBeforeChecking != null && status.get() == null
-                || status.get().hasChangedComparedTo(statusBeforeChecking);
+            (statusBeforeChecking == null && status.get() != null)
+                || (statusBeforeChecking != null && status.get() == null)
+                || (status.get() != null
+                    && statusBeforeChecking != null
+                    && status.get().hasChangedComparedTo(statusBeforeChecking));
 
-        if (connectionHasChanged) {
+        if (connected.get()) {
 
-          // add the URL to the capabilities.
-          if (this.capabilities instanceof AbstractServiceCapabilities asc) {
-            asc.setUrl(this.url);
-          }
-
-          if (connected.get()) {
-
-            // see if we have a local service and change the token
-            if ((token == null || token.isEmpty()) && Utils.URLs.isLocalHost(getUrl())) {
-              // may have gotten lost if the service was starting when we booted
-              var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
-              if (secret != null) {
-                token = secret;
-                client.setAuthorization(token);
-                local = true;
-              }
+          // see if we have a local service and change the token
+          if ((token == null || token.isEmpty()) && Utils.URLs.isLocalHost(getUrl())) {
+            // may have gotten lost if the service was starting when we booted
+            var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
+            if (secret != null) {
+              token = secret;
+              client.setAuthorization(token);
+              local = true;
             }
           }
         }
 
-        if (statusHasChanged || connectionHasChanged) {
-
-          var message =
-              (!connected.get() || status.get() == null)
-                  ? Message.MessageType.ServiceUnavailable
-                  : (status.get().isAvailable()
-                      ? Message.MessageType.ServiceAvailable
-                      : Message.MessageType.ServiceInitializing);
+        // send specific message if status has changed
+        if (statusHasChanged) {
 
           // refresh the capabilities after change
           this.capabilities = capabilities(scope);
 
-          scope.send(Message.MessageClass.ServiceLifecycle, message, capabilities);
+          scope.send(
+              Message.MessageClass.ServiceLifecycle,
+              Message.MessageType.ServiceStatusChanged,
+              status.get() == null ? ServiceStatus.offline(serviceType, null) : status.get());
         }
       }
 
-      // send the status
+      // send the status for monitoring
       if (connected.get() && status.get() != null) {
         scope.send(
-            Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceStatus, status.get());
+            Message.MessageClass.ServiceLifecycle,
+            Message.MessageType.ServiceStatus,
+            status.get() == null ? ServiceStatus.offline(serviceType, null) : status.get());
       }
 
     } catch (Throwable t) {
@@ -397,7 +312,7 @@ public abstract class ServiceClient implements KlabService {
   }
 
   public final ServiceStatus status() {
-    return status.get();
+    return status.get() == null ? ServiceStatus.offline(serviceType, serviceId) : status.get();
   }
 
   @Override
@@ -407,8 +322,7 @@ public abstract class ServiceClient implements KlabService {
 
   @Override
   public final boolean shutdown() {
-    //        scope.disconnect(this);
-    this.scheduler.shutdown();
+    this.shutdown.set(true);
     if (local) {
       return client.put(ServicesAPI.ADMIN.SHUTDOWN);
     }
@@ -430,7 +344,13 @@ public abstract class ServiceClient implements KlabService {
 
   @Override
   public String serviceId() {
-    return capabilities(scope).getServiceId();
+    if (this.serviceId == null) {
+      var capabilities = capabilities(scope);
+      if (capabilities != null) {
+        this.serviceId = capabilities.getServiceId();
+      }
+    }
+    return this.serviceId;
   }
 
   @Override
@@ -542,18 +462,8 @@ public abstract class ServiceClient implements KlabService {
     return null;
   }
 
-  //    @Override
-  //    public InputStream retrieveResource(String urn, Version version, String accessKey, String
-  // format,
-  //                                        Scope scope) {
-  //        try {
-  //            return new
-  // FileInputStream(client.withScope(scope).download(ServicesAPI.DOWNLOAD_ASSET,
-  //            "urn", urn
-  //                    , "format", format, "key", accessKey, "version", (version == null ? null :
-  //                                                                      version.toString())));
-  //        } catch (FileNotFoundException e) {
-  //            throw new RuntimeException(e);
-  //        }
-  //    }
+  public void setProperties(ServiceReference serviceReference) {
+    // TODO set owner, local/remote names etc. We already have the identity set up in the
+    // constructor.
+  }
 }

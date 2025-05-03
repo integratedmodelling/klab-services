@@ -210,7 +210,7 @@ public class ResourceAdminController {
   }
 
   @GetMapping(value = ServicesAPI.RESOURCES.ADMIN.LOCK_PROJECT)
-  public URL lockProject(@PathVariable("urn") String urn, Principal principal) {
+  public boolean lockProject(@PathVariable("urn") String urn, Principal principal) {
     if (resourcesServer.klabService() instanceof ResourcesService.Admin admin
         && principal instanceof EngineAuthorization auth) {
       return admin.lockProject(urn, auth.getScope(UserScope.class));

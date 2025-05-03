@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -38,7 +37,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
-import org.integratedmodelling.klab.api.view.UI;
+import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
@@ -247,8 +246,8 @@ public class RuntimeService extends BaseService
       if (fail.get()) {
         serviceSessionScope.send(
             Notification.error(
-                "Error registering session with other services:" + " session is inoperative",
-                UI.Interactivity.DISPLAY));
+                    "Error registering session with other services:" + " session is inoperative",
+                    UIView.Interactivity.DISPLAY));
         serviceSessionScope.setOperative(false);
       }
 
@@ -302,8 +301,8 @@ public class RuntimeService extends BaseService
       if (fail.get()) {
         serviceContextScope.send(
             Notification.error(
-                "Error registering context with other services:" + " context is inoperative",
-                UI.Interactivity.DISPLAY));
+                    "Error registering context with other services:" + " context is inoperative",
+                    UIView.Interactivity.DISPLAY));
         serviceContextScope.setOperative(false);
       }
 

@@ -42,29 +42,29 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
     private Status status = Status.STARTED;
     private String id;
     protected Type type;
-    private List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
+//    private List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
     private Map<Long, Pair<Message, BiConsumer<Message, Message>>> responseHandlers =
             Collections
                     .synchronizedMap(new HashMap<>());
     private String hostServiceId;
 
-    public BiConsumer<Scope, Message>[] getListeners() {
-        return listeners.toArray(new BiConsumer[]{});
-    }
+//    public BiConsumer<Scope, Message>[] getListeners() {
+//        return listeners.toArray(new BiConsumer[]{});
+//    }
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    public ClientUserScope(Identity user, EngineImpl engine, BiConsumer<Scope, Message>... listeners) {
+    public ClientUserScope(Identity user, EngineImpl engine) {
         super(user, false, true);
         this.user = user;
         this.data = Parameters.create();
         this.id = user.getId();
         this.engine = engine;
-        if (listeners != null) {
-            for (var listener : listeners) {
-                this.listeners.add(listener);
-            }
-        }
+//        if (listeners != null) {
+//            for (var listener : listeners) {
+//                this.listeners.add(listener);
+//            }
+//        }
     }
 
     @Override

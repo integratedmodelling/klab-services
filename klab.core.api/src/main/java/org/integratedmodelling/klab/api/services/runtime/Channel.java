@@ -16,6 +16,7 @@ package org.integratedmodelling.klab.api.services.runtime;
 import java.io.Closeable;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import javax.sound.midi.Receiver;
@@ -117,14 +118,26 @@ public interface Channel {
    */
   void debug(Object... o);
 
-  void status(Scope.Status status);
+//  /**
+//   * Send
+//   * @param status
+//   */
+//  void status(Scope.Status status);
 
   void event(Message message);
 
   void ui(Message message);
 
   /**
-   * Install a reactor to a message getting through the event queue.
+   * Subscribe the passed listener to all messages going through this channels.
+   *
+   * @param consumer
+   * @return
+   */
+  Channel onMessage(BiConsumer<Channel, Message> consumer);
+
+  /**
+   * Install a reactor to specific messages getting through the event queue.
    *
    * @param messageClass mandatory message class
    * @param messageType mandatory message type

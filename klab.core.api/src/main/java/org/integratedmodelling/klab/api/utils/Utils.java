@@ -54,22 +54,18 @@ import java.util.regex.Pattern;
 
 public class Utils {
 
-
   /**
-   * Simple log appender for debugging. Simplest way to use is Debug.print(....) which
-   * will append the string to $HOME/debug.txt.
+   * Simple log appender for debugging. Simplest way to use is Debug.print(....) which will append
+   * the string to $HOME/debug.txt.
    *
    * @author Ferd
-   *
    */
   public static class DebugFile {
 
-    private File         fname;
-    static DebugFile         _debug;
+    private File fname;
+    static DebugFile _debug;
 
-    /**
-     * set this to false to neuter the logger.
-     */
+    /** set this to false to neuter the logger. */
     static final boolean DEBUG = true;
 
     public DebugFile(String file, boolean append) {
@@ -101,7 +97,8 @@ public class Utils {
       if (DEBUG) {
         if (_debug == null) {
           try {
-            _debug = new DebugFile(System.getProperty("java.io.tmpdir") + File.separator + "debug.txt", true);
+            _debug =
+                new DebugFile(System.getProperty("user.home") + File.separator + "debug.txt", true);
           } catch (KlabIOException e) {
           }
         }
@@ -111,8 +108,7 @@ public class Utils {
 
     public static String describeValues(double[] vals) {
 
-      if (vals == null)
-        return "NULL input array";
+      if (vals == null) return "NULL input array";
 
       double min = Double.NaN;
       double max = Double.NaN;
@@ -133,7 +129,6 @@ public class Utils {
       }
 
       return "#" + total + "(" + nans + " NaN): min = " + min + ", max = " + max;
-
     }
   }
 

@@ -42,10 +42,10 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
 
   private static final Map<String, Map<String, List<Consumer<Message>>>> queueConsumers =
       new HashMap<>();
-  private static final Map<String, Map<Message.Match, MessageFuture<?>>> messageFutures =
-      Collections.synchronizedMap(new HashMap<>());
-  private static final Map<String, Set<Message.Match>> messageMatchers =
-      Collections.synchronizedMap(new HashMap<>());
+//  private static final Map<String, Map<Message.Match, MessageFuture<?>>> messageFutures =
+//      Collections.synchronizedMap(new HashMap<>());
+//  private static final Map<String, Set<Message.Match>> messageMatchers =
+//      Collections.synchronizedMap(new HashMap<>());
 
   public abstract String getId();
 
@@ -258,43 +258,43 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
                     }
                   }
 
-                  // TODO skip this and put the ID in MessagingScope
-                  if (this instanceof SessionScope scope) {
-                    var id = scope.getId();
-                    var mMatchers = messageMatchers.get(id);
-                    var mFutures = messageFutures.get(id);
-
-                    if (mMatchers != null) {
-                      List<Message.Match> remove = new ArrayList<>();
-                      for (var match : mMatchers) {
-                        if (matchApplies(match, message)) {
-                          if (match.getMessageConsumer() != null) {
-                            // TODO put this in a virtual thread?
-                            match.getMessageConsumer().accept(message);
-                          }
-                          if (!match.isPersistent()) {
-                            remove.add(match);
-                          }
-                        }
-                      }
-                      remove.forEach(mMatchers::remove);
-                    }
-
-                    if (mFutures != null) {
-                      List<Message.Match> remove = new ArrayList<>();
-                      for (var match : mFutures.keySet()) {
-                        if (matchApplies(match, message)) {
-                          if (match.getMessageConsumer() != null) {
-                            // TODO put this in a virtual thread?
-                            match.getMessageConsumer().accept(message);
-                          }
-                          mFutures.get(match).resolve(message);
-                          remove.add(match);
-                        }
-                      }
-                      remove.forEach(mFutures::remove);
-                    }
-                  }
+//                  // TODO skip this and put the ID in MessagingScope
+//                  if (this instanceof SessionScope scope) {
+//                    var id = scope.getId();
+//                    var mMatchers = messageMatchers.get(id);
+//                    var mFutures = messageFutures.get(id);
+//
+//                    if (mMatchers != null) {
+//                      List<Message.Match> remove = new ArrayList<>();
+//                      for (var match : mMatchers) {
+//                        if (matchApplies(match, message)) {
+//                          if (match.getMessageConsumer() != null) {
+//                            // TODO put this in a virtual thread?
+//                            match.getMessageConsumer().accept(message);
+//                          }
+//                          if (!match.isPersistent()) {
+//                            remove.add(match);
+//                          }
+//                        }
+//                      }
+//                      remove.forEach(mMatchers::remove);
+//                    }
+//
+//                    if (mFutures != null) {
+//                      List<Message.Match> remove = new ArrayList<>();
+//                      for (var match : mFutures.keySet()) {
+//                        if (matchApplies(match, message)) {
+//                          if (match.getMessageConsumer() != null) {
+//                            // TODO put this in a virtual thread?
+//                            match.getMessageConsumer().accept(message);
+//                          }
+//                          mFutures.get(match).resolve(message);
+//                          remove.add(match);
+//                        }
+//                      }
+//                      remove.forEach(mFutures::remove);
+//                    }
+//                  }
 
                   switch (queue) {
                     case Events -> {
@@ -433,48 +433,48 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
     }
   }
 
-  public void trackMessages(Message.Match... matchers) {
-    if (this instanceof SessionScope scope && matchers != null) {
-      for (var matcher : matchers) {
-        messageMatchers
-            .computeIfAbsent(scope.getId(), s -> Collections.synchronizedSet(new HashSet<>()))
-            .add(matcher);
-      }
-    }
-    // TODO skip this and put the ID in MessagingScope
-    throw new KlabInternalErrorException("trackMessages called on unexpected object");
-  }
-
-  @Override
-  public <T> CompletableFuture<T> trackMessages(
-      Message.Match match, Function<Message, T> supplier) {
-    if (this instanceof SessionScope scope) {
-      var ret = new MessageFuture<T>(match, supplier, scope.getId());
-      messageFutures
-          .computeIfAbsent(scope.getId(), s -> Collections.synchronizedMap(new HashMap<>()))
-          .put(match, ret);
-      return ret;
-    }
-    // TODO skip this and put the ID in MessagingScope
-    throw new KlabInternalErrorException("trackMessages called on unexpected object");
-  }
-
-  @Override
-  public void close() {
-    if (this.connection != null) {
-      try {
-        this.connection.close();
-      } catch (Throwable t) {
-        this.connection = null;
-      }
-    }
-    // TODO skip this and put the ID in MessagingScope
-    if (this instanceof SessionScope scope) {
-      messageFutures.remove(scope.getId());
-      messageMatchers.remove(scope.getId());
-      queueConsumers.remove(scope.getId());
-    }
-  }
+//  public void trackMessages(Message.Match... matchers) {
+//    if (this instanceof SessionScope scope && matchers != null) {
+//      for (var matcher : matchers) {
+//        messageMatchers
+//            .computeIfAbsent(scope.getId(), s -> Collections.synchronizedSet(new HashSet<>()))
+//            .add(matcher);
+//      }
+//    }
+//    // TODO skip this and put the ID in MessagingScope
+//    throw new KlabInternalErrorException("trackMessages called on unexpected object");
+//  }
+//
+//  @Override
+//  public <T> CompletableFuture<T> trackMessages(
+//      Message.Match match, Function<Message, T> supplier) {
+//    if (this instanceof SessionScope scope) {
+//      var ret = new MessageFuture<T>(match, supplier, scope.getId());
+//      messageFutures
+//          .computeIfAbsent(scope.getId(), s -> Collections.synchronizedMap(new HashMap<>()))
+//          .put(match, ret);
+//      return ret;
+//    }
+//    // TODO skip this and put the ID in MessagingScope
+//    throw new KlabInternalErrorException("trackMessages called on unexpected object");
+//  }
+//
+//  @Override
+//  public void close() {
+//    if (this.connection != null) {
+//      try {
+//        this.connection.close();
+//      } catch (Throwable t) {
+//        this.connection = null;
+//      }
+//    }
+//    // TODO skip this and put the ID in MessagingScope
+//    if (this instanceof SessionScope scope) {
+//      messageFutures.remove(scope.getId());
+//      messageMatchers.remove(scope.getId());
+//      queueConsumers.remove(scope.getId());
+//    }
+//  }
 
   @Override
   public boolean isConnected() {
@@ -526,7 +526,8 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
       this.cancelled = true;
-      return messageFutures.get(scopeId).remove(match) != null;
+      return true;
+//      return messageFutures.get(scopeId).remove(match) != null;
     }
 
     @Override

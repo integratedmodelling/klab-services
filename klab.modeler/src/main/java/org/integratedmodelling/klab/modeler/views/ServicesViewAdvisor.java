@@ -22,6 +22,11 @@ public class ServicesViewAdvisor extends BaseViewAdvisor implements ServicesView
     }
 
     @Override
+    public void serviceFocusChanged(KlabService.ServiceCapabilities serviceCapabilities) {
+
+    }
+
+    @Override
     public void engineStatusChanged(Engine.Status status) {
 
     }

@@ -1,6 +1,5 @@
 package org.integratedmodelling.common.view;
 
-import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -9,6 +8,7 @@ import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
@@ -36,7 +36,7 @@ import java.util.concurrent.LinkedBlockingDeque;
  */
 public abstract class AbstractUIController implements UIController {
 
-  private final UI ui;
+  private final UIView uiView;
 
   /**
    * All events that the UI reacts to. Used to filter the engine events so they are not dispatched
@@ -90,7 +90,7 @@ public abstract class AbstractUIController implements UIController {
       /*
          this would be fun
       */
-      if (sender == reactor || (sender == AbstractUIController.this && reactor == ui)) {
+      if (sender == reactor || (sender == AbstractUIController.this && reactor == uiView)) {
         return null;
       }
 
@@ -130,8 +130,8 @@ public abstract class AbstractUIController implements UIController {
     this(null);
   }
 
-  protected AbstractUIController(UI mainApplication) {
-    this.ui = mainApplication;
+  protected AbstractUIController(UIView mainApplication) {
+    this.uiView = mainApplication;
     if (mainApplication != null) {
       registerViewController(mainApplication);
     }
@@ -151,19 +151,21 @@ public abstract class AbstractUIController implements UIController {
     return engine;
   }
 
+  public UserScope authenticate() {
+    if (engine == null) {
+      engine = createEngine();
+    }
+    return (UserScope) engine.authenticate().onMessage(this::processMessage);
+  }
+
   /**
    * Boot the engine asynchronously after installing the needed listeners. Must be called by
    * implementors after creation.
+   *
+   * <p>TODO this should return a future for the booted engine status
    */
   public void boot() {
-    engine = createEngine();
-    if (engine instanceof EngineImpl engineClient) {
-      engineClient.addScopeListener(this::processMessage);
-    } else {
-      engine
-          .serviceScope()
-          .warn("Engine is not default: will not communicate engine messages to UI");
-    }
+    authenticate();
     engine.boot();
   }
 
@@ -200,40 +202,36 @@ public abstract class AbstractUIController implements UIController {
       case UserContextDefinition -> {}
       case ServiceLifecycle -> {
         switch (message.getMessageType()) {
-          //                    case ServiceUnavailable -> dispatch(this,
-          // UIReactor.UIEvent.ServiceUnavailable,
-          //                            message.getPayload(Object.class));
-          //                    case ServiceAvailable ->  dispatch(this,
-          // UIReactor.UIEvent.ServiceAvailable,
-          //                            message.getPayload(Object.class));
-          //                    case ServiceInitializing -> dispatch(this,
-          // UIReactor.UIEvent.ServiceStarting,
-          //                            message.getPayload(Object.class));
-          case ServiceStatus ->
-              dispatch(
-                  this,
-                  UIReactor.UIEvent.ServiceStatus,
-                  message.getPayload(KlabService.ServiceStatus.class));
+          //                              case ServiceUnavailable -> dispatch(this,
+          //           UIReactor.UIEvent.ServiceUnavailable,
+          //                                      message.getPayload(Object.class));
+          //                              case ServiceAvailable ->  dispatch(this,
+          //           UIReactor.UIEvent.ServiceAvailable,
+          //                                      message.getPayload(Object.class));
+          //                              case ServiceInitializing -> dispatch(this,
+          //           UIReactor.UIEvent.ServiceStarting,
+          //                                      message.getPayload(Object.class));
+          case ServiceStatus -> {
+            System.out.println("ZIO PINOLO " + message);
+            dispatch(
+                this,
+                UIReactor.UIEvent.ServiceStatus,
+                message.getPayload(KlabService.ServiceStatus.class));
+          }
+//          case ServiceSwitched -> {
+//            System.out.println("ZIO BEFFARDO " + message);
+//            dispatch(
+//                    this,
+//                    UIEvent.ServiceFocused,
+//                    message.getPayload(KlabService.ServiceCapabilities.class));
+//          }
           default -> {}
         }
       }
       case EngineLifecycle -> {
         // TODO engine ready event and status
         switch (message.getMessageType()) {
-          //                    case ServiceUnavailable -> {
-          //                        dispatch(this, UIReactor.UIEvent.EngineUnavailable,
-          // message.getPayload(Object.class));
-          //                    }
-          //                    case ServiceAvailable -> {
-          //                        dispatch(this, UIReactor.UIEvent.EngineAvailable,
-          // message.getPayload(Object.class));
-          //                    }
-          //                    case ServiceInitializing -> {
-          //                        dispatch(this, UIReactor.UIEvent.EngineStarting,
-          // message.getPayload(Object.class));
-          //                    }
           case ServiceStatus -> {
-            //                        recomputeStatus(message);
             dispatch(
                 this,
                 UIReactor.UIEvent.ServiceStatus,
@@ -243,16 +241,8 @@ public abstract class AbstractUIController implements UIController {
             dispatch(this, UIEvent.EngineStatusChanged, message.getPayload(Engine.Status.class));
           }
           case UsingDistribution -> {
-            dispatch(
-                this,
-                UIEvent.DistributionAvailable,
-                message.getPayload(Distribution.class));
+            dispatch(this, UIEvent.DistributionAvailable, message.getPayload(Distribution.class));
           }
-          //                    case ReasoningAvailable -> {
-          //                        dispatch(this, UIReactor.UIEvent.ReasoningAvailable,
-          //                                message.getPayload(Reasoner.Capabilities.class));
-          //                    }
-
           default -> {}
         }
       }
@@ -579,8 +569,8 @@ public abstract class AbstractUIController implements UIController {
       UIReactor requestingReactor, NavigableDocument document, boolean shown) {}
 
   @Override
-  public UI getUI() {
-    return ui;
+  public UIView getUI() {
+    return uiView;
   }
 
   /**

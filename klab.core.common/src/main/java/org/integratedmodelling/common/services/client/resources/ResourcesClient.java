@@ -8,7 +8,6 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.function.BiConsumer;
 import javax.annotation.Nullable;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.data.BaseDataImpl;
@@ -40,16 +39,13 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
-import org.integratedmodelling.klab.rest.ServiceReference;
 
 public class ResourcesClient extends ServiceClient
     implements ResourcesService, ResourcesService.Admin {
@@ -74,24 +70,44 @@ public class ResourcesClient extends ServiceClient
           .maximumSize(500)
           // .expireAfterAccess(10, TimeUnit.MINUTES)
           .build(
-              new CacheLoader<String, KimObservable>() {
+              new CacheLoader<>() {
                 public KimObservable load(String key) {
                   return resolveObservableInternal(key);
                 }
               });
 
-  public ResourcesClient(
-      URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
-    super(Type.RESOURCES, url, identity, List.of(), settings, owner);
+  public static ResourcesClient create(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new ResourcesClient(url, identity, settings);
+  }
+
+  public static ResourcesClient createOffline(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new ResourcesClient(url, identity, settings, false);
+  }
+
+  public static ResourcesClient createLocal(
+      Identity identity, Parameters<Engine.Setting> settings) {
+    return new ResourcesClient(Type.RESOURCES.localServiceUrl(), identity, settings);
+  }
+
+  public static ResourcesClient createLocalOffline(
+      Identity identity, Parameters<Engine.Setting> settings) {
+    return new ResourcesClient(Type.RESOURCES.localServiceUrl(), identity, settings, false);
   }
 
   public ResourcesClient(
-      URL url,
-      Identity identity,
-      List<ServiceReference> services,
-      Parameters<Engine.Setting> settings,
-      BiConsumer<Channel, Message>... listeners) {
-    super(Type.RESOURCES, url, identity, settings, services, listeners);
+      URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
+    super(Type.RESOURCES, url, identity, settings, owner);
+  }
+
+  public ResourcesClient(URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    super(Type.RESOURCES, url, identity, settings, true);
+  }
+
+  private ResourcesClient(
+      URL url, Identity identity, Parameters<Engine.Setting> settings, boolean connect) {
+    super(Type.RESOURCES, url, identity, settings, connect);
   }
 
   @Override
@@ -496,9 +512,17 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public ResourceStatus resourceStatus(String urn, Scope scope) {
-    // TODO Auto-generated method stub
-    return null;
+  public ResourceInfo resourceInfo(String urn, Scope scope) {
+    return client
+        .withScope(scope)
+        .get(ServicesAPI.RESOURCES.RESOURCE_INFO, ResourceInfo.class, "urn", urn);
+  }
+
+  @Override
+  public boolean setResourceInfo(String urn, ResourceInfo info, Scope scope) {
+    return client
+        .withScope(scope)
+        .post(ServicesAPI.RESOURCES.RESOURCE_INFO, info, Boolean.class, "urn", urn);
   }
 
   @Override
@@ -589,7 +613,7 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public ResourceStatus registerResource(
+  public ResourceInfo registerResource(
       String urn, KnowledgeClass knowledgeClass, File file, Scope submittingScope) {
     throw new KlabIllegalStateException(
         "resources service: registerResource() should not be called by clients");
@@ -621,8 +645,8 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public URL lockProject(String urn, UserScope scope) {
-    return client.get(ServicesAPI.RESOURCES.ADMIN.LOCK_PROJECT, URL.class, "urn", urn);
+  public boolean lockProject(String urn, UserScope scope) {
+    return client.get(ServicesAPI.RESOURCES.ADMIN.LOCK_PROJECT, Boolean.class, "urn", urn);
   }
 
   @Override

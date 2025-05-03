@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
@@ -18,6 +19,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.engine.ServiceMonitor;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -69,6 +71,8 @@ public abstract class BaseService implements KlabService {
   private boolean operational;
   private ComponentRegistry componentRegister;
   private String instanceKey = Utils.Names.newName();
+  private long bootTime = System.currentTimeMillis();
+  private ServiceMonitor serviceMonitor;
 
   protected Parameters<Engine.Setting> settingsForSlaveServices = Parameters.createSynchronized();
 
@@ -93,7 +97,19 @@ public abstract class BaseService implements KlabService {
     }
     createServiceSecret();
     componentRegister = new ComponentRegistry(this, options);
+      serviceMonitor =
+          new ServiceMonitor(
+              scope.getIdentity(),
+              settingsForSlaveServices,
+              Utils.URLs.isLocalHost(this.url),
+              List.of(),
+              this::notifyLocalService,
+              this::notifyLocalEngine);
   }
+
+  private void notifyLocalEngine(Engine.Status status) {}
+
+  private void notifyLocalService(KlabService service, ServiceStatus status) {}
 
   public ComponentRegistry getComponentRegistry() {
     return componentRegister;
@@ -213,8 +229,8 @@ public abstract class BaseService implements KlabService {
     ret.setServiceType(serviceType());
     ret.setAvailable(initialized && serviceScope().isAvailable());
     ret.setBusy(serviceScope().isBusy());
-    ret.setLocality(serviceScope().getLocality());
     ret.setOperational(operational);
+    ret.setUptimeMs(System.currentTimeMillis() - this.bootTime);
     return ret;
   }
 

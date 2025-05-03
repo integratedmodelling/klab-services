@@ -4,6 +4,7 @@ import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -27,18 +28,37 @@ import java.util.function.BiConsumer;
 
 public class ResolverClient extends ServiceClient implements Resolver {
 
-  public ResolverClient(
-      URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
-    super(Type.RESOLVER, url, identity, List.of(), settings, owner);
+  public static ResolverClient create(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new ResolverClient(url, identity, settings);
+  }
+
+  public static ResolverClient createOffline(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new ResolverClient(url, identity, settings, false);
+  }
+
+  public static ResolverClient createLocal(Identity identity, Parameters<Engine.Setting> settings) {
+    return new ResolverClient(Type.RESOLVER.localServiceUrl(), identity, settings);
+  }
+
+  public static ResolverClient createLocalOffline(
+      Identity identity, Parameters<Engine.Setting> settings) {
+    return new ResolverClient(Type.RESOLVER.localServiceUrl(), identity, settings, false);
   }
 
   public ResolverClient(
-      URL url,
-      Identity identity,
-      List<ServiceReference> services,
-      Parameters<Engine.Setting> settings,
-      BiConsumer<Channel, Message>... listeners) {
-    super(Type.RESOLVER, url, identity, settings, services, listeners);
+      URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
+    super(Type.RESOLVER, url, identity, settings, owner);
+  }
+
+  public ResolverClient(URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    super(Type.RESOLVER, url, identity, settings, true);
+  }
+
+  private ResolverClient(
+      URL url, Identity identity, Parameters<Engine.Setting> settings, boolean connect) {
+    super(Type.RESOLVER, url, identity, settings, connect);
   }
 
   public ResolverClient(URL url, Parameters<Engine.Setting> settings) {
@@ -56,6 +76,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
                     ServicesAPI.CAPABILITIES,
                     ResolverCapabilitiesImpl.class,
                     Notification.Mode.Silent);
+
       } catch (Throwable t) {
         // not ready yet
         return null;

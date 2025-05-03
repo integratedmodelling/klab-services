@@ -76,19 +76,37 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
                 }
               });
 
-  public ReasonerClient(
-      URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
-    super(Type.REASONER, url, identity, List.of(), settings, owner);
-    // TODO check why the server key is wrong
+  public static ReasonerClient create(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new ReasonerClient(url, identity, settings);
+  }
+
+  public static ReasonerClient createOffline(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new ReasonerClient(url, identity, settings, false);
+  }
+
+  public static ReasonerClient createLocal(Identity identity, Parameters<Engine.Setting> settings) {
+    return new ReasonerClient(Type.REASONER.localServiceUrl(), identity, settings);
+  }
+
+  public static ReasonerClient createLocalOffline(
+      Identity identity, Parameters<Engine.Setting> settings) {
+    return new ReasonerClient(Type.REASONER.localServiceUrl(), identity, settings, false);
   }
 
   public ReasonerClient(
-      URL url,
-      Identity identity,
-      List<ServiceReference> services,
-      Parameters<Engine.Setting> settings,
-      BiConsumer<Channel, Message>... listeners) {
-    super(Type.REASONER, url, identity, settings, services, listeners);
+      URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
+    super(Type.REASONER, url, identity, settings, owner);
+  }
+
+  public ReasonerClient(URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    super(Type.REASONER, url, identity, settings, true);
+  }
+
+  public ReasonerClient(
+      URL url, Identity identity, Parameters<Engine.Setting> settings, boolean connect) {
+    super(Type.REASONER, url, identity, settings, connect);
   }
 
   @Override

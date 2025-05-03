@@ -24,10 +24,10 @@ public class AnonymousUser implements UserIdentity {
         return ServicesAPI.ANONYMOUS_TOKEN;
     }
 
-    @Override
-    public Identity getParentIdentity() {
-        return null;
-    }
+//    @Override
+//    public Identity getParentIdentity() {
+//        return null;
+//    }
 
     @Override
     public boolean is(Type type) {
@@ -39,10 +39,10 @@ public class AnonymousUser implements UserIdentity {
         return false;
     }
 
-    @Override
-    public <T extends Identity> T getParentIdentity(Class<T> type) {
-        return null;
-    }
+//    @Override
+//    public <T extends Identity> T getParentIdentity(Class<T> type) {
+//        return null;
+//    }
 
     @Override
     public String getUsername() {
@@ -110,7 +110,7 @@ public class AnonymousUser implements UserIdentity {
 	}
 	
 	public String toString() {
-		return "anonymous (invalid.email@noservice.com)";
+		return "anonymous user (invalid.email@noservice.com)";
 	}
 
 }

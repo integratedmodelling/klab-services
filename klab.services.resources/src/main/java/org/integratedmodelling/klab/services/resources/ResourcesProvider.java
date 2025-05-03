@@ -15,7 +15,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
-import org.eclipse.xtext.ide.server.ServerLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -49,7 +48,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
@@ -120,20 +119,24 @@ public class ResourcesProvider extends BaseService
                 }
               });
 
-  /**
-   * the only persistent info in this implementation is the catalog of resource status info. This is
-   * used for individual resources and whole projects. It also holds and maintains the review
-   * status, which in the case of projects propagates to the namespaces and models. Reviews and the
-   * rest of the editorial material should be part of the provenance info associated to the items.
-   * The review process is organized and maintained in the community service; only its initiation
-   * and the storage of the review status is the job of the resources service.
-   *
-   * @deprecated use {@link
-   *     org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox}
-   */
-  private DB db = null;
-
-  private ConcurrentNavigableMap<String, ResourceStatus> catalog = null;
+  //  /**
+  //   * the only persistent info in this implementation is the catalog of resource status info.
+  // This is
+  //   * used for individual resources and whole projects. It also holds and maintains the review
+  //   * status, which in the case of projects propagates to the namespaces and models. Reviews and
+  // the
+  //   * rest of the editorial material should be part of the provenance info associated to the
+  // items.
+  //   * The review process is organized and maintained in the community service; only its
+  // initiation
+  //   * and the storage of the review status is the job of the resources service.
+  //   *
+  //   * @deprecated use {@link
+  //   *     org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox}
+  //   */
+  //  private DB db = null;
+  //
+  //  private ConcurrentNavigableMap<String, ResourceInfo> catalog = null;
 
   /**
    * @deprecated use {@link
@@ -181,20 +184,21 @@ public class ResourcesProvider extends BaseService
         Instance.class);
 
     this.kbox = ModelKbox.create(this);
+    this.resourcesKbox = new ResourcesKBox(scope, options, this);
     this.workspaceManager =
         new WorkspaceManager(scope, getStartupOptions(), this, this::resolveRemoteProject);
 
-    this.resourcesKbox = new ResourcesKBox(scope, options, this);
-
-    // FIXME remove along with MapDB and catalog
-    this.db =
-        DBMaker.fileDB(
-                getConfigurationSubdirectory(options, "catalog") + File.separator + "resources.db")
-            .transactionEnable()
-            .closeOnJvmShutdown()
-            .make();
-    this.catalog =
-        db.treeMap("resourcesCatalog", GroupSerializer.STRING, GroupSerializer.JAVA).createOrOpen();
+    //    // FIXME remove along with MapDB and catalog, use Nitrite instead
+    //    this.db =
+    //        DBMaker.fileDB(
+    //                getConfigurationSubdirectory(options, "catalog") + File.separator +
+    // "resources.db")
+    //            .transactionEnable()
+    //            .closeOnJvmShutdown()
+    //            .make();
+    //    this.catalog =
+    //        db.treeMap("resourcesCatalog", GroupSerializer.STRING,
+    // GroupSerializer.JAVA).createOrOpen();
 
     /*
     initialize the plugin system to handle components
@@ -242,26 +246,30 @@ public class ResourcesProvider extends BaseService
       this.embeddedBroker = new EmbeddedBroker();
     }
 
-    if (Utils.URLs.isLocalHost(this.getUrl())) {
-      /*
-       * TODO if local, at this point it should be enough to launch
-       *  org.eclipse.xtext.ide.server.ServerLauncher to start the LSP server for all languages on the
-       *  classpath.
-       */
-      Logging.INSTANCE.info("Starting language services for k.LAB language editors");
-      this.lspThread =
-          new Thread(
-              () -> {
-                try {
-                  ServerLauncher.main(new String[0]);
-                } catch (Throwable t) {
-                  Logging.INSTANCE.error(
-                      "Error launching LSP server: language services not available", t);
-                }
-              });
-
-      this.lspThread.start();
-    }
+    /*
+     * If we want the local resources service to provide LSP functionalities, uncomment this. For now it is
+     * in the Java-based modeler, but if the modeler moves to a web version this can be added.
+     */
+    //    if (Utils.URLs.isLocalHost(this.getUrl())) {
+    //      /*
+    //       *  org.eclipse.xtext.ide.server.ServerLauncher to start the LSP server for all
+    // languages on the
+    //       *  classpath.
+    //       */
+    //      Logging.INSTANCE.info("Starting language services for k.LAB language editors");
+    //      this.lspThread =
+    //          new Thread(
+    //              () -> {
+    //                try {
+    //                  ServerLauncher.main(new String[0]);
+    //                } catch (Throwable t) {
+    //                  Logging.INSTANCE.error(
+    //                      "Error launching LSP server: language services not available", t);
+    //                }
+    //              });
+    //
+    //      this.lspThread.start();
+    //    }
 
     serviceScope()
         .send(
@@ -332,19 +340,20 @@ public class ResourcesProvider extends BaseService
         }
         if (resource != null) {
           localResources.add(resource.getUrn());
-          ResourceStatus status = catalog.get(resource.getUrn());
+          ResourceInfo status = resourcesKbox.getStatus(resource.getUrn(), null);
           if (status == null) {
-            status = new ResourceStatus();
+            status = new ResourceInfo();
             status.setReviewStatus(level);
             status.setFileLocation(subdir);
+            status.setUrn(resource.getUrn());
             status.setType(
                 Utils.Notifications.hasErrors(resource.getNotifications())
-                    ? ResourceStatus.Type.OFFLINE
-                    : ResourceStatus.Type.AVAILABLE);
+                    ? ResourceInfo.Type.OFFLINE
+                    : ResourceInfo.Type.AVAILABLE);
             status.setLegacy(legacy);
             status.setKnowledgeClass(KnowledgeClass.RESOURCE);
             // TODO fill in the rest
-            catalog.put(resource.getUrn(), status);
+            resourcesKbox.putStatus(status);
           }
         }
       }
@@ -612,18 +621,19 @@ public class ResourcesProvider extends BaseService
     var project = workspaceManager.loadProject(storage, workspaceName);
 
     // initial resource permissions
-    var status = new ResourceStatus();
+    var status = new ResourceInfo();
     if (scope.getIdentity() instanceof UserIdentity user) {
-      status.getPrivileges().getAllowedUsers().add(user.getUsername());
+      status.getRights().getAllowedUsers().add(user.getUsername());
       status.setOwner(user.getUsername());
     }
     status.setFileLocation(storage instanceof FileProjectStorage fps ? fps.getRootFolder() : null);
     status.setKnowledgeClass(KnowledgeClass.PROJECT);
     status.setReviewStatus(0);
-    status.setType(ResourceStatus.Type.AVAILABLE);
+    status.setType(ResourceInfo.Type.AVAILABLE);
     status.setLegacy(false);
-    catalog.put(project.getUrn(), status);
-    db.commit();
+    status.setUrn(project.getUrn());
+    resourcesKbox.putStatus(status);
+    //    db.commit();
 
     return collectProject(project.getUrn(), CRUDOperation.CREATE, workspaceName, scope);
   }
@@ -690,7 +700,7 @@ public class ResourcesProvider extends BaseService
     //            }
     workspaceManager.removeProject(projectName);
     invalidateCaches();
-    db.commit();
+    //    db.commit();
 
     //        }/* finally {*/
     updateLock.writeLock().unlock();
@@ -759,6 +769,7 @@ public class ResourcesProvider extends BaseService
     ret.setAdoptedWorldview(workspaceManager.getAdoptedWorldview());
     ret.setWorkspaceNames(workspaceManager.getWorkspaceURNs());
     ret.setType(Type.RESOURCES);
+    ret.setUrl(getUrl());
     ret.setServiceName("Resources");
     ret.setServerId(hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature));
     ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
@@ -1039,18 +1050,19 @@ public class ResourcesProvider extends BaseService
 
     if (urn != null) {
       // initial resource permissions
-      var status = new ResourceStatus();
+      var status = new ResourceInfo();
       if (scope.getIdentity() instanceof UserIdentity user) {
-        status.getPrivileges().getAllowedUsers().add(user.getUsername());
+        status.getRights().getAllowedUsers().add(user.getUsername());
         status.setOwner(user.getUsername());
       }
       status.setFileLocation(sourceFile);
       status.setKnowledgeClass(knowledgeClass);
       status.setReviewStatus(0);
-      status.setType(ResourceStatus.Type.AVAILABLE);
+      status.setType(ResourceInfo.Type.AVAILABLE);
       status.setLegacy(false);
-      catalog.put(urn, status);
-      db.commit();
+      status.setUrn(urn);
+      resourcesKbox.putStatus(status);
+      //      db.commit();
     }
 
     return ret;
@@ -1063,27 +1075,28 @@ public class ResourcesProvider extends BaseService
   //    }
 
   @Override
-  public ResourceStatus registerResource(
+  public ResourceInfo registerResource(
       String urn, KnowledgeClass knowledgeClass, File fileLocation, Scope submittingScope) {
 
     if (urn != null) {
       // initial resource permissions
-      var status = new ResourceStatus();
+      var status = new ResourceInfo();
       if (scope.getIdentity() instanceof UserIdentity user) {
-        status.getPrivileges().getAllowedUsers().add(user.getUsername());
+        status.getRights().getAllowedUsers().add(user.getUsername());
         status.setOwner(user.getUsername());
       }
       status.setFileLocation(fileLocation);
       status.setKnowledgeClass(knowledgeClass);
       status.setReviewStatus(0);
-      status.setType(ResourceStatus.Type.AVAILABLE);
+      status.setType(ResourceInfo.Type.AVAILABLE);
       status.setLegacy(false);
-      catalog.put(urn, status);
-      db.commit();
+      status.setUrn(urn);
+      resourcesKbox.putStatus(status);
+      //      db.commit();
       return status;
     }
 
-    return ResourceStatus.offline();
+    return ResourceInfo.offline();
   }
 
   @Override
@@ -1232,14 +1245,20 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public ResourceStatus resourceStatus(String urn, Scope scope) {
-    ResourceStatus ret = catalog.get(urn);
+  public ResourceInfo resourceInfo(String urn, Scope scope) {
+    ResourceInfo ret = resourcesKbox.getStatus(urn, null);
     if (ret != null && (ret.getType().isUsable())) {
       /*
        * TODO check the resource status at this time and in this scope
        */
     }
     return ret;
+  }
+
+  @Override
+  public boolean setResourceInfo(String urn, ResourceInfo info, Scope scope) {
+    // TODO check access permissions etc
+    return resourcesKbox.putStatus(info);
   }
 
   @Override
@@ -1274,27 +1293,25 @@ public class ResourcesProvider extends BaseService
   @Override
   public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
 
-    var status = catalog.get(resourceUrn);
+    var status = resourcesKbox.getStatus(resourceUrn, null);
     if (status != null) {
-      return status.getPrivileges().asSeenByScope(scope);
+      return status.getRights().asSeenByScope(scope);
     }
     return ResourcePrivileges.empty();
   }
 
   @Override
   public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
-    var status = catalog.get(resourceUrn);
+    var status = resourcesKbox.getStatus(resourceUrn, null);
     if (status != null) {
-      status.setPrivileges(resourcePrivileges);
-      catalog.put(resourceUrn, status);
-      db.commit();
-      return true;
+      status.setRights(resourcePrivileges);
+      return resourcesKbox.putStatus(status);
     }
     return false;
   }
 
   @Override
-  public URL lockProject(String urn, UserScope scope) {
+  public boolean lockProject(String urn, UserScope scope) {
     String token = scope.getIdentity().getId();
     boolean local =
         scope instanceof ServiceScope
@@ -1483,5 +1500,9 @@ public class ResourcesProvider extends BaseService
     }
 
     throw new KlabIllegalArgumentException("unexpected scope class");
+  }
+
+  public ResourcesKBox getResourcesKbox() {
+    return this.resourcesKbox;
   }
 }

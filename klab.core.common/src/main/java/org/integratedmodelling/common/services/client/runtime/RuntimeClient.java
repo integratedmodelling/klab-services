@@ -4,21 +4,20 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
+
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.GraphQLClient;
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -30,32 +29,51 @@ import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.*;
-import org.integratedmodelling.klab.api.services.runtime.objects.AssetRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
-import org.integratedmodelling.klab.rest.ServiceReference;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
 
   private GraphQLClient graphClient;
 
-  public RuntimeClient(
-      URL url,
-      Identity identity,
-      List<ServiceReference> services,
-      Parameters<Engine.Setting> settings,
-      BiConsumer<Channel, Message>... listeners) {
-    super(Type.RUNTIME, url, identity, settings, services, listeners);
+  public static RuntimeClient create(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new RuntimeClient(url, identity, settings);
+  }
+
+  public static RuntimeClient createOffline(
+          URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new RuntimeClient(url, identity, settings, false);
+  }
+
+  public static RuntimeClient createLocal(Identity identity, Parameters<Engine.Setting> settings) {
+    return new RuntimeClient(Type.RUNTIME.localServiceUrl(), identity, settings);
+  }
+
+  public static RuntimeClient createLocalOffline(
+      Identity identity, Parameters<Engine.Setting> settings) {
+    return new RuntimeClient(Type.RUNTIME.localServiceUrl(), identity, settings, false);
+  }
+
+  public RuntimeClient(URL url, Identity identity, Parameters<Engine.Setting> settings /*,
+      BiConsumer<Channel, Message>... listeners*/) {
+    super(Type.RUNTIME, url, identity, settings, true);
+  }
+
+  private RuntimeClient(
+      URL url, Identity identity, Parameters<Engine.Setting> settings, boolean connect) {
+    super(Type.RUNTIME, url, identity, settings, connect);
   }
 
   public RuntimeClient(
       URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
-    super(Type.RUNTIME, url, identity, List.of(), settings, owner);
+    super(Type.RUNTIME, url, identity, settings, owner);
   }
 
+  @SafeVarargs
   @Override
-  protected String establishConnection() {
-    var ret = super.establishConnection();
+  public final String connect(BiConsumer<Channel, Message>... messageBiConsumers) {
+    var ret = super.connect(messageBiConsumers);
     this.graphClient =
         new GraphQLClient(this.getUrl() + ServicesAPI.RUNTIME.DIGITAL_TWIN_GRAPH, ret);
     return ret;

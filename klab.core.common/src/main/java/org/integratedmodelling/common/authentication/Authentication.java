@@ -1,20 +1,17 @@
 package org.integratedmodelling.common.authentication;
 
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
-import org.integratedmodelling.common.authentication.scope.AbstractDelegatingScope;
-import org.integratedmodelling.common.authentication.scope.ChannelImpl;
-import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
-import org.integratedmodelling.common.distribution.DistributionImpl;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.services.client.ServiceClient;
-import org.integratedmodelling.common.services.client.community.CommunityClient;
-import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
-import org.integratedmodelling.common.services.client.resolver.ResolverClient;
-import org.integratedmodelling.common.services.client.resources.ResourcesClient;
-import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
@@ -23,11 +20,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.engine.distribution.Distribution;
-import org.integratedmodelling.klab.api.engine.distribution.Product;
-import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.identities.Group;
@@ -36,23 +29,10 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.rest.EngineAuthenticationRequest;
 import org.integratedmodelling.klab.rest.EngineAuthenticationResponse;
 import org.integratedmodelling.klab.rest.GroupImpl;
 import org.integratedmodelling.klab.rest.ServiceReference;
-
-import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 
 /**
  * Implements the default certificate-based authentication mechanism for an engine. Also maintains
@@ -63,10 +43,7 @@ public enum Authentication {
 
   private final AtomicReference<Collection<String>> sshHosts = new AtomicReference<>();
   private final Set<KlabService.Type> started = EnumSet.noneOf(KlabService.Type.class);
-  private DistributionImpl distribution;
-  private DistributionImpl developmentDistribution;
-  private DistributionImpl downloadedDistribution;
-  private Distribution.Status distributionStatus;
+
 
   /** any external credentials taken from the .klab/credentials.json file if any. */
   private Utils.FileCatalog<ExternalAuthenticationCredentials> externalCredentials;
@@ -80,33 +57,8 @@ public enum Authentication {
 
     this.sshHosts.set(Utils.SSH.readHostFile());
 
-    if (DistributionImpl.isDevelopmentDistributionAvailable()) {
-      this.developmentDistribution = new DevelopmentDistributionImpl();
-    }
-
-    this.downloadedDistribution = new DistributionImpl();
-    this.distribution =
-        this.developmentDistribution == null
-            ? this.downloadedDistribution
-            : this.developmentDistribution;
-
-    var status = new AbstractDistributionImpl.StatusImpl();
-    status.setAvailableDevelopmentVersion(
-        // TODO should use the Git status
-        this.developmentDistribution == null ? Version.EMPTY_VERSION : Version.CURRENT_VERSION);
-    status.setDevelopmentStatus(
-        this.developmentDistribution == null
-            ? Product.Status.UNAVAILABLE
-            : Product.Status.UP_TO_DATE);
-
-    // TODO -- no handling for now; the downloaded distro should carry the latest version available
-
-    this.distributionStatus = status;
   }
 
-  public Distribution.Status getDistributionStatus() {
-    return this.distributionStatus;
-  }
 
   /**
    * Authenticate using the default certificate if present on the filesystem, or anonymously if not.
@@ -219,12 +171,21 @@ public enum Authentication {
                 + ". Continuing anonymously.");
         return Pair.of(new AnonymousUser(), Collections.emptyList());
       } else if (expiry.isBefore(Instant.now())) {
+
         Logging.INSTANCE.error(
             "certificate expired on "
                 + expiry
                 + ". Please obtain a new "
                 + "certificate. Continuing anonymously.");
-        return Pair.of(new AnonymousUser(), Collections.emptyList());
+
+        UserIdentityImpl ret = new UserIdentityImpl();
+        ret.setAnonymous(true);
+        ret.setEmailAddress(authentication.getUserData().getIdentity().getEmail());
+        ret.setUsername(authentication.getUserData().getIdentity().getId());
+        ret.setAuthenticated(false);
+        ret.setOnline(false);
+
+        return Pair.of(ret, Collections.emptyList());
       }
     }
 
@@ -242,9 +203,11 @@ public enum Authentication {
 
         UserIdentityImpl ret = new UserIdentityImpl();
         ret.setId(authentication.getUserData().getToken());
-        ret.setParentIdentity(hub);
+//        ret.setParentIdentity(hub);
         ret.setEmailAddress(authentication.getUserData().getIdentity().getEmail());
         ret.setUsername(authentication.getUserData().getIdentity().getId());
+        ret.setAuthenticated(true);
+        ret.setOnline(true);
 
         for (Object ogroup : authentication.getUserData().getGroups()) {
           // FIXME these come w/o class info so our deserializer screws up
@@ -267,7 +230,6 @@ public enum Authentication {
                 + " owned by "
                 + hubNode.getPartner().getId());
 
-        // TODO services
         Map<KlabService.Type, AtomicInteger> serviceCount = new HashMap<>();
         Logging.INSTANCE.info("The following services are available to " + ret.getUsername() + ":");
         for (var service : authentication.getServices()) {
@@ -297,160 +259,104 @@ public enum Authentication {
     return Pair.of(new AnonymousUser(), Collections.emptyList());
   }
 
-  /**
-   * Strategy to locate a primary service in all possible ways. If there are primary service URLs
-   * for the passed service class in the list of service references obtained through authentication,
-   * try them and if one responds return a client to it. Otherwise, try the local URL and if the
-   * passed service is running locally, return a client to it. As a last resort, check if we have a
-   * source distribution configured or available, and if so, synchronize it if needed and if it
-   * provides the required service product, run it and return a service client.
-   *
-   * @param serviceType the service we need.
-   * @param identity the identity we represent
-   * @param availableServices a list of {@link ServiceReference} objects obtained through
-   *     certificate authentication, or an empty list.
-   * @param <T> the type of service we want to obtain
-   * @return a service client or null. The service status should be checked before use.
-   */
-  public <T extends KlabService> T findService(
-      KlabService.Type serviceType,
-      Scope scope,
-      Identity identity,
-      List<ServiceReference> availableServices,
-      Parameters<Engine.Setting> settings) {
-
-    BiConsumer<Channel, Message>[] listeners =
-        scope instanceof ChannelImpl clientScope
-            ? clientScope.listeners().toArray(BiConsumer[]::new)
-            : (scope instanceof AbstractDelegatingScope ascope ? ascope.listeners() : null);
-
-    for (var service : availableServices) {
-      if (service.getIdentityType() == serviceType && service.isPrimary()) {
-        for (var url : service.getUrls()) {
-          if (ServiceClient.readServiceStatus(url, scope) != null) {
-            scope.info(
-                "Using authenticated "
-                    + service.getIdentityType()
-                    + " service from "
-                    + service.getPartner().getId());
-            return (T)
-                createLocalServiceClient(
-                    serviceType, url, scope, identity, availableServices, settings, listeners);
-          }
-        }
-      }
-    }
-
-    // if we get here, we have no remote services available and we should try a running local one
-    // first.
-    var status = ServiceClient.readServiceStatus(serviceType.localServiceUrl(), null);
-    if (status != null) {
-      scope.info(
-          "Using locally running "
-              + status.getServiceType()
-              + " service at "
-              + serviceType.localServiceUrl());
-      return (T)
-          createLocalServiceClient(
-              serviceType,
-              serviceType.localServiceUrl(),
-              scope,
-              identity,
-              availableServices,
-              settings,
-              listeners);
-    }
-
-    if (distribution.isAvailable() && settings.get(Engine.Setting.LAUNCH_PRODUCT, Boolean.class)) {
-
-      var product = distribution.findProduct(Product.ProductType.forService(serviceType));
-      if (settings.get(Engine.Setting.LOG_EVENTS, Boolean.class)) {
-        scope.info(
-            "No service available for "
-                + serviceType
-                + ": "
-                + (product == null
-                    ? "distribution does not provide service implementation"
-                    : "starting " + "local service from local k.LAB distribution"));
-      }
-      if (product != null && !started.contains(serviceType)) {
-        started.add(serviceType);
-        var instance = product.getInstance(scope);
-        if (instance.start()) {
-          scope.info(
-              "Service is starting: will be attempting connection to locally running "
-                  + serviceType);
-
-          try {
-            // give the service a few seconds to start up
-            Thread.sleep(Duration.ofSeconds(2));
-          } catch (InterruptedException e) {
-            // move on
-          }
-          return (T)
-              createLocalServiceClient(
-                  serviceType,
-                  serviceType.localServiceUrl(),
-                  scope,
-                  identity,
-                  availableServices,
-                  settings,
-                  listeners);
-        }
-      }
-    } else if (settings.get(Engine.Setting.LOG_EVENTS, Boolean.class)) {
-      scope.info(
-          "No service available for " + serviceType + " and no k.LAB distribution available");
-    }
-
-    return null;
-  }
-
-  @SafeVarargs
-  public final <T extends KlabService> T createLocalServiceClient(
-      KlabService.Type serviceType,
-      URL url,
-      Scope scope,
-      Identity identity,
-      List<ServiceReference> services,
-      Parameters<Engine.Setting> settings,
-      BiConsumer<Channel, Message>... listeners) {
-    T ret =
-        switch (serviceType) {
-          case REASONER -> {
-            yield (T) new ReasonerClient(url, identity, services, settings, listeners);
-          }
-          case RESOURCES -> {
-            yield (T) new ResourcesClient(url, identity, services, settings, listeners);
-          }
-          case RESOLVER -> {
-            yield (T) new ResolverClient(url, identity, services, settings, listeners);
-          }
-          case RUNTIME -> {
-            yield (T) new RuntimeClient(url, identity, services, settings, listeners);
-          }
-          case COMMUNITY -> {
-            yield (T) new CommunityClient(url, identity, services, settings, listeners);
-          }
-          default -> throw new IllegalStateException("Unexpected value: " + serviceType);
-        };
-
-    scope.send(
-        Message.MessageClass.ServiceLifecycle,
-        Message.MessageType.ServiceInitializing,
-        serviceType + " service at " + serviceType.localServiceUrl());
-
-    return ret;
-  }
+//  /**
+//   * Strategy to locate a primary service in all possible ways. If there are primary service URLs
+//   * for the passed service class in the list of service references obtained through authentication,
+//   * try them and if one responds return a client to it. Otherwise, try the local URL and if the
+//   * passed service is running locally, return a client to it. As a last resort, check if we have a
+//   * source distribution configured or available, and if so, synchronize it if needed and if it
+//   * provides the required service product, run it and return a service client.
+//   *
+//   * @param serviceType the service we need.
+//   * @param identity the identity we represent
+//   * @param availableServices a list of {@link ServiceReference} objects obtained through
+//   *     certificate authentication, or an empty list.
+//   * @param <T> the type of service we want to obtain
+//   * @return a service client or null. The service status should be checked before use.
+//   */
+//  public <T extends KlabService> T fuckService(
+//      KlabService.Type serviceType,
+//      Scope scope,
+//      Identity identity,
+//      List<ServiceReference> availableServices,
+//      Parameters<Engine.Setting> settings) {
+//
+//    BiConsumer<Channel, Message>[] listeners =
+//        scope instanceof ChannelImpl clientScope
+//            ? clientScope.listeners().toArray(BiConsumer[]::new)
+//            : (scope instanceof AbstractDelegatingScope ascope ? ascope.listeners() : null);
+//
+//
+//
+//    // if we get here, we have no remote services available and we should try a running local one
+//    // first.
+//    var status = ServiceClient.readServiceStatus(serviceType.localServiceUrl(), null);
+//    if (status != null) {
+//      scope.info(
+//          "Using locally running "
+//              + status.getServiceType()
+//              + " service at "
+//              + serviceType.localServiceUrl());
+//      return (T)
+//          createLocalServiceClient(
+//              serviceType,
+//              serviceType.localServiceUrl(),
+//              scope,
+//              identity,
+//              availableServices,
+//              settings,
+//              listeners);
+//    }
+//
+//
+//    return null;
+//  }
+//
+//  @SafeVarargs
+//  public final <T extends KlabService> T createLocalServiceClient(
+//      KlabService.Type serviceType,
+//      URL url,
+//      Scope scope,
+//      Identity identity,
+//      List<ServiceReference> services,
+//      Parameters<Engine.Setting> settings,
+//      BiConsumer<Channel, Message>... listeners) {
+//    T ret =
+//        switch (serviceType) {
+//          case REASONER -> {
+//            yield (T) new ReasonerClient(url, identity, services, settings, listeners);
+//          }
+//          case RESOURCES -> {
+//            yield (T) new ResourcesClient(url, identity, services, settings, listeners);
+//          }
+//          case RESOLVER -> {
+//            yield (T) new ResolverClient(url, identity, services, settings, listeners);
+//          }
+//          case RUNTIME -> {
+//            yield (T) new RuntimeClient(url, identity, services, settings, listeners);
+//          }
+//          case COMMUNITY -> {
+//            yield (T) new CommunityClient(url, identity, services, settings, listeners);
+//          }
+//          default -> throw new IllegalStateException("Unexpected value: " + serviceType);
+//        };
+//
+//    scope.send(
+//        Message.MessageClass.ServiceLifecycle,
+//        Message.MessageType.ServiceInitializing,
+//        serviceType + " service at " + serviceType.localServiceUrl());
+//
+//    return ret;
+//  }
 
   /**
    * This will only return a non-null distribution after authentication if a distribution was used.
    *
    * @return
    */
-  public Distribution getDistribution() {
-    return this.distribution;
-  }
+//  public Distribution getDistribution() {
+//    return this.distribution;
+//  }
 
   Utils.FileCatalog<ExternalAuthenticationCredentials> getExternalCredentialsCatalog(Scope scope) {
     // TODO use separate catalog for services and user scopes

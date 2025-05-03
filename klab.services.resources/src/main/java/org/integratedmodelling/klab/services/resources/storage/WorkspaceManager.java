@@ -21,6 +21,7 @@ import org.eclipse.xtext.parser.IParser;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.knowledge.WorkspaceImpl;
 import org.integratedmodelling.common.knowledge.WorldviewImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -36,17 +37,19 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
-import org.integratedmodelling.klab.api.view.UI;
+import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -223,30 +226,24 @@ public class WorkspaceManager {
     return _behaviorMap == null ? Collections.emptySet() : _behaviorMap.keySet();
   }
 
-  public URL lockProject(String urn, String token, boolean isLocal) {
+  public boolean lockProject(String urn, String token, boolean isLocal) {
 
     var descriptor = projectDescriptors.get(urn);
     if (descriptor == null || !(descriptor.storage instanceof FileProjectStorage)) {
-      return null;
+      return false;
     }
 
     // check and record lock
     if (projectLocks.containsKey(urn) && !projectLocks.get(urn).equals(token)) {
       scope.info("Lock attempt failed: project " + urn + " is already locked");
-      return null;
+      return false;
     }
 
     projectLocks.put(urn, token);
     ((FileProjectStorage) descriptor.storage).lock(true);
     scope.info("Project " + urn + " is locked");
 
-    if (isLocal) {
-      return descriptor.storage.getUrl();
-    } else {
-      // TODO prepare a zip file and make it available through download area, return public URL
-    }
-
-    return null;
+    return true;
   }
 
   public boolean unlockProject(String urn, String token) {
@@ -349,7 +346,8 @@ public class WorkspaceManager {
         }
       } else {
         if (notifications.isEmpty()) {
-          notifications.add(Notification.info("No repository changes", UI.Interactivity.DISPLAY));
+          notifications.add(
+              Notification.info("No repository changes", UIView.Interactivity.DISPLAY));
         }
         var result = ResourceSet.empty();
         result.getNotifications().addAll(notifications);
@@ -466,35 +464,34 @@ public class WorkspaceManager {
      */
     public BehaviorSyntax parseBehavior(String conceptDefinition) {
       var result =
-              parser.parse(
-                      grammarAccess.getConceptExpressionRule(), new StringReader(conceptDefinition));
+          parser.parse(
+              grammarAccess.getConceptExpressionRule(), new StringReader(conceptDefinition));
       var ret = result.getRootASTElement();
       if (ret instanceof Behavior parsed) {
-        return new BehaviorSyntaxImpl(
-                parsed,  languageValidationScope) {
+        return new BehaviorSyntaxImpl(parsed, languageValidationScope) {
 
           List<String> errors = new ArrayList<>();
 
           @Override
           protected void logWarning(
-                  ParsedObject target, EObject object, EStructuralFeature feature, String message) {
+              ParsedObject target, EObject object, EStructuralFeature feature, String message) {
             getNotifications()
-                    .add(
-                            new Notification(
-                                    object,
-                                    new LanguageValidationScope.ValidationMessage(
-                                            message, -1, LanguageValidationScope.Level.WARNING)));
+                .add(
+                    new Notification(
+                        object,
+                        new LanguageValidationScope.ValidationMessage(
+                            message, -1, LanguageValidationScope.Level.WARNING)));
           }
 
           @Override
           protected void logError(
-                  ParsedObject target, EObject object, EStructuralFeature feature, String message) {
+              ParsedObject target, EObject object, EStructuralFeature feature, String message) {
             getNotifications()
-                    .add(
-                            new Notification(
-                                    object,
-                                    new LanguageValidationScope.ValidationMessage(
-                                            message, -1, LanguageValidationScope.Level.ERROR)));
+                .add(
+                    new Notification(
+                        object,
+                        new LanguageValidationScope.ValidationMessage(
+                            message, -1, LanguageValidationScope.Level.ERROR)));
           }
         };
       }
@@ -1096,7 +1093,6 @@ public class WorkspaceManager {
 
             try (var input = behaviorUrl.openStream()) {
 
-
               var errors = new AtomicBoolean(false);
               var notams = new ArrayList<Notification>();
               var parsed = behaviorParser.parse(input, notams);
@@ -1104,9 +1100,9 @@ public class WorkspaceManager {
             } catch (IOException e) {
               // log error and return failure
               scope.error(
-                      "Error loading k.Actors behavior " + behaviorUrl,
-                      Klab.ErrorCode.READ_FAILED,
-                      Klab.ErrorContext.ONTOLOGY);
+                  "Error loading k.Actors behavior " + behaviorUrl,
+                  Klab.ErrorCode.READ_FAILED,
+                  Klab.ErrorContext.ONTOLOGY);
             }
           }
         }
@@ -2359,6 +2355,67 @@ public class WorkspaceManager {
       }
     }
 
+    /*
+    Ensure we have all descriptors for workspaces and projects; if we don't, replace them with
+    defaults so that admins can modify them. adding a warning notification
+     */
+    var kbox = service.getResourcesKbox();
+    for (var ws : this.workspaces.keySet()) {
+      var info = kbox.getStatus(ws, null);
+      boolean wasNull = info == null;
+      if (wasNull) {
+        info = new ResourceInfo();
+        info.setUrn(ws);
+        info.setKnowledgeClass(KlabAsset.KnowledgeClass.WORKSPACE);
+        // this should be private, but in recovery we don't know the user
+        info.setRights(ResourcePrivileges.create("*"));
+        info.setType(ResourceInfo.Type.AVAILABLE);
+        info.getNotifications()
+            .add(
+                Notification.warning(
+                    "Missing metadata for workspace "
+                        + ws
+                        + " were reconstructed with public rights"));
+        info.getMetadata().put(Metadata.DC_COMMENT, "No information given");
+        info.getMetadata().put(Metadata.DC_DATE_CREATED, TimeInstant.create().toRFC3339String());
+        info.setOwner(service.serviceScope().getIdentity().toString());
+      }
+      var workspace = this.workspaces.get(ws);
+
+      for (var project : workspace.getProjects()) {
+        var pInfo = kbox.getStatus(project.getUrn(), null);
+        if (pInfo == null) {
+          pInfo = new ResourceInfo();
+          pInfo.setUrn(project.getUrn());
+          pInfo.setOwner(info.getOwner());
+          pInfo.setRights(info.getRights());
+          pInfo.setKnowledgeClass(KlabAsset.KnowledgeClass.PROJECT);
+          pInfo.setType(ResourceInfo.Type.AVAILABLE);
+          pInfo
+              .getNotifications()
+              .add(
+                  Notification.warning(
+                      "Missing metadata for project "
+                          + project.getUrn()
+                          + " were reconstructed with public rights"));
+          pInfo.getMetadata().put(Metadata.DC_COMMENT, "No information given");
+          pInfo.getMetadata().put(Metadata.DC_DATE_CREATED, TimeInstant.create().toRFC3339String());
+          Logging.INSTANCE.warn(
+              "Recreating lost metadata for project " + project.getUrn() + " with public rights");
+          kbox.putStatus(pInfo);
+        }
+        if (!info.getChildResourceUrns().contains(project.getUrn())) {
+          info.getChildResourceUrns().add(project.getUrn());
+        }
+      }
+
+      if (wasNull) {
+        Logging.INSTANCE.warn(
+            "Recreating lost metadata for workspace " + ws + " with public rights");
+        kbox.putStatus(info);
+      }
+    }
+
     this.loading.set(false);
 
     return true;
@@ -2560,14 +2617,17 @@ public class WorkspaceManager {
 
     if (lockingAuthorization == null
         || !lockingAuthorization.equals(projectLocks.get(projectName))) {
-      throw new KlabAuthorizationException(
-          "cannot update project " + projectName + " without " + "locking" + " it first");
+      return List.of(
+          ResourceSet.empty(
+              Notification.error("Project " + projectName + " is not locked. Update ignored.")));
     }
 
     var pd = projectDescriptors.get(projectName);
     if (pd == null || !(pd.storage instanceof FileProjectStorage)) {
-      throw new KlabIllegalStateException(
-          "Cannot update a document that is not stored on the " + "service's filesystem");
+      return List.of(
+          ResourceSet.empty(
+              Notification.error(
+                  "Project " + projectName + " is not handled by this service. Update ignored.")));
     }
 
     /*
@@ -2633,17 +2693,17 @@ public class WorkspaceManager {
 
     if (lockingAuthorization == null
         || !lockingAuthorization.equals(projectLocks.get(projectName))) {
-      throw new KlabAuthorizationException(
-          "cannot update project " + projectName + " without " + "locking" + " it first");
+      return List.of(
+          ResourceSet.empty(
+              Notification.error("Project " + projectName + " is not locked. Update ignored.")));
     }
 
     var pd = projectDescriptors.get(projectName);
     if (pd == null || !(pd.storage instanceof FileProjectStorage fileProjectStorage)) {
-      throw new KlabIllegalStateException(
-          "Cannot create a document within a project not stored "
-              + "on "
-              + "the "
-              + "service's filesystem");
+      return List.of(
+          ResourceSet.empty(
+              Notification.error(
+                  "Project " + projectName + " is not handled by this service. Update ignored.")));
     }
 
     var document = fileProjectStorage.create(documentUrn, documentType);

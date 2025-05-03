@@ -10,188 +10,180 @@ import java.util.List;
 
 public class ServiceStatusImpl implements KlabService.ServiceStatus {
 
-    private int healthPercentage = -1;
-    private int loadPercentage = -1;
-    private long memoryAvailableBytes = Runtime.getRuntime().totalMemory();
-    private long memoryUsedBytes = Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory();
-    private int connectedSessionCount = -1;
-    private int knownSessionCount = -1;
-    private long uptimeMs = -1;
-    private long bootTimeMs = -1;
-    private List<Notification> advisories = new ArrayList<>();
-    private Metadata metadata = Metadata.create();
-    private boolean available = false;
-    private boolean busy = false;
-    private boolean consistent = true;
-    private boolean operational = false;
-    private ServiceScope.Locality locality = ServiceScope.Locality.EMBEDDED;
-    private KlabService.Type serviceType;
-    private String serviceId;
+  private int healthPercentage = -1;
+  private int loadPercentage = -1;
+  private long memoryAvailableBytes = Runtime.getRuntime().totalMemory();
+  private long memoryUsedBytes =
+      Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory();
+  private int connectedSessionCount = -1;
+  private int knownSessionCount = -1;
+  private long uptimeMs = -1;
+  private List<Notification> advisories = new ArrayList<>();
+  private Metadata metadata = Metadata.create();
+  private boolean available = false;
+  private boolean busy = false;
+  private boolean operational = false;
+  private KlabService.Type serviceType;
+  private String serviceId;
+  private boolean shutdown;
 
-    @Override
-    public int getHealthPercentage() {
-        return this.healthPercentage;
-    }
+  @Override
+  public int getHealthPercentage() {
+    return this.healthPercentage;
+  }
 
-    @Override
-    public int getLoadPercentage() {
-        return this.loadPercentage;
-    }
+  @Override
+  public int getLoadPercentage() {
+    return this.loadPercentage;
+  }
 
-    @Override
-    public long getMemoryAvailableBytes() {
-        return this.memoryAvailableBytes;
-    }
+  @Override
+  public long getMemoryAvailableBytes() {
+    return this.memoryAvailableBytes;
+  }
 
-    @Override
-    public long getMemoryUsedBytes() {
-        return this.memoryUsedBytes;
-    }
+  @Override
+  public long getMemoryUsedBytes() {
+    return this.memoryUsedBytes;
+  }
 
-    @Override
-    public int getConnectedSessionCount() {
-        return this.connectedSessionCount;
-    }
+  @Override
+  public int getConnectedSessionCount() {
+    return this.connectedSessionCount;
+  }
 
-    @Override
-    public int getKnownSessionCount() {
-        return this.knownSessionCount;
-    }
+  @Override
+  public int getKnownSessionCount() {
+    return this.knownSessionCount;
+  }
 
-    @Override
-    public long getUptimeMs() {
-        return this.uptimeMs;
-    }
+  @Override
+  public long getUptimeMs() {
+    return this.uptimeMs;
+  }
 
-    @Override
-    public long getBootTimeMs() {
-        return this.bootTimeMs;
-    }
+  @Override
+  public List<Notification> getAdvisories() {
+    return this.advisories;
+  }
 
-    @Override
-    public List<Notification> getAdvisories() {
-        return this.advisories;
-    }
+  @Override
+  public Metadata getMetadata() {
+    return this.metadata;
+  }
 
-    @Override
-    public Metadata getMetadata() {
-        return this.metadata;
-    }
+  public void setHealthPercentage(int healthPercentage) {
+    this.healthPercentage = healthPercentage;
+  }
 
-    public void setHealthPercentage(int healthPercentage) {
-        this.healthPercentage = healthPercentage;
-    }
+  public void setLoadPercentage(int loadPercentage) {
+    this.loadPercentage = loadPercentage;
+  }
 
-    public void setLoadPercentage(int loadPercentage) {
-        this.loadPercentage = loadPercentage;
-    }
+  public void setMemoryAvailableBytes(long memoryAvailableBytes) {
+    this.memoryAvailableBytes = memoryAvailableBytes;
+  }
 
-    public void setMemoryAvailableBytes(long memoryAvailableBytes) {
-        this.memoryAvailableBytes = memoryAvailableBytes;
-    }
+  public void setMemoryUsedBytes(long memoryUsedBytes) {
+    this.memoryUsedBytes = memoryUsedBytes;
+  }
 
-    public void setMemoryUsedBytes(long memoryUsedBytes) {
-        this.memoryUsedBytes = memoryUsedBytes;
-    }
+  public void setConnectedSessionCount(int connectedSessionCount) {
+    this.connectedSessionCount = connectedSessionCount;
+  }
 
-    public void setConnectedSessionCount(int connectedSessionCount) {
-        this.connectedSessionCount = connectedSessionCount;
-    }
+  public void setKnownSessionCount(int knownSessionCount) {
+    this.knownSessionCount = knownSessionCount;
+  }
 
-    public void setKnownSessionCount(int knownSessionCount) {
-        this.knownSessionCount = knownSessionCount;
-    }
+  public void setUptimeMs(long uptimeMs) {
+    this.uptimeMs = uptimeMs;
+  }
 
-    public void setUptimeMs(long uptimeMs) {
-        this.uptimeMs = uptimeMs;
-    }
+  public void setAdvisories(List<Notification> advisories) {
+    this.advisories = advisories;
+  }
 
-    public void setBootTimeMs(long bootTimeMs) {
-        this.bootTimeMs = bootTimeMs;
-    }
+  public void setMetadata(Metadata metadata) {
+    this.metadata = metadata;
+  }
 
-    public void setAdvisories(List<Notification> advisories) {
-        this.advisories = advisories;
-    }
+  @Override
+  public KlabService.Type getServiceType() {
+    return serviceType;
+  }
 
-    public void setMetadata(Metadata metadata) {
-        this.metadata = metadata;
-    }
+  @Override
+  public String getServiceId() {
+    return serviceId;
+  }
 
-    @Override
-    public KlabService.Type getServiceType() {
-        return serviceType;
-    }
+  @Override
+  public boolean isAvailable() {
+    return available;
+  }
 
-    @Override
-    public String getServiceId() {
-        return serviceId;
-    }
+  public void setAvailable(boolean available) {
+    this.available = available;
+  }
 
-    @Override
-    public boolean isAvailable() {
-        return available;
-    }
+  @Override
+  public boolean isBusy() {
+    return busy;
+  }
 
-    public void setAvailable(boolean available) {
-        this.available = available;
-    }
+  public void setBusy(boolean busy) {
+    this.busy = busy;
+  }
 
-    @Override
-    public boolean isBusy() {
-        return busy;
-    }
+  public void setServiceType(KlabService.Type serviceType) {
+    this.serviceType = serviceType;
+  }
 
-    public void setBusy(boolean busy) {
-        this.busy = busy;
-    }
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
+  }
 
-    @Override
-    public ServiceScope.Locality getLocality() {
-        return locality;
-    }
+  @Override
+  public boolean isOperational() {
+    return operational;
+  }
 
-    public void setLocality(ServiceScope.Locality locality) {
-        this.locality = locality;
-    }
+  public void setOperational(boolean operational) {
+    this.operational = operational;
+  }
 
-    public void setServiceType(KlabService.Type serviceType) {
-        this.serviceType = serviceType;
-    }
+  @Override
+  public boolean isShutdown() {
+    return shutdown;
+  }
 
-    public void setServiceId(String serviceId) {
-        this.serviceId = serviceId;
-    }
+  public void setShutdown(boolean shutdown) {
+    this.shutdown = shutdown;
+  }
 
-    @Override
-    public boolean isConsistent() {
-        return consistent;
-    }
-
-    @Override
-    public boolean isOperational() {
-        return operational;
-    }
-
-    public void setOperational(boolean operational) {
-        this.operational = operational;
-    }
-
-    public void setConsistent(boolean consistent) {
-        this.consistent = consistent;
-    }
-
-    @Override
-    public String toString() {
-        return "ServiceStatusImpl{" +
-                "memoryAvailableBytes=" + memoryAvailableBytes +
-                ", memoryUsedBytes=" + memoryUsedBytes +
-                ", serviceType=" + serviceType +
-                ", serviceId='" + serviceId + '\'' +
-                ", uptimeMs=" + uptimeMs +
-                ", bootTimeMs=" + bootTimeMs +
-                ", available=" + available +
-                ", busy=" + busy +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "ServiceStatusImpl{"
+        + "serviceType="
+        + serviceType
+        + ", available="
+        + available
+        + ", operational="
+        + operational
+        + ", busy="
+        + busy
+        + ", shutdown="
+        + shutdown
+        + ", memoryAvailable="
+        + memoryAvailableBytes
+        + ", memoryUsedBytes="
+        + memoryUsedBytes
+        + ", serviceId='"
+        + serviceId
+        + '\''
+        + ", uptimeMs="
+        + uptimeMs
+        + '}';
+  }
 }

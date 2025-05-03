@@ -410,7 +410,7 @@ public interface ServicesAPI {
     String RETRIEVE_RESOURCE = "/retrieveResource";
     String RETRIEVE_WORKSPACE = "/retrieveWorkspace/{urn}";
     String RESOLVE_SERVICE_CALL = "/resolveServiceCall/{name}";
-    String RESOURCE_STATUS = "/resourceStatus/{urn}";
+    String RESOURCE_INFO = "/resourceInfo/{urn}";
     String RETRIEVE_OBSERVABLE = "/retrieveObservable";
     String DESCRIBE_CONCEPT = "/describeConcept/{conceptUrn}";
     String RETRIEVE_CONCEPT = "/retrieveConcept/{definition}";

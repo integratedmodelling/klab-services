@@ -36,7 +36,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -221,13 +221,28 @@ public class ResourcesProviderController {
                 : null);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.RESOURCE_STATUS)
-  public @ResponseBody ResourceStatus resourceStatus(
+  @GetMapping(ServicesAPI.RESOURCES.RESOURCE_INFO)
+  public @ResponseBody ResourceInfo getResourceInfo(
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
-        .resourceStatus(
+        .resourceInfo(
             urn,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
+
+  @PostMapping(ServicesAPI.RESOURCES.RESOURCE_INFO)
+  public boolean setResourceInfo(
+      @PathVariable("urn") String urn,
+      @RequestBody ResourceInfo resourceInfo,
+      Principal principal) {
+    return resourcesServer
+        .klabService()
+        .setResourceInfo(
+            urn,
+            resourceInfo,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
                 : null);

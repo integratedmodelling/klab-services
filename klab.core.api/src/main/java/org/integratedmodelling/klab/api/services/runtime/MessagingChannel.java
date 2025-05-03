@@ -42,25 +42,27 @@ public interface MessagingChannel extends Channel {
       UserIdentity identity,
       Consumer<Message> consumer);
 
-  /**
-   * Install one or more message matchers to react to messages received and sent through the managed
-   * queues.
-   *
-   * @param matchers
-   * @return
-   */
-  void trackMessages(Message.Match... matchers);
-
-  /**
-   * Install a message matcher and a supplier that turns the matching message into an object, and
-   * return a future for the supplied object.
-   *
-   * @param match
-   * @param supplier
-   * @param <T>
-   * @return
-   */
-  <T> CompletableFuture<T> trackMessages(Message.Match match, Function<Message, T> supplier);
+//  /**
+//   * Install one or more message matchers to react to messages received and sent through the managed
+//   * queues.
+//   *
+//   * @param matchers
+//   * @return
+//   * @deprecated this is complex to use although powerful. We probably don't need it.
+//   */
+//  void trackMessages(Message.Match... matchers);
+//
+//  /**
+//   * Install a message matcher and a supplier that turns the matching message into an object, and
+//   * return a future for the supplied object.
+//   *
+//   * @param match
+//   * @param supplier
+//   * @param <T>
+//   * @return
+//   * @deprecated this is complex to use although powerful. We probably don't need it.
+//   */
+//  <T> CompletableFuture<T> trackMessages(Message.Match match, Function<Message, T> supplier);
 
   /**
    * True if {@link #connectToService(KlabService.ServiceCapabilities, UserIdentity, Consumer)} has

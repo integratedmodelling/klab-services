@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
@@ -19,6 +20,8 @@ import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -40,7 +43,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.view.UI;
+import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.modeler.Modeler;
@@ -87,9 +90,16 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     this.workbench = Utils.YAML.load(workbenchDefinition, EngineConfiguration.class);
   }
 
-  public ModelerImpl(UI ui) {
-    super(ui);
+  public ModelerImpl(UIView uiView) {
+    super(uiView);
     // TODO read the workbench config - NAH this probably pertains to the IDE
+  }
+
+  @Override
+  public Distribution.Status getDistributionStatus() {
+    return engine() == null
+        ? new AbstractDistributionImpl.StatusImpl()
+        : engine().getDistributionStatus();
   }
 
   @Override
@@ -100,40 +110,40 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
       Engine.Status status = (Engine.Status) payload[0];
 
-      for (var capabilities : status.getServicesCapabilities().values()) {
-
-        if (capabilities == null) {
-          continue;
-        }
-
-        if (capabilities.getUrl() != null) {
-          serviceUrls.put(capabilities.getServiceId(), capabilities.getUrl());
-        }
-        if (capabilities.getBrokerURI() != null
-            && scope() instanceof AbstractReactiveScopeImpl serviceClient) {
-          /*
-           * Instrument the service client for messaging. This is pretty involved alas, but the
-           * whole
-           * matter isn't exactly trivial.
-           */
-          var client = serviceClient.getService(capabilities.getServiceId());
-          if (client != null
-              && client.serviceScope() instanceof AbstractServiceDelegatingScope delegatingScope
-              && delegatingScope.getDelegateChannel()
-                  instanceof MessagingChannel messagingChannel) {
-            /*
-             * If the scope delegates to a messaging channel, set up messaging and link the
-             * available  service queues to service message dispatchers.
-             */
-            if (!messagingChannel.isConnected()) {
-              messagingChannel.connectToService(
-                  capabilities,
-                  (UserIdentity) user().getIdentity(),
-                  (message) -> dispatchServerMessage(capabilities, message));
-            }
-          }
-        }
-      }
+//      for (var capabilities : status.getServicesCapabilities().values()) {
+//
+//        if (capabilities == null) {
+//          continue;
+//        }
+//
+//        if (capabilities.getUrl() != null) {
+//          serviceUrls.put(capabilities.getServiceId(), capabilities.getUrl());
+//        }
+//        if (capabilities.getBrokerURI() != null
+//            && scope() instanceof AbstractReactiveScopeImpl serviceClient) {
+//          /*
+//           * Instrument the service client for messaging. This is pretty involved alas, but the
+//           * whole
+//           * matter isn't exactly trivial.
+//           */
+//          var client = serviceClient.getService(capabilities.getServiceId());
+//          if (client != null
+//              && client.serviceScope() instanceof AbstractServiceDelegatingScope delegatingScope
+//              && delegatingScope.getDelegateChannel()
+//                  instanceof MessagingChannel messagingChannel) {
+//            /*
+//             * If the scope delegates to a messaging channel, set up messaging and link the
+//             * available  service queues to service message dispatchers.
+//             */
+//            if (!messagingChannel.isConnected()) {
+//              messagingChannel.connectToService(
+//                  capabilities,
+//                  (UserIdentity) user().getIdentity(),
+//                  (message) -> dispatchServerMessage(capabilities, message));
+//            }
+//          }
+//        }
+//      }
     }
 
     super.dispatch(sender, event, payload);
@@ -153,7 +163,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   @Override
   public Engine createEngine() {
-    // TODO first should locate and set the distribution
     return new EngineImpl();
   }
 
@@ -246,7 +255,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
 
     if (currentContext == null) {
-      user().error("cannot create an observation context: aborting", UI.Interactivity.DISPLAY);
+      user().error("cannot create an observation context: aborting", UIView.Interactivity.DISPLAY);
       return CompletableFuture.completedFuture(Observation.empty());
     }
 
@@ -564,70 +573,81 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     return ((EngineImpl) engine()).getUser();
   }
 
-  @Override
-  public void setDefaultService(KlabService.ServiceCapabilities service) {
-    if (engine() instanceof EngineImpl engine) {
-      engine.setDefaultService(service);
-    } else {
-      engine()
-          .serviceScope()
-          .warn(
-              "Modeler: request to set default service wasn't honored "
-                  + "because the engine implementation is overridden");
-    }
+  public Future<Boolean> startLocalServices() {
+    return CompletableFuture.completedFuture(false);
   }
 
-  @Override
-  public void shutdown(boolean shutdownLocalServices) {
+  public CompletableFuture<Boolean> shutdownLocalServices() {
 
-    engine().shutdown();
-
-    if (shutdownLocalServices) {
-      List<ServiceClient> services = new ArrayList<>();
-      for (var serviceType : List.of(KlabService.Type.RESOURCES)) {
-        for (var service : engine().serviceScope().getServices(serviceType.classify())) {
-          if (service instanceof ServiceClient serviceClient && serviceClient.isLocal()) {
-            services.add(serviceClient);
-          }
+    List<ServiceClient> services = new ArrayList<>();
+    for (var serviceType : List.of(KlabService.Type.RESOURCES)) {
+      for (var service : engine().serviceScope().getServices(serviceType.classify())) {
+        if (service instanceof ServiceClient serviceClient && serviceClient.isLocal()) {
+          services.add(serviceClient);
         }
       }
+    }
 
-      // 10 sec timeout
-      final long timeout = 10000L;
-      var ns = services.size();
-      if (ns > 0) {
+    return CompletableFuture.supplyAsync(
+        () -> {
+          // 10 sec timeout
+          final long timeout = 10000L;
+          var ns = services.size();
+          if (ns > 0) {
 
-        Logging.INSTANCE.warn("Waiting for " + services.size() + " local services to exit");
+            Logging.INSTANCE.warn("Waiting for " + services.size() + " local services to exit");
 
-        long time = System.currentTimeMillis();
-        while (true) {
+            long time = System.currentTimeMillis();
+            while (true) {
 
-          int n = 0;
-          for (var client : services) {
-            if (!client.getHttpClient().isAlive()) {
-              n++;
+              int n = 0;
+              for (var client : services) {
+                if (!client.getHttpClient().isAlive()) {
+                  n++;
+                }
+              }
+
+              if (n == services.size()) {
+                Logging.INSTANCE.warn("All local services have shut down");
+                return true;
+              }
+
+              if ((System.currentTimeMillis() - time) > timeout) {
+                Logging.INSTANCE.error("Timeout reached: shutdown unsuccessful, continuing");
+                break;
+              }
+
+              try {
+                Thread.sleep(300);
+              } catch (InterruptedException e) {
+                Logging.INSTANCE.error("Thread exception: shutdown unsuccessful, continuing");
+                break;
+              }
             }
           }
 
-          if (n == services.size()) {
-            Logging.INSTANCE.warn("@|green All local services have shut" + " down: exiting");
-            System.exit(0);
-          }
+          return false;
+        });
+  }
 
-          if ((System.currentTimeMillis() - time) > timeout) {
-            Logging.INSTANCE.error("Timeout reached: shutdown unsuccessful, continuing");
-            break;
-          }
+  @Override
+  public boolean shutdown(boolean shutdownLocalServices) {
 
-          try {
-            Thread.sleep(300);
-          } catch (InterruptedException e) {
-            Logging.INSTANCE.error("Thread exception: shutdown unsuccessful, continuing");
-            break;
-          }
-        }
+    if (shutdownLocalServices) {
+      try {
+        return shutdownLocalServices().thenApply(b -> engine().shutdown()).get();
+      } catch (Exception e) {
+        Logging.INSTANCE.error("Shutdown procedure terminated with errors", e);
+        return false;
       }
     }
+
+    return engine().shutdown();
+  }
+
+  @Override
+  public Distribution getDistribution() {
+    return engine() instanceof EngineImpl engine ? engine.getDistribution() : null;
   }
 
   @Override

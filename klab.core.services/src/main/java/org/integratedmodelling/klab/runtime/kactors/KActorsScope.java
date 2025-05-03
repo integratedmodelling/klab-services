@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -533,10 +534,10 @@ public class KActorsScope implements VM.BehaviorScope {
         mainScope.debug(o);
     }
 
-    @Override
-    public void status(Scope.Status status) {
-        mainScope.status(status);
-    }
+//    @Override
+//    public void status(Scope.Status status) {
+//        mainScope.status(status);
+//    }
 
     @Override
     public void event(Message message) {
@@ -546,6 +547,11 @@ public class KActorsScope implements VM.BehaviorScope {
     @Override
     public void ui(Message message) {
         mainScope.ui(message);
+    }
+
+    @Override
+    public Channel onMessage(BiConsumer<Channel, Message> consumer) {
+        return mainScope.onMessage(consumer);
     }
 
     @Override
