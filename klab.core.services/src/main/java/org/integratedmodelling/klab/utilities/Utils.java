@@ -87,6 +87,50 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                 "org" + ".integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT", true));
   }
 
+  public static class Templates extends org.integratedmodelling.klab.api.utils.Utils.Templates {
+
+    public static class TemplateBuilder {
+
+      private final File rootFolder;
+
+      public TemplateBuilder(File rootFolder) {
+        this.rootFolder = rootFolder;
+      }
+
+      /**
+       * Add data that will be used in substitutions.
+       *
+       * @param data
+       * @return
+       */
+      public TemplateBuilder with(Object... data) {
+        return this;
+      }
+
+      /**
+       * Create a file at build() at the passed relative path (using slash separators). Contents of
+       * the file depend on the remaining arguments.
+       *
+       * @param relativePath
+       * @param content
+       * @return
+       */
+      public TemplateBuilder file(String relativePath, Object... content) {
+        return this;
+      }
+
+      public File build() {
+        return null;
+      }
+
+      // TODO may add some more methods to automatically set up git
+    }
+
+    public static TemplateBuilder builder(File rootFolder) {
+      return new TemplateBuilder(rootFolder);
+    }
+  }
+
   public static class Data extends org.integratedmodelling.klab.api.utils.Utils.Data {
 
     public static Histogram adaptHistogram(com.dynatrace.dynahist.Histogram histogram) {
@@ -102,8 +146,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       }
       return ret;
     }
-
-
   }
 
   /** Functions to access Maven artifacts */
@@ -499,9 +541,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
               ret.getNotifications()
                   .add(
                       Notification.error(
-                              "Conflicts during merge of "
+                          "Conflicts during merge of "
                               + Strings.join(result.getMergeResult().getConflicts().keySet(), ", "),
-                              UIView.Interactivity.DISPLAY));
+                          UIView.Interactivity.DISPLAY));
             } else {
 
               // commit locally
@@ -630,9 +672,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
               ret.getNotifications()
                   .add(
                       Notification.error(
-                              "Conflicts during merge of "
+                          "Conflicts during merge of "
                               + Strings.join(result.getMergeResult().getConflicts().keySet(), ", "),
-                              UIView.Interactivity.DISPLAY));
+                          UIView.Interactivity.DISPLAY));
             } else {
               compileDiff(repo, git, oldHead, ret);
             }
@@ -640,11 +682,11 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             ret.getNotifications()
                 .add(
                     Notification.error(
-                            "Pull from default remote of "
+                        "Pull from default remote of "
                             + "repository "
                             + repo.getIdentifier()
                             + " unsuccessful",
-                            UIView.Interactivity.DISPLAY));
+                        UIView.Interactivity.DISPLAY));
           }
 
           /*
