@@ -639,8 +639,81 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
+  public boolean createWorkspace(String workspace, Metadata metadata, UserScope scope) {
+    /*
+     * We just create the descriptor. Project URNs are unique anyway, so the workspace is a purely
+     * logical entity for now.
+     */
+    var existing = resourcesKbox.getStatus(workspace, null);
+    if (existing != null) {
+      return false;
+    }
+
+    var rights = ResourcePrivileges.create(scope);
+
+    if (rights.invalid()) {
+      return false;
+    }
+
+    ResourceInfo resourceInfo = new ResourceInfo();
+    resourceInfo.setType(ResourceInfo.Type.AVAILABLE);
+    resourceInfo.setRights(rights);
+    resourceInfo.setKnowledgeClass(KnowledgeClass.WORKSPACE);
+    resourceInfo.setUrn(workspace);
+    resourceInfo.getMetadata().putAll(metadata);
+    resourcesKbox.putStatus(resourceInfo);
+
+    return true;
+  }
+
+  @Override
   public ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
-    return null;
+
+    var workspaceInfo = resourcesKbox.getStatus(workspaceName, null);
+
+    if (workspaceInfo == null) {
+      if (!createWorkspace(workspaceName, Metadata.create(), scope)) {
+        return ResourceSet.empty(
+            Notification.error(
+                "Cannot create workspace "
+                    + workspaceName
+                    + " when attempting to create project "
+                    + projectName
+                    + " in it"));
+      }
+    }
+
+    var projectInfo = resourcesKbox.getStatus(projectName, null);
+    if (projectInfo != null) {
+      return ResourceSet.empty(
+          Notification.error(
+              "Cannot create project "
+                  + projectName
+                  + " as asset of type "
+                  + projectInfo.getKnowledgeClass()
+                  + " already exists"));
+    }
+
+    var rights = ResourcePrivileges.create(scope);
+    if (rights.invalid()) {
+      return ResourceSet.empty(
+          Notification.error(
+              "Cannot create project " + projectName + ": requesting scope is not authorized"));
+    }
+
+    var ret = workspaceManager.createProject(projectName, workspaceName);
+
+    if (ret != null) {
+      ResourceInfo resourceInfo = new ResourceInfo();
+      resourceInfo.setType(ResourceInfo.Type.AVAILABLE);
+      resourceInfo.setRights(rights);
+      resourceInfo.setKnowledgeClass(KnowledgeClass.WORKSPACE);
+      resourceInfo.setUrn(projectName);
+//      resourceInfo.getMetadata().putAll(Metadata.create());
+      resourcesKbox.putStatus(resourceInfo);
+    }
+
+    return ret;
   }
 
   @Override

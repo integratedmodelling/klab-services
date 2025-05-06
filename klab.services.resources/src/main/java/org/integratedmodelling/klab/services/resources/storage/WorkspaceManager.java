@@ -374,6 +374,91 @@ public class WorkspaceManager {
                 Notification.Level.Error)));
   }
 
+  /**
+   * Called by the service after checking that rights are OK, workspace exists and the project is
+   * not already there.
+   *
+   * @param projectName
+   * @return
+   */
+  public ResourceSet createProject(String projectName, String workspaceName) {
+    File workspace = BaseService.getConfigurationSubdirectory(startupOptions, "workspaces");
+    File projectHome = new File(workspace + File.separator + projectName);
+
+    if (projectHome.exists()) {
+      // shouldn't happen, but in case
+      return null;
+    }
+
+    var manifest = new ProjectImpl.ManifestImpl();
+    var result =
+        Utils.Templates.builder(projectHome)
+                       // TODO other support files?
+            .file("META-INF/klab.yaml", Utils.YAML.asString(manifest))
+            .build();
+
+    if (result != null) {
+      var ret = new ResourceSet();
+      var prj = new ResourceSet.Resource();
+      prj.setResourceUrn(projectName);
+      prj.setResourceVersion(manifest.getVersion());
+      ret.setWorkspace(workspaceName);
+      ret.getProjects().add(prj);
+
+      // update projectConfiguration and write it
+      // update lastProjectUpdates
+      // update as follows
+
+      var configuration = new ResourcesConfiguration.ProjectConfiguration();
+//      configuration.setSourceUrl(projectUrl);
+//      configuration.setWorkspaceName(workspaceName);
+//      configuration.setSyncIntervalMinutes(DEFAULT_GIT_SYNC_INTERVAL_MINUTES);
+//      configuration.setStorageType(ret.getType());
+//      /*
+//       * Default privileges are exclusive to the service, the API can be used to change them
+//       */
+//      configuration.setPrivileges(ResourcePrivileges.empty());
+//      if (ret instanceof FileProjectStorage fps) {
+//        configuration.setLocalPath(fps.getRootFolder());
+//      }
+//      this.configuration.getProjectConfiguration().put(ret.getProjectName(), configuration);
+//      configuration.setWorldview(readManifest(ret).getDefinedWorldview() != null);
+//
+//      Set<String> projects = this.configuration.getWorkspaces().get(workspaceName);
+//      if (projects == null) {
+//        projects = new LinkedHashSet<>();
+//        this.configuration.getWorkspaces().put(workspaceName, projects);
+//      }
+//
+//      projects.add(ret.getProjectName());
+//
+//      if (!this.workspaces.containsKey(workspaceName)) {
+//        var ws = new WorkspaceImpl();
+//        ws.setUrn(workspaceName);
+//        this.workspaces.put(workspaceName, ws);
+//      }
+//
+//      saveConfiguration();
+//
+//      /*
+//      create project descriptor
+//       */
+//      ProjectDescriptor descriptor = new ProjectDescriptor();
+//      descriptor.storage = ret;
+//      descriptor.manifest = readManifest(ret);
+//      descriptor.workspace = workspaceName;
+//      descriptor.name = ret.getProjectName();
+//      descriptor.updateInterval = configuration.getSyncIntervalMinutes();
+//      projectDescriptors.put(ret.getProjectName(), descriptor);
+
+      return ret;
+    }
+
+
+
+    return null;
+  }
+
   class StrategyParser extends Parser<Strategies> {
 
     @Override
@@ -625,15 +710,15 @@ public class WorkspaceManager {
     int updateInterval;
   }
 
-  private Map<String, WorkspaceImpl> workspaces = new LinkedHashMap<>();
+  private final Map<String, WorkspaceImpl> workspaces = new LinkedHashMap<>();
   private final Function<String, Project> externalProjectResolver;
-  private Map<String, ProjectDescriptor> projectDescriptors = new HashMap<>();
-  private Map<String, Project> projects = new LinkedHashMap<>();
+  private final Map<String, ProjectDescriptor> projectDescriptors = new HashMap<>();
+  private final Map<String, Project> projects = new LinkedHashMap<>();
   // all logging goes through here
-  private Scope scope;
+  private final Scope scope;
   private ResourcesConfiguration configuration;
-  private Map<String, Long> lastProjectUpdates = new HashMap<>();
-  private List<Pair<String, Version>> unresolvedProjects = new ArrayList<>();
+  private final Map<String, Long> lastProjectUpdates = new HashMap<>();
+  private final List<Pair<String, Version>> unresolvedProjects = new ArrayList<>();
 
   // TODO fix the API - just pass the service, get options and scope from it like the kbox
   public WorkspaceManager(
@@ -647,7 +732,7 @@ public class WorkspaceManager {
     this.startupOptions = options;
     readConfiguration(options);
     loadWorkspace();
-    scheduler.scheduleAtFixedRate(() -> checkForProjectUpdates(), 1, 1, TimeUnit.MINUTES);
+    scheduler.scheduleAtFixedRate(this::checkForProjectUpdates, 1, 1, TimeUnit.MINUTES);
   }
 
   private void checkForProjectUpdates() {
@@ -2428,10 +2513,6 @@ public class WorkspaceManager {
       }
     }
     return Version.ANY_VERSION;
-  }
-
-  private ProjectStorage newProject(String projectName, String workspaceName) {
-    return null;
   }
 
   public SemanticSyntax resolveConcept(String conceptDefinition) {

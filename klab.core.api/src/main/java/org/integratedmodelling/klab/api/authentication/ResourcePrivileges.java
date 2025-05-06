@@ -76,6 +76,10 @@ public class ResourcePrivileges implements Serializable {
     return new ResourcePrivileges(null);
   }
 
+  public boolean invalid() {
+    return !isPublic && allowedUsers.isEmpty() && allowedGroups.isEmpty();
+  }
+
   /**
    * Create a permission object from a string.
    *
@@ -84,6 +88,17 @@ public class ResourcePrivileges implements Serializable {
    */
   public static ResourcePrivileges create(String permissions) {
     return new ResourcePrivileges(permissions);
+  }
+
+  public static ResourcePrivileges create(Scope scope) {
+
+    if (scope instanceof UserScope userScope) {
+      if (!userScope.getUser().isAnonymous() && userScope.getUser().isAuthenticated()) {
+        return create(userScope.getUser().getUsername());
+      }
+    }
+
+    return empty();
   }
 
   public boolean checkAuthorization(Scope scope) {

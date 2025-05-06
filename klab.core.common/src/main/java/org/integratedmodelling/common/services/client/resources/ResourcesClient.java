@@ -551,6 +551,11 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
+  public boolean createWorkspace(String workspace, Metadata metadata, UserScope scope) {
+    return false;
+  }
+
+  @Override
   public ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
     return null;
   }

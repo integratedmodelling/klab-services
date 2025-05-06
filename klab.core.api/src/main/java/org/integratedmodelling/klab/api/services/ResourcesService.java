@@ -244,8 +244,8 @@ public interface ResourcesService extends KlabService {
   ResourceInfo resourceInfo(String urn, Scope scope);
 
   /**
-   * Set all the asset metadata in one shot. Applies to all kinds of assets that deserve their own resource
-   * metadata - i.e. workspaces, projects, components and resources.
+   * Set all the asset metadata in one shot. Applies to all kinds of assets that deserve their own
+   * resource metadata - i.e. workspaces, projects, components and resources.
    *
    * @param urn
    * @param info the new resource status from now on
@@ -283,7 +283,11 @@ public interface ResourcesService extends KlabService {
    * @return
    */
   Data contextualize(
-          Resource contextualizedResource, Observation observation, Scheduler.Event event, Data input, Scope scope);
+      Resource contextualizedResource,
+      Observation observation,
+      Scheduler.Event event,
+      Data input,
+      Scope scope);
 
   /**
    * @param urn
@@ -411,25 +415,19 @@ public interface ResourcesService extends KlabService {
    */
   interface Admin {
 
-    //        /**
-    //         * Add or update a project from an external source to the local repository.
-    //         *
-    //         * @param workspaceName
-    //         * @param projectUrl          can be a file (zip or existing folder), a git URL (with
-    // a potential
-    //         *                            branch name after a # sign) or a http URL from another
-    // resource
-    //         *                            manager.
-    //         * @param overwriteIfExisting self-explanatory. If the project is remote, reload if
-    // true.
-    //         * @param scope               a scope that must have previously locked the project
-    //         * @return true if operation succeeded and anything was done (false if project existed
-    // and wasn't
-    //         * overwritten)
-    //         */
-    //        List<ResourceSet> importProject(String workspaceName, String projectUrl, boolean
-    // overwriteIfExisting,
-    //                                        UserScope scope);
+    /**
+     * Create a workspace with the passed ID and metadata. While workspaces can still be created
+     * automatically on demand, calling this is the proper workflow and automatic creation may be
+     * disabled in the future. The workspace will initially be accessible only to the owning user,
+     * and the rights management system can be used to change that.
+     *
+     * @param workspace
+     * @param metadata
+     * @param scope
+     * @return true if the workspace creation succeeded. False will be returned if there were errors
+     *     or the workspace already existed.
+     */
+    boolean createWorkspace(String workspace, Metadata metadata, UserScope scope);
 
     /**
      * Create a new empty project. Use the update function to configure the manifest and the
@@ -503,63 +501,6 @@ public interface ResourcesService extends KlabService {
      */
     List<ResourceSet> manageRepository(
         String projectName, RepositoryState.Operation operation, String... arguments);
-
-    //        /**
-    //         * Add a resource fully specified by a resource object to those managed by this
-    // service. Resource is
-    //         * invisible from the outside until published. The resource adapter must be available
-    // to the service.
-    //         *
-    //         * @param resource
-    //         * @return the resource URN, potentially modified w.r.t. the one in the request.
-    //         * @deprecated subsume in the importAsset mechanism
-    //         */
-    //        ResourceSet createResource(Resource resource, UserScope scope);
-    //
-    //        /**
-    //         * Create a resource from a dataflow, storing it in serialized form. The dataflow must
-    // be fully
-    //         * resolved and all dependencies must be stated.
-    //         *
-    //         * @param dataflow
-    //         * @param scope
-    //         * @return
-    //         * @deprecated subsume in the importAsset mechanism
-    //         */
-    //        ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope);
-    //
-    //        /**
-    //         * Add a resource with file content or a k.LAB component to those managed by this
-    // service. Resource is
-    //         * invisible from the outside until published. The resource adapter must be available
-    // to the service.
-    //         *
-    //         * @param resourcePath the URL to a local or remote directory or archive file that
-    // contains the
-    //         *                     resource files. A resource.json file must be present, along
-    // with anything else
-    //         *                     required by the adapter. If the file is a .jar file, the
-    // resource is assumed to
-    //         *                     be a component and is treated as such.
-    //         * @return the result including the resource URN in results, potentially modified
-    // w.r.t. the one in
-    //         * the request. If a component, the URN is the plugin name from the jar manifest.
-    //         * <p>
-    //         * @deprecated use the resource import mechanism
-    //         */
-    //        ResourceSet createResource(File resourcePath, UserScope scope);
-
-    //        /**
-    //         * @param projectName
-    //         * @param urnId
-    //         * @param adapter
-    //         * @param resourceData
-    //         * @param scope
-    //         * @return
-    //         * @deprecated use the import mechanism
-    //         */
-    //        Resource createResource(String projectName, String urnId, String adapter,
-    //                                Parameters<String> resourceData, UserScope scope);
 
     /**
      * Remove a document in a project. May be a resource when it's exclusive to the project.
