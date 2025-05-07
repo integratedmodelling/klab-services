@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -37,6 +36,7 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -74,9 +74,6 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-import org.mapdb.serializer.GroupSerializer;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -663,6 +660,8 @@ public class ResourcesProvider extends BaseService
     resourceInfo.getMetadata().putAll(metadata);
     resourcesKbox.putStatus(resourceInfo);
 
+    workspaceManager.notifyNewWorkspace(resourceInfo);
+
     return true;
   }
 
@@ -704,12 +703,23 @@ public class ResourcesProvider extends BaseService
     var ret = workspaceManager.createProject(projectName, workspaceName);
 
     if (ret != null) {
+
       ResourceInfo resourceInfo = new ResourceInfo();
       resourceInfo.setType(ResourceInfo.Type.AVAILABLE);
       resourceInfo.setRights(rights);
       resourceInfo.setKnowledgeClass(KnowledgeClass.WORKSPACE);
       resourceInfo.setUrn(projectName);
-//      resourceInfo.getMetadata().putAll(Metadata.create());
+      resourceInfo
+          .getMetadata()
+          .putAll(
+              Metadata.create(
+                  Metadata.DC_DATE_CREATED,
+                  TimeInstant.create().toRFC3339String(),
+                  "klab:serviceId",
+                  serviceId(),
+                  Metadata.DC_CONTRIBUTOR,
+                  scope.getUser().getUsername()));
+
       resourcesKbox.putStatus(resourceInfo);
     }
 

@@ -30,7 +30,6 @@ import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -382,6 +381,7 @@ public class WorkspaceManager {
    * @return
    */
   public ResourceSet createProject(String projectName, String workspaceName) {
+
     File workspace = BaseService.getConfigurationSubdirectory(startupOptions, "workspaces");
     File projectHome = new File(workspace + File.separator + projectName);
 
@@ -393,7 +393,7 @@ public class WorkspaceManager {
     var manifest = new ProjectImpl.ManifestImpl();
     var result =
         Utils.Templates.builder(projectHome)
-                       // TODO other support files?
+            // TODO other support files?
             .file("META-INF/klab.yaml", Utils.YAML.asString(manifest))
             .build();
 
@@ -405,58 +405,48 @@ public class WorkspaceManager {
       ret.setWorkspace(workspaceName);
       ret.getProjects().add(prj);
 
-      // update projectConfiguration and write it
-      // update lastProjectUpdates
-      // update as follows
-
       var configuration = new ResourcesConfiguration.ProjectConfiguration();
-//      configuration.setSourceUrl(projectUrl);
-//      configuration.setWorkspaceName(workspaceName);
-//      configuration.setSyncIntervalMinutes(DEFAULT_GIT_SYNC_INTERVAL_MINUTES);
-//      configuration.setStorageType(ret.getType());
-//      /*
-//       * Default privileges are exclusive to the service, the API can be used to change them
-//       */
-//      configuration.setPrivileges(ResourcePrivileges.empty());
-//      if (ret instanceof FileProjectStorage fps) {
-//        configuration.setLocalPath(fps.getRootFolder());
-//      }
-//      this.configuration.getProjectConfiguration().put(ret.getProjectName(), configuration);
-//      configuration.setWorldview(readManifest(ret).getDefinedWorldview() != null);
-//
-//      Set<String> projects = this.configuration.getWorkspaces().get(workspaceName);
-//      if (projects == null) {
-//        projects = new LinkedHashSet<>();
-//        this.configuration.getWorkspaces().put(workspaceName, projects);
-//      }
-//
-//      projects.add(ret.getProjectName());
-//
-//      if (!this.workspaces.containsKey(workspaceName)) {
-//        var ws = new WorkspaceImpl();
-//        ws.setUrn(workspaceName);
-//        this.workspaces.put(workspaceName, ws);
-//      }
-//
-//      saveConfiguration();
-//
-//      /*
-//      create project descriptor
-//       */
-//      ProjectDescriptor descriptor = new ProjectDescriptor();
-//      descriptor.storage = ret;
-//      descriptor.manifest = readManifest(ret);
-//      descriptor.workspace = workspaceName;
-//      descriptor.name = ret.getProjectName();
-//      descriptor.updateInterval = configuration.getSyncIntervalMinutes();
-//      projectDescriptors.put(ret.getProjectName(), descriptor);
+      configuration.setSourceUrl(projectName);
+      configuration.setWorkspaceName(workspaceName);
+      configuration.setSyncIntervalMinutes(DEFAULT_GIT_SYNC_INTERVAL_MINUTES);
+      configuration.setStorageType(ProjectStorage.Type.FILE);
+      configuration.setLocalPath(projectHome);
+      this.configuration.getProjectConfiguration().put(projectName, configuration);
+      // TODO   configuration.setWorldview(readManifest(ret).getDefinedWorldview() != null);
+
+      this.configuration
+          .getWorkspaces()
+          .computeIfAbsent(workspaceName, k -> new LinkedHashSet<>())
+          .add(projectName);
+
+      var storage = new FileProjectStorage(projectHome, projectName, this::handleFileChange);
+
+      ProjectDescriptor descriptor = new ProjectDescriptor();
+      descriptor.storage = storage;
+      descriptor.manifest = readManifest(storage);
+      descriptor.workspace = workspaceName;
+      descriptor.name = projectName;
+      descriptor.updateInterval = configuration.getSyncIntervalMinutes();
+      projectDescriptors.put(projectName, descriptor);
+
+      this.lastProjectUpdates.put(projectName, System.currentTimeMillis());
+
+      saveConfiguration();
 
       return ret;
     }
 
-
-
     return null;
+  }
+
+  public void notifyNewWorkspace(ResourceInfo resourceInfo) {
+    var workspace = new WorkspaceImpl();
+    workspace.setUrn(resourceInfo.getUrn());
+    workspace.setPrivileges(resourceInfo.getRights());
+    workspace.setMetadata(resourceInfo.getMetadata());
+    this.workspaces.put(resourceInfo.getUrn(), workspace);
+    this.configuration.getWorkspaces().put(resourceInfo.getUrn(), new LinkedHashSet<>());
+    this.saveConfiguration();
   }
 
   class StrategyParser extends Parser<Strategies> {
@@ -2498,6 +2488,22 @@ public class WorkspaceManager {
         Logging.INSTANCE.warn(
             "Recreating lost metadata for workspace " + ws + " with public rights");
         kbox.putStatus(info);
+      }
+    }
+
+    /**
+     * Add any workspace that didn't have projects configured
+     */
+    for (var ws : this.configuration.getWorkspaces().keySet()) {
+      if (!workspaces.containsKey(ws)) {
+        var info = service.getResourcesKbox().getStatus(ws, null);
+        if (info != null) {
+          WorkspaceImpl wsImpl = new WorkspaceImpl();
+          wsImpl.setUrn(ws);
+          wsImpl.setPrivileges(info.getRights());
+          wsImpl.getMetadata().putAll(info.getMetadata());
+          workspaces.put(ws, wsImpl);
+        }
       }
     }
 

@@ -552,12 +552,27 @@ public class ResourcesClient extends ServiceClient
 
   @Override
   public boolean createWorkspace(String workspace, Metadata metadata, UserScope scope) {
-    return false;
+    return client
+        .withScope(scope)
+        .post(
+            ServicesAPI.RESOURCES.ADMIN.CREATE_WORKSPACE,
+            metadata,
+            Boolean.class,
+            "workspaceName",
+            workspace);
   }
 
   @Override
   public ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
-    return null;
+    return client
+        .withScope(scope)
+        .get(
+            ServicesAPI.RESOURCES.ADMIN.CREATE_PROJECT,
+            ResourceSet.class,
+            "workspaceName",
+            workspaceName,
+            "projectName",
+            projectName);
   }
 
   @Override

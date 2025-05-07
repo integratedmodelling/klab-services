@@ -435,6 +435,8 @@ public interface ServicesAPI {
      */
     public interface ADMIN extends PluginAPI {
 
+      /** create a new workspace, posting metadata */
+      String CREATE_WORKSPACE = "/createWorkspace/{workspaceName}";
       /** Create new empty project in passed workspace. */
       String CREATE_PROJECT = "/createProject/{workspaceName}/{projectName}";
 
