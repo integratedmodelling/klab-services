@@ -264,7 +264,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
                   .filter(child -> !child.getUrn().equals(change.getResourceUrn()))
                   .toList();
           changedAssets.add(parent);
-          parent.localMetadata().put(NavigableAsset.REPOSITORY_STATUS_KEY, RepositoryState.Status.MODIFIED);
+          parent.localMetadata().put(NavigableAsset.REPOSITORY_STATUS_KEY, RepositoryState.Status.REMOVED);
           return true;
         }
       }
