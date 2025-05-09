@@ -769,8 +769,8 @@ public class WorkspaceManager {
       // make an empty config
       this.configuration = new ResourcesConfiguration();
       this.configuration.setServicePath("resources");
-      this.configuration.setLocalResourcePath("local");
-      this.configuration.setPublicResourcePath("public");
+//      this.configuration.setLocalResourcePath("local");
+//      this.configuration.setPublicResourcePath("public");
       this.configuration.setServiceId(UUID.randomUUID().toString());
       saveConfiguration();
     }

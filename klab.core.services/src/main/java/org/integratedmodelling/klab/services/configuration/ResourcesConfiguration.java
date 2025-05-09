@@ -216,10 +216,10 @@ public class ResourcesConfiguration implements Serializable {
   /** The service work directory path within the k.LAB work directory */
   private String servicePath = "resources";
 
-  /** all other paths are relative to the service path */
-  private String localResourcePath = "local";
-
-  private String publicResourcePath = "public";
+//  /** all other paths are relative to the service path */
+//  private String localResourcePath = "local";
+//
+//  private String publicResourcePath = "public";
   private URI brokerURI = null;
 
   /**
@@ -269,21 +269,21 @@ public class ResourcesConfiguration implements Serializable {
     this.projectConfiguration = projectConfiguration;
   }
 
-  public String getLocalResourcePath() {
-    return localResourcePath;
-  }
-
-  public void setLocalResourcePath(String localResourcePath) {
-    this.localResourcePath = localResourcePath;
-  }
-
-  public String getPublicResourcePath() {
-    return publicResourcePath;
-  }
-
-  public void setPublicResourcePath(String publicResourcePath) {
-    this.publicResourcePath = publicResourcePath;
-  }
+//  public String getLocalResourcePath() {
+//    return localResourcePath;
+//  }
+//
+//  public void setLocalResourcePath(String localResourcePath) {
+//    this.localResourcePath = localResourcePath;
+//  }
+//
+//  public String getPublicResourcePath() {
+//    return publicResourcePath;
+//  }
+//
+//  public void setPublicResourcePath(String publicResourcePath) {
+//    this.publicResourcePath = publicResourcePath;
+//  }
 
   public String getServiceId() {
     return serviceId;
