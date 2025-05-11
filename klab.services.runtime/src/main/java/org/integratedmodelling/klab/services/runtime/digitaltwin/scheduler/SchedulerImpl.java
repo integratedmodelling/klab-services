@@ -221,7 +221,7 @@ public class SchedulerImpl implements Scheduler {
 
     var sortedTasks =
         tasks.entrySet().stream()
-            .sorted((i1, i2) -> i1.getKey().compareTo(i2.getKey()))
+            .sorted(Comparator.comparing(Map.Entry::getKey))
             .map(Map.Entry::getValue)
             .toList();
 

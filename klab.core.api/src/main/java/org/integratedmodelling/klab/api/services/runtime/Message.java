@@ -183,7 +183,7 @@ public interface Message extends Serializable {
         ServiceUnavailable(Queue.Events, KlabService.ServiceCapabilities.class),
         ServiceStatus(Queue.Events, KlabService.ServiceStatus.class),
         ServiceStatusChanged(Queue.Events, KlabService.ServiceStatus.class),
-        ConnectScope(Queue.Events, ScopeOptions.class),
+//        ConnectScope(Queue.Events, ScopeOptions.class),
 
         /**
          * UI selections
@@ -202,8 +202,10 @@ public interface Message extends Serializable {
 
         @Deprecated
         DocumentSelected(Queue.UI, KlabDocument.class),
+        @Deprecated
         UserAuthorized(Queue.Events, UserIdentity.class),
-        UserDisconnected(Queue.UI, UserIdentity.class),
+//        UserDisconnected(Queue.UI, UserIdentity.class),
+
         /**
          * F <-> B: scenario selection from user action (if class == UserInterface) and/or from engine
          * (after selection or from API) with class == SessionLifecycle. In all cases the list of
@@ -267,11 +269,11 @@ public interface Message extends Serializable {
 
         ContextualizationStarted(Queue.Events, Observation.class),
 
-        ActivityStarted(Queue.Events, Activity.class),
-
-        ActivityFinished(Queue.Events, Activity.class),
-
-        ActivityAborted(Queue.Events, Activity.class),
+//        ActivityStarted(Queue.Events, Activity.class),
+//
+//        ActivityFinished(Queue.Events, Activity.class),
+//
+//        ActivityAborted(Queue.Events, Activity.class),
 
         ContextClosed(Queue.Events, String.class),
 
@@ -293,6 +295,7 @@ public interface Message extends Serializable {
         /**
          * Engine lifecycle, should only be client-wide
          */
+        @Deprecated
         UsingDistribution(Queue.UI, Distribution.class);
 
         public final Class<?> payloadClass;
