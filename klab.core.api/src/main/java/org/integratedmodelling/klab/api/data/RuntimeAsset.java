@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.data;
 
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -22,11 +23,15 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
  */
 public interface RuntimeAsset {
 
-  // TODO listeners and subscriptions mechanism
+  ContextAsset CONTEXT_ASSET = new ContextAsset();
+  ProvenanceAsset PROVENANCE_ASSET_ASSET = new ProvenanceAsset();
+  DataflowAsset DATAFLOW_ASSET = new DataflowAsset();
+
 
   enum Type {
     OBSERVATION(Observation.class),
     ACTUATOR(Actuator.class),
+    CONTEXT(DigitalTwin.class),
     DATAFLOW(Dataflow.class),
     PROVENANCE(Provenance.class),
     ACTIVITY(Activity.class),
@@ -78,4 +83,44 @@ public interface RuntimeAsset {
   long getId();
 
   Type classify();
+
+  class ContextAsset implements RuntimeAsset {
+
+    @Override
+    public long getId() {
+      return -1000;
+    }
+
+    @Override
+    public Type classify() {
+      return Type.CONTEXT;
+    }
+  }
+
+  class ProvenanceAsset implements RuntimeAsset {
+
+    @Override
+    public long getId() {
+      return -1001;
+    }
+
+    @Override
+    public Type classify() {
+      return Type.PROVENANCE;
+    }
+  }
+
+  class DataflowAsset implements RuntimeAsset {
+
+    @Override
+    public long getId() {
+      return -1002;
+    }
+
+    @Override
+    public Type classify() {
+      return Type.DATAFLOW;
+    }
+  }
+
 }

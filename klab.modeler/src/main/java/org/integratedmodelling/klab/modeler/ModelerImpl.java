@@ -347,6 +347,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                     "Observation " + observation + " was not resolved due to errors");
               } else {
                 if (observering) {
+                  // FIXME TODO this should send a DT focus event with observer emphasis. The observation will be in the KG anyway.
                   setCurrentContext(currentContext.withObserver(obs));
                   currentContext.ui(
                       Message.create(
@@ -357,6 +358,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                 } else if (currentContext.getContextObservation() == null
                     && obs.getObservable().is(SemanticType.SUBJECT)
                     && !obs.getObservable().getSemantics().isCollective()) {
+                  // FIXME TODO this should send a DT focus event with context emphasis. The observation will be in the KG anyway.
                   setCurrentContext(currentContext.within(obs));
                   currentContext.ui(
                       Message.create(

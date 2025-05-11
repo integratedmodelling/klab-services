@@ -26,7 +26,7 @@ import java.util.Map;
  * <p>If we want to put up a good face and pretend this is a "standard", using media type <code>
  * application/vnd.jgf+json</code> will make those who spent time on this smile.
  */
-public class GraphReference {
+public class RuntimeAssetGraph {
 
     private boolean directed;
     private String type;
@@ -39,6 +39,14 @@ public class GraphReference {
 
         private String label;
         private Map<String, String> metadata = new LinkedHashMap<>();
+        private RuntimeAsset asset;
+
+        public Node() {
+        }
+
+        public Node(RuntimeAsset asset) {
+            this.asset = asset;
+        }
 
         public String getLabel() {
             return label;
@@ -54,6 +62,15 @@ public class GraphReference {
 
         public void setMetadata(Map<String, String> metadata) {
             this.metadata = metadata;
+        }
+
+        public RuntimeAsset getAsset() {
+            return asset;
+        }
+
+        public void setAsset(RuntimeAsset asset) {
+            this.asset = asset;
+            this.label = asset.getId() + "";
         }
     }
 

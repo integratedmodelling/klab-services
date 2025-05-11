@@ -129,4 +129,14 @@ public class ClientDigitalTwin implements DigitalTwin {
 
   @Override
   public void dispose() {}
+
+  @Override
+  public long getId() {
+    return 0;
+  }
+
+  @Override
+  public Type classify() {
+    return Type.CONTEXT;
+  }
 }
