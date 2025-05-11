@@ -8,8 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
-import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
@@ -26,7 +25,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -38,10 +36,10 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -71,6 +69,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   private ContextScope currentContext;
   private SessionScope currentSession;
+  // There should only be one "raw" user session as a principle, the others should be
+  // apps/scripts/testcases
   private List<SessionScope> sessions = new ArrayList<>();
   private MultiValueMap<SessionScope, ContextScope> contexts = new LinkedMultiValueMap<>();
 
@@ -102,52 +102,56 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         : engine().getDistributionStatus();
   }
 
-  @Override
-  public void dispatch(UIReactor sender, UIEvent event, Object... payload) {
-
-    // intercept some messages for bookkeeping
-    if (event == UIEvent.EngineStatusChanged) {
-
-      Engine.Status status = (Engine.Status) payload[0];
-
-//      for (var capabilities : status.getServicesCapabilities().values()) {
-//
-//        if (capabilities == null) {
-//          continue;
-//        }
-//
-//        if (capabilities.getUrl() != null) {
-//          serviceUrls.put(capabilities.getServiceId(), capabilities.getUrl());
-//        }
-//        if (capabilities.getBrokerURI() != null
-//            && scope() instanceof AbstractReactiveScopeImpl serviceClient) {
-//          /*
-//           * Instrument the service client for messaging. This is pretty involved alas, but the
-//           * whole
-//           * matter isn't exactly trivial.
-//           */
-//          var client = serviceClient.getService(capabilities.getServiceId());
-//          if (client != null
-//              && client.serviceScope() instanceof AbstractServiceDelegatingScope delegatingScope
-//              && delegatingScope.getDelegateChannel()
-//                  instanceof MessagingChannel messagingChannel) {
-//            /*
-//             * If the scope delegates to a messaging channel, set up messaging and link the
-//             * available  service queues to service message dispatchers.
-//             */
-//            if (!messagingChannel.isConnected()) {
-//              messagingChannel.connectToService(
-//                  capabilities,
-//                  (UserIdentity) user().getIdentity(),
-//                  (message) -> dispatchServerMessage(capabilities, message));
-//            }
-//          }
-//        }
-//      }
-    }
-
-    super.dispatch(sender, event, payload);
-  }
+  //  @Override
+  //  public void dispatch(UIReactor sender, UIEvent event, Object... payload) {
+  //
+  //    // intercept some messages for bookkeeping
+  //    if (event == UIEvent.EngineStatusChanged) {
+  //
+  //      Engine.Status status = (Engine.Status) payload[0];
+  //
+  //      //      for (var capabilities : status.getServicesCapabilities().values()) {
+  //      //
+  //      //        if (capabilities == null) {
+  //      //          continue;
+  //      //        }
+  //      //
+  //      //        if (capabilities.getUrl() != null) {
+  //      //          serviceUrls.put(capabilities.getServiceId(), capabilities.getUrl());
+  //      //        }
+  //      //        if (capabilities.getBrokerURI() != null
+  //      //            && scope() instanceof AbstractReactiveScopeImpl serviceClient) {
+  //      //          /*
+  //      //           * Instrument the service client for messaging. This is pretty involved alas,
+  // but
+  //      // the
+  //      //           * whole
+  //      //           * matter isn't exactly trivial.
+  //      //           */
+  //      //          var client = serviceClient.getService(capabilities.getServiceId());
+  //      //          if (client != null
+  //      //              && client.serviceScope() instanceof AbstractServiceDelegatingScope
+  //      // delegatingScope
+  //      //              && delegatingScope.getDelegateChannel()
+  //      //                  instanceof MessagingChannel messagingChannel) {
+  //      //            /*
+  //      //             * If the scope delegates to a messaging channel, set up messaging and link
+  // the
+  //      //             * available  service queues to service message dispatchers.
+  //      //             */
+  //      //            if (!messagingChannel.isConnected()) {
+  //      //              messagingChannel.connectToService(
+  //      //                  capabilities,
+  //      //                  (UserIdentity) user().getIdentity(),
+  //      //                  (message) -> dispatchServerMessage(capabilities, message));
+  //      //            }
+  //      //          }
+  //      //        }
+  //      //      }
+  //    }
+  //
+  //    super.dispatch(sender, event, payload);
+  //  }
 
   private void dispatchServerMessage(
       KlabService.ServiceCapabilities capabilities, Message message) {
@@ -177,7 +181,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     registerViewController(new ResourcesNavigatorControllerImpl(this));
     registerViewController(new ContextInspectorControllerImpl(this));
     registerViewController(new AuthenticationViewControllerImpl(this));
-    registerViewController(new ContextControllerImpl(this));
+    registerViewController(new RuntimeControllerImpl(this));
     registerViewController(new KnowledgeInspectorControllerImpl(this));
     // TODO etc.
 
@@ -247,6 +251,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
      * must create a default empty context within the session & select it
      */
     if (currentSession == null) {
+      // TODO use openOrCreateUserSession () for a user-specific single raw session. Session should have
+      //  the user's name
       currentSession = openNewSession("S" + (++sessionCount));
     }
 
@@ -374,6 +380,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     var ret = currentSession.createContext(contextName);
     if (ret != null) {
       contexts.add(currentSession, ret);
+      dispatch(
+          this.getController(),
+          UIEvent.ContextCreated,
+          ret,
+          scope().getService(RuntimeService.class));
     }
     return ret;
   }

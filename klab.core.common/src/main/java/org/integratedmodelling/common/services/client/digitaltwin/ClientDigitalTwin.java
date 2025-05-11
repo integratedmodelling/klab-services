@@ -17,6 +17,10 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
 /**
  * Client-side digital twin, connected to the actual DT through the messages it gets from it (and
  * nothing more for now). Will NOT reconstruct the entire runtime-side DT and many functions will
@@ -30,6 +34,8 @@ public class ClientDigitalTwin implements DigitalTwin {
   private final ContextScope scope;
   private ClientKnowledgeGraph knowledgeGraph;
   private RuntimeService runtimeClient;
+  private List<Consumer<Message>> eventConsumers = new ArrayList<>();
+
 
   public ClientDigitalTwin(ContextScope scope, String id) {
     this.scope = scope;
@@ -44,20 +50,46 @@ public class ClientDigitalTwin implements DigitalTwin {
     }
   }
 
+  public void addEventConsumer(Consumer<Message> consumer) {
+    eventConsumers.add(consumer);
+  }
+
   /**
    * Main function that constructs the client-side KG structure. Not all elements in the remote KG
    * will be present, but those that are must be coherently linked.
    *
+   * <p>From a UI perspective we can just show the root observations that get here and use queries
+   * to show the graph on demand according to the level of detail chosen.
+   *
+   * <p>Resolved observations MUST contain their n. of children so we can show it without
+   * downloading them.
+   *
+   * <p>Keep the failed observations with their contexts at the client side so that we can check for
+   * previous failures.
+   *
    * @param event
    */
   public void ingest(Message event) {
-    // TODO build activity tree and inform any UI listeners in the scope
-    //    System.out.println("ACTIVITY " + event);
+    // observations based on the URN
+    for (var consumer : eventConsumers) {
+      consumer.accept(event);
+    }
+    // TODO define self based on the message content, reconstructing hierarchies of activities and
+//    switch (event.getMessageType()) {
+//      case ContextualizationStarted -> {}
+//      case ContextualizationAborted -> {}
+//      case ContextualizationSuccessful -> {}
+//      case ActivityStarted -> {}
+//      case ActivityAborted -> {}
+//      case ActivityFinished -> {}
+//    }
+    // nah    this.scope.send(event);
   }
 
   @Override
   public Transaction transaction(Activity activity, ContextScope scope, Object... runtimeAssets) {
-    throw new KlabIllegalStateException("Digital twin transactions can only be invoked at server side");
+    throw new KlabIllegalStateException(
+        "Digital twin transactions can only be invoked at server side");
   }
 
   @Override

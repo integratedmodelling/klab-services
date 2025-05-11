@@ -32,21 +32,6 @@ import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
         "Resource Navigator", target = ResourcesService.class)
 public interface ResourcesNavigatorController extends ViewController<ResourcesNavigator> {
 
-
-    /**
-     * Load the passed service in the UI. This is normally sent by the UI action
-     * {@link ServicesViewController#focusService(KlabService.ServiceCapabilities)} once determined that the
-     * service should be focused on, either because of first availability or user choice. The type of the
-     * argument ensures that only the {@link ResourcesService} capabilities get through. Upon receiving this,
-     * the view should set up appropriate navigation UI for the assets provided by the service.
-     * <p>
-     * If the service is null, disable the UI.
-     *
-     * @param service the capabilities of the selected services or null
-     */
-    @UIEventHandler(UIEvent.ServiceSelected)
-    void serviceSelected(ResourcesService.Capabilities service);
-
     /**
      * Invoked when a workspace needs to be reloaded in the UI. The workspace may or may not be the one
      * currently shown.

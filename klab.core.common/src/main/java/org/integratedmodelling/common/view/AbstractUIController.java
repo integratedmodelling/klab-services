@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -212,19 +213,11 @@ public abstract class AbstractUIController implements UIController {
           //           UIReactor.UIEvent.ServiceStarting,
           //                                      message.getPayload(Object.class));
           case ServiceStatus -> {
-            System.out.println("ZIO PINOLO " + message);
             dispatch(
                 this,
                 UIReactor.UIEvent.ServiceStatus,
                 message.getPayload(KlabService.ServiceStatus.class));
           }
-//          case ServiceSwitched -> {
-//            System.out.println("ZIO BEFFARDO " + message);
-//            dispatch(
-//                    this,
-//                    UIEvent.ServiceFocused,
-//                    message.getPayload(KlabService.ServiceCapabilities.class));
-//          }
           default -> {}
         }
       }
@@ -260,7 +253,8 @@ public abstract class AbstractUIController implements UIController {
         }
       }
       case TaskLifecycle -> {}
-      case DigitalTwin -> {}
+      case DigitalTwin -> {
+      }
       case SessionLifecycle -> {}
       case UnitTests -> {}
       case Notification -> {}

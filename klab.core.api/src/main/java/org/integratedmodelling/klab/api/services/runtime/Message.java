@@ -201,15 +201,15 @@ public interface Message extends Serializable {
     CreateSession,
     Fire,
 
-    /** Resolver event messages. FIXME these are obsolete */
-    @Deprecated
-    ResolutionUnsuccessful(Queue.Events, Observation.class),
-    @Deprecated
-    ResolutionSuccessful(Queue.Events, Observation.class),
-    @Deprecated
-    ResolutionAborted(Queue.Events, Observation.class),
-    @Deprecated
-    ResolutionStarted(Queue.Events, Observation.class),
+//    /** Resolver event messages. FIXME these are obsolete */
+//    @Deprecated
+//    ResolutionUnsuccessful(Queue.Events, Observation.class),
+//    @Deprecated
+//    ResolutionSuccessful(Queue.Events, Observation.class),
+//    @Deprecated
+//    ResolutionAborted(Queue.Events, Observation.class),
+//    @Deprecated
+//    ResolutionStarted(Queue.Events, Observation.class),
 
     ContextualizationSuccessful(Queue.Events, Observation.class),
     ContextualizationAborted(Queue.Events, Observation.class),

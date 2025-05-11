@@ -5,17 +5,20 @@ import java.util.List;
 import org.integratedmodelling.cli.KlabCLI;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.api.view.modeler.views.ContextView;
-import org.integratedmodelling.klab.api.view.modeler.views.controllers.ContextViewController;
+import org.integratedmodelling.klab.api.view.modeler.views.RuntimeView;
+import org.integratedmodelling.klab.api.view.modeler.views.controllers.RuntimeViewController;
 import picocli.CommandLine;
 
 @CommandLine.Command(
@@ -28,12 +31,12 @@ import picocli.CommandLine;
       CLIObservationView.Context.class,
       CLIObservationView.Clear.class
     })
-public class CLIObservationView extends CLIView implements ContextView, Runnable {
+public class CLIObservationView extends CLIView implements RuntimeView, Runnable {
 
-  private static ContextViewController controller;
+  private static RuntimeViewController controller;
 
   public CLIObservationView() {
-    controller = KlabCLI.INSTANCE.modeler().viewController(ContextViewController.class);
+    controller = KlabCLI.INSTANCE.modeler().viewController(RuntimeViewController.class);
     controller.registerView(this);
   }
 
@@ -144,6 +147,12 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
               "Can't resolve URN @|yellow " + urn + "|@ to observable knowledge"));
     }
   }
+
+  @Override
+  public void notifyNewDigitalTwin(ContextScope scope, RuntimeService service) {}
+
+  @Override
+  public void notifyDigitalTwinModified(DigitalTwin digitalTwin, Message change) {}
 
   @CommandLine.Command(
       name = "close",
@@ -335,9 +344,4 @@ public class CLIObservationView extends CLIView implements ContextView, Runnable
       for (var session : runtime.getSessionInfo(KlabCLI.INSTANCE.user())) {}
     }
   }
-
-  /* ---- view methods ---- */
-
-  @Override
-  public void engineStatusChanged(Engine.Status status) {}
 }

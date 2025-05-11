@@ -1,6 +1,5 @@
 package org.integratedmodelling.cli;
 
-import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.*;
 import org.integratedmodelling.klab.modeler.ModelerImpl;
 import org.integratedmodelling.klab.modeler.views.*;
@@ -26,7 +25,7 @@ public class CommandLineModeler extends ModelerImpl {
         viewController(ContextInspectorController.class).registerView(new ContextInspectorAdvisor());
         viewController(AuthenticationViewController.class).registerView(new AuthenticationViewAdvisor());
         viewController(ServicesViewController.class).registerView(new ServicesViewAdvisor());
-        viewController(ContextViewController.class).registerView(new ContextViewAdvisor());
+        viewController(RuntimeViewController.class).registerView(new RuntimeViewAdvisor());
         // TODO others
     }
 

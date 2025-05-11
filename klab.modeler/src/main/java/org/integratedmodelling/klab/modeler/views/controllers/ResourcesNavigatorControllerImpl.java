@@ -37,20 +37,20 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     super(controller);
   }
 
-  @Override
-  public void serviceSelected(ResourcesService.Capabilities capabilities) {
-    releaseLocks();
-    var service = service(capabilities, ResourcesService.class);
-    if (service == null) {
-      view().disable();
-    } else {
-      view().enable();
-      view().setServiceCapabilities(capabilities);
-      getController().storeView(currentService);
-      createNavigableAssets(service);
-      view().showWorkspaces(new ArrayList<>(assetMap.values()));
-    }
-  }
+//  @Override
+//  public void serviceSelected(ResourcesService.Capabilities capabilities) {
+//    releaseLocks();
+//    var service = service(capabilities, ResourcesService.class);
+//    if (service == null) {
+//      view().disable();
+//    } else {
+//      view().enable();
+//      view().setServiceCapabilities(capabilities);
+//      getController().storeView(currentService);
+//      createNavigableAssets(service);
+//      view().showWorkspaces(new ArrayList<>(assetMap.values()));
+//    }
+//  }
 
   @Override
   public void workspaceModified(ResourceSet changes) {

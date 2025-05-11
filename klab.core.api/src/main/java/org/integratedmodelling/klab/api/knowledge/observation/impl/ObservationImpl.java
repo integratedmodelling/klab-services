@@ -217,7 +217,13 @@ public class ObservationImpl implements Observation {
 
   @Override
   public String toString() {
-    return "(OBS) " + observable + " [#" + (geometry == null ? "0" : geometry.size()) + "]";
+    return "(OBS) "
+        + observable
+        + " ["
+        + urn
+        + "#"
+        + (geometry == null ? "0" : geometry.size())
+        + "]";
   }
 
   /**
