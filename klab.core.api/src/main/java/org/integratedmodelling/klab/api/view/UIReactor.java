@@ -223,7 +223,19 @@ public interface UIReactor {
      * method.
      */
     AnyEvent(EventDirection.Bidirectional, Void.class),
-    ;
+
+    ContextObservationResolved(
+        EventDirection.ViewToView, ContextScope.class, RuntimeService.class, Observation.class),
+
+    ObserverResolved(
+        EventDirection.ViewToView, ContextScope.class, RuntimeService.class, Observation.class),
+
+    ObservationSubmissionStarted(
+        EventDirection.EngineToView, ContextScope.class, RuntimeService.class, Observation.class),
+    ObservationSubmissionAborted(
+        EventDirection.EngineToView, ContextScope.class, RuntimeService.class, Observation.class),
+    ObservationSubmissionFinished(
+        EventDirection.EngineToView, ContextScope.class, RuntimeService.class, Observation.class);
 
     List<Class<?>> payloadClasses = new ArrayList<>();
     EventDirection direction;

@@ -20,6 +20,25 @@ public interface RuntimeViewController extends ViewController<RuntimeView> {
   @UIEventHandler(UIEvent.ContextCreated)
   void contextCreated(ContextScope contextScope, RuntimeService service);
 
+  @UIEventHandler(UIEvent.ObservationSubmissionStarted)
+  void observationSubmission(
+      ContextScope contextScope, RuntimeService service, Observation observation);
+
+  @UIEventHandler(UIEvent.ObservationSubmissionAborted)
+  void observationSubmissionAborted(
+      ContextScope contextScope, RuntimeService service, Observation observation);
+
+  @UIEventHandler(UIEvent.ObservationSubmissionFinished)
+  void observationSubmissionFinished(
+      ContextScope contextScope, RuntimeService service, Observation observation);
+
+  @UIEventHandler(UIEvent.ContextObservationResolved)
+  void contextObservationResolved(
+      ContextScope contextScope, RuntimeService service, Observation observation);
+
+  @UIEventHandler(UIEvent.ObserverResolved)
+  void observerResolved(ContextScope contextScope, RuntimeService service, Observation observation);
+
   @UIEventHandler(UIEvent.DigitalTwinModified)
   void digitalTwinModified(DigitalTwin digitalTwin, Message change);
 }

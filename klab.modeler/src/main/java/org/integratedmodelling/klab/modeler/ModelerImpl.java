@@ -251,7 +251,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
      * must create a default empty context within the session & select it
      */
     if (currentSession == null) {
-      // TODO use openOrCreateUserSession () for a user-specific single raw session. Session should have
+      // TODO use openOrCreateUserSession () for a user-specific single raw session. Session should
+      // have
       //  the user's name
       currentSession = openNewSession("S" + (++sessionCount));
     }
@@ -326,11 +327,36 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     final boolean observering = isObserver;
 
+    // for the benefit of linked DTs
+    currentContext.send(
+        Message.MessageClass.DigitalTwin,
+        Message.MessageType.ObservationSubmissionStarted,
+        observation);
+    // for the UI
+    dispatch(
+        this,
+        UIEvent.ObservationSubmissionStarted,
+        currentContext,
+        currentContext.getService(RuntimeService.class),
+        observation);
+
     return currentContext
         .withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new))
         .observe(observation)
         .exceptionally(
             t -> {
+              // for the benefit of linked DTs
+              currentContext.send(
+                  Message.MessageClass.DigitalTwin,
+                  Message.MessageType.ObservationSubmissionAborted,
+                  observation);
+              // for the UI
+              dispatch(
+                  this,
+                  UIEvent.ObservationSubmissionAborted,
+                  currentContext,
+                  currentContext.getService(RuntimeService.class),
+                  observation);
               currentContext.error(
                   "Resolution of observation "
                       + observation
@@ -342,23 +368,54 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             })
         .thenApply(
             obs -> {
+              // for the benefit of linked DTs
+              currentContext.send(
+                  Message.MessageClass.DigitalTwin,
+                  Message.MessageType.ObservationSubmissionFinished,
+                  observation);
+              // for the UI
+              dispatch(
+                  this,
+                  UIEvent.ObservationSubmissionFinished,
+                  currentContext,
+                  currentContext.getService(RuntimeService.class),
+                  observation);
               if (obs.isEmpty()) {
                 currentContext.error(
                     "Observation " + observation + " was not resolved due to errors");
               } else {
                 if (observering) {
-                  // FIXME TODO this should send a DT focus event with observer emphasis. The observation will be in the KG anyway.
+                  // Send a DT focus event with observer emphasis. The
+                  //  observation will be in the KG anyway.
+                  currentContext.send(
+                      Message.MessageClass.DigitalTwin, Message.MessageType.ObserverResolved, obs);
                   setCurrentContext(currentContext.withObserver(obs));
                   currentContext.ui(
                       Message.create(
                           currentContext,
                           Message.MessageClass.UserInterface,
                           Message.MessageType.CurrentContextModified));
+                  dispatch(
+                      this,
+                      UIEvent.ObserverResolved,
+                      currentContext,
+                      currentContext.getService(RuntimeService.class),
+                      observation);
                   currentContext.info(obs + " is now the current observer");
                 } else if (currentContext.getContextObservation() == null
                     && obs.getObservable().is(SemanticType.SUBJECT)
                     && !obs.getObservable().getSemantics().isCollective()) {
-                  // FIXME TODO this should send a DT focus event with context emphasis. The observation will be in the KG anyway.
+                  // for the UI
+                  currentContext.send(
+                      Message.MessageClass.DigitalTwin,
+                      Message.MessageType.ContextObservationResolved,
+                      obs);
+                  dispatch(
+                      this,
+                      UIEvent.ContextObservationResolved,
+                      currentContext,
+                      currentContext.getService(RuntimeService.class),
+                      observation);
                   setCurrentContext(currentContext.within(obs));
                   currentContext.ui(
                       Message.create(

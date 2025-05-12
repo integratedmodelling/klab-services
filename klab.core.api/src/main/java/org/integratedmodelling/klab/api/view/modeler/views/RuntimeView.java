@@ -13,4 +13,14 @@ public interface RuntimeView extends View {
     void notifyNewDigitalTwin(ContextScope scope, RuntimeService service);
 
     void notifyDigitalTwinModified(DigitalTwin digitalTwin, Message change);
+
+    void notifyObservationSubmission(Observation observation, ContextScope contextScope, RuntimeService service);
+
+    void notifyObservationSubmissionAborted(Observation observation, ContextScope contextScope, RuntimeService service);
+
+    void notifyObservationSubmissionFinished(Observation observation, ContextScope contextScope, RuntimeService service);
+
+    void notifyContextObservationResolved(Observation observation, ContextScope contextScope, RuntimeService service);
+
+    void notifyObserverResolved(Observation observation, ContextScope contextScope, RuntimeService service);
 }

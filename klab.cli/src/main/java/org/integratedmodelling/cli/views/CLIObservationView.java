@@ -154,6 +154,36 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
   @Override
   public void notifyDigitalTwinModified(DigitalTwin digitalTwin, Message change) {}
 
+  @Override
+  public void notifyObservationSubmission(Observation observation, ContextScope contextScope,
+                                          RuntimeService service) {
+
+  }
+
+  @Override
+  public void notifyObservationSubmissionAborted(Observation observation, ContextScope contextScope,
+                                                 RuntimeService service) {
+
+  }
+
+  @Override
+  public void notifyObservationSubmissionFinished(Observation observation, ContextScope contextScope,
+                                                  RuntimeService service) {
+
+  }
+
+  @Override
+  public void notifyContextObservationResolved(Observation observation, ContextScope contextScope,
+                                               RuntimeService service) {
+
+  }
+
+  @Override
+  public void notifyObserverResolved(Observation observation, ContextScope contextScope,
+                                     RuntimeService service) {
+
+  }
+
   @CommandLine.Command(
       name = "close",
       mixinStandardHelpOptions = true,

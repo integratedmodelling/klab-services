@@ -25,6 +25,36 @@ public class RuntimeControllerImpl extends AbstractUIViewController<RuntimeView>
   }
 
   @Override
+  public void observationSubmission(
+      ContextScope contextScope, RuntimeService service, Observation observation) {
+    view().notifyObservationSubmission(observation, contextScope, service);
+  }
+
+  @Override
+  public void observationSubmissionAborted(
+      ContextScope contextScope, RuntimeService service, Observation observation) {
+    view().notifyObservationSubmissionAborted(observation, contextScope, service);
+  }
+
+  @Override
+  public void observationSubmissionFinished(
+      ContextScope contextScope, RuntimeService service, Observation observation) {
+    view().notifyObservationSubmissionFinished(observation, contextScope, service);
+  }
+
+  @Override
+  public void contextObservationResolved(
+      ContextScope contextScope, RuntimeService service, Observation observation) {
+    view().notifyContextObservationResolved(observation, contextScope, service);
+  }
+
+  @Override
+  public void observerResolved(
+      ContextScope contextScope, RuntimeService service, Observation observation) {
+    view().notifyObserverResolved(observation, contextScope, service);
+  }
+
+  @Override
   public void digitalTwinModified(DigitalTwin digitalTwin, Message change) {
     view().notifyDigitalTwinModified(digitalTwin, change);
   }
