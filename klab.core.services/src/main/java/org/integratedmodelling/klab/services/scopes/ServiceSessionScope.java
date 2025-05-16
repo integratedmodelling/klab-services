@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.scopes;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -11,6 +12,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.JobStatus;
 import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.base.BaseService;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +36,11 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
         this.data = Parameters.create();
         this.data.putAll(parent.data);
         // the job manager is created upstream
+    }
+
+    @Override
+    public ContextScope connect(URL digitalTwinURL) {
+        throw new KlabIllegalStateException("connect() can not be called on a session scope");
     }
 
     @Override

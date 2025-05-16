@@ -8,12 +8,14 @@ import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -67,6 +69,14 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
 //        }
     }
 
+
+    @Override
+    public ContextScope connect(URL digitalTwinURL) {
+        // TODO connect to a scope on a runtime. Unless the runtime is local, we should produce a
+        //  client without having to pass through other services.
+        return null;
+    }
+
     @Override
     public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
 
@@ -96,7 +106,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
     @Override
     public SessionScope createSession(String sessionName) {
 
-        /**
+        /*
          * Must have runtime
          *
          * Send REGISTER_SCOPE to runtime; returned ID becomes part of the token for requests

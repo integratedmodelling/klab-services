@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client.scope;
 
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -7,6 +8,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 
@@ -24,6 +26,11 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
         this.runtimeService = runtimeService;
         this.name = sessionName;
         this.parentScope = parent;
+    }
+
+    @Override
+    public ContextScope connect(URL digitalTwinURL) {
+        throw new KlabIllegalStateException("connect() can not be called on a session scope");
     }
 
     @Override
