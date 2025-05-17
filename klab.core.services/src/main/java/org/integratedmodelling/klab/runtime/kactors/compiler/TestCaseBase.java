@@ -1,7 +1,8 @@
-package org.integratedmodelling.klab.runtime.kactors.actors;
+package org.integratedmodelling.klab.runtime.kactors.compiler;
 
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.runtime.kactors.tests.TestScope;
+import org.integratedmodelling.klab.runtime.kactors.actors.runtime.TestScope;
 
 import java.util.function.Consumer;
 
@@ -11,8 +12,8 @@ public abstract class TestCaseBase extends ActorBase {
 
     protected abstract void runTests();
 
-    public TestCaseBase(SessionScope scope) {
-        super();
+    public TestCaseBase(KActorsBehavior behavior, SessionScope scope) {
+        super(behavior);
         this.scope = scope;
     }
 

@@ -7,14 +7,11 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.klab.services.actors.KAgent;
-import org.integratedmodelling.klab.services.actors.UserAgent;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -119,12 +116,12 @@ public class ScopeManager {
 
       if (service instanceof BaseService baseService && baseService.scopesAreReactive()) {
         /** agents are only created for services that request them */
-        String agentName = KAgent.sanitizeName(user.getUsername());
-        // TODO move to lazy logics
-        KActorsBehavior.Ref agent =
-            KAgent.KAgentRef.get(actorSystem.spawn(new UserAgent(agentName, ret)).get());
-        ret.setAgent(agent);
-        ret.setId(user.getUsername());
+//        String agentName = KAgent.sanitizeName(user.getUsername());
+//        // TODO move to lazy logics
+//        KActorsBehavior.Ref agent =
+//            KAgent.KAgentRef.get(actorSystem.spawn(new UserAgent(agentName, ret)).get());
+//        ret.setAgent(agent);
+//        ret.setId(user.getUsername());
 
         File userBehavior =
             new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + "user.kactors");

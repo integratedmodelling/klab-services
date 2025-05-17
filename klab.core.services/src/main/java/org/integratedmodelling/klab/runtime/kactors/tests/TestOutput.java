@@ -1,26 +1,41 @@
 package org.integratedmodelling.klab.runtime.kactors.tests;
 
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.runtime.kactors.actors.TestCaseBase;
+import org.integratedmodelling.klab.runtime.kactors.actors.ContextActor;
+import org.integratedmodelling.klab.runtime.kactors.actors.Inspector;
+import org.integratedmodelling.klab.runtime.kactors.actors.runtime.TestScope;
+import org.integratedmodelling.klab.runtime.kactors.compiler.TestCaseBase;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * TEMPORARY CLASS FOR TESTING Example worked out translation of a k.Actors script <verbatim>
+ * TEMPORARY CLASS FOR TESTING Manually worked out translation of a k.Actors script
+ *
+ * <pre>
  * testcase staging.vxii.basic
  *
- * @test action t1: inspector.record(events={ a: dio b: can }) context.new: dt -> (
- *     dt.observe('staging.vxii.basic.testregion'): dt.observe({{earth:StreamGradient}}) ),
- *     inspector.verify </verbatim>
+ * @test
+ * action t1:
+ * 	inspector.record(events={
+ * 		a: dio
+ * 		b: can
+ * 	})
+ * 	context.new: dt -> (
+ * 		dt.observe('staging.vxii.basic.testregion'):
+ * 			dt.observe({{earth:StreamGradient}})
+ * 	)
+ * </pre>
+ *
  */
 public class TestOutput extends TestCaseBase {
 
   ContextActor contextActorInstance;
-  Observation observation1;
+  Observation _obs1;
 
   @Override
   protected void runTests() {
@@ -28,8 +43,8 @@ public class TestOutput extends TestCaseBase {
     contextActorInstance = new ContextActor(scope);
   }
 
-  public TestOutput(SessionScope scope) {
-    super(scope);
+  public TestOutput(KActorsBehavior behavior, SessionScope scope) {
+    super(behavior, scope);
   }
 
   void actionT1(TestScope testScope) {
@@ -38,29 +53,28 @@ public class TestOutput extends TestCaseBase {
     // try-with-resources block
     try (var inspector = new Inspector(testScope, scope)) {
       inspector.record(Map.of("a", resolveIdentifier("dio"), "b", resolveIdentifier("can")));
+
+      /*
+       * The pattern for any asynchronous action. Always return the result of handle() and pass it to anything that
+       * follows, handling any match actions in thenApply.
+       */
       CompletableFuture.supplyAsync(() -> contextActorInstance.newContext())
-          .exceptionally(
-              t -> {
-                //                testScope.record(t, statement_here) NEEDS LEXICAL CONTEXT established at runtime
-                return null;
-              })
+          .handle((s, t) -> testScope.handle(t, this, null /* TODO */, ContextScope.class, s))
           .thenApply(
-              contextScope -> {
-                CompletableFuture.supplyAsync(() -> contextScope.observe(observation1))
-                    .exceptionally(
-                        t -> {
-                          /*testScope.record(t);*/
-                          return null;
-                        })
+              dt -> {
+                CompletableFuture.supplyAsync(() -> dt.observe(_obs1))
+                    .handle(
+                        (result, t) ->
+                            testScope.handle(t, this, null /* TODO */, Observation.class, result))
                     .thenApply(
-                        observation -> {
-                            // TODO the remaining piece
-                          return observation;
+                        obs1_ -> {
+                          // TODO the remaining piece
+                          return obs1_;
                         });
-                return contextScope;
+                return dt;
               });
     } catch (IOException e) {
-      //                testScope.record(t, statement_here)
+      testScope.handle(e, this, null /* TODO */, Void.class);
     }
   }
 }

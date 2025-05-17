@@ -3,16 +3,15 @@ package org.integratedmodelling.klab.api.services.runtime.extension;
 import java.lang.annotation.*;
 
 /**
- * Specialized library for actors and verbs. Should support:
- *
+ * Tags the action parameters if needed. Otherwise they are paired by name and type.
+ * <p>
  * scoping to one or more script types;
  * re-entrant, static or other execution models
- *
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface Actor {
+@Target(ElementType.PARAMETER)
+public @interface ActionParameter {
 
     /**
      * ID of the component. Must be unique, please use unambiguous paths like package or project
@@ -20,9 +19,12 @@ public @interface Actor {
      *
      * @return component id
      */
-    String name();
+    String name() default "";
 
-    String description() default "";
-
-
+    /**
+     * Type if there is ambiguity.
+     *
+     * @return
+     */
+    Class<?> type() default Object.class;
 }

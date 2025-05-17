@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.kactors.tests;
+package org.integratedmodelling.klab.runtime.kactors.actors;
 
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;

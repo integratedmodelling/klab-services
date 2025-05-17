@@ -103,15 +103,16 @@
 
     <!-- wanted by jgrasstools and osm4j. Would be lovely to avoid these. -->
     <repositories>
+<!--
         <repository>
             <id>slimjars</id>
             <url>https://mvn.slimjars.com</url>
         </repository>
-        <!-- Another old library hosting its news builds on its own repo -->
         <repository>
             <id>topobyte</id>
             <url>https://mvn.topobyte.de</url>
         </repository>
+-->
         <repository>
             <id>osgeo</id>
             <name>OSGeo Release Repository</name>
@@ -137,6 +138,13 @@
     </repositories>
 
     <dependencies>
+
+        <!-- this is to build the Java actor code -->
+        <dependency>
+            <groupId>com.palantir.javapoet</groupId>
+            <artifactId>javapoet</artifactId>
+            <version>0.5.0</version>
+        </dependency>
 
         <!-- lightweights template engine for generated Groovy classes and more -->
         <dependency>
