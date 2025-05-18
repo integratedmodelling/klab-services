@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.lang.kactors;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +11,7 @@ public class KActorsArgumentsImpl extends ParametersImpl<String> implements Argu
 
 	private List<String> metadataKeys = new ArrayList<>();
 
+	@Serial
 	private static final long serialVersionUID = -6906711012673497730L;
 
 	@Override

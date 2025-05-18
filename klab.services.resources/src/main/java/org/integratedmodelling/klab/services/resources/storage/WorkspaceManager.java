@@ -769,8 +769,8 @@ public class WorkspaceManager {
       // make an empty config
       this.configuration = new ResourcesConfiguration();
       this.configuration.setServicePath("resources");
-//      this.configuration.setLocalResourcePath("local");
-//      this.configuration.setPublicResourcePath("public");
+      //      this.configuration.setLocalResourcePath("local");
+      //      this.configuration.setPublicResourcePath("public");
       this.configuration.setServiceId(UUID.randomUUID().toString());
       saveConfiguration();
     }
@@ -1151,6 +1151,7 @@ public class WorkspaceManager {
   }
 
   public List<KActorsBehavior> getBehaviors() {
+
     if (_behaviorOrder == null) {
       _behaviorOrder = new ArrayList<>();
       _behaviorMap = new HashMap<>();
@@ -1172,12 +1173,65 @@ public class WorkspaceManager {
               var notams = new ArrayList<Notification>();
               var parsed = behaviorParser.parse(input, notams);
 
+              if (!notams.isEmpty()) {
+                scope.error(
+                    "Observation strategy resource has errors: " + behaviorUrl,
+                    Klab.ErrorCode.RESOURCE_VALIDATION,
+                    Klab.ErrorContext.OBSERVATION_STRATEGY);
+                //                                return Collections.emptyList();
+              } else {
+
+                List<Notification> notifications = new ArrayList<>();
+                var syntax =
+                    new BehaviorSyntaxImpl(parsed, this.languageValidationScope) {
+
+                      @Override
+                      protected void logWarning(
+                          ParsedObject target,
+                          EObject object,
+                          EStructuralFeature feature,
+                          String message) {
+                        notifications.add(
+                            makeNotification(
+                                target,
+                                object,
+                                feature,
+                                message,
+                                org.integratedmodelling.klab.api.services.runtime.Notification.Level
+                                    .Warning));
+                      }
+
+                      @Override
+                      protected void logError(
+                          ParsedObject target,
+                          EObject object,
+                          EStructuralFeature feature,
+                          String message) {
+                        notifications.add(
+                            makeNotification(
+                                target,
+                                object,
+                                feature,
+                                message,
+                                org.integratedmodelling.klab.api.services.runtime.Notification.Level
+                                    .Error));
+                        errors.set(true);
+                      }
+                    };
+
+                if (!errors.get()) {
+                  var document =
+                      LanguageAdapter.INSTANCE.adaptBehavior(syntax, pd.name, notifications);
+                  _behaviorOrder.add(document);
+                  _behaviorMap.put(document.getUrn(), document);
+                }
+              }
             } catch (IOException e) {
               // log error and return failure
               scope.error(
                   "Error loading k.Actors behavior " + behaviorUrl,
-                  Klab.ErrorCode.READ_FAILED,
-                  Klab.ErrorContext.ONTOLOGY);
+//                  Klab.ErrorCode.READ_FAILED,
+                  Klab.ErrorContext.BEHAVIOR);
             }
           }
         }
@@ -2491,9 +2545,7 @@ public class WorkspaceManager {
       }
     }
 
-    /**
-     * Add any workspace that didn't have projects configured
-     */
+    /** Add any workspace that didn't have projects configured */
     for (var ws : this.configuration.getWorkspaces().keySet()) {
       if (!workspaces.containsKey(ws)) {
         var info = service.getResourcesKbox().getStatus(ws, null);

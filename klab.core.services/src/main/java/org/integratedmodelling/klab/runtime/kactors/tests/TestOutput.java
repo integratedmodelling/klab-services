@@ -39,7 +39,7 @@ public class TestOutput extends TestCaseBase {
 
   @Override
   protected void runTests() {
-      /* contents generated */
+    /* contents generated */
     runTest(this::action_t1);
   }
 
@@ -61,13 +61,21 @@ public class TestOutput extends TestCaseBase {
        * follows, handling any match actions in thenApply.
        */
       CompletableFuture.supplyAsync(() -> contextActorInstance.newContext())
-          .handle((s, t) -> testScope.handle(t, this, null /* TODO compile the lexical scope in */, ContextScope.class, s))
+          .handle(
+              (s, t) ->
+                  testScope.handle(
+                      t, this, null /* TODO compile the lexical scope in */, ContextScope.class, s))
           .thenApply(
               dt -> {
                 CompletableFuture.supplyAsync(() -> dt.observe(_obs1))
                     .handle(
                         (result, t) ->
-                            testScope.handle(t, this, null /* TODO compile the lexical scope in */, Observation.class, result))
+                            testScope.handle(
+                                t,
+                                this,
+                                null /* TODO compile the lexical scope in */,
+                                Observation.class,
+                                result))
                     .thenApply(
                         obs1_ -> {
                           // TODO the remaining piece. ACHTUNG may get the empty result of handle()
