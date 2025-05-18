@@ -34,41 +34,43 @@ import java.util.concurrent.CompletableFuture;
  */
 public class TestOutput extends TestCaseBase {
 
-  ContextActor contextActorInstance;
-  Observation _obs1;
+  private final ContextActor contextActorInstance;
+  private Observation _obs1;
 
   @Override
   protected void runTests() {
-    runTest(this::actionT1);
-    contextActorInstance = new ContextActor(scope);
+      /* contents generated */
+    runTest(this::action_t1);
   }
 
   public TestOutput(KActorsBehavior behavior, SessionScope scope) {
     super(behavior, scope);
+    /* initialize global actors */
+    contextActorInstance = new ContextActor(scope);
+    /* init any observations */
   }
 
-  void actionT1(TestScope testScope) {
+  void action_t1(TestScope testScope) {
 
-    // anything mentioning the inspector should be given an individual one instantiated within a
-    // try-with-resources block
+    /* initialize closeables used within an action, in a try-with-resources block */
     try (var inspector = new Inspector(testScope, scope)) {
       inspector.record(Map.of("a", resolveIdentifier("dio"), "b", resolveIdentifier("can")));
 
       /*
-       * The pattern for any asynchronous action. Always return the result of handle() and pass it to anything that
+       * The compiled pattern for any asynchronous action. Always return the result of handle() and pass it to anything that
        * follows, handling any match actions in thenApply.
        */
       CompletableFuture.supplyAsync(() -> contextActorInstance.newContext())
-          .handle((s, t) -> testScope.handle(t, this, null /* TODO */, ContextScope.class, s))
+          .handle((s, t) -> testScope.handle(t, this, null /* TODO compile the lexical scope in */, ContextScope.class, s))
           .thenApply(
               dt -> {
                 CompletableFuture.supplyAsync(() -> dt.observe(_obs1))
                     .handle(
                         (result, t) ->
-                            testScope.handle(t, this, null /* TODO */, Observation.class, result))
+                            testScope.handle(t, this, null /* TODO compile the lexical scope in */, Observation.class, result))
                     .thenApply(
                         obs1_ -> {
-                          // TODO the remaining piece
+                          // TODO the remaining piece. ACHTUNG may get the empty result of handle()
                           return obs1_;
                         });
                 return dt;
