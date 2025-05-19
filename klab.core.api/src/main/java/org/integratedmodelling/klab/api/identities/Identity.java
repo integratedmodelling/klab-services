@@ -14,15 +14,14 @@
 package org.integratedmodelling.klab.api.identities;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 
 /**
  * Identities own scopes and services, representing their legitimate owner. An identity is always
- * present in a scope and in each message sent through it. Identities must be small and well-behaved as
- * Javabeans.
+ * present in a scope and in each message sent through it. Identities must be small and well-behaved
+ * as Javabeans.
  *
  * <p>TODO revise the chain as Institution(Hub) -> User -> Session -> DigitalTwin -> Observation,
- *  with the appropriate data.
+ * with the appropriate data.
  *
  * @author Ferd
  * @version $Id: $Id
@@ -95,9 +94,6 @@ public interface Identity {
   /**
    * True if the identity is of the passed type.
    *
-   * @param type a {@link
-   *     org.integratedmodelling.klab.api.services.resources.adapters.ResolutionType.IIdentity.Type}
-   *     object.
    * @return a boolean.
    */
   boolean is(Type type);
@@ -117,4 +113,9 @@ public interface Identity {
    */
   Parameters<String> getData();
 
+  /**
+   * Groups may be associated to a SSH key for uploading projects in Git repositories.
+   * @return the SSH key associated with this group, or null if none is set
+   */
+  String getSshKey();
 }

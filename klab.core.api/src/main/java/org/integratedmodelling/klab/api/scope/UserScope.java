@@ -8,7 +8,8 @@ import java.net.URL;
 import java.util.List;
 
 /**
- * User scopes restrict a service's permissions to those available to a specific user.
+ * User scopes restrict a service's permissions to those available to a specific user. The group
+ * enables federation-wide messaging iif the user is part of a federation that advertises a broker.
  *
  * @author ferd
  */
@@ -64,10 +65,4 @@ public interface UserScope extends ReactiveScope {
    */
   SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType);
 
-  /**
-   * Switch the "current" service for the service class to the passed one, adding it to the
-   * available services in the scope if it's not there already. After this call, the user scope's
-   * {@link #getService(Class)} will return the passed service for that class.
-   */
-  void switchService(KlabService service);
 }

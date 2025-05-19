@@ -6,29 +6,29 @@ import java.util.List;
 import java.util.Set;
 
 public interface Group {
-    String getId();
+  String getId();
 
-    String getName();
+  String getName();
 
-    String getDescription();
+  String getDescription();
 
-    String getSshKey();
+  String getSshKey();
 
-    List<String> getProjectUrls();
+  List<String> getProjectUrls();
 
-    boolean isWorldview();
+  boolean isWorldview();
 
-    String getIconUrl();
+  String getIconUrl();
 
-    long getMaxUpload();
+  long getMaxUpload();
 
-    Set<CustomProperty> getCustomProperties();
+  List<CustomProperty> getCustomProperties();
 
-    long getDefaultExpirationTime();
+  long getDefaultExpirationTime();
 
-    boolean isOptIn();
+  boolean isOptIn();
 
-    boolean isComplimentary();
+  boolean isComplimentary();
 
-    List<String> getDependsOn();
+  List<String> getDependsOn();
 }

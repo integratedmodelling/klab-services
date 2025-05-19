@@ -14,6 +14,7 @@ import org.apache.http.client.CredentialsProvider;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.CustomProperty;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -25,6 +26,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -40,6 +42,8 @@ import org.integratedmodelling.klab.rest.ServiceReference;
  */
 public enum Authentication {
   INSTANCE;
+
+  public static record FederationData(String id, String broker) {}
 
   /**
    * Group property that flags the group as a federation. There can only be zero or more federations
@@ -224,7 +228,7 @@ public enum Authentication {
           // FIXME these come w/o class info so our deserializer screws up
           Group group = null;
           if (ogroup instanceof Map map) {
-            ogroup = Utils.Json.convertMap(map, GroupImpl.class);
+            group = Utils.Json.convertMap(map, GroupImpl.class);
           } else if (ogroup instanceof Group g) {
             group = g;
           }
@@ -240,6 +244,12 @@ public enum Authentication {
                 + hubNode.getId()
                 + " owned by "
                 + hubNode.getPartner().getId());
+
+        /* validate federation data */
+        var federationData = getFederationData(ret);
+        if (federationData != null) {
+          Logging.INSTANCE.info("User " + ret.getUsername() + " is part of the " + federationData);
+        }
 
         Map<KlabService.Type, AtomicInteger> serviceCount = new HashMap<>();
         Logging.INSTANCE.info("The following services are available to " + ret.getUsername() + ":");
@@ -268,6 +278,35 @@ public enum Authentication {
     }
 
     return Pair.of(new AnonymousUser(), Collections.emptyList());
+  }
+
+  private FederationData getFederationData(UserIdentity identity) {
+
+    var federations =
+        identity.getGroups().stream()
+            .filter(
+                g ->
+                    g.getCustomProperties().stream()
+                        .anyMatch(
+                            customProperty ->
+                                ("federation.id".equals(customProperty.getKey()))
+                                    && "true".equals(customProperty.getValue())))
+            .toList();
+
+    if (federations.size() > 1) {
+      throw new KlabAuthorizationException(
+          "multiple federations found for user " + identity.getUsername());
+    } else if (federations.size() == 1) {
+      return new FederationData(
+          federations.getFirst().getName(),
+          federations.getFirst().getCustomProperties().stream()
+              .filter(cp -> "federation.broker".equals(cp.getKey()))
+              .map(CustomProperty::getValue)
+              .findFirst()
+              .orElse(null));
+    }
+
+    return null;
   }
 
   //  /**

@@ -320,12 +320,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     setStatus(Status.EMPTY);
   }
 
-  @Override
-  public void switchService(KlabService service) {
-    // no switching at server side. TODO Consider raising an exception or when that could be
-    // appropriate.
-  }
-
   public Collection<Role> getRoles() {
     return roles;
   }

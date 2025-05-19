@@ -29,44 +29,21 @@ public interface MessagingChannel extends Channel {
    */
   boolean hasMessaging();
 
-  /**
-   * When a service advertises message queues, connect to the available admin user service-side
-   * queues using the passed handler.
-   *
-   * @param capabilities
-   * @param identity
-   * @param consumer
-   */
-  void connectToService(
-      KlabService.ServiceCapabilities capabilities,
-      UserIdentity identity,
-      Consumer<Message> consumer);
-
 //  /**
-//   * Install one or more message matchers to react to messages received and sent through the managed
-//   * queues.
+//   * When a service advertises message queues, connect to the available admin user service-side
+//   * queues using the passed handler.
 //   *
-//   * @param matchers
-//   * @return
-//   * @deprecated this is complex to use although powerful. We probably don't need it.
+//   * @param capabilities
+//   * @param identity
+//   * @param consumer
 //   */
-//  void trackMessages(Message.Match... matchers);
-//
-//  /**
-//   * Install a message matcher and a supplier that turns the matching message into an object, and
-//   * return a future for the supplied object.
-//   *
-//   * @param match
-//   * @param supplier
-//   * @param <T>
-//   * @return
-//   * @deprecated this is complex to use although powerful. We probably don't need it.
-//   */
-//  <T> CompletableFuture<T> trackMessages(Message.Match match, Function<Message, T> supplier);
+//  void connectToService(
+//      KlabService.ServiceCapabilities capabilities,
+//      UserIdentity identity,
+//      Consumer<Message> consumer);
 
   /**
-   * True if {@link #connectToService(KlabService.ServiceCapabilities, UserIdentity, Consumer)} has
-   * been successfully called.
+   * True if connections have been established.
    *
    * @return
    */

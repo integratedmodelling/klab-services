@@ -216,11 +216,6 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
     }
 
     @Override
-    public void switchService(KlabService service) {
-        // TODO, or just avoid in this implementation.
-    }
-
-    @Override
     public Scope getParentScope() {
         return parentScope;
     }

@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.runtime.kactors.compiler;
 
 import groovy.lang.GroovyObjectSupport;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.runtime.kactors.actors.runtime.ActionScope;
 
 /**
  * Base class for the Java/Groovy compiled actor that translates a k.Actors behavior, substituting
@@ -15,7 +16,7 @@ public class ActorBase extends GroovyObjectSupport {
         this.behavior = behavior;
     }
 
-    protected Object resolveIdentifier(String identifier) {
+    protected Object resolveIdentifier(String identifier, ActionScope scope) {
         return null;
     }
 
