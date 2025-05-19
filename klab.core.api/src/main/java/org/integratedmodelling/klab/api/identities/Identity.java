@@ -113,9 +113,4 @@ public interface Identity {
    */
   Parameters<String> getData();
 
-  /**
-   * Groups may be associated to a SSH key for uploading projects in Git repositories.
-   * @return the SSH key associated with this group, or null if none is set
-   */
-  String getSshKey();
 }
