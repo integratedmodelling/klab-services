@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.integratedmodelling</groupId>
     <artifactId>klab-services</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
         <module>klab.services.reasoner</module>
@@ -88,7 +88,7 @@
 
     <properties>
 
-        <klab.version>1.0-SNAPSHOT</klab.version>
+        <klab.version>1.0.0-SNAPSHOT</klab.version>
 
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
