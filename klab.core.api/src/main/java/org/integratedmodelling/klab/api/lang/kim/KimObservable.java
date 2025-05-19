@@ -1,17 +1,19 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import org.integratedmodelling.klab.api.collections.Literal;
+//import org.integratedmodelling.klab.api.collections.Literal;
+
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
-public interface KimObservable extends KimStatement, KlabAsset {
+public interface KimObservable extends KlabStatement, Resolvable {
 
     /**
      * @return the main concept
@@ -34,10 +36,9 @@ public interface KimObservable extends KimStatement, KlabAsset {
     String getCurrency();
 
     /**
-     * This will be null unless the k.IM definition has a 'named' clause. The resulting observables
-     * will always have a name, so this is the only guaranteed way to obtain the user-defined formal
-     * name.
-     * 
+     * This will be null unless the k.IM definition has a 'named' clause. The resulting observables will
+     * always have a name, so this is the only guaranteed way to obtain the user-defined formal name.
+     *
      * @return the 'named' name
      */
     String getFormalName();
@@ -45,96 +46,129 @@ public interface KimObservable extends KimStatement, KlabAsset {
     /**
      * @return the literal value
      */
-    Literal getValue();
+    Object getValue();
 
     /**
      * The default value if one is given. The optional state and resolution triggers are affected.
-     * 
+     *
      * @return
      */
-    Literal getDefaultValue();
+    Object getDefaultValue();
 
     /**
      * Resolution exceptions linked to the use of a stated default value.
-     * 
+     *
      * @return
      */
-    Collection<Observable.ResolutionException> getResolutionExceptions();
+    Collection<Observable.ResolutionDirective> getResolutionExceptions();
 
     /**
      * Value operators with their operands.
      *
      * @return
      */
-    List<Pair<ValueOperator, Literal>> getValueOperators();
+    List<Pair<ValueOperator, Object>> getValueOperators();
 
-//    /**
-//     * If the observable specification had an identifier (rather than a literal value) before an
-//     * 'as' clause introducing the semantics, this will return it and the {@link #getValue()} method
-//     * will return null. The interpretation of the identifier is context-dependent as it may refer
-//     * to a value previously defined in a 'define' statement, or to an attribute to be looked up in
-//     * a referenced resource.
-//     *
-//     * @return true if identified by an attribute to be resolved
-//     */
-//    String getAttributeIdentifier();
+    /**
+     * If the observable specification had an identifier (rather than a literal value) before an 'as' clause
+     * introducing the semantics, this will return it and the {@link #getValue()} method will return null. The
+     * interpretation of the identifier is context-dependent as it may refer to a value previously defined in
+     * a 'define' statement, or to an attribute to be looked up in a referenced resource.
+     *
+     * @return true if identified by an attribute to be resolved
+     */
+    String getAttributeIdentifier();
 
     /**
      * True if the 'optional' clause has been passed.
-     * 
+     *
      * @return true if optional
      */
     boolean isOptional();
 
     /**
      * If the observable is tied to a predefined model, return the model fully qualified name here.
-     * 
+     *
      * @return
      */
     String getModelReference();
 
     /**
-     * If this returns anything other than null, we are looking at the observable of a non-semantic
-     * model, and implementations will need to handle this properly, for example creating a
-     * recognizable, unique concept of the returned type using the name set into modelReference, or
-     * using completely independent logics.
-     * 
+     * If this returns anything other than null, we are looking at the observable of a non-semantic model, and
+     * implementations will need to handle this properly, for example creating a recognizable, unique concept
+     * of the returned type using the name set into modelReference, or using completely independent logics.
+     *
      * @return
      */
     Artifact.Type getNonSemanticType();
 
     /**
-     * Return a descriptive name for this concept suitable for use as the name of a k.IM object. If
-     * the concept comes from an observable specification with a 'named' clause, return the supplied
-     * name instead.
-     * 
+     * Return a descriptive name for this concept suitable for use as the name of a k.IM object. If the
+     * concept comes from an observable specification with a 'named' clause, return the supplied name
+     * instead.
+     *
      * @return the name for k.IM code
      */
     String getCodeName();
 
+
     /**
-     * Generic observables have "any" prepended and specify the class including their children even
-     * if the observable is concrete.
-     * 
+     * Return an unambiguous string that is compatible with k.IM identifiers. This can be used in code with
+     * the guarantee that it will identify this observable's semantics unambiguously. It should not contain
+     * mediators but it will contain any value operator encoding.
+     *
+     * @return
+     */
+    String getReferenceName();
+
+
+    /**
+     * Generic observables have "any" prepended and specify the class including their children even if the
+     * observable is concrete.
+     *
      * @return
      */
     boolean isGeneric();
 
     /**
-     * Globalized observables have "all" prepended and are used in classifiers and special
-     * classification or expansion situations (not in actual semantics) to indicate that all levels
-     * of the hierarchy should be considered.
-     * 
+     * Globalized observables have "all" prepended and are used in classifiers and special classification or
+     * expansion situations (not in actual semantics) to indicate that all levels of the hierarchy should be
+     * considered.
+     *
      * @return
      */
     boolean isGlobal();
 
     /**
-     * Exclusive observables have 'only' prepended and only match themselves, never a subclass, when
-     * used for queries.
-     * 
+     * Exclusive observables have 'only' prepended and only match themselves, never a subclass, when used for
+     * queries.
+     *
      * @return
      */
     boolean isExclusive();
 
+    /**
+     * Visit the expression and extract all the ontology namespaces used in it.
+     *
+     * @return
+     */
+    Set<String> namespaces();
+
+    /**
+     * If this is not null, the observable is a macro pattern with variables that needs to be substituted by
+     * concepts before parsing into a concept. String substitution (with the necessary parentheses) of all the
+     * variables listed in {@link #getPatternVariables()}, which are contained in the pattern in the form
+     * <code>$:variable</code>, is needed before sending to the resources services to obtain the actual
+     * concept.
+     *
+     * @return
+     */
+    String getPattern();
+
+    /**
+     * This will return a non-empty collection only if {@link #getPattern()} returns a valid string.
+     *
+     * @return
+     */
+    Collection<String> getPatternVariables();
 }

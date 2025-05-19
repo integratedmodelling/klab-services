@@ -1,83 +1,213 @@
 package org.integratedmodelling.klab.api.services.runtime.impl;
 
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.view.UIView;
+
+import java.io.Serial;
 import java.io.Serializable;
 
-import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
-
 /**
- * Trivial bean for notifications, so these can be sent outside of the validator and processed in
- * it. The constructors are messy and nasty but cleaning this is low priority.
- * 
- * @author ferdinando.villa
+ * Trivial bean for notifications, so these can be sent outside the validator and processed in it.
+ * The constructors are messy and nasty but cleaning this is low priority.
  *
+ * @author ferdinando.villa
  */
 public class NotificationImpl implements Notification, Serializable {
 
-    private static final long serialVersionUID = -5812547783872203517L;
+  @Serial private static final long serialVersionUID = -5812547783872203517L;
 
-    String message;
-    Level level;
-    Type type = Type.None;
-    long timestamp = System.currentTimeMillis();
-    // this will be null when parsed, identities are in the runtime
-    String identity;
+  private String message;
+  private Level level;
+  //    private Type type = Type.None;
+  private long timestamp = System.currentTimeMillis();
+  // this will be null when parsed, identities are in the runtime
+  private String identity;
+  private LexicalContext lexicalContext;
+  private Mode mode;
+  private UIView.Interactivity interactivity = UIView.Interactivity.BATCH;
 
-    public NotificationImpl() {
+  //    private Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
+
+  public static class LexicalContextImpl implements LexicalContext {
+
+    private String documentUrn;
+    private String projectUrn;
+    private int offsetInDocument;
+    private int length;
+    private KlabAsset.KnowledgeClass documentType;
+    private KlabAsset.KnowledgeClass type;
+
+    @Override
+    public String getDocumentUrn() {
+      return documentUrn;
     }
 
-    public NotificationImpl(String message, Level level) {
-        this.message = message;
-        this.level = level;
-    }
-
-    public NotificationImpl(Pair<String, Type> message, Level level) {
-        this.message = message.getFirst();
-        this.type = message.getSecond();
-        this.level = level;
-    }
-
-    public NotificationImpl(String message2, Level level2, long timestamp2) {
-        this(message2, level2);
-        this.timestamp = timestamp2;
-    }
-
-    public NotificationImpl(Pair<String, Type> message2, Level level2, long timestamp2) {
-        this(message2.getFirst(), level2);
-        this.timestamp = timestamp2;
-        this.type = message2.getSecond();
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public Level getLevel() {
-        return level;
-    }
-
-    public void setLevel(Level level) {
-        this.level = level;
+    public void setDocumentUrn(String documentUrn) {
+      this.documentUrn = documentUrn;
     }
 
     @Override
-    public long getTimestamp() {
-        return timestamp;
+    public int getOffsetInDocument() {
+      return offsetInDocument;
+    }
+
+    public void setOffsetInDocument(int offsetInDocument) {
+      this.offsetInDocument = offsetInDocument;
     }
 
     @Override
-    public Type getType() {
-        return type;
+    public int getLength() {
+      return length;
+    }
+
+    public void setLength(int length) {
+      this.length = length;
     }
 
     @Override
-    public String getIdentity() {
-        return identity;
+    public KlabAsset.KnowledgeClass getDocumentType() {
+      return documentType;
     }
 
+    public void setDocumentType(KlabAsset.KnowledgeClass documentType) {
+      this.documentType = documentType;
+    }
+
+    @Override
+    public String getProjectUrn() {
+      return projectUrn;
+    }
+
+    public void setProjectUrn(String projectUrn) {
+      this.projectUrn = projectUrn;
+    }
+
+    @Override
+    public KlabAsset.KnowledgeClass getType() {
+      return type;
+    }
+
+    public void setType(KlabAsset.KnowledgeClass type) {
+      this.type = type;
+    }
+
+    @Override
+    public String toString() {
+      return offsetInDocument + "/" + length;
+    }
+  }
+
+  public NotificationImpl() {}
+
+  public NotificationImpl(String message, Level level) {
+    this.message = message;
+    this.level = level;
+  }
+
+  public NotificationImpl withIdentity(String identity) {
+    this.identity = identity;
+    return this;
+  }
+
+  //    public NotificationImpl(Pair<String, Type> message, Level level) {
+  //        this.message = message.getFirst();
+  //        this.type = message.getSecond();
+  //        this.level = level;
+  //    }
+
+  //    public NotificationImpl(String message2, Level level2, long timestamp2) {
+  //        this(message2, level2);
+  //        this.timestamp = timestamp2;
+  //    }
+  //
+  //    public NotificationImpl(Pair<String, Type> message2, Level level2, long timestamp2) {
+  //        this(message2.getFirst(), level2);
+  //        this.timestamp = timestamp2;
+  //        this.type = message2.getSecond();
+  //    }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
+  }
+
+  public Level getLevel() {
+    return level;
+  }
+
+  public void setLevel(Level level) {
+    this.level = level;
+  }
+
+  @Override
+  public long getTimestamp() {
+    return timestamp;
+  }
+
+  //    @Override
+  //    public Type getType() {
+  //        return type;
+  //    }
+
+  @Override
+  public Mode getMode() {
+    return mode;
+  }
+
+  @Override
+  public String getIdentity() {
+    return identity;
+  }
+
+  //    public void setType(Type type) {
+  //        this.type = type;
+  //    }
+
+  public void setTimestamp(long timestamp) {
+    this.timestamp = timestamp;
+  }
+
+  public void setIdentity(String identity) {
+    this.identity = identity;
+  }
+
+  @Override
+  public LexicalContext getLexicalContext() {
+    return lexicalContext;
+  }
+
+  public void setLexicalContext(LexicalContext lexicalContext) {
+    this.lexicalContext = lexicalContext;
+  }
+
+  public void setMode(Mode mode) {
+    this.mode = mode;
+  }
+
+  //    @Override
+  //    public Message.ForwardingPolicy getForwardingPolicy() {
+  //        return forwardingPolicy;
+  //    }
+  //
+  //    public void setForwardingPolicy(Message.ForwardingPolicy forwardingPolicy) {
+  //        this.forwardingPolicy = forwardingPolicy;
+  //    }
+
+  @Override
+  public UIView.Interactivity getInteractivity() {
+    return interactivity;
+  }
+
+  public void setInteractivity(UIView.Interactivity interactivity) {
+    this.interactivity = interactivity;
+  }
+
+  @Override
+  public String toString() {
+    return "NotificationImpl{" + "message='" + message + '\'' + ", level=" + level + '}';
+  }
 }

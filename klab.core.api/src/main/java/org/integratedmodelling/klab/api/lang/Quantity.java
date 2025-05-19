@@ -1,5 +1,10 @@
 package org.integratedmodelling.klab.api.lang;
 
+import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
+
 import java.io.Serializable;
 
 /**
@@ -29,9 +34,17 @@ public interface Quantity extends Serializable {
 	 * @return
 	 */
 	String getCurrency();
-	
-	static Quantity parse(String specification) {
-	    // TODO
-	    return null;
+
+	static Quantity of(double value, String unit) {
+		return create(value + "." + unit);
 	}
+
+	static Quantity create(String textSpecification) {
+		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+		if (configuration == null) {
+			throw new KlabIllegalStateException("k.LAB environment not configured to create a quantity");
+		}
+		return configuration.parseQuantity(textSpecification);
+	}
+
 }

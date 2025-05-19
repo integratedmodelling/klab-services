@@ -15,7 +15,7 @@
  */
 package org.integratedmodelling.klab.api.lang;
 
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -30,54 +30,59 @@ import org.integratedmodelling.klab.api.exceptions.KValidationException;
  * @author Ferdinando Villa
  * @version $Id: $Id
  */
-public class LogicalConnector {
+public enum LogicalConnector {
 
-    /** The Constant _UNION. */
-    static public final int _UNION          = 0;
-    
-    /** The Constant _INTERSECTION. */
-    static public final int _INTERSECTION   = 1;
-    
-    /** The Constant _EXCLUSION. */
-    static public final int _EXCLUSION      = 2;
-    
-    /** The Constant _DISJOINT_UNION. */
-    static public final int _DISJOINT_UNION = 3;
+    UNION(0),
+    INTERSECTION(1),
+    EXCLUSION(2),
+    DISJOINT_UNION(3);
 
-    /** The union. */
-    static public LogicalConnector UNION          = new LogicalConnector(_UNION);
-    
-    /** The intersection. */
-    static public LogicalConnector INTERSECTION   = new LogicalConnector(_INTERSECTION);
-    
-    /** The exclusion. */
-    static public LogicalConnector EXCLUSION      = new LogicalConnector(_EXCLUSION);
-    
-    /** The disjoint union. */
-    static public LogicalConnector DISJOINT_UNION = new LogicalConnector(_DISJOINT_UNION);
-
+//    /** The Constant _UNION. */
+//    static public final int _UNION          = 0;
+//
+//    /** The Constant _INTERSECTION. */
+//    static public final int _INTERSECTION   = 1;
+//
+//    /** The Constant _EXCLUSION. */
+//    static public final int _EXCLUSION      = 2;
+//
+//    /** The Constant _DISJOINT_UNION. */
+//    static public final int _DISJOINT_UNION = 3;
+//
+//    /** The union. */
+//    static public LogicalConnector UNION          = new LogicalConnector(_UNION);
+//
+//    /** The intersection. */
+//    static public LogicalConnector INTERSECTION   = new LogicalConnector(_INTERSECTION);
+//
+//    /** The exclusion. */
+//    static public LogicalConnector EXCLUSION      = new LogicalConnector(_EXCLUSION);
+//
+//    /** The disjoint union. */
+//    static public LogicalConnector DISJOINT_UNION = new LogicalConnector(_DISJOINT_UNION);
+//
     /**
      * The value of a connector. Use this one in switch statements, or use equality 
      * with static connector members in if statements.
      */
-    public int value;
+    public final int value;
 
-    /**
-     * Checks if string is a valid representation of a logical connector.
-     *
-     * @param s a string
-     * @return true if string represents a connector.
-     */
-    public static boolean isLogicalConnector(String s) {
-        // TODO
-        boolean ret = true;
-        try {
-            parseLogicalConnector(s);
-        } catch (KValidationException e) {
-            ret = false;
-        }
-        return ret;
-    }
+//    /**
+//     * Checks if string is a valid representation of a logical connector.
+//     *
+//     * @param s a string
+//     * @return true if string represents a connector.
+//     */
+//    public static boolean isLogicalConnector(String s) {
+//        // TODO
+//        boolean ret = true;
+//        try {
+//            parseLogicalConnector(s);
+//        } catch (KlabValidationException e) {
+//            ret = false;
+//        }
+//        return ret;
+//    }
 
     /**
      * Parses string into connector and returns result. Will never allocate new connectors, but only
@@ -85,7 +90,7 @@ public class LogicalConnector {
      *
      * @param s A string representing a logical connector.
      * @return a LogicalConnector
-     * @throws KValidationException the klab validation exception
+     * @throws KlabValidationException the klab validation exception
      */
     public static LogicalConnector parseLogicalConnector(String s) {
 
@@ -103,7 +108,7 @@ public class LogicalConnector {
         else if (s.equals("xor") || s.equals("disjoint-union"))
             value = DISJOINT_UNION;
         else
-            throw new KValidationException(s + " is not a valid logical connector");
+            throw new KlabValidationException(s + " is not a valid logical connector");
 
         return value;
     }
@@ -112,57 +117,57 @@ public class LogicalConnector {
         value = i;
     }
 
-    /**
-     * Equals.
-     *
-     * @param c the c
-     * @return true if same
-     */
-    public boolean equals(LogicalConnector c) {
-        return c.value == value;
-    }
-
-    /**
-     * Equals.
-     *
-     * @param c the c
-     * @return a boolean.
-     */
-    public boolean equals(int c) {
-        return value == c;
-    }
-
-    /**
-     * Equals.
-     *
-     * @param s the s
-     * @return a boolean.
-     * @throws KValidationException the klab validation exception
-     */
-    public boolean equals(String s) {
-        return value == parseLogicalConnector(s).value;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public String toString() {
-
-        String ret = "";
-        switch (value) {
-        case _UNION:
-            ret = "or";
-            break;
-        case _INTERSECTION:
-            ret = "and";
-            break;
-        case _EXCLUSION:
-            ret = "not";
-            break;
-        case _DISJOINT_UNION:
-            ret = "xor";
-            break;
-        }
-
-        return ret;
-    }
+//    /**
+//     * Equals.
+//     *
+//     * @param c the c
+//     * @return true if same
+//     */
+//    public boolean equals(LogicalConnector c) {
+//        return c.value == value;
+//    }
+//
+//    /**
+//     * Equals.
+//     *
+//     * @param c the c
+//     * @return a boolean.
+//     */
+//    public boolean equals(int c) {
+//        return value == c;
+//    }
+//
+//    /**
+//     * Equals.
+//     *
+//     * @param s the s
+//     * @return a boolean.
+//     * @throws KlabValidationException the klab validation exception
+//     */
+//    public boolean equals(String s) {
+//        return value == parseLogicalConnector(s).value;
+//    }
+//
+//    /** {@inheritDoc} */
+//    @Override
+//    public String toString() {
+//
+//        String ret = "";
+//        switch (value) {
+//        case _UNION:
+//            ret = "or";
+//            break;
+//        case _INTERSECTION:
+//            ret = "and";
+//            break;
+//        case _EXCLUSION:
+//            ret = "not";
+//            break;
+//        case _DISJOINT_UNION:
+//            ret = "xor";
+//            break;
+//        }
+//
+//        return ret;
+//    }
 }

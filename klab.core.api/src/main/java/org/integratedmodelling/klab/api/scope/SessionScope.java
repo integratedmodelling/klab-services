@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.api.scope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 
+import java.util.List;
+
 /**
  * Session scopes are stateful.
  *
@@ -10,41 +12,44 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
  */
 public interface SessionScope extends UserScope {
 
-    /**
-     * The session scope's scale is the "focal" geometry of the user (where/when the user agent is looking); the
-     * geometry in each {@link ContextScope} is the actual view during observation. If there is no current focus the
-     * result is the empty geometry.
-     *
-     * @return the current viewing scale, empty if the session is still "blind", never null.
-     */
-    Scale getScale();
+    @Override
+    default Type getType() {
+        return Type.SESSION;
+    }
 
     /**
-     * A session may represent a raw session, a script or an application. In each case a name is supplied and can be
-     * retrieved. The name may not be unique.
+     * A session may represent a raw session, a script or an application. In each case a name is supplied and
+     * can be retrieved. The name may not be unique.
      *
      * @return
      */
     String getName();
 
     /**
-     * Create a context scope in this session. The scope is empty, initially focused on the geometry that the session
-     * was focused on at the time of the call (also empty by default). Because of this, only direct observables may be
-     * observed in it initially.
+     * SessionScopes and ContextScopes have a mandatory ID that will be used to rebuild the scope at server
+     * side.
      *
-     * @param urn the context URN, which will be the ID in its URL for external reference. Must be unique within the
-     *            session. Optionally this can be the http-based URL of a remote context, which will create a "proxy"
-     *            for the remote.
      * @return
      */
-    ContextScope createContext(String urn, Geometry geometry);
+    String getId();
 
     /**
-     * Return the existing context scope with the passed name, or null.
+     * Return all the active observation scopes. These may be the currently "alive" ones or any persistent
+     * observation scope left out previously. Active means they haven't expired, not that there has been any
+     * recent activity.
      *
-     * @param urn
      * @return
      */
-    ContextScope getContext(String urn);
+    List<ContextScope> getActiveContexts();
+
+    /**
+     * Create a context scope in this session. The scope is empty, initially focused on the geometry that the
+     * session was focused on at the time of the call (also empty by default). Because of this, only direct
+     * observables may be observed in it initially.
+     *
+     * @param contextName a name for the context. Can be anything and does not uniquely identify the context.
+     * @return a new context, or null if the request failed
+     */
+    ContextScope createContext(String contextName);
 
 }

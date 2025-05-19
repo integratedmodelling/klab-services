@@ -3,8 +3,20 @@
   <parent>
     <groupId>org.integratedmodelling</groupId>
     <artifactId>klab-services</artifactId>
-    <version>0.11.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>klab.core.api</artifactId>
   <name>Core API classes</name>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.google.cloud.tools</groupId>
+        <artifactId>jib-maven-plugin</artifactId>
+        <configuration>
+          <!-- we don't want jib to execute on this module -->
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

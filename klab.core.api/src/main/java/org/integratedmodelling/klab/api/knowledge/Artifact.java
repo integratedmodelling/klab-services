@@ -1,33 +1,31 @@
 /*
  * This file is part of k.LAB.
- * 
+ *
  * k.LAB is free software: you can redistribute it and/or modify it under the terms of the Affero
  * GNU General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
  *
  * A copy of the GNU Affero General Public License is distributed in the root directory of the k.LAB
  * distribution (LICENSE.txt). If this cannot be found see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned in author tags. All
  * rights reserved.
  */
 package org.integratedmodelling.klab.api.knowledge;
 
-import java.util.Collection;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.Process;
-import org.integratedmodelling.klab.api.knowledge.observation.Subject;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * An Artifact can be any of the first-class products of a k.LAB task: a non-semantic
@@ -36,7 +34,7 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
  * has been produced by an observation activity, such as a learning model.
  * <p>
  * By implementing {@link java.lang.Iterable}, we also allow Artifacts to represent groups of
- * artifacts (e.g. all the {@link Subject subjects} instantiated by resolving a subject
+ * artifacts (e.g. all subjects instantiated by resolving a subject
  * {@link Observable observable}). This enables simpler handling of provenance, as each observation
  * activity returns one artifact, possibly iterable as a group.
  * <p>
@@ -52,12 +50,15 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
  */
 public interface Artifact extends Provenance.Node, Iterable<Artifact> {
 
+    default RuntimeAsset.Type classify() {
+        return RuntimeAsset.Type.ARTIFACT;
+    }
+
     /**
      * All non-semantic artifact types produced, contextualized or validated. Used in various
      * locations, not all compatible with all values.
-     * 
-     * @author ferdinando.villa
      *
+     * @author ferdinando.villa
      */
     enum Type {
         /**
@@ -106,12 +107,12 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
         ENUM,
 
         /**
-         * 
+         *
          */
         DATETIME,
 
         /**
-         * 
+         *
          */
         QUANTITY,
 
@@ -121,17 +122,17 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
         TEMPORAL_RESOLUTION,
 
         /**
-         * 
+         *
          */
         URN,
 
         /**
-         * 
+         *
          */
         URL,
-        
+
         /**
-         * 
+         *
          */
         GEOMETRY,
 
@@ -181,7 +182,7 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
 
         /**
          * Classify a POD type producing the type that represents it.
-         * 
+         *
          * @param o
          * @return a type for o. If o == null, VALUE is returned.
          */
@@ -192,7 +193,7 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
                 return BOOLEAN;
             } else if (o instanceof String) {
                 return TEXT;
-            } else if (o instanceof RangeImpl) {
+            } else if (o instanceof NumericRangeImpl) {
                 return RANGE;
             } else if (o instanceof List) {
                 return LIST;
@@ -236,7 +237,7 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
 
         /**
          * Dependent means that the runtime must create the correspondent observation.
-         * 
+         *
          * @return
          */
         public boolean isDependent() {
@@ -272,49 +273,43 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      * The artifact structure keeps tabs on both the logical and the physical relationships of the
      * artifacts within a context. The scope of each observation contains the structure and exposes
      * it.
-     * 
-     * @author Ferd
      *
+     * @author Ferd
      */
     interface Structure {
 
         /**
          * The root artifact always has the session user as the observer.
-         * 
+         *
          * @return
          */
         Artifact getRootArtifact();
 
         /**
-         * 
          * @param child
          * @return
          */
         Artifact getArtifactParent(Artifact child);
 
         /**
-         * 
          * @param child
          * @return
          */
         Artifact getLogicalParent(Artifact child);
 
         /**
-         * 
          * @param parent
          * @return
          */
         Collection<Artifact> getArtifactChildren(Artifact parent);
 
         /**
-         * 
          * @param parent
          * @return
          */
         Collection<Artifact> getLogicalChildren(Artifact parent);
 
         /**
-         * 
          * @param artifact
          * @return
          */
@@ -322,7 +317,7 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
 
         /**
          * If an artifact is called into the context by a process, return the process.
-         * 
+         *
          * @param artifact
          * @return
          */
@@ -330,7 +325,7 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
 
         /**
          * Retrieve the observer of the passed artifact.
-         * 
+         *
          * @param artifact
          * @return
          */
@@ -346,13 +341,6 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
     Geometry getGeometry();
 
     /**
-     * Metadata. Never null, possibly empty.
-     *
-     * @return the metadata
-     */
-    Metadata getMetadata();
-
-    /**
      * <p>
      * getUrn.
      * </p>
@@ -360,16 +348,6 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      * @return a {@link java.lang.String} object.
      */
     String getUrn();
-
-    /**
-     * All the annotations proceeding from the k.IM lineage of this artifact (from the model that
-     * produced it, the concepts it incarnates, etc.). Never null, possibly empty.
-     * <p>
-     * When artifacts are persisted, these may or may not be preserved.
-     * 
-     * @return k.IM annotations in the lineage of this artifact.
-     */
-    Collection<Annotation> getAnnotations();
 
     /**
      * Collect all artifacts of the passed concept (or with the passed role/trait) up the provenance
@@ -385,16 +363,15 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      * provenance chain.
      *
      * @param role
-     * @param roleContext a
-     *        {@link org.integratedmodelling.klab.api.DirectObservation.IDirectObservation} object.
-     * @return a {@link org.integratedmodelling.klab.api.provenance.Artifact} object.
+     * @param roleContext
+     * @return
      */
-    Artifact trace(Concept role, DirectObservation roleContext);
+    Artifact trace(Concept role, Observation roleContext);
 
     /**
      * Some artifact may be connected into a hierarchical structure, which may or may not be the
      * same as the natural structure of the specific type of artifact.
-     * 
+     *
      * @return the child artifacts or an empty list
      */
     Collection<Artifact> getChildArtifacts();
@@ -404,11 +381,10 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      * chain.
      *
      * @param role
-     * @param roleContext a
-     *        {@link org.integratedmodelling.klab.api.DirectObservation.IDirectObservation} object.
+     * @param roleContext
      * @return a {@link java.util.Collection} object.
      */
-    Collection<Artifact> collect(Concept role, DirectObservation roleContext);
+    Collection<Artifact> collect(Concept role, Observation roleContext);
 
     /**
      * The size of the group that this artifact is part of. Any artifact is part of a group
@@ -429,7 +405,7 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
     /**
      * The type of this artifact. Types are a small set meant to enable more efficient storage and
      * correct contextualization.
-     * 
+     *
      * @return the type
      */
     Type getType();
@@ -439,7 +415,6 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      * and free any resources without terminating the object itself, according to the implementation
      * of the storage provider. Calling release() is optional and should be done only on temporary
      * artifacts with a well-defined life span.
-     * 
      */
     void release();
 
@@ -447,7 +422,7 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      * We leave specific views of artifacts flexible without specializing the base class through a
      * simple adaptation mechanism, suitable for PODs or more complex objects. This method, paired
      * with {@link #as(Class)}, enables checking for adaptability to specific types.
-     * 
+     *
      * @param cls
      * @return true if the artifact can be adapted to the passed type.
      */
@@ -456,7 +431,7 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
     /**
      * Use after {@link #is(Class)} has returned true to adapt to the corresponding object of that
      * type.
-     * 
+     *
      * @param cls
      * @return the specific class requested
      */
@@ -470,23 +445,16 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      * is learned in the context of learning (the actuator is void) but the semantics of the learned
      * state in each instantiated object is passed through an archetype.
      * <p>
-     * 
+     *
      * @return true if archetype. In this case, no use should be made of the artifact other than
-     *         inspection of the relevant specifics.
+     * inspection of the relevant specifics.
      */
     boolean isArchetype();
 
-    /**
-     * Get the last update time in <em>context</em> time, or 0 if the context is not temporal.
-     * 
-     * @return
-     */
-    long getLastUpdate();
 
     /**
      * Checks if the artifact has changed in any way during the passed temporal transition. Will
-     * return false if {@link #isDynamic()} is false.
-     * 
+     *
      * @param time
      * @return
      */

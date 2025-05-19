@@ -23,7 +23,7 @@ package org.integratedmodelling.klab.api.data.mediation;
 
 import java.io.Serializable;
 
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -42,7 +42,7 @@ public interface ValueMediator extends Serializable {
      * true if this can be converted into other. Do not throw exceptions.
      * 
      * @param other
-     * @throws KIllegalStateException if this mediator was produced through
+     * @throws KlabIllegalStateException if this mediator was produced through
      *         {@link #contextualize(Observable, Scale)}.
      * @return true if other is compatible
      */
@@ -54,7 +54,7 @@ public interface ValueMediator extends Serializable {
      * @param d
      * @param scale
      * @return the converted number
-     * @throws KIllegalStateException if this mediator was produced through
+     * @throws KlabIllegalStateException if this mediator was produced through
      *         {@link #contextualize(Observable, Scale)}.
      */
     Number convert(Number d, ValueMediator scale);
@@ -123,7 +123,7 @@ public interface ValueMediator extends Serializable {
      * 
      * @param value
      * @param locator
-     * @throws KIllegalStateException if this is called on a mediator that was not produced
+     * @throws KlabIllegalStateException if this is called on a mediator that was not produced
      *         through {@link #contextualize(Observable, Scale)}.
      * @return
      */

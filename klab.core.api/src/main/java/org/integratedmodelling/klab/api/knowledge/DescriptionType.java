@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.knowledge;
 
-import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 
 import java.util.Collection;
 
@@ -13,6 +13,7 @@ import java.util.Collection;
  */
 public enum DescriptionType {
 
+    VOID(false, "void", Artifact.Type.VOID, "nothing"),
     /**
      * The observation activity that produces a countable object. Acknowledgement is a special case of
      * instantiation, limited to a subject and performed on a fiat basis (in k.IM through an
@@ -155,8 +156,10 @@ public enum DescriptionType {
             return distributed ? CLASSIFICATION : CHARACTERIZATION;
         } else if (type.contains(SemanticType.DIRECT_OBSERVABLE)) {
             return distributed ? INSTANTIATION : ACKNOWLEDGEMENT;
+        } else if (type.contains(SemanticType.NOTHING)) {
+            return VOID;
         }
-        throw new KUnimplementedException("DescriptionType::forSemantics - unexpected semantic typeset " + type);
+        throw new KlabUnimplementedException("DescriptionType::forSemantics - unexpected semantic typeset " + type);
 //        return COMPILATION;
     }
 }

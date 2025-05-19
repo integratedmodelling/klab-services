@@ -1,1175 +1,1591 @@
 package org.integratedmodelling.klab.services.resources;
 
-import com.google.inject.Injector;
-import org.eclipse.xtext.testing.IInjectorProvider;
-import org.integratedmodelling.kactors.model.KActors;
-import org.integratedmodelling.kdl.model.Kdl;
-import org.integratedmodelling.kim.api.IKimObservable;
-import org.integratedmodelling.kim.api.IKimProject;
-import org.integratedmodelling.kim.model.Kim;
-import org.integratedmodelling.kim.model.KimLoader;
-import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
-import org.integratedmodelling.klab.api.authentication.CRUDPermission;
-import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.KlabData;
-import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.Urn;
-import org.integratedmodelling.klab.api.knowledge.organization.Project;
-import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
-import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimNamespaceImpl;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
-import org.integratedmodelling.klab.api.lang.kim.*;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.services.Authentication;
-import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.resolver.Coverage;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
-import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.rest.ResourceReference;
-import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
-import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
-import org.integratedmodelling.klab.services.resources.assets.ProjectImpl.ManifestImpl;
-import org.integratedmodelling.klab.services.resources.assets.WorkspaceImpl;
-import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration;
-import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration.ProjectConfiguration;
-import org.integratedmodelling.klab.services.resources.lang.*;
-import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
-import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
-import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.klab.utilities.Utils.Git;
-import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.traverse.TopologicalOrderIterator;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-import org.mapdb.serializer.GroupSerializer;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.FileFilter;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.knowledge.ProjectImpl;
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
+import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.RepositoryState;
+import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.*;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.knowledge.organization.Project;
+import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
+import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.scope.*;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
+import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
+import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
+import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
+import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.integratedmodelling.klab.resources.FileProjectStorage;
+import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
+import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
+import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
+import org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox;
+import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
+import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
+import org.integratedmodelling.klab.utilities.Utils;
+import org.integratedmodelling.languages.validation.LanguageValidationScope;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.traverse.TopologicalOrderIterator;
+import org.springframework.stereotype.Service;
 
 @Service
-public class ResourcesProvider extends BaseService implements ResourcesService, ResourcesService.Admin {
+public class ResourcesProvider extends BaseService
+    implements ResourcesService, ResourcesService.Admin {
 
-    private static final long serialVersionUID = 6589150530995037678L;
+  private final String hardwareSignature = Utils.Names.getHardwareId();
+  private final WorkspaceManager workspaceManager;
+  private final ResourcesKBox resourcesKbox;
 
-    private static boolean languagesInitialized;
+  /**
+   * We keep a hash of all the resource URNs we serve for quick reference and search
+   *
+   * @deprecated use {@link
+   *     org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox}
+   */
+  private Set<String> localResources = new HashSet<>();
 
-    private String url;
-    private KimLoader kimLoader;
-    private ResourcesConfiguration configuration = new ResourcesConfiguration();
-    private Authentication authenticationService;
-    private Map<String, Project> localProjects = Collections.synchronizedMap(new HashMap<>());
-    private Map<String, Workspace> localWorkspaces = Collections.synchronizedMap(new HashMap<>());
-    private Map<String, KimNamespace> localNamespaces = Collections.synchronizedMap(new HashMap<>());
-    private Map<String, KActorsBehavior> localBehaviors = Collections.synchronizedMap(new HashMap<>());
+  /** Caches for concepts and observables. */
+  private LoadingCache<String, KimConcept> concepts =
+      CacheBuilder.newBuilder()
+          .maximumSize(500)
+          // .expireAfterAccess(10, TimeUnit.MINUTES)
+          .build(
+              new CacheLoader<String, KimConcept>() {
+                public KimConcept load(String key) {
+                  return resolveConceptInternal(key);
+                }
+              });
 
-    /**
-     * We keep a hash of all the resource URNs we serve for quick reference and search
-     */
-    private Set<String> localResources = new HashSet<>();
+  /** Caches for concepts and observables. */
+  private LoadingCache<String, KimObservable> observables =
+      CacheBuilder.newBuilder()
+          .maximumSize(500)
+          // .expireAfterAccess(10, TimeUnit.MINUTES)
+          .build(
+              new CacheLoader<String, KimObservable>() {
+                public KimObservable load(String key) {
+                  return resolveObservableInternal(key);
+                }
+              });
 
-    /**
-     * record the time of last update of each project
-     */
-    private Map<String, Long> lastUpdate = new HashMap<>();
+  //  /**
+  //   * the only persistent info in this implementation is the catalog of resource status info.
+  // This is
+  //   * used for individual resources and whole projects. It also holds and maintains the review
+  //   * status, which in the case of projects propagates to the namespaces and models. Reviews and
+  // the
+  //   * rest of the editorial material should be part of the provenance info associated to the
+  // items.
+  //   * The review process is organized and maintained in the community service; only its
+  // initiation
+  //   * and the storage of the review status is the job of the resources service.
+  //   *
+  //   * @deprecated use {@link
+  //   *     org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox}
+  //   */
+  //  private DB db = null;
+  //
+  //  private ConcurrentNavigableMap<String, ResourceInfo> catalog = null;
 
-    /**
-     * the only persistent info in this implementation is the catalog of resource status info. This is used
-     * for individual resources and whole projects. It also holds and maintains the review status, which in
-     * the case of projects propagates to the namespaces and models. Reviews and the rest of the editorial
-     * material should be part of the provenance info associated to the items. The review process is organized
-     * and maintained in the community service; only its initiation and the storage of the review status is
-     * the job of the resources service.
-     */
-    private DB db = null;
-    private ConcurrentNavigableMap<String, ResourceStatus> catalog = null;
-    private ModelKbox kbox;
+  /**
+   * @deprecated use {@link
+   *     org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox}
+   */
+  private ModelKbox kbox;
+
+  // set to true when the connected reasoner becomes operational
+  private boolean semanticSearchAvailable = false;
+  /*
+   * "fair" read/write lock to ensure no reading during updates
+   */
+  private final ReadWriteLock updateLock = new ReentrantReadWriteLock(true);
+  private Thread lspThread;
+
+  @SuppressWarnings("unchecked")
+  public ResourcesProvider(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
+
+    super(scope, Type.RESOURCES, options);
+
+    ServiceConfiguration.INSTANCE.setMainService(this);
 
     /*
-     * "fair" read/write lock to ensure no reading during updates
+    Find out any Instance-annotated classes before we read anything
      */
-    private ReadWriteLock updateLock = new ReentrantReadWriteLock(true);
+    scanPackages(
+        (annotation, annotated) -> {
+          if (!LanguageAdapter.INSTANCE.registerInstanceClass(annotation, annotated)) {
+            Logging.INSTANCE.error(
+                "Configuration error: multiple definitions, cannot redefine instance"
+                    + " "
+                    + "implementation "
+                    + annotation.value());
+            serviceNotifications()
+                .add(
+                    Notification.create(
+                        "Configuration error: multiple definitions, "
+                            + "cannot redefine instance"
+                            + " "
+                            + "implementation "
+                            + annotation.value(),
+                        Notification.Level.Error));
+          }
+        },
+        Instance.class);
+
+    this.kbox = ModelKbox.create(this);
+    this.resourcesKbox = new ResourcesKBox(scope, options, this);
+    this.workspaceManager =
+        new WorkspaceManager(scope, getStartupOptions(), this, this::resolveRemoteProject);
+
+    //    // FIXME remove along with MapDB and catalog, use Nitrite instead
+    //    this.db =
+    //        DBMaker.fileDB(
+    //                getConfigurationSubdirectory(options, "catalog") + File.separator +
+    // "resources.db")
+    //            .transactionEnable()
+    //            .closeOnJvmShutdown()
+    //            .make();
+    //    this.catalog =
+    //        db.treeMap("resourcesCatalog", GroupSerializer.STRING,
+    // GroupSerializer.JAVA).createOrOpen();
+
+    /*
+    initialize the plugin system to handle components
+     */
+    getComponentRegistry()
+        .initializeComponents(
+            this.workspaceManager.getConfiguration(),
+            getConfigurationSubdirectory(options, "components"));
+
+    // load predefined runtime libraries
+    getComponentRegistry()
+        .loadExtensions(
+            "org.integratedmodelling.klab.runtime.libraries",
+            "org.integratedmodelling.klab.services.resources.library");
+  }
+
+  public Project resolveRemoteProject(String projectId) {
+    // TODO
+    System.out.println("TODO resolve external project " + projectId);
+    return null;
+  }
+
+  @Override
+  public void initializeService() {
+
+    Logging.INSTANCE.setSystemIdentifier("Resources service: ");
+
+    serviceScope()
+        .send(
+            Message.MessageClass.ServiceLifecycle,
+            Message.MessageType.ServiceInitializing,
+            capabilities(serviceScope()).toString());
+
+    //        this.workspaceManager.loadWorkspace();
+    /*
+     * TODO launch update service
+     */
 
     /**
-     * Default interval to check for changes in Git (15 minutes in milliseconds)
+     * Setup an embedded broker, possibly to be shared with other services, if we're local and there
+     * is no configured broker.
      */
-    private long DEFAULT_GIT_SYNC_INTERVAL = 15L * 60L * 60L * 1000L;
+    if (Utils.URLs.isLocalHost(this.getUrl())
+        && workspaceManager.getConfiguration().getBrokerURI() == null) {
+      this.embeddedBroker = new EmbeddedBroker();
+    }
 
-    /**
-     * If this is used, {@link #loadWorkspaces()} must be called explicitly after the service scope is set.
+    /*
+     * If we want the local resources service to provide LSP functionalities, uncomment this. For now it is
+     * in the Java-based modeler, but if the modeler moves to a web version this can be added.
      */
-    @SuppressWarnings("unchecked")
-    public ResourcesProvider(ServiceScope scope, String localName,
-                             BiConsumer<Scope, Message>... messageListeners) {
-        super(scope, localName, messageListeners);
-        if (scope instanceof LocalServiceScope localScope) {
-            localScope.setService(this);
-        }
-        initializeLanguageServices();
+    //    if (Utils.URLs.isLocalHost(this.getUrl())) {
+    //      /*
+    //       *  org.eclipse.xtext.ide.server.ServerLauncher to start the LSP server for all
+    // languages on the
+    //       *  classpath.
+    //       */
+    //      Logging.INSTANCE.info("Starting language services for k.LAB language editors");
+    //      this.lspThread =
+    //          new Thread(
+    //              () -> {
+    //                try {
+    //                  ServerLauncher.main(new String[0]);
+    //                } catch (Throwable t) {
+    //                  Logging.INSTANCE.error(
+    //                      "Error launching LSP server: language services not available", t);
+    //                }
+    //              });
+    //
+    //      this.lspThread.start();
+    //    }
 
-        this.db = DBMaker
-                .fileDB(Configuration.INSTANCE.getDataPath("resources/catalog") + File.separator +
-                        "gbif_ids.db")
-                .transactionEnable().closeOnJvmShutdown().make();
-        this.catalog =
-                db.treeMap("resourcesCatalog", GroupSerializer.STRING, GroupSerializer.JAVA).createOrOpen();
+    serviceScope()
+        .send(
+            Message.MessageClass.ServiceLifecycle,
+            Message.MessageType.ServiceAvailable,
+            capabilities(serviceScope()));
+  }
 
-        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
-        if (config.exists()) {
-            configuration = Utils.YAML.load(config, ResourcesConfiguration.class);
-        }
+  @Override
+  public boolean operationalizeService() {
+    var reasoner = serviceScope().getService(Reasoner.class);
+    if (reasoner.status().isOperational()) {
+      Logging.INSTANCE.info("Reasoner is available: indexing semantic assets");
+      indexKnowledge();
+      this.semanticSearchAvailable = true;
+    } else {
+      Logging.INSTANCE.warn("reasoner is inoperative: cannot index semantic content");
+      this.semanticSearchAvailable = false;
     }
+    return true;
+  }
 
-    @Autowired
-    public ResourcesProvider(Authentication authenticationService, ServiceScope scope, String localName, BiConsumer<Scope,
-            Message>... messageListeners) {
-        this(scope, localName,messageListeners);
-        this.authenticationService = authenticationService;
-    }
+  /**
+   * Return whatever worldview is defined in this service, using any other services necessary, or an
+   * empty set if none is available.
+   *
+   * <p>TODO we may support >1 worldviews at this level and pass the worldview name.
+   *
+   * @return
+   */
+  public Worldview retrieveWorldview() {
+    return this.workspaceManager.getWorldview();
+  }
 
-    @Override
-    public void initializeService() {
+  /**
+   * Called after startup and by the update timer at regular intervals. TODO must check if changes
+   * were made and reload the affected workspaces if so.
+   *
+   * <p>Projects with update frequency == 0 do not get updated.
+   */
+  private void loadResources(File resourceDir, ProjectImpl project, int level, boolean legacy) {
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
-                capabilities());
-        this.kbox = ModelKbox.create(localName, this.scope);
-        updateProjects();
-        /*
-         * TODO launch update service
-         */
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
-                capabilities());
-    }
-
-    private void saveConfiguration() {
-        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
-        Utils.YAML.save(this.configuration, config);
-    }
-
-    public ResourceSet loadWorkspaces() {
-        List<String> projects = new ArrayList<>();
-        for (String workspaceName : configuration.getWorkspaces().keySet()) {
-            Workspace workspace = getWorkspace(workspaceName);
-            for (String project : configuration.getWorkspaces().get(workspaceName)) {
-                workspace.getProjects().add(loadProject(project,
-                        configuration.getProjectConfiguration().get(project)));
-                projects.add(project);
-            }
-        }
-        return projects(projects, scope);
-    }
-
-    private Workspace getWorkspace(String workspaceName) {
-        Workspace ret = localWorkspaces.get(workspaceName);
-        if (ret == null) {
-            ret = new WorkspaceImpl();
-            ((WorkspaceImpl) ret).setName(workspaceName);
-            // ((WorkspaceImpl)ret).setUrl(this.url + "/workspaces/" + workspaceName);
-            this.localWorkspaces.put(workspaceName, ret);
-        }
-        return ret;
-    }
-
-    /**
-     * Called after startup and by the update timer at regular intervals. TODO must check if changes were made
-     * and reload the affected workspaces if so.
-     * <p>
-     * Projects with update frequency == 0 do not get updated.
+    /*
+     * load new and legacy resources. This thing returns null if the dir does not
+     * exist.
      */
-    private void updateProjects() {
-        for (String projectName : configuration.getProjectConfiguration().keySet()) {
-            ProjectConfiguration project = configuration.getProjectConfiguration().get(projectName);
-            Long lastUpdate = this.lastUpdate.get(projectName);
-            if (Git.isRemoteGitURL(project.getSourceUrl())) {
-                if (lastUpdate == null || (lastUpdate > 0
-                        && (System.currentTimeMillis() - lastUpdate) >= project.getSyncIntervalMs())) {
-                    Git.pull(project.getLocalPath());
-                    this.lastUpdate.put(projectName, System.currentTimeMillis());
-                }
-            }
-
-        }
-    }
-
-    /**
-     * TODO this must load to a staging area and commit the project after approval.
-     *
-     * @param projectName
-     * @param projectConfiguration
-     * @return
-     */
-    private synchronized Project loadProject(String projectName,
-                                             final ProjectConfiguration projectConfiguration) {
-
-        /*
-         * this automatically loads namespaces and behaviors through callbacks.
-         */
-        ProjectImpl project = new ProjectImpl();
-        project.setName(projectName);
-        // project.setUrl(this.url + "/projects/" + kimProject.getName());
-        localProjects.put(projectName, project);
-        IKimProject kimProject = kimLoader.loadProject(projectConfiguration.getLocalPath());
-        File resourceDir = new File(kimProject.getRoot() + File.separator + "resources");
-        loadResources(resourceDir, project, 0, true);
-        project.setManifest(readManifest(kimProject));
-//		project.getMetadata().putAll(readMetadata(kimProject, project.getManifest()));
-
-        /*
-         * TODO check notifications in namespaces and behaviors and ensure the project
-         * reports errors in its components. Resources are managed indepenendently of
-         * the projects they belong to. FIXME probably the resource permissions could be
-         * intersected, but it's probably confusing although restrictions in projects
-         * should be the default for resources..
-         */
-        /*
-         * TODO add a ResourceStatus record for the project
-         */
-
-        db.commit();
-
-        return project;
-
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> readMetadata(IKimProject kimProject, Manifest manifest) {
-        File manifestFile = new File(
-                kimProject.getRoot() + File.separator + "META-INF" + File.separator + "metadata.json");
-        if (manifestFile.exists()) {
-            return Utils.Json.load(manifestFile, Map.class);
-        }
-        Map<String, Object> ret = new LinkedHashMap<>();
-        for (Object key : kimProject.getProperties().keySet()) {
-            ret.put(key.toString(), kimProject.getProperties().getProperty(key.toString()));
-        }
-        if (!ret.containsKey(Metadata.DC_COMMENT)) {
-            ret.put(Metadata.DC_COMMENT, manifest.getDescription());
-        }
-        return ret;
-    }
-
-    private Manifest readManifest(IKimProject project) {
-        File manifestFile = new File(
-                project.getRoot() + File.separator + "META-INF" + File.separator + "manifest.json");
-        if (manifestFile.exists()) {
-            return Utils.Json.load(manifestFile, ManifestImpl.class);
-        }
-        ManifestImpl ret = new ManifestImpl();
-        ret.setWorldview(project.getWorldview());
-        ret.setDefinedWorldview(project.getDefinedWorldview());
-        for (String proj : project.getRequiredProjectNames()) {
-            ret.getPrerequisiteProjects().add(Pair.of(proj, Version.EMPTY_VERSION));
-        }
-        Utils.Json.save(ret, manifestFile);
-        return ret;
-    }
-
-    private void loadResources(File resourceDir, ProjectImpl project, int level, boolean legacy) {
-
-        /*
-         * load new and legacy resources. This thing returns null if the dir does not
-         * exist.
-         */
-        File[] files = resourceDir.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
+    File[] files =
+        resourceDir.listFiles(
+            new FileFilter() {
+              @Override
+              public boolean accept(File pathname) {
                 return pathname.isDirectory() && pathname.canRead();
-            }
-        });
-        if (files != null) {
-            for (File subdir : files) {
-                Resource resource = null;
-                if ("unreviewed".equals(Utils.Files.getFileBaseName(subdir))) {
-                    loadResources(subdir, project, 0, false);
-                } else if ("staging".equals(Utils.Files.getFileBaseName(subdir))) {
-                    loadResources(subdir, project, 1, false);
-                } else {
-                    resource = KimAdapter.adaptResource(Utils.Json
-                            .load(new File(subdir + File.separator + "resource.json"),
-                                    ResourceReference.class));
-                }
-                if (resource != null) {
-                    localResources.add(resource.getUrn());
-                    ResourceStatus status = catalog.get(resource.getUrn());
-                    if (status == null) {
-                        status = new ResourceStatus();
-                        status.setReviewStatus(level);
-                        status.setFileLocation(subdir);
-                        status.setType(Utils.Notifications.hasErrors(resource.getNotifications()) ?
-                                       ResourceStatus.Type.OFFLINE :
-                                       ResourceStatus.Type.AVAILABLE);
-                        status.setLegacy(legacy);
-                        status.setKnowledgeClass(KnowledgeClass.RESOURCE);
-                        // TODO fill in the rest
-                        catalog.put(resource.getUrn(), status);
-                    }
-                }
-            }
+              }
+            });
+    if (files != null) {
+      for (File subdir : files) {
+        Resource resource = null;
+        if ("unreviewed".equals(Utils.Files.getFileBaseName(subdir))) {
+          loadResources(subdir, project, 0, false);
+        } else if ("staging".equals(Utils.Files.getFileBaseName(subdir))) {
+          loadResources(subdir, project, 1, false);
+        } else {
+          // CHUPA CHUPA
+          //                    resource = KimAdapter.adaptResource(Utils.Json
+          //                            .load(new File(subdir + File.separator + "resource
+          //                            .json"),
+          //                                    ResourceReference.class));
         }
+        if (resource != null) {
+          localResources.add(resource.getUrn());
+          ResourceInfo status = resourcesKbox.getStatus(resource.getUrn(), null);
+          if (status == null) {
+            status = new ResourceInfo();
+            status.setReviewStatus(level);
+            status.setFileLocation(subdir);
+            status.setUrn(resource.getUrn());
+            status.setType(
+                Utils.Notifications.hasErrors(resource.getNotifications())
+                    ? ResourceInfo.Type.OFFLINE
+                    : ResourceInfo.Type.AVAILABLE);
+            status.setLegacy(legacy);
+            status.setKnowledgeClass(KnowledgeClass.RESOURCE);
+            // TODO fill in the rest
+            resourcesKbox.putStatus(status);
+          }
+        }
+      }
+    }
+  }
+
+  private void indexKnowledge() {
+
+    // TODO index ontologies
+
+    for (var namespace : workspaceManager.getNamespaces()) {
+      kbox.remove(namespace.getUrn(), scope);
+      for (var statement : namespace.getStatements()) {
+        if (statement instanceof KimModel model) {
+          kbox.store(model, scope);
+        }
+      }
+    }
+  }
+
+  @Override
+  public KimNamespace retrieveNamespace(String urn, Scope scope) {
+    return this.workspaceManager.getNamespace(urn);
+    // TODO check scope for authorization
+  }
+
+  @Override
+  public KimOntology retrieveOntology(String urn, Scope scope) {
+    return this.workspaceManager.getOntology(urn);
+    // TODO check scope for authorization
+  }
+
+  @Override
+  public KActorsBehavior retrieveBehavior(String urn, Scope scope) {
+    return this.workspaceManager.getBehavior(urn);
+    // TODO check scope for authorization
+  }
+
+  public KimObservationStrategyDocument retrieveObservationStrategyDocument(
+      String urn, Scope scope) {
+    return this.workspaceManager.getStrategyDocument(urn);
+    // TODO check scope for authorization
+  }
+
+  @Override
+  public Resource retrieveResource(List<String> urns, Scope scope) {
+    if (urns.size() > 1) {
+      // TODO find or cache a merged resource for these URNs with validation and shit
+      throw new KlabUnimplementedException("Multiple URNs in retrieveResource");
+    }
+    return retrieveResource(urns.getFirst(), scope);
+  }
+
+  private Resource retrieveResource(String urnId, Scope scope) {
+
+    var urn = Urn.of(urnId);
+
+    if (urn.isUniversal()) {
+      return createUniversalResource(urn, scope);
     }
 
-    private void initializeLanguageServices() {
+    // TODO use kbox
+    return null;
+  }
 
-        if (!languagesInitialized) {
+  private Resource createUniversalResource(Urn urn, Scope scope) {
+    var adapter = getComponentRegistry().getAdapter(urn.getCatalog(), urn.getVersion(), scope);
+    if (adapter == null) {
+      return null;
+    }
+    // TODO see if we need a resource builder within the adapter.
+    var ret = new ResourceImpl();
+    ret.setUrn(urn.getUrn());
+    ret.setAdapterType(urn.getCatalog());
+    ret.setVersion(adapter.getVersion());
+    ret.setServiceId(serviceId());
+    ret.setType(adapter.resourceType(urn));
+    // TODO adapter must report the overall geometry, generally or on a URN basis
+    ret.setGeometry(Geometry.create("S2"));
+    return ret;
+  }
 
-            /*
-             * set up access to the k.IM grammar
-             */
-            IInjectorProvider kimInjectorProvider = new KimInjectorProvider();
-            Injector kimInjector = kimInjectorProvider.getInjector();
-            if (kimInjector != null) {
-                Kim.INSTANCE.setup(kimInjector);
-            }
+  @Override
+  public Workspace retrieveWorkspace(String urn, Scope scope) {
+    // TODO check permissions in scope, possibly filter the workspace's projects
+    return this.workspaceManager.getWorkspace(urn);
+  }
 
-            this.kimLoader = new KimLoader((nss) -> loadNamespaces(nss),
-                    (behaviors) -> loadBehaviors(behaviors));
+  @Override
+  public ResourceSet resolveServiceCall(String name, Version version, Scope scope) {
 
-            /*
-             * k.DL....
-             */
-            IInjectorProvider kdlInjectorProvider = new KdlInjectorProvider();
-            Injector kdlInjector = kdlInjectorProvider.getInjector();
-            if (kdlInjector != null) {
-                Kdl.INSTANCE.setup(kdlInjector);
-            }
-
-            /*
-             * ...and k.Actors
-             */
-            IInjectorProvider kActorsInjectorProvider = new KactorsInjectorProvider();
-            Injector kActorsInjector = kActorsInjectorProvider.getInjector();
-            if (kActorsInjector != null) {
-                KActors.INSTANCE.setup(kActorsInjector);
-            }
-
-            languagesInitialized = true;
-        }
-
+    ResourceSet ret = new ResourceSet();
+    boolean empty = true;
+    for (var component : getComponentRegistry().resolveServiceCall(name, version)) {
+      if (
+      /*component.permissions().checkAuthorization(scope)*/ true /* TODO check permissions */) {
+        empty = false;
+        ret.getResults()
+            .add(
+                new ResourceSet.Resource(
+                    this.serviceId(),
+                    component.id(),
+                    null,
+                    component.version(),
+                    KnowledgeClass.COMPONENT));
+      }
     }
 
-    private void loadBehaviors(List<File> behaviors) {
-        for (File behaviorFile : behaviors) {
-            // projectLoader.execute(() -> {
-            KActorsBehavior behavior = KActorsAdapter.INSTANCE.readBehavior(behaviorFile);
-            if (behavior.getProjectId() != null) {
-                localProjects.get(behavior.getProjectId()).getBehaviors().add(behavior);
-            }
-            this.localBehaviors.put(behavior.getUrn(), behavior);
-            // });
-        }
+    if (!empty) {
+      ret.getServices().put(this.serviceId(), this.getUrl());
     }
 
-    private void loadNamespaces(List<NamespaceDescriptor> namespaces) {
-        for (NamespaceDescriptor ns : namespaces) {
-            // projectLoader.execute(() -> {
-            KimNamespaceImpl namespace = KimAdapter.adaptKimNamespace(ns);
-            Project project = localProjects.get(namespace.getProjectName());
-            project.getNamespaces().add(namespace);
-            this.localNamespaces.put(namespace.getUrn(), namespace);
-            this.kbox.store(namespace, this.scope);
-            for (KimStatement statement : namespace.getStatements()) {
-                if (statement instanceof KimModel && !Utils.Notifications.hasErrors(statement.getNotifications())) {
-                    this.kbox.store(statement, scope);
-                }
-            }
-            // });
-        }
+    ret.setEmpty(empty);
+
+    return ret;
+  }
+
+  @Override
+  public ResourceSet resolveResource(List<String> urnIds, Scope scope) {
+
+    if (urnIds.size() == 1) {
+      return resolveResourceUrn(urnIds.getFirst(), scope);
     }
 
-    @Override
-    public KimNamespace resolveNamespace(String urn, Scope scope) {
+    return ResourceSet.empty(Notification.error("UNIMPLEMENTED"));
+  }
 
-        KimNamespace ret = localNamespaces.get(urn);
-        if (ret != null && !(scope instanceof ServiceScope)) {
-            /*
-             * check permissions; if not allowed, log and set ret = null. If the scope is
-             * the service itself, we can access everything.
-             */
-            ProjectConfiguration pconf =
-                    this.configuration.getProjectConfiguration().get(ret.getProjectName());
-            if (pconf == null || !authenticationService.checkPermissions(pconf.getPrivileges(), scope)) {
-                scope.debug("trying to access unauthorized namespace " + urn);
-                ret = null;
-            }
+  @Override
+  public Resource contextualizeResource(Resource resource, Geometry geometry, Scope scope) {
+    var adapter =
+        getComponentRegistry()
+            .getAdapter(
+                resource.getAdapterType(), /* TODO needs adapter version */
+                Version.ANY_VERSION,
+                scope);
+    if (adapter == null) {
+      throw new KlabIllegalStateException(
+          "Cannot contextualize resource "
+              + resource.getUrn()
+              + ": unknown adapter "
+              + resource.getAdapterType());
+    }
+    return adapter.hasContextualizer()
+        ? adapter.contextualize(resource, geometry, scope)
+        : resource;
+  }
 
-        }
+  private ResourceSet resolveResourceUrn(String urnId, Scope scope) {
 
-        return ret;
+    var urn = Urn.of(urnId);
+    ResourceSet ret = new ResourceSet();
+    if (urn.isUniversal()) {
+
+      var adapter = getComponentRegistry().getAdapter(urn.getCatalog(), Version.ANY_VERSION, scope);
+      if (adapter == null) {
+        return ResourceSet.empty(
+            Notification.error("No adapter available for " + urn.getCatalog()));
+      }
+
+      var info = adapter.getAdapterInfo();
+      if (info.validatedPhases().contains(ResourceAdapter.Validator.LifecyclePhase.UrnSyntax)) {
+        // TODO validate the URN before returning
+      }
+
+      ret.getResults()
+          .add(
+              new ResourceSet.Resource(
+                  this.serviceId(),
+                  urn.getUrn(),
+                  null,
+                  adapter.getVersion(),
+                  KnowledgeClass.RESOURCE));
+
+      return ret;
+
+    } else if (urn.isLocal()) {
+
+      // must have project and be same user. Staging area is accessible.
+
+    } else {
+
+      // use the resource
     }
 
-    @Override
-    public KActorsBehavior resolveBehavior(String urn, Scope scope) {
+    return ResourceSet.empty(Notification.error("UNIMPLEMENTED"));
+  }
 
-        KActorsBehavior ret = localBehaviors.get(urn);
-        if (ret != null && !(scope instanceof ServiceScope)) {
-            if (ret.getProjectId() != null) {
-                ProjectConfiguration pconf =
-                        this.configuration.getProjectConfiguration().get(ret.getProjectId());
-                if (pconf == null || !authenticationService.checkPermissions(pconf.getPrivileges(), scope)) {
-                    // scope.info("");
-                    ret = null;
-                }
-            }
-            return ret;
-        }
+  @Override
+  public Data contextualize(
+      Resource resource,
+      Observation observation,
+      Scheduler.Event event,
+      @Nullable Data input,
+      Scope scope) {
+    var adapter =
+        getComponentRegistry().getAdapter(resource.getAdapterType(), resource.getVersion(), scope);
+    if (adapter == null) {
+      return Data.empty(
+          Notification.error("Adapter " + resource.getAdapterType() + " not available"));
+    }
+    var name =
+        observation.getObservable().getStatedName() == null
+            ? observation.getObservable().getUrn()
+            : observation.getObservable().getStatedName();
+    var builder = Data.builder(name, observation.getObservable(), observation.getGeometry());
+    Urn urn = Urn.of(resource.getUrn());
+    if (!adapter.encode(
+        resource,
+        observation.getGeometry(),
+        event,
+        builder,
+        observation,
+        observation.getObservable(),
+        urn,
+        Parameters.create(urn.getParameters()),
+        input,
+        scope)) {
+      return Data.empty(Notification.error("Resource encoding failed"));
+    }
+    return builder.build();
+  }
 
-        return null;
+  @Override
+  public KimObservationStrategyDocument retrieveDataflow(String urn, Scope scope) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public List<KimNamespace> dependents(String namespaceId) {
+    return null;
+  }
+
+  @Override
+  public List<KimNamespace> precursors(String namespaceId) {
+    return null;
+  }
+
+  /**
+   * TODO improve logics: the main function should return the appropriate ProjectStorage for the URL
+   * in all cases. Then call importProject (storage) when all the different storages are
+   * implemented.
+   *
+   * <p>TODO add scope so we can record the owner/importer in the project rights
+   *
+   * @param workspaceName
+   * @param projectUrl can be a file (zip, jar, existing folder, or anything supported by
+   *     extensions), a git URL (with a potential branch name after a # sign) or a http URL from
+   *     another resource manager. Could also be a service URL for mirroring.
+   * @param overwriteIfExisting self-explanatory. If the project is remote, reload if true.
+   * @return
+   * @deprecated use project import schema + register resource
+   */
+  //    @Override
+  public synchronized List<ResourceSet> importProject(
+      String workspaceName, String projectUrl, boolean overwriteIfExisting, UserScope scope) {
+
+    var storage = workspaceManager.importProject(projectUrl, workspaceName);
+    if (storage == null) {
+      return List.of(
+          Utils.Resources.createEmpty(
+              Notification.create("Import failed for " + projectUrl, Notification.Level.Error)));
     }
 
-    @Override
-    public Resource resolveResource(String urn, Scope scope) {
-        if (localResources.contains(Urn.removeParameters(urn))) {
-            // TODO
-        }
-        return null;
+    var project = workspaceManager.loadProject(storage, workspaceName);
+
+    // initial resource permissions
+    var status = new ResourceInfo();
+    if (scope.getIdentity() instanceof UserIdentity user) {
+      status.getRights().getAllowedUsers().add(user.getUsername());
+      status.setOwner(user.getUsername());
+    }
+    status.setFileLocation(storage instanceof FileProjectStorage fps ? fps.getRootFolder() : null);
+    status.setKnowledgeClass(KnowledgeClass.PROJECT);
+    status.setReviewStatus(0);
+    status.setType(ResourceInfo.Type.AVAILABLE);
+    status.setLegacy(false);
+    status.setUrn(project.getUrn());
+    resourcesKbox.putStatus(status);
+    //    db.commit();
+
+    return collectProject(project.getUrn(), CRUDOperation.CREATE, workspaceName, scope);
+  }
+
+  @Override
+  public boolean createWorkspace(String workspace, Metadata metadata, UserScope scope) {
+    /*
+     * We just create the descriptor. Project URNs are unique anyway, so the workspace is a purely
+     * logical entity for now.
+     */
+    var existing = resourcesKbox.getStatus(workspace, null);
+    if (existing != null) {
+      return false;
     }
 
-    @Override
-    public ResourceSet resolveServiceCall(String name, Scope scope) {
-        // TODO
-        var ret = new ResourceSet();
+    var rights = ResourcePrivileges.create(scope);
+
+    if (rights.invalid()) {
+      return false;
+    }
+
+    ResourceInfo resourceInfo = new ResourceInfo();
+    resourceInfo.setType(ResourceInfo.Type.AVAILABLE);
+    resourceInfo.setRights(rights);
+    resourceInfo.setKnowledgeClass(KnowledgeClass.WORKSPACE);
+    resourceInfo.setUrn(workspace);
+    resourceInfo.getMetadata().putAll(metadata);
+    resourcesKbox.putStatus(resourceInfo);
+
+    workspaceManager.notifyNewWorkspace(resourceInfo);
+
+    return true;
+  }
+
+  @Override
+  public ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
+
+    var workspaceInfo = resourcesKbox.getStatus(workspaceName, null);
+
+    if (workspaceInfo == null) {
+      if (!createWorkspace(workspaceName, Metadata.create(), scope)) {
+        return ResourceSet.empty(
+            Notification.error(
+                "Cannot create workspace "
+                    + workspaceName
+                    + " when attempting to create project "
+                    + projectName
+                    + " in it"));
+      }
+    }
+
+    var projectInfo = resourcesKbox.getStatus(projectName, null);
+    if (projectInfo != null) {
+      return ResourceSet.empty(
+          Notification.error(
+              "Cannot create project "
+                  + projectName
+                  + " as asset of type "
+                  + projectInfo.getKnowledgeClass()
+                  + " already exists"));
+    }
+
+    var rights = ResourcePrivileges.create(scope);
+    if (rights.invalid()) {
+      return ResourceSet.empty(
+          Notification.error(
+              "Cannot create project " + projectName + ": requesting scope is not authorized"));
+    }
+
+    var ret = workspaceManager.createProject(projectName, workspaceName);
+
+    if (ret != null) {
+
+      ResourceInfo resourceInfo = new ResourceInfo();
+      resourceInfo.setType(ResourceInfo.Type.AVAILABLE);
+      resourceInfo.setRights(rights);
+      resourceInfo.setKnowledgeClass(KnowledgeClass.WORKSPACE);
+      resourceInfo.setUrn(projectName);
+      resourceInfo
+          .getMetadata()
+          .putAll(
+              Metadata.create(
+                  Metadata.DC_DATE_CREATED,
+                  TimeInstant.create().toRFC3339String(),
+                  "klab:serviceId",
+                  serviceId(),
+                  Metadata.DC_CONTRIBUTOR,
+                  scope.getUser().getUsername()));
+
+      resourcesKbox.putStatus(resourceInfo);
+    }
+
+    return ret;
+  }
+
+  @Override
+  public ResourceSet updateProject(
+      String projectName, Manifest manifest, Metadata metadata, UserScope scope) {
+    return null;
+  }
+
+  @Override
+  public List<ResourceSet> createDocument(
+      String projectName,
+      String documentUrn,
+      ProjectStorage.ResourceType documentType,
+      UserScope scope) {
+    return this.workspaceManager.createDocument(projectName, documentType, documentUrn, scope);
+  }
+
+  @Override
+  public List<ResourceSet> updateDocument(
+      String projectName,
+      ProjectStorage.ResourceType documentType,
+      String content,
+      UserScope scope) {
+    var ret = this.workspaceManager.updateDocument(projectName, documentType, content, scope);
+    invalidateCaches();
+    return ret;
+  }
+
+  private void invalidateCaches() {
+    concepts.invalidateAll();
+    observables.invalidateAll();
+  }
+
+  @Override
+  public List<ResourceSet> deleteProject(String projectName, UserScope scope) {
+
+    updateLock.writeLock().lock();
+    //
+    //        try {
+    //            // remove namespaces, behaviors and resources
+    //            var project = localProjects.get(projectName);
+    //            if (project != null) {
+    //                for (var namespace : project.getNamespaces()) {
+    //                    this.localNamespaces.remove(namespace.getUrn());
+    //                }
+    //                for (var ontology : project.getOntologies()) {
+    //                    this.servedOntologies.remove(ontology.getUrn());
+    //                }
+    //                for (KActorsBehavior behavior : project.getBehaviors()) {
+    //                    this.localBehaviors.remove(behavior.getUrn());
+    //                }
+    //                for (String resource : project.getResourceUrns()) {
+    //                    localResources.remove(resource);
+    //                    catalog.remove(resource);
+    //                }
+    //                this.localProjects.remove(projectName);
+    //            }
+    workspaceManager.removeProject(projectName);
+    invalidateCaches();
+    //    db.commit();
+
+    //        }/* finally {*/
+    updateLock.writeLock().unlock();
+    /*}*/
+
+    return null;
+  }
+
+  @Override
+  public List<ResourceSet> deleteWorkspace(String workspaceName, UserScope scope) {
+    Workspace workspace = workspaceManager.getWorkspace(workspaceName);
+    for (Project project : workspace.getProjects()) {
+      deleteProject(project.getUrn(), scope);
+    }
+    invalidateCaches();
+    //        try {
+    //            updateLock.writeLock().lock();
+    ////            this.localWorkspaces.remove(workspaceName);
+    //        } finally {
+    //            updateLock.writeLock().unlock();
+    //        }\
+    return null;
+  }
+
+  @Override
+  public Collection<Workspace> listWorkspaces() {
+    return this.workspaceManager.getWorkspaces();
+  }
+
+  @Override
+  public boolean shutdown() {
+    return shutdown(30);
+  }
+
+  @Override
+  public boolean scopesAreReactive() {
+    return false;
+  }
+
+  public boolean shutdown(int secondsToWait) {
+
+    serviceScope()
+        .send(
+            Message.MessageClass.ServiceLifecycle,
+            Message.MessageType.ServiceUnavailable,
+            capabilities(serviceScope()));
+
+    if (this.lspThread != null) {
+      this.lspThread.interrupt();
+    }
+
+    // try {
+    // projectLoader.awaitTermination(secondsToWait, TimeUnit.SECONDS);
+    return super.shutdown();
+    // } catch (InterruptedException e) {
+    // Logging.INSTANCE.error("Error during thread termination", e);
+    // }
+    // return false;
+  }
+
+  @Override
+  public Capabilities capabilities(Scope scope) {
+
+    var ret = new ResourcesCapabilitiesImpl();
+    ret.setWorldviewProvider(workspaceManager.isWorldviewProvider());
+    ret.setAdoptedWorldview(workspaceManager.getAdoptedWorldview());
+    ret.setWorkspaceNames(workspaceManager.getWorkspaceURNs());
+    ret.setType(Type.RESOURCES);
+    ret.setUrl(getUrl());
+    ret.setServiceName("Resources");
+    ret.setServerId(hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature));
+    ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
+    ret.getServiceNotifications().addAll(serviceNotifications());
+    ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
+    // TODO capabilities are being asked from same machine as the one that runs the server. This
+    // call
+    //  should have a @Nullable scope. The condition here is silly.
+    ret.getPermissions().add(CRUDOperation.CREATE);
+    ret.getPermissions().add(CRUDOperation.DELETE);
+    ret.getPermissions().add(CRUDOperation.UPDATE);
+    ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
+    ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
+    ret.setBrokerURI(
+        embeddedBroker != null
+            ? embeddedBroker.getURI()
+            : workspaceManager.getConfiguration().getBrokerURI());
+    ret.setAvailableMessagingQueues(
+        Utils.URLs.isLocalHost(getUrl())
+            ? EnumSet.of(
+                Message.Queue.Info,
+                Message.Queue.Errors,
+                Message.Queue.Warnings,
+                Message.Queue.Events)
+            : EnumSet.noneOf(Message.Queue.class));
+
+    return ret;
+  }
+
+  @Override
+  public String serviceId() {
+    return workspaceManager.getConfiguration().getServiceId();
+  }
+
+  @Override
+  public KimConcept.Descriptor describeConcept(String conceptUrn) {
+    return workspaceManager.describeConcept(conceptUrn);
+  }
+
+  @Override
+  public KimConcept retrieveConcept(String definition) {
+    try {
+      return concepts.get(removeExcessParentheses(definition));
+    } catch (ExecutionException e) {
+      scope.warn("invalid concept definition: " + definition);
+    }
+    return null;
+  }
+
+  @Override
+  public KimObservable retrieveObservable(String definition) {
+    try {
+      return observables.get(removeExcessParentheses(definition));
+    } catch (ExecutionException e) {
+      scope.warn("invalid observable definition: " + definition);
+    }
+    return null;
+  }
+
+  public KimConcept resolveConceptInternal(String definition) {
+    var parsed = this.workspaceManager.resolveConcept(definition);
+    if (parsed != null) {
+      boolean errors = false;
+      for (var notification : parsed.getNotifications()) {
+        if (notification.message().level() == LanguageValidationScope.Level.ERROR) {
+          errors = true;
+          scope.error(notification.message().message());
+        } else if (notification.message().level() == LanguageValidationScope.Level.WARNING) {
+          scope.error(notification.message().message());
+        }
+      }
+      return errors ? null : LanguageAdapter.INSTANCE.adaptSemantics(parsed, null, null, null);
+    }
+    return null;
+  }
+
+  public KimObservable resolveObservableInternal(String definition) {
+    var parsed = this.workspaceManager.resolveObservable(removeExcessParentheses(definition));
+    if (parsed != null) {
+      boolean errors = false;
+      for (var notification : parsed.getNotifications()) {
+        if (notification.message().level() == LanguageValidationScope.Level.ERROR) {
+          errors = true;
+          scope.error(notification.message().message());
+        } else if (notification.message().level() == LanguageValidationScope.Level.WARNING) {
+          scope.error(notification.message().message());
+        }
+      }
+      return errors ? null : LanguageAdapter.INSTANCE.adaptObservable(parsed, null, null, null);
+    }
+    return null;
+  }
+
+  private String removeExcessParentheses(String definition) {
+    definition = definition.trim();
+    while (definition.startsWith("(") && definition.endsWith(")")) {
+      definition = definition.substring(1, definition.length() - 1);
+    }
+    return definition;
+  }
+
+  @Override
+  public List<ResourceSet> resolveProjects(Collection<String> projects, Scope scope) {
+
+    ResourceSet ret = new ResourceSet();
+
+    // TODO
+    //        for (String projectName : this.configuration.getProjectConfiguration().keySet()) {
+    //            if (projects.contains(projectName)) {
+    ////                if (!localProjects.containsKey(projectName)) {
+    ////                    importProject(projectName, this.configuration.getProjectConfiguration()
+    // .get
+    // (projectName));
+    ////                }
+    //                ret = Utils.Resources.merge(ret, collectProject(projectName, scope));
+    //            }
+    //        }
+
+    return List.of(); // sort(ret, scope);
+  }
+
+  private ResourceSet sort(ResourceSet ret, Scope scope) {
+
+    Graph<String, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+
+    for (ResourceSet.Resource ns : ret.getNamespaces()) {
+
+      // TODO use a recursive function to capture n-th level deps that aren't resolved
+      // directly, although this doesn't apply if we have the whole workspace
+
+      graph.addVertex(ns.getResourceUrn());
+      KimNamespace namespace = retrieveNamespace(ns.getResourceUrn(), scope);
+      if (namespace == null) {
         ret.setEmpty(true);
         return ret;
-    }
-
-    @Override
-    public Resource contextualizeResource(Resource originalResource, ContextScope scope) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public KlabData contextualize(Resource contextualizedResource, Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public KdlDataflow resolveDataflow(String urn, Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<KimNamespace> dependents(String namespaceId) {
-        return null;
-    }
-
-    @Override
-    public List<KimNamespace> precursors(String namespaceId) {
-        return null;
-    }
-
-    @Override
-    public synchronized boolean importProject(String workspaceName, String projectUrl,
-                                              boolean overwriteIfExisting) {
-
-        boolean ret = false;
-
-        updateLock.writeLock().lock();
-
-        try {
-
-            String projectName = Utils.URLs.getURLBaseName(projectUrl);
-            ProjectConfiguration config = this.configuration.getProjectConfiguration().get(projectName);
-            if (config != null) {
-                if (overwriteIfExisting) {
-                    removeProject(projectName);
-                } else {
-                    return false;
-                }
-            }
-
-            File workspace = Configuration.INSTANCE.getDataPath(
-                    configuration.getServicePath() + File.separator + "workspaces" + File.separator + workspaceName);
-            workspace.mkdirs();
-
-            if (Utils.Git.isRemoteGitURL(projectUrl)) {
-
-                try {
-
-                    /**
-                     * This should be the main use of project resources. TODO handle credentials
-                     */
-
-                    projectName = Git.clone(projectUrl, workspace, false);
-                    ProjectConfiguration configuration = new ProjectConfiguration();
-                    configuration.setLocalPath(new File(workspace + File.separator + projectName));
-                    configuration.setSourceUrl(projectUrl);
-                    configuration.setWorkspaceName(workspaceName);
-                    configuration.setSyncIntervalMs(DEFAULT_GIT_SYNC_INTERVAL);
-                    /*
-                     * Default privileges are exclusive to the service
-                     */
-                    configuration.setPrivileges(ResourcePrivileges.empty());
-                    // this must happen before loadProject is called.
-                    this.configuration.getProjectConfiguration().put(projectName, configuration);
-
-                    Set<String> projects = this.configuration.getWorkspaces().get(workspaceName);
-                    if (projects == null) {
-                        projects = new LinkedHashSet<>();
-                        this.configuration.getWorkspaces().put(workspaceName, projects);
-                    }
-                    projects.add(projectName);
-                    Project project = loadProject(projectName, configuration);
-                    configuration.setWorldview(project.getManifest().getDefinedWorldview() != null);
-                    saveConfiguration();
-                    return true;
-
-                } catch (Throwable t) {
-                    File ws = new File(workspace + File.separator + projectName);
-                    if (ws.exists()) {
-                        Utils.Files.deleteQuietly(ws);
-                    }
-                    ret = false;
-                }
-
-            } else if (projectUrl.startsWith("http")) {
-
-                /*
-                 * TODO
-                 *
-                 * Load from another service. These projects may be served as mirrors or just
-                 * kept to meet dependencies, according to the 'served' bit in the
-                 * configuration. The source of truth should remain the source code, hosted in a
-                 * single place (the remote service); mechanisms should be in place to store the
-                 * original server and check for changes and new versions.
-                 */
-
-            } else if (projectUrl.startsWith("file:") || new File(projectUrl).isFile()) {
-
-                /*
-                 * import a zipped project (from a publish operation) or connect a directory.
-                 */
-
-            }
-        } finally {
-            updateLock.writeLock().unlock();
+      }
+      for (String imp : namespace.getImports().keySet()) {
+        KimNamespace imported = retrieveNamespace(imp, scope);
+        if (imported == null) {
+          ret.setEmpty(true);
+          return ret;
         }
-
-        return ret;
-    }
-
-    @Override
-    public Project createProject(String workspaceName, String projectName) {
-        return null;
-    }
-
-    @Override
-    public Project updateProject(String projectName, Manifest manifest, Metadata metadata) {
-        return null;
-    }
-
-    @Override
-    public KimNamespace createNamespace(String projectName, String namespaceContent) {
-        return null;
-    }
-
-    @Override
-    public KimNamespace updateNamespace(String projectName, String namespaceContent) {
-        return null;
-    }
-
-    @Override
-    public KActorsBehavior createBehavior(String projectName, String behaviorContent) {
-        return null;
-    }
-
-    @Override
-    public KActorsBehavior updateBehavior(String projectName, String behaviorContent) {
-        return null;
-    }
-
-    @Override
-    public KimNamespace createOntology(String projectName, String ontologyContent) {
-        return null;
-    }
-
-    @Override
-    public KimNamespace updateOntology(String projectName, String ontologyContent) {
-        return null;
-    }
-
-    @Override
-    public void removeProject(String projectName) {
-
-        updateLock.writeLock().lock();
-
-        try {
-            ProjectConfiguration configuration =
-                    this.configuration.getProjectConfiguration().get(projectName);
-            Project project = this.localProjects.get(projectName);
-            String workspaceName = getWorkspace(project);
-            Workspace workspace = this.localWorkspaces.get(workspaceName);
-            Utils.Files.deleteQuietly(configuration.getLocalPath());
-            if (this.configuration.getWorkspaces().get(workspaceName) != null) {
-                this.configuration.getWorkspaces().get(workspaceName).remove(projectName);
-            }
-            // remove namespaces, behaviors and resources
-            for (KimNamespace namespace : project.getNamespaces()) {
-                this.localNamespaces.remove(namespace.getNamespace());
-            }
-            for (KActorsBehavior behavior : project.getBehaviors()) {
-                this.localBehaviors.remove(behavior.getUrn());
-            }
-            for (String resource : project.getResourceUrns()) {
-                localResources.remove(resource);
-                catalog.remove(resource);
-            }
-            this.localProjects.remove(projectName);
-            workspace.getProjects().remove(project);
-            saveConfiguration();
-            db.commit();
-        } finally {
-            updateLock.writeLock().unlock();
+        graph.addVertex(imported.getUrn());
+        if (imported.getUrn().equals(namespace.getUrn())) {
+          System.out.println("DIO ZAPPA");
         }
+        graph.addEdge(imported.getUrn(), namespace.getUrn());
+      }
     }
 
-    private String getWorkspace(Project project) {
-        for (String ret : this.configuration.getWorkspaces().keySet()) {
-            if (this.configuration.getWorkspaces().get(ret).contains(project.getName())) {
-                return ret;
-            }
-        }
-        return null;
+    TopologicalOrderIterator<String, DefaultEdge> order = new TopologicalOrderIterator<>(graph);
+    Map<String, ResourceSet.Resource> toSort = new HashMap<>();
+    ret.getNamespaces().forEach((ns) -> toSort.put(ns.getResourceUrn(), ns));
+    ret.getNamespaces().clear();
+    while (order.hasNext()) {
+      ret.getNamespaces().add(toSort.get(order.next()));
     }
 
-    @Override
-    public void removeWorkspace(String workspaceName) {
-        Workspace workspace = this.localWorkspaces.get(workspaceName);
-        for (Project project : workspace.getProjects()) {
-            removeProject(project.getName());
-        }
-        try {
-            updateLock.writeLock().lock();
-            this.localWorkspaces.remove(workspaceName);
-        } finally {
-            updateLock.writeLock().unlock();
-        }
+    return ret;
+  }
+
+  /**
+   * Collect all known project data, fulfilling any missing external dependencies but not sorting
+   * the results by dependency as this could be one step in a multiple-project setup. If external
+   * dependencies are needed and unsatisfied, return an empty resourceset.
+   *
+   * @param projectName
+   * @param scope
+   * @return
+   */
+  private List<ResourceSet> collectProject(
+      String projectName, CRUDOperation operation, String workspace, Scope scope) {
+
+    List<ResourceSet> ret = new ArrayList<>();
+
+    List<KimOntology> ontologies =
+        this.workspaceManager.getOntologies(false).stream()
+            .filter(o -> projectName.equals(o.getProjectName()))
+            .toList();
+    List<KimNamespace> namespaces =
+        this.workspaceManager.getNamespaces().stream()
+            .filter(o -> projectName.equals(o.getProjectName()))
+            .toList();
+    List<KimObservationStrategyDocument> strategies =
+        this.workspaceManager.getStrategyDocuments().stream()
+            .filter(o -> projectName.equals(o.getProjectName()))
+            .toList();
+    List<KActorsBehavior> behaviors =
+        this.workspaceManager.getBehaviors().stream()
+            .filter(o -> projectName.equals(o.getProjectName()))
+            .toList();
+
+    // Resources work independently and do not come with the project data.
+
+    // check if the worldview is impacted, too
+    var worldviewOntologies =
+        retrieveWorldview().getOntologies().stream()
+            .map(KlabAsset::getUrn)
+            .collect(Collectors.toSet());
+    var worldviewStrategies =
+        retrieveWorldview().getObservationStrategies().stream()
+            .map(KlabAsset::getUrn)
+            .collect(Collectors.toSet());
+
+    var conts =
+        Sets.intersection(
+            worldviewOntologies,
+            ontologies.stream().map(KlabAsset::getUrn).collect(Collectors.toSet()));
+    var cstra =
+        Sets.intersection(
+            worldviewStrategies,
+            strategies.stream().map(KlabAsset::getUrn).collect(Collectors.toSet()));
+
+    if (!conts.isEmpty() || !cstra.isEmpty()) {
+      ret.add(
+          Utils.Resources.create(
+              this,
+              Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER,
+              operation,
+              Utils.Collections.shallowCollection(
+                      ontologies.stream().filter(o -> conts.contains(o.getUrn())).toList(),
+                      strategies.stream().filter(o -> conts.contains(o.getUrn())).toList())
+                  .toArray(new KlabAsset[0])));
     }
 
-    @Override
-    public Collection<Workspace> listWorkspaces() {
-        return localWorkspaces.values();
+    ret.add(
+        Utils.Resources.create(
+            this,
+            workspace,
+            operation,
+            Utils.Collections.shallowCollection(ontologies, strategies, namespaces, behaviors)
+                .toArray(new KlabAsset[0])));
+
+    return ret;
+  }
+
+  @Override
+  public ResourceSet resolveModel(String modelName, Scope scope) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public List<ResourceSet> manageRepository(
+      String projectName, RepositoryState.Operation operation, String... arguments) {
+    return workspaceManager.manageRepository(projectName, operation, arguments);
+  }
+
+  //    @Override
+  //    public ResourceSet createResource(Resource resource, UserScope scope) {
+  //        // TODO Auto-generated method stub
+  //        return null;
+  //    }
+  //
+  //    @Override
+  //    public ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope) {
+  //        return null;
+  //    }
+
+  //    @Override
+  @Deprecated // remove when the import mechanism can do this
+  public ResourceSet createResource(File resourcePath, UserScope scope) {
+
+    KnowledgeClass knowledgeClass = null;
+    File sourceFile = null;
+    String urn = null;
+    ResourceSet ret = null;
+
+    if ("jar".equals(Utils.Files.getFileExtension(resourcePath))) {
+      var imported = getComponentRegistry().installComponent(resourcePath, null, scope);
+      knowledgeClass = KnowledgeClass.COMPONENT;
+      sourceFile = imported.getFirst().sourceArchive();
+      urn = imported.getFirst().id();
+      ret = imported.getSecond();
+    } else {
+      // TODO resource, mirror archive
     }
 
-    @Override
-    public boolean shutdown() {
-        return shutdown(30);
+    if (urn != null) {
+      // initial resource permissions
+      var status = new ResourceInfo();
+      if (scope.getIdentity() instanceof UserIdentity user) {
+        status.getRights().getAllowedUsers().add(user.getUsername());
+        status.setOwner(user.getUsername());
+      }
+      status.setFileLocation(sourceFile);
+      status.setKnowledgeClass(knowledgeClass);
+      status.setReviewStatus(0);
+      status.setType(ResourceInfo.Type.AVAILABLE);
+      status.setLegacy(false);
+      status.setUrn(urn);
+      resourcesKbox.putStatus(status);
+      //      db.commit();
     }
 
-    public boolean shutdown(int secondsToWait) {
+    return ret;
+  }
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
-                capabilities());
+  //    @Override
+  //    public Resource createResource(String projectName, String urnId, String adapter,
+  //                                   Parameters<String> resourceData, UserScope scope) {
+  //        return null;
+  //    }
 
-        // try {
-        // projectLoader.awaitTermination(secondsToWait, TimeUnit.SECONDS);
-        return true;
-        // } catch (InterruptedException e) {
-        // Logging.INSTANCE.error("Error during thread termination", e);
-        // }
-        // return false;
+  @Override
+  public ResourceInfo registerResource(
+      String urn, KnowledgeClass knowledgeClass, File fileLocation, Scope submittingScope) {
+
+    if (urn != null) {
+      // initial resource permissions
+      var status = new ResourceInfo();
+      if (scope.getIdentity() instanceof UserIdentity user) {
+        status.getRights().getAllowedUsers().add(user.getUsername());
+        status.setOwner(user.getUsername());
+      }
+      status.setFileLocation(fileLocation);
+      status.setKnowledgeClass(knowledgeClass);
+      status.setReviewStatus(0);
+      status.setType(ResourceInfo.Type.AVAILABLE);
+      status.setLegacy(false);
+      status.setUrn(urn);
+      resourcesKbox.putStatus(status);
+      //      db.commit();
+      return status;
     }
 
-    @Override
-    public Capabilities capabilities() {
-        return new Capabilities() {
-            @Override
-            public boolean isWorldviewProvider() {
-                // TODO
-                return false;
-            }
+    return ResourceInfo.offline();
+  }
 
-            @Override
-            public String getAdoptedWorldview() {
-                // TODO
-                return null;
-            }
+  @Override
+  public List<ResourceSet> deleteDocument(String projectName, String assetUrn, UserScope scope) {
+    return null;
+  }
 
-            @Override
-            public Set<CRUDPermission> getPermissions() {
-                // TODO
-                return EnumSet.noneOf(CRUDPermission.class);
-            }
+  //    public void setLocalName(String localName) {
+  //        this.localName = localName;
+  //    }
 
-            @Override
-            public Type getType() {
-                return Type.RESOURCES;
-            }
+  @Override
+  public ResourceSet resolveModels(Observable observable, ContextScope scope) {
 
-            @Override
-            public String getLocalName() {
-                return localName;
-            }
-
-            @Override
-            public String getServiceName() {
-                return "Resources";
-            }
-        };
+    if (!semanticSearchAvailable) {
+      Logging.INSTANCE.warn(
+          "Semantic search is not available: client should not make this request");
+      return ResourceSet.empty();
     }
 
-    @Override
-    public KimObservable resolveObservable(String definition) {
-        IKimObservable parsed = Kim.INSTANCE.declare(definition);
-        return parsed == null ? null : KimAdapter.adaptKimObservable(parsed);
+    ResourceSet results = new ResourceSet();
+    // FIXME use the observation's scale (pass the observation)
+    for (ModelReference model : this.kbox.query(observable, scope)) {
+      results
+          .getResults()
+          .add(
+              new ResourceSet.Resource(
+                  getUrl().toString(),
+                  model.getName(),
+                  model.getProjectUrn(),
+                  model.getVersion(),
+                  KnowledgeClass.MODEL));
     }
 
-    @Override
-    public KimConcept resolveConcept(String definition) {
-        IKimObservable parsed = Kim.INSTANCE.declare(definition);
-        if (parsed == null) {
-            return null;
-        }
-        return KimAdapter.adaptKimObservable(parsed).getSemantics();
+    addDependencies(results, scope);
 
-    }
+    return results;
+  }
 
-    @Override
-    public ResourceSet projects(Collection<String> projects, Scope scope) {
+  /**
+   * The workspace manager calls the kbox directly
+   *
+   * @return
+   */
+  public ModelKbox modelKbox() {
+    return this.kbox;
+  }
 
-        ResourceSet ret = new ResourceSet();
+  /**
+   * Add a collection of namespaces to a result set, including their dependencies and listing the
+   * correspondent resources in dependency order. If any namespace isn't available, return false;
+   *
+   * <p>TODO/FIXME involve other services from the scope if a namespace is not available locally.
+   *
+   * @param namespaces
+   * @param results
+   */
+  private boolean addNamespacesToResultSet(
+      Set<String> namespaces, ResourceSet results, Scope scope) {
 
-        for (String projectName : this.configuration.getProjectConfiguration().keySet()) {
-            if (projects.contains(projectName)) {
-                if (!localProjects.containsKey(projectName)) {
-                    loadProject(projectName, this.configuration.getProjectConfiguration().get(projectName));
-                }
-                ret = Utils.Resources.merge(ret, collectProject(projectName, scope));
-            }
-        }
-
-        return sort(ret, scope);
-    }
-
-    private ResourceSet sort(ResourceSet ret, Scope scope) {
-
-        Graph<String, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
-
-        for (ResourceSet.Resource ns : ret.getNamespaces()) {
-
-            // TODO use a recursive function to capture n-th level deps that aren't resolved
-            // directly, although this doesn't apply if we have the whole workspace
-
-            graph.addVertex(ns.getResourceUrn());
-            KimNamespace namespace = resolveNamespace(ns.getResourceUrn(), scope);
-            if (namespace == null) {
-                ret.setEmpty(true);
-                return ret;
-            }
-            for (String imp : namespace.getImports().keySet()) {
-                KimNamespace imported = resolveNamespace(imp, scope);
-                if (imported == null) {
-                    ret.setEmpty(true);
-                    return ret;
-                }
-                graph.addVertex(imported.getUrn());
-                if (imported.getUrn().equals(namespace.getUrn())) {
-                    System.out.println("DIO ZAPPA");
-                }
-                graph.addEdge(imported.getUrn(), namespace.getUrn());
-            }
-        }
-
-        TopologicalOrderIterator<String, DefaultEdge> order = new TopologicalOrderIterator<>(graph);
-        Map<String, ResourceSet.Resource> toSort = new HashMap<>();
-        ret.getNamespaces().forEach((ns) -> toSort.put(ns.getResourceUrn(), ns));
-        ret.getNamespaces().clear();
-        while (order.hasNext()) {
-            ret.getNamespaces().add(toSort.get(order.next()));
-        }
-
-        return ret;
-    }
-
-    /**
-     * Collect all known project data, fulfilling any missing external dependencies but not sorting the
-     * results by dependency as this could be one step in a multiple-project setup. If external dependencies
-     * are needed and unsatisfied, return an empty resourceset.
-     *
-     * @param projectName
-     * @param scope
-     * @return
-     */
-    private ResourceSet collectProject(String projectName, Scope scope) {
-        List<KimNamespace> namespaces = new ArrayList<>();
-        for (String namespace : this.localNamespaces.keySet()) {
-            KimNamespace ns = this.localNamespaces.get(namespace);
-            if (projectName.equals(ns.getProjectName())) {
-                namespaces.add(ns);
-            }
-        }
-        List<KActorsBehavior> behaviors = new ArrayList<>();
-        for (KActorsBehavior behavior : localBehaviors.values()) {
-            if (projectName.equals(behavior.getProjectId())) {
-                behaviors.add(behavior);
-            }
-        }
-
-        // Resources work independently and do not come with the project data.
-
-        return Utils.Resources.create(this,
-                Utils.Collections.shallowCollection(namespaces, behaviors).toArray(new KlabAsset[namespaces.size()]));
-    }
-
-    @Override
-    public ResourceSet project(String projectName, Scope scope) {
-        return sort(collectProject(projectName, scope), scope);
-    }
-
-    @Override
-    public ResourceSet model(String modelName, Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean publishProject(String projectUrl, ResourcePrivileges permissions) {
-        // TODO Auto-generated method stub
+    DefaultDirectedGraph<String, DefaultEdge> nss = new DefaultDirectedGraph<>(DefaultEdge.class);
+    Map<String, ResourceSet.Resource> storage = new HashMap<>();
+    for (String ns : namespaces) {
+      if (!addNamespaceToResultSet(ns, nss, storage, scope)) {
         return false;
+      }
     }
 
-    @Override
-    public boolean unpublishProject(String projectUrl) {
-        // TODO Auto-generated method stub
-        return false;
+    TopologicalOrderIterator<String, DefaultEdge> order = new TopologicalOrderIterator<>(nss);
+    while (order.hasNext()) {
+      results.getNamespaces().add(storage.get(order.next()));
     }
 
-    @Override
-    public String createResource(Resource resource) {
-        // TODO Auto-generated method stub
-        return null;
+    return true;
+  }
+
+  private boolean addNamespaceToResultSet(
+      String ns,
+      DefaultDirectedGraph<String, DefaultEdge> nss,
+      Map<String, ResourceSet.Resource> storage,
+      Scope scope) {
+
+    if (nss.containsVertex(ns)) {
+      return true;
     }
 
-    @Override
-    public String createResource(File resourcePath) {
-        // TODO Auto-generated method stub
-        // Concept
-        return null;
+    KimNamespace namespace = retrieveNamespace(ns, scope);
+    if (namespace == null) {
+      // TODO use services in scope
+      return false;
     }
 
-    @Override
-    public Resource createResource(String projectName, String urnId, String adapter,
-                                   Parameters<String> resourceData) {
-        return null;
+    nss.addVertex(ns);
+
+    var dependency = namespace.getImports();
+    for (String dependent : dependency.keySet()) {
+      if (!nss.containsVertex(dependent)) {
+        addNamespaceToResultSet(dependent, nss, storage, scope);
+      }
+      nss.addEdge(dependent, ns);
     }
 
-    @Override
-    public boolean publishResource(String resourceUrn, ResourcePrivileges permissions) {
-        // TODO Auto-generated method stub
-        return false;
+    var resource = new ResourceSet.Resource();
+    resource.setKnowledgeClass(KnowledgeClass.NAMESPACE);
+    resource.setResourceUrn(ns);
+    resource.setResourceVersion(namespace.getVersion());
+    resource.setServiceId(serviceId());
+    storage.put(ns, resource);
+
+    return true;
+  }
+
+  @Override
+  public List<String> queryResources(String urnPattern, KnowledgeClass... resourceTypes) {
+
+    List<String> ret = new ArrayList<>();
+    Set<KnowledgeClass> wanted = EnumSet.noneOf(KnowledgeClass.class);
+    if (resourceTypes != null && resourceTypes.length > 0) {
+      wanted.addAll(Arrays.asList(resourceTypes));
+    } else {
+      // we want them all
+      wanted.addAll(Arrays.asList(KnowledgeClass.values()));
     }
 
-    @Override
-    public boolean unpublishResource(String resourceUrn) {
-        // TODO Auto-generated method stub
-        return false;
+    if (wanted.contains(KnowledgeClass.RESOURCE)) {}
+
+    if (wanted.contains(KnowledgeClass.MODEL)) {}
+
+    if (wanted.contains(KnowledgeClass.SCRIPT)) {}
+
+    if (wanted.contains(KnowledgeClass.APPLICATION)) {}
+
+    if (wanted.contains(KnowledgeClass.BEHAVIOR)) {}
+
+    if (wanted.contains(KnowledgeClass.COMPONENT)) {}
+
+    if (wanted.contains(KnowledgeClass.NAMESPACE)) {}
+
+    if (wanted.contains(KnowledgeClass.PROJECT)) {}
+
+    //        if (wanted.contains(KnowledgeClass.INSTANCE)) {
+    //
+    //        }
+
+    return ret;
+  }
+
+  @Override
+  public ResourceInfo resourceInfo(String urn, Scope scope) {
+    ResourceInfo ret = resourcesKbox.getStatus(urn, null);
+    if (ret != null && (ret.getType().isUsable())) {
+      /*
+       * TODO check the resource status at this time and in this scope
+       */
     }
+    return ret;
+  }
 
-    @Override
-    public String getUrl() {
-        return this.url;
+  @Override
+  public boolean setResourceInfo(String urn, ResourceInfo info, Scope scope) {
+    // TODO check access permissions etc
+    return resourcesKbox.putStatus(info);
+  }
+
+  @Override
+  public Project retrieveProject(String projectName, Scope scope) {
+    // TODO check scope
+    return workspaceManager.getProject(projectName);
+  }
+
+  @Override
+  public Coverage modelGeometry(String modelUrn) throws KlabIllegalArgumentException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public KActorsBehavior readBehavior(URL url) {
+    return null;
+    //        return KActorsAdapter.INSTANCE.readBehavior(url);
+  }
+
+  @Override
+  public Collection<Project> listProjects(Scope scope) {
+    // FIXME filter by scope access
+    return workspaceManager.getProjects();
+  }
+
+  @Override
+  public Collection<String> listResourceUrns(Scope scope) {
+    return localResources;
+  }
+
+  @Override
+  public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
+
+    var status = resourcesKbox.getStatus(resourceUrn, null);
+    if (status != null) {
+      return status.getRights().asSeenByScope(scope);
     }
+    return ResourcePrivileges.empty();
+  }
 
-    public void setUrl(String url) {
-        this.url = url;
+  @Override
+  public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
+    var status = resourcesKbox.getStatus(resourceUrn, null);
+    if (status != null) {
+      status.setRights(resourcePrivileges);
+      return resourcesKbox.putStatus(status);
     }
+    return false;
+  }
 
-    public void setLocalName(String localName) {
-        this.localName = localName;
-    }
+  @Override
+  public boolean lockProject(String urn, UserScope scope) {
+    String token = scope.getIdentity().getId();
+    boolean local =
+        scope instanceof ServiceScope
+            || (scope instanceof ServiceUserScope userScope && userScope.isLocal());
+    return workspaceManager.lockProject(urn, token, local);
+  }
 
-    @Override
-    public ServiceScope scope() {
-        return this.scope;
-    }
+  @Override
+  public boolean unlockProject(String urn, UserScope scope) {
+    String token = scope.getIdentity().getId();
+    return workspaceManager.unlockProject(urn, token);
+  }
 
-    @Override
-    public ResourceSet queryModels(Observable observable, ContextScope scope) {
+  @Override
+  public ResourceSet resolve(String urn, Scope scope) {
 
-        ResourceSet results = new ResourceSet();
-        for (ModelReference model : this.kbox.query(observable, scope)) {
-            results.getResults().add(new ResourceSet.Resource(this.url,
-                    model.getNamespaceId() + "." + model.getName(),
-                    model.getVersion(), KnowledgeClass.MODEL));
-        }
+    ResourceSet ret = new ResourceSet();
 
-        addDependencies(results, scope);
+    switch (Urn.classify(urn)) {
+      case RESOURCE -> {}
+      case KIM_OBJECT -> {
 
-        return results;
-    }
+        /** TODO may be a project or even a workspace */
+        KimNamespace namespace = retrieveNamespace(urn, scope);
+        if (namespace != null) {
 
-    /**
-     * Add a collection of namespaces to a result set, including their dependencies and listing the
-     * correspondent resources in dependency order. If any namespace isn't available, return false;
-     * <p>
-     * TODO/FIXME involve other services from the scope if a namespace is not
-     * available locally.
-     *
-     * @param namespaces
-     * @param results
-     */
-    private boolean addNamespacesToResultSet(Set<String> namespaces, ResourceSet results, Scope scope) {
+          ret.getResults()
+              .add(
+                  new ResourceSet.Resource(
+                      getUrl().toString(),
+                      urn,
+                      namespace.getProjectName(),
+                      namespace.getVersion(),
+                      KnowledgeClass.NAMESPACE));
 
-        DefaultDirectedGraph<String, DefaultEdge> nss = new DefaultDirectedGraph<>(DefaultEdge.class);
-        Map<String, ResourceSet.Resource> storage = new HashMap<>();
-        for (String ns : namespaces) {
-            if (!addNamespaceToResultSet(ns, nss, storage, scope)) {
-                return false;
-            }
-        }
-
-        TopologicalOrderIterator<String, DefaultEdge> order = new TopologicalOrderIterator<>(nss);
-        while (order.hasNext()) {
-            results.getNamespaces().add(storage.get(order.next()));
-        }
-
-        return true;
-    }
-
-    private boolean addNamespaceToResultSet(String ns, DefaultDirectedGraph<String, DefaultEdge> nss,
-                                            Map<String, ResourceSet.Resource> storage, Scope scope) {
-
-        if (nss.containsVertex(ns)) {
-            return true;
-        }
-
-        KimNamespace namespace = this.localNamespaces.get(ns);
-        if (namespace == null) {
-            // TODO use services in scope
-            return false;
-        }
-
-        nss.addVertex(ns);
-
-        var dependency = namespace.getImports();
-        for (String dependent : dependency.keySet()) {
-            if (!nss.containsVertex(dependent)) {
-                addNamespaceToResultSet(dependent, nss, storage, scope);
-            }
-            nss.addEdge(dependent, ns);
-        }
-
-        var resource = new ResourceSet.Resource();
-        resource.setKnowledgeClass(KnowledgeClass.NAMESPACE);
-        resource.setResourceUrn(ns);
-        resource.setResourceVersion(namespace.getVersion());
-        resource.setServiceId(getUrl());
-        storage.put(ns, resource);
-
-        return true;
-    }
-
-    @Override
-    public List<String> queryResources(String urnPattern, KnowledgeClass... resourceTypes) {
-
-        List<String> ret = new ArrayList<>();
-        Set<KnowledgeClass> wanted = EnumSet.noneOf(KnowledgeClass.class);
-        if (resourceTypes != null && resourceTypes.length > 0) {
-            for (KnowledgeClass k : resourceTypes) {
-                wanted.add(k);
-            }
         } else {
-            // we want them all
-            for (KnowledgeClass k : KnowledgeClass.values()) {
-                wanted.add(k);
+
+          /*
+           * extract namespace and check for that.
+           */
+          String ns = Utils.Paths.getLeading(urn, '.');
+          String nm = Utils.Paths.getLast(urn, '.');
+          namespace = retrieveNamespace(ns, scope);
+          /*
+           * TODO check permissions!
+           */
+          if (namespace != null) {
+            for (KlabStatement statement : namespace.getStatements()) {
+              if (urn.equals(statement.getUrn())) {
+                ret.getResults()
+                    .add(
+                        new ResourceSet.Resource(
+                            serviceId(),
+                            urn,
+                            namespace.getProjectName(),
+                            namespace.getVersion(),
+                            KlabAsset.classify(statement)));
+                break;
+              }
             }
+          }
         }
-
-        if (wanted.contains(KnowledgeClass.RESOURCE)) {
-
+      }
+      case OBSERVABLE -> {
+        var observable = retrieveObservable(urn);
+        if (observable != null) {
+          ret.getResults()
+              .add(
+                  new ResourceSet.Resource(
+                      serviceId(), urn, null, null, KnowledgeClass.OBSERVABLE));
         }
-        if (wanted.contains(KnowledgeClass.MODEL)) {
-
-        }
-        if (wanted.contains(KnowledgeClass.SCRIPT)) {
-
-        }
-        if (wanted.contains(KnowledgeClass.APPLICATION)) {
-
-        }
-        if (wanted.contains(KnowledgeClass.BEHAVIOR)) {
-
-        }
-        if (wanted.contains(KnowledgeClass.COMPONENT)) {
-
-        }
-        if (wanted.contains(KnowledgeClass.NAMESPACE)) {
-
-        }
-        if (wanted.contains(KnowledgeClass.PROJECT)) {
-
-        }
-        if (wanted.contains(KnowledgeClass.INSTANCE)) {
-
-        }
-
-        return ret;
+      }
+      case REMOTE_URL -> {
+        // TODO
+      }
+      case UNKNOWN -> {
+        ret.setEmpty(true);
+        ret.getNotifications()
+            .add(Notification.error("Resource service cannot resolve URN " + urn));
+      }
     }
 
-    @Override
-    public ResourceStatus resourceStatus(String urn, Scope scope) {
-        ResourceStatus ret = catalog.get(urn);
-        if (ret != null && (ret.getType().isUsable())) {
-            /*
-             * TODO check the resource status at this time and in this scope
-             */
+    return addDependencies(ret, scope);
+  }
+
+  /*
+   * TODO add dependencies to resource set containing only local resources,
+   * including merging any remote resources in view of the passed scope. SET TO
+   * EMPTY if dependencies cannot be resolved in this scope.
+   */
+  private ResourceSet addDependencies(ResourceSet resourceSet, Scope scope) {
+
+    if (resourceSet.getResults().isEmpty()) {
+      resourceSet.setEmpty(true);
+      return resourceSet;
+    }
+
+    Set<String> namespaces = new HashSet<>();
+    for (ResourceSet.Resource result : resourceSet.getResults()) {
+      if (Urn.classify(result.getResourceUrn()) == Urn.Type.KIM_OBJECT) {
+        if (result.getKnowledgeClass() == KnowledgeClass.NAMESPACE) {
+          namespaces.add(result.getResourceUrn());
+        } else if (result.getKnowledgeClass() == KnowledgeClass.MODEL
+            || result.getKnowledgeClass() == KnowledgeClass.DEFINITION) {
+          namespaces.add(Utils.Paths.getLeading(result.getResourceUrn(), '.'));
         }
-        return ret;
+      }
     }
 
-    @Override
-    public Project resolveProject(String projectName, Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Coverage modelGeometry(String modelUrn) throws KIllegalArgumentException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public KActorsBehavior readBehavior(URL url) {
-        return KActorsAdapter.INSTANCE.readBehavior(url);
-    }
-
-    @Override
-    public Collection<Project> listProjects() {
-        return localProjects.values();
-    }
-
-    @Override
-    public Collection<String> listResourceUrns() {
-        return localResources;
-    }
-
-    @Override
-    public ResourceSet loadWorldview() {
-        List<String> projects = new ArrayList<>();
-        for (String project : configuration.getProjectConfiguration().keySet()) {
-            if (configuration.getProjectConfiguration().get(project).isWorldview()) {
-                projects.add(project);
-            }
-        }
-        return projects(projects, scope);
-    }
-
-    @Override
-    public ResourceSet resolve(String urn, Scope scope) {
-
-        ResourceSet ret = new ResourceSet();
-
-        /*
-         * Check if it's a project
-         */
-        if (localProjects.containsKey(urn)) {
-
-        } else if (localNamespaces.containsKey(urn)) {
-
-            /*
-             * If not, check for namespace
-             */
-
-        } else if (localBehaviors.containsKey(urn)) {
-
-            /*
-             * If not, check for behavior
-             */
-
-        } else if (urn.contains(".")) {
-
-            /*
-             * if not, extract namespace and check for that.
-             */
-            String ns = Utils.Paths.getLeading(urn, '.');
-            String nm = Utils.Paths.getLast(urn, '.');
-            KimNamespace namespace = localNamespaces.get(ns);
-            /*
-             * TODO check permissions!
-             */
-            if (namespace != null) {
-                for (KimStatement statement : namespace.getStatements()) {
-                    if (statement instanceof KimModel && urn.equals(((KimModel) statement).getName())) {
-                        ret.getResults().add(
-                                new ResourceSet.Resource(getUrl(), urn, namespace.getVersion(),
-                                        KnowledgeClass.MODEL));
-                    } else if (statement instanceof KimInstance && nm.equals(((KimInstance) statement).getName())) {
-                        ret.getResults().add(new ResourceSet.Resource(getUrl(), urn, namespace.getVersion(),
-                                KnowledgeClass.INSTANCE));
-                    }
-                }
-
-                if (ret.getResults().size() > 0) {
-                    ret.getNamespaces().add(new ResourceSet.Resource(getUrl(), namespace.getUrn(),
-                            namespace.getVersion(), KnowledgeClass.NAMESPACE));
-                }
-
-            }
-        }
-
-        return addDependencies(ret, scope);
-    }
+    addNamespacesToResultSet(namespaces, resourceSet, scope);
 
     /*
-     * TODO add dependencies to resource set containing only local resources,
-     * including merging any remote resources in view of the passed scope. SET TO
-     * EMPTY if dependencies cannot be resolved in this scope.
+     * add components and action libraries to behaviors
+     *
+     * add loaded namespaces and the deps (projects, components) of all projects
+     * that are required by their projects. Function calls may reference local
+     * resources.
+     *
+     * Resources may be using other resources
      */
-    private ResourceSet addDependencies(ResourceSet resourceSet, Scope scope) {
 
-        Set<String> namespaces = new HashSet<>();
-        for (ResourceSet.Resource result : resourceSet.getResults()) {
-            if (Urn.classify(result.getResourceUrn()) == Urn.Type.KIM_OBJECT) {
-                if (result.getKnowledgeClass() == KnowledgeClass.NAMESPACE) {
-                    namespaces.add(result.getResourceUrn());
-                } else if (result.getKnowledgeClass() == KnowledgeClass.MODEL
-                        || result.getKnowledgeClass() == KnowledgeClass.INSTANCE
-                        || result.getKnowledgeClass() == KnowledgeClass.DEFINITION) {
-                    namespaces.add(Utils.Paths.getLeading(result.getResourceUrn(), '.'));
-                }
-            }
-        }
+    return resourceSet;
+  }
 
-        addNamespacesToResultSet(namespaces, resourceSet, scope);
+  /**
+   * Replicate a remote scope in the scope manager. This should be called by the runtime service
+   * after creating it so if the scope has no ID we issue an error, as we do not create independent
+   * scopes.
+   *
+   * @param sessionScope a client scope that should record the ID for future communication. If the
+   *     ID is null, the call has failed.
+   * @return
+   */
+  @Override
+  public String registerSession(SessionScope sessionScope) {
 
-        /*
-         * add components and action libraries to behaviors
-         *
-         * add loaded namespaces and the deps (projects, components) of all projects
-         * that are required by their projects. Function calls may reference local
-         * resources.
-         *
-         * Resources may be using other resources
-         */
+    if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
-        return resourceSet;
+      if (sessionScope.getId() == null) {
+        throw new KlabIllegalArgumentException(
+            "resolver: session scope has no ID, cannot register " + "a scope autonomously");
+      }
+
+      getScopeManager()
+          .registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
+      return serviceSessionScope.getId();
     }
 
+    throw new KlabIllegalArgumentException("unexpected scope class");
+  }
+
+  /**
+   * Replicate a remote scope in the scope manager. This should be called by the runtime service
+   * after creating it so if the scope has no ID we issue an error, as we do not create independent
+   * scopes.
+   *
+   * @param contextScope a client scope that should record the ID for future communication. If the
+   *     ID is null, the call has failed.
+   * @return
+   */
+  @Override
+  public String registerContext(ContextScope contextScope) {
+
+    if (contextScope instanceof ServiceContextScope serviceContextScope) {
+
+      if (contextScope.getId() == null) {
+        throw new KlabIllegalArgumentException(
+            "resolver: context scope has no ID, cannot register " + "a scope autonomously");
+      }
+
+      /*
+       * The resolver needs a digital twin client installed to find existing observations through the
+       * service-level context scope.
+       */
+      if (contextScope.getHostServiceId() != null) {
+        serviceContextScope.setDigitalTwin(
+            new ClientDigitalTwin(contextScope, serviceContextScope.getId()));
+      } else {
+        scope.warn(
+            "Registering context scope without service ID: digital twin will be inoperative");
+      }
+
+      getScopeManager()
+          .registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
+      return serviceContextScope.getId();
+    }
+
+    throw new KlabIllegalArgumentException("unexpected scope class");
+  }
+
+  public ResourcesKBox getResourcesKbox() {
+    return this.resourcesKbox;
+  }
 }

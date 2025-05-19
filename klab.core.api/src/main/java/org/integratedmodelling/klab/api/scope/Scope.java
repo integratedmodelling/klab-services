@@ -3,68 +3,103 @@ package org.integratedmodelling.klab.api.scope;
 import java.util.Collection;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.exceptions.KServiceAccessException;
-import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
+import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
 /**
  * The scope is a communication channel that holds all information about the knowledge environment in the
  * service. That includes other services, which must be set into the scope in either an embedded or client
- * implementation and are made available through {@link #getService(Class)}. Scopes are passed to most
- * functions in k.LAB.
+ * implementation and are made available through {@link #getService(Class)}. A scope of the appropriate class
+ * are a required argument to most calls in the k.LAB API.
  * <p>
  * There are three major classes of scope: authentication produces a {@link UserScope}, which can spawn
- * sessions and applications as "child" scopes. Within these, {@link ContextScope}s are used to make and
- * manage observations. In addition, a {@link ServiceScope} is used by each service to access logging, the
- * owning identity, and other services.
+ * sessions and applications as "child" {@link SessionScope}s. Within these, {@link ContextScope}s are used to
+ * create and maintain the environments where observations are made, serving as a handle to a "digital twin"
+ * that manages a dynamic, semantic knowledge graph (the "context"). In addition, a {@link ServiceScope} is
+ * used by each service to access logging, the owning identity, and other services.
  * <p>
- * The scope API exposes an agent handle through {@link #getAgent()} which is used to communicate with an
- * underlying software agent, incarnating the identity that owns the scope in a reactive environment.
- * According to implementation, the agent may or may not be present.
+ * The scope can be seen as an underlying software agent, incarnating the identity that owns the scope in a
+ * reactive environment. According to implementation, a reactive agent may or may not be physically
+ * implemented (in the reference implementation, agents are created on demand and they run k.Actors
+ * behaviors).
  * <p>
- * In a server context, the authentication mechanism is responsible for maintaing a valid hierarchy of scopes
- * based on the authorization token. Scopes should never be transferred through REST calls (they do not
- * implement Serializable on purpose) unless embedded in authorization tokens, from which they should be
- * extracted and sent to calls that require scopes. A "remote" scope MUST implement {@link #send(Object...)}
- * and the logging methods (with the possible exception of {@link #debug(Object...)}) so that they communicate
- * their arguments to the client-side scope using a suitable RPC mechanism.
+ * In a service context, the authentication mechanism is responsible for maintaining a valid hierarchy of
+ * scopes based on the authorization token, which must generate a valid {@link UserScope}. Scopes are not
+ * serialized for communication between services, but are replicated explicitly by the originating service
+ * into any other service that must be aware of them, using the
+ * {@link org.integratedmodelling.klab.api.ServicesAPI#CREATE_SESSION} and
+ * {@link org.integratedmodelling.klab.api.ServicesAPI#CREATE_CONTEXT} calls, after which they are referred to
+ * through the {@link org.integratedmodelling.klab.api.ServicesAPI#SCOPE_HEADER} in REST calls that require
+ * scopes below the user level. Each service maintains the state it needs to operate. The originator of
+ * {@link SessionScope}s and {@link ContextScope} is always the
+ * {@link org.integratedmodelling.klab.api.services.RuntimeService}.
  * <p>
- * At the moment, there is no requirement for the remote scope to be able to communicate with a remote agent
- * in case {@link #getAgent()} isn't null at the client side. This may become a requirement in the future.
+ * A "remote" scope implements {@link #send(Object...)} and the logging methods inherited from {@link Channel}
+ * so that they can communicate across services to their peer scopes using a suitable RPC mechanism (the
+ * reference implementation uses AMPQ messaging and separate queues for different event streams). The RPC
+ * mechanism is crucial to connect observation scopes into distributed digital twins.
+ * <p>
+ * Scopes expire according to their expiration type returned by {@link #getPersistence()}. Services are
+ * configured to define the details and may refuse scope creation requests that require unsupported expiration
+ * types.
  *
  * @author Ferd
  */
-public abstract interface Scope extends Channel {
+public interface Scope extends Channel {
 
     enum Status {
         WAITING, STARTED, CHANGED, FINISHED, ABORTED, INTERRUPTED, EMPTY
     }
 
     enum Type {
+
         SERVICE, // service-level scope
         USER, // root-level scope
         SCRIPT, // session-level scope
         API, // session for the REST API through a client
         APPLICATION, // session for an application, including the Explorer
         SESSION, // raw session for direct use within Java code
-        CONTEXT // context, on which observe() can be called
+        CONTEXT; // context, on which observe() can be called
+
+        public Class<? extends Scope> classify() {
+
+            return switch (this) {
+                case SERVICE -> ServiceScope.class;
+                case USER -> UserScope.class;
+                case SESSION, APPLICATION, API, SCRIPT -> SessionScope.class;
+                case CONTEXT -> ContextScope.class;
+            };
+        }
     }
 
     /**
-     * The ID is unique in each scope and serves as an authorization token for any network calls. In a
-     * UserScope it may coincide with {@link Identity#getId()}, but we no longer require contexts,
-     * applications and tasks to be identities so the scope's ID should be used instead.
-     * <p>
-     * The ID must contain enough information for the receiving end to reconstruct a peer of the scope
-     * hierarchy. For this reason all "child" scopes (i.e. any scope except {@link UserScope}) must use the
-     * same conventions in creating the ID, which must consist of a forward slash-separated path from the
-     * parent to self. The forward slash cannot be used as part of each individual ID.
+     * The expiration type for the scope. The details (e.g. the idle time) depend on service configuration.
      *
      * @return
      */
-    String getId();
+    Persistence getPersistence();
+
+    /**
+     * All scope except a {@link UserScope} have a non-null parent scope. A {@link ContextScope} is the only
+     * one that can have another scope of its same class as parent. If a specific scope class is needed from a
+     * ContextScope, use {@link #getParentScope(Type, Class)} instead as the parent(s) may be other
+     * {@link ContextScope}s.
+     *
+     * @return the parent scope, null for {@link UserScope}s.
+     */
+    Scope getParentScope();
+
+    /**
+     * Retrieve the first parent scope that matches the passed type. The class isn't enough as each inner
+     * scope class inherits from the others.
+     *
+     * @param type
+     * @param scopeClass
+     * @param <T>
+     * @return
+     */
+    <T extends Scope> T getParentScope(Scope.Type type, Class<T> scopeClass);
 
     /**
      * Each scope can carry arbitrary data linked to it.
@@ -73,24 +108,37 @@ public abstract interface Scope extends Channel {
      */
     Parameters<String> getData();
 
-    /**
-     * If this scope is owned by an agent, return the agent handle for communication.
-     *
-     * @return the agent or null.
-     */
-    Ref getAgent();
 
     /**
-     * Retrieve the service corresponding to the passed class. A {@link KServiceAccessException} should be the
-     * response when services are unavailable. If there are multiple services available for the class, a
+     * Retrieve the service corresponding to the passed class. A {@link KlabServiceAccessException} should be
+     * the response when services are unavailable. If there are multiple services available for the class, a
      * default one should be chosen based on load factor, vicinity or any other sensible logic.
      *
      * @param <T>
      * @param serviceClass
      * @return
-     * @throws KServiceAccessException if the requested service is not available
+     * @throws KlabServiceAccessException if the requested service is not available
      */
     <T extends KlabService> T getService(Class<T> serviceClass);
+
+    /**
+     * The service ID serves as a unique key into a specific service instance (or its clients). This is the
+     * equivalent of {@link #getService(String, Class)} when a serviceId is communicated and a specific
+     * service is wanted. Because this is a precise request, it is expected that the service exists; if not,
+     * this method should throw a
+     * {@link org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException} exception.
+     *
+     * @param serviceId
+     * @param serviceClass
+     * @param <T>
+     * @return the service of the passed class and ID.
+     * @throws org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException if the service isn't
+     *                                                                                 among those listed by
+     *                                                                                 {@link
+     *                                                                                 #getServices(Class)}
+     *                                                                                 for serviceClass.
+     */
+    <T extends KlabService> T getService(String serviceId, Class<T> serviceClass);
 
     /**
      * Retrieve all the currently available services corresponding to the passed class, including the default
@@ -101,6 +149,13 @@ public abstract interface Scope extends Channel {
      * @return
      */
     <T extends KlabService> Collection<T> getServices(Class<T> serviceClass);
+
+    /**
+     * The scope type is the only safe way to discriminate a scope type from another.
+     *
+     * @return
+     */
+    Type getType();
 
     /**
      * Return the status of the scope at the time of the call.
@@ -132,10 +187,4 @@ public abstract interface Scope extends Channel {
      */
     void setData(String key, Object value);
 
-    /**
-     * Stopping the scope leaves it in an unusable state and has different side effects depending on the
-     * specific scope type. User scopes will logout the user, script scopes will stop any running scripts. All
-     * of them should release any resources and temporary storage as well as stopping all their child scopes.
-     */
-    void stop();
 }

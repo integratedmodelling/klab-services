@@ -11,12 +11,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentNavigableMap;
 
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Codelist;
 import org.integratedmodelling.klab.api.services.resources.objects.AuthorityIdentity;
 import org.integratedmodelling.klab.api.services.resources.objects.AuthorityReference;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
 // import org.integratedmodelling.klab.rest.AuthorityIdentity;
 // import org.integratedmodelling.klab.rest.AuthorityReference;
@@ -71,7 +71,7 @@ public class GBIFAuthority implements Authority {
 
     public GBIFAuthority() {
         
-        this.db = DBMaker.fileDB(Configuration.INSTANCE.getDataPath("authorities") + File.separator + "gbif_ids.db")
+        this.db = DBMaker.fileDB(ServiceConfiguration.INSTANCE.getDataPath("authorities") + File.separator + "gbif_ids.db")
                 .transactionEnable().closeOnJvmShutdown().make();
         this.cache = db.treeMap("gbifAuthority", GroupSerializer.STRING, GroupSerializer.STRING).createOrOpen();
 
@@ -81,7 +81,7 @@ public class GBIFAuthority implements Authority {
         this.capabilities.getDocumentationFormats().add("text/plain");
         this.capabilities.getSubAuthorities().add(Pair.of("", "Any rank"));
         for (String rank : ranks) {
-            this.capabilities.getSubAuthorities().add(Pair.of(rank.toUpperCase(), Utils.Strings.capitalize(rank) + " rank"));
+            this.capabilities.getSubAuthorities().add(Pair.of(rank.toUpperCase(), org.integratedmodelling.common.utils.Utils.Strings.capitalize(rank) + " rank"));
         }
         this.capabilities.setName(ID);
 
@@ -107,7 +107,7 @@ public class GBIFAuthority implements Authority {
                     }
                 }
                 if (rankIndex < 0) {
-                    throw new KValidationException("GBIF authority: invalid catalog " + ranks);
+                    throw new KlabValidationException("GBIF authority: invalid catalog " + ranks);
                 }
             }
 
@@ -174,7 +174,7 @@ public class GBIFAuthority implements Authority {
         result.setAuthorityName(ID);
         result.setId(key);
         result.setLabel(canonicalName);
-        result.setDescription((rank == null ? "" : (Utils.Strings.capitalize(rank) + ": ")) + canonicalName
+        result.setDescription((rank == null ? "" : (org.integratedmodelling.common.utils.Utils.Strings.capitalize(rank) + ": ")) + canonicalName
                 + ((authorship == null || authorship.isEmpty()) ? "" : (" (" + authorship + ")"))
                 + (parents == null ? "" : (". " + parents + ".")));
         result.setConceptName("gbif" + key);

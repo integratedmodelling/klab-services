@@ -9,7 +9,9 @@ package org.integratedmodelling.klab.api.services;
  *
  */
 public interface Community extends KlabService {
-    
-    public static final int DEFAULT_PORT = 8095;
+
+    interface Capabilities extends ServiceCapabilities {
+
+    }
 
 }

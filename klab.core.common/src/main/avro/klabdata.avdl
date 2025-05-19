@@ -1,0 +1,53 @@
+@namespace("org.integratedmodelling.klab.common.data")
+protocol KlabData {
+
+	enum Level {
+		DEBUG, INFO, WARNING, ERROR
+	}
+
+	record Notification {
+		string message;
+		string? activityUrn;
+		union{null, map<string>} metadata;
+		int? code;
+		Level level;
+	}
+
+	/**
+	 * The payload of any contextualization is a top-level Instance. Any ERROR-level
+	 * notification in the top-level Instance means that contextualization has failed.
+     */
+	record Instance {
+		string name;
+		string geometry;
+		string observable;
+		string? fillingCurve = "DN_LINEAR";
+		boolean empty = false;
+		array<Notification> notifications;
+		map<string> metadata;
+		// children
+		union{null, array<Instance>} instances;
+		// only one of the following may be instantiated. Cannot use unions on these.
+		union{null, array<double>} doubleData;
+		union{null, array<long>} longData;
+		union{null, array<int>} intData;
+		union{null, array<float>} floatData;
+		// this links the string representation of int values in intData to the string rep of their
+		// value in case of key-value data pairs.
+		union{null, map<string>} dataKey;
+	}
+
+	/**
+	 * The data request sent to the ResourcesService endpoint. It may include an Instance to satisfy
+	 * dependencies for adapters that require input besides parameters.
+     */
+	record DataRequest {
+		string observable;
+		string geometry;
+		long startTime;
+		long endTime;
+		array<string> resourceUrns;
+		Instance? inputData;
+	}
+
+}

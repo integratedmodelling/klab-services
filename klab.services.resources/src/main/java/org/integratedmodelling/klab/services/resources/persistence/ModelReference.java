@@ -13,18 +13,18 @@
  */
 package org.integratedmodelling.klab.services.resources.persistence;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
-import org.integratedmodelling.klab.api.lang.kim.KimStatement;
-import org.integratedmodelling.klab.api.observations.scale.space.ISpace;
-import org.integratedmodelling.klab.api.observations.scale.time.ITime;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Model metadata, describing enough about an existing model to rank it for
@@ -81,7 +81,7 @@ public class ModelReference {
 	private String serverId;
 	private String projectUrn;
 	private String projectId;
-	private KimStatement.Scope scope;
+	private KlabStatement.Scope scope;
 	private String namespaceId;
 	private boolean inScenario;
 	private boolean reification;
@@ -104,15 +104,15 @@ public class ModelReference {
 	private Set<String> neededCapabilities = new HashSet<>();
 	private Map<String, Double> ranks;
 	private boolean abstractObservable;
-	private int minSpatialScaleFactor = ISpace.MIN_SCALE_RANK;
-	private int maxSpatialScaleFactor = ISpace.MAX_SCALE_RANK;
+	private int minSpatialScaleFactor = Space.MIN_SCALE_RANK;
+	private int maxSpatialScaleFactor = Space.MAX_SCALE_RANK;
 	private String enumeratedSpaceDomain;
 	private String enumeratedSpaceLocation;
-	private int minTimeScaleFactor = ITime.MIN_SCALE_RANK;
-	private int maxTimeScaleFactor = ITime.MAX_SCALE_RANK;
+	private int minTimeScaleFactor = Time.MIN_SCALE_RANK;
+	private int maxTimeScaleFactor = Time.MAX_SCALE_RANK;
 	private int priority = 0;
 	private boolean specializedObservable = false;
-	private ResourcePrivileges permissions = new ResourcePrivileges();
+	private ResourcePrivileges permissions = ResourcePrivileges.PUBLIC;
 	private Version version;
 
 	transient private Concept observableConcept;
@@ -794,11 +794,11 @@ public class ModelReference {
 		this.priority = priority;
 	}
 
-	public KimStatement.Scope getScope() {
+	public KlabStatement.Scope getScope() {
 		return scope;
 	}
 
-	public void setScope(KimStatement.Scope scope) {
+	public void setScope(KlabStatement.Scope scope) {
 		this.scope = scope;
 	}
 
@@ -826,6 +826,7 @@ public class ModelReference {
 		this.specializedObservable = specializedObservable;
 	}
 
+	@Deprecated // depend on the accessing user
 	public ResourcePrivileges getPermissions() {
 		return permissions;
 	}

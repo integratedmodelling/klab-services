@@ -1,12 +1,11 @@
 package org.integratedmodelling.klab.api.lang.kactors;
 
-import java.io.Serializable;
-import java.util.List;
-
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Arguments;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
+
+import java.io.Serializable;
+import java.util.List;
 
 /**
  * Values can be a lot of different things in k.Actors and serve as matches for fired values, so we
@@ -28,7 +27,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
  * @author Ferd
  *
  */
-public interface KActorsValue extends KActorsCodeStatement {
+public interface KActorsValue extends Serializable {
 
     /**
      * Only used in cast expression (value as <type>)
@@ -99,7 +98,7 @@ public interface KActorsValue extends KActorsCodeStatement {
      * 
      * @return
      */
-    Literal getStatedValue();
+    Object getStatedValue();
 
     /**
      * Return the value as the type passed. Meant to complement the enum in a fluent API and not to

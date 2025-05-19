@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 
-public interface KimLookupTable extends KimStatement {
+public interface KimLookupTable extends KlabStatement {
 
     public static class Argument {
 

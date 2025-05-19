@@ -123,24 +123,24 @@ public interface TimeDuration extends Serializable, Comparable<TimeDuration> {
     /**
      * TODO we can do better
      */
-    public static String print(long durationMs) {
+    static String print(long durationMs) {
         return Duration.ofMillis(durationMs).toString();
     }
 
-    public static TimeDuration of(Quantity spec) {
+    static TimeDuration of(Quantity spec) {
         Resolution res = Resolution.of(spec.getValue().doubleValue(), Resolution.Type.parse(spec.getUnit().toString()));
         return of((long) (res.getMultiplier() * res.getType().getMilliseconds()), res.getType());
     }
 
-    public static TimeDuration parse(String string) {
-        return of(Quantity.parse(string));
+    static TimeDuration parse(String string) {
+        return of(Quantity.create(string));
     }
 
-    public static TimeDuration of(Number number, Resolution.Type type) {
+    static TimeDuration of(Number number, Resolution.Type type) {
         return TimeDurationImpl.create(number.longValue(), type);
     }
 
-    public static TimeDuration create(TimeInstant start, TimeInstant end, boolean anchor) {
+    static TimeDuration create(TimeInstant start, TimeInstant end, boolean anchor) {
         TimeDuration period = new TimeDurationImpl(Duration.ofMillis(end.getMilliseconds() - start.getMilliseconds()),
                 Resolution.of(start, end).getType());
         return anchor ? period : period.anchor(start);

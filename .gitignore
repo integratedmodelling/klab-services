@@ -6,3 +6,5 @@ target
 **/*.xtendbin
 **/.temp-*
 **/*._trace
+**/*.puml
+.mvn/wrapper/maven-wrapper.jar

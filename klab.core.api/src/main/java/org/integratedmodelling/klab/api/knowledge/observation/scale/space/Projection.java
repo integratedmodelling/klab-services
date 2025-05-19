@@ -16,7 +16,7 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
 import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 
 /**
  * Opaque interface for a coordinate reference system.
@@ -62,7 +62,7 @@ public interface Projection {
 	public static Projection of(String string) {
 		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
 		if (configuration == null) {
-			throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
+			throw new KlabIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
 		}
 		return configuration.getSpatialProjection(string);
 	}
@@ -71,7 +71,7 @@ public interface Projection {
 	public static Projection getLatLon() {
 		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
 		if (configuration == null) {
-			throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
+			throw new KlabIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
 		}
 		return configuration.getLatLonSpatialProjection();
 	}
@@ -79,7 +79,7 @@ public interface Projection {
 	public static Projection getDefault() {
 		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
 		if (configuration == null) {
-			throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
+			throw new KlabIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
 		}
 		return configuration.getDefaultSpatialProjection();
 	}

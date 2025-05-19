@@ -14,8 +14,8 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
@@ -182,7 +182,7 @@ public interface Time extends Extent<Time>, Encodeable {
                     case "millisecond":
                         return Type.MILLISECOND;
                 }
-                throw new KValidationException("invalid time unit for resolution: " + unit);
+                throw new KlabValidationException("invalid time unit for resolution: " + unit);
             }
 
         }
@@ -230,7 +230,7 @@ public interface Time extends Extent<Time>, Encodeable {
 
             Type type = Resolution.Type.MILLISECOND;
             // order of magnitude
-            RangeImpl order = RangeImpl.create(1, 9.999, false);
+            NumericRangeImpl order = NumericRangeImpl.create(1, 9.999, false);
 
             if (order.contains((double) ms / Resolution.Type.MILLENNIUM.getMilliseconds())) {
                 type = Resolution.Type.MILLENNIUM;
@@ -258,7 +258,7 @@ public interface Time extends Extent<Time>, Encodeable {
         }
 
         public static Resolution parse(String string) {
-            return Resolution.of(Quantity.parse(string));
+            return Resolution.of(Quantity.create(string));
         }
 
     }
@@ -461,13 +461,5 @@ public interface Time extends Extent<Time>, Encodeable {
      */
     TimeInstant getFocus();
 
-//    /**
-//     * Time extents record the actual changes in the observations they describe. This method checks if there have been
-//     * one or more changes in the artifact's state during the time passed.
-//     *
-//     * @param time
-//     * @return
-//     */
-//    boolean hasChangeDuring(Time time);
 
 }

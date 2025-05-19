@@ -1,11 +1,6 @@
 package org.integratedmodelling.klab.api.lang;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
-import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
 
 /**
  * Annotation from code, normally starting out as a @xxx annotation in a parsed language (all three
@@ -32,25 +27,9 @@ public interface Annotation extends Parameters<String> {
     String getName();
 
     String getContentClass();
-    
-    @SuppressWarnings("unchecked")
-    public static Annotation create(String name, Object... o) {
-        Map<String, Object> inp = new LinkedHashMap<String, Object>();
-        if (o != null) {
-            for (int i = 0; i < o.length; i++) {
-                if (o[i] instanceof Map) {
-                    inp.putAll((Map) o[i]);
-                } else if (o[i] != null) {
-                    if (!ParametersImpl.IGNORED_PARAMETER.equals(o[i])) {
-                        inp.put(o[i].toString(), o[i + 1]);
-                    }
-                    i++;
-                }
-            }
-        }
-        AnnotationImpl ret = new AnnotationImpl(inp);
-        ret.setName(name);
-        return ret;
+
+    public static AnnotationImpl of(String name, Object... parameters) {
+        return AnnotationImpl.create(name, parameters);
     }
 
     //

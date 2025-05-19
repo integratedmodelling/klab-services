@@ -32,6 +32,9 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * TODO revise using filling curves
+ */
 public class NDCursor {
 
     public enum Order {
@@ -115,7 +118,7 @@ public class NDCursor {
 
     }
 
-    long multiplicity;
+    protected long multiplicity;
     int dimensions;
     long[] extents;
     long[] strides;
@@ -137,9 +140,13 @@ public class NDCursor {
     }
 
     public NDCursor(Geometry geometry) {
+        this(geometry, Order.FIRST_SLOWEST);
+    }
+
+    public NDCursor(Geometry geometry, Order storageOrder) {
         multiplicity = 0;
         dimensions = 0;
-        storageOrderType = Order.FIRST_SLOWEST;
+        storageOrderType = storageOrder;
         long[] dims = new long[geometry.getDimensions().size()];
         int i = 0;
         for (Dimension dimension : geometry.getDimensions()) {
@@ -305,8 +312,8 @@ public class NDCursor {
     }
 
     public long defineDimensions(List<Long> extents) {
-        this.extents = Utils.Numbers.longArrayFromCollection(extents);
-        dimensions = extents == null ? 0 : extents.size();
+        this.dimensions = extents == null ? 0 : extents.size();
+        this.extents = extents == null? new long[0] : Utils.Numbers.longArrayFromCollection(extents);
         return initializeStrides();
     }
 

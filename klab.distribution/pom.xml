@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.integratedmodelling</groupId>
+        <artifactId>klab-services</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+    <packaging>pom</packaging>
+    <artifactId>klab.distribution</artifactId>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.integratedmodelling</groupId>
+                <artifactId>klab.product</artifactId>
+                <version>1.0.1-SNAPSHOT</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>update-distribution</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!--
+                       release name is the current Git branch, courtesy of the buildnumber-maven-plugin
+                       configured in the root pom.xml.
+                    -->
+                    <releaseName>${scmBranch}</releaseName>
+                    <outputDirectory>target/distribution</outputDirectory>
+                    <distributionName>klab</distributionName>
+                    <distributionVersion>${klab.version}</distributionVersion>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!-- Add every project that has build configuration and should end up in the distribution -->
+    <dependencies>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.services.resources.server</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.services.reasoner.server</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.services.resolver.server</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.services.runtime.server</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
+    </dependencies>
+
+</project>

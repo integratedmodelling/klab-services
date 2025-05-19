@@ -1,68 +1,178 @@
 /*
  * This file is part of k.LAB.
- * 
+ *
  * k.LAB is free software: you can redistribute it and/or modify it under the terms of the Affero
  * GNU General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
  *
  * A copy of the GNU Affero General Public License is distributed in the root directory of the k.LAB
  * distribution (LICENSE.txt). If this cannot be found see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned in author tags. All
  * rights reserved.
  */
 package org.integratedmodelling.klab.api.provenance;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
+import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
- * Activity (process). Primary processes produce artifacts. Secondary processes
- * (after creation) may modify them. Activities in k.LAB represent each
- * execution of an actuator, which represents a IPlan (part of the overall plan
- * that is the IActuator).
- * 
+ * Activity (process). Primary processes produce artifacts. Secondary processes (after creation) may
+ * modify them. Activities in k.LAB should always be linked to (1) the root provenance node for a
+ * context scope through the main provenance node or a parent activity; (2) the agent that
+ * engendered them; and (3) the plan represented by a dataflow or actuator. The latter can be
+ * optional if the activity is explicit and the actor is a user, unless we want to capture the
+ * user's intention.
+ *
+ * <p>Activities have URNs containing a full hierarchical path so that a client that obtains them
+ * with contextualization events can reconstruct the call sequence.
+ *
+ * <p>To optimize the provenance graph, actions that are repeated by the scheduler will not generate
+ * a new activity but add a timestamp to {@link #getSchedulerTime()}; TODO obsolete
+ *
  * @author Ferd
  * @version $Id: $Id
  */
 public interface Activity extends Provenance.Node {
 
-	/**
-	 * System time of start.
-	 *
-	 * @return a long.
-	 */
-	long getStart();
+  default RuntimeAsset.Type classify() {
+    return RuntimeAsset.Type.ACTIVITY;
+  }
 
-	/**
-	 * System time of end.
-	 *
-	 * @return a long.
-	 */
-	long getEnd();
+  String getServiceId();
 
-	/**
-	 * Scheduler time of action. Null if agent is not the k.LAB scheduler.
-	 * 
-	 * @return
-	 */
-	Time getSchedulerTime();
+  String getServiceName();
 
-	/**
-	 * If the action was caused by another action, return the action that caused it.
-	 *
-	 * @return a {@link java.util.Optional} object.
-	 */
-	Optional<Activity> getCause();
+  KlabService.Type getServiceType();
 
-	/**
-	 * Actions are made by agents.
-	 *
-	 * @return a {@link org.integratedmodelling.klab.api.provenance.Agent} object.
-	 */
-	Agent getAgent();
+  String getDataflow();
 
+  /**
+   * The URN is a dot-separated hierarchically organized identifier, starting with the context scope
+   * ID, and enables the reconstruction of the activity hierarchy at the client side.
+   *
+   * @return
+   */
+  String getUrn();
+
+  enum Type {
+    CONTEXT_INITIALIZATION,
+    INITIALIZATION,
+    RESOLUTION,
+    CONTEXTUALIZATION,
+    INSTANTIATION,
+    EXECUTION
+  }
+
+  enum Outcome {
+    FAILURE,
+    SUCCESS,
+    INTERNAL_FAILURE
+  }
+
+  Type getType();
+
+  /**
+   * System time of start.
+   *
+   * @return a long.
+   */
+  long getStart();
+
+  /**
+   * System time of end.
+   *
+   * @return a long.
+   */
+  long getEnd();
+
+  /**
+   * A quantification of the¶ "size" of the activity in any metric that can be compared across the
+   * provenance graph.
+   *
+   * @return
+   */
+  long getSize();
+
+  /**
+   * The number of k.LAB credits expended during the activity.
+   *
+   * @return
+   */
+  long getCredits();
+
+  /**
+   * Logs each time that the action was executed (in lieu of having an action per each execution).
+   * Empty for any action that wasn't called by the scheduler. If not empty the first time could be
+   * initialization or after, based on the occurrent character of the linked observation.
+   *
+   * @return
+   */
+  List<Long> getSchedulerTime();
+
+  /**
+   * Optional description for human consumption and report generation.
+   *
+   * @return
+   */
+  String getDescription();
+
+  /**
+   * Non-null for all activities that manipulate an observation, including those that failed.
+   *
+   * @return
+   */
+  String getObservationUrn();
+
+  Outcome getOutcome();
+
+  String getStackTrace();
+
+  /**
+   * Create an activity with the passed parameters. Those that should always be passed are the
+   * activity type, a description, and the service that creates it. If a TimeInstant is passed, the
+   * start time will be set (otherwise it will be the time of creation). An {@link Outcome} can also
+   * be passed and a Throwable, which will also set the outcome to failure and the end time to the
+   * current time.
+   *
+   * @param arguments
+   * @return
+   */
+  static ActivityImpl of(Object... arguments) {
+
+    var ret = new ActivityImpl();
+    ret.setStart(System.currentTimeMillis());
+    ret.setId(Observation.UNASSIGNED_ID);
+
+    for (Object o : arguments) {
+      if (o instanceof String string) {
+        ret.setDescription(string);
+      } else if (o instanceof TimeInstant timeInstant) {
+        ret.setStart(timeInstant.getMilliseconds());
+      } else if (o instanceof Type type) {
+        ret.setType(type);
+      } else if (o instanceof Outcome outcome) {
+        ret.setOutcome(outcome);
+      } else if (o instanceof Throwable throwable) {
+        ret.setStackTrace(Utils.Exceptions.stackTrace(throwable));
+        ret.setEnd(System.currentTimeMillis());
+        ret.setOutcome(Outcome.FAILURE);
+      } else if (o instanceof KlabService service) {
+        ret.setServiceId(service.serviceId());
+        ret.setServiceName(service.getServiceName());
+        ret.setServiceType(KlabService.Type.classify(service));
+      }
+    }
+    return ret;
+  }
 }

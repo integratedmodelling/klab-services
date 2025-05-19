@@ -15,145 +15,132 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation;
 
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Knowledge;
-import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
+import org.integratedmodelling.klab.api.scope.Scope;
+
+import java.util.List;
 
 /**
- * The interface Observation, which is the semantic equivalent of an Artifact and once created in a k.LAB session, can
- * be made reactive by supplementing it with a behavior. Models may bind instantiated observations to actor files that
- * will provide behaviors for their instances (or a subset thereof). Once made reactive, they can interact with each
- * other and the system.
- * <p>
- * FIXME the API needs to lose a lot of weight
+ * The interface Observation, which is the semantic equivalent of an Artifact and represents an
+ * observable in the observation graph of a k.LAB context. Once created in a k.LAB session, it can
+ * be made reactive by supplementing it with a behavior, which will create an agent accessible
+ * through the context scope focused on the observation. Models may bind instantiated observations
+ * to actor files that will provide behaviors for their instances (or a subset thereof). Once made
+ * reactive, they can interact with each other and the system.
+ *
+ * <p>The ID of an observation is a positive long for efficiency. Paths such as 3.44.234 identify
+ * observation hierarchies to reconstruct scopes. If the ID is negative, the observation is
+ * unresolved and does not exist in the knowledge graph. So a client may <em>send</em> an unresolved
+ * observation (normally created with {@link
+ * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin#createObservation(Scope, Object...)} but
+ * will never <em>receive</em> one, except in case of resolution error.
+ *
+ * <p>TODO we could just use Observation (abstract) + DirectObservation (rename to Substantial) and
+ * State, then everything else is taken care of by the semantics (folder ==
+ * getObservable().isCollective()), the DT and its graph.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Observation extends Knowledge, Artifact {
+public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAsset {
 
-    /**
-     * Return the observable.
-     *
-     * @return the observation's observable
-     */
-    Observable getObservable();
+  long UNASSIGNED_ID = -1;
 
-    /**
-     * The observer that/who made the observation. May be a simple identity (like the user in the main scope) or a
-     * DirectObservation from (this or another) scope, which also implements Identity. Never null.
-     *
-     * @return
-     */
-    Identity getObserver();
+  /**
+   * The role played by an observation in a dependency hierarchy. This depends solely on the
+   * observable's semantics so it's redundant, but being able to classify it streamlines and
+   * clarifies the code and any API use.
+   */
+  enum Role {
+    COLLECTIVE_SUBSTANTIAL,
+    INDIVIDUAL_SUBSTANTIAL,
+    RELATIONAL,
+    DEPENDENT
+    // TODO classifications and categorizations
+  }
 
-    /**
-     * Return the scale where this is contextualized. It may differ from the scale of the context although the latter
-     * should always contain the scale of all observations and observers in it.
-     *
-     * @return the observation's scale
-     */
-    @Override
-    Scale getGeometry();
+  default RuntimeAsset.Type classify() {
+    return RuntimeAsset.Type.OBSERVATION;
+  }
 
-    /**
-     * Return a view of this observation restricted to the passed locator, which is applied to the scale to obtain a new
-     * scale, used as a filter to obtain the view. The result should be able to handle both conformant scaling (e.g. fix
-     * one dimension) and non-conformant (i.e. one state maps to multiple ones with irregular extent coverage) in both
-     * reading and writing.
-     *
-     * @param locator
-     * @return a rescaled view of this observation
-     * @throws IllegalArgumentException if the locator is unsuitable for the observation
-     */
-    Observation at(Locator locator);
+  /**
+   * A name should never be null, although only substantials have the name as a defining feature.
+   * Names do not need to be unique or conform to any syntax rule.
+   *
+   * @return
+   */
+  String getName();
 
-//	/**
-//	 * Observation may have been made in the context of another direct observation.
-//	 * This will always return non-null in indirect observations, and may return
-//	 * null in direct ones when they represent the "root" context.
-//	 *
-//	 * @return the context for the observation, if any.
-//	 */
-//	DirectObservation getContext();
+  /**
+   * Return the observable.
+   *
+   * @return the observation's observable
+   */
+  Observable getObservable();
 
-//	/**
-//	 * True if our scale has an observation of space with more than one state value.
-//	 *
-//	 * @return true if distributed in space
-//	 */
-//	boolean isSpatiallyDistributed();
-//
-//	/**
-//	 * True if our scale has an observation of time with more than one state value.
-//	 *
-//	 * @return true if distributed in time.
-//	 */
-//	boolean isTemporallyDistributed();
-//
-//	/**
-//	 * True if our scale has any implementation of time.
-//	 *
-//	 * @return if time is known
-//	 */
-//	boolean isTemporal();
-//
-//	/**
-//	 * True if our scale has any implementation of space.
-//	 *
-//	 * @return if space is known
-//	 */
-//	boolean isSpatial();
+  /**
+   * Return a view of this observation restricted to the passed locator, which is applied to the
+   * scale to obtain a new scale, used as a filter to obtain the view. The result should be able to
+   * handle both conformant scaling (e.g. fix one dimension) and non-conformant (i.e. one state maps
+   * to multiple ones with irregular extent coverage) in both reading and writing.
+   *
+   * @param locator
+   * @return a rescaled view of this observation
+   * @throws IllegalArgumentException if the locator is unsuitable for the observation
+   */
+  Observation at(Locator locator);
 
-    /**
-     * Return the spatial extent, or null.
-     *
-     * @return the observation of space
-     */
-    Space getSpace();
-
-//	/**
-//	 * Return true if this observation has changes that happened after
-//	 * initialization. Note that it is not guaranteed that a dynamic observation
-//	 * knows it's dynamic before changes are reported, so observations may start
-//	 * static and become dynamic later.
-//	 *
-//	 * @return
-//	 */
-//	boolean isDynamic();
-
-//	/**
-//	 * Time of creation according to context time, not to be confused with the
-//	 * system creation time returned by {@link #getTimestamp()}.
-//	 *
-//	 * @return the time of creation
-//	 */
-//	long getCreationTime();
-
-//	/**
-//	 * Time of "exit", i.e. end of life of the observation according to context
-//	 * time. If the context has no time or the object is current, this is -1L.
-//	 *
-//	 * @return the time of exit
-//	 */
-//
-//	long getExitTime();
-
-    static Observation EMPTY_OBSERVATION = new ObservationImpl() {
+  Observation EMPTY_OBSERVATION =
+      new ObservationImpl() {
 
         @Override
         public boolean isEmpty() {
-            return true;
+          return true;
         }
-    };
+      };
 
-    public static Observation empty() {
-        return EMPTY_OBSERVATION;
+  static Observation empty() {
+    return EMPTY_OBSERVATION;
+  }
+
+  Object getValue();
+
+  /**
+   * The observation records the timestamps of last update due to any event that required its
+   * contextualization. Substantials and their qualities have an initial 0 value to represent the
+   * "past" - that's because substantials exists besides simulated time, so that their first state
+   * (computed when the INITIALIZATION event is received) is represented by the period 0-(beginning
+   * re: time in geometry of context observation). If this is empty the observation hasn't been
+   * resolved yet.
+   *
+   * @return
+   */
+  List<Long> getEventTimestamps();
+
+  /**
+   * After resolution, this will report the 0-1 coverage resolved. Before resolution this will be 0.
+   *
+   * @return
+   */
+  double getResolvedCoverage();
+
+  static Role classifyRole(Observation observation) {
+
+    // TODO check classifications and categorizations
+    if (observation.getObservable().is(SemanticType.QUALITY)
+        || observation.getObservable().is(SemanticType.PROCESS)) {
+      return Role.DEPENDENT;
+    } else if (observation.getObservable().is(SemanticType.RELATIONSHIP)) {
+      return Role.RELATIONAL;
+    } else if (observation.getObservable().getSemantics().isCollective()) {
+      return Role.COLLECTIVE_SUBSTANTIAL;
     }
+    return Role.INDIVIDUAL_SUBSTANTIAL;
+  }
 }

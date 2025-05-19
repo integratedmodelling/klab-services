@@ -1,9 +1,9 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 
 import java.util.Collection;
 import java.util.List;
@@ -11,139 +11,68 @@ import java.util.Map;
 
 /**
  * The syntactic peer of a k.LAB namespace.
- * 
- * @author ferdinando.villa
  *
+ * @author ferdinando.villa
  */
-public interface KimNamespace extends KimStatement, KlabAsset {
+public interface KimNamespace extends KlabDocument<KlabStatement> {
 
-	/**
-	 * Roles a namespace can play within a project. Not fully integrated at the
-	 * moment, although the namespace should have a getRole() method to expose it.
-	 * 
-	 * @author Ferd
-	 *
-	 */
-	public enum Role {
-		KNOWLEDGE, SCRIPT, TESTCASE, CALIBRATION, SCENARIOalias
-	}
+    /**
+     * Return all the namespaces that this should not be mixed with during resolution or scenario setting.
+     *
+     * @return IDs of namespaces we do not agree with
+     */
+    Collection<String> getDisjointNamespaces();
 
-	/**
-	 * Return all the namespaces that this should not be mixed with during
-	 * resolution or scenario setting.
-	 *
-	 * @return IDs of namespaces we do not agree with
-	 */
-	Collection<String> getDisjointNamespaces();
+    /**
+     * Extentual coverage of this namespace. This constrains any model-specific coverage if both are
+     * specified, and it's the upstream top level of coverage specification for any models.
+     *
+     * @return
+     */
+    Geometry getCoverage();
 
-	/**
-	 * The timestamp of creation of the namespace object - not the underlying file
-	 * resource (see {@link #getFile()} for that).
-	 * 
-	 * @return time of creation
-	 */
-	long getTimestamp();
+//    /**
+//     * @return
+//     */
+//    Parameters<String> getDefines();
 
-	/**
-	 * Imports of external OWL ontologies
-	 * 
-	 * @return
-	 */
-	List<PairImpl<String, String>> getOwlImports();
+    /**
+     * True if declared as a scenario.
+     *
+     * @return
+     */
+    boolean isScenario();
 
-	/**
-	 * Import of vocabularies from resources, as resource URN -> list of
-	 * vocabularies from that resource
-	 * 
-	 * @return
-	 */
-	List<PairImpl<String, List<String>>> getVocabularyImports();
+    /**
+     * If this is a script, return its ID (either specified in a run annotation or the file name). Otherwise
+     * return null.
+     *
+     * @return the script ID or null.
+     */
+    String getScriptId();
 
-	/**
-	 * 
-	 * @return
-	 */
-	Map<String, Object> getDefines();
+    /**
+     * If this is a test case, return its ID (either specified in a run annotation or the file name).
+     * Otherwise return null.
+     *
+     * @return the test case ID or null.
+     */
+    String getTestCaseId();
 
-	/**
-	 * True if declared as void.
-	 * 
-	 * @return
-	 */
-	boolean isInactive();
+    /**
+     * Bound to a worldview, therefore used as a script or sidecar file.
+     *
+     * @return
+     */
+    boolean isWorldviewBound();
 
-	/**
-	 * True if declared as a scenario.
-	 * 
-	 * @return
-	 */
-	boolean isScenario();
 
-	/**
-	 * The domain concept, if stated.
-	 * 
-	 * @return
-	 */
-	KimConcept getDomain();
-
-	/**
-	 * If this is a script, return its ID (either specified in a run annotation or
-	 * the file name). Otherwise return null.
-	 * 
-	 * @return the script ID or null.
-	 */
-	String getScriptId();
-
-	/**
-	 * If this is a test case, return its ID (either specified in a run annotation
-	 * or the file name). Otherwise return null.
-	 * 
-	 * @return the test case ID or null.
-	 */
-	String getTestCaseId();
-
-	/**
-	 * Bound to a worldview, therefore used as a script or sidecar file.
-	 * 
-	 * @return
-	 */
-	boolean isWorldviewBound();
-
-	/**
-	 * Return all the top-level statements in order of definition.
-	 * 
-	 * @return
-	 */
-	List<KimStatement> getStatements();
-
-	/**
-	 * If functions were given to constrain the namespace to a scale, return them.
-	 * 
-	 * @return
-	 */
-	List<ServiceCall> getExtents();
-
-	/**
-	 * A list of the imported namespace IDs matched to a (possibly null) list of
-	 * identifiers imported from each.
-	 * 
-	 * @return
-	 */
-	Map<String, List<String>> getImports();
-
-	/**
-	 * Notifications during compilation. If any of the contained objects have
-	 * errors, there should be one overall notification that ensures errors are
-	 * visible at the namespace level.
-	 * 
-	 * @return
-	 */
-	Collection<Notification> getNotifications();
-
-	/**
-	 * 
-	 * @return
-	 */
-	String getProjectName();
+    /**
+     * A list of the imported namespace IDs matched to a (possibly null) list of symbols imported from each.
+     * If the list is null, all symbols are imported.
+     *
+     * @return
+     */
+    Map<String, List<String>> getImports();
 
 }

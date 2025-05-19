@@ -1,169 +1,345 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <groupId>org.integratedmodelling</groupId>
-    <artifactId>klab</artifactId>
-    <version>0.11.0-SNAPSHOT</version>
-  </parent>
-  <artifactId>klab-services</artifactId>
-  <packaging>pom</packaging>
-  <modules>
-	<module>klab.services.engine</module>
-	<module>klab.services.reasoner</module>
-	<module>klab.services.core</module>
-	<module>klab.core.api</module>
-	<module>klab.services.resources</module>
-	<module>klab.services.authentication</module>
-	<module>klab.services.reasoner.server</module>
-	<module>klab.services.community</module>
-	<module>klab.services.reasoner.client</module>
-	<module>klab.services.resources.client</module>
-	<module>klab.services.resources.server</module>
-	<module>klab.services.resolver.client</module>
-	<module>klab.services.resolver.server</module>
-	<module>klab.services.runtime.client</module>
-	<module>klab.services.runtime.server</module>
-	<module>klab.services.community.client</module>
-	<module>klab.services.community.server</module>
-	<module>klab.services.runtime</module>
-	<module>klab.services.resolver</module>
-	<module>kcli</module>
-  </modules>
+    <artifactId>klab-services</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <modules>
+        <module>klab.services.reasoner</module>
+        <module>klab.core.services</module>
+        <module>klab.core.api</module>
+        <module>klab.services.resources</module>
+        <module>klab.services.reasoner.server</module>
+        <module>klab.core.common</module>
+        <module>klab.services.resources.server</module>
+        <module>klab.services.resolver.server</module>
+        <module>klab.services.runtime.server</module>
+        <module>klab.services.runtime</module>
+        <module>klab.services.resolver</module>
+        <!--        <module>p2</module>-->
+        <module>klab.cli</module>
+        <module>klab.modeler</module>
+        <module>klab.distribution</module>
+    </modules>
 
-	<licenses>
-		<license>
-			<name>GNU Affero General Public License (AGPL) version 3.0</name>
-			<url>http://www.gnu.org/licenses/agpl-3.0.en.html</url>
-		</license>
-	</licenses>
+    <licenses>
+        <license>
+            <name>GNU Affero General Public License (AGPL) version 3.0</name>
+            <url>http://www.gnu.org/licenses/agpl-3.0.en.html</url>
+        </license>
+    </licenses>
 
-	<developers>
-		<developer>
-			<name>Ferdinando Villa</name>
-			<email>ferdinando.villa@bc3research.org</email>
-			<organization>Basque Centre for Climate Change (BC3); IKERBASQUE, Basque foundation for science</organization>
-			<organizationUrl>http://www.bc3research.org</organizationUrl>
-		</developer>
-		<developer>
-			<name>Enrico Girotto</name>
-			<email>enrico.girotto@gmail.com</email>
-			<organization>Basque Centre for Climate Change (BC3)</organization>
-			<organizationUrl>http://www.bc3research.org</organizationUrl>
-		</developer>
-		<developer>
-			<name>Iñigo Cobián</name>
-			<email>inigo.cobian@bc3research.org</email>
-			<organization>Basque Centre for Climate Change (BC3)</organization>
-			<organizationUrl>http://www.bc3research.org</organizationUrl>
-		</developer>
-		<developer>
-			<name>Andrea Antonello</name>
-			<email>andrea.antonello@gmail.com</email>
-			<organization>HydroloGIS Environmental Engineering</organization>
-			<organizationUrl>https://www.hydrologis.com/</organizationUrl>
-		</developer>
-	</developers>
+    <developers>
+        <developer>
+            <name>Ferdinando Villa</name>
+            <email>ferdinando.villa@bc3research.org</email>
+            <organization>Basque Centre for Climate Change (BC3); IKERBASQUE, Basque foundation for science
+            </organization>
+            <organizationUrl>http://www.bc3research.org</organizationUrl>
+        </developer>
+        <developer>
+            <name>Enrico Girotto</name>
+            <email>enrico.girotto@gmail.com</email>
+            <organization>Basque Centre for Climate Change (BC3)</organization>
+            <organizationUrl>http://www.bc3research.org</organizationUrl>
+        </developer>
+        <developer>
+            <name>Iñigo Cobián</name>
+            <email>inigo.cobian@bc3research.org</email>
+            <organization>Basque Centre for Climate Change (BC3)</organization>
+            <organizationUrl>http://www.bc3research.org</organizationUrl>
+        </developer>
+        <developer>
+            <name>Kristina Sánchez</name>
+            <email>kristina.sanchez@bc3research.org</email>
+            <organization>Basque Centre for Climate Change (BC3)</organization>
+            <organizationUrl>http://www.bc3research.org</organizationUrl>
+        </developer>
+        <developer>
+            <name>Andrea Antonello</name>
+            <email>andrea.antonello@gmail.com</email>
+            <organization>HydroloGIS Environmental Engineering</organization>
+            <organizationUrl>https://www.hydrologis.com/</organizationUrl>
+        </developer>
+    </developers>
 
-	<scm>
-		<connection>scm:git:http://github.com/integratedmodelling/klab-services</connection>
-		<developerConnection>scm:git:https://github.com/integratedmodelling/klab-services</developerConnection>
-		<url>https://github.com/integratedmodelling/klab-services.git</url>
-	</scm>
+    <scm>
+        <connection>scm:git:http://github.com/integratedmodelling/klab-services</connection>
+        <developerConnection>scm:git:https://github.com/integratedmodelling/klab-services</developerConnection>
+        <url>https://github.com/integratedmodelling/klab-services.git</url>
+    </scm>
 
-	<organization>
-		<name>integratedmodelling.org</name>
-		<url>http://www.integratedmodelling.org</url>
-	</organization>
+    <organization>
+        <name>integratedmodelling.org</name>
+        <url>https://www.integratedmodelling.org</url>
+    </organization>
 
-	<distributionManagement>
-		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</snapshotRepository>
-		<repository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
-		</repository>
-	</distributionManagement>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+        </repository>
+    </distributionManagement>
 
-	<properties>
+    <properties>
 
-		<klab.version>0.11.0-SNAPSHOT</klab.version>
+        <klab.version>1.0.0-SNAPSHOT</klab.version>
 
-		<project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-		<java.version>11</java.version>
-		<!-- Careful here: geotools must be right for hortonmachine to work; JTS
-			should be the same one that geotools and HM needs. -->
-		<geotools.version>28.0</geotools.version>
-		<hortonmachine.version>0.10.8-SNAPSHOT</hortonmachine.version>
-		<jts.version>1.18.1</jts.version>
-		<h2gis.version>1.5.0</h2gis.version>
-		<maven.compiler.source>21</maven.compiler.source>
-		<maven.compiler.target>21</maven.compiler.target>
-		<tycho-version>2.7.3</tycho-version>
-		<xtextVersion>2.27.0</xtextVersion>
-		<mweVersion>2.13.0</mweVersion>
-		<googleJibVersion>3.4.0</googleJibVersion>
-		<jib.jvmFlags>-XshowSettings:vm</jib.jvmFlags>
+        <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
+        <java.version>21</java.version>
+        <!-- Careful here: geotools must be right for hortonmachine to work; JTS
+            should be the same one that geotools and HM needs. -->
+        <geotools.version>28.0</geotools.version>
+        <hortonmachine.version>0.10.8-SNAPSHOT</hortonmachine.version>
+        <jts.version>1.18.1</jts.version>
+        <h2gis.version>1.5.0</h2gis.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <tycho-version>2.7.3</tycho-version>
+        <xtextVersion>2.27.0</xtextVersion>
+        <mweVersion>2.13.0</mweVersion>
+        <googleJibVersion>3.3.1</googleJibVersion>
+        <jib.jvmFlags>-XshowSettings:vm</jib.jvmFlags>
+        <avro.version>1.12.0</avro.version>
 
-		<!-- the five below go together. Never change one without checking the
-			others. Spring security latest is currently requiring 5.0.4, implying boot
-			2.0.0 -->
-		<spring-boot.version>3.1.4</spring-boot.version>
-		<spring.version>6.0.12</spring.version>
-		<spring-security.version>6.1.4</spring-security.version>
-		<junit-version>5.6.3</junit-version>
-		<jackson-version>2.12.4</jackson-version>
-		<jsonld-java-version>0.13.4</jsonld-java-version>
-		<!-- end versions that need to be in lock-step to avoid multiple Spring
-			issues -->
+        <!-- the five below go together. Never change one without checking the
+            others. -->
+        <spring-boot.version>3.4.4</spring-boot.version>
+        <spring.version>6.2.5</spring.version>
+        <spring-security.version>6.4.4</spring-security.version>
+        <junit-version>5.6.3</junit-version>
+        <jackson-version>2.17.1</jackson-version>
 
-		<!-- <scala.version>2.13.1</scala.version> -->
-		<joda-time-version>2.3</joda-time-version>
-		<javax.mail-api.version>1.5.2</javax.mail-api.version>
-		<jung.version>2.1.1</jung.version>
 
-	</properties>
+        <javax.mail-api.version>1.5.2</javax.mail-api.version>
+        <maven-compiler-plugin-version>3.13.0</maven-compiler-plugin-version>
 
-	<build>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.12.1</version>
-					<configuration>
-						<source>${maven.compiler.source}</source>
-						<target>${maven.compiler.target}</target>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>3.6.2</version>
-					<configuration>
-						<!-- Recover doclint checks: https://integratedmodelling.atlassian.net/browse/IM-229 !-->
-						<doclint>none</doclint>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>com.google.cloud.tools</groupId>
-					<artifactId>jib-maven-plugin</artifactId>
-					<version>${googleJibVersion}</version>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-	</build>
+    </properties>
 
-	<repositories>
-		<repository>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<id>sonatype-nexus-snapshots</id>
-			<name>Maven Central snapshots</name>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</repository>
-	</repositories>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin-version}</version>
+                    <configuration>
+                        <source>${maven.compiler.source}</source>
+                        <target>${maven.compiler.target}</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>jar-no-fork</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.11.1</version>
+                    <configuration>
+                        <!-- Recover doclint checks: https://integratedmodelling.atlassian.net/browse/IM-229 !-->
+                        <doclint>none</doclint>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>com.google.cloud.tools</groupId>
+                    <artifactId>jib-maven-plugin</artifactId>
+                    <version>${googleJibVersion}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <!-- This makes build info available downstream. Used in klab.distribution to find the ${scmBranch}. Also
+                 creates a build number, not used at the moment. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>create</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <repositories>
+        <repository>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>sonatype-nexus-snapshots</id>
+            <name>Maven Central snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>sonatype-nexus-snapshots</id>
+            <name>Maven Central snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <releases>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </pluginRepository>
+    </pluginRepositories>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.jgrapht</groupId>
+                <artifactId>jgrapht-core</artifactId>
+                <version>1.5.2</version>
+            </dependency>
+            <dependency>
+                <groupId>tech.units</groupId>
+                <artifactId>indriya</artifactId>
+                <version>2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.30.2-GA</version>
+                <type>jar</type>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.17.0</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>1.3.4</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.11.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>2.0.11</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-parameter-names</artifactId>
+                <version>${jackson-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>0.10.2</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>3.2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.collections</groupId>
+                <artifactId>eclipse-collections-api</artifactId>
+                <version>12.0.0.M3</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>33.0.0-jre</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-web</artifactId>
+                <version>${spring.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-messaging</artifactId>
+                <version>${spring.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-websocket</artifactId>
+                <version>${spring.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-oauth2-client</artifactId>
+                <version>${spring-security.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-websocket</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-graphql</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-tomcat</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-webflux</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-security</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
 </project>

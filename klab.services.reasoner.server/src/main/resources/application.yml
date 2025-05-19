@@ -10,7 +10,7 @@ management:
       enabled: false
 application:
    info:
-      title: "k.LAB Reasoner API"
-      description: "Porcaccio dio gesu"
+      title: "k.LAB Reasoner"
+      description: "Reasoning services for k.LAB"
       contactName: "Integrated Modelling Partnership"
       contactEmail: "info@integratedmodelling.org"

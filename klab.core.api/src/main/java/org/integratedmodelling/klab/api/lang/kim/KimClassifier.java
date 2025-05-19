@@ -1,8 +1,9 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
+import java.io.Serializable;
 import java.util.List;
 
-import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
+import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 
@@ -12,7 +13,7 @@ import org.integratedmodelling.klab.api.lang.ExpressionCode;
  * @author ferdinando.villa
  *
  */
-public interface KimClassifier extends KimStatement {
+public interface KimClassifier extends Serializable {
 
     boolean isCatchAll();
 
@@ -28,7 +29,7 @@ public interface KimClassifier extends KimStatement {
 
     List<KimClassifier> getClassifierMatches();
 
-    RangeImpl getIntervalMatch();
+    NumericRangeImpl getIntervalMatch();
 
     boolean isNullMatch();
 

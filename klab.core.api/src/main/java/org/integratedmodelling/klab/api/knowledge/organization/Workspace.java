@@ -1,16 +1,15 @@
 package org.integratedmodelling.klab.api.knowledge.organization;
 
-import java.io.Serializable;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+
 import java.util.Collection;
 
-public interface Workspace extends Serializable {
-    
-    /**
-     * Name of the workspace. May or may not be linked to the name of the root directory.
-     * 
-     * @return workspace name.
-     */
-    String getName();
+public interface Workspace extends KlabAsset {
+
+    String EXTERNAL_WORKSPACE_URN = "__EXTERNAL_WORKSPACE__";
+
+    ResourcePrivileges getPrivileges();
 
     /**
      * All projects managed under this workspace.

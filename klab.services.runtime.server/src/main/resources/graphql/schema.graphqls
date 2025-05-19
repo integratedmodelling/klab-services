@@ -1,0 +1,139 @@
+# Main query types
+
+type Query {
+    # all root observations in scope (including the observer) if at root level; children if in observation scope
+    observations: [Observation]!
+    # The parent observation (null if not in observation scope)
+    parent: Observation
+    # All tasks in scope
+    tasks: [ResolutionTask]!
+    # all notifications from tasks in this scope (and children) that happened after passed Epoch (a long in the API)
+    notifications(after: Float = 0): [Notification]!
+}
+
+#type Mutation {
+#    # submit the data for an observation and obtain the observation ID, also the task ID of its resolution
+#    # the ID is a long but there's no Long and Int is a real Int, I use a String because I hate it less than Float.
+#    observe(observation: ObservationInput): String
+#}
+
+# ---- COMMON types
+
+enum Status { WAITING, STARTED, FINISHED, ABORTED }
+enum Level { DEBUG, INFO, WARNING, ERROR }
+enum SemanticType {QUALITY, AGENT, SUBJECT, FUNCTIONAL_RELATIONSHIP, STRUCTURAL_RELATIONSHIP, BOND, EVENT, PROCESS, CONFIGURATION}
+enum LinkType {CHILD, PARENT, OBSERVER}
+
+type Link {
+    sourceId: String!
+    targetID: String!
+    type: LinkType!
+}
+
+type Notification {
+    level: Level
+    message: String
+    mClass: String
+    taskId: String
+}
+
+# ----- OBSERVATION schema ------
+
+type Observation {
+    id: String!
+    name: String!
+    type: ObservationType!
+    geometry: Geometry!
+    semantics: Observable!
+    resolution: Status!
+    # if this is not null, the observation is an observer
+    observerGeometry: Geometry
+    nChildren: Int
+}
+
+type ResolutionTask {
+    # same as the ID of the observation being resolved
+    id: String
+    start: Float!
+    end: Float
+    status: Status!
+    notifications: [Notification]!
+    children: [ResolutionTask]!
+}
+
+type Observable {
+    semantics: String!
+    collective: Boolean!
+    referenceName: String!
+    baseType: SemanticType!
+}
+
+type Geometry {
+    multiplicity: Int!
+    # mandatorily a WKB string
+    shape: String
+    grid: Grid
+    projection: String
+    time: Time
+}
+
+type Grid {
+    xCells: Int
+    yCells: Int
+    x1: Float
+    x2: Float
+    y1: Float
+    y2: Float
+}
+
+type Time {
+    # seconds from epoch (should be converted to long)
+    start: Float
+    # seconds from epoch (should be converted to long)
+    end: Float
+}
+
+enum ObservationType {SUBJECT, STATE, PROCESS, OBSERVER, EVENT, RELATIONSHIP}
+
+# ==== Input schema to create observations ====
+
+### Resolution constraints. These come with the observation scope and get transmitted to
+### ObservationInput when submitting a new observation.
+##enum Constraint {Scenarios, ResolveWith, Resolved, ResolutionScope, ConcretePredicates,
+##    Whitelist, Blacklist}
+##
+##input ResolutionConstraint {
+##    type: Constraint
+##}
+#
+#input ObservationInput {
+#    name: String
+#    observable: String!
+#    geometry: String!
+#    # default value, optional, only for states, parsed from string according to semantics
+#    defaultValue: String
+#    observerGeometry: String
+##    resolutionConstraints: [ResolutionConstraint]
+#}
+
+# ----- DATAFLOW schema
+
+
+type Dataflow {
+    id: String!
+    actuators: [Actuator]!
+}
+
+type Actuator {
+    id: String!
+    observable: Observable!
+    children: [Actuator]!
+}
+
+# ------ PROVENANCE schema
+
+type ProvenanceNode {
+    id: String!
+}
+
+

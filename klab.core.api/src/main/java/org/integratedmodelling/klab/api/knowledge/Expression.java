@@ -1,13 +1,13 @@
 /*
  * This file is part of k.LAB.
- * 
+ *
  * k.LAB is free software: you can redistribute it and/or modify it under the terms of the Affero
  * GNU General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
  *
  * A copy of the GNU Affero General Public License is distributed in the root directory of the k.LAB
  * distribution (LICENSE.txt). If this cannot be found see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned in author tags. All
  * rights reserved.
  */
@@ -15,6 +15,7 @@ package org.integratedmodelling.klab.api.knowledge;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,341 +23,381 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
- * Simple execution interface for expressions. A new expression is generated per
- * each call to the corresponding language statement, so each object can store
- * local data about its call context.
+ * Simple execution interface for expressions. A new expression is generated per each call to the
+ * corresponding language statement, so each object can store local data about its call context.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
 public interface Expression extends Serializable {
 
-	/**
-	 * Forcing for scalarization. See {@link Scope#scalar(Forcing)}.
-	 * 
-	 * @author Ferd
-	 */
-	public enum Forcing {
-		AsNeeded, Always
-	}
+  /**
+   * Forcing for scalarization..
+   *
+   * @author Ferd
+   * @deprecated
+   */
+  public enum Forcing {
+    AsNeeded,
+    Always
+  }
 
-	public enum CompilerScope {
-		/**
-		 * Execution is triggered by state-by-state logic, so specific subdivision of
-		 * the context is located at execution, and observation IDs point to state
-		 * values insteaf of the entire observation when the observation is a quality.
-		 * Called very many times and concurrently. Irrelevant unless Contextual is also
-		 * passed.
-		 */
-		Scalar,
-		/**
-		 * Execution is observation-wise, so if states of qualities are needed, the
-		 * correspondent observations must be iterated within the expression. Irrelevant
-		 * unless Contextual is also passed.
-		 */
-		Observation,
-		/**
-		 * The expression will be executed in the scope of an observation, so all the
-		 * auxiliary variables are defined and the observations will be located to the
-		 * space/time of contextualization. If not passed, expression is normal Groovy
-		 * code with the k.LAB extensions for reasoning etc.
-		 */
-		Contextual
-	}
+  public enum CompilerScope {
+    /**
+     * Execution is triggered by state-by-state logic, so specific subdivision of the context is
+     * located at execution, and observation IDs point to state values insteaf of the entire
+     * observation when the observation is a quality. Called very many times and concurrently.
+     * Irrelevant unless Contextual is also passed.
+     */
+    Scalar,
+    /**
+     * Execution is observation-wise, so if states of qualities are needed, the correspondent
+     * observations must be iterated within the expression. Irrelevant unless Contextual is also
+     * passed.
+     */
+    Observation,
+    /**
+     * The expression will be executed in the scope of an observation, so all the auxiliary
+     * variables are defined and the observations will be located to the space/time of
+     * contextualization. If not passed, expression is normal Groovy code with the k.LAB extensions
+     * for reasoning etc.
+     */
+    Contextual
+  }
 
-	// TODO still have to support these instead of passing flags to the compiler
-	public enum CompilerOption {
+  // TODO still have to support these instead of passing flags to the compiler
+  public enum CompilerOption {
 
-		/**
-		 * Don't try to process code related to observations and just consider each
-		 * variable with its own name.
-		 */
-		IgnoreContext,
+    /**
+     * Don't try to process code related to observations and just consider each variable as
+     * unresolved and to be passed as a parameter.
+     */
+    IgnoreContext,
 
-		/**
-		 * Translate identifiers like id@ctx into id["ctx"] instead of inserting the
-		 * recontextualization hooks for states.
-		 */
-		RecontextualizeAsMap,
+    /**
+     * Enable automatic scanning of the provided context scope and pairing of identifiers to the
+     * observations seen in it, in lieu of the normal behavior to compile based on a provided list
+     * of visible input and output observables.
+     */
+    ScanContext,
 
-		/**
-		 * Ignore the recontextualizations done with @. Passed when expressions are
-		 * compiled as part of documentation templates, which use @ for internal
-		 * purposes.
-		 */
-		IgnoreRecontextualization,
+    /** Skip k.LAB preprocessing altogether and just compile as is. */
+    DoNotPreprocess,
+  }
 
-		/**
-		 * Skip k.LAB preprocessing altogether.
-		 */
-		DoNotPreprocess,
+  //
+  //  /**
+  //   * The context to compile an expression. If passed, it is used to establish the role of the
+  //   * identifiers, which may affect preprocessing.
+  //   *
+  //   * @author ferdinando.villa
+  //   */
+  //  public interface Scope {
+  //
+  //    /**
+  //     * The expected return type, if known.
+  //     *
+  //     * <p>FIXME should be Artifact.Type, or transfer responsibility to the context of usage
+  //     *
+  //     * @return
+  //     */
+  //    SemanticType getReturnType();
+  //
+  //    /**
+  //     * All known identifiers at the time of evaluation.
+  //     *
+  //     * @return
+  //     */
+  //    Collection<String> getIdentifiers();
+  //
+  //    /**
+  //     * Add a scalar identifier that we want recognized at compilation. TODO this should use
+  //     * IArtifact.Type
+  //     */
+  //    void addKnownIdentifier(String id, SemanticType type);
+  //
+  //    /**
+  //     * All known identifiers of quality observations at the time of evaluation.
+  //     *
+  //     * @return
+  //     */
+  //    Collection<String> getStateIdentifiers();
+  //
+  //    /**
+  //     * The type of the passed identifier.
+  //     *
+  //     * @param identifier
+  //     * @return
+  //     */
+  //    SemanticType getIdentifierType(String identifier);
+  //
+  //    /**
+  //     * The scale of evaluation, or null.
+  //     *
+  //     * @return
+  //     */
+  //    Scale getScale();
+  //
+  //    /**
+  //     * A monitoring channel for notifications.
+  //     *
+  //     * @return
+  //     */
+  //    Channel getMonitor();
+  //
+  //    /**
+  //     * The type of compilation we desire. This should automatically be set to Contextual if a
+  //     * contextualization scope is passed.
+  //     *
+  //     * @return
+  //     */
+  //    CompilerScope getCompilerScope();
+  //
+  //    /**
+  //     * If the expression scope was created during contextualization, return the scope here.
+  //     *
+  //     * @return
+  //     */
+  //    ContextScope getRuntimeScope();
+  //
+  //    /**
+  //     * If true, we have requested the expression to be evaluated in a scalar fashion no matter
+  // what
+  //     * it says.
+  //     *
+  //     * @return
+  //     */
+  //    boolean isForcedScalar();
+  //  }
 
-		/**
-		 * Refer to quality values coming from states directly instead of compiling in a
-		 * state.get(scale) instruction. Values must be inserted in parameters at
-		 * eval(). Use when speed is critical - Groovy takes a long time dispatching the
-		 * messages.
-		 */
-		DirectQualityAccess
-	}
+  /**
+   * The expression service can compile a string expression into a descriptor, which can in turn be
+   * compiled into the executable expression. The descriptor contains a list of identifiers and
+   * ideally should be able to determine in which context (scalar value or not) they are used within
+   * the expression.
+   *
+   * <p>TODO this needs revision and simplification.
+   *
+   * @author Ferd
+   */
+  interface Descriptor {
 
-	/**
-	 * The context to compile an expression. If passed, it is used to establish the
-	 * role of the identifiers, which may affect preprocessing.
-	 * 
-	 * @author ferdinando.villa
-	 *
-	 */
-	public interface Scope {
+    /**
+     * Each identifier found will be described through this structure, which describes one or more
+     * uses of the identifier in code.
+     */
+    interface Identifier {
 
-		/**
-		 * The expected return type, if known.
-		 * 
-		 * FIXME should be Artifact.Type, or transfer responsibility to the context of
-		 * usage
-		 * 
-		 * @return
-		 */
-		SemanticType getReturnType();
+      /**
+       * Name of the identifier. Unrecognized names may just have this field as non null.
+       *
+       * @return
+       */
+      String name();
 
-		// /**
-		// * Namespace of evaluation, if any.
-		// *
-		// * @return
-		// */
-		// Namespace getNamespace();
+      /**
+       * Observable is filled if this identifier matches the code name of a known observation in the
+       * context of compilation.
+       *
+       * @return
+       */
+      Observable observable();
 
-		/**
-		 * All known identifiers at the time of evaluation.
-		 * 
-		 * @return
-		 */
-		Collection<String> getIdentifiers();
+      /**
+       * The runtime class may be filled with a k.LAB known entity if the identifier matches a
+       * conventional name for the scope, scale, time, space, observer or other automatically bound
+       * object from the execution scope.
+       *
+       * @return
+       */
+      Class<?> runtimeClass();
 
-		/**
-		 * Add a scalar identifier that we want recognized at compilation. TODO this
-		 * should use IArtifact.Type
-		 */
-		void addKnownIdentifier(String id, SemanticType type);
+      /**
+       * If this is >0, the identifier has been used as a single variable to extract its value and
+       * if it describes a quality observable, the code can be assumed to be scalar and to map over
+       * a data buffer.
+       *
+       * @return
+       */
+      int scalarReferenceCount();
 
-		/**
-		 * All known identifiers of quality observations at the time of evaluation.
-		 * 
-		 * @return
-		 */
-		Collection<String> getStateIdentifiers();
+      /**
+       * If this is >0, the identifier has been used as an object on which a method has been called,
+       * and the expression will have to distinguish it from its value in case {@link
+       * #scalarReferenceCount()} is also non-zero. The {@link #methodsCalled()} method will return
+       * the names of the methods that have been called on the object.
+       *
+       * @return
+       */
+      int nonScalarReferenceCount();
 
-		/**
-		 * The type of the passed identifier.
-		 * 
-		 * @param identifier
-		 * @return
-		 */
-		SemanticType getIdentifierType(String identifier);
+      /**
+       * The methods called on the identifier when used in a non-scalar context.
+       *
+       * @return
+       */
+      List<String> methodsCalled();
+    }
 
-		/**
-		 * The scale of evaluation, or null.
-		 * 
-		 * @return
-		 */
-		Scale getScale();
+    /**
+     * For each identifier found, return what is known about it. The map should be a LinkedHashMap
+     * so that the order can be preserved and used to build constructors or other sequences.
+     *
+     * @return
+     */
+    Map<String, Identifier> getIdentifiers();
 
-		/**
-		 * A monitoring channel for notifications.
-		 * 
-		 * @return
-		 */
-		Channel getMonitor();
+    //    /**
+    //     * Return all identifiers detected.
+    //     *
+    //     * @return set of identifiers
+    //     */
+    //    Collection<String> getIdentifiers();
 
-		/**
-		 * The type of compilation we desire. This should automatically be set to
-		 * Contextual if a contextualization scope is passed.
-		 * 
-		 * @return
-		 */
-		CompilerScope getCompilerScope();
+    //    /**
+    //     * Return all contextualizers encountered (in expressions such as "elevation@nw")
+    //     *
+    //     * @return set of contextualizers
+    //     */
+    //    Collection<String> getContextualizers();
+    //
+    //    /**
+    //     * True if the expression contains scalar usage for one or more of the identifiers used in
+    // a
+    //     * scalar fashion. This may be false even if the expression was compiled in scalar scope.
+    //     *
+    //     * @return
+    //     */
+    //    boolean isScalar();
+    //
+    //    /**
+    //     * Return true if the expression contains scalar usage for the passed identifiers within a
+    //     * transition (i.e. used alone or with locator semantics for space or other non-temporal
+    //     * domain).
+    //     *
+    //     * @param identifier identifiers representing states
+    //     * @return true if the identifier is used in a scalar context.
+    //     */
+    //    boolean isScalar(String identifier);
+    //
+    //    /**
+    //     * Return true if the expression contains non-scalar usage for the passed identifiers
+    // within a
+    //     * transition (i.e. used as an object, with methods called on it).
+    //     *
+    //     * @param identifier identifiers representing states
+    //     * @return true if the identifier is used in a scalar context.
+    //     */
+    //    boolean isNonscalar(String identifier);
+    //
+    //    /**
+    //     * Return true if the expression contains scalar usage for any of the passed identifiers
+    // within
+    //     * a transition (i.e. used alone or with locator semantics for space or other non-temporal
+    //     * domain).
+    //     *
+    //     * @param stateIdentifiers identifiers representing states
+    //     * @return true if any of the identifiers is used in a scalar context.
+    //     */
+    //    boolean isScalar(Collection<String> stateIdentifiers);
+    //
+    //    /**
+    //     * Return true if the expression contains non-scalar usage for any of the passed
+    // identifiers
+    //     * within a transition (i.e. used as an object, with methods called on it).
+    //     *
+    //     * @param stateIdentifiers identifiers representing states
+    //     * @return true if any of the identifiers is used in a scalar context.
+    //     */
+    //    boolean isNonscalar(Collection<String> stateIdentifiers);
 
-		/**
-		 * If the expression scope was created during contextualization, return the
-		 * scope here.
-		 * 
-		 * @return
-		 */
-		ContextScope getRuntimeScope();
+    /**
+     * Compilation may generate notifications. If any notification is error level, the expression is
+     * not usable.
+     *
+     * @return
+     */
+    Collection<Notification> getNotifications();
 
-		/**
-		 * If true, we have requested the expression to be evaluated in a scalar fashion
-		 * no matter what it says.
-		 * 
-		 * @return
-		 */
-		boolean isForcedScalar();
+    /**
+     * In order to avoid duplicated action, the descriptor alone must be enough to compile the
+     * expression. If we have a valid descriptor the returned expression must be valid so no
+     * exceptions are thrown unless the descriptor has errors, which causes an
+     * IllegalArgumentException.
+     *
+     * @return a compiled expression ready for execution in the context that produced the descriptor
+     * @throws IllegalArgumentException if the descriptor has errors
+     */
+    Expression compile();
 
-	}
+    //    /**
+    //     * Return a descriptor scope that will compile into an expression with the required
+    //     * scalarization. The forcing passed defines the type of constraint: if {@link
+    //     * Forcing#AsNeeded}, the expression will be scalar only if it mentions quality variables
+    // in a
+    //     * scalar scope; if {@link Forcing#Always}, scalar behavior will be forced no matter the
+    //     * statement.
+    //     *
+    //     * @deprecated
+    //     * @param forcing
+    //     * @return
+    //     */
+    //    Descriptor scalar(Forcing forcing);
+    //
+    //    /**
+    //     * @return
+    //     */
+    //    Collection<String> getIdentifiersInScalarScope();
+    //
+    //    /**
+    //     * @return
+    //     */
+    //    Collection<String> getIdentifiersInNonscalarScope();
 
-	/**
-	 * The expression service can compile a string expression into a descriptor,
-	 * which can in turn be compiled into the executable expression. The descriptor
-	 * contains a list of identifiers and ideally should be able to determine in
-	 * which context (scalar value or not) they are used within the expression.
-	 * 
-	 * @author Ferd
-	 *
-	 */
-	interface Descriptor {
+    //    /**
+    //     * If the expression was compiled with the {@link CompilerOption#RecontextualizeAsMap}
+    // option,
+    //     * any identifier seen as id@ctx will have been turned into id["ctx"] and the id plus all
+    // the
+    //     * keys will be available here.
+    //     *
+    //     * @return
+    //     * @deprecated
+    //     */
+    //    Map<String, Set<String>> getMapIdentifiers();
 
-		/**
-		 * Return all identifiers detected.
-		 * 
-		 * @return set of identifiers
-		 */
-		Collection<String> getIdentifiers();
+    //    /**
+    //     * Return the set of options that were passed when this expression was compiled. May be
+    // empty,
+    //     * never null.
+    //     *
+    //     * @return
+    //     */
+    //    Collection<CompilerOption> getOptions();
 
-		/**
-		 * Return all contextualizers encountered (in expressions such as
-		 * "elevation@nw")
-		 * 
-		 * @return set of contextualizers
-		 */
-		Collection<String> getContextualizers();
+    //    /**
+    //     * Predefined variables that have been inserted in the code and whose value is known at
+    // the time
+    //     * of compilation. Typically translations of k.IM identifiers and URNs into the
+    // correspondent
+    //     * objects.
+    //     *
+    //     * @return
+    //     */
+    //    Parameters<String> getVariables();
+  }
 
-		/**
-		 * True if the expression contains scalar usage for one or more of the
-		 * identifiers used in a scalar fashion. This may be false even if the
-		 * expression was compiled in scalar scope.
-		 * 
-		 * @return
-		 */
-		boolean isScalar();
-
-		/**
-		 * Return true if the expression contains scalar usage for the passed
-		 * identifiers within a transition (i.e. used alone or with locator semantics
-		 * for space or other non-temporal domain).
-		 * 
-		 * @param identifier identifiers representing states
-		 * 
-		 * @return true if the identifier is used in a scalar context.
-		 */
-		boolean isScalar(String identifier);
-
-		/**
-		 * Return true if the expression contains non-scalar usage for the passed
-		 * identifiers within a transition (i.e. used as an object, with methods called
-		 * on it).
-		 * 
-		 * @param identifier identifiers representing states
-		 * 
-		 * @return true if the identifier is used in a scalar context.
-		 */
-		boolean isNonscalar(String identifier);
-
-		/**
-		 * Return true if the expression contains scalar usage for any of the passed
-		 * identifiers within a transition (i.e. used alone or with locator semantics
-		 * for space or other non-temporal domain).
-		 * 
-		 * @param stateIdentifiers identifiers representing states
-		 * 
-		 * @return true if any of the identifiers is used in a scalar context.
-		 */
-		boolean isScalar(Collection<String> stateIdentifiers);
-
-		/**
-		 * Return true if the expression contains non-scalar usage for any of the passed
-		 * identifiers within a transition (i.e. used as an object, with methods called
-		 * on it).
-		 * 
-		 * @param stateIdentifiers identifiers representing states
-		 * 
-		 * @return true if any of the identifiers is used in a scalar context.
-		 */
-		boolean isNonscalar(Collection<String> stateIdentifiers);
-
-		/**
-		 * In order to avoid duplicated action, the descriptor alone must be enough to
-		 * compile the expression. If we have a valid descriptor the returned expression
-		 * must be valid so no exceptions are thrown unless the descriptor has errors,
-		 * which causes an IllegalArgumentException.
-		 * 
-		 * @return a compiled expression ready for execution in the context that
-		 *         produced the descriptor
-		 * @throws IllegalArgumentException if the descriptor has errors
-		 */
-		Expression compile();
-
-		/**
-		 * Return a descriptor scope that will compile into an expression with the
-		 * required scalarization. The forcing passed defines the type of constraint: if
-		 * {@link Forcing#AsNeeded}, the expression will be scalar only if it mentions
-		 * quality variables in a scalar scope; if {@link Forcing#Always}, scalar
-		 * behavior will be forced no matter the statement.
-		 * 
-		 * @param forceScalar
-		 * @return
-		 */
-		Descriptor scalar(Forcing forcing);
-
-		/**
-		 * 
-		 * @return
-		 */
-		Collection<String> getIdentifiersInScalarScope();
-
-		/**
-		 * 
-		 * @return
-		 */
-		Collection<String> getIdentifiersInNonscalarScope();
-
-		/**
-		 * If the expression was compiled with the
-		 * {@link CompilerOption#RecontextualizeAsMap} option, any identifier seen as
-		 * id@ctx will have been turned into id["ctx"] and the id plus all the keys will
-		 * be available here.
-		 * 
-		 * @return
-		 */
-		Map<String, Set<String>> getMapIdentifiers();
-
-		/**
-		 * Return the set of options that were passed when this expression was compiled.
-		 * May be empty, never null.
-		 * 
-		 * @return
-		 */
-		Collection<CompilerOption> getOptions();
-
-		/**
-		 * Predefined variables that have been inserted in the code and whose value is
-		 * known at the time of compilation. Typically translations of k.IM identifiers
-		 * and URNs into the correspondent objects.
-		 * 
-		 * @return
-		 */
-		Parameters<String> getVariables();
-	}
-
-	/**
-	 * Execute the expression
-	 *
-	 * @param parameters           from context or defined in a language call
-	 * @param scope                possibly empty, may be added to determine the
-	 *                             result of the evaluation according to the calling
-	 *                             context. The
-	 *                             {@link IContextualizationScope#getMonitor()
-	 *                             monitor in the context} will never be null and
-	 *                             can be used to send messages or interrupt the
-	 *                             computation.
-	 * @param additionalParameters add paired key, value for any additional
-	 *                             parameter to add. If in place of a String key the
-	 *                             system finds a Map, the map will be used to
-	 *                             provide parameters.
-	 * @return the result of evaluating the expression
-	 * @throws org.integratedmodelling.klab.KException.KlabException TODO
-	 */
-	Object eval(org.integratedmodelling.klab.api.scope.Scope scope, Object... additionalParameters);
-
+  /**
+   * Execute the expression
+   *
+   * @param scope possibly empty, may be added to determine the result of the evaluation according
+   *     to the calling context.
+   * @param additionalParameters add paired key, value for any additional parameter to add. If in
+   *     place of a String key the system finds a Map, the map will be used to provide parameters.
+   * @return the result of evaluating the expression
+   */
+  Object eval(org.integratedmodelling.klab.api.scope.Scope scope, Object... additionalParameters);
 }

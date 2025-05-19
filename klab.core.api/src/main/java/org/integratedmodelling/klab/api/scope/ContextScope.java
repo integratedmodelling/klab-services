@@ -1,305 +1,525 @@
 package org.integratedmodelling.klab.api.scope;
 
+import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Mutable;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
+import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
-import org.integratedmodelling.klab.api.knowledge.observation.State;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 /**
- * The scope for a context and any observations made within it. The context scope is the "digital twin" of the
- * observations made in it. A scope is also passed around during resolution and carries scope info (namespace,
- * project, scenarios) that is relevant to the resolver.
- * <p>
- * The context scope has a URL and can be connected to another to become part of a larger scope.
+ * The scope for an observation context and any observations made within it. The observation scope
+ * is the handle to the "digital twin" of the observations made in it and contains all the methods
+ * that give access to the observation, dataflow and provenance graphs. These are available from the
+ * GraphQL API served by the {@link org.integratedmodelling.klab.api.services.RuntimeService}.
+ *
+ * <p>The context scope always has an observer that can be switched to another when making
+ * observations. The observer is an observation of an agent that also specifies an observed geometry
+ * in addition to its own. The calling client should explicitly provide an observer; if not, the
+ * digital twin should provide one by default, using information from the parent scopes (session
+ * user identity, including any roles specified in the user groups subscribed to). Observations of
+ * the same observable with different observers are different observations.
+ *
+ * <p>A context scope is used to add observations, which will trigger resolution, through {@link
+ * #observe(Observation)} and carries information (parent observation, observer, namespace, project,
+ * scenarios) that is relevant to the resolver. Scopes can be specialized to customize resolution
+ * before {@link #observe(Observation)} is called, and their status is passed across network
+ * boundaries, encoded in the scope header added to requests that trigger resolution. If resolution
+ * in the runtime fails, the resulting observation will be in an unresolved state, unusable to make
+ * any further resolution, and the context is inconsistent unless all the inconsistent observations
+ * are substantials that can simply be stated. In the runtime service API, the GraphQL endpoint is
+ * used to submit observations to a digital twin for resolution through a mutation.
+ *
+ * <p>The context scope carries the URL of the digital twin (a GraphQL endpoint) and can be
+ * connected to another to form larger, multi-observer, distributed scopes.
  *
  * @author Ferd
  */
-public interface ContextScope extends SessionScope, AutoCloseable {
+public interface ContextScope extends SessionScope {
+
+  @Override
+  default Type getType() {
+    return Type.CONTEXT;
+  }
+
+  /**
+   * Context scopes have a URL that enables communication with clients but also allows other
+   * contexts to connect to them and become part of federated contexts to form distributed digital
+   * twins. When connected, contexts share events and state through messaging, with visibility
+   * defined by their authenticated agreement.
+   *
+   * @return
+   */
+  URL getUrl();
+
+  /**
+   * Return the observer for this context. This should normally not be null even if the context is
+   * not focused on an observation except at context initialization; the system should provide a
+   * default observer built from session data if non-observer observations are made without an
+   * explicit observer. The scale of the observer implies the default context of observation.
+   *
+   * @return
+   */
+  Observation getObserver();
+
+  /**
+   * A context scope is inconsistent if resolution has failed for one or more <em>dependent</em>
+   * observations, such as qualities and processes. These can be retrieved through {@link
+   * #getInconsistencies(boolean)} passing true as parameter.
+   *
+   * @return
+   */
+  boolean isConsistent();
+
+  /**
+   * Return all the observations visible in this context, ordered by submission timestamp.
+   *
+   * @return
+   */
+  List<Observation> getObservations();
+
+  /**
+   * Retrieve the observation with the passed observable in this scope from the knowledge graph.
+   * This will only retrieve one observation. Calling this one with a countable observable may
+   * produce a singular observation or a collective whose children are the requested observation in
+   * case there are multiple observations in this scope. To retrieve all the instances of the
+   * collective, retrieve the collective and then call {@link #getChildrenOf(Observation)} on it.
+   * The API user is responsible for checking the collective status of the result.
+   *
+   * @param observable can pass an observable, but the result will be insensitive to units, name or
+   *     anything not related to semantics.
+   * @return the observation (possibly a collective) or null. The resulting observation may be
+   *     unresolved; the implementation decides what to do with it and is responsible for checking.
+   */
+  Observation getObservation(Semantics observable);
+
+  /**
+   * Return all observations in this scope for which resolution has failed. Optionally only return
+   * dependent observations, whose presence makes the context and the associated digital twin
+   * inconsistent.
+   *
+   * @param dependentOnly if true, only dependent observations are returned
+   * @return the requested inconsistent observations in this scope
+   */
+  Collection<Observation> getInconsistencies(boolean dependentOnly);
+
+  /**
+   * Return all the known observation perspectives for the passed observable. These are the
+   * different observations of the same observable made by different observers. The observer in the
+   * scope and in the passed observable will be ignored when matching.
+   *
+   * @param observable
+   * @param <T>
+   * @return zero or more observations of the same observable. If > 1, the resulting observations
+   *     are guaranteed to have different observers.
+   */
+  <T extends Observation> Collection<T> getPerspectives(Observable observable);
+
+  /**
+   * Return the observer that has made the observation passed. It should never be null. This is done
+   * by inspecting the observation graph.
+   *
+   * @param observation
+   * @return
+   */
+  Observation getObserverOf(Observation observation);
+
+  /**
+   * Produce a {@link Data} package that contains the data content of the passed observations. The
+   * object should be lazy and only fill in its contents when the actual data are requested. It can
+   * be sent to services to pass around data content for distributed computation workflows.
+   *
+   * @param observations
+   * @return
+   */
+  Data getData(Observation... observations);
+
+  /**
+   * Return the consistent observations made in the root context using {@link
+   * #observe(Observation)}. The resulting collection must iterate in order of observation,
+   * established by provenance. All the root observations must be direct, so they cannot be
+   * inconsistent even if they are unresolved.
+   *
+   * @return
+   */
+  Collection<Observation> getRootObservations();
+
+  /**
+   * If this scope is focused on a specific subject, return it.
+   *
+   * @return the context observation or null
+   */
+  Observation getContextObservation();
+
+  /**
+   * Return a child scope with the passed observer instead of ours.
+   *
+   * @param observer
+   * @return
+   */
+  ContextScope withObserver(Observation observer);
+
+  /**
+   * Return a scope focused on a specific context observation. The focus determines the observations
+   * found and made, and filters the dataflow and provenance returned.
+   *
+   * @param contextObservation
+   * @return a scope focused on the passed observation.
+   */
+  ContextScope within(Observation contextObservation);
+
+  /**
+   * Return a new context with source and target set to create and resolve a relationship.
+   *
+   * @param source
+   * @param target
+   * @return
+   */
+  ContextScope between(Observation source, Observation target);
+
+  /**
+   * Each scope manages a digital twin. At client side or on slave servers this may be null or
+   * limited in functionality.
+   *
+   * @return
+   */
+  DigitalTwin getDigitalTwin();
+
+  /**
+   * In a ContextScope, {@link #connect(URL)} is redefined to produce merged DTs that exchange
+   * messages and build a higher-level one merging contents and events between the remote DT and the
+   * one on which connect is called. Authentication details will define what can be seen and done.
+   *
+   * @param remoteContext
+   * @return
+   */
+  @Override
+  ContextScope connect(URL remoteContext);
+
+  /**
+   * Submit an observation to the digital twin and start its resolution in this scope. Returns a
+   * future for the resolved (or unresolved in case of failure) observation. The scope will be
+   * notified of all events related to the resolution, with messages that will carry a task ID equal
+   * to the URN of the observation or derived from it so that what is happening can be reconstructed
+   * at the client side.
+   *
+   * @param observation an unresolved observation to be resolved by the runtime and added to the
+   *     digital twin.
+   * @return a {@link Future} producing the resolved observation when resolution is finished. If
+   *     resolution has failed, the observation in the future will be unresolved.
+   */
+  CompletableFuture<Observation> observe(@Mutable Observation observation);
+
+  /**
+   * Return all observations affected by the passed one in this scope, either through model
+   * dependencies or behaviors. "Affected" is any kind of reaction, not necessarily implied by
+   * semantics.
+   *
+   * @param observation
+   * @return
+   */
+  Collection<Observation> affects(Observation observation);
+
+  /**
+   * Return all observations that the passed one affects in this scope, either through model
+   * dependencies or behaviors. "Affected" is any kind of reaction, not necessarily implied by
+   * semantics.
+   *
+   * @param observation
+   * @return
+   */
+  Collection<Observation> affected(Observation observation);
+
+  /**
+   * Start the scheduling if the context occurs; do nothing if not, or if there are no new
+   * transitions to calculate. This can be called multiple times, normally after each observation,
+   * with intelligent "replay" of any transitions that need to be seen again.
+   */
+  void runTransitions();
+
+  /**
+   * Return the portion of the provenance graph that pertains to this scope. This may be empty in an
+   * empty context, never null. Provenance will be relative to the context observation this scope
+   * focuses on. The full provenance graph will be returned by calling this method on the result of
+   * {@link #getRootContextScope()}.
+   *
+   * @return the provenance graph for this scope
+   */
+  Provenance getProvenance();
+
+  /**
+   * Get the portion of the provenance graph that pertains to the passed observation. Can be used by
+   * the reporting system to document each individual observation.
+   *
+   * @param observation
+   * @return
+   */
+  Provenance getProvenanceOf(Observation observation);
+
+  /**
+   * Return the compiled report that pertains to this scope. The result may be a subgraph of the
+   * root report available from the root context scope. There is one report per root context.
+   * Actuators will add sections to it as models are computed, based on the documentation templates
+   * associated with models and their parts. The report can be compiled and rendered at any time.
+   * Each observation in the same context will report the same report.
+   *
+   * <p>TODO pass reporting options
+   *
+   * @return
+   */
+  Report getReport();
+
+  /**
+   * Return the dataflow that pertains to this scope. The result may be a subgraph of the root
+   * context scope's dataflow. There is one dataflow per context, and it's never null. It starts
+   * empty and incorporates all the dataflows created by the resolver when new observations are
+   * made. Each dataflow is inserted in the main one at the appropriate position, so that running
+   * the dataflow again will recreate the exact same context. The dataflow returned pertains to the
+   * observation that the scope is focused on.
+   *
+   * <p>Note that the dataflow will not recompute observations, so the partial dataflow may not be a
+   * complete strategy for the observation as it may reuse information already available in upstream
+   * scopes.
+   *
+   * @return
+   */
+  Dataflow getDataflow();
+
+  /**
+   * Return the root context scope with the overall observer and the full observation graph.
+   *
+   * @return
+   */
+  ContextScope getRootContextScope();
+
+  //  /**
+  //   * The main method to retrieve anything visible to this scope from the knowledge graph.
+  //   *
+  //   * @param resultClass
+  //   * @param queryData
+  //   * @param <T>
+  //   * @return
+  //   * @deprecated use query on KG
+  //   */
+  //  <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData);
+
+  //  <T extends RuntimeAsset> List<T> queryKnowledgeGraph(KnowledgeGraph.Query<T>
+  // knowledgeGraphQuery);
+
+  /**
+   * Return the parent observation of the passed observation. The runtime context maintains the
+   * logical structure graph (ignores grouping of artifacts).
+   *
+   * @param observation
+   * @return the parent, or null if root subject
+   */
+  Observation getParentOf(Observation observation);
+
+  /**
+   * Return all children of the passed observation, using the logical structure (i.e. skipping
+   * observation groups). The runtime context maintains the structure graph.
+   *
+   * @param observation an observation. Quality observations have no children but no error should be
+   *     raised.
+   * @return the parent, or an empty collection if no children
+   */
+  Collection<Observation> getChildrenOf(Observation observation);
+
+  /**
+   * Inspect the network graph of the current context, returning all relationships that have the
+   * passed subject as target.
+   *
+   * @param observation a {@link Observation} object.
+   * @return a {@link java.util.Collection} object.
+   */
+  Collection<Observation> getOutgoingRelationshipsOf(Observation observation);
+
+  /**
+   * Inspect the network graph of the current context, returning all relationships that have the
+   * passed subject as target.
+   *
+   * @param observation a {@link Observation} object.
+   * @return a {@link java.util.Collection} object.
+   */
+  Collection<Observation> getIncomingRelationshipsOf(Observation observation);
+
+  /**
+   * Set resolution constraints here. Returns a new scope with all the constraints added to the ones
+   * in this. Pass nothing (null array) to reset the constraints and return a new scope with no
+   * constraints.
+   */
+  ContextScope withResolutionConstraints(ResolutionConstraint... resolutionConstraints);
+
+  /**
+   * Return all the raw resolution constraints. Used when calling REST endpoints, the <code>
+   * getConstraint[s](...)</code> methods should be used when resolving.
+   *
+   * @return
+   */
+  List<ResolutionConstraint> getResolutionConstraints();
+
+  /**
+   * Return the single value of a resolution constraint, or null if absent.
+   *
+   * @param type
+   * @param resultClass
+   * @param <T>
+   * @return
+   */
+  <T> T getConstraint(ResolutionConstraint.Type type, Class<T> resultClass);
+
+  /**
+   * Return the single value of a resolution constraint, or a default value if absent.
+   *
+   * @param type
+   * @param defaultValue
+   * @param <T>
+   * @return
+   */
+  <T> T getConstraint(ResolutionConstraint.Type type, T defaultValue);
+
+  /**
+   * Return all the existing value of a resolution constraint in the scope, or the empty list if no
+   * constraint is there.
+   *
+   * @param type
+   * @param resultClass
+   * @param <T>
+   * @return
+   */
+  <T> List<T> getConstraints(ResolutionConstraint.Type type, Class<T> resultClass);
+
+  /**
+   * A data structure incorporating the results of parsing a scope token string into all its
+   * possible components. The scope token is added to requests that need a scope below UserScope
+   * through the {@link org.integratedmodelling.klab.api.ServicesAPI#SCOPE_HEADER} HTTP request
+   * header. Empty means the passed token was null. Tokens must appear in the header content in the
+   * order below. All fields may be null, including the arrays, if not passed in the token.
+   *
+   * @param type the scope type, based on the path length
+   * @param scopeId the ID with which the scope should be registered
+   * @param observationPath if there is a focal observation ID, the path to the observation
+   * @param observerId if there is an observer field after #, the path to the observer
+   */
+  record ScopeData(Scope.Type type, String scopeId, long[] observationPath, long observerId
+      /*, String[] scenarioUrns, Map<String, String> traitIncarnations,
+      String resolutionNamespace*/ ) {
+    public boolean empty() {
+      return scopeId() == null;
+    }
+  }
+
+  /**
+   * Obtain the properly formatted scope token for the {@link
+   * org.integratedmodelling.klab.api.ServicesAPI#SCOPE_HEADER} to use in a request. The root
+   * context scope must have been registered by the runtime service, which is done automatically by
+   * client scopes.
+   *
+   * @param scope
+   * @return
+   */
+  static String getScopeId(ContextScope scope) {
+
+    StringBuffer ret = new StringBuffer(512);
+
+    ret.append(scope.getId());
 
     /**
-     * Context scopes have a URL that enables communication with clients but also allows other contexts to
-     * connect to them and become part of federated contexts to form distributed digital twins. When
-     * connected, contexts share events and state through messaging, with visibility defined by their
-     * authenticated agreement.
-     *
-     * @return
+     * If the context observation is unresolved, it cannot be retrieved from the knowledge graph, so
+     * do not add it; the calling function will need to reconstruct the scope in other ways
      */
-    URL getUrl();
+    if (scope.getContextObservation() != null && scope.getContextObservation().getId() > 0) {
 
-    /**
-     * Return the observer for this context. The original observation scope has the session user as observer.
-     *
-     * @return
-     */
-    Identity getObserver();
+      var cobs = new ArrayList<Observation>();
+      ContextScope rootContext = scope;
+      cobs.add(scope.getContextObservation());
+      while (rootContext.getParentScope() instanceof ContextScope parentContext) {
+        if (parentContext.getContextObservation() == null) {
+          break;
+        } else if (cobs.isEmpty()
+            || cobs.getLast().getId() != parentContext.getContextObservation().getId()) {
+          cobs.add(parentContext.getContextObservation());
+        }
+        rootContext = parentContext;
+      }
 
-    /**
-     * If this scope is focused on a specific subject, return it.
-     *
-     * @return the context observation or null
-     */
-    DirectObservation getContextObservation();
+      for (var obs : cobs.reversed()) {
+        ret.append("." + obs.getId());
+      }
+    }
 
-    /**
-     * Return a child scope with the passed observer instead of ours.
-     *
-     * @param observer
-     * @return
-     */
-    ContextScope withObserver(Identity observer);
+    // observers are necessarily resolved
+    if (scope.getObserver() != null) {
+      ret.append("#").append(scope.getObserver().getId());
+    }
 
-    /**
-     * Return a new observation scope that sets the passed scenarios for any future observation.
-     *
-     * @param scenarios
-     * @return
-     */
-    ContextScope withScenarios(String... scenarios);
+    return ret.toString();
+  }
 
-    /**
-     * Return a new context scope with the passed namespace of resolution. Used by the resolver or to
-     * fine-tune resolution.
-     *
-     * @param namespace
-     * @return
-     */
-    ContextScope withResolutionNamespace(String namespace);
+  static Geometry getResolutionGeometry(ContextScope scope) {
 
-    /**
-     * Create a context with the passed geometry to replace the one currently active. Any observations made in
-     * it must be consistent with the overall geometry and context observations; if observations of direct
-     * observables are made, the parent's geometry should be updated to reflect it.
-     *
-     * <p>This does not reinitialize the catalog, as it's meant to focus on a subset of an overall scale.</p>
-     *
-     * @param geometry
-     * @return
-     */
-    ContextScope withGeometry(Geometry geometry);
+    var resolutionGeometry =
+        scope.getConstraint(ResolutionConstraint.Type.Geometry, Geometry.class);
+    if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
+      if (scope.getContextObservation() != null) {
+        resolutionGeometry = scope.getContextObservation().getGeometry();
+      }
+      if ((resolutionGeometry == null || resolutionGeometry.isEmpty())
+          && scope.getObserver() != null) {
+        resolutionGeometry = scope.getObserver().getGeometry();
+      }
+    }
+    return resolutionGeometry;
+  }
 
-    /**
-     * Return a scope focused on a specific context observation. The catalog will be reinitialized to empty,
-     * and there is no guarantee that passing the same observation as the current context will not do so.
-     *
-     * @param contextObservation
-     * @return
-     */
-    ContextScope within(DirectObservation contextObservation);
+  /**
+   * Parse a scope token into the corresponding data structure
+   *
+   * @param scopeToken
+   * @return
+   */
+  static ScopeData parseScopeId(String scopeToken) {
 
-    /**
-     * Contextualize to a specific subclass of a trait, which is observed within the current context
-     * observation, and defaults to the passed value overall if the resolution fails. The trait becomes a
-     * constraint in the iteration of the scale returned by {@link #getScale()}, making the iterators skip any
-     * state where the trait may be different from the one set through this method.
-     * <p>
-     * Using this method will trigger resolution and computation for each new base trait subsuming
-     * abstractTrait. Implementations may make its resolution lazy or not.
-     *
-     * @param abstractTrait subsuming value, may be concrete but will be observed if absent, so if concrete
-     *                      the base trait will be observed instead.
-     * @param concreteTrait the fill value, may be abstract as long as it's subsumed by abstractTrait
-     * @return a new context scope that only considers the passed incarnation of the trait.
-     */
-    ContextScope with(Concept abstractTrait, Concept concreteTrait);
+    Scope.Type type = Scope.Type.USER;
+    String scopeId = null;
+    long[] observationPath = null;
+    long observerId = Observation.UNASSIGNED_ID;
 
-    /**
-     * Add another context to this one to build a higher-level one. Authentication details will define what is
-     * seen and done.
-     *
-     * @param remoteContext
-     * @return
-     */
-    ContextScope connect(URL remoteContext);
+    if (scopeToken != null) {
+      // Separate out observer path if any
+      if (scopeToken.contains("#")) {
+        String[] split = scopeToken.split("#");
+        scopeToken = split[0];
+        observerId = Long.parseLong(split[1]);
+      }
 
-    /**
-     * Make an observation. Must be called on a context scope, possibly focused on a given root observation
-     * using {@link #within(DirectObservation)}}. If no root observation is present in the scope, the
-     * arguments must fully specify a subject, either through an
-     * {@link org.integratedmodelling.klab.api.knowledge.Instance} or a URN specifying a subject observable +
-     * a scale. If the parent session was focused on a scale, this is available through {@link #getScale()}
-     * and the context can decide to use it as a scale for the root subject.
-     * <p>
-     * Observables will be routinely specified through URNs, which will be validated as any observable object
-     * - concepts/observables, resource URNs, model/acknowledgement URNs, or full URLs specifying a
-     * context/observation in an externally hosted runtime to link to the current context. Passing descriptors
-     * for concepts, observables, acknowledgements or models should not cause errors.
-     * <p>
-     * In case the observable specifies a relationship, k.LAB will attempt to instantiate it, observing its
-     * source/target endpoints as well, unless two subject observations are passed, in which case a specified
-     * relationship will be instantiated between them using them as source and target respectively. In the
-     * latter case, each relationship will be resolved but configuration detection will only happen upon
-     * exiting the scope where observe() is called.
-     * <p>
-     * If the observation is at root level, or connecting two root-level subject through a relationship, the
-     * overall geometry of the context will be automatically adjusted.
-     *
-     * @param observables either a {@link Observable} (with a {@link Geometry} if root subject) or a
-     *                    {@link org.integratedmodelling.klab.api.knowledge.Instance} for a pre-specified root
-     *                    subject.
-     * @return a future for the observation being contextualized.
-     */
-    Future<Observation> observe(Object... observables);
+      var path = scopeToken.split("\\.");
+      type = path.length > 1 ? Scope.Type.CONTEXT : Scope.Type.SESSION;
+      scopeId = path.length == 1 ? path[0] : (path[0] + "." + path[1]);
+      if (path.length > 2) {
+        List<Long> longs = new ArrayList<>();
+        for (int i = 2; i < path.length; i++) {
+          longs.add(Long.parseLong(path[i]));
+        }
+        observationPath = Utils.Numbers.longArrayFromCollection(longs);
+      }
+    }
 
-    /**
-     * Return all observations affected by the passed one in this scope, either through model dependencies or
-     * behaviors. "Affected" is any kind of reaction, not necessarily implied by semantics.
-     *
-     * @param observation
-     * @return
-     */
-    Collection<Observation> affects(Observation observation);
-
-    /**
-     * Return all observations that the passed one affects in this scope, either through model dependencies or
-     * behaviors. "Affected" is any kind of reaction, not necessarily implied by semantics.
-     *
-     * @param observation
-     * @return
-     */
-    Collection<Observation> affected(Observation observation);
-
-    /**
-     * Start the scheduling if the context occurs; do nothing if not. This can be called again at each
-     * observation, with intelligent "replay" of any transitions that need to be seen again.
-     */
-    void runTransitions();
-
-    /**
-     * <p>
-     * getProvenance.
-     * </p>
-     *
-     * @return the provenance graph. Empty in an empty context, never null. Each observation in the same
-     * context will report the same provenance graph for now (TODO may turn into provenance as the "root" node
-     * or have a focus field).
-     */
-    Provenance getProvenance();
-
-    /**
-     * There is one report per root context. Actuators will add sections to it as models are computed, based
-     * on the documentation templates associated with models and their parts. The report can be compiled and
-     * rendered at any time. Each observation in the same context will report the same report.
-     *
-     * @return
-     */
-    Report getReport();
-
-    /**
-     * There is one dataflow per context, and it's never null. It starts empty and incorporates all the
-     * dataflows created by the resolver when new observations are made. Each dataflow is inserted in the main
-     * one at the appropriate position, so that running the dataflow again will recreate the exact same
-     * context.
-     *
-     * @return
-     */
-    Dataflow<Observation> getDataflow();
-
-    /**
-     * Return the parent observation of the passed observation. The runtime context maintains the logical
-     * structure graph (ignores grouping of artifacts).
-     *
-     * @param observation
-     * @return the parent, or null if root subject
-     */
-    DirectObservation getParentOf(Observation observation);
-
-    /**
-     * Return all children of the passed observation, using the logical structure (i.e. skipping observation
-     * groups). The runtime context maintains the structure graph.
-     *
-     * @param observation an observation. {@link State States} have no children but no error should be
-     *                    raised.
-     * @return the parent, or an empty collection if no children
-     */
-    Collection<Observation> getChildrenOf(Observation observation);
-
-    /**
-     * Inspect the network graph of the current context, returning all relationships that have the passed
-     * subject as target.
-     *
-     * @param observation a {@link DirectObservation} object.
-     * @return a {@link java.util.Collection} object.
-     */
-    Collection<Relationship> getOutgoingRelationships(DirectObservation observation);
-
-    /**
-     * Inspect the network graph of the current context, returning all relationships that have the passed
-     * subject as target.
-     *
-     * @param observation a {@link DirectObservation} object.
-     * @return a {@link java.util.Collection} object.
-     */
-    Collection<Relationship> getIncomingRelationships(DirectObservation observation);
-
-    /**
-     * Return the currently known observations as a map indexed by observable.
-     *
-     * @return
-     */
-    Map<Observable, Observation> getCatalog();
-
-    /**
-     * Retrieve the observation recognized in this context with the passed name.
-     *
-     * @param <T>
-     * @param localName
-     * @param cls
-     * @return
-     */
-    <T extends Observation> T getObservation(String localName, Class<T> cls);
-
-    /**
-     * When resolving, the resolution namespace that provides the resolution scope must be provided. In other
-     * situations this will be null.
-     *
-     * @return
-     */
-    String getResolutionNamespace();
-
-    /**
-     * Same as {@link #getResolutionNamespace()}, reporting the project in scope during resolution.
-     *
-     * @return
-     */
-    String getResolutionProject();
-
-    /**
-     * Any scenarios set during the resolution.
-     *
-     * @return
-     */
-    Collection<String> getResolutionScenarios();
-
-    /**
-     * A context is born "empty" and since k.LAB 0.12 does not have a root observation, but when used in
-     * resolution may acquire a root observation which serves as context for the resolution.
-     *
-     * @return
-     */
-    DirectObservation getResolutionObservation();
-
-    /**
-     * Create a new scope if necessary where the catalog uses the passed local names and the scale, if not
-     * null, is the passed one. Called before each actuator's functors are executed and passed to the functor
-     * executor.
-     *
-     * @param scale      may be null, meaning that the original scale is unchanged
-     * @param localNames if empty, the catalog remains the same
-     * @return a localized context or this one if nothing needs to change
-     */
-    ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale, Map<String,
-            String> localNames);
+    return new ScopeData(
+        type, scopeId, observationPath, observerId /*, scenarioUrns, traitIncarnations,
+                resolutionNamespace*/);
+  }
 }

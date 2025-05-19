@@ -24,6 +24,9 @@ import java.lang.annotation.Target;
  * methods of classes tagged with {@link Library}. In a call chain, the first argument is the
  * "receiver" from the previous call.
  *
+ * Needs a Type that specified if this is a functional call, admitting asynchronous or synchronous
+ * execution, or an emitter
+ *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
@@ -31,6 +34,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Verb {
+
+    enum ExecutionType {
+        SYNC, ASYNC, EMITTER;
+    }
 
     /**
      * ID of the component. Must be unique, please use unambiguous paths like package or project
@@ -61,4 +68,10 @@ public @interface Verb {
      */
     Class<?> returns() default Object.class;
 
+    /**
+     * The execution mode of this verb.
+     *
+     * @return
+     */
+    ExecutionType executionType() default ExecutionType.SYNC;
 }
