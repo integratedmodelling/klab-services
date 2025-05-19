@@ -137,9 +137,9 @@ public interface RuntimeService extends KlabService {
    * exceptionally if no dataflow can be built for them, and the knowledge graph will not contain
    * the observation submitted after completion.
    *
-   * @param observation
-   * @param scope
-   * @return
+   * @param observation the observation to submit
+   * @param scope the context scope in which to submit the observation
+   * @return a future that completes with the resolved observation when resolution is complete
    */
   CompletableFuture<Observation> submit(@Mutable Observation observation, ContextScope scope);
 

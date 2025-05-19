@@ -69,7 +69,7 @@ public interface Data {
      * fill curve. The scanners exposed by cursors that scan a data buffer can also expose methods
      * to set/get typed values sequentially.
      *
-     * @return
+     * @return a primitive iterator of long values representing indices along the fill curve
      */
     PrimitiveIterator.OfLong scan();
   }
@@ -176,17 +176,17 @@ public interface Data {
     /**
      * Add the passed notification. Returns self.
      *
-     * @param notification
-     * @return
+     * @param notification the notification to add
+     * @return this builder instance for method chaining
      */
     Builder notification(Notification notification);
 
     /**
      * Add the passed non-semantic metadata. Returns self.
      *
-     * @param key
-     * @param value
-     * @return
+     * @param key the metadata key
+     * @param value the metadata value
+     * @return this builder instance for method chaining
      */
     Builder metadata(String key, Object value);
 
@@ -195,8 +195,8 @@ public interface Data {
      * geometry is mandatorily that of the builder and the name is the URN of the observable. On the
      * builder, one of the fillers must be called to set the numbers.
      *
-     * @param observable
-     * @return
+     * @param observable the observable for which to create a state
+     * @return a new builder for the state
      */
     Builder state(Observable observable);
 
@@ -205,10 +205,10 @@ public interface Data {
      * transaction. The API ensures that the object is sound after this call, but the builder can be
      * used to add metadata, states or child objects.
      *
-     * @param name
-     * @param observable
-     * @param geometry
-     * @return
+     * @param name the name of the object
+     * @param observable the observable for the object
+     * @param geometry the geometry for the object
+     * @return a new builder for the object
      */
     Builder object(String name, Observable observable, Geometry geometry);
 
@@ -216,9 +216,9 @@ public interface Data {
      * Shorthand for buffers(.., storage.getFillingCurve()).getFirst() when the fill curve
      * doesnt'matter and there is only one buffer because it's been forced to.
      *
-     * @param fillerClass
-     * @return
-     * @param <T>
+     * @param fillerClass the class of buffer to create
+     * @return a single buffer of the specified type
+     * @param <T> the type of buffer
      */
     <T extends Storage.Buffer> T buffer(Class<T> fillerClass);
 
@@ -226,10 +226,10 @@ public interface Data {
      * Shorthand for buffers(..).getFirst() when we know that there will be only one buffer due to
      * contextualizer configuration (split=1).
      *
-     * @param fillerClass
-     * @param spaceFillingCurve
-     * @return
-     * @param <T>
+     * @param fillerClass the class of buffer to create
+     * @param spaceFillingCurve the space filling curve to use
+     * @return a single buffer of the specified type using the specified space filling curve
+     * @param <T> the type of buffer
      */
     <T extends Storage.Buffer> T buffer(Class<T> fillerClass, SpaceFillingCurve spaceFillingCurve);
 
@@ -237,9 +237,9 @@ public interface Data {
      * Shorthand for getting a set of parallel buffers with the filling curve mandated by the
      * modeler, configuration or implementation.
      *
-     * @param fillerClass
-     * @return
-     * @param <T>
+     * @param fillerClass the class of buffer to create
+     * @return a list of buffers of the specified type
+     * @param <T> the type of buffer
      */
     <T extends Storage.Buffer> List<T> buffers(Class<T> fillerClass);
 
@@ -249,10 +249,10 @@ public interface Data {
      * quality and the class is not compatible with the observable's {@link
      * org.integratedmodelling.klab.api.knowledge.DescriptionType}.
      *
-     * @param fillerClass
-     * @param spaceFillingCurve
-     * @return
-     * @param <T>
+     * @param fillerClass the class of buffer to create
+     * @param spaceFillingCurve the space filling curve to use
+     * @return a list of buffers of the specified type using the specified space filling curve
+     * @param <T> the type of buffer
      */
     <T extends Storage.Buffer> List<T> buffers(
         Class<T> fillerClass, SpaceFillingCurve spaceFillingCurve);
@@ -262,7 +262,7 @@ public interface Data {
      * encoders. Nothing needs to be done with the output which is automatically added if this comes
      * from a {@link #state(Observable)} or {@link #object(String, Observable, Geometry)} call.
      *
-     * @return
+     * @return the built Data object
      */
     Data build();
   }
@@ -271,42 +271,42 @@ public interface Data {
    * The name. Never null; in quality observations, it will be the URN of the observable or the
    * stated name if there is one.
    *
-   * @return
+   * @return the name of this data object
    */
   String name();
 
   /**
    * The observable URN. Never null.
    *
-   * @return
+   * @return the URN of the observable associated with this data
    */
   String semantics();
 
   /**
    * The geometry. Never null.
    *
-   * @return
+   * @return the geometry of this data object
    */
   Geometry geometry();
 
   /**
    * Metadata. Possibly empty, never null.
    *
-   * @return
+   * @return the metadata associated with this data object
    */
   Metadata metadata();
 
   /**
    * If empty, the data cannot be used. Normally there will be notifications explaining why.
    *
-   * @return
+   * @return true if this data object is empty and cannot be used, false otherwise
    */
   boolean empty();
 
   /**
    * Any notifications added. If any notification is ERROR level, empty() will be true.
    *
-   * @return
+   * @return a list of notifications associated with this data object
    */
   List<Notification> notifications();
 
@@ -326,7 +326,7 @@ public interface Data {
    * A class switch should be used along with the fill curve to transfer the data to the storage,
    * filtering through the {@link #dataKey()} if appropriate.
    *
-   * @return
+   * @return a list of child data objects
    */
   List<Data> children();
 
@@ -338,7 +338,7 @@ public interface Data {
    * <p>TODO expose annotation names and methods so they are recognized and validated at the API
    * level
    *
-   * @return
+   * @return a collection of annotations associated with this data object
    */
   Collection<Annotation> annotations();
 
@@ -349,7 +349,7 @@ public interface Data {
    * data object will implement {@link java.util.PrimitiveIterator.OfInt} and can be iterated to
    * extract the categories.
    *
-   * @return
+   * @return a map of integer keys to category string values
    */
   Map<Integer, String> dataKey();
 
@@ -358,7 +358,7 @@ public interface Data {
    * in states, or both. If size() == 0 the data specify no child observations. The observable
    * should be the guide in asking the right questions about the data.
    *
-   * @return
+   * @return the number of objects or values in this data object
    */
   long size();
 
@@ -366,7 +366,7 @@ public interface Data {
    * True if the instance contains state values. In that case it will need to be cast to the
    * appropriate primivite iterator to obtain the data.
    *
-   * @return
+   * @return true if this data object contains state values, false otherwise
    */
   boolean hasStates();
 

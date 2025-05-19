@@ -26,7 +26,7 @@ public interface Histogram extends Serializable {
      * If true, the histogram is empty or not reliable and should not be used. Normally arises from no-data states or
      * abnormal value attribution (e.g. data are changed w/o updating the histogram).
      *
-     * @return
+     * @return true if the histogram is empty or not reliable, false otherwise
      */
     boolean isEmpty();
 

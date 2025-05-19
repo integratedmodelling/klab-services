@@ -280,7 +280,14 @@ public enum Authentication {
     return Pair.of(new AnonymousUser(), Collections.emptyList());
   }
 
-  private FederationData getFederationData(UserIdentity identity) {
+  /**
+   * Retrieve the federation data for the passed identity, authenticating the presence of only one
+   * federation group.
+   *
+   * @param identity
+   * @return the federation data or null if no federation group was found.
+   */
+  public FederationData getFederationData(UserIdentity identity) {
 
     var federations =
         identity.getGroups().stream()
