@@ -224,6 +224,18 @@ public interface ContextScope extends SessionScope {
   CompletableFuture<Observation> observe(@Mutable Observation observation);
 
   /**
+   * Create an observation in this context, which must be able to include it both semantically
+   * (compatible context observation) and physically (compatible geometry). The observation must not
+   * already exist. The passed data may defer to an adapter. The built observation should be "lazy"
+   * if binary content is not passed.
+   *
+   * @param observation the new unresolved observation
+   * @param observationData the data that resolve the observation
+   * @return a future for the resolved observation
+   */
+  CompletableFuture<Observation> submit(Observation observation, Data observationData);
+
+  /**
    * Return all observations affected by the passed one in this scope, either through model
    * dependencies or behaviors. "Affected" is any kind of reaction, not necessarily implied by
    * semantics.

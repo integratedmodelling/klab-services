@@ -7,6 +7,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
@@ -641,6 +642,11 @@ public class ResourcesClient extends ServiceClient
 
   @Override
   public List<ResourceSet> deleteDocument(String projectName, String assetUrn, UserScope scope) {
+    return null;
+  }
+
+  @Override
+  public CompletableFuture<Resource> publishObservation(Observation observation, ContextScope scope) {
     return null;
   }
 

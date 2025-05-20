@@ -348,4 +348,8 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     this.digitalTwin = new ClientDigitalTwin(this, id);
   }
 
+  @Override
+  public CompletableFuture<Observation> submit(Observation observation, Data observationData) {
+    return null;
+  }
 }

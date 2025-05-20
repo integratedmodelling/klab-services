@@ -171,6 +171,9 @@ public interface Data {
     }
   }
 
+  /**
+   * A data builder encodes data content, either in raw binary form or by configuring an adapter.
+   */
   interface Builder {
 
     /**
@@ -182,7 +185,18 @@ public interface Data {
     Builder notification(Notification notification);
 
     /**
-     * Add the passed non-semantic metadata. Returns self.
+     * Pass the ID of an adapter that will interpret the contents. If not passed, raw binary content
+     * is assumed. If passed, the data object built may contain only references to the configuration
+     * of the identified adapter.
+     *
+     * @param adapterId
+     * @return
+     */
+    Builder adapter(String adapterId);
+
+    /**
+     * Add the passed non-semantic metadata. Can be used for properties when no data content is
+     * added but an adapter is used. Returns self.
      *
      * @param key the metadata key
      * @param value the metadata value

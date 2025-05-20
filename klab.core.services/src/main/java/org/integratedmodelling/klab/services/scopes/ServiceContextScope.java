@@ -52,7 +52,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private Observation contextObservation;
   private URL url;
   private DigitalTwin digitalTwin;
-//  private KnowledgeGraph.Operation currentOperation;
 
   // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
   protected ServiceContextScope parent;
@@ -263,7 +262,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return runtime.submit(observation, this);
   }
 
-//  public void finalizeObservation(
+  @Override
+  public CompletableFuture<Observation> submit(Observation observation, Data observationData) {
+    return null;
+  }
+
+  //  public void finalizeObservation(
 //      Observation observation, KnowledgeGraph.Operation operation, boolean successful) {
 //    if (successful) {
 //      if (observation.getObservable().is(SemanticType.QUALITY)) {

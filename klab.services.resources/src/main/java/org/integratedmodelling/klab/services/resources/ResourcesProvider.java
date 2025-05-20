@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -1187,9 +1188,11 @@ public class ResourcesProvider extends BaseService
     return null;
   }
 
-  //    public void setLocalName(String localName) {
-  //        this.localName = localName;
-  //    }
+  @Override
+  public CompletableFuture<Resource> publishObservation(Observation observation, ContextScope scope) {
+    // TODO
+    return null;
+  }
 
   @Override
   public ResourceSet resolveModels(Observable observable, ContextScope scope) {

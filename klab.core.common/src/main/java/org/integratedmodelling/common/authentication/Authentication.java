@@ -43,7 +43,16 @@ import org.integratedmodelling.klab.rest.ServiceReference;
 public enum Authentication {
   INSTANCE;
 
-  public static record FederationData(String id, String broker) {}
+  public static class FederationData {
+
+    private final String id;
+    private final String broker;
+
+    public FederationData(String id, String broker) {
+      this.id = id;
+      this.broker = broker;
+    }
+  }
 
   /**
    * Group property that flags the group as a federation. There can only be zero or more federations
@@ -280,14 +289,7 @@ public enum Authentication {
     return Pair.of(new AnonymousUser(), Collections.emptyList());
   }
 
-  /**
-   * Retrieve the federation data for the passed identity, authenticating the presence of only one
-   * federation group.
-   *
-   * @param identity
-   * @return the federation data or null if no federation group was found.
-   */
-  public FederationData getFederationData(UserIdentity identity) {
+  private FederationData getFederationData(UserIdentity identity) {
 
     var federations =
         identity.getGroups().stream()

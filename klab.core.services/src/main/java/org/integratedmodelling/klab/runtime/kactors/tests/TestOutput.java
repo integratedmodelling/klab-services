@@ -91,7 +91,12 @@ public class TestOutput extends TestCaseBase {
                                 result))
                     .thenApply(
                         obs1_ -> {
-                          // the remaining piece. ACHTUNG this may get the EMPTY result of handle()
+
+                          // the remaining piece. ACHTUNG must always check for an empty result of handle()!
+                          if (obs1_.isEmpty()) {
+                            return obs1_;
+                          }
+
                           var observation =
                               DigitalTwin.createObservation(dt, _observable1, obs1_.getGeometry());
                           var childScope = dt.within(observation);
@@ -108,6 +113,7 @@ public class TestOutput extends TestCaseBase {
                         });
                 return dt;
               });
+
     } catch (IOException e) {
       testScope.handle(e, this, null /* TODO */, Void.class);
     }
