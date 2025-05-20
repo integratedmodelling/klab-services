@@ -289,7 +289,7 @@ public enum Authentication {
     return Pair.of(new AnonymousUser(), Collections.emptyList());
   }
 
-  private FederationData getFederationData(UserIdentity identity) {
+  public FederationData getFederationData(UserIdentity identity) {
 
     var federations =
         identity.getGroups().stream()
