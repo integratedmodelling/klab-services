@@ -15,7 +15,6 @@ import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -292,7 +291,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         } else if (asset == knowledgeGraph.dataflow()) {
             return DATAFLOW_ASSET.getId() + "";
         } else if (asset == knowledgeGraph.provenance()) {
-            return PROVENANCE_ASSET_ASSET.getId() + "";
+            return PROVENANCE_ASSET.getId() + "";
         }
         return asset.getId() + "";
     }
@@ -324,7 +323,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         this.storageManager = new StorageManagerImpl(service, scope);
         this.scheduler = new SchedulerImpl(scope, this);
         this.contextAssetNode = new RuntimeAssetGraph.Node(RuntimeAsset.CONTEXT_ASSET);
-        this.provenanceAssetNode = new RuntimeAssetGraph.Node(RuntimeAsset.PROVENANCE_ASSET_ASSET);
+        this.provenanceAssetNode = new RuntimeAssetGraph.Node(RuntimeAsset.PROVENANCE_ASSET);
         this.dataflowAssetNode = new RuntimeAssetGraph.Node(RuntimeAsset.DATAFLOW_ASSET);
     }
 

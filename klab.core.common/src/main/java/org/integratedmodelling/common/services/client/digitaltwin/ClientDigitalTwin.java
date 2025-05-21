@@ -1,9 +1,14 @@
 package org.integratedmodelling.common.services.client.digitaltwin;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.RuntimeAssetGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
@@ -16,10 +21,6 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Client-side digital twin, connected to the actual DT through the messages it gets from it (and
@@ -35,7 +36,6 @@ public class ClientDigitalTwin implements DigitalTwin {
   private ClientKnowledgeGraph knowledgeGraph;
   private RuntimeService runtimeClient;
   private List<Consumer<Message>> eventConsumers = new ArrayList<>();
-
 
   public ClientDigitalTwin(ContextScope scope, String id) {
     this.scope = scope;
@@ -70,19 +70,18 @@ public class ClientDigitalTwin implements DigitalTwin {
    * @param event
    */
   public void ingest(Message event) {
-    // observations based on the URN
+    /*
+    We load contextualization info in each observation's metadata
+     */
+    switch (event.getMessageType()) {
+      case KnowledgeGraphCommitted ->
+          knowledgeGraph.ingest(event.getPayload(RuntimeAssetGraph.class));
+      case ContextualizationStarted, ContextualizationAborted, ContextualizationSuccessful ->
+          knowledgeGraph.update(event.getPayload(Observation.class), event.getMessageType());
+    }
     for (var consumer : eventConsumers) {
       consumer.accept(event);
     }
-    // TODO define self based on the message content, reconstructing hierarchies of activities and
-//    switch (event.getMessageType()) {
-//      case ContextualizationStarted -> {}
-//      case ContextualizationAborted -> {}
-//      case ContextualizationSuccessful -> {}
-//      case ActivityStarted -> {}
-//      case ActivityAborted -> {}
-//      case ActivityFinished -> {}
-//    }
     // nah    this.scope.send(event);
   }
 
@@ -96,6 +95,7 @@ public class ClientDigitalTwin implements DigitalTwin {
   public KnowledgeGraph getKnowledgeGraph() {
     return knowledgeGraph;
   }
+
 
   @Override
   public Provenance getProvenanceGraph(ContextScope context) {

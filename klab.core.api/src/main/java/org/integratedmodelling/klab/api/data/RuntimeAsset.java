@@ -8,7 +8,6 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Plan;
 import org.integratedmodelling.klab.api.provenance.Provenance;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
@@ -24,9 +23,17 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 public interface RuntimeAsset {
 
   ContextAsset CONTEXT_ASSET = new ContextAsset();
-  ProvenanceAsset PROVENANCE_ASSET_ASSET = new ProvenanceAsset();
+  ProvenanceAsset PROVENANCE_ASSET = new ProvenanceAsset();
   DataflowAsset DATAFLOW_ASSET = new DataflowAsset();
 
+  /** The status of an asset, which may be added to the metadata using the "status" property. */
+  enum Status {
+    UNRESOLVED,
+    CONTEXTUALIZED,
+    CORRUPTED,
+    DELETED,
+    ACTIVE
+  }
 
   enum Type {
     OBSERVATION(Observation.class),
@@ -122,5 +129,4 @@ public interface RuntimeAsset {
       return Type.DATAFLOW;
     }
   }
-
 }
