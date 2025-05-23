@@ -32,6 +32,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -58,7 +59,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
-import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
@@ -239,8 +240,7 @@ public class ResourcesProvider extends BaseService
      * Setup an embedded broker, possibly to be shared with other services, if we're local and there
      * is no configured broker.
      */
-    if (Utils.URLs.isLocalHost(this.getUrl())
-        && workspaceManager.getConfiguration().getBrokerURI() == null) {
+    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
       this.embeddedBroker = new EmbeddedBroker();
     }
 
@@ -867,18 +867,18 @@ public class ResourcesProvider extends BaseService
     ret.getPermissions().add(CRUDOperation.UPDATE);
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
-    ret.setBrokerURI(
-        embeddedBroker != null
-            ? embeddedBroker.getURI()
-            : workspaceManager.getConfiguration().getBrokerURI());
-    ret.setAvailableMessagingQueues(
-        Utils.URLs.isLocalHost(getUrl())
-            ? EnumSet.of(
-                Message.Queue.Info,
-                Message.Queue.Errors,
-                Message.Queue.Warnings,
-                Message.Queue.Events)
-            : EnumSet.noneOf(Message.Queue.class));
+    //    ret.setBrokerURI(
+    //        embeddedBroker != null
+    //            ? embeddedBroker.getURI()
+    //            : workspaceManager.getConfiguration().getBrokerURI());
+    //    ret.setAvailableMessagingQueues(
+    //        Utils.URLs.isLocalHost(getUrl())
+    //            ? EnumSet.of(
+    //                Message.Queue.Info,
+    //                Message.Queue.Errors,
+    //                Message.Queue.Warnings,
+    //                Message.Queue.Events)
+    //            : EnumSet.noneOf(Message.Queue.class));
 
     return ret;
   }
@@ -1189,7 +1189,8 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public CompletableFuture<Resource> publishObservation(Observation observation, ContextScope scope) {
+  public CompletableFuture<Resource> publishObservation(
+      Observation observation, ContextScope scope) {
     // TODO
     return null;
   }
@@ -1532,7 +1533,7 @@ public class ResourcesProvider extends BaseService
    * @return
    */
   @Override
-  public String registerSession(SessionScope sessionScope) {
+  public String registerSession(SessionScope sessionScope, Federation federation) {
 
     if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
@@ -1541,8 +1542,7 @@ public class ResourcesProvider extends BaseService
             "resolver: session scope has no ID, cannot register " + "a scope autonomously");
       }
 
-      getScopeManager()
-          .registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
+      getScopeManager().registerScope(serviceSessionScope, federation);
       return serviceSessionScope.getId();
     }
 
@@ -1559,7 +1559,7 @@ public class ResourcesProvider extends BaseService
    * @return
    */
   @Override
-  public String registerContext(ContextScope contextScope) {
+  public String registerContext(ContextScope contextScope, Federation federation) {
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
@@ -1580,8 +1580,7 @@ public class ResourcesProvider extends BaseService
             "Registering context scope without service ID: digital twin will be inoperative");
       }
 
-      getScopeManager()
-          .registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
+      getScopeManager().registerScope(serviceContextScope, federation);
       return serviceContextScope.getId();
     }
 

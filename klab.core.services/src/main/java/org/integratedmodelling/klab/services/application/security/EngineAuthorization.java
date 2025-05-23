@@ -43,6 +43,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken
         AuthenticatedIdentity {
 
   private static final int TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7 * 4; // 4 weeks
+  private final String federationId;
 
   protected Instant expiration;
 
@@ -54,6 +55,8 @@ public class EngineAuthorization extends AbstractAuthenticationToken
 
   /** The groups associated with the token. These come from the authenticating hub. */
   private Collection<Group> groups = new ArrayList<>();
+
+  private String brokerUrl;
 
   /**
    * The ID of the Integrated Modelling partner which owns the directory containing the user being
@@ -91,10 +94,17 @@ public class EngineAuthorization extends AbstractAuthenticationToken
   private Scope scope;
 
   public EngineAuthorization(
-      String partnerId, String username, Collection<String> groups, Collection<Role> roles) {
+      String partnerId,
+      String username,
+      String brokerUrl,
+      String federationId,
+      Collection<String> groups,
+      Collection<Role> roles) {
     super(roles);
     this.partnerId = new Credentials(partnerId);
     this.username = new Credentials(username);
+    this.brokerUrl = brokerUrl;
+    this.federationId = federationId;
     expiration = Instant.now().plusSeconds(TOKEN_TTL_SECONDS);
 
     /*
@@ -119,6 +129,14 @@ public class EngineAuthorization extends AbstractAuthenticationToken
   @Override
   public Credentials getCredentials() {
     return tokenString;
+  }
+
+  public String getBrokerUrl() {
+    return brokerUrl;
+  }
+
+  public String getFederationId() {
+    return federationId;
   }
 
   public Instant getExpiration() {

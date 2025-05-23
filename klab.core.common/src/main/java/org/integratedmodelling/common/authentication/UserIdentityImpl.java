@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.authentication;
 
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 

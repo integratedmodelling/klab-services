@@ -9,7 +9,6 @@ import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.GraphQLClient;
 import org.integratedmodelling.common.services.client.ServiceClient;
-import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -17,6 +16,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -42,7 +42,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   }
 
   public static RuntimeClient createOffline(
-          URL url, Identity identity, Parameters<Engine.Setting> settings) {
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
     return new RuntimeClient(url, identity, settings, false);
   }
 
@@ -80,7 +80,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   }
 
   @Override
-  public String registerSession(SessionScope scope) {
+  public String registerSession(SessionScope scope, Federation federation) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
@@ -119,25 +119,32 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     var ret =
-        client./*withScope(scope.getParentScope()).*/ post(
-            ServicesAPI.CREATE_SESSION,
-            request,
-            String.class,
-            "id",
-            scope instanceof ServiceSideScope serviceSideScope ? serviceSideScope.getId() : null);
+        client
+            .withHeader(
+                ServicesAPI.MESSAGING_URL_HEADER,
+                federation == null ? null : federation.getBroker())
+            .withHeader(
+                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
+            .post(
+                ServicesAPI.CREATE_SESSION,
+                request,
+                String.class,
+                "id",
+                scope instanceof ServiceSideScope serviceSideScope
+                    ? serviceSideScope.getId()
+                    : null);
 
-    var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
-    if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
+    if (federation != null && scope instanceof MessagingChannelImpl messagingChannel) {
       var queues =
           getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
-      messagingChannel.setupMessaging(brokerURI, ret, queues);
+      messagingChannel.setupMessaging(federation.getBroker(), queues);
     }
 
     return ret;
   }
 
   @Override
-  public String registerContext(ContextScope scope) {
+  public String registerContext(ContextScope scope, Federation federation) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
@@ -145,7 +152,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     var runtime = scope.getService(RuntimeService.class);
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
-            && messagingChannel.hasMessaging();
+            && messagingChannel.hasMessaging()
+            && federation != null;
 
     // The runtime needs to use our resolver(s) and resource service(s), as long as they're
     // accessible.
@@ -175,14 +183,15 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
       request.getReasonerServices().add(reasonerClient.getUrl());
     }
 
-    if (hasMessaging) {
-      // TODO setup desired request. This will send no header and use the defaults.
-    }
-
     var ret =
         client
             .withScope(scope.getParentScope())
             .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
+            .withHeader(
+                ServicesAPI.MESSAGING_URL_HEADER,
+                federation == null ? null : federation.getBroker())
+            .withHeader(
+                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
             .post(
                 ServicesAPI.CREATE_CONTEXT,
                 request,
@@ -193,14 +202,15 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
                     : null);
 
     if (hasMessaging) {
-      var queues =
-          getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
       if (scope instanceof MessagingChannelImpl messagingChannel) {
-        messagingChannel.setupMessagingQueues(ret, queues);
+        var queues =
+            getQueuesFromHeader(
+                scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+        messagingChannel.setupMessaging(federation.getBroker(), queues);
       }
-      if (scope instanceof ClientContextScope clientContextScope) {
-        clientContextScope.createDigitalTwin(ret);
-      }
+    }
+    if (scope instanceof ClientContextScope clientContextScope) {
+      clientContextScope.createDigitalTwin(ret);
     }
 
     return ret;

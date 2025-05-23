@@ -27,6 +27,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -42,17 +43,6 @@ import org.integratedmodelling.klab.rest.ServiceReference;
  */
 public enum Authentication {
   INSTANCE;
-
-  public static class FederationData {
-
-    private final String id;
-    private final String broker;
-
-    public FederationData(String id, String broker) {
-      this.id = id;
-      this.broker = broker;
-    }
-  }
 
   /**
    * Group property that flags the group as a federation. There can only be zero or more federations
@@ -258,6 +248,7 @@ public enum Authentication {
         var federationData = getFederationData(ret);
         if (federationData != null) {
           Logging.INSTANCE.info("User " + ret.getUsername() + " is part of the " + federationData);
+          ret.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
         }
 
         Map<KlabService.Type, AtomicInteger> serviceCount = new HashMap<>();
@@ -289,7 +280,7 @@ public enum Authentication {
     return Pair.of(new AnonymousUser(), Collections.emptyList());
   }
 
-  public FederationData getFederationData(UserIdentity identity) {
+  public Federation getFederationData(UserIdentity identity) {
 
     var federations =
         identity.getGroups().stream()
@@ -306,10 +297,10 @@ public enum Authentication {
       throw new KlabAuthorizationException(
           "multiple federations found for user " + identity.getUsername());
     } else if (federations.size() == 1) {
-      return new FederationData(
+      return new Federation(
           federations.getFirst().getName(),
           federations.getFirst().getCustomProperties().stream()
-              .filter(cp -> "federation.broker".equals(cp.getKey()))
+              .filter(cp -> "federation.broker.url".equals(cp.getKey()))
               .map(CustomProperty::getValue)
               .findFirst()
               .orElse(null));
@@ -317,109 +308,6 @@ public enum Authentication {
 
     return null;
   }
-
-  //  /**
-  //   * Strategy to locate a primary service in all possible ways. If there are primary service
-  // URLs
-  //   * for the passed service class in the list of service references obtained through
-  // authentication,
-  //   * try them and if one responds return a client to it. Otherwise, try the local URL and if the
-  //   * passed service is running locally, return a client to it. As a last resort, check if we
-  // have a
-  //   * source distribution configured or available, and if so, synchronize it if needed and if it
-  //   * provides the required service product, run it and return a service client.
-  //   *
-  //   * @param serviceType the service we need.
-  //   * @param identity the identity we represent
-  //   * @param availableServices a list of {@link ServiceReference} objects obtained through
-  //   *     certificate authentication, or an empty list.
-  //   * @param <T> the type of service we want to obtain
-  //   * @return a service client or null. The service status should be checked before use.
-  //   */
-  //  public <T extends KlabService> T fuckService(
-  //      KlabService.Type serviceType,
-  //      Scope scope,
-  //      Identity identity,
-  //      List<ServiceReference> availableServices,
-  //      Parameters<Engine.Setting> settings) {
-  //
-  //    BiConsumer<Channel, Message>[] listeners =
-  //        scope instanceof ChannelImpl clientScope
-  //            ? clientScope.listeners().toArray(BiConsumer[]::new)
-  //            : (scope instanceof AbstractDelegatingScope ascope ? ascope.listeners() : null);
-  //
-  //
-  //
-  //    // if we get here, we have no remote services available and we should try a running local
-  // one
-  //    // first.
-  //    var status = ServiceClient.readServiceStatus(serviceType.localServiceUrl(), null);
-  //    if (status != null) {
-  //      scope.info(
-  //          "Using locally running "
-  //              + status.getServiceType()
-  //              + " service at "
-  //              + serviceType.localServiceUrl());
-  //      return (T)
-  //          createLocalServiceClient(
-  //              serviceType,
-  //              serviceType.localServiceUrl(),
-  //              scope,
-  //              identity,
-  //              availableServices,
-  //              settings,
-  //              listeners);
-  //    }
-  //
-  //
-  //    return null;
-  //  }
-  //
-  //  @SafeVarargs
-  //  public final <T extends KlabService> T createLocalServiceClient(
-  //      KlabService.Type serviceType,
-  //      URL url,
-  //      Scope scope,
-  //      Identity identity,
-  //      List<ServiceReference> services,
-  //      Parameters<Engine.Setting> settings,
-  //      BiConsumer<Channel, Message>... listeners) {
-  //    T ret =
-  //        switch (serviceType) {
-  //          case REASONER -> {
-  //            yield (T) new ReasonerClient(url, identity, services, settings, listeners);
-  //          }
-  //          case RESOURCES -> {
-  //            yield (T) new ResourcesClient(url, identity, services, settings, listeners);
-  //          }
-  //          case RESOLVER -> {
-  //            yield (T) new ResolverClient(url, identity, services, settings, listeners);
-  //          }
-  //          case RUNTIME -> {
-  //            yield (T) new RuntimeClient(url, identity, services, settings, listeners);
-  //          }
-  //          case COMMUNITY -> {
-  //            yield (T) new CommunityClient(url, identity, services, settings, listeners);
-  //          }
-  //          default -> throw new IllegalStateException("Unexpected value: " + serviceType);
-  //        };
-  //
-  //    scope.send(
-  //        Message.MessageClass.ServiceLifecycle,
-  //        Message.MessageType.ServiceInitializing,
-  //        serviceType + " service at " + serviceType.localServiceUrl());
-  //
-  //    return ret;
-  //  }
-
-  /**
-   * This will only return a non-null distribution after authentication if a distribution was used.
-   *
-   * @return
-   */
-  //  public Distribution getDistribution() {
-  //    return this.distribution;
-  //  }
 
   Utils.FileCatalog<ExternalAuthenticationCredentials> getExternalCredentialsCatalog(Scope scope) {
     // TODO use separate catalog for services and user scopes

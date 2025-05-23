@@ -4,7 +4,7 @@
 //import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 //import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 //import org.integratedmodelling.klab.api.services.KlabService;
-//import org.integratedmodelling.klab.services.ServiceStartupOptions;
+//import org.integratedmodelling.common.services.ServiceStartupOptions;
 //import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 //import org.integratedmodelling.klab.services.resources.embedded.ResourcesServiceInstance;
 //import org.integratedmodelling.klab.utilities.Utils;

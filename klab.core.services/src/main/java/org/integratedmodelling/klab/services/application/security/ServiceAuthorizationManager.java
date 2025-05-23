@@ -6,6 +6,8 @@ import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Supplier;
+
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.PartnerIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
@@ -95,10 +97,11 @@ public class ServiceAuthorizationManager {
 
     this.authenticatingHub = serverHub;
     this.nodeName =
-            certificate.getProperty(KlabCertificate.KEY_NODENAME) != null
+        certificate.getProperty(KlabCertificate.KEY_NODENAME) != null
             ? certificate.getProperty(KlabCertificate.KEY_NODENAME)
             : options.getServiceName();
-    this.type = KlabService.Type.valueOf(certificate.getProperty(KlabCertificate.KEY_CERTIFICATE_TYPE));
+    this.type =
+        KlabService.Type.valueOf(certificate.getProperty(KlabCertificate.KEY_CERTIFICATE_TYPE));
     ServiceAuthenticationRequest request = new ServiceAuthenticationRequest(type);
 
     request.setCertificate(certificate.getProperty(KlabCertificate.KEY_CERTIFICATE));
@@ -117,8 +120,9 @@ public class ServiceAuthorizationManager {
     PublicKey publicKey;
     ServiceAuthenticationResponse response;
     try (var client = Utils.Http.getClient(this.authenticatingHub, null)) {
-      response = client.post(ServicesAPI.HUB.AUTHENTICATE_SERVICE, request,
-              ServiceAuthenticationResponse.class);
+      response =
+          client.post(
+              ServicesAPI.HUB.AUTHENTICATE_SERVICE, request, ServiceAuthenticationResponse.class);
     } catch (Exception e) {
       throw new KlabAuthorizationException("error authenticating: " + e);
     }
@@ -208,7 +212,8 @@ public class ServiceAuthorizationManager {
    * roles. Otherwise the hub makes the decision and the JWT is parsed to obtain username, groups
    * and roles as expected.
    */
-  public EngineAuthorization validateToken(String token, String serverKey, String scopeHeader) {
+  public EngineAuthorization validateToken(
+      String token, String serverKey, String scopeHeader, String brokerUrl, String federationId) {
 
     EngineAuthorization ret = null;
 
@@ -249,13 +254,10 @@ public class ServiceAuthorizationManager {
               new EngineAuthorization(
                   hubId,
                   username,
+                  brokerUrl,
+                  federationId,
                   groupStrings,
                   Collections.unmodifiableList(filterRoles(roleStrings)));
-
-          //                    if
-          // (klabService.get().klabService().getServiceSecret().equals(token)) {
-          //                        ret.setTokenString(token);
-          //                    }
 
           /*
            * Audience (aud) - The "aud" (audience) claim identifies the recipients that
@@ -305,7 +307,7 @@ public class ServiceAuthorizationManager {
       /*
       anonymous user case also intercepts JWT token failure
        */
-      ret = new EngineAuthorization("nohub", "anonymous", List.of(), null);
+      ret = new EngineAuthorization("nohub", "anonymous", null, null, List.of(), null);
       ret.setTokenString(ServicesAPI.ANONYMOUS_TOKEN);
     }
 
@@ -325,6 +327,7 @@ public class ServiceAuthorizationManager {
         ret.setGroups(user.getGroups());
         ret.setEmailAddress(user.getEmailAddress());
       }
+
     }
 
     /** User scope is created anyway. */

@@ -1,22 +1,14 @@
 package org.integratedmodelling.resources.server;
 
-import org.apache.catalina.startup.Tomcat;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
-import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
-import org.springframework.boot.web.embedded.tomcat.TomcatWebServer;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.util.Collections;
 import java.util.List;
 
 @Component

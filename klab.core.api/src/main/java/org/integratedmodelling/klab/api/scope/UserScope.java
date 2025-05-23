@@ -11,6 +11,10 @@ import java.util.List;
  * User scopes restrict a service's permissions to those available to a specific user. The group
  * enables federation-wide messaging iif the user is part of a federation that advertises a broker.
  *
+ * <p>If there are federation info in the user identity, the scope should initialize messaging in
+ * send/receive mode. Session and Context scopes created from it will advertise the broker to the
+ * runtime service so that applications and digital twins can use the messaging features.
+ *
  * @author ferd
  */
 public interface UserScope extends ReactiveScope {
@@ -64,5 +68,4 @@ public interface UserScope extends ReactiveScope {
    * @return
    */
   SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType);
-
 }

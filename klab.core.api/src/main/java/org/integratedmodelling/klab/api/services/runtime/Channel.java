@@ -60,6 +60,9 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
  */
 public interface Channel {
 
+  String LOCAL_BROKER_URL = "amqp://127.0.0.1:";
+  int LOCAL_BROKER_PORT = 20937;
+
   default Set<Message.Queue> defaultQueues() {
     return EnumSet.of(Message.Queue.Info);
   }
@@ -118,11 +121,11 @@ public interface Channel {
    */
   void debug(Object... o);
 
-//  /**
-//   * Send
-//   * @param status
-//   */
-//  void status(Scope.Status status);
+  //  /**
+  //   * Send
+  //   * @param status
+  //   */
+  //  void status(Scope.Status status);
 
   void event(Message message);
 

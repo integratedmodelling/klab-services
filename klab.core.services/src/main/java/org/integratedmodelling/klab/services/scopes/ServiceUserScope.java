@@ -210,52 +210,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     return this.data;
   }
 
-  //
-  //    @Override
-  //    public Message post(Consumer<Message> responseHandler, Object... message) {
-  //
-  //        /*
-  //         * Agent scopes will intercept the response from an agent and pair it with the
-  //         * response handler. All response handlers are scheduled and executed in
-  //         * sequence.
-  //         */
-  //        if (message != null && message.length == 1 && message[0] instanceof AgentResponse) {
-  //            Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>> handler =
-  // responseHandlers
-  //                    .get(((AgentResponse) message[0]).getId());
-  //            if (handler != null) {
-  //                executor.execute(() -> {
-  //                    handler.getSecond().accept(handler.getFirst(), (AgentResponse) message[0]);
-  //                    if (((AgentResponse) message[0]).isRemoveHandler()) {
-  //                        responseHandlers.remove(((AgentResponse) message[0]).getId());
-  //                    }
-  //                });
-  //            }
-  //            return null;
-  //        } else if (message != null && message.length == 1 && message[0] instanceof
-  // VM.AgentMessage) {
-  //            /*
-  //             * dispatch to the agent. If there's a handler, make a responseHandler and
-  //             * ensure that it gets a message
-  //             */
-  //            if (responseHandler != null) {
-  //                // TODO needs an asynchronous ask()
-  //                // Message m = Message.create(getIdentity().getId(),
-  //                // Message.MessageClass.ActorCommunication, Message.Type.AgentResponse,
-  //                // message[0]);
-  //                // this.getAgent().ask(m, (VM.AgentMessage)message[0]);
-  //            } else {
-  //                this.getAgent().tell((VM.AgentMessage) message[0]);
-  //            }
-  //
-  //        } else {
-  //            return super.post(responseHandler, message);
-  //        }
-  //
-  //        return null;
-  //
-  //    }
-
   @Override
   public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
     var ret =
@@ -358,30 +312,30 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     return user.toString();
   }
 
-  /**
-   * This implementation ensures that if we don't have channels set up but the service has an
-   * embedded broker (which means it's local and talking to local users) these get set up. Channel
-   * setup is only called once after the service has been initialized.
-   *
-   * @param queue
-   * @return
-   */
-  @Override
-  protected Channel getChannel(Message.Queue queue) {
-
-    if (!messagingChecked
-        && service instanceof BaseService baseService
-        && baseService.isInitialized()
-        && baseService.getEmbeddedBroker() != null) {
-      setupMessaging(
-          baseService.getEmbeddedBroker().getURI().toString(),
-          service.capabilities(this).getType().name().toLowerCase() + "." + getUser().getUsername(),
-          service.capabilities(this).getAvailableMessagingQueues());
-      messagingChecked = true;
-    }
-
-    return super.getChannel(queue);
-  }
+//  /**
+//   * This implementation ensures that if we don't have channels set up but the service has an
+//   * embedded broker (which means it's local and talking to local users) these get set up. Channel
+//   * setup is only called once after the service has been initialized.
+//   *
+//   * @param queue
+//   * @return
+//   */
+//  @Override
+//  protected Channel getChannel(Message.Queue queue) {
+//
+//    if (!messagingChecked
+//        && service instanceof BaseService baseService
+//        && baseService.isInitialized()
+//        && baseService.getEmbeddedBroker() != null) {
+//      setupMessaging(
+//          baseService.getEmbeddedBroker().getURI().toString(),
+//          service.capabilities(this).getType().name().toLowerCase() + "." + getUser().getUsername(),
+//          service.capabilities(this).getAvailableMessagingQueues());
+//      messagingChecked = true;
+//    }
+//
+//    return super.getChannel(queue);
+//  }
 
   @Override
   public void event(Message message) {

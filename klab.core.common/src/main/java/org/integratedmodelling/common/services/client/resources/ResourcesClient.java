@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -139,13 +140,13 @@ public class ResourcesClient extends ServiceClient
    * @return
    */
   @Override
-  public String registerSession(SessionScope scope) {
+  public String registerSession(SessionScope scope, Federation federation) {
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
 
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
-            && messagingChannel.hasMessaging();
+            && messagingChannel.hasMessaging() && federation != null;
 
     for (var service : scope.getServices(ResourcesService.class)) {
       if (service instanceof ServiceClient serviceClient) {
@@ -189,24 +190,26 @@ public class ResourcesClient extends ServiceClient
     }
 
     var ret =
-        client
-            .withScope(scope.getParentScope())
-            .post(
-                ServicesAPI.CREATE_SESSION,
-                request,
-                String.class,
-                "id",
-                scope instanceof ServiceSideScope serviceSideScope
-                    ? serviceSideScope.getId()
-                    : null);
+            client
+                    .withHeader(
+                            ServicesAPI.MESSAGING_URL_HEADER,
+                            federation == null ? null : federation.getBroker())
+                    .withHeader(
+                            ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
+                    .post(
+                            ServicesAPI.CREATE_SESSION,
+                            request,
+                            String.class,
+                            "id",
+                            scope instanceof ServiceSideScope serviceSideScope
+                            ? serviceSideScope.getId()
+                            : null);
 
-    var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
-    if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
+    if (federation != null && scope instanceof MessagingChannelImpl messagingChannel) {
       var queues =
-          getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
-      messagingChannel.setupMessaging(brokerURI, ret, queues);
+              getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+      messagingChannel.setupMessaging(federation.getBroker(), queues);
     }
-
     return ret;
   }
 
@@ -219,7 +222,7 @@ public class ResourcesClient extends ServiceClient
    * @return
    */
   @Override
-  public String registerContext(ContextScope scope) {
+  public String registerContext(ContextScope scope, Federation federation) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
@@ -227,7 +230,7 @@ public class ResourcesClient extends ServiceClient
     var runtime = scope.getService(RuntimeService.class);
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
-            && messagingChannel.hasMessaging();
+            && messagingChannel.hasMessaging() && federation != null;
 
     // The runtime needs to use our resolver(s) and resource service(s), as long as they're
     // accessible.
@@ -274,23 +277,29 @@ public class ResourcesClient extends ServiceClient
     }
 
     var ret =
-        client
-            .withScope(scope.getParentScope())
-            .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
-            .post(
-                ServicesAPI.CREATE_CONTEXT,
-                request,
-                String.class,
-                "id",
-                scope instanceof ServiceSideScope serviceSideScope
-                    ? serviceSideScope.getId()
-                    : null);
+            client
+                    .withScope(scope.getParentScope())
+                    .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
+                    .withHeader(
+                            ServicesAPI.MESSAGING_URL_HEADER,
+                            federation == null ? null : federation.getBroker())
+                    .withHeader(
+                            ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
+                    .post(
+                            ServicesAPI.CREATE_CONTEXT,
+                            request,
+                            String.class,
+                            "id",
+                            scope instanceof ServiceSideScope serviceSideScope
+                            ? serviceSideScope.getId()
+                            : null);
 
     if (hasMessaging) {
-      var queues =
-          getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
       if (scope instanceof MessagingChannelImpl messagingChannel) {
-        messagingChannel.setupMessagingQueues(ret, queues);
+        var queues =
+                getQueuesFromHeader(
+                        scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+        messagingChannel.setupMessaging(federation.getBroker(), queues);
       }
     }
 

@@ -220,7 +220,7 @@ public class ResourcesConfiguration implements Serializable {
 //  private String localResourcePath = "local";
 //
 //  private String publicResourcePath = "public";
-  private URI brokerURI = null;
+//  private URI brokerURI = null;
 
   /**
    * Each workspace name is a subdirectory with a number of projects in them. All are relative to
@@ -289,13 +289,13 @@ public class ResourcesConfiguration implements Serializable {
     return serviceId;
   }
 
-  public URI getBrokerURI() {
-    return brokerURI;
-  }
-
-  public void setBrokerURI(URI brokerURI) {
-    this.brokerURI = brokerURI;
-  }
+//  public URI getBrokerURI() {
+//    return brokerURI;
+//  }
+//
+//  public void setBrokerURI(URI brokerURI) {
+//    this.brokerURI = brokerURI;
+//  }
 
   public void setServiceId(String serviceId) {
     this.serviceId = serviceId;

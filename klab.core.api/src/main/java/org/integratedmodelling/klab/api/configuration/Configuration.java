@@ -272,4 +272,8 @@ public enum Configuration {
         return null;
     }
 
+    public File getServiceDataPath() {
+        // TODO this should reflect the service
+        return getDataPath();
+    }
 }

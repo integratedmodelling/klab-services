@@ -11,10 +11,10 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
@@ -35,16 +35,14 @@ import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
-import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 
 /**
@@ -97,14 +95,14 @@ public abstract class BaseService implements KlabService {
     }
     createServiceSecret();
     componentRegister = new ComponentRegistry(this, options);
-      serviceMonitor =
-          new ServiceMonitor(
-              scope.getIdentity(),
-              settingsForSlaveServices,
-              Utils.URLs.isLocalHost(this.url),
-              List.of(),
-              this::notifyLocalService,
-              this::notifyLocalEngine);
+    serviceMonitor =
+        new ServiceMonitor(
+            scope.getIdentity(),
+            settingsForSlaveServices,
+            Utils.URLs.isLocalHost(this.url),
+            List.of(),
+            this::notifyLocalService,
+            this::notifyLocalEngine);
   }
 
   private void notifyLocalEngine(Engine.Status status) {}
@@ -158,30 +156,30 @@ public abstract class BaseService implements KlabService {
     return embeddedBroker;
   }
 
-  /**
-   * Set up the messaging queues according to configuration in case the user is local and
-   * privileged. TODO this ignores the configuration for now.
-   *
-   * @param scope
-   * @param capabilities
-   */
-  public void setupMessaging(UserScope scope, ServiceCapabilities capabilities) {
-    if (scope instanceof ServiceUserScope serviceUserScope && serviceUserScope.isLocal()) {
-      capabilities.getAvailableMessagingQueues().add(Message.Queue.Errors);
-      capabilities.getAvailableMessagingQueues().add(Message.Queue.Warnings);
-      capabilities.getAvailableMessagingQueues().add(Message.Queue.Info);
-      // TODO configure debug
-    }
-  }
+  //  /**
+  //   * Set up the messaging queues according to configuration in case the user is local and
+  //   * privileged. TODO this ignores the configuration for now.
+  //   *
+  //   * @param scope
+  //   * @param capabilities
+  //   */
+  //  public void setupMessaging(UserScope scope, ServiceCapabilities capabilities) {
+  //    if (scope instanceof ServiceUserScope serviceUserScope && serviceUserScope.isLocal()) {
+  //      capabilities.getAvailableMessagingQueues().add(Message.Queue.Errors);
+  //      capabilities.getAvailableMessagingQueues().add(Message.Queue.Warnings);
+  //      capabilities.getAvailableMessagingQueues().add(Message.Queue.Info);
+  //      // TODO configure debug
+  //    }
+  //  }
 
-  /**
-   * Use this broker in local configurations unless a broker URL is specified in configuration
-   *
-   * @return
-   */
-  protected EmbeddedBroker getLocalBroker() {
-    return null;
-  }
+//  /**
+//   * Use this broker in local configurations unless a broker URL is specified in configuration
+//   *
+//   * @return
+//   */
+//  protected EmbeddedBroker getLocalBroker() {
+//    return null;
+//  }
 
   /**
    * The scope manager is created on demand as not all services need it.
@@ -402,7 +400,8 @@ public abstract class BaseService implements KlabService {
    *     ID is null, the call has failed.
    * @return the ID of the new session created at server side, or null in case of failure.
    */
-  public String registerSession(SessionScope sessionScope) {
+  public String registerSession(
+      SessionScope sessionScope, Federation federation) {
     return sessionScope instanceof ServiceSessionScope serviceSessionScope
         ? serviceSessionScope.getId()
         : null;
@@ -420,7 +419,8 @@ public abstract class BaseService implements KlabService {
    *     ID is null, the call has failed.
    * @return the ID of the new context scope created at server side, or null in case of failure.
    */
-  public String registerContext(ContextScope contextScope) {
+  public String registerContext(
+      ContextScope contextScope, Federation federation) {
     return contextScope instanceof ServiceContextScope serviceSessionScope
         ? serviceSessionScope.getId()
         : null;

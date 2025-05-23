@@ -2,29 +2,22 @@ package org.integratedmodelling.common.services.client.resolver;
 
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
-import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
-import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.knowledge.Model;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
-import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
 
 public class ResolverClient extends ServiceClient implements Resolver {
 
@@ -119,13 +112,13 @@ public class ResolverClient extends ServiceClient implements Resolver {
    * @return
    */
   @Override
-  public String registerSession(SessionScope scope) {
+  public String registerSession(SessionScope scope, Federation federation) {
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
 
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
-            && messagingChannel.hasMessaging();
+            && messagingChannel.hasMessaging() && federation != null;
 
     for (var service : scope.getServices(ResourcesService.class)) {
       if (service instanceof ServiceClient serviceClient) {
@@ -169,22 +162,25 @@ public class ResolverClient extends ServiceClient implements Resolver {
     }
 
     var ret =
-        client
-            .withScope(scope.getParentScope())
-            .post(
-                ServicesAPI.CREATE_SESSION,
-                request,
-                String.class,
-                "id",
-                scope instanceof ServiceSideScope serviceSideScope
-                    ? serviceSideScope.getId()
-                    : null);
+            client
+                    .withHeader(
+                            ServicesAPI.MESSAGING_URL_HEADER,
+                            federation == null ? null : federation.getBroker())
+                    .withHeader(
+                            ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
+                    .post(
+                            ServicesAPI.CREATE_SESSION,
+                            request,
+                            String.class,
+                            "id",
+                            scope instanceof ServiceSideScope serviceSideScope
+                            ? serviceSideScope.getId()
+                            : null);
 
-    var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
-    if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
+    if (federation != null && scope instanceof MessagingChannelImpl messagingChannel) {
       var queues =
-          getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
-      messagingChannel.setupMessaging(brokerURI, ret, queues);
+              getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+      messagingChannel.setupMessaging(federation.getBroker(), queues);
     }
 
     return ret;
@@ -200,7 +196,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
    * @return
    */
   @Override
-  public String registerContext(ContextScope scope) {
+  public String registerContext(ContextScope scope, Federation federation) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
@@ -208,7 +204,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
     var runtime = scope.getService(RuntimeService.class);
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
-            && messagingChannel.hasMessaging();
+            && messagingChannel.hasMessaging() && federation != null;
 
     // The runtime needs to use our resolver(s) and resource service(s), as long as they're
     // accessible.
@@ -255,23 +251,29 @@ public class ResolverClient extends ServiceClient implements Resolver {
     }
 
     var ret =
-        client
-            .withScope(scope.getParentScope())
-            .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
-            .post(
-                ServicesAPI.CREATE_CONTEXT,
-                request,
-                String.class,
-                "id",
-                scope instanceof ServiceSideScope serviceSideScope
-                    ? serviceSideScope.getId()
-                    : null);
+            client
+                    .withScope(scope.getParentScope())
+                    .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
+                    .withHeader(
+                            ServicesAPI.MESSAGING_URL_HEADER,
+                            federation == null ? null : federation.getBroker())
+                    .withHeader(
+                            ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
+                    .post(
+                            ServicesAPI.CREATE_CONTEXT,
+                            request,
+                            String.class,
+                            "id",
+                            scope instanceof ServiceSideScope serviceSideScope
+                            ? serviceSideScope.getId()
+                            : null);
 
     if (hasMessaging) {
-      var queues =
-          getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
       if (scope instanceof MessagingChannelImpl messagingChannel) {
-        messagingChannel.setupMessagingQueues(ret, queues);
+        var queues =
+                getQueuesFromHeader(
+                        scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+        messagingChannel.setupMessaging(federation.getBroker(), queues);
       }
     }
 

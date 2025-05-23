@@ -4,25 +4,20 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
-import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
+
+import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 
 /**
  * A channel instrumented for messaging, containing the AMQP connections and channels for all the
@@ -42,11 +37,6 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
 
   private static final Map<String, Map<String, List<Consumer<Message>>>> queueConsumers =
       new HashMap<>();
-
-  //  private static final Map<String, Map<Message.Match, MessageFuture<?>>> messageFutures =
-  //      Collections.synchronizedMap(new HashMap<>());
-  //  private static final Map<String, Set<Message.Match>> messageMatchers =
-  //      Collections.synchronizedMap(new HashMap<>());
 
   public abstract String getId();
 
@@ -181,7 +171,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
    * @return
    */
   public Collection<Message.Queue> setupMessaging(
-      String brokerUrl, String scopeId, Collection<Message.Queue> queuesHeader) {
+      String brokerUrl, Collection<Message.Queue> queuesHeader) {
 
     if (brokerUrl == null) {
       return EnumSet.noneOf(Message.Queue.class);
@@ -191,7 +181,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
       this.connectionFactory = new ConnectionFactory();
       this.connectionFactory.setUri(brokerUrl);
       this.connection = this.connectionFactory.newConnection();
-      return setupMessagingQueues(scopeId, queuesHeader);
+      return setupMessagingQueues(getBaseQueueName(), queuesHeader);
     } catch (Throwable t) {
       error("Error connecting to broker: no messaging available", t);
       return EnumSet.noneOf(Message.Queue.class);
@@ -205,7 +195,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
    * @return
    */
   public Collection<Message.Queue> setupMessagingQueues(
-      String scopeId, Collection<Message.Queue> queuesHeader) {
+      String baseQueueName, Collection<Message.Queue> queuesHeader) {
 
     Connection conn = this.connection;
     if (conn == null) {
@@ -219,7 +209,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
     if (conn != null) {
       for (var queue : queuesHeader) {
         try {
-          String queueId = scopeId + "." + queue.name().toLowerCase();
+          String queueId = baseQueueName + "." + queue.name().toLowerCase();
           getOrCreateChannel(queue)
               .queueDeclare(queueId, true, false, true /* TODO LINK TO SCOPE
                      PERSISTENCE */, Map.of());
@@ -234,7 +224,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
         Set<Message.Queue> toRemove = EnumSet.noneOf(Message.Queue.class);
         // setup consumers. The service-side scopes only receive messages from paired DTs.
         for (var queue : ret) {
-          String queueId = scopeId + "." + queue.name().toLowerCase();
+          String queueId = baseQueueName + "." + queue.name().toLowerCase();
           try {
 
             DeliverCallback deliverCallback =
@@ -246,7 +236,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
                   //                  System.out.println("ZIO PERA " + message);
 
                   // if there is a consumer installed for this queue, run it
-                  var consumers = queueConsumers.get(scopeId);
+                  var consumers = queueConsumers.get(baseQueueName);
                   if (consumers != null && consumers.containsKey(queueId)) {
                     for (var consumer : consumers.get(queueId)) {
                       consumer.accept(message);
@@ -258,44 +248,6 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
                       //  install the requesting message ID.
                     }
                   }
-
-                  //                  // TODO skip this and put the ID in MessagingScope
-                  //                  if (this instanceof SessionScope scope) {
-                  //                    var id = scope.getId();
-                  //                    var mMatchers = messageMatchers.get(id);
-                  //                    var mFutures = messageFutures.get(id);
-                  //
-                  //                    if (mMatchers != null) {
-                  //                      List<Message.Match> remove = new ArrayList<>();
-                  //                      for (var match : mMatchers) {
-                  //                        if (matchApplies(match, message)) {
-                  //                          if (match.getMessageConsumer() != null) {
-                  //                            // TODO put this in a virtual thread?
-                  //                            match.getMessageConsumer().accept(message);
-                  //                          }
-                  //                          if (!match.isPersistent()) {
-                  //                            remove.add(match);
-                  //                          }
-                  //                        }
-                  //                      }
-                  //                      remove.forEach(mMatchers::remove);
-                  //                    }
-                  //
-                  //                    if (mFutures != null) {
-                  //                      List<Message.Match> remove = new ArrayList<>();
-                  //                      for (var match : mFutures.keySet()) {
-                  //                        if (matchApplies(match, message)) {
-                  //                          if (match.getMessageConsumer() != null) {
-                  //                            // TODO put this in a virtual thread?
-                  //                            match.getMessageConsumer().accept(message);
-                  //                          }
-                  //                          mFutures.get(match).resolve(message);
-                  //                          remove.add(match);
-                  //                        }
-                  //                      }
-                  //                      remove.forEach(mFutures::remove);
-                  //                    }
-                  //                  }
 
                   switch (queue) {
                     case Events -> {
@@ -407,81 +359,29 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   protected void configureQueueConsumers(Set<Message.Queue> availableQueues) {}
 
   /**
-   * Scope-to-service connection is currently unused but may be an option for local services.
+   * Connects to a messaging service using the provided broker URL, message queues, user identity,
+   * and message consumer. Sets up messaging channels and installs queue consumers for the available
+   * queues.
    *
-   * @param capabilities
-   * @param identity
-   * @param consumer
+   * @param brokerUrl the URL of the message broker to connect to
+   * @param queues a collection of message queues to be used for messaging
+   * @param identity the identity of the user initiating the connection
+   * @param consumer a consumer to handle incoming messages from the queues
    */
   public void connectToService(
-      KlabService.ServiceCapabilities capabilities,
+      String brokerUrl,
+      Collection<Message.Queue> queues,
       UserIdentity identity,
       Consumer<Message> consumer) {
 
     this.connected = true;
 
-    if (capabilities.getAvailableMessagingQueues().isEmpty()
-        || capabilities.getBrokerURI() == null) {
-      return;
-    }
-    setupMessaging(
-        capabilities.getBrokerURI().toString(),
-        capabilities.getType().name().toLowerCase() + "." + identity.getUsername(),
-        capabilities.getAvailableMessagingQueues());
+    setupMessaging(brokerUrl, queues);
 
-    for (var queue : capabilities.getAvailableMessagingQueues()) {
-      installQueueConsumer(
-          capabilities.getType().name().toLowerCase()
-              + "."
-              + identity.getUsername()
-              + "."
-              + queue.name().toLowerCase(),
-          consumer);
+    for (var queue : queues) {
+      installQueueConsumer(getId() + "." + queue.name().toLowerCase(), consumer);
     }
   }
-
-  //  public void trackMessages(Message.Match... matchers) {
-  //    if (this instanceof SessionScope scope && matchers != null) {
-  //      for (var matcher : matchers) {
-  //        messageMatchers
-  //            .computeIfAbsent(scope.getId(), s -> Collections.synchronizedSet(new HashSet<>()))
-  //            .add(matcher);
-  //      }
-  //    }
-  //    // TODO skip this and put the ID in MessagingScope
-  //    throw new KlabInternalErrorException("trackMessages called on unexpected object");
-  //  }
-  //
-  //  @Override
-  //  public <T> CompletableFuture<T> trackMessages(
-  //      Message.Match match, Function<Message, T> supplier) {
-  //    if (this instanceof SessionScope scope) {
-  //      var ret = new MessageFuture<T>(match, supplier, scope.getId());
-  //      messageFutures
-  //          .computeIfAbsent(scope.getId(), s -> Collections.synchronizedMap(new HashMap<>()))
-  //          .put(match, ret);
-  //      return ret;
-  //    }
-  //    // TODO skip this and put the ID in MessagingScope
-  //    throw new KlabInternalErrorException("trackMessages called on unexpected object");
-  //  }
-  //
-  //  @Override
-  //  public void close() {
-  //    if (this.connection != null) {
-  //      try {
-  //        this.connection.close();
-  //      } catch (Throwable t) {
-  //        this.connection = null;
-  //      }
-  //    }
-  //    // TODO skip this and put the ID in MessagingScope
-  //    if (this instanceof SessionScope scope) {
-  //      messageFutures.remove(scope.getId());
-  //      messageMatchers.remove(scope.getId());
-  //      queueConsumers.remove(scope.getId());
-  //    }
-  //  }
 
   @Override
   public boolean isConnected() {
@@ -510,62 +410,76 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
     return receiver;
   }
 
-  private static class MessageFuture<T> extends CompletableFuture<T> {
-
-    private AtomicReference<T> payload = new AtomicReference<>();
-    private AtomicBoolean resolved = new AtomicBoolean(false);
-    private boolean cancelled;
-    private final Message.Match match;
-    private final Function<Message, T> supplier;
-    private String scopeId;
-
-    public MessageFuture(Message.Match match, Function<Message, T> supplier, String scopeId) {
-      this.match = match;
-      this.supplier = supplier;
-      this.scopeId = scopeId;
-    }
-
-    public void resolve(Message message) {
-      this.resolved.set(true);
-      this.payload.set(supplier.apply(message));
-    }
-
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-      this.cancelled = true;
-      return true;
-      //      return messageFutures.get(scopeId).remove(match) != null;
-    }
-
-    @Override
-    public boolean isCancelled() {
-      return this.cancelled;
-    }
-
-    @Override
-    public boolean isDone() {
-      return this.resolved.get();
-    }
-
-    @Override
-    public T get() throws InterruptedException, ExecutionException {
-      while (!this.resolved.get()) {
-        Thread.sleep(200);
+  protected String getBaseQueueName() {
+    if (this instanceof UserScope userScope) {
+      var federationData =
+          userScope
+              .getUser()
+              .getData()
+              .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+      if (federationData != null) {
+        return federationData.getId();
       }
-      return payload.get();
     }
-
-    @Override
-    public T get(long timeout, TimeUnit unit)
-        throws InterruptedException, ExecutionException, TimeoutException {
-      long mss = System.currentTimeMillis() + unit.toMillis(timeout);
-      while (!this.resolved.get()) {
-        Thread.sleep(200);
-        if (System.currentTimeMillis() > mss) {
-          break;
-        }
-      }
-      return payload.get();
-    }
+    return getId();
   }
+  //
+  //  private static class MessageFuture<T> extends CompletableFuture<T> {
+  //
+  //    private AtomicReference<T> payload = new AtomicReference<>();
+  //    private AtomicBoolean resolved = new AtomicBoolean(false);
+  //    private boolean cancelled;
+  //    private final Message.Match match;
+  //    private final Function<Message, T> supplier;
+  //    private String scopeId;
+  //
+  //    public MessageFuture(Message.Match match, Function<Message, T> supplier, String scopeId) {
+  //      this.match = match;
+  //      this.supplier = supplier;
+  //      this.scopeId = scopeId;
+  //    }
+  //
+  //    public void resolve(Message message) {
+  //      this.resolved.set(true);
+  //      this.payload.set(supplier.apply(message));
+  //    }
+  //
+  //    @Override
+  //    public boolean cancel(boolean mayInterruptIfRunning) {
+  //      this.cancelled = true;
+  //      return true;
+  //      //      return messageFutures.get(scopeId).remove(match) != null;
+  //    }
+  //
+  //    @Override
+  //    public boolean isCancelled() {
+  //      return this.cancelled;
+  //    }
+  //
+  //    @Override
+  //    public boolean isDone() {
+  //      return this.resolved.get();
+  //    }
+  //
+  //    @Override
+  //    public T get() throws InterruptedException, ExecutionException {
+  //      while (!this.resolved.get()) {
+  //        Thread.sleep(200);
+  //      }
+  //      return payload.get();
+  //    }
+  //
+  //    @Override
+  //    public T get(long timeout, TimeUnit unit)
+  //        throws InterruptedException, ExecutionException, TimeoutException {
+  //      long mss = System.currentTimeMillis() + unit.toMillis(timeout);
+  //      while (!this.resolved.get()) {
+  //        Thread.sleep(200);
+  //        if (System.currentTimeMillis() > mss) {
+  //          break;
+  //        }
+  //      }
+  //      return payload.get();
+  //    }
+  //  }
 }

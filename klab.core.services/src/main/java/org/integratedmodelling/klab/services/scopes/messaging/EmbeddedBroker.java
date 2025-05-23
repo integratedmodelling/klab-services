@@ -6,6 +6,7 @@ import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.FileBasedLock;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -22,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 public class EmbeddedBroker {
 
     private static final String EMBEDDED_BROKER_CONFIGURATION = "klab-broker-config.json";
-    private static final int EMBEDDED_BROKER_PORT = 20937;
 
     private ConnectionFactory connectionFactory;
     private Connection connection;
@@ -33,7 +33,7 @@ public class EmbeddedBroker {
     public EmbeddedBroker() {
 
         try {
-            this.uri = new URI("amqp://127.0.0.1:" + EMBEDDED_BROKER_PORT);
+            this.uri = new URI(Channel.LOCAL_BROKER_URL + Channel.LOCAL_BROKER_PORT);
         } catch (URISyntaxException e) {
             // dio animale
             Logging.INSTANCE.error("Error impossible: " + e.getMessage());

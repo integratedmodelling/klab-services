@@ -50,7 +50,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
-import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;

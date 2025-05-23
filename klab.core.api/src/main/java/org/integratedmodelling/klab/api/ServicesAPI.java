@@ -38,7 +38,9 @@ public interface ServicesAPI {
    * Response header for the URN of a AMQP messaging service, returned along with the {@link
    * RUNTIME#CREATE_SESSION} response when messaging is available.
    */
-  String MESSAGING_URN_HEADER = "messaging-urn";
+  String MESSAGING_URL_HEADER = "messaging-urn";
+
+  String FEDERATION_ID_HEADER = "federation-id";
 
   /**
    * Header used to both request and confirm the set of messaging queues wanted or offered for

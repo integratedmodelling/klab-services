@@ -51,6 +51,12 @@
     </properties>
     <dependencies>
 
+        <dependency>
+            <groupId>args4j</groupId>
+            <artifactId>args4j</artifactId>
+            <version>2.37</version>
+        </dependency>
+
         <!-- for TOML settings (modeler and user-level applications) -->
         <dependency>
             <groupId>com.electronwill.night-config</groupId>

@@ -16,8 +16,8 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
   private String serviceId;
   private String serverId;
   private URL url;
-  private Set<Message.Queue> availableMessagingQueues = EnumSet.noneOf(Message.Queue.class);
-  private URI brokerURI;
+  //  private Set<Message.Queue> availableMessagingQueues = EnumSet.noneOf(Message.Queue.class);
+  //  private URI brokerURI;
   private Map<String, List<ResourceTransport.Schema>> importSchemata = new HashMap<>();
   private Map<String, List<ResourceTransport.Schema>> exportSchemata = new HashMap<>();
   private List<Extensions.ComponentDescriptor> components = new ArrayList<>();
@@ -65,24 +65,6 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
 
   public void setUrl(URL url) {
     this.url = url;
-  }
-
-  @Override
-  public Set<Message.Queue> getAvailableMessagingQueues() {
-    return availableMessagingQueues;
-  }
-
-  public void setAvailableMessagingQueues(Set<Message.Queue> availableMessagingQueues) {
-    this.availableMessagingQueues = availableMessagingQueues;
-  }
-
-  @Override
-  public URI getBrokerURI() {
-    return brokerURI;
-  }
-
-  public void setBrokerURI(URI brokerURI) {
-    this.brokerURI = brokerURI;
   }
 
   @Override

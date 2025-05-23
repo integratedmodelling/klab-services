@@ -1,11 +1,10 @@
 package org.integratedmodelling.klab.services;
 
-import com.google.common.collect.Sets;
-import org.checkerframework.checker.units.qual.A;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.services.client.resolver.ResolverClient;
 import org.integratedmodelling.common.services.client.resources.ResourcesClient;
@@ -14,18 +13,17 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.springframework.security.core.parameters.P;
 
 import java.net.URL;
 import java.util.*;
@@ -215,7 +213,7 @@ public abstract class ServiceInstance<T extends BaseService> {
 
       @Override
       public UserScope createUser(String username, String password) {
-        return createUserScope(username, password);
+        throw new KlabIllegalStateException("Service scope does not support user creation");
       }
 
       @Override
@@ -248,10 +246,10 @@ public abstract class ServiceInstance<T extends BaseService> {
     };
   }
 
-  protected UserScope createUserScope(String username, String password) {
-    // TODO use hub or throw exception.
-    return null;
-  }
+//  protected UserScope createUserScope(String username, String password) {
+//    // TODO use hub or throw exception.
+//    return null;
+//  }
 
   public boolean start(ServiceStartupOptions options) {
 

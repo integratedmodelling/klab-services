@@ -5,10 +5,10 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 
@@ -18,7 +18,6 @@ import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Services may be locally implemented or clients to remote services: each service implementation
@@ -244,30 +243,34 @@ public interface KlabService extends Service {
      */
     URL getUrl();
 
-    /**
-     * Messaging queues listed here are available for user scopes only if the capabilities are
-     * retrieved by a privileged user (normally a local, exclusive user or an authorized
-     * administrator). These are used in all send() methods invoked on an authorized user scope.
-     * This may return an empty set without jeopardizing the ability to instrument session and
-     * context scopes with messaging, as long as {@link #getBrokerURI()} returns a valid URI.
-     *
-     * @return the set of messaging queues published by this service for the requesting user, in the
-     *     form <code>username.queuetype</code>.
-     */
-    Set<Message.Queue> getAvailableMessagingQueues();
+    //    /**
+    //     * Messaging queues listed here are available for user scopes only if the capabilities are
+    //     * retrieved by a privileged user (normally a local, exclusive user or an authorized
+    //     * administrator). These are used in all send() methods invoked on an authorized user
+    // scope.
+    //     * This may return an empty set without jeopardizing the ability to instrument session and
+    //     * context scopes with messaging, as long as {@link #getBrokerURI()} returns a valid URI.
+    //     *
+    //     * @return the set of messaging queues published by this service for the requesting user,
+    // in the
+    //     *     form <code>username.queuetype</code>.
+    //     */
+    //    Set<Message.Queue> getAvailableMessagingQueues();
 
     Map<String, List<ResourceTransport.Schema>> getExportSchemata();
 
     Map<String, List<ResourceTransport.Schema>> getImportSchemata();
 
-    /**
-     * URI for the message broker. If null, the service doesn't have messaging capabilities and will
-     * not enable distributed digital twin functionalities. If this isn't null, messaging can be
-     * added to scopes.
-     *
-     * @return the broker URL or null
-     */
-    URI getBrokerURI();
+    //    /**
+    //     * URI for the message broker. If null, the service doesn't have messaging capabilities
+    // and will
+    //     * not enable distributed digital twin functionalities. If this isn't null, messaging can
+    // be
+    //     * added to scopes.
+    //     *
+    //     * @return the broker URL or null
+    //     */
+    //    URI getBrokerURI();
 
     List<Extensions.ComponentDescriptor> getComponents();
   }
@@ -345,9 +348,11 @@ public interface KlabService extends Service {
    *
    * @param sessionScope a client scope that should record the ID for future communication. If the
    *     ID is null, the call has failed.
+   * @param federation if not null, sets up the scope for communication in the passed federation's
+   *     channels
    * @return the ID of the new session created at server side, or null in case of failure.
    */
-  String registerSession(SessionScope sessionScope);
+  String registerSession(SessionScope sessionScope, Federation federation);
 
   /**
    * Register a context scope created by the scope manager. Return a unique session ID that may be
@@ -359,9 +364,11 @@ public interface KlabService extends Service {
    *
    * @param contextScope a client scope that should record the ID for future communication. If the
    *     ID is null, the call has failed.
+   * @param federation if not null, sets up the scope for communication in the passed federation's
+   *     channels
    * @return the ID of the new context scope created at server side, or null in case of failure.
    */
-  String registerContext(ContextScope contextScope);
+  String registerContext(ContextScope contextScope, Federation federation);
 
   /**
    * Exclusive status means that the service is either an application started by the requesting JVM

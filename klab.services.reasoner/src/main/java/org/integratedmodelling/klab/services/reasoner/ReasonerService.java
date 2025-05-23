@@ -18,6 +18,7 @@ import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
 import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.common.lang.kim.KimConceptImpl;
@@ -55,7 +56,7 @@ import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.indexing.SemanticExpression;
-import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration.ProjectConfiguration;
@@ -300,7 +301,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
      * Setup an embedded broker, possibly to be shared with other services, if we're local and there
      * is no configured broker.
      */
-    if (Utils.URLs.isLocalHost(this.getUrl()) && this.configuration.getBrokerURI() == null) {
+    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
       Logging.INSTANCE.info("Setting up embedded broker in local service");
       this.embeddedBroker = new EmbeddedBroker();
       Logging.INSTANCE.info(
@@ -1239,23 +1240,23 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ret.setServerId(hardwareSignature == null ? null : ("REASONER_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
     ret.setServiceName("Reasoner");
-    ret.setBrokerURI(
-        (embeddedBroker != null && embeddedBroker.isOnline())
-            ? embeddedBroker.getURI()
-            : configuration.getBrokerURI());
+    //    ret.setBrokerURI(
+    //        (embeddedBroker != null && embeddedBroker.isOnline())
+    //            ? embeddedBroker.getURI()
+    //            : configuration.getBrokerURI());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
     ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
     ret.setConsistent(this.consistent.get());
 
-    ret.setAvailableMessagingQueues(
-        Utils.URLs.isLocalHost(getUrl())
-            ? EnumSet.of(
-                Message.Queue.Info,
-                Message.Queue.Errors,
-                Message.Queue.Warnings,
-                Message.Queue.Events)
-            : EnumSet.noneOf(Message.Queue.class));
+    //    ret.setAvailableMessagingQueues(
+    //        Utils.URLs.isLocalHost(getUrl())
+    //            ? EnumSet.of(
+    //                Message.Queue.Info,
+    //                Message.Queue.Errors,
+    //                Message.Queue.Warnings,
+    //                Message.Queue.Events)
+    //            : EnumSet.noneOf(Message.Queue.class));
     return ret;
   }
 
@@ -3011,7 +3012,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    * @return
    */
   @Override
-  public String registerSession(SessionScope sessionScope) {
+  public String registerSession(SessionScope sessionScope, Federation federation) {
 
     if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
@@ -3020,8 +3021,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             "resolver: session scope has no ID, cannot register " + "a scope autonomously");
       }
 
-      getScopeManager()
-          .registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
+      getScopeManager().registerScope(serviceSessionScope, federation);
+
       return serviceSessionScope.getId();
     }
 
@@ -3038,7 +3039,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    * @return
    */
   @Override
-  public String registerContext(ContextScope contextScope) {
+  public String registerContext(ContextScope contextScope, Federation federation) {
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
@@ -3059,8 +3060,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             "Registering context scope without service ID: digital twin will be inoperative");
       }
 
-      getScopeManager()
-          .registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
+      getScopeManager().registerScope(serviceContextScope, federation);
       return serviceContextScope.getId();
     }
 
