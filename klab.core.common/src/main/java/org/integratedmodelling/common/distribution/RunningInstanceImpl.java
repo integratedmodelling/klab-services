@@ -162,11 +162,6 @@ public class RunningInstanceImpl implements RunningInstance {
 
         CommandLine cmdLine = getCommandLine(scope);
 
-//        File logDirectory = BaseService.getConfigurationSubdirectory(options, "logs");
-//        File logFile =
-//                new File(logDirectory + File.separator + options.getServiceType().name().toLowerCase() +
-//                        ".log");
-
         Logging.INSTANCE.info("Starting " + build.getProduct().getDescription() + " with command line: \"" +
                 cmdLine.toString() + "\"");
 
@@ -179,9 +174,6 @@ public class RunningInstanceImpl implements RunningInstance {
 
         this.executor = new DefaultExecutor();
         this.executor.setWorkingDirectory(build.getLocalWorkspace());
-
-//        PumpStreamHandler noEchoHandler = new PumpStreamHandler(null, System.err);
-//        this.executor.setStreamHandler(noEchoHandler);
 
         Map<String, String> env = new HashMap<>();
         env.putAll(System.getenv());

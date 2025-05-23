@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.services.scopes;
 
-import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
-import io.reacted.core.reactorsystem.ReActorSystem;
+//import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
+//import io.reacted.core.reactorsystem.ReActorSystem;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.authentication.UserIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ScopeManager {
 
-  private ReActorSystem actorSystem = null;
+//  private ReActorSystem actorSystem = null;
   KlabService service;
 
   /**
@@ -47,16 +47,16 @@ public class ScopeManager {
 
     this.service = service;
 
-    if (service instanceof BaseService baseService && baseService.scopesAreReactive()) {
-      /*
-       * boot the actor system right away, so that we can call login() before boot().
-       */
-      this.actorSystem =
-          new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
-              .initReActorSystem();
-
-      Logging.INSTANCE.info("Actor system booted");
-    }
+//    if (service instanceof BaseService baseService && baseService.scopesAreReactive()) {
+//      /*
+//       * boot the actor system right away, so that we can call login() before boot().
+//       */
+//      this.actorSystem =
+//          new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
+//              .initReActorSystem();
+//
+//      Logging.INSTANCE.info("Actor system booted");
+//    }
 
     executor.scheduleAtFixedRate(() -> expiredScopeCheck(), 60, 60, TimeUnit.SECONDS);
   }
@@ -284,9 +284,9 @@ public class ScopeManager {
   }
 
   public void shutdown() {
-    if (actorSystem != null) {
-      actorSystem.shutDown();
-    }
+//    if (actorSystem != null) {
+//      actorSystem.shutDown();
+//    }
   }
 
   /**

@@ -118,7 +118,6 @@ public class ServiceStartupOptions implements StartupOptions {
     ret.serviceType = serviceType;
     ret.port = serviceType.defaultPort;
     ret.contextPath = "/" + serviceType.defaultServicePath;
-    //        ret.configurationPath = "services/" + serviceType.defaultServicePath;
     ret.nodeName = serviceType.defaultServicePath;
     return ret;
   }
@@ -134,7 +133,6 @@ public class ServiceStartupOptions implements StartupOptions {
     ret.serviceType = serviceType;
     ret.port = serviceType.defaultPort;
     ret.contextPath = "/" + serviceType.defaultServicePath;
-    //        ret.configurationPath = "services/test/" + serviceType.defaultServicePath;
     ret.nodeName = "service." + serviceType.defaultServicePath + ".test";
     return ret;
   }
@@ -318,29 +316,29 @@ public class ServiceStartupOptions implements StartupOptions {
    * Utils
    */
 
-  /**
-   * Create a directory name for the passed path relative to the configured datapath, resolved from
-   * the overall configuration unless redefined here. If the path does not exist, create it before
-   * returning it.
-   *
-   * @param path
-   * @return
-   */
-  public File fileFromPath(String path) {
-
-    File configurationDirectory =
-        dataDir == null ? Configuration.INSTANCE.getServiceDataPath() : dataDir;
-    if (!configurationDirectory.exists()) {
-      configurationDirectory.mkdirs();
-    }
-
-    configurationDirectory = new File(configurationDirectory + File.separator + path);
-    if (!configurationDirectory.exists()) {
-      configurationDirectory.mkdirs();
-    }
-
-    return configurationDirectory;
-  }
+//  /**
+//   * Create a directory name for the passed path relative to the configured datapath, resolved from
+//   * the overall configuration unless redefined here. If the path does not exist, create it before
+//   * returning it.
+//   *
+//   * @param path
+//   * @return
+//   */
+//  public File fileFromPath(String path) {
+//
+//    File configurationDirectory =
+//        dataDir == null ? Configuration.INSTANCE.getServiceDataPath() : dataDir;
+//    if (!configurationDirectory.exists()) {
+//      configurationDirectory.mkdirs();
+//    }
+//
+//    configurationDirectory = new File(configurationDirectory + File.separator + path);
+//    if (!configurationDirectory.exists()) {
+//      configurationDirectory.mkdirs();
+//    }
+//
+//    return configurationDirectory;
+//  }
 
   public String getContextPath() {
     return contextPath;

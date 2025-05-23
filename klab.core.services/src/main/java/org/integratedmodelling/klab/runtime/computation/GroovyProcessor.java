@@ -11,7 +11,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jnr.ffi.annotations.In;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;

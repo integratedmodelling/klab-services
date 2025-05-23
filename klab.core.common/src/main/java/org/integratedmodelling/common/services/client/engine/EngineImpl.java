@@ -177,7 +177,6 @@ public class EngineImpl implements Engine, PropertyHolder {
           var instance = product.getInstance(defaultUser);
           if (serviceType == Type.RUNTIME
               && instance.getSettings() instanceof ServiceStartupOptions serviceStartupOptions) {
-
             serviceStartupOptions.setStartLocalBroker(true);
           }
 

@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.services.scopes;
 
 import com.rabbitmq.client.Channel;
-import io.reacted.core.messages.reactors.ReActorStop;
+//import io.reacted.core.messages.reactors.ReActorStop;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -267,8 +267,8 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   //	@Override
   public void stop() {
     if (agent != null) {
-      agent.tell(ReActorStop.STOP);
-      this.agent = null;
+//      agent.tell(ReActorStop.STOP);
+//      this.agent = null;
     }
     this.data.clear();
     setStatus(Status.EMPTY);

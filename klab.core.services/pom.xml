@@ -103,16 +103,16 @@
 
     <!-- wanted by jgrasstools and osm4j. Would be lovely to avoid these. -->
     <repositories>
-<!--
-        <repository>
-            <id>slimjars</id>
-            <url>https://mvn.slimjars.com</url>
-        </repository>
-        <repository>
-            <id>topobyte</id>
-            <url>https://mvn.topobyte.de</url>
-        </repository>
--->
+        <!--
+                <repository>
+                    <id>slimjars</id>
+                    <url>https://mvn.slimjars.com</url>
+                </repository>
+                <repository>
+                    <id>topobyte</id>
+                    <url>https://mvn.topobyte.de</url>
+                </repository>
+        -->
         <repository>
             <id>osgeo</id>
             <name>OSGeo Release Repository</name>
@@ -157,58 +157,28 @@
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.core.common</artifactId>
             <version>${klab.version}</version>
-            <exclusions>
-<!--
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
--->
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>io.reacted</groupId>
-            <artifactId>reacted-framework</artifactId>
-            <version>2.1.4</version>
-            <type>pom</type>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
-<!--
-        &lt;!&ndash; plugin management for extension components &ndash;&gt;
-        &lt;!&ndash; https://mvnrepository.com/artifact/org.pf4j/pf4j &ndash;&gt;
-        <dependency>
-            <groupId>org.pf4j</groupId>
-            <artifactId>pf4j</artifactId>
-            <version>3.12.1</version>
-        </dependency>
--->
+        <!--
+                <dependency>
+                    <groupId>io.hawt</groupId>
+                    <artifactId>hawtio-springboot</artifactId>
+                    <version>4.2.0</version>
+                </dependency>
 
-<!--
-        <dependency>
-            <groupId>io.hawt</groupId>
-            <artifactId>hawtio-springboot</artifactId>
-            <version>4.2.0</version>
-        </dependency>
-
-        &lt;!&ndash; Mandatory for enabling Camel management via JMX / Hawtio &ndash;&gt;
-        <dependency>
-            <groupId>org.apache.camel.springboot</groupId>
-            <artifactId>camel-management-starter</artifactId>
-            <version>4.9.0</version>
-        </dependency>
-        &lt;!&ndash; (Optional) Required for Hawtio Camel route diagram tab &ndash;&gt;
-        <dependency>
-            <groupId>org.apache.camel.springboot</groupId>
-            <artifactId>camel-spring-boot-xml-starter</artifactId>
-            <version>4.9.0</version>
-        </dependency>
--->
+                &lt;!&ndash; Mandatory for enabling Camel management via JMX / Hawtio &ndash;&gt;
+                <dependency>
+                    <groupId>org.apache.camel.springboot</groupId>
+                    <artifactId>camel-management-starter</artifactId>
+                    <version>4.9.0</version>
+                </dependency>
+                &lt;!&ndash; (Optional) Required for Hawtio Camel route diagram tab &ndash;&gt;
+                <dependency>
+                    <groupId>org.apache.camel.springboot</groupId>
+                    <artifactId>camel-spring-boot-xml-starter</artifactId>
+                    <version>4.9.0</version>
+                </dependency>
+        -->
 
         <dependency>
             <groupId>io.github.luiinge</groupId>
@@ -336,25 +306,25 @@
             <version>0.13.0</version>
         </dependency>
 
-<!--
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>2.20.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>2.20.0</version>
-        </dependency>
--->
-<!--
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <version>2.20.0</version>
-        </dependency>
--->
+        <!--
+                <dependency>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-api</artifactId>
+                    <version>2.20.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-core</artifactId>
+                    <version>2.20.0</version>
+                </dependency>
+        -->
+        <!--
+                <dependency>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-slf4j-impl</artifactId>
+                    <version>2.20.0</version>
+                </dependency>
+        -->
 
         <!-- hns ttps://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
         <dependency>
@@ -384,20 +354,20 @@
             <artifactId>spring-boot-starter-websocket</artifactId>
             <version>${spring-boot.version}</version>
             <exclusions>
-                    <exclusion>
-                        <groupId>org.springframework.boot</groupId>
-                        <artifactId>spring-boot-starter-logging</artifactId>
-                    </exclusion>
-<!--
                 <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-to-slf4j</artifactId>
-                </exclusion>
--->
+                <!--
+                                <exclusion>
+                                    <groupId>ch.qos.logback</groupId>
+                                    <artifactId>logback-classic</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                    <groupId>org.apache.logging.log4j</groupId>
+                                    <artifactId>log4j-to-slf4j</artifactId>
+                                </exclusion>
+                -->
             </exclusions>
         </dependency>
         <dependency>
@@ -409,16 +379,16 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-logging</artifactId>
                 </exclusion>
-<!--
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-to-slf4j</artifactId>
-                </exclusion>
--->
+                <!--
+                                <exclusion>
+                                    <groupId>ch.qos.logback</groupId>
+                                    <artifactId>logback-classic</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                    <groupId>org.apache.logging.log4j</groupId>
+                                    <artifactId>log4j-to-slf4j</artifactId>
+                                </exclusion>
+                -->
             </exclusions>
         </dependency>
         <dependency>
@@ -426,18 +396,18 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
             <version>${spring-boot.version}</version>
             <exclusions>
-            <exclusion>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-logging</artifactId>
-            </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
-<!--
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-        </dependency>
--->
+        <!--
+                <dependency>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </dependency>
+        -->
         <!-- GEOTOOLS mess starts -->
         <!-- <dependency> <groupId>org.geotools</groupId> <artifactId>gt-metadata</artifactId>
             <version>${geotools.version}</version> </dependency> -->
@@ -618,16 +588,16 @@
             <version>2.4.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
-<!--        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-test</artifactId>
-            <version>${kotlin.version}</version>
-            <scope>test</scope>
-        </dependency>-->
+        <!--        <dependency>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib-jdk8</artifactId>
+                    <version>${kotlin.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-test</artifactId>
+                    <version>${kotlin.version}</version>
+                    <scope>test</scope>
+                </dependency>-->
     </dependencies>
 </project>
