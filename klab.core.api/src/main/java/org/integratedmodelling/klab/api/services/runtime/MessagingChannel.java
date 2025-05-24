@@ -19,7 +19,8 @@ public interface MessagingChannel extends Channel {
 
   @Override
   default Set<Message.Queue> defaultQueues() {
-    return EnumSet.of(Message.Queue.Errors, Message.Queue.Events, Message.Queue.Status);
+    return EnumSet.of(
+        Message.Queue.Errors, Message.Queue.Events, Message.Queue.Warnings, Message.Queue.Status);
   }
 
   /**
@@ -28,19 +29,6 @@ public interface MessagingChannel extends Channel {
    * @return
    */
   boolean hasMessaging();
-
-//  /**
-//   * When a service advertises message queues, connect to the available admin user service-side
-//   * queues using the passed handler.
-//   *
-//   * @param capabilities
-//   * @param identity
-//   * @param consumer
-//   */
-//  void connectToService(
-//      KlabService.ServiceCapabilities capabilities,
-//      UserIdentity identity,
-//      Consumer<Message> consumer);
 
   /**
    * True if connections have been established.

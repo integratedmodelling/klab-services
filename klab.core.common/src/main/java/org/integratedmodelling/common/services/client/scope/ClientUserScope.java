@@ -51,23 +51,19 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
       Collections.synchronizedMap(new HashMap<>());
   private String hostServiceId;
 
-  //    public BiConsumer<Scope, Message>[] getListeners() {
-  //        return listeners.toArray(new BiConsumer[]{});
-  //    }
-
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
   public ClientUserScope(Identity user, EngineImpl engine) {
-    super(user, false, true);
+    super(user, true, true);
     this.user = user;
     this.data = Parameters.create();
     this.id = user.getId();
     this.engine = engine;
-    //        if (listeners != null) {
-    //            for (var listener : listeners) {
-    //                this.listeners.add(listener);
-    //            }
-    //        }
+    var federation = user.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+    if (federation != null) {
+      setupMessagingQueues(federation.getId(), defaultQueues());
+    }
+    /* TODO if the user is federated, this scope should be both a sender and a receiver */
   }
 
   @Override
@@ -146,7 +142,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
 
     var id =
         engine.registerSession(
-            ret, getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class));
+            ret, user.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class));
 
     if (id != null) {
       ret.setId(id);

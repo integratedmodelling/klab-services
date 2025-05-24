@@ -246,11 +246,6 @@ public abstract class ServiceInstance<T extends BaseService> {
     };
   }
 
-//  protected UserScope createUserScope(String username, String password) {
-//    // TODO use hub or throw exception.
-//    return null;
-//  }
-
   public boolean start(ServiceStartupOptions options) {
 
     setEnvironment(options);

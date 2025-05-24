@@ -10,6 +10,7 @@ import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -68,8 +69,22 @@ public class KlabScopeController {
       var userScope = authorization.getScope(UserScope.class);
       if (userScope != null) {
 
+        Federation federation = null;
+        if (federationId != null) {
+          federation = new Federation(federationId, brokerUrl);
+        }
+
         var ret = userScope.createSession(request.getName());
         var identity = userScope.getIdentity();
+
+        if (federation != null
+            && !identity.getData().containsKey(UserIdentity.FEDERATION_DATA_PROPERTY)) {
+          // this way the federation goes into the service clients. TODO the logic here is really
+          // stateful and not clean as things can be invalidated simply by improper client behavior.
+          // It should be revised by moving the federation info at first authentication
+          // with the hub, which would  require it to be in the JWT, or a specific hub call.
+          identity.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federation);
+        }
 
         List<Reasoner> reasoners =
             instance.klabService() instanceof Reasoner r
@@ -128,11 +143,6 @@ public class KlabScopeController {
           }
         }
 
-        Federation federation = null;
-        if (federationId != null) {
-          federation = new Federation(federationId, brokerUrl);
-        }
-
         var id = instance.klabService().registerSession(ret, federation);
         if (brokerUrl != null && ret instanceof ServiceSessionScope serviceSessionScope) {
 
@@ -141,7 +151,7 @@ public class KlabScopeController {
           }
 
           var implementedQueues =
-              serviceSessionScope.setupMessaging(brokerUrl.toString(), queuesHeader);
+              serviceSessionScope.setupMessaging(brokerUrl, queuesHeader);
 
           if (instance.klabService().scopesAreReactive()
               && !serviceSessionScope.initializeAgents(id)) {
@@ -196,6 +206,17 @@ public class KlabScopeController {
       if (sessionScope != null) {
 
         var identity = sessionScope.getIdentity();
+        Federation federation = null;
+        if (federationId != null) {
+          federation = new Federation(federationId, brokerUrl);
+        }
+
+        if (federation != null
+            && !identity.getData().containsKey(UserIdentity.FEDERATION_DATA_PROPERTY)) {
+          // TODO see comment in createSession. This shouldn't happen if we've gone through a session, but
+          //  a DT could also be created in other ways at production.
+          identity.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federation);
+        }
         List<Reasoner> reasoners =
             instance.klabService() instanceof Reasoner r
                 ? new ArrayList<>(List.of(r))
@@ -259,10 +280,6 @@ public class KlabScopeController {
             queuesHeader = serviceContextScope.defaultQueues();
           }
 
-          Federation federation = null;
-          if (federationId != null) {
-            federation = new Federation(federationId, brokerUrl);
-          }
           var id = instance.klabService().registerContext(ret, federation);
 
           var queuesAvailable = serviceContextScope.setupMessagingQueues(id, queuesHeader);

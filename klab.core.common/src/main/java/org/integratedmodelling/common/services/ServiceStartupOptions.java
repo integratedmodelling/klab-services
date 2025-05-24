@@ -95,7 +95,7 @@ public class ServiceStartupOptions implements StartupOptions {
       metaVar = "<SIMPLE_STRING>")
   private String contextPath;
 
-  @Option(name = "start-local-broker", usage = "Start a local AMQP broker")
+  @Option(name = "-startLocalBroker", usage = "Start a local AMQP broker")
   private boolean startLocalBroker;
 
   /** All defaults */
@@ -311,34 +311,6 @@ public class ServiceStartupOptions implements StartupOptions {
   public void setStartLocalBroker(boolean startLocalBroker) {
     this.startLocalBroker = startLocalBroker;
   }
-
-  /*
-   * Utils
-   */
-
-//  /**
-//   * Create a directory name for the passed path relative to the configured datapath, resolved from
-//   * the overall configuration unless redefined here. If the path does not exist, create it before
-//   * returning it.
-//   *
-//   * @param path
-//   * @return
-//   */
-//  public File fileFromPath(String path) {
-//
-//    File configurationDirectory =
-//        dataDir == null ? Configuration.INSTANCE.getServiceDataPath() : dataDir;
-//    if (!configurationDirectory.exists()) {
-//      configurationDirectory.mkdirs();
-//    }
-//
-//    configurationDirectory = new File(configurationDirectory + File.separator + path);
-//    if (!configurationDirectory.exists()) {
-//      configurationDirectory.mkdirs();
-//    }
-//
-//    return configurationDirectory;
-//  }
 
   public String getContextPath() {
     return contextPath;

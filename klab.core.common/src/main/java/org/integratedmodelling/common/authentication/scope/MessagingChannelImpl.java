@@ -14,7 +14,9 @@ import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
@@ -411,7 +413,9 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   }
 
   protected String getBaseQueueName() {
-    if (this instanceof UserScope userScope) {
+    if (this instanceof ContextScope || this instanceof SessionScope) {
+      return this.getId();
+    } else if (this instanceof UserScope userScope) {
       var federationData =
           userScope
               .getUser()
@@ -423,63 +427,4 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
     }
     return getId();
   }
-  //
-  //  private static class MessageFuture<T> extends CompletableFuture<T> {
-  //
-  //    private AtomicReference<T> payload = new AtomicReference<>();
-  //    private AtomicBoolean resolved = new AtomicBoolean(false);
-  //    private boolean cancelled;
-  //    private final Message.Match match;
-  //    private final Function<Message, T> supplier;
-  //    private String scopeId;
-  //
-  //    public MessageFuture(Message.Match match, Function<Message, T> supplier, String scopeId) {
-  //      this.match = match;
-  //      this.supplier = supplier;
-  //      this.scopeId = scopeId;
-  //    }
-  //
-  //    public void resolve(Message message) {
-  //      this.resolved.set(true);
-  //      this.payload.set(supplier.apply(message));
-  //    }
-  //
-  //    @Override
-  //    public boolean cancel(boolean mayInterruptIfRunning) {
-  //      this.cancelled = true;
-  //      return true;
-  //      //      return messageFutures.get(scopeId).remove(match) != null;
-  //    }
-  //
-  //    @Override
-  //    public boolean isCancelled() {
-  //      return this.cancelled;
-  //    }
-  //
-  //    @Override
-  //    public boolean isDone() {
-  //      return this.resolved.get();
-  //    }
-  //
-  //    @Override
-  //    public T get() throws InterruptedException, ExecutionException {
-  //      while (!this.resolved.get()) {
-  //        Thread.sleep(200);
-  //      }
-  //      return payload.get();
-  //    }
-  //
-  //    @Override
-  //    public T get(long timeout, TimeUnit unit)
-  //        throws InterruptedException, ExecutionException, TimeoutException {
-  //      long mss = System.currentTimeMillis() + unit.toMillis(timeout);
-  //      while (!this.resolved.get()) {
-  //        Thread.sleep(200);
-  //        if (System.currentTimeMillis() > mss) {
-  //          break;
-  //        }
-  //      }
-  //      return payload.get();
-  //    }
-  //  }
 }

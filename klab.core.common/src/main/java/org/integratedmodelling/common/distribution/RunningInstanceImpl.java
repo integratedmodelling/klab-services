@@ -102,6 +102,11 @@ public class RunningInstanceImpl implements RunningInstance {
         }
 
         if (startupOptions != null && ret != null) {
+
+            if (startupOptions.isStartLocalBroker()) {
+                ret.addArgument("-startLocalBroker");
+            }
+
             // add the remaining startup options to the command line
             for (var arg : startupOptions.getArguments()) {
                 ret.addArgument(arg);
