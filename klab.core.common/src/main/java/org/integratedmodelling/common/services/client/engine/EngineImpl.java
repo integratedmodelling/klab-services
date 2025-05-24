@@ -50,6 +50,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   private DistributionImpl developmentDistribution;
   private DistributionImpl downloadedDistribution;
   private final Distribution.Status distributionStatus;
+  private Federation federationData;
 
   public EngineImpl() {
     settings.put(Setting.POLLING, "on");
@@ -149,26 +150,6 @@ public class EngineImpl implements Engine, PropertyHolder {
     var ret = new HashMap<KlabService.Type, KlabService>();
 
     if (distribution != null && distribution.isAvailable()) {
-
-      /*
-       * If user is federated, we don't start the local broker. Otherwise, we set up a local
-       * federated identity and tell the runtime service to create an embedded broker on the default
-       * URL and port.
-       */
-      var federationData =
-          getUser()
-              .getUser()
-              .getData()
-              .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
-
-      if (federationData == null || federationData.getBroker() == null) {
-        var id = federationData == null ? null : federationData.getId();
-        if (id == null) {
-          id = "local.federation";
-        }
-        federationData = new Federation(id, Channel.LOCAL_BROKER_URL + Channel.LOCAL_BROKER_PORT);
-        getUser().getUser().getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
-      }
 
       for (var serviceType :
           new KlabService.Type[] {Type.RESOURCES, Type.REASONER, Type.RUNTIME, Type.RESOLVER}) {
@@ -298,6 +279,29 @@ public class EngineImpl implements Engine, PropertyHolder {
           Message.MessageClass.Authorization,
           Message.MessageType.UserAuthorized,
           authData.getFirst());
+    }
+
+    /*
+     * If user is federated, we don't start the local broker. Otherwise, we set up a local
+     * federated identity and tell the runtime service to create an embedded broker on the default
+     * URL and port.
+     */
+    this.federationData =
+        this.defaultUser
+            .getUser()
+            .getData()
+            .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+
+    if (federationData == null || federationData.getBroker() == null) {
+      var id = federationData == null ? null : federationData.getId();
+      if (id == null) {
+        id = "local.federation";
+      }
+      federationData = new Federation(id, Channel.LOCAL_BROKER_URL + Channel.LOCAL_BROKER_PORT);
+      this.defaultUser
+          .getUser()
+          .getData()
+          .put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
     }
 
     return this.defaultUser;
