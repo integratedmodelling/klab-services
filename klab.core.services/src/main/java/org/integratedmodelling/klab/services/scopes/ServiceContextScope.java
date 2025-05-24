@@ -502,21 +502,22 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     // but
     // no big deal for now. Alternative is a complicated restructuring of messages to take multiple
     // payloads.
-    setId(scopeId);
-    setStatus(Status.WAITING);
-    KActorsBehavior.Ref contextAgent =
-        parentScope.ask(
-            KActorsBehavior.Ref.class,
-            Message.MessageClass.ActorCommunication,
-            Message.MessageType.CreateContext,
-            this);
-    if (contextAgent != null && !contextAgent.isEmpty()) {
-      setStatus(Status.STARTED);
-      setAgent(contextAgent);
-      return true;
-    }
-    setStatus(Status.ABORTED);
-    return false;
+//    setId(scopeId);
+//    setStatus(Status.WAITING);
+//    KActorsBehavior.Ref contextAgent =
+//        parentScope.ask(
+//            KActorsBehavior.Ref.class,
+//            Message.MessageClass.ActorCommunication,
+//            Message.MessageType.CreateContext,
+//            this);
+//    if (contextAgent != null && !contextAgent.isEmpty()) {
+//      setStatus(Status.STARTED);
+//      setAgent(contextAgent);
+//      return true;
+//    }
+//    setStatus(Status.ABORTED);
+//    return false;
+    return true;
   }
 
   @Override

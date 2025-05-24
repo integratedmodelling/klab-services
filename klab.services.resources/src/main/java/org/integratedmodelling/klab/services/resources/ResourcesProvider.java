@@ -819,11 +819,6 @@ public class ResourcesProvider extends BaseService
     return shutdown(30);
   }
 
-  @Override
-  public boolean scopesAreReactive() {
-    return false;
-  }
-
   public boolean shutdown(int secondsToWait) {
 
     serviceScope()

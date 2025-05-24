@@ -1,15 +1,8 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
-import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.services.KlabService;
 
-import java.io.Closeable;
 import java.util.EnumSet;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * A channel that has been instrumented for messaging to paired channels. Only a tag interface for

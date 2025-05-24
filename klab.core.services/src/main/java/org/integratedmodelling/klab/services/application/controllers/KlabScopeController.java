@@ -150,11 +150,9 @@ public class KlabScopeController {
             queuesHeader = serviceSessionScope.defaultQueues();
           }
 
-          var implementedQueues =
-              serviceSessionScope.setupMessaging(brokerUrl, queuesHeader);
+          var implementedQueues = serviceSessionScope.setupMessaging(brokerUrl, queuesHeader);
 
-          if (instance.klabService().scopesAreReactive()
-              && !serviceSessionScope.initializeAgents(id)) {
+          if (!serviceSessionScope.initializeAgents(id)) {
             Logging.INSTANCE.warn("agent initialization failed in session creation");
           }
           response.setHeader(
@@ -213,7 +211,8 @@ public class KlabScopeController {
 
         if (federation != null
             && !identity.getData().containsKey(UserIdentity.FEDERATION_DATA_PROPERTY)) {
-          // TODO see comment in createSession. This shouldn't happen if we've gone through a session, but
+          // TODO see comment in createSession. This shouldn't happen if we've gone through a
+          // session, but
           //  a DT could also be created in other ways at production.
           identity.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federation);
         }
@@ -284,10 +283,10 @@ public class KlabScopeController {
 
           var queuesAvailable = serviceContextScope.setupMessagingQueues(id, queuesHeader);
 
-          if (instance.klabService().scopesAreReactive()
-              && !serviceContextScope.initializeAgents(id)) {
+          if (!serviceContextScope.initializeAgents(id)) {
             Logging.INSTANCE.warn("agent initialization failed in context creation");
           }
+
           response.setHeader(
               ServicesAPI.MESSAGING_QUEUES_HEADER, Utils.Strings.join(queuesAvailable, ", "));
 

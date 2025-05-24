@@ -395,11 +395,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
-  public boolean scopesAreReactive() {
-    return false;
-  }
-
-  @Override
   public ServiceStatus status() {
     var ret = super.status();
     if (ret instanceof ServiceStatusImpl serviceStatus) {

@@ -103,19 +103,19 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
         // but
         // no big deal for now. Alternative is a complicated restructuring of messages to take multiple
         // payloads.
-        setId(scopeId);
-        setStatus(Status.WAITING);
-        if (parentScope.getAgent() != null) {
-            Ref sessionAgent = parentScope.ask(Ref.class, Message.MessageClass.ActorCommunication,
-                    Message.MessageType.CreateSession, this);
-            if (sessionAgent != null && !sessionAgent.isEmpty()) {
-                setStatus(Status.STARTED);
-                setAgent(sessionAgent);
-                return true;
-            }
-            setStatus(Status.ABORTED);
-            return false;
-        }
+//        setId(scopeId);
+//        setStatus(Status.WAITING);
+//        if (parentScope.getAgent() != null) {
+//            Ref sessionAgent = parentScope.ask(Ref.class, Message.MessageClass.ActorCommunication,
+//                    Message.MessageType.CreateSession, this);
+//            if (sessionAgent != null && !sessionAgent.isEmpty()) {
+//                setStatus(Status.STARTED);
+//                setAgent(sessionAgent);
+//                return true;
+//            }
+//            setStatus(Status.ABORTED);
+//            return false;
+//        }
         return true;
     }
 
