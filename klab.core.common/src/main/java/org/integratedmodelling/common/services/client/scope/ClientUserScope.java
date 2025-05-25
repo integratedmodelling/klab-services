@@ -59,11 +59,6 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
     this.data = Parameters.create();
     this.id = user.getId();
     this.engine = engine;
-    var federation = user.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
-    if (federation != null) {
-      setupMessagingQueues(federation.getId(), defaultQueues());
-    }
-    /* TODO if the user is federated, this scope should be both a sender and a receiver */
   }
 
   @Override

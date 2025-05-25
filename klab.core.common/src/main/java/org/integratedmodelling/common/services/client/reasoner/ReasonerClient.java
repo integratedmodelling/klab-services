@@ -811,7 +811,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     if (federation != null && scope instanceof MessagingChannelImpl messagingChannel) {
       var queues =
           getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
-      messagingChannel.setupMessaging(federation.getBroker(), queues);
+      messagingChannel.setupMessaging(ret, federation.getBroker(), queues);
     }
 
     return ret;
@@ -875,10 +875,10 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
       }
     }
 
-    if (hasMessaging) {
-      // TODO setup desired request. This will send no header and use the defaults.
-      // Resolver should probably only catch events and errors.
-    }
+//    if (hasMessaging) {
+//      // TODO setup desired request. This will send no header and use the defaults.
+//      // Resolver should probably only catch events and errors.
+//    }
 
     var ret =
         client
@@ -903,7 +903,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
         var queues =
             getQueuesFromHeader(
                 scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
-        messagingChannel.setupMessaging(federation.getBroker(), queues);
+        messagingChannel.setupMessaging(ret, federation.getBroker(), queues);
       }
     }
 

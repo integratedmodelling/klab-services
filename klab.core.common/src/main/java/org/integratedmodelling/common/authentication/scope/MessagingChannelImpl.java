@@ -10,22 +10,22 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 
 /**
- * A channel instrumented for messaging, containing the AMQP connections and channels for all the
- * subscribed queues. In service use, creates the queues and advertises them. In client
- * configurations, consumes the queues and dispatches the messages to their respective handlers. Can
- * be configured as a sender, receiver or both.
+ * Abstract base implementation of a messaging channel, providing functionality for sending and
+ * receiving messages, managing connections, and setting up messaging queues on a compliant AMQP
+ * 0.9.1 broker. This class extends {@link ChannelImpl} and implements the {@link MessagingChannel}
+ * interface.
+ *
+ * <p>The class is designed to enable communication through messaging frameworks by establishing
+ * connections, configuring message queues, and facilitating message dispatching to local handlers
+ * or through message brokers.
  */
 public abstract class MessagingChannelImpl extends ChannelImpl implements MessagingChannel {
 
@@ -165,15 +165,17 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   }
 
   /**
-   * Called on the intended target, should use the local connection fields. This is normally only
-   * called on scopes below the user scope.
+   * Establishes a messaging setup by connecting to the specified broker and initializing the
+   * provided message queues for communication. If the broker URL is null or an error occurs during
+   * connection, an empty collection of queues is returned.
    *
-   * @param brokerUrl
-   * @param queuesHeader
-   * @return
+   * @param ownId the identifier for the current entity to configure messaging for
+   * @param brokerUrl the URL of the message broker to connect to
+   * @param queues the collection of {@link Message.Queue} instances to initialize
+   * @return a collection of {@link Message.Queue} that were successfully set up and ready for use
    */
   public Collection<Message.Queue> setupMessaging(
-      String brokerUrl, Collection<Message.Queue> queuesHeader) {
+      String ownId, String brokerUrl, Collection<Message.Queue> queues) {
 
     if (brokerUrl == null) {
       return EnumSet.noneOf(Message.Queue.class);
@@ -183,7 +185,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
       this.connectionFactory = new ConnectionFactory();
       this.connectionFactory.setUri(brokerUrl);
       this.connection = this.connectionFactory.newConnection();
-      return setupMessagingQueues(getBaseQueueName(), queuesHeader);
+      return setupQueues(ownId, queues);
     } catch (Throwable t) {
       error("Error connecting to broker: no messaging available", t);
       return EnumSet.noneOf(Message.Queue.class);
@@ -191,13 +193,17 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   }
 
   /**
-   * Called on anything that has a broker connection either locally or in one of the parents.
+   * Sets up the queues for messaging by declaring them with the broker and configuring message
+   * consumers if applicable. This method ensures the queues are connected and ready for either
+   * sending or receiving messages based on the channel configuration.
    *
-   * @param queuesHeader
-   * @return
+   * @param baseQueueName the prefix to use for queue names when declaring queues
+   * @param queues the collection of {@link Message.Queue} instances to be set up
+   * @return a collection of {@link Message.Queue} instances that were successfully set up and
+   *     connected
    */
-  public Collection<Message.Queue> setupMessagingQueues(
-      String baseQueueName, Collection<Message.Queue> queuesHeader) {
+  public Collection<Message.Queue> setupQueues(
+      String baseQueueName, Collection<Message.Queue> queues) {
 
     Connection conn = this.connection;
     if (conn == null) {
@@ -209,12 +215,16 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
 
     Set<Message.Queue> ret = EnumSet.noneOf(Message.Queue.class);
     if (conn != null) {
-      for (var queue : queuesHeader) {
+      for (var queue : queues) {
         try {
           String queueId = baseQueueName + "." + queue.name().toLowerCase();
-          getOrCreateChannel(queue)
+          var result = getOrCreateChannel(queue)
               .queueDeclare(queueId, true, false, true /* TODO LINK TO SCOPE
                      PERSISTENCE */, Map.of());
+          if (result.getQueue() == null) {
+            error("Queue " + queueId + " could not be declared");
+            continue;
+          }
           this.queueNames.put(queue, queueId);
           ret.add(queue);
         } catch (Throwable e) {
@@ -235,7 +245,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
                       Utils.Json.parseObject(
                           new String(delivery.getBody(), StandardCharsets.UTF_8), Message.class);
 
-                  //                  System.out.println("ZIO PERA " + message);
+                  Logging.INSTANCE.info("ZIO PERA " + message);
 
                   // if there is a consumer installed for this queue, run it
                   var consumers = queueConsumers.get(baseQueueName);
@@ -315,6 +325,8 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
       }
 
       return ret;
+    } else {
+      error("No connection to broker");
     }
 
     return EnumSet.noneOf(Message.Queue.class);
@@ -354,52 +366,15 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   }
 
   /**
-   * Do nothing implementation, override to install consumers when needed.
+   * Do-nothing implementation, override to install consumers when needed.
    *
    * @param availableQueues
    */
   protected void configureQueueConsumers(Set<Message.Queue> availableQueues) {}
 
-  /**
-   * Connects to a messaging service using the provided broker URL, message queues, user identity,
-   * and message consumer. Sets up messaging channels and installs queue consumers for the available
-   * queues.
-   *
-   * @param brokerUrl the URL of the message broker to connect to
-   * @param queues a collection of message queues to be used for messaging
-   * @param identity the identity of the user initiating the connection
-   * @param consumer a consumer to handle incoming messages from the queues
-   */
-  public void connectToService(
-      String brokerUrl,
-      Collection<Message.Queue> queues,
-      UserIdentity identity,
-      Consumer<Message> consumer) {
-
-    this.connected = true;
-
-    setupMessaging(brokerUrl, queues);
-
-    for (var queue : queues) {
-      installQueueConsumer(getId() + "." + queue.name().toLowerCase(), consumer);
-    }
-  }
-
   @Override
   public boolean isConnected() {
     return connected;
-  }
-
-  /**
-   * Only called in advance of setupMessaging() when setup happens in {@link
-   * #getChannel(Message.Queue)} and can only be called after scope creation, which is in local
-   * services when the user must receive notifications. TODO check if we can make this simpler.
-   *
-   * @param queue
-   * @param s
-   */
-  public void presetMessagingQueue(Message.Queue queue, String s) {
-    queueNames.put(queue, s + "." + queue.name().toLowerCase());
   }
 
   @Override
@@ -410,21 +385,5 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   @Override
   public boolean isReceiver() {
     return receiver;
-  }
-
-  protected String getBaseQueueName() {
-    if (this instanceof ContextScope || this instanceof SessionScope) {
-      return this.getId();
-    } else if (this instanceof UserScope userScope) {
-      var federationData =
-          userScope
-              .getUser()
-              .getData()
-              .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
-      if (federationData != null) {
-        return federationData.getId();
-      }
-    }
-    return getId();
   }
 }

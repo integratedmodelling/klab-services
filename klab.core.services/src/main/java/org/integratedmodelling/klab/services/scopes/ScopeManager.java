@@ -176,7 +176,7 @@ public class ScopeManager {
       // servicetype.username.queuetype
       var brokerURI = authorization.getBrokerUrl();
       if (brokerURI != null) {
-        ret.setupMessaging(brokerURI, ret.defaultQueues());
+        ret.setupMessaging(authorization.getFederationId(), brokerURI, ret.defaultQueues());
       }
     }
 

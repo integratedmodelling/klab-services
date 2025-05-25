@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
@@ -31,6 +32,7 @@ import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -220,6 +222,18 @@ public class EngineImpl implements Engine, PropertyHolder {
 
     if (this.defaultUser == null) {
       this.defaultUser = authenticate();
+      var federation =
+          this.defaultUser
+              .getIdentity()
+              .getData()
+              .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+      /* No federation even with local services, which will message to downstream scopes */
+      if (federation != null
+          && !"local.federation".equals(federation.getId())
+          && this.defaultUser instanceof MessagingChannelImpl messagingChannel) {
+        messagingChannel.setupMessaging(
+            federation.getId(), federation.getBroker(), messagingChannel.defaultQueues());
+      }
     }
 
     this.defaultUser.send(
