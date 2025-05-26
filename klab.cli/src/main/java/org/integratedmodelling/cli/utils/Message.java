@@ -1,7 +1,10 @@
 package org.integratedmodelling.cli.utils;
 
 import com.rabbitmq.client.*;
+import java.io.PrintWriter;
+import java.util.*;
 import org.integratedmodelling.cli.KlabCLI;
+import org.integratedmodelling.common.authentication.scope.AMQPChannel;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -11,13 +14,6 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import picocli.CommandLine;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
-
 @CommandLine.Command(
     name = "message",
     mixinStandardHelpOptions = true,
@@ -26,14 +22,15 @@ import java.util.function.Consumer;
     subcommands = {Message.Connect.class, Message.Send.class, Message.Delete.class})
 public class Message {
 
-  private static Channel channel_;
-  private static ConnectionFactory connectionFactory = null;
-  private static Connection connection = null;
-  private static final Map<
-          String, List<Consumer<org.integratedmodelling.klab.api.services.runtime.Message>>>
-      queueConsumers = new HashMap<>();
+  //  private static Channel channel_;
+  //  private static ConnectionFactory connectionFactory = null;
+  //  private static Connection connection = null;
+  //  private static final Map<
+  //          String, List<Consumer<org.integratedmodelling.klab.api.services.runtime.Message>>>
+  //      queueConsumers = new HashMap<>();
+  private static Map<String, AMQPChannel> channelMap = new HashMap<>();
   private static Federation federation;
-  private static String consumerTag;
+  //  private static String consumerTag;
 
   private static final String EXCHANGE_NAME = "klab-exchange";
 
@@ -61,23 +58,23 @@ public class Message {
     return federation;
   }
 
-  private static Channel channel() {
-    if (channel_ == null) {
-      try {
-        connectionFactory = new ConnectionFactory();
-        connectionFactory.setUri(federation().getBroker());
-        connectionFactory.setAutomaticRecoveryEnabled(true);
-        connection = connectionFactory.newConnection();
-        channel_ = connection.createChannel();
-        channel_.basicQos(1);
-        channel_.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.DIRECT, true);
-
-      } catch (Throwable t) {
-        throw new KlabInternalErrorException(t);
-      }
-    }
-    return channel_;
-  }
+  //  private static Channel channel() {
+  //    if (channel_ == null) {
+  //      try {
+  //        connectionFactory = new ConnectionFactory();
+  //        connectionFactory.setUri(federation().getBroker());
+  //        connectionFactory.setAutomaticRecoveryEnabled(true);
+  //        connection = connectionFactory.newConnection();
+  //        channel_ = connection.createChannel();
+  //        channel_.basicQos(1);
+  //        channel_.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.DIRECT, true);
+  //
+  //      } catch (Throwable t) {
+  //        throw new KlabInternalErrorException(t);
+  //      }
+  //    }
+  //    return channel_;
+  //  }
 
   @CommandLine.Command(
       name = "connect",
@@ -96,73 +93,15 @@ public class Message {
       PrintWriter out = commandSpec.commandLine().getOut();
       PrintWriter err = commandSpec.commandLine().getErr();
 
-      try {
+      channelMap.computeIfAbsent(
+          queue,
+          q -> {
+            out.println(
+                "Connecting to queue " + queue + " through broker " + federation().getBroker());
+            return new AMQPChannel(federation(), queue);
+          });
 
-        var result = channel().queueDeclare(queue, true, false, false, Map.of());
-        if (result.getQueue() == null) {
-          err.println("Queue " + queue + " could not be declared");
-          throw new RuntimeException("Failed to declare queue: " + queue);
-        }
-        channel().queueBind(queue, EXCHANGE_NAME, queue);
-
-        DeliverCallback deliverCallback =
-            (ct, delivery) -> {
-              try {
-
-                //                Map<String, Object> headers =
-                // delivery.getProperties().getHeaders();
-                //                if (headers != null
-                //                    && headers.containsKey("channelId")
-                //                    && headers.get("channelId").equals(channel().hashCode())) {
-                //                  channel().basicAck(delivery.getEnvelope().getDeliveryTag(),
-                // true);
-                //                  System.out.println("SKIPPING THE FUCKA");
-                //                  return;
-                //                }
-
-                var message =
-                    Utils.Json.parseObject(
-                        new String(delivery.getBody(), StandardCharsets.UTF_8),
-                        org.integratedmodelling.klab.api.services.runtime.Message.class);
-
-                out.println("RECEIVED [" + queue + "]: " + message);
-                channel().basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-
-                // if there is a consumer installed for this queue, run it
-                var consumers = queueConsumers.get(queue);
-                if (consumers != null) {
-                  for (var consumer : consumers) {
-                    consumer.accept(message);
-                    /*
-                    TODO handle reply() ?
-                     */
-                  }
-                }
-              } catch (Exception e) {
-                channel().basicNack(delivery.getEnvelope().getDeliveryTag(), false, true);
-                err.println("Error processing message: " + e.getMessage());
-              }
-            };
-
-        consumerTag =
-            channel()
-                .basicConsume(
-                    queue,
-                    false,
-                    deliverCallback,
-                    consumerTag1 -> {
-                      queueConsumers.remove(queue);
-                      out.println("Queue consumer cancelled: " + consumerTag1);
-                    });
-
-        out.println("Started consumer with tag: " + consumerTag);
-
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-
-      out.println(
-          " connected to queue " + queue + " through broker " + connectionFactory.getHost());
+      out.println(" connected to queue " + queue + " through broker " + federation().getBroker());
     }
   }
 
@@ -197,23 +136,36 @@ public class Message {
           org.integratedmodelling.klab.api.services.runtime.Message.create(
               KlabCLI.INSTANCE.user(), Notification.info(text));
 
-      try {
-        AMQP.BasicProperties props =
-            new AMQP.BasicProperties.Builder()
-                //                .headers(Map.of("channelId", channel().hashCode()))
-                .deliveryMode(2) // persistent
-                .contentType("text/plain")
-                .build();
+      var channel =
+          channelMap.computeIfAbsent(
+              queue,
+              q -> {
+                out.println(
+                    "Connecting to queue " + queue + " through broker " + federation().getBroker());
+                var ret = new AMQPChannel(federation(), queue);
+                ret.consume(message1 -> out.println("[" + queue + "]: " + message1));
+                return ret;
+              });
 
-        channel()
-            .basicPublish(
-                EXCHANGE_NAME,
-                queue,
-                props,
-                Utils.Json.asString(msg).getBytes(StandardCharsets.UTF_8));
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
+      channel.post(msg);
+
+      //      try {
+      //        AMQP.BasicProperties props =
+      //            new AMQP.BasicProperties.Builder()
+      //                //                .headers(Map.of("channelId", channel().hashCode()))
+      //                .deliveryMode(2) // persistent
+      //                .contentType("text/plain")
+      //                .build();
+      //
+      //        channel()
+      //            .basicPublish(
+      //                EXCHANGE_NAME,
+      //                queue,
+      //                props,
+      //                Utils.Json.asString(msg).getBytes(StandardCharsets.UTF_8));
+      //      } catch (IOException e) {
+      //        throw new RuntimeException(e);
+      //      }
     }
   }
 
@@ -236,29 +188,36 @@ public class Message {
 
     @Override
     public void run() {
+
       PrintWriter out = commandSpec.commandLine().getOut();
       PrintWriter err = commandSpec.commandLine().getErr();
 
-      try {
-        // Queue deletion with parameters:
-        // queue - the queue to delete
-        // ifUnused - true to only delete if queue has no consumers
-        // ifEmpty - true to only delete if queue has no messages
-        channel().queueDelete(queue, !force, !force);
-        queueConsumers.remove(queue);
-
+      var channel = channelMap.get(queue);
+      if (channel != null) {
+        channel.close();
         out.println("Queue '" + queue + "' successfully deleted");
-
-      } catch (IOException e) {
-        if (e.getCause() instanceof com.rabbitmq.client.ShutdownSignalException) {
-          err.println("Queue '" + queue + "' does not exist");
-        } else {
-          err.println("Failed to delete queue '" + queue + "': " + e.getMessage());
-          if (!force) {
-            err.println("Try using --force if the queue is not empty or has consumers");
-          }
-        }
       }
+
+      //      try {
+      //        // Queue deletion with parameters:
+      //        // queue - the queue to delete
+      //        // ifUnused - true to only delete if queue has no consumers
+      //        // ifEmpty - true to only delete if queue has no messages
+      //        channel().queueDelete(queue, !force, !force);
+      //        queueConsumers.remove(queue);
+      //
+      //        out.println("Queue '" + queue + "' successfully deleted");
+      //
+      //      } catch (IOException e) {
+      //        if (e.getCause() instanceof com.rabbitmq.client.ShutdownSignalException) {
+      //          err.println("Queue '" + queue + "' does not exist");
+      //        } else {
+      //          err.println("Failed to delete queue '" + queue + "': " + e.getMessage());
+      //          if (!force) {
+      //            err.println("Try using --force if the queue is not empty or has consumers");
+      //          }
+      //        }
+      //      }
     }
   }
 }
