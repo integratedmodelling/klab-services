@@ -202,12 +202,6 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   @Override
-  public boolean isExclusive() {
-    // the engine is just an orchestrator so we can assume every client is local.
-    return true;
-  }
-
-  @Override
   public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
     return null;
   }
@@ -222,33 +216,34 @@ public class EngineImpl implements Engine, PropertyHolder {
 
     if (this.defaultUser == null) {
       this.defaultUser = authenticate();
-      var federation =
-          this.defaultUser
-              .getIdentity()
-              .getData()
-              .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
-      /* No federation even with local services, which will message to downstream scopes */
-      if (federation != null
-          && !"local.federation".equals(federation.getId())
-          && this.defaultUser instanceof MessagingChannelImpl messagingChannel) {
-        messagingChannel.setupMessaging(
-            federation.getId(), federation.getBroker(), messagingChannel.defaultQueues());
-      }
     }
 
-    this.defaultUser.send(
-        Message.MessageClass.EngineLifecycle,
-        Message.MessageType.ServiceInitializing,
-        capabilities(serviceScope()));
-    //    scheduler.scheduleAtFixedRate(this::timedTasks, 0, 2, TimeUnit.SECONDS);
-    booted.set(true);
-
-    if (distribution != null) {
-      this.defaultUser.send(
-          Message.MessageClass.EngineLifecycle,
-          Message.MessageType.UsingDistribution,
-          distribution);
+    var federation =
+            this.defaultUser
+                    .getIdentity()
+                    .getData()
+                    .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+    /* No federation even with local services, which will message to downstream scopes */
+    if (federation != null
+            && !"local.federation".equals(federation.getId())
+            && this.defaultUser instanceof MessagingChannelImpl messagingChannel) {
+      messagingChannel.setupMessaging(
+              federation.getId(), federation.getBroker(), messagingChannel.defaultQueues());
     }
+
+//    this.defaultUser.send(
+//        Message.MessageClass.EngineLifecycle,
+//        Message.MessageType.ServiceInitializing,
+//        capabilities(serviceScope()));
+//    //    scheduler.scheduleAtFixedRate(this::timedTasks, 0, 2, TimeUnit.SECONDS);
+//    booted.set(true);
+//
+//    if (distribution != null) {
+//      this.defaultUser.send(
+//          Message.MessageClass.EngineLifecycle,
+//          Message.MessageType.UsingDistribution,
+//          distribution);
+//    }
   }
 
   private void notifyLocalEngine(Engine.Status status) {
@@ -289,10 +284,10 @@ public class EngineImpl implements Engine, PropertyHolder {
             }
           };
       this.users.add(this.defaultUser);
-      this.defaultUser.send(
-          Message.MessageClass.Authorization,
-          Message.MessageType.UserAuthorized,
-          authData.getFirst());
+//      this.defaultUser.send(
+//          Message.MessageClass.Authorization,
+//          Message.MessageType.UserAuthorized,
+//          authData.getFirst());
     }
 
     /*

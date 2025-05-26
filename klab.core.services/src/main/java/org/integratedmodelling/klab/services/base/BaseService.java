@@ -117,17 +117,6 @@ public abstract class BaseService implements KlabService {
     return startupOptions;
   }
 
-//  /**
-//   * If true, the user/session/context scopes managed by the service should return a valid {@link
-//   * org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref} to run behaviors and
-//   * applications. At the moment only the runtime has this requirement to support agentive
-//   * observations. Returning true will initialize an actor system on boot and provide an agent to
-//   * each new scope.
-//   *
-//   * @return
-//   */
-//  public abstract boolean scopesAreReactive();
-
   /**
    * Each service creates a secret key and stores in a text file in its work directory. The service
    * key is created only if absent and remains the same across boot cycles. It is used to grant
@@ -171,15 +160,6 @@ public abstract class BaseService implements KlabService {
   //      // TODO configure debug
   //    }
   //  }
-
-//  /**
-//   * Use this broker in local configurations unless a broker URL is specified in configuration
-//   *
-//   * @return
-//   */
-//  protected EmbeddedBroker getLocalBroker() {
-//    return null;
-//  }
 
   /**
    * The scope manager is created on demand as not all services need it.
@@ -352,19 +332,6 @@ public abstract class BaseService implements KlabService {
   @Override
   public URL getUrl() {
     return url;
-  }
-
-  @Override
-  public boolean isExclusive() {
-    // TODO
-    // as a matter of principle, no service instance is exclusive by default. If a client is using
-    // the
-    // secret token it can assume the service is exclusive, although there should be some type of
-    // locking
-    // done to ensure that that is true. A way to do that could be to set busy status for any client
-    // that isn't  using the secret token, and only allow these clients to lock the service that
-    // way.
-    return false;
   }
 
   protected boolean isOperational() {

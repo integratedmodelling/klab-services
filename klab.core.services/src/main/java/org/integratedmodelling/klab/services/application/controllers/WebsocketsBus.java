@@ -65,79 +65,79 @@ import java.util.Collections;
 @EnableWebSocketMessageBroker
 public class WebsocketsBus implements WebSocketMessageBrokerConfigurer {
 
-    public static class StompClient {
-        private final String serverUrl;
-        private final String queueName;
-        private WebSocketStompClient stompClient;
-        private StompSession stompSession;
+  public static class StompClient {
+    private final String serverUrl;
+    private final String queueName;
+    private WebSocketStompClient stompClient;
+    private StompSession stompSession;
 
-        public StompClient(String serverUrl, String queueName) {
-            this.serverUrl = serverUrl;
-            this.queueName = queueName;
-            this.stompClient =
-                    new WebSocketStompClient(
-                            new SockJsClient(
-                                    Collections.singletonList(
-                                            new WebSocketTransport(new StandardWebSocketClient()))));
-        }
-
-        public void connect() {
-            try {
-                stompSession =
-                        stompClient
-                                .connectAsync(
-                                        serverUrl,
-                                        new StompSessionHandlerAdapter() {
-                                            @Override
-                                            public void afterConnected(
-                                                    StompSession session, StompHeaders connectedHeaders) {
-                                                session.subscribe(
-                                                        queueName,
-                                                        new StompFrameHandler() {
-                                                            @Override
-                                                            public Type getPayloadType(StompHeaders headers) {
-                                                                return String.class;
-                                                            }
-
-                                                            @Override
-                                                            public void handleFrame(StompHeaders headers, Object payload) {
-                                                                System.out.println("Received message: " + payload);
-                                                            }
-                                                        });
-                                            }
-                                        })
-                                .get();
-            } catch (Exception e) {
-                throw new RuntimeException("Could not connect to WebSocket server", e);
-            }
-        }
-
-        public void disconnect() {
-            if (stompSession != null && stompSession.isConnected()) {
-                stompSession.disconnect();
-            }
-            if (stompClient != null) {
-                stompClient.stop();
-            }
-        }
+    public StompClient(String serverUrl, String queueName) {
+      this.serverUrl = serverUrl;
+      this.queueName = queueName;
+      this.stompClient =
+          new WebSocketStompClient(
+              new SockJsClient(
+                  Collections.singletonList(
+                      new WebSocketTransport(new StandardWebSocketClient()))));
     }
 
-    @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/comms/application").setAllowedOrigins("*").withSockJS();
+    public void connect() {
+      try {
+        stompSession =
+            stompClient
+                .connectAsync(
+                    serverUrl,
+                    new StompSessionHandlerAdapter() {
+                      @Override
+                      public void afterConnected(
+                          StompSession session, StompHeaders connectedHeaders) {
+                        session.subscribe(
+                            queueName,
+                            new StompFrameHandler() {
+                              @Override
+                              public Type getPayloadType(StompHeaders headers) {
+                                return String.class;
+                              }
+
+                              @Override
+                              public void handleFrame(StompHeaders headers, Object payload) {
+                                System.out.println("Received message: " + payload);
+                              }
+                            });
+                      }
+                    })
+                .get();
+      } catch (Exception e) {
+        throw new RuntimeException("Could not connect to WebSocket server", e);
+      }
     }
 
-    @Override
-    public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.setApplicationDestinationPrefixes("/app");
-        config.enableSimpleBroker("/topic", "/queue");
+    public void disconnect() {
+      if (stompSession != null && stompSession.isConnected()) {
+        stompSession.disconnect();
+      }
+      if (stompClient != null) {
+        stompClient.stop();
+      }
     }
+  }
 
-    public void start() {
-        // Server startup logic
-    }
+  @Override
+  public void registerStompEndpoints(StompEndpointRegistry registry) {
+    registry.addEndpoint("/comms/application").setAllowedOrigins("*").withSockJS();
+  }
 
-    public void shutdown() {
-        // Server shutdown logic
-    }
+  @Override
+  public void configureMessageBroker(MessageBrokerRegistry config) {
+    config.setApplicationDestinationPrefixes("/app");
+    config.enableSimpleBroker("/topic", "/queue");
+  }
+
+  public void start() {
+    // Server startup logic
+  }
+
+  public void shutdown() {
+    // Server shutdown logic
+  }
 }
