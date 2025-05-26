@@ -219,31 +219,31 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
 
     var federation =
-            this.defaultUser
-                    .getIdentity()
-                    .getData()
-                    .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+        this.defaultUser
+            .getIdentity()
+            .getData()
+            .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
     /* No federation even with local services, which will message to downstream scopes */
     if (federation != null
-            && !"local.federation".equals(federation.getId())
-            && this.defaultUser instanceof MessagingChannelImpl messagingChannel) {
+        && !Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
+        && this.defaultUser instanceof MessagingChannelImpl messagingChannel) {
       messagingChannel.setupMessaging(
-              federation.getId(), federation.getBroker(), messagingChannel.defaultQueues());
+          federation.getId(), federation.getBroker(), messagingChannel.defaultQueues());
     }
 
-//    this.defaultUser.send(
-//        Message.MessageClass.EngineLifecycle,
-//        Message.MessageType.ServiceInitializing,
-//        capabilities(serviceScope()));
-//    //    scheduler.scheduleAtFixedRate(this::timedTasks, 0, 2, TimeUnit.SECONDS);
-//    booted.set(true);
-//
-//    if (distribution != null) {
-//      this.defaultUser.send(
-//          Message.MessageClass.EngineLifecycle,
-//          Message.MessageType.UsingDistribution,
-//          distribution);
-//    }
+    //    this.defaultUser.send(
+    //        Message.MessageClass.EngineLifecycle,
+    //        Message.MessageType.ServiceInitializing,
+    //        capabilities(serviceScope()));
+    //    //    scheduler.scheduleAtFixedRate(this::timedTasks, 0, 2, TimeUnit.SECONDS);
+    //    booted.set(true);
+    //
+    //    if (distribution != null) {
+    //      this.defaultUser.send(
+    //          Message.MessageClass.EngineLifecycle,
+    //          Message.MessageType.UsingDistribution,
+    //          distribution);
+    //    }
   }
 
   private void notifyLocalEngine(Engine.Status status) {
@@ -284,10 +284,10 @@ public class EngineImpl implements Engine, PropertyHolder {
             }
           };
       this.users.add(this.defaultUser);
-//      this.defaultUser.send(
-//          Message.MessageClass.Authorization,
-//          Message.MessageType.UserAuthorized,
-//          authData.getFirst());
+      //      this.defaultUser.send(
+      //          Message.MessageClass.Authorization,
+      //          Message.MessageType.UserAuthorized,
+      //          authData.getFirst());
     }
 
     /*
@@ -304,7 +304,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     if (federationData == null || federationData.getBroker() == null) {
       var id = federationData == null ? null : federationData.getId();
       if (id == null) {
-        id = "local.federation";
+        id = Federation.LOCAL_FEDERATION_ID;
       }
       federationData = new Federation(id, Channel.LOCAL_BROKER_URL + Channel.LOCAL_BROKER_PORT);
       this.defaultUser

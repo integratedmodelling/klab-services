@@ -1,6 +1,10 @@
 package org.integratedmodelling.klab.api.identities;
 
+import org.integratedmodelling.klab.api.services.runtime.Channel;
+
 public class Federation {
+
+  public static final String LOCAL_FEDERATION_ID = "local.federation";
 
   private String id;
   private String broker;
@@ -26,5 +30,9 @@ public class Federation {
 
   public void setBroker(String broker) {
     this.broker = broker;
+  }
+
+  public static Federation local() {
+    return new Federation(LOCAL_FEDERATION_ID, Channel.LOCAL_BROKER_URL + Channel.LOCAL_BROKER_PORT);
   }
 }

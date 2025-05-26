@@ -150,7 +150,7 @@ public interface Message extends Serializable {
     ServiceAvailable(Queue.Events, KlabService.ServiceCapabilities.class),
     @Deprecated
     ServiceUnavailable(Queue.Events, KlabService.ServiceCapabilities.class),
-    ServiceStatus(Queue.Events, KlabService.ServiceStatus.class),
+    ServiceStatus(Queue.Status, KlabService.ServiceStatus.class),
     ServiceStatusChanged(Queue.Events, KlabService.ServiceStatus.class),
 
     /** UI selections */
@@ -168,8 +168,8 @@ public interface Message extends Serializable {
 
     @Deprecated
     DocumentSelected(Queue.UI, KlabDocument.class),
-    @Deprecated
-    UserAuthorized(Queue.Events, UserIdentity.class),
+//    @Deprecated
+//    UserAuthorized(Queue.Events, UserIdentity.class),
 
     /**
      * F <-> B: scenario selection from user action (if class == UserInterface) and/or from engine

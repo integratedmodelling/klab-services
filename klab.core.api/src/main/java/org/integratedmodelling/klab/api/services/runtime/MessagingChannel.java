@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
-
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -12,8 +11,7 @@ public interface MessagingChannel extends Channel {
 
   @Override
   default Set<Message.Queue> defaultQueues() {
-    return EnumSet.of(
-        Message.Queue.Errors, Message.Queue.Events, Message.Queue.Warnings, Message.Queue.Status);
+    return EnumSet.of(Message.Queue.Errors, Message.Queue.Events, Message.Queue.Warnings);
   }
 
   /**

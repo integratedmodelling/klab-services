@@ -48,9 +48,6 @@ public class KlabCompleter implements Completer {
       // take over
       return;
     }
-
-    System.out.println(candidates.size() + " candidates: " + candidates);
-
     delegate.complete(reader, line, candidates);
   }
 }

@@ -246,12 +246,12 @@ public abstract class AbstractUIController implements UIController {
         }
       }
       case ProjectLifecycle -> {}
-      case Authorization -> {
-        if (message.is(Message.MessageType.UserAuthorized)) {
-          dispatch(
-              this, UIReactor.UIEvent.UserAuthenticated, message.getPayload(UserIdentity.class));
-        }
-      }
+//      case Authorization -> {
+//        if (message.is(Message.MessageType.UserAuthorized)) {
+//          dispatch(
+//              this, UIReactor.UIEvent.UserAuthenticated, message.getPayload(UserIdentity.class));
+//        }
+//      }
       case TaskLifecycle -> {}
       case DigitalTwin -> {
       }
