@@ -98,7 +98,8 @@ public class Message {
           q -> {
             out.println(
                 "Connecting to queue " + queue + " through broker " + federation().getBroker());
-            return new AMQPChannel(federation(), queue);
+            return new AMQPChannel(
+                federation(), queue, message1 -> out.println("[" + queue + "]: " + message1));
           });
 
       out.println(" connected to queue " + queue + " through broker " + federation().getBroker());
@@ -142,9 +143,8 @@ public class Message {
               q -> {
                 out.println(
                     "Connecting to queue " + queue + " through broker " + federation().getBroker());
-                var ret = new AMQPChannel(federation(), queue);
-                ret.consume(message1 -> out.println("[" + queue + "]: " + message1));
-                return ret;
+                return new AMQPChannel(
+                    federation(), queue, message1 -> out.println("[" + queue + "]: " + message1));
               });
 
       channel.post(msg);

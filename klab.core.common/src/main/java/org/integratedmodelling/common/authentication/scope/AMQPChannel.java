@@ -1,9 +1,6 @@
 package org.integratedmodelling.common.authentication.scope;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.DeliverCallback;
+import com.rabbitmq.client.*;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.identities.Federation;
@@ -32,6 +29,8 @@ public class AMQPChannel {
   private boolean connected = false;
   private Consumer<Message> messageConsumer;
   private String consumerQueue;
+  private AMQP.BasicProperties props;
+  private boolean online = false;
 
   /**
    * Creates a new AMQPChannel with the specified federation and queue.
@@ -39,11 +38,12 @@ public class AMQPChannel {
    * @param federation the federation containing the broker URI
    * @param queue the queue name
    */
-  public AMQPChannel(Federation federation, String queue) {
+  public AMQPChannel(Federation federation, String queue, Consumer<Message> messageConsumer) {
     this.brokerUri = federation.getBroker();
     this.queue = federation.getId() + "." + queue;
     this.exchangeName = federation.getId() + "." + queue + ".exchange";
-    connect();
+    this.messageConsumer = messageConsumer;
+    this.online = connect();
   }
 
   /**
@@ -60,12 +60,45 @@ public class AMQPChannel {
       // Create connection and channel
       connection = connectionFactory.newConnection();
       channel = connection.createChannel();
+      this.props =
+          new AMQP.BasicProperties.Builder()
+              .headers(Map.of("channelId", channel.hashCode()))
+              .deliveryMode(2) // persistent
+              .contentType("text/plain")
+              .build();
 
       // Declare a fanout exchange
-      channel.exchangeDeclare(exchangeName, "fanout", true);
+      channel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT, true);
 
       connected = true;
+      // Create a unique queue for this consumer
+      consumerQueue = channel.queueDeclare().getQueue();
+
+      // Bind the queue to the exchange
+      channel.queueBind(consumerQueue, exchangeName, queue);
+
+      DeliverCallback deliverCallback =
+          (consumerTag, delivery) -> {
+            try {
+              // Parse the message from JSON
+              Message message =
+                  Utils.Json.parseObject(
+                      new String(delivery.getBody(), StandardCharsets.UTF_8), Message.class);
+
+              // Call the consumer with the received message
+              if (messageConsumer != null) {
+                messageConsumer.accept(message);
+              }
+            } catch (Exception e) {
+              Logging.INSTANCE.error("Error processing received message: " + e.getMessage());
+            }
+          };
+
+      // Start consuming messages from the unique queue
+      channel.basicConsume(consumerQueue, true, deliverCallback, consumerTag -> {});
+
       return true;
+
     } catch (Exception e) {
       Logging.INSTANCE.error("Error connecting to AMQP broker: " + e.getMessage());
       return false;
@@ -92,50 +125,8 @@ public class AMQPChannel {
     }
   }
 
-  /**
-   * Sets up a consumer to receive messages from a unique queue bound to the exchange.
-   *
-   * @param consumer the consumer to call when a message is received
-   */
-  public void consume(Consumer<Message> consumer) {
-
-    if (!connected && !connect()) {
-      Logging.INSTANCE.error("Cannot consume messages: not connected to broker");
-      return;
-    }
-
-    this.messageConsumer = consumer;
-
-    try {
-      // Create a unique queue for this consumer
-      consumerQueue = channel.queueDeclare().getQueue();
-
-      // Bind the queue to the exchange
-      channel.queueBind(consumerQueue, exchangeName, "");
-
-      // Set up a delivery callback to process incoming messages
-      DeliverCallback deliverCallback =
-          (consumerTag, delivery) -> {
-            try {
-              // Parse the message from JSON
-              Message message =
-                  Utils.Json.parseObject(
-                      new String(delivery.getBody(), StandardCharsets.UTF_8), Message.class);
-
-              // Call the consumer with the received message
-              if (messageConsumer != null) {
-                messageConsumer.accept(message);
-              }
-            } catch (Exception e) {
-              Logging.INSTANCE.error("Error processing received message: " + e.getMessage());
-            }
-          };
-
-      // Start consuming messages from the unique queue
-      channel.basicConsume(consumerQueue, true, deliverCallback, consumerTag -> {});
-    } catch (IOException e) {
-      Logging.INSTANCE.error("Error setting up message consumer: " + e.getMessage());
-    }
+  public boolean isOnline() {
+    return online;
   }
 
   /** Closes the connection to the AMQP broker. */
