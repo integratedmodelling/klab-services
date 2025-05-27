@@ -1,21 +1,11 @@
 package org.integratedmodelling.common.authentication.scope;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.DeliverCallback;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
-
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
@@ -32,13 +22,8 @@ import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
  */
 public abstract class MessagingChannelImpl extends ChannelImpl implements MessagingChannel {
 
-  //  private Channel channel_;
   private boolean sender;
   private boolean receiver;
-  //  private ConnectionFactory connectionFactory = null;
-  //  private Connection connection = null;
-  private final Map<Message.Queue, String> queueNames = new HashMap<>();
-  //  private boolean connected;
   private AMQPChannel amqpChannel = null;
 
   private static final Map<String, Map<String, List<Consumer<Message>>>> queueConsumers =
@@ -55,16 +40,11 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   protected MessagingChannelImpl(MessagingChannelImpl other) {
     super(other);
     this.amqpChannel = other.amqpChannel;
+    this.sender = other.sender;
+    this.receiver = other.receiver;
   }
 
   protected void copyMessagingSetup(MessagingChannelImpl parent) {
-    //    this.channel_ = parent.channel_;
-    //    this.sender = parent.sender;
-    //    this.receiver = parent.receiver;
-    //    this.connectionFactory = parent.connectionFactory;
-    //    this.connection = parent.connection;
-    //    this.connected = parent.connected;
-    this.queueNames.putAll(parent.queueNames);
     this.amqpChannel = parent.amqpChannel;
     copyListeners(parent);
   }
@@ -74,18 +54,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
     if (this.sender && this.amqpChannel != null && this.amqpChannel.isOnline()) {
       // dispatch to queue if the queue is there
       var message = Message.create(this, args);
-      var queue = queueNames.get(message.getQueue());
-      if (queue != null) {
-        this.amqpChannel.post(message);
-        //        try {
-        //          getChannel(message.getQueue())
-        //              .basicPublish(
-        //                  "", queue, null,
-        // Utils.Json.asString(message).getBytes(StandardCharsets.UTF_8));
-        //        } catch (IOException e) {
-        //          error(e);
-        //        }
-      }
+      this.amqpChannel.post(message);
     }
     // this will dispatch to the local handlers
     return super.send(args);
@@ -111,71 +80,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
     if (this.amqpChannel != null) {
       this.amqpChannel.close();
     }
-    //    if (this.channel_ != null) {
-    //      try {
-    //        for (var queue : queueNames.values()) {
-    //          this.channel_.queueDelete(queue);
-    //        }
-    //        queueNames.clear();
-    //      } catch (Exception e) {
-    //        error("Error closing messaging channel", e);
-    //      }
-    //    }
   }
-
-  //  protected Channel getOrCreateChannel(Message.Queue queue) {
-  //
-  //    //        if (!queueNames.containsKey(queue)) {
-  //
-  //    /*
-  //    Looks like just one channel is enough - so one connection factory, one
-  //    connection, one channel. Maybe the whole API could be simpler. Maybe channels are
-  // synchronizing? In
-  //     all cases we now can have a queue name w/o a channel so we would need to keep a hash of
-  // channels
-  //     and dispose
-  //    properly.
-  //     */
-  //    if (this.channel_ == null) {
-  //      var holder = findParent((p) -> p.channel_ != null);
-  //      if (holder != null) {
-  //        return holder.channel_;
-  //      }
-  //      try {
-  //        this.channel_ = this.connection.createChannel();
-  //      } catch (IOException e) {
-  //        // just return null
-  //      }
-  //    }
-  //
-  //    return this.channel_;
-  //  }
-
-  //  protected Channel getChannel(Message.Queue queue) {
-  //    return getOrCreateChannel(queue);
-  //  }
-
-  //  /*
-  //   * Channels are not hierarchically organized but most of their derivatives are. If this is a
-  // scope,
-  //   * this methods finds the first parent that meets the passed condition.
-  //   *
-  //   * @param filter
-  //   * @return
-  //   */
-  //  private MessagingChannelImpl findParent(Predicate<MessagingChannelImpl> filter) {
-  //
-  //    if (filter.test(this)) {
-  //      return this;
-  //    }
-  //
-  //    if (this instanceof Scope scope
-  //        && scope.getParentScope() instanceof MessagingChannelImpl parent) {
-  //      return parent.findParent(filter);
-  //    }
-  //
-  //    return null;
-  //  }
 
   /**
    * Sets up messaging by establishing an AMQP channel and configuring it for the specified queues.
@@ -199,16 +104,6 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
               default -> federation.getId();
             },
             this.receiver ? this::messageHandler : null);
-    //
-    //    try {
-    //      this.connectionFactory = new ConnectionFactory();
-    //      this.connectionFactory.setUri(brokerUrl);
-    //      this.connection = this.connectionFactory.newConnection();
-    //      return setupQueues(ownId, queues);
-    //    } catch (Throwable t) {
-    //      error("Error connecting to broker: no messaging available", t);
-    //      return EnumSet.noneOf(Message.Queue.class);
-    //    }
 
     return setupQueues(queues);
   }
@@ -216,6 +111,8 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   private void messageHandler(Message message) {
 
     Logging.INSTANCE.info("ZIO PERA " + message);
+
+    // TODO listeners, resend to handlers in super, handle reply() in posted messages
 
     // if there is a consumer installed for this queue, run it
     //                      var consumers = queueConsumers.get(baseQueueName);
@@ -410,15 +307,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   @Override
   public boolean hasMessaging() {
     return this.amqpChannel != null;
-    //    return connection != null && connection.isOpen();
   }
-
-  /**
-   * Do-nothing implementation, override to install consumers when needed.
-   *
-   * @param availableQueues
-   */
-  protected void configureQueueConsumers(Set<Message.Queue> availableQueues) {}
 
   @Override
   public boolean isConnected() {
