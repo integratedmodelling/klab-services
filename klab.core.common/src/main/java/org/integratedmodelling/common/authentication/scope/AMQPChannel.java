@@ -4,6 +4,7 @@ import com.rabbitmq.client.*;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
 import java.io.IOException;
@@ -31,6 +32,7 @@ public class AMQPChannel {
   private String consumerQueue;
   private AMQP.BasicProperties props;
   private boolean online = false;
+  private String channelTag;
 
   /**
    * Creates a new AMQPChannel with the specified federation and queue.
@@ -40,11 +42,26 @@ public class AMQPChannel {
    */
   public AMQPChannel(Federation federation, String queue, Consumer<Message> messageConsumer) {
     this.brokerUri = federation.getBroker();
-    this.queue = federation.getId() + "." + queue;
-    this.exchangeName = federation.getId() + "." + queue + ".exchange";
+    this.queue = queue;
+    this.exchangeName = federation.getId() + ".exchange";
     this.messageConsumer = messageConsumer;
     this.online = connect();
   }
+
+  /**
+   * Creates a new AMQPChannel with the specified federation and queue.
+   *
+   * @param federation the federation containing the broker URI
+   * @param queue the queue name
+   */
+  public AMQPChannel(Federation federation, Scope scope, Consumer<Message> messageConsumer) {
+    this.brokerUri = federation.getBroker();
+//    this.queue = scope.getId();
+    this.exchangeName = federation.getId() + ".exchange";
+    this.messageConsumer = messageConsumer;
+    this.online = connect();
+  }
+
 
   /**
    * Connects to the AMQP broker and creates a channel.
@@ -60,9 +77,10 @@ public class AMQPChannel {
       // Create connection and channel
       connection = connectionFactory.newConnection();
       channel = connection.createChannel();
+      channelTag = channel.hashCode() + "";
       this.props =
           new AMQP.BasicProperties.Builder()
-              .headers(Map.of("channelId", channel.hashCode()))
+              .headers(Map.of("channelId", channelTag))
               .deliveryMode(2) // persistent
               .contentType("text/plain")
               .build();
@@ -75,11 +93,21 @@ public class AMQPChannel {
       consumerQueue = channel.queueDeclare().getQueue();
 
       // Bind the queue to the exchange
+      // START: Method using routingKey parameter
       channel.queueBind(consumerQueue, exchangeName, queue);
+      // END: Method using routingKey parameter
 
       DeliverCallback deliverCallback =
           (consumerTag, delivery) -> {
             try {
+
+              Map<String, Object> headers = delivery.getProperties().getHeaders();
+              if (headers != null && headers.containsKey("channelId")) {
+                if (channelTag.equals(headers.get("channelId").toString())) {
+                  return;
+                }
+              }
+
               // Parse the message from JSON
               Message message =
                   Utils.Json.parseObject(
@@ -106,7 +134,17 @@ public class AMQPChannel {
   }
 
   /**
-   * Sends a message to the exchange.
+   * Send the message with its own queue filters.
+   *
+   * @param scope
+   * @param message
+   */
+  public void send(Scope scope, Object... message) {
+    post(Message.create(scope, message));
+  }
+
+  /**
+   * Sends any message to the exchange.
    *
    * @param message the message to send
    */
@@ -118,8 +156,13 @@ public class AMQPChannel {
 
     try {
       // Convert message to JSON and send to exchange
+      // START: Method using routingKey parameter
       channel.basicPublish(
-          exchangeName, "", null, Utils.Json.asString(message).getBytes(StandardCharsets.UTF_8));
+          exchangeName,
+          queue,
+          props,
+          Utils.Json.asString(message).getBytes(StandardCharsets.UTF_8));
+      // END: Method using routingKey parameter
     } catch (IOException e) {
       Logging.INSTANCE.error("Error posting message to exchange: " + e.getMessage());
     }

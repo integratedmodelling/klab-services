@@ -99,7 +99,11 @@ public class Message {
             out.println(
                 "Connecting to queue " + queue + " through broker " + federation().getBroker());
             return new AMQPChannel(
-                federation(), queue, message1 -> out.println("[" + queue + "]: " + message1));
+                federation(),
+                queue,
+               /* EnumSet.noneOf(
+                    org.integratedmodelling.klab.api.services.runtime.Message.Queue.class),*/
+                message1 -> out.println("[" + queue + "]: " + message1));
           });
 
       out.println(" connected to queue " + queue + " through broker " + federation().getBroker());
@@ -144,28 +148,15 @@ public class Message {
                 out.println(
                     "Connecting to queue " + queue + " through broker " + federation().getBroker());
                 return new AMQPChannel(
-                    federation(), queue, message1 -> out.println("[" + queue + "]: " + message1));
+                    federation(),
+                    queue,
+                   /* EnumSet.noneOf(
+                        org.integratedmodelling.klab.api.services.runtime.Message.Queue.class),*/
+                    message1 -> out.println("[" + queue + "]: " + message1));
               });
 
       channel.post(msg);
 
-      //      try {
-      //        AMQP.BasicProperties props =
-      //            new AMQP.BasicProperties.Builder()
-      //                //                .headers(Map.of("channelId", channel().hashCode()))
-      //                .deliveryMode(2) // persistent
-      //                .contentType("text/plain")
-      //                .build();
-      //
-      //        channel()
-      //            .basicPublish(
-      //                EXCHANGE_NAME,
-      //                queue,
-      //                props,
-      //                Utils.Json.asString(msg).getBytes(StandardCharsets.UTF_8));
-      //      } catch (IOException e) {
-      //        throw new RuntimeException(e);
-      //      }
     }
   }
 
