@@ -25,8 +25,9 @@ public interface RuntimeAsset {
   ContextAsset CONTEXT_ASSET = new ContextAsset();
   ProvenanceAsset PROVENANCE_ASSET = new ProvenanceAsset();
   DataflowAsset DATAFLOW_ASSET = new DataflowAsset();
+    long CONTEXT_ID = 1L;
 
-  /** The status of an asset, which may be added to the metadata using the "status" property. */
+    /** The status of an asset, which may be added to the metadata using the "status" property. */
   enum Status {
     UNRESOLVED,
     CONTEXTUALIZED,

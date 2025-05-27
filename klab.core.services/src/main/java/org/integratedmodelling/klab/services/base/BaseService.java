@@ -56,7 +56,7 @@ public abstract class BaseService implements KlabService {
   private final Type type;
   protected EmbeddedBroker embeddedBroker;
   private String serviceSecret;
-  private boolean provideScopesAutomatically = false;
+//  private boolean provideScopesAutomatically = false;
   private URL url;
   //    protected AtomicBoolean online = new AtomicBoolean(false);
   protected AtomicBoolean available = new AtomicBoolean(false);

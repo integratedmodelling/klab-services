@@ -44,9 +44,20 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   public void ingest(RuntimeAssetGraph graph) {
+
     for (var nodeId : graph.getNodes().keySet()) {
+
       var node = graph.getNodes().get(nodeId);
       var asset = node.getAsset();
+
+      if (asset.getId() == RuntimeAsset.CONTEXT_ASSET.getId()) {
+        asset = RuntimeAsset.CONTEXT_ASSET;
+      } else if (asset.getId() == RuntimeAsset.PROVENANCE_ASSET.getId()) {
+        asset = RuntimeAsset.PROVENANCE_ASSET;
+      } else  if (asset.getId() == RuntimeAsset.DATAFLOW_ASSET.getId()) {
+        asset = RuntimeAsset.DATAFLOW_ASSET;
+      }
+
       var id = Long.parseLong(nodeId);
       if (!catalog.containsKey(id)) {
         catalog.put(id, asset);
@@ -56,6 +67,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     for (var edge : graph.getEdges()) {
       long source = Long.parseLong(edge.getSource());
       long target = Long.parseLong(edge.getTarget());
+      // TODO edge metadata
       this.graph.addEdge(catalog.get(source), catalog.get(target));
     }
   }
