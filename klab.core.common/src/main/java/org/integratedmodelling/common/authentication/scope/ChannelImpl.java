@@ -57,6 +57,7 @@ public class ChannelImpl implements Channel {
     this.eventMatchers = other.eventMatchers;
   }
 
+  @Deprecated
   protected void copyListeners(ChannelImpl channel) {
     this.messageListeners.addAll(channel.messageListeners);
     this.eventMatchers = channel.eventMatchers;
@@ -96,9 +97,6 @@ public class ChannelImpl implements Channel {
   public void debug(Object... o) {
     Logging.INSTANCE.debug(o);
   }
-
-//  @Override
-//  public void status(Scope.Status status) {}
 
   @Override
   public void event(Message message) {

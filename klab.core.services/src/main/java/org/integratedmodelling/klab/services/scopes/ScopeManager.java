@@ -106,14 +106,14 @@ public class ScopeManager {
       File userBehavior =
           new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + "user.kactors");
       if (userBehavior.isFile() && userBehavior.canRead()) {
-//        try {
-//          ret.send(
-//              Message.MessageClass.ActorCommunication,
-//              Message.MessageType.RunBehavior,
-//              userBehavior.toURI().toURL());
-//        } catch (MalformedURLException e) {
-//          ret.error(e, "while reading user.kactors behavior");
-//        }
+        //        try {
+        //          ret.send(
+        //              Message.MessageClass.ActorCommunication,
+        //              Message.MessageType.RunBehavior,
+        //              userBehavior.toURI().toURL());
+        //        } catch (MalformedURLException e) {
+        //          ret.error(e, "while reading user.kactors behavior");
+        //        }
       }
 
       scopes.put(user.getUsername(), ret);
@@ -176,7 +176,10 @@ public class ScopeManager {
       // servicetype.username.queuetype
       var brokerURI = authorization.getBrokerUrl();
       if (brokerURI != null) {
-        ret.setupMessaging(authorization.getFederationId(), brokerURI, ret.defaultQueues());
+        ret.setupMessaging(
+            new Federation(authorization.getFederationId(), brokerURI),
+            authorization.getFederationId(),
+            ret.defaultQueues());
       }
     }
 

@@ -3,12 +3,16 @@ package org.integratedmodelling.common.authentication.scope;
 import com.rabbitmq.client.*;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -21,18 +25,20 @@ import java.util.function.Consumer;
  */
 public class AMQPChannel {
 
-  String brokerUri;
-  String queue;
-  String exchangeName;
+  private final String brokerUri;
+  private final String queue;
+  private final String exchangeName;
   private ConnectionFactory connectionFactory;
   private Connection connection;
   private Channel channel;
   private boolean connected = false;
-  private Consumer<Message> messageConsumer;
+  private final Consumer<Message> messageConsumer;
   private String consumerQueue;
   private AMQP.BasicProperties props;
   private boolean online = false;
   private String channelTag;
+  private Collection<Message.Queue> queues;
+  private boolean federationWide = false;
 
   /**
    * Creates a new AMQPChannel with the specified federation and queue.
@@ -46,22 +52,12 @@ public class AMQPChannel {
     this.exchangeName = federation.getId() + ".exchange";
     this.messageConsumer = messageConsumer;
     this.online = connect();
+    this.federationWide = queue.equals(federation.getId());
   }
 
-  /**
-   * Creates a new AMQPChannel with the specified federation and queue.
-   *
-   * @param federation the federation containing the broker URI
-   * @param queue the queue name
-   */
-  public AMQPChannel(Federation federation, Scope scope, Consumer<Message> messageConsumer) {
-    this.brokerUri = federation.getBroker();
-//    this.queue = scope.getId();
-    this.exchangeName = federation.getId() + ".exchange";
-    this.messageConsumer = messageConsumer;
-    this.online = connect();
+  public void filter(Collection<Message.Queue> queues) {
+    this.queues = queues;
   }
-
 
   /**
    * Connects to the AMQP broker and creates a channel.
@@ -95,40 +91,62 @@ public class AMQPChannel {
       // Bind the queue to the exchange
       // START: Method using routingKey parameter
       channel.queueBind(consumerQueue, exchangeName, queue);
-      // END: Method using routingKey parameter
 
-      DeliverCallback deliverCallback =
-          (consumerTag, delivery) -> {
-            try {
+      if (messageConsumer != null) {
 
-              Map<String, Object> headers = delivery.getProperties().getHeaders();
-              if (headers != null && headers.containsKey("channelId")) {
-                if (channelTag.equals(headers.get("channelId").toString())) {
+        // END: Method using routingKey parameter
+
+        DeliverCallback deliverCallback =
+            (consumerTag, delivery) -> {
+              try {
+
+                Map<String, Object> headers = delivery.getProperties().getHeaders();
+                if (headers != null && headers.containsKey("channelId")) {
+                  if (channelTag.equals(headers.get("channelId").toString())) {
+                    return;
+                  }
+                }
+
+                // Parse the message from JSON
+                Message message =
+                    Utils.Json.parseObject(
+                        new String(delivery.getBody(), StandardCharsets.UTF_8), Message.class);
+
+                // filter queue and identity route if needed
+                if (queues != null && !queues.isEmpty() && !queues.contains(message.getQueue())) {
                   return;
                 }
-              }
 
-              // Parse the message from JSON
-              Message message =
-                  Utils.Json.parseObject(
-                      new String(delivery.getBody(), StandardCharsets.UTF_8), Message.class);
+                if (!federationWide && !message.getIdentity().equals(queue)) {
+                  return;
+                }
 
-              // Call the consumer with the received message
-              if (messageConsumer != null) {
                 messageConsumer.accept(message);
+              } catch (Exception e) {
+                Logging.INSTANCE.error(
+                    "Error processing received message: "
+                        + e.getMessage()
+                        + "\n"
+                        + new String(delivery.getBody(), StandardCharsets.UTF_8)
+                        + "\nqueue="
+                        + queue);
               }
-            } catch (Exception e) {
-              Logging.INSTANCE.error("Error processing received message: " + e.getMessage());
-            }
-          };
+            };
 
-      // Start consuming messages from the unique queue
-      channel.basicConsume(consumerQueue, true, deliverCallback, consumerTag -> {});
+        // Start consuming messages from the unique queue
+        channel.basicConsume(consumerQueue, true, deliverCallback, consumerTag -> {});
+      }
 
       return true;
 
     } catch (Exception e) {
-      Logging.INSTANCE.error("Error connecting to AMQP broker: " + e.getMessage());
+      Logging.INSTANCE.error(
+          "Error connecting to AMQP broker: "
+              + e.getMessage()
+              + "\n"
+              + brokerUri
+              + "\nqueue="
+              + queue);
       return false;
     }
   }

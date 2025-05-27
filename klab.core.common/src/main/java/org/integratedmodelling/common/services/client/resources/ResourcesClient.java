@@ -208,7 +208,7 @@ public class ResourcesClient extends ServiceClient
     if (federation != null && scope instanceof MessagingChannelImpl messagingChannel) {
       var queues =
               getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
-      messagingChannel.setupMessaging(ret, federation.getBroker(), queues);
+      messagingChannel.setupMessaging(federation, ret, queues);
     }
     return ret;
   }
@@ -299,7 +299,7 @@ public class ResourcesClient extends ServiceClient
         var queues =
                 getQueuesFromHeader(
                         scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
-        messagingChannel.setupMessaging(ret, federation.getBroker(), queues);
+        messagingChannel.setupMessaging(federation, ret, queues);
       }
     }
 

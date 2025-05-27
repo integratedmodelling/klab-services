@@ -150,9 +150,10 @@ public class KlabScopeController {
             queuesHeader = serviceSessionScope.defaultQueues();
           }
 
-          var implementedQueues = serviceSessionScope.setupMessaging(id, brokerUrl, queuesHeader);
+          var implementedQueues = serviceSessionScope.setupMessaging(federation, id, queuesHeader);
 
-          Logging.INSTANCE.info("Queues set up for session " + id + ": " + implementedQueues + " on session scope");
+          Logging.INSTANCE.info(
+              "Queues set up for session " + id + ": " + implementedQueues + " on session scope");
 
           if (!serviceSessionScope.initializeAgents(id)) {
             Logging.INSTANCE.warn("agent initialization failed in session creation");
@@ -283,9 +284,10 @@ public class KlabScopeController {
 
           var id = instance.klabService().registerContext(ret, federation);
 
-          var queuesAvailable = serviceContextScope.setupQueues(id, queuesHeader);
+          var queuesAvailable = serviceContextScope.setupQueues(queuesHeader);
 
-          Logging.INSTANCE.info("Queues set up for session " + id + ": " + queuesAvailable + " on context scope");
+          Logging.INSTANCE.info(
+              "Queues set up for session " + id + ": " + queuesAvailable + " on context scope");
 
           if (!serviceContextScope.initializeAgents(id)) {
             Logging.INSTANCE.warn("agent initialization failed in context creation");

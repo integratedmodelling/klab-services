@@ -228,7 +228,7 @@ public class EngineImpl implements Engine, PropertyHolder {
         && !Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
         && this.defaultUser instanceof MessagingChannelImpl messagingChannel) {
       messagingChannel.setupMessaging(
-          federation.getId(), federation.getBroker(), messagingChannel.defaultQueues());
+          federation, federation.getId(), messagingChannel.defaultQueues());
     }
 
     //    this.defaultUser.send(
