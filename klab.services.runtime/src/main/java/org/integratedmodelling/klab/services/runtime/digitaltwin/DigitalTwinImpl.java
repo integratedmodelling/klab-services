@@ -40,10 +40,6 @@ public class DigitalTwinImpl implements DigitalTwin {
   private final ContextScope rootScope;
   private final Scheduler scheduler;
 
-  //    private final RuntimeAssetGraph.Node contextAssetNode;
-  //    private final RuntimeAssetGraph.Node provenanceAssetNode;
-  //    private final RuntimeAssetGraph.Node dataflowAssetNode;
-
   @Override
   public long getId() {
     return 0;
