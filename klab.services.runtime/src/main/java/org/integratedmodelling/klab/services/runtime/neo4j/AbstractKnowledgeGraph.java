@@ -100,6 +100,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           }
         }
         case Agent agent -> {
+          ret.put("name", agent.getName());
           // TODO
         }
         case ActuatorImpl actuator -> {
