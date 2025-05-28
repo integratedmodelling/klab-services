@@ -153,10 +153,22 @@ public abstract class AbstractUIController implements UIController {
   }
 
   public UserScope authenticate() {
+
     if (engine == null) {
       engine = createEngine();
     }
-    return (UserScope) engine.authenticate().onMessage(this::processMessage);
+
+    var ret = engine.authenticate();
+
+    ret.onMessage(this::processEvent, Message.Queue.Events);
+    ret.onMessage(this::processInteraction, Message.Queue.UI);
+    ret.onMessage(
+        this::processNotification,
+        Message.Queue.Info,
+        Message.Queue.Errors,
+        Message.Queue.Warnings);
+
+    return ret;
   }
 
   /**
@@ -185,6 +197,10 @@ public abstract class AbstractUIController implements UIController {
    */
   protected abstract void createView();
 
+  protected void processNotification(Channel scope, Message message) {}
+
+  protected void processInteraction(Channel scope, Message message) {}
+
   /**
    * Translate k.LAB events into relevant UI events and dispatch them, routing through the view
    * graph. If overridden, most implementation should make sure that super is called.
@@ -192,13 +208,13 @@ public abstract class AbstractUIController implements UIController {
    * @param scope
    * @param message
    */
-  protected void processMessage(Channel scope, Message message) {
+  protected void processEvent(Channel scope, Message message) {
 
     switch (message.getMessageClass()) {
       case Void -> {}
-      case UserInterface -> {
-        // shouldn't happen
-      }
+//      case UserInterface -> {
+//        // shouldn't happen
+//      }
       case UserContextChange -> {}
       case UserContextDefinition -> {}
       case ServiceLifecycle -> {
@@ -212,33 +228,31 @@ public abstract class AbstractUIController implements UIController {
           //                              case ServiceInitializing -> dispatch(this,
           //           UIReactor.UIEvent.ServiceStarting,
           //                                      message.getPayload(Object.class));
-          case ServiceStatus -> {
-            dispatch(
-                this,
-                UIReactor.UIEvent.ServiceStatus,
-                message.getPayload(KlabService.ServiceStatus.class));
-          }
+//          case ServiceStatus -> {
+//            dispatch(
+//                this,
+//                UIReactor.UIEvent.ServiceStatus,
+//                message.getPayload(KlabService.ServiceStatus.class));
+//          }
           default -> {}
         }
       }
-      case EngineLifecycle -> {
-        // TODO engine ready event and status
-        switch (message.getMessageType()) {
-          case ServiceStatus -> {
-            dispatch(
-                this,
-                UIReactor.UIEvent.ServiceStatus,
-                message.getPayload(KlabService.ServiceStatus.class));
-          }
-          case EngineStatusChanged -> {
-            dispatch(this, UIEvent.EngineStatusChanged, message.getPayload(Engine.Status.class));
-          }
-          case UsingDistribution -> {
-            dispatch(this, UIEvent.DistributionAvailable, message.getPayload(Distribution.class));
-          }
-          default -> {}
-        }
-      }
+//      case EngineLifecycle -> {
+//        // TODO engine ready event and status
+//        switch (message.getMessageType()) {
+////          case ServiceStatus -> {
+////            dispatch(
+////                this,
+////                UIReactor.UIEvent.ServiceStatus,
+////                message.getPayload(KlabService.ServiceStatus.class));
+////          }
+//          }
+////          case UsingDistribution -> {
+////            dispatch(this, UIEvent.DistributionAvailable, message.getPayload(Distribution.class));
+////          }
+//          default -> {}
+//        }
+//      }
       case KimLifecycle -> {}
       case ResourceLifecycle -> {
         if (message.is(Message.MessageType.WorkspaceChanged)) {
@@ -246,15 +260,15 @@ public abstract class AbstractUIController implements UIController {
         }
       }
       case ProjectLifecycle -> {}
-//      case Authorization -> {
-//        if (message.is(Message.MessageType.UserAuthorized)) {
-//          dispatch(
-//              this, UIReactor.UIEvent.UserAuthenticated, message.getPayload(UserIdentity.class));
-//        }
-//      }
+      //      case Authorization -> {
+      //        if (message.is(Message.MessageType.UserAuthorized)) {
+      //          dispatch(
+      //              this, UIReactor.UIEvent.UserAuthenticated,
+      // message.getPayload(UserIdentity.class));
+      //        }
+      //      }
       case TaskLifecycle -> {}
-      case DigitalTwin -> {
-      }
+      case DigitalTwin -> {}
       case SessionLifecycle -> {}
       case UnitTests -> {}
       case Notification -> {}

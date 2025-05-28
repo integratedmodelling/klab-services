@@ -107,12 +107,12 @@ public class ResolverService extends BaseService implements Resolver {
   @Override
   public boolean shutdown() {
 
-    serviceScope()
-        .send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceUnavailable,
-            capabilities(serviceScope()));
-
+//    serviceScope()
+//        .send(
+//            Message.MessageClass.ServiceLifecycle,
+//            Message.MessageType.ServiceUnavailable,
+//            capabilities(serviceScope()));
+//
     // TODO Auto-generated method stub
     return super.shutdown();
   }
@@ -204,11 +204,11 @@ public class ResolverService extends BaseService implements Resolver {
 
     Logging.INSTANCE.setSystemIdentifier("Resolver service: ");
 
-    serviceScope()
-        .send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceInitializing,
-            capabilities(serviceScope()).toString());
+//    serviceScope()
+//        .send(
+//            Message.MessageClass.ServiceLifecycle,
+//            Message.MessageType.ServiceInitializing,
+//            capabilities(serviceScope()).toString());
 
     /*
      * Components
@@ -236,11 +236,11 @@ public class ResolverService extends BaseService implements Resolver {
       this.embeddedBroker = new EmbeddedBroker();
     }
 
-    serviceScope()
-        .send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceAvailable,
-            capabilities(serviceScope()));
+//    serviceScope()
+//        .send(
+//            Message.MessageClass.ServiceLifecycle,
+//            Message.MessageType.ServiceAvailable,
+//            capabilities(serviceScope()));
   }
 
   @Override

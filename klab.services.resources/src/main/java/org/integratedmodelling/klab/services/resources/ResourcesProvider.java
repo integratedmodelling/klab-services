@@ -224,12 +224,12 @@ public class ResourcesProvider extends BaseService
   public void initializeService() {
 
     Logging.INSTANCE.setSystemIdentifier("Resources service: ");
-
-    serviceScope()
-        .send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceInitializing,
-            capabilities(serviceScope()).toString());
+//
+//    serviceScope()
+//        .send(
+//            Message.MessageClass.ServiceLifecycle,
+//            Message.MessageType.ServiceInitializing,
+//            capabilities(serviceScope()).toString());
 
     //        this.workspaceManager.loadWorkspace();
     /*
@@ -269,11 +269,11 @@ public class ResourcesProvider extends BaseService
     //      this.lspThread.start();
     //    }
 
-    serviceScope()
-        .send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceAvailable,
-            capabilities(serviceScope()));
+//    serviceScope()
+//        .send(
+//            Message.MessageClass.ServiceLifecycle,
+//            Message.MessageType.ServiceAvailable,
+//            capabilities(serviceScope()));
   }
 
   @Override
@@ -821,12 +821,12 @@ public class ResourcesProvider extends BaseService
 
   public boolean shutdown(int secondsToWait) {
 
-    serviceScope()
-        .send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceUnavailable,
-            capabilities(serviceScope()));
-
+//    serviceScope()
+//        .send(
+//            Message.MessageClass.ServiceLifecycle,
+//            Message.MessageType.ServiceUnavailable,
+//            capabilities(serviceScope()));
+//
     if (this.lspThread != null) {
       this.lspThread.interrupt();
     }

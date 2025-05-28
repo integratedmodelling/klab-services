@@ -3,11 +3,9 @@ package org.integratedmodelling.common.authentication.scope;
 import com.rabbitmq.client.*;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
 import java.io.IOException;
@@ -28,6 +26,7 @@ public class AMQPChannel {
   private final String brokerUri;
   private final String queue;
   private final String exchangeName;
+  private final org.integratedmodelling.klab.api.services.runtime.Channel klabChannel;
   private ConnectionFactory connectionFactory;
   private Connection connection;
   private Channel channel;
@@ -46,13 +45,18 @@ public class AMQPChannel {
    * @param federation the federation containing the broker URI
    * @param queue the queue name
    */
-  public AMQPChannel(Federation federation, String queue, Consumer<Message> messageConsumer) {
+  public AMQPChannel(
+      Federation federation,
+      String queue,
+      org.integratedmodelling.klab.api.services.runtime.Channel channel,
+      Consumer<Message> messageConsumer) {
     this.brokerUri = federation.getBroker();
     this.queue = queue;
     this.exchangeName = federation.getId() + ".exchange";
     this.messageConsumer = messageConsumer;
     this.online = connect();
     this.federationWide = queue.equals(federation.getId());
+    this.klabChannel = channel;
   }
 
   public void filter(Collection<Message.Queue> queues) {
@@ -117,7 +121,11 @@ public class AMQPChannel {
                   return;
                 }
 
-                if (!federationWide && !message.getIdentity().equals(queue)) {
+                if (klabChannel != null) {
+                  if (!klabChannel.getDispatchId().equals(message.getDispatchId())) {
+                    return;
+                  }
+                } else if (!federationWide && !message.getDispatchId().equals(queue)) {
                   return;
                 }
 

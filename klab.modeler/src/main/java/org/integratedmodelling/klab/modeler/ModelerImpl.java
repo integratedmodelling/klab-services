@@ -167,7 +167,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   @Override
   public Engine createEngine() {
-    return new EngineImpl();
+    return new EngineImpl(
+        status -> dispatch(this, UIEvent.EngineStatusChanged, status),
+        (service, status) -> dispatch(this, UIEvent.ServiceStatus, service, status));
   }
 
   @Override

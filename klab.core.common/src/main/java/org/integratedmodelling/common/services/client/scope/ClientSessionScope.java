@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 
@@ -23,7 +24,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
   public ClientSessionScope(
       ClientUserScope parent, String sessionName, RuntimeService runtimeService) {
     // FIXME use a copy constructor that inherits the environment from the parent
-    super(parent.getIdentity(), parent.engine);
+    super(parent.getUser(), parent.engine);
     this.runtimeService = runtimeService;
     this.name = sessionName;
     this.parentScope = parent;
@@ -37,6 +38,21 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
   @Override
   public String getName() {
     return this.name;
+  }
+
+  @Override
+  public String getDispatchId() {
+    return getId();
+  }
+
+  public String toString() {
+    return "[ClientSessionScope] "
+        + name
+        + ": "
+        + getId()
+        + " ("
+        + (isConnected() ? "connected" : "not connected")
+        + ")";
   }
 
   @Override
@@ -75,7 +91,10 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
     var id =
         engine.registerContext(
             ret,
-            parentScope.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class));
+            getParentScope(Type.USER, UserScope.class)
+                .getUser()
+                .getData()
+                .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class));
 
     if (id != null) {
       ret.setId(id);

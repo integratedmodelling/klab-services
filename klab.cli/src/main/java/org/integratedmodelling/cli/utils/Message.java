@@ -101,8 +101,7 @@ public class Message {
             return new AMQPChannel(
                 federation(),
                 queue,
-               /* EnumSet.noneOf(
-                    org.integratedmodelling.klab.api.services.runtime.Message.Queue.class),*/
+                KlabCLI.INSTANCE.user(),
                 message1 -> out.println("[" + queue + "]: " + message1));
           });
 
@@ -150,13 +149,11 @@ public class Message {
                 return new AMQPChannel(
                     federation(),
                     queue,
-                   /* EnumSet.noneOf(
-                        org.integratedmodelling.klab.api.services.runtime.Message.Queue.class),*/
+                    KlabCLI.INSTANCE.user(),
                     message1 -> out.println("[" + queue + "]: " + message1));
               });
 
       channel.post(msg);
-
     }
   }
 

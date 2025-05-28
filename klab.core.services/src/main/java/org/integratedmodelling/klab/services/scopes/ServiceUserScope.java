@@ -10,6 +10,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -66,12 +67,14 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   // messaging for
   // local users
   protected KlabService service;
+  protected Federation federation;
 
   public ServiceUserScope(UserIdentity user, KlabService service) {
     super(user, true, false);
     this.user = user;
     this.data = Parameters.create();
     this.service = service;
+    this.federation = user.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
   }
 
   @Override
@@ -127,6 +130,11 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
         };
     ret.copyInfo(this);
     return ret;
+  }
+
+  @Override
+  public String getDispatchId() {
+    return federation == null ? user.getUsername() : federation.getId();
   }
 
   protected void copyInfo(ServiceUserScope other) {

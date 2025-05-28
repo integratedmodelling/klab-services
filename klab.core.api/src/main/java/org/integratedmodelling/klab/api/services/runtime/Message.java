@@ -1,21 +1,17 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
-import org.integratedmodelling.klab.api.data.GraphReference;
 import org.integratedmodelling.klab.api.data.RuntimeAssetGraph;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
-import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.impl.MatchImpl;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
-import org.integratedmodelling.klab.api.services.runtime.impl.ScopeOptions;
 
 import java.io.Serializable;
 import java.util.Set;
@@ -140,37 +136,14 @@ public interface Message extends Serializable {
    */
   enum MessageType {
 
-    /*
-     * Service messages, coming with service capabilities
-     */
-    @Deprecated
-    ServiceInitializing(Queue.Events, KlabService.ServiceCapabilities.class),
-    //        ReasoningAvailable(Queue.Events, Reasoner.Capabilities.class),
-    @Deprecated
-    ServiceAvailable(Queue.Events, KlabService.ServiceCapabilities.class),
-    @Deprecated
-    ServiceUnavailable(Queue.Events, KlabService.ServiceCapabilities.class),
-    ServiceStatus(Queue.Status, KlabService.ServiceStatus.class),
-    ServiceStatusChanged(Queue.Events, KlabService.ServiceStatus.class),
-
-    /** UI selections */
-    @Deprecated
-    WorkspaceSelected(Queue.UI, String.class),
-    @Deprecated
-    ServiceSwitched(Queue.UI, KlabService.ServiceCapabilities.class),
-
+//    ServiceStatus(Queue.Status, KlabService.ServiceStatus.class),
+//    ServiceStatusChanged(Queue.Events, KlabService.ServiceStatus.class),
     /**
      * Sent whenever a file modification (external or through the API) implies a change in a
      * workspace. Accompanied by a ResourceSet that details all the assets affected and their order
      * of loading.
      */
     WorkspaceChanged(Queue.UI, ResourceSet.class),
-
-    @Deprecated
-    DocumentSelected(Queue.UI, KlabDocument.class),
-//    @Deprecated
-//    UserAuthorized(Queue.Events, UserIdentity.class),
-
     /**
      * F <-> B: scenario selection from user action (if class == UserInterface) and/or from engine
      * (after selection or from API) with class == SessionLifecycle. In all cases the list of
@@ -181,6 +154,7 @@ public interface Message extends Serializable {
 
     /** Sent by the runtime when a new portion of the knowledge graph has been committed. */
     KnowledgeGraphCommitted(Queue.Events, RuntimeAssetGraph.class),
+
     /**
      * Sent after a new individual agent observation tagged as an observer has been explicitly
      * resolved, or when the user selects an observation from the graph as observer.
@@ -202,12 +176,6 @@ public interface Message extends Serializable {
     Warning(Queue.Warnings, Notification.class),
 
     Error(Queue.Errors, Notification.class),
-
-    /*
-     * --- reasoning-related messages
-     */
-    @Deprecated
-    LogicalValidation(Queue.Events, ResourceSet.class),
 
     /** Runtime event messages */
     TestCaseStarted(Queue.Events, TestStatistics.class),
@@ -234,8 +202,8 @@ public interface Message extends Serializable {
 
     CurrentContextModified(Queue.UI, Void.class),
 
-    /** Engine status has changed */
-    EngineStatusChanged(Queue.Events, Engine.Status.class),
+//    /** Engine status has changed */
+//    EngineStatusChanged(Queue.Events, Engine.Status.class),
 
     /*
      * --- View actor messages
@@ -244,10 +212,6 @@ public interface Message extends Serializable {
     SetupInterface,
     CreateWindow,
     CreateModalWindow,
-
-    /** Engine lifecycle, should only be client-wide */
-    @Deprecated
-    UsingDistribution(Queue.UI, Distribution.class),
 
     /**
      * Explicit submission of a single observation to the digital twin. TODO should add the current
@@ -362,14 +326,13 @@ public interface Message extends Serializable {
   Message respondingTo(Message message);
 
   /**
-   * The message exposes the identity that created it through a token, which may or may not be
-   * parseable at the receiving end but will be consistently linked to the message type. For
-   * example, task messages will have the identity of the task that generated them so they can be
-   * correctly distributed among tasks.
+   * The message exposes the identity that created it through a dispatch ID that corresponds to the
+   * {@link Channel#getDispatchId()} of the channel that sent it. This is matched to the dispatch ID
+   * of the receiver by the message router.
    *
    * @return the sender's identity. Never null.
    */
-  String getIdentity();
+  String getDispatchId();
 
   /**
    * @return the message class
@@ -409,8 +372,8 @@ public interface Message extends Serializable {
     return this.getMessageClass() == messageClass && getMessageType() == messageType;
   }
 
-  public static Message create(Channel scope, Object... o) {
-    return create(scope.getIdentity().getId(), o);
+  static Message create(Channel scope, Object... o) {
+    return create(scope.getDispatchId(), o);
   }
 
   /**
@@ -427,7 +390,7 @@ public interface Message extends Serializable {
    * @throws IllegalArgumentException if there are not enough arguments or more than one payload was
    *     passed
    */
-  public static Message create(String identity, Object... o) {
+  static Message create(String identity, Object... o) {
 
     if (o == null) {
       return null;
@@ -440,7 +403,7 @@ public interface Message extends Serializable {
     boolean queueOverridden = false;
     Object payloadIfAbsent = null;
     MessageImpl ret = new MessageImpl();
-    ret.setIdentity(identity);
+    ret.setDispatchId(identity);
     //        Notification.Type notype = null;
     for (Object ob : o) {
       if (ob instanceof MessageType) {
@@ -512,7 +475,7 @@ public interface Message extends Serializable {
   public static MessageImpl create(Notification notification, String identity) {
 
     MessageImpl ret = new MessageImpl();
-    ret.setIdentity(identity);
+    ret.setDispatchId(identity);
     ret.setMessageClass(MessageClass.Notification);
     ret.setPayload(notification);
     ret.setPayloadClass("String");

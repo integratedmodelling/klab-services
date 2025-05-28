@@ -30,8 +30,8 @@ public class ServicesViewControllerImpl extends AbstractUIViewController<Service
   }
 
   @Override
-  public void serviceStatusNotified(KlabService.ServiceStatus status) {
-    view().notifyServiceStatus(status);
+  public void serviceStatusNotified(KlabService service, KlabService.ServiceStatus status) {
+    view().notifyServiceStatus(service, status);
   }
 
   @Override

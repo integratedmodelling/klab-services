@@ -29,8 +29,8 @@ public abstract class AbstractDelegatingScope implements Scope {
   }
 
   @Override
-  public Channel onMessage(BiConsumer<Channel, Message> consumer) {
-    return this.delegateChannel.onMessage(consumer);
+  public Channel onMessage(BiConsumer<Channel, Message> consumer, Message.Queue... queues) {
+    return this.delegateChannel.onMessage(consumer, queues);
   }
 
   public Channel getDelegateChannel() {
@@ -60,6 +60,10 @@ public abstract class AbstractDelegatingScope implements Scope {
   @Override
   public void info(Object... info) {
     delegateChannel.info(info);
+  }
+
+  public String getDispatchId() {
+    return delegateChannel.getDispatchId();
   }
 
   @Override
@@ -102,11 +106,6 @@ public abstract class AbstractDelegatingScope implements Scope {
     this.data.put(key, value);
   }
 
-  //    @Override
-  //    public void status(Status status) {
-  //        delegateChannel.status(status);
-  //    }
-
   @Override
   public void event(Message message) {
     delegateChannel.event(message);
@@ -141,21 +140,21 @@ public abstract class AbstractDelegatingScope implements Scope {
     return parentScope;
   }
 
-  public void setParentScope(Scope parentScope) {
-    this.parentScope = parentScope;
-  }
-
-  public void addListener(BiConsumer<Channel, Message> listener) {
-    if (delegateChannel instanceof ChannelImpl channel) {
-      channel.addListener(listener);
-    } // TODO maybe warn otherwise
-  }
-
-  public BiConsumer<Channel, Message>[] listeners() {
-    return delegateChannel instanceof ChannelImpl channel
-        ? channel.listeners().toArray(BiConsumer[]::new)
-        : null;
-  }
+  //  public void setParentScope(Scope parentScope) {
+  //    this.parentScope = parentScope;
+  //  }
+  //
+  //  public void addListener(BiConsumer<Channel, Message> listener) {
+  //    if (delegateChannel instanceof ChannelImpl channel) {
+  //      channel.addListener(listener);
+  //    } // TODO maybe warn otherwise
+  //  }
+  //
+  //  public BiConsumer<Channel, Message>[] listeners() {
+  //    return delegateChannel instanceof ChannelImpl channel
+  //        ? channel.listeners().toArray(BiConsumer[]::new)
+  //        : null;
+  //  }
 
   @Override
   public Persistence getPersistence() {

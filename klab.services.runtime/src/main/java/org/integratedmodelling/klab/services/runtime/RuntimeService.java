@@ -109,11 +109,11 @@ public class RuntimeService extends BaseService
 
     Logging.INSTANCE.setSystemIdentifier("Runtime service: ");
 
-    serviceScope()
-        .send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceInitializing,
-            capabilities(serviceScope()).toString());
+    //    serviceScope()
+    //        .send(
+    //            Message.MessageClass.ServiceLifecycle,
+    //            Message.MessageType.ServiceInitializing,
+    //            capabilities(serviceScope()).toString());
 
     if (createMainKnowledgeGraph()) {
 
@@ -122,18 +122,18 @@ public class RuntimeService extends BaseService
       getComponentRegistry()
           .initializeComponents(
               BaseService.getConfigurationSubdirectory(startupOptions, "components"));
-      serviceScope()
-          .send(
-              Message.MessageClass.ServiceLifecycle,
-              Message.MessageType.ServiceAvailable,
-              capabilities(serviceScope()));
+      //      serviceScope()
+      //          .send(
+      //              Message.MessageClass.ServiceLifecycle,
+      //              Message.MessageType.ServiceAvailable,
+      //              capabilities(serviceScope()));
     } else {
 
-      serviceScope()
-          .send(
-              Message.MessageClass.ServiceLifecycle,
-              Message.MessageType.ServiceUnavailable,
-              capabilities(serviceScope()));
+      //      serviceScope()
+      //          .send(
+      //              Message.MessageClass.ServiceLifecycle,
+      //              Message.MessageType.ServiceUnavailable,
+      //              capabilities(serviceScope()));
     }
   }
 
@@ -159,11 +159,11 @@ public class RuntimeService extends BaseService
       }
     }
 
-    serviceScope()
-        .send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceUnavailable,
-            capabilities(serviceScope()));
+    //    serviceScope()
+    //        .send(
+    //            Message.MessageClass.ServiceLifecycle,
+    //            Message.MessageType.ServiceUnavailable,
+    //            capabilities(serviceScope()));
     if (systemLauncher != null) {
       systemLauncher.shutdown();
     }
@@ -407,6 +407,8 @@ public class RuntimeService extends BaseService
 
       var agent =
           serviceContextScope.getConstraint(ResolutionConstraint.Type.Provenance, Agent.class);
+      var storedAgent =
+          serviceContextScope.getDigitalTwin().getKnowledgeGraph().requireAgent(agent.getName());
       var contextScope = serviceContextScope.initializeResolution();
       var resolver = scope.getService(Resolver.class);
       var resolution =
@@ -425,7 +427,7 @@ public class RuntimeService extends BaseService
                   var transaction =
                       scope
                           .getDigitalTwin()
-                          .transaction(resolution, scope, dataflow, observation, agent);
+                          .transaction(resolution, scope, dataflow, observation, storedAgent);
 
                   if (compile(observation, dataflow, contextScope, transaction)) {
                     if (transaction.commit()) {

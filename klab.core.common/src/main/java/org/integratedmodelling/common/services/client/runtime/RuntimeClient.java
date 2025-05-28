@@ -72,7 +72,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
   @SafeVarargs
   @Override
-  public final String connect(BiConsumer<Channel, Message>... messageBiConsumers) {
+  public final String connect(BiConsumer<ServiceStatus, Boolean>... messageBiConsumers) {
     var ret = super.connect(messageBiConsumers);
     this.graphClient =
         new GraphQLClient(this.getUrl() + ServicesAPI.RUNTIME.DIGITAL_TWIN_GRAPH, ret);

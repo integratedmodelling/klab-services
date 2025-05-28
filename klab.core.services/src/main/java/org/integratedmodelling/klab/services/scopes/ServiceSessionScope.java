@@ -44,6 +44,11 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     }
 
     @Override
+    public String getDispatchId() {
+        return getId();
+    }
+
+    @Override
     ServiceSessionScope copy() {
         return new ServiceSessionScope(this);
     }
