@@ -174,10 +174,10 @@ public class DigitalTwinImpl implements DigitalTwin {
         for (var asset : graph.vertexSet()) {
           if (setupForStorage(asset, trivial)) {
             kgTransaction.store(asset);
-            if (!nodes.containsKey(encodeRuntimeAssetLabel(asset))) {
-              var node = encodeRuntimeAsset(asset, nodes);
-              this.graphReference.getNodes().put(node.getLabel(), node);
-            }
+          }
+          if (!nodes.containsKey(encodeRuntimeAssetLabel(asset))) {
+            var node = encodeRuntimeAsset(asset, nodes);
+            this.graphReference.getNodes().put(node.getLabel(), node);
           }
         }
 

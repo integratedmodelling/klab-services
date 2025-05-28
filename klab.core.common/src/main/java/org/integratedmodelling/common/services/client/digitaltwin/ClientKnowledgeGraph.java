@@ -6,7 +6,6 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.RuntimeAssetGraph;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
