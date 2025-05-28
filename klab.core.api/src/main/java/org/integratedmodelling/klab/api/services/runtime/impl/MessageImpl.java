@@ -191,7 +191,7 @@ public class MessageImpl implements Message, Serializable {
   }
 
   @Override
-  public String getTaskId() {
+  public String getActivityUrn() {
     return taskId;
   }
 

@@ -1,14 +1,10 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
 import org.integratedmodelling.klab.api.data.RuntimeAssetGraph;
-import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
-import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.impl.MatchImpl;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
@@ -70,16 +66,13 @@ public interface Message extends Serializable {
      * Used within a UI for communicating things to react to and between F/B to gather user input.
      */
     UserInterface,
-
     /** F->B when user selects context */
     UserContextChange,
-
     /**
      * B->F after UserContextChange was received, containing the remaining definition set by the
      * engine
      */
     UserContextDefinition,
-
     /** Any event referring to a service */
     ServiceLifecycle,
     /** */
@@ -93,8 +86,6 @@ public interface Message extends Serializable {
 
     /** */
     ProjectLifecycle,
-    /** */
-    Authorization,
     /** */
     TaskLifecycle,
     /** DT events */
@@ -112,13 +103,10 @@ public interface Message extends Serializable {
     Search,
     /** Query messages are sent by the back end upon receiving Search-class messages. */
     Query,
-
     /** Run-class messages start scripts and tests. */
     Run,
-
     /** Messages sent or received by the view actor, called from behaviors. */
     ViewActor,
-
     /** These are skipped from queues and sent directly to the scope's agent. */
     ActorCommunication;
 
@@ -136,8 +124,6 @@ public interface Message extends Serializable {
    */
   enum MessageType {
 
-//    ServiceStatus(Queue.Status, KlabService.ServiceStatus.class),
-//    ServiceStatusChanged(Queue.Events, KlabService.ServiceStatus.class),
     /**
      * Sent whenever a file modification (external or through the API) implies a change in a
      * workspace. Accompanied by a ResourceSet that details all the assets affected and their order
@@ -151,10 +137,8 @@ public interface Message extends Serializable {
      * selection with no scenarios is a reset.
      */
     ScenariosSelected(Queue.Events, String[].class),
-
     /** Sent by the runtime when a new portion of the knowledge graph has been committed. */
     KnowledgeGraphCommitted(Queue.Events, RuntimeAssetGraph.class),
-
     /**
      * Sent after a new individual agent observation tagged as an observer has been explicitly
      * resolved, or when the user selects an observation from the graph as observer.
@@ -169,21 +153,16 @@ public interface Message extends Serializable {
     /*
      * --- Notification-class types ---
      */
+
     Debug(Queue.Debug, Notification.class),
-
     Info(Queue.Info, Notification.class),
-
     Warning(Queue.Warnings, Notification.class),
-
     Error(Queue.Errors, Notification.class),
 
-    /** Runtime event messages */
+    /* Runtime event messages */
     TestCaseStarted(Queue.Events, TestStatistics.class),
-
     TestCaseFinished(Queue.Events, TestStatistics.class),
-
     TestStarted(Queue.Events, ActionStatistics.class),
-
     TestFinished(Queue.Events, ActionStatistics.class),
 
     RunApplication,
@@ -202,12 +181,10 @@ public interface Message extends Serializable {
 
     CurrentContextModified(Queue.UI, Void.class),
 
-//    /** Engine status has changed */
-//    EngineStatusChanged(Queue.Events, Engine.Status.class),
-
     /*
      * --- View actor messages
      */
+
     CreateViewComponent,
     SetupInterface,
     CreateWindow,
@@ -233,12 +210,12 @@ public interface Message extends Serializable {
     public final Class<?> payloadClass;
     public final Queue queue;
 
-    private MessageType() {
+    MessageType() {
       this.payloadClass = Void.class;
       this.queue = Queue.None;
     }
 
-    private MessageType(Queue queue, Class<?> payloadClass) {
+    MessageType(Queue queue, Class<?> payloadClass) {
       this.queue = queue;
       this.payloadClass = payloadClass;
     }
@@ -248,6 +225,8 @@ public interface Message extends Serializable {
    * Matcher that can be used to match messages and specify actions to be taken upon match. The
    * details can be opaque: filtering conditions are specified in the match() function that produces
    * it.
+   *
+   * <p>TODO deprecate? Not used at the moment
    */
   interface Match {
 
@@ -307,12 +286,11 @@ public interface Message extends Serializable {
   long getId();
 
   /**
-   * If the message is coming from a task started by the client or the server, an ID can be supplied
-   * and it can be a path so that task structure can be followed and monitored.
+   * If the message is emitted during the execution of an activity, the activity URN is returned.
    *
    * @return
    */
-  String getTaskId();
+  String getActivityUrn();
 
   /**
    * Return this or a new message with the response ID set to that of the passed message, so that
@@ -472,7 +450,7 @@ public interface Message extends Serializable {
    * @param identity
    * @return a new message
    */
-  public static MessageImpl create(Notification notification, String identity) {
+  static MessageImpl create(Notification notification, String identity) {
 
     MessageImpl ret = new MessageImpl();
     ret.setDispatchId(identity);
