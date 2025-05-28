@@ -12,7 +12,7 @@ public class RuntimeConfiguration {
   private List<String> allowedGroups = new ArrayList<>();
   private String url = null;
   private String serviceId;
-  private URI brokerURI;
+//  private URI brokerURI;
   private Storage.Type numericStorageType = Storage.Type.DOUBLE;
 
   public List<String> getAllowedGroups() {
@@ -53,20 +53,20 @@ public class RuntimeConfiguration {
     this.numericStorageType = numericStorageType;
   }
 
-  /**
-   * If no broker URL is present, the service will install a local QPid broker for internal
-   * connections on port 5672.
-   *
-   * <p>This should be something like "amqp://userName:password@hostName:portNumber/virtualHost" to
-   * pass to a connectionfactory.
-   *
-   * @return
-   */
-  public URI getBrokerURI() {
-    return brokerURI;
-  }
-
-  public void setBrokerURI(URI brokerURI) {
-    this.brokerURI = brokerURI;
-  }
+//  /**
+//   * If no broker URL is present, the service will install a local QPid broker for internal
+//   * connections on port 5672.
+//   *
+//   * <p>This should be something like "amqp://userName:password@hostName:portNumber/virtualHost" to
+//   * pass to a connectionfactory.
+//   *
+//   * @return
+//   */
+//  public URI getBrokerURI() {
+//    return brokerURI;
+//  }
+//
+//  public void setBrokerURI(URI brokerURI) {
+//    this.brokerURI = brokerURI;
+//  }
 }

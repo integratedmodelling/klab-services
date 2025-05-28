@@ -1,10 +1,9 @@
 package org.integratedmodelling.klab.services.reasoner.embedded;
 
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.ServiceInstance;
-import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 
 import java.util.List;

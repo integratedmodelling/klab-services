@@ -40,7 +40,10 @@ public class RuntimeServerContextController {
     var authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
     var observerToken = request.getHeader(ServicesAPI.SCOPE_HEADER);
     var serverKey = request.getHeader(ServicesAPI.SERVER_KEY_HEADER);
-    return authorizationManager.validateToken(authHeader, serverKey, observerToken);
+    var brokerUrl = request.getHeader(ServicesAPI.MESSAGING_URL_HEADER);
+    var federationId = request.getHeader(ServicesAPI.FEDERATION_ID_HEADER);
+    return authorizationManager.validateToken(
+        authHeader, serverKey, observerToken, brokerUrl, federationId);
   }
 
   @QueryMapping
@@ -48,13 +51,4 @@ public class RuntimeServerContextController {
     return List.of();
   }
 
-//  @QueryMapping
-//  public List<GraphModel.ResolutionTask> tasks() {
-//    return List.of();
-//  }
-
-//  @QueryMapping
-//  public List<GraphModel.Notification> notifications(@Argument(name = "after") float after) {
-//    return List.of();
-//  }
 }

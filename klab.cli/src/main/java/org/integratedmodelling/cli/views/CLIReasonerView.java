@@ -120,15 +120,6 @@ public class CLIReasonerView {
 
     @Parameters List<String> observables;
 
-    //    @Option(
-    //        names = {"-a", "--acknowledgement"},
-    //        defaultValue = "false",
-    //        description = {
-    //          "Force a direct" + " observable to represent the acknowledgement of the observable."
-    //        },
-    //        required = false)
-    //    boolean acknowledge;
-
     @Override
     public void run() {
 
@@ -158,16 +149,6 @@ public class CLIReasonerView {
                 "URN @|red " + urn + "|@ does not resolve to " + "a valid " + "observable"));
         return;
       }
-
-      //      if (acknowledge) {
-      //        if (!observable.getDescriptionType().isInstantiation()) {
-      //          err.println(
-      //              CommandLine.Help.Ansi.AUTO.string(
-      //                  "Cannot acknowledge something that is not" + " countable"));
-      //          return;
-      //        }
-      //        observable = observable.builder(ctx).as(DescriptionType.ACKNOWLEDGEMENT).build();
-      //      }
 
       var observation =
           DigitalTwin.createObservation(

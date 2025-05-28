@@ -22,17 +22,17 @@ import java.time.Instant;
  */
 public interface Build {
 
-    public static final String DEVELOP_RELEASE = "develop";
-    public static final String LATEST_RELEASE = "latest";
-    public static final String RELEASE = "release";
-    public static final String DEFAULT_RELEASE_URL = "https://products.integratedmodelling.org/klab/";
-    public static final String BUILD_PROPERTIES_FILE = "build.properties";
-    public static final String BUILD_DIGEST_FILE = "filelist.txt";
-    public final static String PRODUCT_OSSPECIFIC_PROPERTY = "klab.build.osspecific";
-    public final static String BUILD_VERSION_PROPERTY = "klab.build.version";
-    public final static String BUILD_MAINCLASS_PROPERTY = "klab.build.main";
-    public final static String BUILD_TIME_PROPERTY = "klab.build.time";
-    public final static String BUILD_WORKSPACE_PROPERTY = "klab.build.workspace";
+    String DEVELOP_RELEASE = "develop";
+    String LATEST_RELEASE = "latest";
+    String RELEASE = "release";
+    String DEFAULT_RELEASE_URL = "https://products.integratedmodelling.org/klab/";
+    String BUILD_PROPERTIES_FILE = "build.properties";
+    String BUILD_DIGEST_FILE = "filelist.txt";
+    String PRODUCT_OSSPECIFIC_PROPERTY = "klab.build.osspecific";
+    String BUILD_VERSION_PROPERTY = "klab.build.version";
+    String BUILD_MAINCLASS_PROPERTY = "klab.build.main";
+    String BUILD_TIME_PROPERTY = "klab.build.time";
+    String BUILD_WORKSPACE_PROPERTY = "klab.build.workspace";
     /**
      * The product we're part of.
      *

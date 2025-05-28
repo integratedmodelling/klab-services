@@ -43,20 +43,23 @@ public class ResourceAdminController {
 
   @Autowired private ServiceAuthorizationManager authenticationManager;
 
-  //    @PostMapping(ServicesAPI.RESOURCES.ADMIN.IMPORT_PROJECT)
-  //    public @ResponseBody List<ResourceSet> importNewProject(@RequestBody ProjectRequest request,
-  //                                                            Principal principal) {
-  //        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-  //            return admin.importProject(request.getWorkspaceName(), request.getProjectUrl(),
-  //                    request.isOverwrite(), principal instanceof EngineAuthorization
-  // authorization ?
-  //                                           authorization.getScope(UserScope.class) : null);
-  //        }
-  //        throw new KlabInternalErrorException("Resources service is incapable of admin
-  // operation");
-  //    }
+  @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_WORKSPACE)
+  public @ResponseBody boolean createNewProject(
+      @RequestBody Metadata metadata,
+      @PathVariable("workspaceName") String workspaceName,
+      Principal principal) {
+    if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
+      return admin.createWorkspace(
+          workspaceName,
+          metadata,
+          principal instanceof EngineAuthorization authorization
+              ? authorization.getScope(UserScope.class)
+              : null);
+    }
+    throw new KlabInternalErrorException("Resources service is incapable of admin operation");
+  }
 
-  @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_PROJECT)
+  @GetMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_PROJECT)
   public @ResponseBody ResourceSet createNewProject(
       @PathVariable("workspaceName") String workspaceName,
       @PathVariable("projectName") String projectName,
@@ -210,7 +213,7 @@ public class ResourceAdminController {
   }
 
   @GetMapping(value = ServicesAPI.RESOURCES.ADMIN.LOCK_PROJECT)
-  public URL lockProject(@PathVariable("urn") String urn, Principal principal) {
+  public boolean lockProject(@PathVariable("urn") String urn, Principal principal) {
     if (resourcesServer.klabService() instanceof ResourcesService.Admin admin
         && principal instanceof EngineAuthorization auth) {
       return admin.lockProject(urn, auth.getScope(UserScope.class));

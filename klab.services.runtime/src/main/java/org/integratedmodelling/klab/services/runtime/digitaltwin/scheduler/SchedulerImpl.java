@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -16,6 +17,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
@@ -159,6 +161,7 @@ public class SchedulerImpl implements Scheduler {
         transaction.commit();
       }
     } catch (Throwable t) {
+      Logging.INSTANCE.error(t);
       transaction.fail(t);
     }
   }
@@ -185,35 +188,40 @@ public class SchedulerImpl implements Scheduler {
 
     // follow the dependency chain first, then execute self
     Map<Integer, List<Callable<Boolean>>> tasks = new HashMap<>();
-    for (var affected :
+    for (var affecting :
         knowledgeGraph
             .query(Observation.class, scope)
             .target(observation)
             .along(GraphModel.Relationship.AFFECTS)
             .run(scope)) {
 
+      if (checkEvent(affecting, causingEvent)) {
+        continue;
+      }
+
       var relationship =
           knowledgeGraph
               .query(KnowledgeGraph.Link.class, scope)
-              .between(affected, observation, GraphModel.Relationship.AFFECTS)
+              .between(affecting, observation, GraphModel.Relationship.AFFECTS)
               .peek(scope);
 
-      transaction.link(transaction.getActivity(), affected, GraphModel.Relationship.CONTEXTUALIZED);
+      transaction.link(
+          transaction.getActivity(), affecting, GraphModel.Relationship.CONTEXTUALIZED);
 
       var sequence = 0;
-      if (relationship.isPresent()) {
+      if (relationship.isPresent()) { // it must be
         sequence =
             relationship.get().properties().get(/* TODO use formal property */ "sequence", 0);
       }
 
       tasks
           .computeIfAbsent(sequence, n -> new ArrayList<>())
-          .add(() -> contextualize(affected, geometry, scope, causingEvent, transaction));
+          .add(() -> contextualize(affecting, geometry, scope, causingEvent, transaction));
     }
 
     var sortedTasks =
         tasks.entrySet().stream()
-            .sorted((i1, i2) -> i1.getKey().compareTo(i2.getKey()))
+            .sorted(Comparator.comparing(Map.Entry::getKey))
             .map(Map.Entry::getValue)
             .toList();
 
@@ -246,10 +254,63 @@ public class SchedulerImpl implements Scheduler {
      */
     var executor = executors.getIfPresent(observation.getId());
     if (executor != null) {
-      executor.apply(geometry, causingEvent, scope);
+      return execute(executor, observation, geometry, causingEvent, scope, transaction);
     }
-
     return true;
+  }
+
+  private boolean execute(
+      TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor,
+      Observation observation,
+      Geometry geometry,
+      Scheduler.Event event,
+      ServiceContextScope scope,
+      DigitalTwin.Transaction transaction) {
+    if (executor.apply(geometry, event, scope)) {
+      if (observation.getObservable().is(SemanticType.QUALITY)) {
+        var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
+        if (storage != null) {
+          for (var buffer : storage.buffers(geometry, event.getTime())) {
+            transaction.link(observation, buffer, GraphModel.Relationship.HAS_DATA);
+          }
+        }
+      }
+      var geometryTime = GeometryRepository.INSTANCE.scale(geometry).getTime();
+      recordEvent(observation, event, geometryTime, transaction);
+      return true;
+    }
+    return false;
+  }
+
+  private boolean checkEvent(Observation observation, Event event) {
+    var timestamps = observation.getEventTimestamps();
+    if (event.getType() == Event.Type.INITIALIZATION
+        && observation instanceof ObservationImpl observation1
+        && observation1.isSubstantialQuality()) {
+      return !timestamps.isEmpty() && timestamps.getFirst() == 0;
+    }
+    return !timestamps.isEmpty()
+        && timestamps.getLast() >= event.getTime().getEnd().getMilliseconds();
+  }
+
+  private void recordEvent(
+      Observation observation,
+      Event event,
+      Time geometryTime,
+      DigitalTwin.Transaction transaction) {
+    if (observation instanceof ObservationImpl observation1) {
+      var timestamps = new ArrayList<Long>(observation.getEventTimestamps());
+      if (event.getType() == Event.Type.INITIALIZATION && observation1.isSubstantialQuality()) {
+        timestamps.add(0L);
+        if (geometryTime != null) {
+          timestamps.add(geometryTime.getStart().getMilliseconds());
+        }
+      } else {
+        timestamps.add(event.getTime().getEnd().getMilliseconds());
+      }
+      observation1.setEventTimestamps(timestamps);
+      transaction.update(observation);
+    }
   }
 
   /**
@@ -295,6 +356,8 @@ public class SchedulerImpl implements Scheduler {
    *
    * <p>TODO the registrations should be cached and reconstructed from the KG based on the
    * resolution status and last time of update.
+   *
+   * <p>TODO add info for filtering, e.g. a <em>substantial</em> flag to filter initialization
    *
    * <p>The observation should also know if it's a dependent or not, in which case only actual
    * observation events only affects it, given that contextualization actions are handled through
@@ -391,9 +454,8 @@ public class SchedulerImpl implements Scheduler {
   }
 
   private Boolean checkApplies(Registration observation, EventImpl event) {
-    //    boolean ok = !observation.name.endsWith("2");
-    System.out.println("Checking " + observation + " against " + event);
-    // TODO
+    // TODO filter INITIALIZATION for substantials and their qualities
+    // TODO check observed event based on 'affects' semantics
     return true;
   }
 
@@ -405,8 +467,10 @@ public class SchedulerImpl implements Scheduler {
    * @param event
    */
   private void handleEvent(Registration registration, EventImpl event) {
-    System.out.println(registration + " got event " + event);
-    if (event.type == EventImpl.Type.INITIALIZATION) {
+    //    System.out.println(registration + " got event " + event);
+    if (event.type
+        == EventImpl.Type
+            .INITIALIZATION) { // FIXME this should not be necessary when the filter works
       var observation = rootScope.getObservation(registration.id());
       if (observation != null) {
         initialize(observation, rootScope.of(observation), registration.activity());

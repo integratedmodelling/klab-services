@@ -5,8 +5,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -348,7 +348,8 @@ public class JacksonConfiguration {
           ServiceInfo.class,
           ServiceInfo.Argument.class,
           Urn.class,
-          ExpressionCode.class
+          ExpressionCode.class,
+          Federation.class
         }) {
       module.addSerializer(cls, new PolymorphicSerializer<>());
       module.addDeserializer(cls, new PolymorphicDeserializer<>(cls));

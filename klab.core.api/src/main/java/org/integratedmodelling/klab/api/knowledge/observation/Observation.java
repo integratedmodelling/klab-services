@@ -24,6 +24,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.Scope;
 
+import java.util.List;
+
 /**
  * The interface Observation, which is the semantic equivalent of an Artifact and represents an
  * observable in the observation graph of a k.LAB context. Once created in a k.LAB session, it can
@@ -49,6 +51,19 @@ import org.integratedmodelling.klab.api.scope.Scope;
 public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAsset {
 
   long UNASSIGNED_ID = -1;
+
+  /**
+   * The role played by an observation in a dependency hierarchy. This depends solely on the
+   * observable's semantics so it's redundant, but being able to classify it streamlines and
+   * clarifies the code and any API use.
+   */
+  enum Role {
+    COLLECTIVE_SUBSTANTIAL,
+    INDIVIDUAL_SUBSTANTIAL,
+    RELATIONAL,
+    DEPENDENT
+    // TODO classifications and categorizations
+  }
 
   default RuntimeAsset.Type classify() {
     return RuntimeAsset.Type.OBSERVATION;
@@ -97,9 +112,35 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
   Object getValue();
 
   /**
+   * The observation records the timestamps of last update due to any event that required its
+   * contextualization. Substantials and their qualities have an initial 0 value to represent the
+   * "past" - that's because substantials exists besides simulated time, so that their first state
+   * (computed when the INITIALIZATION event is received) is represented by the period 0-(beginning
+   * re: time in geometry of context observation). If this is empty the observation hasn't been
+   * resolved yet.
+   *
+   * @return
+   */
+  List<Long> getEventTimestamps();
+
+  /**
    * After resolution, this will report the 0-1 coverage resolved. Before resolution this will be 0.
    *
    * @return
    */
   double getResolvedCoverage();
+
+  static Role classifyRole(Observation observation) {
+
+    // TODO check classifications and categorizations
+    if (observation.getObservable().is(SemanticType.QUALITY)
+        || observation.getObservable().is(SemanticType.PROCESS)) {
+      return Role.DEPENDENT;
+    } else if (observation.getObservable().is(SemanticType.RELATIONSHIP)) {
+      return Role.RELATIONAL;
+    } else if (observation.getObservable().getSemantics().isCollective()) {
+      return Role.COLLECTIVE_SUBSTANTIAL;
+    }
+    return Role.INDIVIDUAL_SUBSTANTIAL;
+  }
 }

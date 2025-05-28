@@ -1,27 +1,23 @@
 package org.integratedmodelling.klab.services.scopes;
 
-import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
-import io.reacted.core.reactorsystem.ReActorSystem;
+// import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
+// import io.reacted.core.reactorsystem.ReActorSystem;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.authentication.UserIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.klab.services.actors.KAgent;
-import org.integratedmodelling.klab.services.actors.UserAgent;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -34,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ScopeManager {
 
-  private ReActorSystem actorSystem = null;
+  //  private ReActorSystem actorSystem = null;
   KlabService service;
 
   /**
@@ -51,16 +47,17 @@ public class ScopeManager {
 
     this.service = service;
 
-    if (service instanceof BaseService baseService && baseService.scopesAreReactive()) {
-      /*
-       * boot the actor system right away, so that we can call login() before boot().
-       */
-      this.actorSystem =
-          new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
-              .initReActorSystem();
-
-      Logging.INSTANCE.info("Actor system booted");
-    }
+    //    if (service instanceof BaseService baseService && baseService.scopesAreReactive()) {
+    //      /*
+    //       * boot the actor system right away, so that we can call login() before boot().
+    //       */
+    //      this.actorSystem =
+    //          new
+    // ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
+    //              .initReActorSystem();
+    //
+    //      Logging.INSTANCE.info("Actor system booted");
+    //    }
 
     executor.scheduleAtFixedRate(() -> expiredScopeCheck(), 60, 60, TimeUnit.SECONDS);
   }
@@ -70,7 +67,7 @@ public class ScopeManager {
     // send each scope closing to a virtual thread after removing from the scope map
   }
 
-  public void registerScope(ServiceUserScope serviceScope, URI brokerUri) {
+  public void registerScope(ServiceUserScope serviceScope, Federation federation) {
     scopes.put(serviceScope.getId(), serviceScope);
   }
 
@@ -106,38 +103,17 @@ public class ScopeManager {
             }
           };
 
-      if (Utils.URLs.isLocalHost(service.getUrl())) {
-        /*
-        pre-advertise queues; channel setup will happen later
-         */
-        var capabilities = service.capabilities(ret);
-        for (var queue : capabilities.getAvailableMessagingQueues()) {
-          ret.presetMessagingQueue(
-              queue, capabilities.getType().name().toLowerCase() + "." + user.getUsername());
-        }
-      }
-
-      if (service instanceof BaseService baseService && baseService.scopesAreReactive()) {
-        /** agents are only created for services that request them */
-        String agentName = KAgent.sanitizeName(user.getUsername());
-        // TODO move to lazy logics
-        KActorsBehavior.Ref agent =
-            KAgent.KAgentRef.get(actorSystem.spawn(new UserAgent(agentName, ret)).get());
-        ret.setAgent(agent);
-        ret.setId(user.getUsername());
-
-        File userBehavior =
-            new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + "user.kactors");
-        if (userBehavior.isFile() && userBehavior.canRead()) {
-          try {
-            ret.send(
-                Message.MessageClass.ActorCommunication,
-                Message.MessageType.RunBehavior,
-                userBehavior.toURI().toURL());
-          } catch (MalformedURLException e) {
-            ret.error(e, "while reading user.kactors behavior");
-          }
-        }
+      File userBehavior =
+          new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + "user.kactors");
+      if (userBehavior.isFile() && userBehavior.canRead()) {
+        //        try {
+        //          ret.send(
+        //              Message.MessageClass.ActorCommunication,
+        //              Message.MessageType.RunBehavior,
+        //              userBehavior.toURI().toURL());
+        //        } catch (MalformedURLException e) {
+        //          ret.error(e, "while reading user.kactors behavior");
+        //        }
       }
 
       scopes.put(user.getUsername(), ret);
@@ -165,6 +141,13 @@ public class ScopeManager {
     ret.setId(engineAuthorization.getToken());
     ret.setAuthenticated(engineAuthorization.isAuthenticated());
     // TODO continue
+
+    if (engineAuthorization.getFederationId() != null) {
+      var federationData =
+          new Federation(engineAuthorization.getFederationId(), engineAuthorization.getBrokerUrl());
+      ret.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
+    }
+
     return ret;
   }
 
@@ -191,14 +174,12 @@ public class ScopeManager {
       ret.setLocal(true);
       // setup queues in scope if user is local and messaging is configured, Queue will be
       // servicetype.username.queuetype
-      var brokerURI = service.capabilities(ret).getBrokerURI();
-      if (brokerURI != null && !service.capabilities(ret).getAvailableMessagingQueues().isEmpty()) {
+      var brokerURI = authorization.getBrokerUrl();
+      if (brokerURI != null) {
         ret.setupMessaging(
-            brokerURI.toString(),
-            service.capabilities(null).getType().name().toLowerCase()
-                + "."
-                + authorization.getUsername(),
-            service.capabilities(ret).getAvailableMessagingQueues());
+            new Federation(authorization.getFederationId(), brokerURI),
+            authorization.getFederationId(),
+            ret.defaultQueues());
       }
     }
 
@@ -295,9 +276,9 @@ public class ScopeManager {
   }
 
   public void shutdown() {
-    if (actorSystem != null) {
-      actorSystem.shutDown();
-    }
+    //    if (actorSystem != null) {
+    //      actorSystem.shutDown();
+    //    }
   }
 
   /**

@@ -8,30 +8,28 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocumen
 import org.integratedmodelling.klab.api.view.modeler.views.KnowledgeInspector;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.KnowledgeInspectorController;
 
-public class KnowledgeInspectorControllerImpl extends AbstractUIViewController<KnowledgeInspector> implements KnowledgeInspectorController  {
+public class KnowledgeInspectorControllerImpl extends AbstractUIViewController<KnowledgeInspector>
+    implements KnowledgeInspectorController {
 
+  public KnowledgeInspectorControllerImpl(UIController controller) {
+    super(controller);
+  }
 
-    public KnowledgeInspectorControllerImpl(UIController controller) {
-        super(controller);
+  @Override
+  public void focusResource(Resource resource) {
+    view().showResource(resource);
+  }
+
+  @Override
+  public void focusDocument(NavigableDocument document, Integer position) {
+    var statementPath = document.getStatementPath(position);
+    if (!statementPath.isEmpty()) {
+      view().showStatements(statementPath);
     }
+  }
 
-
-    @Override
-    public void focusResource(Resource resource) {
-        view().showResource(resource);
-    }
-
-    @Override
-    public void focusDocument(NavigableDocument document, Integer position) {
-        var statementPath = document.getStatementPath(position);
-        if (!statementPath.isEmpty()) {
-            view().showStatements(statementPath);
-        }
-    }
-
-    @Override
-    public void focusService(KlabService.ServiceCapabilities capabilities) {
-        view().showService(capabilities);
-    }
-
+  @Override
+  public void focusService(KlabService.ServiceCapabilities capabilities) {
+    view().showService(capabilities);
+  }
 }

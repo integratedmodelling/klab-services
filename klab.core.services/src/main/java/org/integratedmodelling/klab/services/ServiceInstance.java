@@ -1,28 +1,31 @@
 package org.integratedmodelling.klab.services;
 
-import com.google.common.collect.Sets;
-import org.checkerframework.checker.units.qual.A;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
+import org.integratedmodelling.common.services.client.resolver.ResolverClient;
+import org.integratedmodelling.common.services.client.resources.ResourcesClient;
+import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.springframework.security.core.parameters.P;
 
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -136,8 +139,23 @@ public abstract class ServiceInstance<T extends BaseService> {
    */
   protected KlabService createDefaultService(
       KlabService.Type serviceType, Scope scope, long timeUnavailable) {
-    return Authentication.INSTANCE.findService(
-        serviceType, scope, identity.getFirst(), identity.getSecond(), settings);
+    return createLocalServiceClient(
+        serviceType, serviceType.localServiceUrl(), scope, serviceScope.getIdentity(), settings);
+  }
+
+  private <T extends KlabService> T createLocalServiceClient(
+      KlabService.Type serviceType,
+      URL url,
+      Scope scope,
+      Identity identity,
+      Parameters<Engine.Setting> settings) {
+    return switch (serviceType) {
+      case REASONER -> (T) new ReasonerClient(url, identity, settings);
+      case RESOURCES -> (T) new ResourcesClient(url, identity, settings);
+      case RESOLVER -> (T) new ResolverClient(url, identity, settings);
+      case RUNTIME -> (T) new RuntimeClient(url, identity, settings);
+      default -> throw new IllegalStateException("Unexpected value: " + serviceType);
+    };
   }
 
   /**
@@ -195,7 +213,7 @@ public abstract class ServiceInstance<T extends BaseService> {
 
       @Override
       public UserScope createUser(String username, String password) {
-        return createUserScope(username, password);
+        throw new KlabIllegalStateException("Service scope does not support user creation");
       }
 
       @Override
@@ -226,11 +244,6 @@ public abstract class ServiceInstance<T extends BaseService> {
         };
       }
     };
-  }
-
-  protected UserScope createUserScope(String username, String password) {
-    // TODO use hub or throw exception.
-    return null;
   }
 
   public boolean start(ServiceStartupOptions options) {
@@ -316,6 +329,13 @@ public abstract class ServiceInstance<T extends BaseService> {
       allservices.addAll(operational);
 
       boolean wasAvailable = serviceScope.isAvailable();
+
+      /**
+       * TODO if we start with remote services and we are local (starting with a user certificate), we MUST
+       *  switch the default service to a local service as soon as one comes online. So here we must detect
+       *  local services for all the needed ones and keep checking their status. Keep a map of local clients
+       *  and fill it if we are local.
+       */
 
       // create all clients that we may need and know how to create
       for (var serviceType : allservices) {

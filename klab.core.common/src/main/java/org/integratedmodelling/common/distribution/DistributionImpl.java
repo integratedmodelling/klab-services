@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.integratedmodelling.common.authentication.AnonymousUser;
 import org.integratedmodelling.common.authentication.scope.AbstractDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
@@ -42,24 +43,25 @@ public class DistributionImpl extends AbstractDistributionImpl {
   private String DEFAULT_DISTRIBUTION_DESCRIPTOR =
       "https://resources.integratedmodelling.org/klab/products/klab/distribution.properties";
 
-  private boolean isAvailable = false;
   private boolean isRemote = false;
   private URL distributionUrl;
 
-  /**
-   * When the URL is known and the distribution may or may not have been synchronized, use this to
-   * download whatever is necessary and add the URL to the distribution properties. After that, the
-   * other constructor may be used.
-   *
-   * @param url
-   * @param scope
-   * @param synchronizeIfIncomplete
-   * @param synchronizeAnyway
-   */
-  public DistributionImpl(
-      URL url, Scope scope, boolean synchronizeIfIncomplete, boolean synchronizeAnyway) {
-    // TODO launch synchronization with messages to scope
-  }
+  //  /**
+  //   * When the URL is known and the distribution may or may not have been synchronized, use this
+  // to
+  //   * download whatever is necessary and add the URL to the distribution properties. After that,
+  // the
+  //   * other constructor may be used.
+  //   *
+  //   * @param url
+  //   * @param scope
+  //   * @param synchronizeIfIncomplete
+  //   * @param synchronizeAnyway
+  //   */
+  //  public DistributionImpl(
+  //      URL url, Scope scope, boolean synchronizeIfIncomplete, boolean synchronizeAnyway) {
+  //    // TODO launch synchronization with messages to scope
+  //  }
 
   /**
    * Check if there is any trace of a remote distribution on the filesystem (which may be completely
@@ -139,7 +141,6 @@ public class DistributionImpl extends AbstractDistributionImpl {
                   + File.separator
                   + Distribution.DISTRIBUTION_PROPERTIES_FILE);
       if (distributionProperties.isFile()) {
-        isAvailable = true;
         initialize(distributionProperties);
       }
     }
@@ -227,7 +228,8 @@ public class DistributionImpl extends AbstractDistributionImpl {
    * @return
    */
   private StartupOptions makeOptions(Build build, Scope scope) {
-    return null;
+    // TODO
+    return new ServiceStartupOptions();
   }
 
   private void readFilelist(File f, Map<String, String> map) {

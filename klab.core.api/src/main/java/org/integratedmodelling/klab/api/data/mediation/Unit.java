@@ -79,7 +79,7 @@ public interface Unit extends ValueMediator {
      * <p>
      * TODO hide from API
      *
-     * @return
+     * @return a map of extent dimensions to their distributions for aggregated dimensions
      */
     Map<ExtentDimension, ExtentDistribution> getAggregatedDimensions();
 
@@ -88,8 +88,8 @@ public interface Unit extends ValueMediator {
      * return them separately. This will also infer spatial unit if called on the factorized form
      * (e.g. for mm over AREAL, it will return (mm^3, mm^2)).
      *
-     * @param dimension
-     * @return
+     * @param dimension the extent dimension to split
+     * @return a pair containing the numerator unit and denominator unit after splitting
      */
     Pair<Unit, Unit> splitExtent(ExtentDimension dimension);
 
@@ -99,7 +99,7 @@ public interface Unit extends ValueMediator {
     /**
      * True if unitless.
      *
-     * @return
+     * @return true if this unit is dimensionless (has no units), false otherwise
      */
     boolean isUnitless();
 

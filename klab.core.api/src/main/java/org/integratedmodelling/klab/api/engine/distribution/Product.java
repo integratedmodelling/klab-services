@@ -16,22 +16,21 @@ import java.util.List;
  */
 public interface Product {
 
-    public static final String PRODUCT_PROPERTIES_FILE = "product.properties";
-
-    public final static String PRODUCT_NAME_PROPERTY = "klab.product.name";
-    public final static String PRODUCT_DESCRIPTION_PROPERTY = "klab.product.description";
-    public final static String PRODUCT_TYPE_PROPERTY = "klab.product.type";
-    public final static String PRODUCT_CLASS_PROPERTY = "klab.product.class";
-    public final static String RELEASE_NAMES_PROPERTY = "klab.product.releases";
+    String PRODUCT_PROPERTIES_FILE = "product.properties";
+    String PRODUCT_NAME_PROPERTY = "klab.product.name";
+    String PRODUCT_DESCRIPTION_PROPERTY = "klab.product.description";
+    String PRODUCT_TYPE_PROPERTY = "klab.product.type";
+    String PRODUCT_CLASS_PROPERTY = "klab.product.class";
+    String RELEASE_NAMES_PROPERTY = "klab.product.releases";
 
     /**
      * Used only in local products to remember the release and build we used last time when launch() is
      * called. If not present, the most recent build in the first release found is used. Must be in
      * release/build format.
      */
-    public final static String LAST_BUILD_LAUNCHED = "klab.product.lastbuildlaunched";
+    String LAST_BUILD_LAUNCHED = "klab.product.lastbuildlaunched";
 
-    public enum Status {
+    enum Status {
 
         /**
          * Status when offline or other error has occurred and there is no usable local distribution.
@@ -60,7 +59,7 @@ public interface Product {
             return usable;
         }
 
-        private Status(boolean usable) {
+        Status(boolean usable) {
             this.usable = usable;
         }
 

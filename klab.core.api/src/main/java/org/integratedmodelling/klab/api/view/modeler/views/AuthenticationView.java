@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.view.modeler.views;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.view.View;
 
+@Deprecated
 public interface AuthenticationView extends View {
 
     /**

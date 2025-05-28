@@ -238,7 +238,7 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
         /**
          * Dependent means that the runtime must create the correspondent observation.
          *
-         * @return
+         * @return true if this type requires the runtime to create a correspondent observation
          */
         public boolean isDependent() {
             return this == RESOLVE || this == PROCESS || this == CONCEPT || this == NUMBER || this == BOOLEAN || this == TEXT;
@@ -281,31 +281,31 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
         /**
          * The root artifact always has the session user as the observer.
          *
-         * @return
+         * @return the root artifact in the structure
          */
         Artifact getRootArtifact();
 
         /**
-         * @param child
-         * @return
+         * @param child the child artifact
+         * @return the parent artifact of the given child, or null if no parent exists
          */
         Artifact getArtifactParent(Artifact child);
 
         /**
-         * @param child
-         * @return
+         * @param child the child artifact
+         * @return the logical parent of the given child, or null if no logical parent exists
          */
         Artifact getLogicalParent(Artifact child);
 
         /**
-         * @param parent
-         * @return
+         * @param parent the parent artifact
+         * @return a collection of child artifacts for the given parent, empty if no children exist
          */
         Collection<Artifact> getArtifactChildren(Artifact parent);
 
         /**
-         * @param parent
-         * @return
+         * @param parent the parent artifact
+         * @return a collection of logical children for the given parent, empty if no logical children exist
          */
         Collection<Artifact> getLogicalChildren(Artifact parent);
 
@@ -318,16 +318,16 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
         /**
          * If an artifact is called into the context by a process, return the process.
          *
-         * @param artifact
-         * @return
+         * @param artifact the artifact to check
+         * @return the process that owns the artifact, or null if the artifact is not owned by a process
          */
         Process getOwningProcess(Artifact artifact);
 
         /**
          * Retrieve the observer of the passed artifact.
          *
-         * @param artifact
-         * @return
+         * @param artifact the artifact to get the observer for
+         * @return the identity of the observer for the given artifact
          */
         Identity getObserver(Artifact artifact);
 
@@ -362,9 +362,9 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      * Trace the nearest artifact with the passed role within the passed observation up the
      * provenance chain.
      *
-     * @param role
-     * @param roleContext
-     * @return
+     * @param role the role concept to trace
+     * @param roleContext the observation context to search within
+     * @return the nearest artifact with the specified role, or null if none is found
      */
     Artifact trace(Concept role, Observation roleContext);
 
@@ -451,12 +451,6 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      */
     boolean isArchetype();
 
-    /**
-     * Get the last update time in <em>context</em> time, or 0 if the context is not temporal.
-     *
-     * @return
-     */
-    long getLastUpdate();
 
     /**
      * Checks if the artifact has changed in any way during the passed temporal transition. Will

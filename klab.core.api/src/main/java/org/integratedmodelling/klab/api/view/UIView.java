@@ -9,7 +9,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * in its interface. The controller may not have a UI, in which case it should just assume that all choices
  * are confirmed and user-level logging is not requested.
  */
-public interface UI {
+public interface UIView {
 
     /**
      * This can be added to notifications that need to be shown into UIs.

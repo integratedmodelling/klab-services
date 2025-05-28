@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -20,8 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
-
-  protected static int MAX_CACHED_OBSERVATIONS = 400;
 
   protected ContextScope scope;
 
@@ -86,7 +85,6 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
               observation.getName() == null
                   ? observation.getObservable().codeName()
                   : observation.getName());
-          ret.put("updated", observation.getLastUpdate());
           ret.put("type", observation.getType().name());
           ret.put("urn", observation.getUrn());
           ret.put(
@@ -96,6 +94,10 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("semantics", observation.getObservable().getSemantics().getUrn());
           ret.put("observable", observation.getObservable().getUrn());
           ret.put("id", observation.getId());
+          ret.put("eventTimestamps", observation.getEventTimestamps());
+          if (observation instanceof ObservationImpl observation1) {
+            ret.put("substantial", observation1.isSubstantialQuality());
+          }
         }
         case Agent agent -> {
           // TODO
@@ -137,6 +139,9 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("type", buffer.getDataType().name());
           ret.put("fillCurve", buffer.getFillingCurve().name());
           ret.put("size", buffer.size());
+          ret.put("offset", buffer.offset());
+          ret.put("timestamp", buffer.getTimestamp());
+          ret.put("urn", buffer.getUrn());
           ret.put(
               "histogram",
               org.integratedmodelling.common.utils.Utils.Json.asString(buffer.histogram()));

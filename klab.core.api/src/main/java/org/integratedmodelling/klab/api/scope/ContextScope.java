@@ -1,19 +1,10 @@
 package org.integratedmodelling.klab.api.scope;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Mutable;
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -21,6 +12,13 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.api.utils.Utils;
+
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 /**
  * The scope for an observation context and any observations made within it. The observation scope
@@ -142,9 +140,7 @@ public interface ContextScope extends SessionScope {
   /**
    * Produce a {@link Data} package that contains the data content of the passed observations. The
    * object should be lazy and only fill in its contents when the actual data are requested. It can
-   * be sent to services such as {@link
-   * org.integratedmodelling.klab.api.services.ResourcesService#contextualize(Resource, Observation,
-   * Data, Scope)} to pass around data content for distributed computation workflows.
+   * be sent to services to pass around data content for distributed computation workflows.
    *
    * @param observations
    * @return
@@ -203,31 +199,41 @@ public interface ContextScope extends SessionScope {
   DigitalTwin getDigitalTwin();
 
   /**
-   * Add another context to this one to build a higher-level one. Authentication details will define
-   * what is seen and done.
+   * In a ContextScope, {@link #connect(URL)} is redefined to produce merged DTs that exchange
+   * messages and build a higher-level one merging contents and events between the remote DT and the
+   * one on which connect is called. Authentication details will define what can be seen and done.
    *
    * @param remoteContext
    * @return
    */
+  @Override
   ContextScope connect(URL remoteContext);
 
   /**
    * Submit an observation to the digital twin and start its resolution in this scope. Returns a
-   * future for the resolved (or unresolved in case of failure) observation. The {@link
-   * Observation#isResolved()} method should be checked after the future is complete. The scope will
-   * be notified of all events related to the resolution, with messages that will carry a task ID
-   * equal to the URN of the observation or derived from it so that what is happening can be
-   * reconstructed at the client side.
+   * future for the resolved (or unresolved in case of failure) observation. The scope will be
+   * notified of all events related to the resolution, with messages that will carry a task ID equal
+   * to the URN of the observation or derived from it so that what is happening can be reconstructed
+   * at the client side.
    *
    * @param observation an unresolved observation to be resolved by the runtime and added to the
-   *     digital twin. After the call exits, the resolution will be ongoing but the observation will
-   *     have gained a valid ID and URN. The {@link
-   *     org.integratedmodelling.klab.api.digitaltwin.DigitalTwin#createObservation(Scope,
-   *     Object...)} method can be used to construct it from existing knowledge.
+   *     digital twin.
    * @return a {@link Future} producing the resolved observation when resolution is finished. If
    *     resolution has failed, the observation in the future will be unresolved.
    */
   CompletableFuture<Observation> observe(@Mutable Observation observation);
+
+  /**
+   * Create an observation in this context, which must be able to include it both semantically
+   * (compatible context observation) and physically (compatible geometry). The observation must not
+   * already exist. The passed data may defer to an adapter. The built observation should be "lazy"
+   * if binary content is not passed.
+   *
+   * @param observation the new unresolved observation
+   * @param observationData the data that resolve the observation
+   * @return a future for the resolved observation
+   */
+  CompletableFuture<Observation> submit(Observation observation, Data observationData);
 
   /**
    * Return all observations affected by the passed one in this scope, either through model

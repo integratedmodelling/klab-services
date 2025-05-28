@@ -4,11 +4,11 @@
     <parent>
         <groupId>org.integratedmodelling</groupId>
         <artifactId>klab-services</artifactId>
-        <version>0.11.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>klab.services.runtime</artifactId>
     <properties>
-        <neo4j-version>5.23.0</neo4j-version>
+        <neo4j-version>2025.03.0</neo4j-version>
     </properties>
     <build>
         <plugins>
@@ -57,6 +57,7 @@
             <version>2024.4.0</version>
         </dependency>
 
+
         <!-- neo4j provides the default persistence model for the digital twin and the social graph. Would be so much better if
  they didn't want their f'ing money to make it distributed and production-level. Consider moving to
  dgraph or memgraph for production.
@@ -66,25 +67,39 @@
             <artifactId>neo4j</artifactId>
             <version>${neo4j-version}</version>
             <exclusions>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
+                <!--
+                                <exclusion>
+                                    <groupId>jakarta.validation</groupId>
+                                    <artifactId>jakarta.validation-api</artifactId>
+                                </exclusion>
+                -->
             </exclusions>
+            <!--
+                        <exclusions>
+                            <exclusion>
+                                <groupId>commons-logging</groupId>
+                                <artifactId>commons-logging</artifactId>
+                            </exclusion>
+                        </exclusions>
+            -->
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-spatial-index</artifactId>
             <version>${neo4j-version}</version>
             <exclusions>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.neo4j</groupId>
-                    <artifactId>neo4j-slf4j-provider</artifactId>
-                </exclusion>
+                <!--
+                                <exclusion>
+                                    <groupId>commons-logging</groupId>
+                                    <artifactId>commons-logging</artifactId>
+                                </exclusion>
+                -->
+                <!--
+                                <exclusion>
+                                    <groupId>org.neo4j</groupId>
+                                    <artifactId>neo4j-slf4j-provider</artifactId>
+                                </exclusion>
+                -->
             </exclusions>
         </dependency>
         <dependency>
@@ -92,29 +107,37 @@
             <artifactId>neo4j-bolt</artifactId>
             <version>${neo4j-version}</version>
             <exclusions>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.neo4j</groupId>
-                    <artifactId>neo4j-slf4j-provider</artifactId>
-                </exclusion>
+                <!--
+                                <exclusion>
+                                    <groupId>commons-logging</groupId>
+                                    <artifactId>commons-logging</artifactId>
+                                </exclusion>
+                -->
+                <!--
+                                <exclusion>
+                                    <groupId>org.neo4j</groupId>
+                                    <artifactId>neo4j-slf4j-provider</artifactId>
+                                </exclusion>
+                -->
             </exclusions>
         </dependency>
         <dependency>
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
-            <version>${neo4j-version}</version>
+            <version>5.28.4</version>
             <exclusions>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.neo4j</groupId>
-                    <artifactId>neo4j-slf4j-provider</artifactId>
-                </exclusion>
+                <!--
+                                <exclusion>
+                                    <groupId>commons-logging</groupId>
+                                    <artifactId>commons-logging</artifactId>
+                                </exclusion>
+                -->
+                <!--
+                                <exclusion>
+                                    <groupId>org.neo4j</groupId>
+                                    <artifactId>neo4j-slf4j-provider</artifactId>
+                                </exclusion>
+                -->
             </exclusions>
         </dependency>
         <dependency>
@@ -122,16 +145,33 @@
             <artifactId>neo4j-record-storage-engine</artifactId>
             <version>${neo4j-version}</version>
             <exclusions>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.neo4j</groupId>
-                    <artifactId>neo4j-slf4j-provider</artifactId>
-                </exclusion>
+                <!--
+                                <exclusion>
+                                    <groupId>commons-logging</groupId>
+                                    <artifactId>commons-logging</artifactId>
+                                </exclusion>
+                -->
+                <!--
+                                <exclusion>
+                                    <groupId>org.neo4j</groupId>
+                                    <artifactId>neo4j-slf4j-provider</artifactId>
+                                </exclusion>
+                -->
             </exclusions>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <!--
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-validation</artifactId>
+                    <version>${spring-boot.version}</version>
+                </dependency>
+        -->
         <!--
                 <dependency>
                     <groupId>org.neo4j</groupId>
@@ -139,21 +179,23 @@
                     <version>${neo4j-version}</version>
                 </dependency>
         -->
-        <dependency>
-            <groupId>org.neo4j</groupId>
-            <artifactId>neo4j-graphql-java</artifactId>
-            <version>1.9.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-                <exclusion>
+        <!--
+                <dependency>
                     <groupId>org.neo4j</groupId>
-                    <artifactId>neo4j-slf4j-provider</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+                    <artifactId>neo4j-graphql-java</artifactId>
+                    <version>1.9.1</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>commons-logging</groupId>
+                            <artifactId>commons-logging</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>org.neo4j</groupId>
+                            <artifactId>neo4j-slf4j-provider</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+        -->
         <!--
                 <dependency>
                     <groupId>org.neo4j</groupId>
@@ -166,45 +208,91 @@
             <artifactId>antlr4-runtime</artifactId>
             <version>4.13.1</version>
         </dependency>
+
+        <!--        <dependency>
+                    <groupId>jakarta.xml.bind</groupId>
+                    <artifactId>jakarta.xml.bind-api</artifactId>
+                    <version>3.0.1</version>
+                </dependency>
+                &lt;!&ndash; https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api &ndash;&gt;
+                <dependency>
+                    <groupId>jakarta.validation</groupId>
+                    <artifactId>jakarta.validation-api</artifactId>
+                    <version>3.0.2</version>
+                </dependency>-->
+
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-neo4j</artifactId>
-            <version>7.3.2</version>
+            <version>8.0.0-M1</version>
             <exclusions>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
+                <!--
+                                <exclusion>
+                                    <groupId>commons-logging</groupId>
+                                    <artifactId>commons-logging</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                    <groupId>commons-logging</groupId>
+                                    <artifactId>commons-logging</artifactId>
+                                </exclusion>
+                -->
+                <!--
+                                <exclusion>
+                                    <groupId>org.springframework</groupId>
+                                    <artifactId>spring-core</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                    <groupId>org.springframework</groupId>
+                                    <artifactId>spring-beans</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                    <groupId>org.springframework</groupId>
+                                    <artifactId>spring-context</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                    <groupId>org.springframework</groupId>
+                                    <artifactId>spring-tx</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                    <groupId>org.springframework</groupId>
+                                    <artifactId>spring-data-commons</artifactId>
+                                </exclusion>
+                -->
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-tomcat</artifactId>
-        </dependency>
+
+
+        <!--
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-tomcat</artifactId>
+                </dependency>
+        -->
+
     </dependencies>
 
-    <repositories>
-        <repository>
-            <id>neo4j-contrib-releases</id>
-            <url>https://raw.github.com/neo4j-contrib/m2/master/releases</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>neo4j-contrib-snapshots</id>
-            <url>https://raw.github.com/neo4j-contrib/m2/master/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
+    <!--    <repositories>
+            <repository>
+                <id>neo4j-contrib-releases</id>
+                <url>https://raw.github.com/neo4j-contrib/m2/master/releases</url>
+                <releases>
+                    <enabled>true</enabled>
+                </releases>
+                <snapshots>
+                    <enabled>false</enabled>
+                </snapshots>
+            </repository>
+            <repository>
+                <id>neo4j-contrib-snapshots</id>
+                <url>https://raw.github.com/neo4j-contrib/m2/master/snapshots</url>
+                <releases>
+                    <enabled>false</enabled>
+                </releases>
+                <snapshots>
+                    <enabled>true</enabled>
+                </snapshots>
+            </repository>
+        </repositories>-->
     <!--    <repositories>-->
     <!--        <repository>-->
     <!--            <id>YOUR-PROJECT-NAME-mvn-repo</id>-->

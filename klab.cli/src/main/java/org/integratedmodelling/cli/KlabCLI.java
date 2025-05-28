@@ -6,6 +6,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Supplier;
+
+import org.integratedmodelling.cli.utils.Message;
 import org.integratedmodelling.cli.views.CLIObservationView;
 import org.integratedmodelling.cli.views.CLIReasonerView;
 import org.integratedmodelling.cli.views.CLIResourcesView;
@@ -320,7 +322,8 @@ public enum KlabCLI {
         Components.class,
         Test.class,
         Run.Alias.class,
-        Run.Unalias.class
+        Run.Unalias.class,
+        Message.class
       })
   static class CliCommands implements Runnable {
 
@@ -345,6 +348,7 @@ public enum KlabCLI {
       },
       subcommands = {Run.List.class, Run.Purge.class})
   static class Run /* extends Monitor */ implements Runnable {
+
 
     java.util.Set<SessionScope> running = new LinkedHashSet<>();
 

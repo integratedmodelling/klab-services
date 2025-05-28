@@ -7,10 +7,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -38,10 +39,10 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
-import org.integratedmodelling.klab.api.view.UI;
+import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
-import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
@@ -70,7 +71,7 @@ public class RuntimeService extends BaseService
   }
 
   private void initializeMessaging() {
-    if (this.configuration.getBrokerURI() == null) {
+    if (startupOptions.isStartLocalBroker()) {
       this.embeddedBroker = new EmbeddedBroker();
     }
   }
@@ -101,11 +102,6 @@ public class RuntimeService extends BaseService
   private void saveConfiguration() {
     File config = BaseService.getFileInConfigurationDirectory(startupOptions, "runtime.yaml");
     org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
-  }
-
-  @Override
-  public boolean scopesAreReactive() {
-    return true;
   }
 
   @Override
@@ -187,10 +183,12 @@ public class RuntimeService extends BaseService
     ret.setServerId(hardwareSignature == null ? null : ("RUNTIME_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
     ret.setServiceName("Runtime");
-    ret.setBrokerURI(
-        embeddedBroker != null ? embeddedBroker.getURI() : configuration.getBrokerURI());
-    ret.setBrokerURI(
-        embeddedBroker != null ? embeddedBroker.getURI() : configuration.getBrokerURI());
+    //        ret.setBrokerURI(
+    //                embeddedBroker != null ? embeddedBroker.getURI() :
+    // configuration.getBrokerURI());
+    //        ret.setBrokerURI(
+    //                embeddedBroker != null ? embeddedBroker.getURI() :
+    // configuration.getBrokerURI());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
     ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
@@ -210,12 +208,12 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public String registerSession(SessionScope sessionScope) {
+  public String registerSession(SessionScope sessionScope, Federation federation) {
+
     if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
       serviceSessionScope.setId(Utils.Names.shortUUID());
-      getScopeManager()
-          .registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
+      getScopeManager().registerScope(serviceSessionScope, federation);
 
       if (serviceSessionScope.getServices(RuntimeService.class).isEmpty()) {
         // add self as the runtime service, which is needed by the slave scopes
@@ -233,7 +231,7 @@ public class RuntimeService extends BaseService
                       // if things are OK, the service repeats the ID back
                       if (!serviceSessionScope
                           .getId()
-                          .equals(service.registerSession(serviceSessionScope))) {
+                          .equals(service.registerSession(serviceSessionScope, federation))) {
                         fail.set(true);
                       }
                     }
@@ -248,7 +246,7 @@ public class RuntimeService extends BaseService
         serviceSessionScope.send(
             Notification.error(
                 "Error registering session with other services:" + " session is inoperative",
-                UI.Interactivity.DISPLAY));
+                UIView.Interactivity.DISPLAY));
         serviceSessionScope.setOperative(false);
       }
 
@@ -258,7 +256,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public String registerContext(ContextScope contextScope) {
+  public String registerContext(ContextScope contextScope, Federation federation) {
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
@@ -266,8 +264,7 @@ public class RuntimeService extends BaseService
 
       serviceContextScope.setId(
           serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
-      getScopeManager()
-          .registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
+      getScopeManager().registerScope(serviceContextScope, federation);
       serviceContextScope.setDigitalTwin(
           new DigitalTwinImpl(this, serviceContextScope, getMainKnowledgeGraph()));
 
@@ -288,7 +285,7 @@ public class RuntimeService extends BaseService
                       // if things are OK, the service repeats the ID back
                       if (!serviceContextScope
                           .getId()
-                          .equals(service.registerContext(serviceContextScope))) {
+                          .equals(service.registerContext(serviceContextScope, federation))) {
                         fail.set(true);
                       }
                     }
@@ -303,7 +300,7 @@ public class RuntimeService extends BaseService
         serviceContextScope.send(
             Notification.error(
                 "Error registering context with other services:" + " context is inoperative",
-                UI.Interactivity.DISPLAY));
+                UIView.Interactivity.DISPLAY));
         serviceContextScope.setOperative(false);
       }
 
@@ -367,8 +364,7 @@ public class RuntimeService extends BaseService
    * @return
    */
   @Override
-  public CompletableFuture<Observation> submit(
-      Observation observation, ContextScope scope) {
+  public CompletableFuture<Observation> submit(Observation observation, ContextScope scope) {
 
     if (observation.getId() > 0) {
       return CompletableFuture.completedFuture(observation);
@@ -409,10 +405,12 @@ public class RuntimeService extends BaseService
         }
       }
 
-      var agent = serviceContextScope.getConstraint(ResolutionConstraint.Type.Provenance, Agent.class);
+      var agent =
+          serviceContextScope.getConstraint(ResolutionConstraint.Type.Provenance, Agent.class);
       var contextScope = serviceContextScope.initializeResolution();
       var resolver = scope.getService(Resolver.class);
-      var resolution = Activity.of("Resolution of " + observation, Activity.Type.RESOLUTION, this, agent);
+      var resolution =
+          Activity.of("Resolution of " + observation, Activity.Type.RESOLUTION, this, agent);
 
       return resolver
           /* resolve asynchronously */
@@ -425,10 +423,18 @@ public class RuntimeService extends BaseService
                    * Compile an atomic transaction from the dataflow, adding new observations if the digital twin does not have them.
                    */
                   var transaction =
-                      scope.getDigitalTwin().transaction(resolution, scope, dataflow, observation, agent);
+                      scope
+                          .getDigitalTwin()
+                          .transaction(resolution, scope, dataflow, observation, agent);
 
                   if (compile(observation, dataflow, contextScope, transaction)) {
                     if (transaction.commit()) {
+                      // send the committed graph before submitting the observation to the
+                      // scheduler,
+                      contextScope.send(
+                          Message.MessageClass.DigitalTwin,
+                          Message.MessageType.KnowledgeGraphCommitted,
+                          transaction.getGraph());
                       return observation;
                     }
                   }
@@ -528,10 +534,10 @@ public class RuntimeService extends BaseService
       intersect coverage from dataflow with contextualization scale
        */
 
-//      if (dataflow instanceof DataflowImpl df
-//          && dataflow.getTarget() instanceof ObservationImpl obs) {
-//        obs.setResolvedCoverage(df.getResolvedCoverage());
-//      }
+      //      if (dataflow instanceof DataflowImpl df
+      //          && dataflow.getTarget() instanceof ObservationImpl obs) {
+      //        obs.setResolvedCoverage(df.getResolvedCoverage());
+      //      }
 
       //      contextualization.success(contextScope, dataflow.getTarget(), dataflow);
     }

@@ -47,7 +47,7 @@ public enum Logging {
     Consumer<String> errorWriter = (message) -> System.err.println("ERROR: " + message);
     Consumer<String> debugWriter = (message) -> System.err.println("DEBUG: " + message);
 
-    private Logging() {
+    Logging() {
         try {
             logger = (Logger) LoggerFactory.getLogger(this.getClass());
         } catch (Throwable e) {

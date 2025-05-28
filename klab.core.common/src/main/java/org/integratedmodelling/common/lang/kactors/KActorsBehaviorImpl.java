@@ -56,10 +56,6 @@ public class KActorsBehaviorImpl extends KlabDocumentImpl<KActorsAction> impleme
         return this.imports;
     }
 
-    //	@Override
-    //	public List<KActorsAction> getActions() {
-    //		return this.actions;
-    //	}
     @Override
     public Set<String> importedNamespaces(boolean withinType) {
         Set<String> ret = new HashSet<>();
@@ -125,10 +121,6 @@ public class KActorsBehaviorImpl extends KlabDocumentImpl<KActorsAction> impleme
     public void setImports(List<String> imports) {
         this.imports = imports;
     }
-
-    //	public void setActions(List<KActorsAction> actions) {
-    //		this.actions = actions;
-    //	}
 
     public void setStyle(String style) {
         this.style = style;

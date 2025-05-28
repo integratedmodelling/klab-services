@@ -4,6 +4,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
+
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.GraphQLClient;
@@ -12,13 +13,11 @@ import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -30,39 +29,58 @@ import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.*;
-import org.integratedmodelling.klab.api.services.runtime.objects.AssetRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
-import org.integratedmodelling.klab.rest.ServiceReference;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
 
   private GraphQLClient graphClient;
 
-  public RuntimeClient(
-      URL url,
-      Identity identity,
-      List<ServiceReference> services,
-      Parameters<Engine.Setting> settings,
-      BiConsumer<Channel, Message>... listeners) {
-    super(Type.RUNTIME, url, identity, settings, services, listeners);
+  public static RuntimeClient create(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new RuntimeClient(url, identity, settings);
+  }
+
+  public static RuntimeClient createOffline(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new RuntimeClient(url, identity, settings, false);
+  }
+
+  public static RuntimeClient createLocal(Identity identity, Parameters<Engine.Setting> settings) {
+    return new RuntimeClient(Type.RUNTIME.localServiceUrl(), identity, settings);
+  }
+
+  public static RuntimeClient createLocalOffline(
+      Identity identity, Parameters<Engine.Setting> settings) {
+    return new RuntimeClient(Type.RUNTIME.localServiceUrl(), identity, settings, false);
+  }
+
+  public RuntimeClient(URL url, Identity identity, Parameters<Engine.Setting> settings /*,
+      BiConsumer<Channel, Message>... listeners*/) {
+    super(Type.RUNTIME, url, identity, settings, true);
+  }
+
+  private RuntimeClient(
+      URL url, Identity identity, Parameters<Engine.Setting> settings, boolean connect) {
+    super(Type.RUNTIME, url, identity, settings, connect);
   }
 
   public RuntimeClient(
       URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
-    super(Type.RUNTIME, url, identity, List.of(), settings, owner);
+    super(Type.RUNTIME, url, identity, settings, owner);
   }
 
+  @SafeVarargs
   @Override
-  protected String establishConnection() {
-    var ret = super.establishConnection();
+  public final String connect(BiConsumer<Channel, Message>... messageBiConsumers) {
+    var ret = super.connect(messageBiConsumers);
     this.graphClient =
         new GraphQLClient(this.getUrl() + ServicesAPI.RUNTIME.DIGITAL_TWIN_GRAPH, ret);
     return ret;
   }
 
   @Override
-  public String registerSession(SessionScope scope) {
+  public String registerSession(SessionScope scope, Federation federation) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
@@ -101,25 +119,32 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     var ret =
-        client./*withScope(scope.getParentScope()).*/ post(
-            ServicesAPI.CREATE_SESSION,
-            request,
-            String.class,
-            "id",
-            scope instanceof ServiceSideScope serviceSideScope ? serviceSideScope.getId() : null);
+        client
+            .withHeader(
+                ServicesAPI.MESSAGING_URL_HEADER,
+                federation == null ? null : federation.getBroker())
+            .withHeader(
+                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
+            .post(
+                ServicesAPI.CREATE_SESSION,
+                request,
+                String.class,
+                "id",
+                scope instanceof ServiceSideScope serviceSideScope
+                    ? serviceSideScope.getId()
+                    : null);
 
-    var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
-    if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
+    if (federation != null && scope instanceof MessagingChannelImpl messagingChannel) {
       var queues =
           getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
-      messagingChannel.setupMessaging(brokerURI, ret, queues);
+      messagingChannel.setupMessaging(federation, ret, queues);
     }
 
     return ret;
   }
 
   @Override
-  public String registerContext(ContextScope scope) {
+  public String registerContext(ContextScope scope, Federation federation) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
@@ -127,7 +152,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     var runtime = scope.getService(RuntimeService.class);
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
-            && messagingChannel.hasMessaging();
+            && messagingChannel.hasMessaging()
+            && federation != null;
 
     // The runtime needs to use our resolver(s) and resource service(s), as long as they're
     // accessible.
@@ -157,14 +183,15 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
       request.getReasonerServices().add(reasonerClient.getUrl());
     }
 
-    if (hasMessaging) {
-      // TODO setup desired request. This will send no header and use the defaults.
-    }
-
     var ret =
         client
             .withScope(scope.getParentScope())
             .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
+            .withHeader(
+                ServicesAPI.MESSAGING_URL_HEADER,
+                federation == null ? null : federation.getBroker())
+            .withHeader(
+                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
             .post(
                 ServicesAPI.CREATE_CONTEXT,
                 request,
@@ -175,14 +202,15 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
                     : null);
 
     if (hasMessaging) {
-      var queues =
-          getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
       if (scope instanceof MessagingChannelImpl messagingChannel) {
-        messagingChannel.setupMessagingQueues(ret, queues);
+        var queues =
+            getQueuesFromHeader(
+                scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+        messagingChannel.setupMessaging(federation, ret, queues);
       }
-      if (scope instanceof ClientContextScope clientContextScope) {
-        clientContextScope.createDigitalTwin(ret);
-      }
+    }
+    if (scope instanceof ClientContextScope clientContextScope) {
+      clientContextScope.createDigitalTwin(ret);
     }
 
     return ret;

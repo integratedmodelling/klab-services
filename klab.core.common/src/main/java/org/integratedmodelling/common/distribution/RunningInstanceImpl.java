@@ -2,12 +2,11 @@ package org.integratedmodelling.common.distribution;
 
 import org.apache.commons.exec.*;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.distribution.Build;
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
-import org.integratedmodelling.klab.api.engine.distribution.Settings;
+import org.integratedmodelling.common.configuration.Settings;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -17,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 public class RunningInstanceImpl implements RunningInstance {
 
@@ -104,6 +102,11 @@ public class RunningInstanceImpl implements RunningInstance {
         }
 
         if (startupOptions != null && ret != null) {
+
+            if (startupOptions.isStartLocalBroker()) {
+                ret.addArgument("-startLocalBroker");
+            }
+
             // add the remaining startup options to the command line
             for (var arg : startupOptions.getArguments()) {
                 ret.addArgument(arg);
@@ -164,11 +167,6 @@ public class RunningInstanceImpl implements RunningInstance {
 
         CommandLine cmdLine = getCommandLine(scope);
 
-//        File logDirectory = BaseService.getConfigurationSubdirectory(options, "logs");
-//        File logFile =
-//                new File(logDirectory + File.separator + options.getServiceType().name().toLowerCase() +
-//                        ".log");
-
         Logging.INSTANCE.info("Starting " + build.getProduct().getDescription() + " with command line: \"" +
                 cmdLine.toString() + "\"");
 
@@ -181,9 +179,6 @@ public class RunningInstanceImpl implements RunningInstance {
 
         this.executor = new DefaultExecutor();
         this.executor.setWorkingDirectory(build.getLocalWorkspace());
-
-//        PumpStreamHandler noEchoHandler = new PumpStreamHandler(null, System.err);
-//        this.executor.setStreamHandler(noEchoHandler);
 
         Map<String, String> env = new HashMap<>();
         env.putAll(System.getenv());

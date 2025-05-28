@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.utilities.Utils;
 
@@ -17,9 +18,10 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   private final Persistence persistence;
   private final Storage.Type dataType;
   private final long offset;
-  private final long id;
+  private long id; // for reference in the knowledge graoh
+  private final String urn; // for persistent reference in storage manager
   private final StorageImpl storage;
-  private long internalId;
+  private final long timestamp;
   protected com.dynatrace.dynahist.Histogram histogram;
 
   /**
@@ -31,20 +33,24 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
    */
   protected BufferImpl(
       Geometry geometry,
-      Observable observable,
+      Observation observation,
       StorageImpl stateStorage,
       long size,
       Data.SpaceFillingCurve spaceFillingCurve,
-      long offsets) {
+      long offsets,
+      long timestamp) {
     super(geometry, spaceFillingCurve);
     this.storage = stateStorage;
+    this.timestamp = timestamp;
     this.dataType = stateStorage.getType();
-    this.id = stateStorage.stateStorage.nextBufferId();
+    this.urn = observation.getUrn() + "#" + stateStorage.stateStorage.nextBufferId();
     this.persistence = Persistence.SERVICE_SHUTDOWN;
     this.offset = offsets;
     this.spaceFillingCurve = spaceFillingCurve;
     if (stateStorage.stateStorage.isRecordHistogram()) {
-      this.histogram = com.dynatrace.dynahist.Histogram.createDynamic(histogramLayout(observable));
+      this.histogram =
+          com.dynatrace.dynahist.Histogram.createDynamic(
+              histogramLayout(observation.getObservable()));
     }
   }
 
@@ -53,6 +59,10 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   @Override
   public long getId() {
     return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
   }
 
   @Override
@@ -77,13 +87,23 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
     return persistence;
   }
 
-  public long getInternalId() {
-    return internalId;
+  @Override
+  public String getUrn() {
+    return urn;
   }
 
-  public void setInternalId(long internalId) {
-    this.internalId = internalId;
+  @Override
+  public long getTimestamp() {
+    return timestamp;
   }
+
+  //  public long getInternalId() {
+  //    return internalId;
+  //  }
+
+  //  public void setInternalId(long internalId) {
+  //    this.internalId = internalId;
+  //  }
 
   public Histogram histogram() {
     return Utils.Data.adaptHistogram(this.histogram);

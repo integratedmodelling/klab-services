@@ -14,10 +14,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.engine.ServiceMonitor;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -33,16 +35,14 @@ import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
-import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 
 /**
@@ -56,7 +56,7 @@ public abstract class BaseService implements KlabService {
   private final Type type;
   protected EmbeddedBroker embeddedBroker;
   private String serviceSecret;
-  private boolean provideScopesAutomatically = false;
+//  private boolean provideScopesAutomatically = false;
   private URL url;
   //    protected AtomicBoolean online = new AtomicBoolean(false);
   protected AtomicBoolean available = new AtomicBoolean(false);
@@ -69,6 +69,8 @@ public abstract class BaseService implements KlabService {
   private boolean operational;
   private ComponentRegistry componentRegister;
   private String instanceKey = Utils.Names.newName();
+  private long bootTime = System.currentTimeMillis();
+  private ServiceMonitor serviceMonitor;
 
   protected Parameters<Engine.Setting> settingsForSlaveServices = Parameters.createSynchronized();
 
@@ -93,7 +95,19 @@ public abstract class BaseService implements KlabService {
     }
     createServiceSecret();
     componentRegister = new ComponentRegistry(this, options);
+    serviceMonitor =
+        new ServiceMonitor(
+            scope.getIdentity(),
+            settingsForSlaveServices,
+            Utils.URLs.isLocalHost(this.url),
+            List.of(),
+            this::notifyLocalService,
+            this::notifyLocalEngine);
   }
+
+  private void notifyLocalEngine(Engine.Status status) {}
+
+  private void notifyLocalService(KlabService service, ServiceStatus status) {}
 
   public ComponentRegistry getComponentRegistry() {
     return componentRegister;
@@ -102,17 +116,6 @@ public abstract class BaseService implements KlabService {
   protected ServiceStartupOptions getStartupOptions() {
     return startupOptions;
   }
-
-  /**
-   * If true, the user/session/context scopes managed by the service should return a valid {@link
-   * org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref} to run behaviors and
-   * applications. At the moment only the runtime has this requirement to support agentive
-   * observations. Returning true will initialize an actor system on boot and provide an agent to
-   * each new scope.
-   *
-   * @return
-   */
-  public abstract boolean scopesAreReactive();
 
   /**
    * Each service creates a secret key and stores in a text file in its work directory. The service
@@ -142,30 +145,21 @@ public abstract class BaseService implements KlabService {
     return embeddedBroker;
   }
 
-  /**
-   * Set up the messaging queues according to configuration in case the user is local and
-   * privileged. TODO this ignores the configuration for now.
-   *
-   * @param scope
-   * @param capabilities
-   */
-  public void setupMessaging(UserScope scope, ServiceCapabilities capabilities) {
-    if (scope instanceof ServiceUserScope serviceUserScope && serviceUserScope.isLocal()) {
-      capabilities.getAvailableMessagingQueues().add(Message.Queue.Errors);
-      capabilities.getAvailableMessagingQueues().add(Message.Queue.Warnings);
-      capabilities.getAvailableMessagingQueues().add(Message.Queue.Info);
-      // TODO configure debug
-    }
-  }
-
-  /**
-   * Use this broker in local configurations unless a broker URL is specified in configuration
-   *
-   * @return
-   */
-  protected EmbeddedBroker getLocalBroker() {
-    return null;
-  }
+  //  /**
+  //   * Set up the messaging queues according to configuration in case the user is local and
+  //   * privileged. TODO this ignores the configuration for now.
+  //   *
+  //   * @param scope
+  //   * @param capabilities
+  //   */
+  //  public void setupMessaging(UserScope scope, ServiceCapabilities capabilities) {
+  //    if (scope instanceof ServiceUserScope serviceUserScope && serviceUserScope.isLocal()) {
+  //      capabilities.getAvailableMessagingQueues().add(Message.Queue.Errors);
+  //      capabilities.getAvailableMessagingQueues().add(Message.Queue.Warnings);
+  //      capabilities.getAvailableMessagingQueues().add(Message.Queue.Info);
+  //      // TODO configure debug
+  //    }
+  //  }
 
   /**
    * The scope manager is created on demand as not all services need it.
@@ -213,8 +207,8 @@ public abstract class BaseService implements KlabService {
     ret.setServiceType(serviceType());
     ret.setAvailable(initialized && serviceScope().isAvailable());
     ret.setBusy(serviceScope().isBusy());
-    ret.setLocality(serviceScope().getLocality());
     ret.setOperational(operational);
+    ret.setUptimeMs(System.currentTimeMillis() - this.bootTime);
     return ret;
   }
 
@@ -340,19 +334,6 @@ public abstract class BaseService implements KlabService {
     return url;
   }
 
-  @Override
-  public boolean isExclusive() {
-    // TODO
-    // as a matter of principle, no service instance is exclusive by default. If a client is using
-    // the
-    // secret token it can assume the service is exclusive, although there should be some type of
-    // locking
-    // done to ensure that that is true. A way to do that could be to set busy status for any client
-    // that isn't  using the secret token, and only allow these clients to lock the service that
-    // way.
-    return false;
-  }
-
   protected boolean isOperational() {
     return operational;
   }
@@ -386,7 +367,8 @@ public abstract class BaseService implements KlabService {
    *     ID is null, the call has failed.
    * @return the ID of the new session created at server side, or null in case of failure.
    */
-  public String registerSession(SessionScope sessionScope) {
+  public String registerSession(
+      SessionScope sessionScope, Federation federation) {
     return sessionScope instanceof ServiceSessionScope serviceSessionScope
         ? serviceSessionScope.getId()
         : null;
@@ -404,7 +386,8 @@ public abstract class BaseService implements KlabService {
    *     ID is null, the call has failed.
    * @return the ID of the new context scope created at server side, or null in case of failure.
    */
-  public String registerContext(ContextScope contextScope) {
+  public String registerContext(
+      ContextScope contextScope, Federation federation) {
     return contextScope instanceof ServiceContextScope serviceSessionScope
         ? serviceSessionScope.getId()
         : null;

@@ -166,25 +166,6 @@ public class MessageImpl implements Message, Serializable {
     this.timestamp = timestamp;
   }
 
-  //    /**
-  //     * Make an exact copy of this message using a different identity. Used for relaying.
-  //     *
-  //     * @param relayId
-  //     * @return a new message identified by relayId
-  //     */
-  //    public MessageImpl copyWithIdentity(String relayId) {
-  //        MessageImpl ret = new MessageImpl();
-  //        ret.identity = relayId;
-  //        ret.messageClass = this.messageClass;
-  //        ret.payload = this.payload;
-  //        ret.payloadClass = this.payloadClass;
-  //        ret.messageType = this.messageType;
-  //        ret.inResponseTo = this.inResponseTo;
-  //        ret.timestamp = this.timestamp;
-  //        ret.taskId = this.taskId;
-  //        return ret;
-  //    }
-
   @Override
   public <T> T getPayload(Class<? extends T> cls) {
 

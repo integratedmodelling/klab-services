@@ -17,11 +17,10 @@ public class DataBuilderImpl implements Data.Builder {
   private final Instance.Builder builder;
   private Instance.Builder parentBuilder;
   private final Geometry geometry;
-  //  private Observable observable;
-  //  private Data.Filler filler;
   private Data.SpaceFillingCurve spaceFillingCurve;
   private Map<Object, Integer> objectKey;
   private int objectCounter = 1;
+  private String adapter;
 
   public DataBuilderImpl(String name, Observable observable, Geometry geometry) {
     this.builder = Instance.newBuilder();
@@ -37,7 +36,6 @@ public class DataBuilderImpl implements Data.Builder {
     this.builder.setLongData(null);
     this.builder.setDataKey(null);
     this.geometry = geometry;
-    //    this.observable = observable;
   }
 
   private DataBuilderImpl(
@@ -51,6 +49,12 @@ public class DataBuilderImpl implements Data.Builder {
     var nBuilder = org.integratedmodelling.klab.common.data.Notification.newBuilder();
     //
     this.builder.getNotifications().add(nBuilder.build());
+    return this;
+  }
+
+  @Override
+  public Data.Builder adapter(String adapterId) {
+    this.adapter = adapterId;
     return this;
   }
 

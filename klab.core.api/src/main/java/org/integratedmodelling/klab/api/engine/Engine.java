@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.engine;
 
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 
@@ -8,24 +9,30 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The k.LAB engine is a service orchestrator that maintains scopes and the services used by these
- * scopes. Its primary role is to provide {@link UserScope}s, of which it can handle one or more.
- * The scopes give access to all authorized services and expose a messaging system that enables
- * listening to authorized events from all services.
+ * The k.LAB engine is a service orchestrator that maintains scopes and clients for all services
+ * used by these scopes. Its primary role is to create and maintain {@link UserScope}s, of which it
+ * can handle one or more. The scopes give access to all authorized services and expose a messaging
+ * system that enables listening to authorized events from all services. This engine implementation
+ * is meant to be lightweight (depending only on the API and commons packages) to be embedded into
+ * applications such as command-line or graphical IDEs.
  *
- * <p>The engine instantiates user scopes upon authentication or anonymously. Access to services
- * happens through the {@link UserScope#getService(Class)} and {@link UserScope#getServices(Class)}
- * methods. There is no specific API related to authentication, except defining the model for {@link
- * org.integratedmodelling.klab.api.authentication.KlabCertificate}s.
+ * <p>The engine instantiates user scopes upon authentication, or anonymously. All scopes access
+ * their services through the {@link UserScope#getService(Class)} and {@link
+ * UserScope#getServices(Class)} methods. There is no specific API related to authentication, except
+ * defining the model for {@link org.integratedmodelling.klab.api.authentication.KlabCertificate}s.
  *
- * <p>Methods are exposed for booting and shutting down the engine, for situations when
- * implementations need to control these phases. Those should operate harmlessly where a boot phase
- * is not needed. The engine should not boot automatically upon creation; the {@link #isAvailable()}
- * and {@link #isOnline()} can be used to monitor status, ensuring that the engine is online before
- * using the scope for k.LAB activities. The messaging system must correctly report all {@link
- * org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#EngineLifecycle} and
- * {@link org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#ServiceLifecycle}
- * events.
+ * <p>The engine detects and exposes k.LAB local {@link Distribution} and if one is present, methods
+ * are exposed for booting and shutting down local services, which are transparently added to the
+ * list of available services for all scopes. If the user has a compiled source distribution in its
+ * filesystem that can be found in the standard ~/git/klab-services directory, that takes over the
+ * downloaded k.LAB distribution. The local distribution is able to operate, in limited mode, even
+ * if the engine runs in anonymous scope without a certificate or with an expired one.
+ *
+ * <p>All service events visible to the service clients are reported through the user scopes that
+ * own them. In turn, the events are dispatched to the Engine's own service scope. Users of the
+ * engine API can listen to all relevant events using the {@link #serviceScope()} handle, or they
+ * can install specific listeners directly on the other scopes exposed. The engine will not
+ * re-broadcast events below the user level.
  *
  * <p>Engine functions can be exposed through the simple REST API defined in {@link
  * org.integratedmodelling.klab.api.ServicesAPI.ENGINE} and is a {@link KlabService} to ensure it
@@ -81,10 +88,10 @@ public interface Engine extends KlabService {
   }
 
   /**
-   * Comprehensive engine status is kept up to date by polling or listening to services. Whenever
-   * the status changes, either because of service lifecycle or because of the user choosing a
-   * different service as the current one, a message is sent (intercepted by the modeler and also
-   * sent to the UI).
+   * Comprehensive engine status is kept up to date by polling or listening to local services.
+   * Whenever the status changes, either because of service lifecycle or because of the user
+   * choosing a different service as the current one, a message is sent (intercepted by the modeler
+   * and also sent to the UI).
    */
   interface Status extends ServiceStatus {
 
@@ -104,21 +111,19 @@ public interface Engine extends KlabService {
      */
     Collection<String> getConnectedUsernames();
 
-    /**
-     * Return service capabilities for all known current services. Capabilities may be filtered
-     * according to who's asking.
-     *
-     * @return
-     */
-    Map<Type, ServiceCapabilities> getServicesCapabilities();
   }
 
   /**
-   * The engine is available to boot.
+   * The engine must be authenticated and have a "default" user, even if more users are created
+   * afterwards. This can be called explicitly before {@link #boot()} if the API user wants to
+   * screen the default user. If it was not called, {@link #boot()} must invoke it before anything
+   * else is done.
+   *
+   * <p>This should be callable more than once without consequences.
    *
    * @return
    */
-  boolean isAvailable();
+  UserScope authenticate();
 
   /**
    * The engine has booted successfully and it's available for use.
@@ -127,6 +132,8 @@ public interface Engine extends KlabService {
    */
   boolean isOnline();
 
+  Distribution.Status getDistributionStatus();
+
   /**
    * Return all the user scopes currently connected to the engine.
    *
@@ -134,7 +141,21 @@ public interface Engine extends KlabService {
    */
   List<UserScope> getUsers();
 
-  // TODO UserScope login(...)
+  /**
+   * Stop any local services that were started by calling {@link #startLocalServices()}. This does
+   * not wait for the services to stop.
+   *
+   * @return the number of service shutdowns initiated
+   */
+  int stopLocalServices();
+
+  /**
+   * Start all available local services and return them categorized by type. The services are added
+   * to the available for the scopes.
+   *
+   * @return
+   */
+  Map<Type, KlabService> startLocalServices();
 
   /**
    * To facilitate implementations, we expose the boot and shutdown as explicitly called phases.

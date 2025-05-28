@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.view.modeler.panels.controllers;
+package org.integratedmodelling.klab.api.view.modeler.views.controllers;
 
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.view.UIReactor;
@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIViewController;
-import org.integratedmodelling.klab.api.view.modeler.panels.DistributionView;
+import org.integratedmodelling.klab.api.view.modeler.views.DistributionView;
 
 /**
  * Interact with and show the status of the current software distribution, if any. If a distribution is
@@ -23,7 +23,7 @@ public interface DistributionViewController extends ViewController<DistributionV
      *
      * @param distribution
      */
-    @UIEventHandler
+    @UIEventHandler(value = UIEvent.DistributionAvailable)
     void distributionAvailable(Distribution distribution);
 
     /**

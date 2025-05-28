@@ -24,17 +24,17 @@ public interface Model extends Knowledge, Resolvable {
         /**
          * Call this to specify semantics for a semantic resource annotation.
          *
-         * @param observable
-         * @return
+         * @param observable the observable to use as semantics
+         * @return this builder instance for method chaining
          */
         Builder as(Observable observable);
 
         /**
          * Call this to build a non-semantic learner
          *
-         * @param name
-         * @param nonSemanticType
-         * @return
+         * @param name the name for the non-semantic learner
+         * @param nonSemanticType the type of artifact to be produced
+         * @return this builder instance for method chaining
          */
         Builder as(String name, Artifact.Type nonSemanticType);
 
@@ -56,28 +56,28 @@ public interface Model extends Knowledge, Resolvable {
     /**
      * Models are in namespaces, which are relevant to organization and scoping.
      *
-     * @return
+     * @return the namespace that contains this model
      */
     String getNamespace();
 
     /**
      * Project name is needed by the resolver for prioritization
      *
-     * @return
+     * @return the name of the project this model belongs to
      */
     String getProjectName();
 
     /**
      * One of CONCEPT, TEXT, NUMBER, BOOLEAN or VOID if inactive because of error or offline resources.
      *
-     * @return
+     * @return the artifact type of this model
      */
     Artifact.Type getType();
 
     /**
      * Models can be annotated for runtime options.
      *
-     * @return
+     * @return a list of annotations associated with this model
      */
     List<Annotation> getAnnotations();
 
@@ -85,7 +85,7 @@ public interface Model extends Knowledge, Resolvable {
      * The kind of description this model represents. Instantiators return
      * {@link DescriptionType#INSTANTIATION}.
      *
-     * @return
+     * @return the description type of this model
      */
     DescriptionType getDescriptionType();
 
@@ -93,7 +93,7 @@ public interface Model extends Knowledge, Resolvable {
      * All the observables contextualized by the model, including the "root" one that defines the model
      * semantics.
      *
-     * @return
+     * @return a list of all observables contextualized by this model
      */
     List<Observable> getObservables();
 
@@ -101,7 +101,7 @@ public interface Model extends Knowledge, Resolvable {
      * All the observables needed by the model before contextualization. If the list has size 0, the model is
      * resolved, i.e. it can be computed without referencing any other observation.
      *
-     * @return
+     * @return a list of observable dependencies required by this model
      */
     List<Observable> getDependencies();
 
@@ -110,7 +110,7 @@ public interface Model extends Knowledge, Resolvable {
      * inherited by their resources. Models with universal coverage should return an empty scale. FIXME there
      * should be a "universal" scale that isn't empty.
      *
-     * @return
+     * @return the geometry representing the coverage of this model
      */
     Geometry getCoverage();
 
@@ -118,7 +118,7 @@ public interface Model extends Knowledge, Resolvable {
      * If the model (or the containing namespace) is stated as <code>observed by</code> some type, return it
      * so that the model can be matched to the observer.
      *
-     * @return
+     * @return the concept representing the observer type for this model, or null if not specified
      */
     Concept getObserverType();
 
@@ -126,7 +126,7 @@ public interface Model extends Knowledge, Resolvable {
      * The sequence of contextualizables (resources, function calls, expressions etc.) that composes the
      * computable part of the model.
      *
-     * @return
+     * @return a list of contextualizables that make up the computation for this model
      */
     List<Contextualizable> getComputation();
 //

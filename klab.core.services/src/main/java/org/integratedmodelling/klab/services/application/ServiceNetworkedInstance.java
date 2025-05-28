@@ -23,7 +23,7 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.ServiceInstance;
-import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.springframework.beans.factory.InitializingBean;
@@ -101,7 +101,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
      * and adjust the service scope.
      */
     File cert = getStartupOptions().getCertificateFile();
-    if (cert != null) {
+    if (cert.isFile()) {
         KlabCertificate certificate = KlabCertificateImpl.createFromFile(cert);
         if (!certificate.isValid()) {
             throw new KlabAuthorizationException("Certificate is invalid: " + certificate.getInvalidityCause());

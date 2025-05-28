@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
+import org.integratedmodelling.klab.api.data.GraphReference;
+import org.integratedmodelling.klab.api.data.RuntimeAssetGraph;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -137,18 +139,25 @@ public interface Message extends Serializable {
    * @author ferdinando.villa
    */
   enum MessageType {
+
     /*
      * Service messages, coming with service capabilities
      */
+    @Deprecated
     ServiceInitializing(Queue.Events, KlabService.ServiceCapabilities.class),
     //        ReasoningAvailable(Queue.Events, Reasoner.Capabilities.class),
+    @Deprecated
     ServiceAvailable(Queue.Events, KlabService.ServiceCapabilities.class),
+    @Deprecated
     ServiceUnavailable(Queue.Events, KlabService.ServiceCapabilities.class),
-    ServiceStatus(Queue.Events, KlabService.ServiceStatus.class),
-    ConnectScope(Queue.Events, ScopeOptions.class),
+    ServiceStatus(Queue.Status, KlabService.ServiceStatus.class),
+    ServiceStatusChanged(Queue.Events, KlabService.ServiceStatus.class),
 
     /** UI selections */
+    @Deprecated
     WorkspaceSelected(Queue.UI, String.class),
+    @Deprecated
+    ServiceSwitched(Queue.UI, KlabService.ServiceCapabilities.class),
 
     /**
      * Sent whenever a file modification (external or through the API) implies a change in a
@@ -157,9 +166,11 @@ public interface Message extends Serializable {
      */
     WorkspaceChanged(Queue.UI, ResourceSet.class),
 
+    @Deprecated
     DocumentSelected(Queue.UI, KlabDocument.class),
-    UserAuthorized(Queue.Events, UserIdentity.class),
-    UserDisconnected(Queue.UI, UserIdentity.class),
+//    @Deprecated
+//    UserAuthorized(Queue.Events, UserIdentity.class),
+
     /**
      * F <-> B: scenario selection from user action (if class == UserInterface) and/or from engine
      * (after selection or from API) with class == SessionLifecycle. In all cases the list of
@@ -168,43 +179,56 @@ public interface Message extends Serializable {
      */
     ScenariosSelected(Queue.Events, String[].class),
 
+    /** Sent by the runtime when a new portion of the knowledge graph has been committed. */
+    KnowledgeGraphCommitted(Queue.Events, RuntimeAssetGraph.class),
+    /**
+     * Sent after a new individual agent observation tagged as an observer has been explicitly
+     * resolved, or when the user selects an observation from the graph as observer.
+     */
+    ObserverResolved(Queue.Events, Observation.class),
+    /**
+     * Sent after a new individual observation suitable for being a context observation has been
+     * explicitly resolved, or when the user selects an observation from the graph as context
+     */
+    ContextObservationResolved(Queue.Events, Observation.class),
+
     /*
      * --- Notification-class types ---
      */
     Debug(Queue.Debug, Notification.class),
+
     Info(Queue.Info, Notification.class),
+
     Warning(Queue.Warnings, Notification.class),
+
     Error(Queue.Errors, Notification.class),
 
     /*
      * --- reasoning-related messages
      */
+    @Deprecated
     LogicalValidation(Queue.Events, ResourceSet.class),
 
     /** Runtime event messages */
     TestCaseStarted(Queue.Events, TestStatistics.class),
+
     TestCaseFinished(Queue.Events, TestStatistics.class),
+
     TestStarted(Queue.Events, ActionStatistics.class),
+
     TestFinished(Queue.Events, ActionStatistics.class),
+
     RunApplication,
     RunBehavior,
     CreateContext,
     CreateSession,
     Fire,
 
-    /** Resolver event messages. FIXME these are obsolete */
-    ResolutionUnsuccessful(Queue.Events, Observation.class),
-    ResolutionSuccessful(Queue.Events, Observation.class),
-    ResolutionAborted(Queue.Events, Observation.class),
-    ResolutionStarted(Queue.Events, Observation.class),
-
     ContextualizationSuccessful(Queue.Events, Observation.class),
-    ContextualizationAborted(Queue.Events, Observation.class),
-    ContextualizationStarted(Queue.Events, Observation.class),
 
-    ActivityStarted(Queue.Events, Activity.class),
-    ActivityFinished(Queue.Events, Activity.class),
-    ActivityAborted(Queue.Events, Activity.class),
+    ContextualizationAborted(Queue.Events, Observation.class),
+
+    ContextualizationStarted(Queue.Events, Observation.class),
 
     ContextClosed(Queue.Events, String.class),
 
@@ -220,8 +244,27 @@ public interface Message extends Serializable {
     SetupInterface,
     CreateWindow,
     CreateModalWindow,
+
     /** Engine lifecycle, should only be client-wide */
-    UsingDistribution(Queue.UI, Distribution.class);
+    @Deprecated
+    UsingDistribution(Queue.UI, Distribution.class),
+
+    /**
+     * Explicit submission of a single observation to the digital twin. TODO should add the current
+     * context path and the user to the metadata in case it comes from a linked DT.
+     */
+    ObservationSubmissionStarted(Queue.Events, Observation.class),
+    /**
+     * Failure (with an exception) after submission of a single observation to the digital twin.
+     * TODO should add the exception to the metadata.
+     */
+    ObservationSubmissionAborted(Queue.Events, Observation.class),
+    /**
+     * Regular termination of a single observation to the digital twin. The observation may be
+     * empty! TODO should add the current * context path and the user to the metadata in case it
+     * comes from a linked DT.
+     */
+    ObservationSubmissionFinished(Queue.Events, Observation.class);
 
     public final Class<?> payloadClass;
     public final Queue queue;

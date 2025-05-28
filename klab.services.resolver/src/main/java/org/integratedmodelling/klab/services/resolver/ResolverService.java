@@ -1,5 +1,11 @@
 package org.integratedmodelling.klab.services.resolver;
 
+import java.io.File;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.knowledge.ModelImpl;
@@ -17,7 +23,6 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -31,18 +36,13 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResolverConfiguration;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
-
-import java.io.File;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 public class ResolverService extends BaseService implements Resolver {
 
@@ -127,18 +127,18 @@ public class ResolverService extends BaseService implements Resolver {
     ret.setServerId(hardwareSignature == null ? null : ("RESOLVER_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
     ret.setServiceName("Resolver");
-    ret.setBrokerURI(
-        (embeddedBroker != null && embeddedBroker.isOnline())
-            ? embeddedBroker.getURI()
-            : configuration.getBrokerURI());
+    //    ret.setBrokerURI(
+    //        (embeddedBroker != null && embeddedBroker.isOnline())
+    //            ? embeddedBroker.getURI()
+    //            : configuration.getBrokerURI());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
     ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
 
-    ret.setAvailableMessagingQueues(
-        Utils.URLs.isLocalHost(getUrl())
-            ? EnumSet.of(Message.Queue.Info, Message.Queue.Errors, Message.Queue.Warnings)
-            : EnumSet.noneOf(Message.Queue.class));
+    //    ret.setAvailableMessagingQueues(
+    //        Utils.URLs.isLocalHost(getUrl())
+    //            ? EnumSet.of(Message.Queue.Info, Message.Queue.Errors, Message.Queue.Warnings)
+    //            : EnumSet.noneOf(Message.Queue.class));
     return ret;
   }
 
@@ -200,11 +200,6 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   @Override
-  public boolean scopesAreReactive() {
-    return false;
-  }
-
-  @Override
   public void initializeService() {
 
     Logging.INSTANCE.setSystemIdentifier("Resolver service: ");
@@ -237,7 +232,7 @@ public class ResolverService extends BaseService implements Resolver {
      * Setup an embedded broker, possibly to be shared with other services, if we're local and there
      * is no configured broker.
      */
-    if (Utils.URLs.isLocalHost(this.getUrl()) && this.configuration.getBrokerURI() == null) {
+    if (Utils.URLs.isLocalHost(this.getUrl()) &&  startupOptions.isStartLocalBroker()) {
       this.embeddedBroker = new EmbeddedBroker();
     }
 
@@ -372,7 +367,8 @@ public class ResolverService extends BaseService implements Resolver {
    * @return
    */
   @Override
-  public String registerSession(SessionScope sessionScope) {
+  public String registerSession(
+      SessionScope sessionScope, Federation federation) {
 
     if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
@@ -381,8 +377,7 @@ public class ResolverService extends BaseService implements Resolver {
             "resolver: session scope has no ID, cannot register " + "a scope autonomously");
       }
 
-      getScopeManager()
-          .registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
+      getScopeManager().registerScope(serviceSessionScope, federation);
       return serviceSessionScope.getId();
     }
 
@@ -399,7 +394,8 @@ public class ResolverService extends BaseService implements Resolver {
    * @return
    */
   @Override
-  public String registerContext(ContextScope contextScope) {
+  public String registerContext(
+      ContextScope contextScope, Federation federation) {
 
     contextScope.getData().put(RESOLUTION_GRAPH_KEY, ResolutionGraph.create(contextScope));
 
@@ -422,8 +418,7 @@ public class ResolverService extends BaseService implements Resolver {
             "Registering context scope without service ID: digital twin will be inoperative");
       }
 
-      getScopeManager()
-          .registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
+      getScopeManager().registerScope(serviceContextScope, federation);
       return serviceContextScope.getId();
     }
 

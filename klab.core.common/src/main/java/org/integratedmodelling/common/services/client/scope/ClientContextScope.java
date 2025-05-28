@@ -117,22 +117,8 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
   @Override
   public CompletableFuture<Observation> observe(Observation observation) {
-
     var runtime = getService(RuntimeService.class);
     return runtime.submit(observation, this);
-    //
-    //    if (taskId != Observation.UNASSIGNED_ID) {
-    //      if (observation instanceof ObservationImpl observation1) {
-    //        observation1.setId(taskId);
-    //        observation1.setUrn(this.getId() + "." + taskId);
-    //      }
-    //      return runtime.resolve(taskId, this);
-    //    }
-    //
-    //    // failure: this just returns the unresolved observation
-    //    info("Submission of " + observation + " failed");
-    //
-    //    return CompletableFuture.completedFuture(observation);
   }
 
   @Override
@@ -204,12 +190,6 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);
   }
-
-  //
-  //  @Override
-  //  public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
-  //    return List.of();
-  //  }
 
   @Override
   public void close() {
@@ -368,9 +348,8 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     this.digitalTwin = new ClientDigitalTwin(this, id);
   }
 
-  //  @Override
-  //  public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
-  //      KnowledgeGraph.Query<T> knowledgeGraphQuery) {
-  //    return runtimeService.queryKnowledgeGraph(knowledgeGraphQuery, this);
-  //  }
+  @Override
+  public CompletableFuture<Observation> submit(Observation observation, Data observationData) {
+    return null;
+  }
 }

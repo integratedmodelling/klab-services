@@ -81,19 +81,6 @@ public enum ServiceConfiguration {
   private Map<String, Authority> authorities = new HashMap<>();
   private KlabService mainService;
 
-  //    /**
-  //     * Standard library loader. Must be registered explicitly when calling {@link #scanPackage
-  //     (String, Map)}.
-  //     * Not registering this along with the {@link Library} annotation can lead to interesting
-  // behaviors.
-  //     */
-  ////    public BiConsumer<Annotation, Class<?>> LIBRARY_LOADER = (annotation, cls) -> {
-  ////        var languageService = getService(Language.class);
-  ////        for (ServiceInfo serviceInfo : loadLibrary((Library) annotation, cls)) {
-  ////            ((LanguageService) languageService).declare(serviceInfo);
-  ////        }
-  ////    };
-
   static {
 
     /*
@@ -109,12 +96,12 @@ public enum ServiceConfiguration {
 
           @Override
           public Scale promoteGeometryToScale(Geometry geometry, Scope scope) {
-              if (geometry instanceof Scale scale) {
-                  return scale;
-              }
-              var ret = new ScaleImpl(geometry);
-              GeometryRepository.INSTANCE.put(geometry, ret);
-              return ret;
+            if (geometry instanceof Scale scale) {
+              return scale;
+            }
+            var ret = new ScaleImpl(geometry);
+            GeometryRepository.INSTANCE.put(geometry, ret);
+            return ret;
           }
 
           @Override
@@ -295,50 +282,58 @@ public enum ServiceConfiguration {
           }
 
           @Override
-          public Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction> getSpatialOffsetMapping(Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve) {
+          public Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>
+              getSpatialOffsetMapping(Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve) {
             return switch (spaceFillingCurve) {
-                case D1_LINEAR -> new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
+              case D1_LINEAR ->
+                  new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
 
                     final long[] l = new long[1];
 
                     @Override
                     public Data.LongToLongArrayFunction getFirst() {
-                        return n -> { l[0] = n; return l; };
+                      return n -> {
+                        l[0] = n;
+                        return l;
+                      };
                     }
 
                     @Override
                     public Data.LongArrayToLongFunction getSecond() {
-                        return n -> n[0];
+                      return n -> n[0];
                     }
-                };
-                case D2_XY -> {
+                  };
+              case D2_XY -> {
+                final var shape = geometry.dimension(Geometry.Dimension.Type.SPACE).getShape();
+                final var x = shape.get(0);
+                final var y = shape.get(1);
 
-                    final var shape = geometry.dimension(Geometry.Dimension.Type.SPACE).getShape();
-                    final var x = shape.get(0);
-                    final var y = shape.get(1);
+                yield new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
 
-                    yield  new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
+                  final long[] l = new long[2];
 
-                        final long[] l = new long[2];
-
-                        @Override
-                        public Data.LongToLongArrayFunction getFirst() {
-                            return n -> { l[0] = n/x; l[1] = n % x; return l; };
-                        }
-
-                        @Override
-                        public Data.LongArrayToLongFunction getSecond() {
-                            return n -> n[1] * x + n[0];
-                        }
+                  @Override
+                  public Data.LongToLongArrayFunction getFirst() {
+                    return n -> {
+                      l[0] = n / x;
+                      l[1] = n % x;
+                      return l;
                     };
-                }
-//                case D2_YX -> null;
-//                case D2_XInvY -> null;
-//                case D3_XYZ -> null;
-//                case D3_ZYX -> null;
-//                case D2_HILBERT -> null;
-//                case D3_HILBERT -> null;
-                default ->
+                  }
+
+                  @Override
+                  public Data.LongArrayToLongFunction getSecond() {
+                    return n -> n[1] * x + n[0];
+                  }
+                };
+              }
+              //                case D2_YX -> null;
+              //                case D2_XInvY -> null;
+              //                case D3_XYZ -> null;
+              //                case D3_ZYX -> null;
+              //                case D2_HILBERT -> null;
+              //                case D3_HILBERT -> null;
+              default ->
                   throw new KlabUnimplementedException(
                       "ServiceConfiguration::getGeometryIterator(" + spaceFillingCurve + ")");
             };

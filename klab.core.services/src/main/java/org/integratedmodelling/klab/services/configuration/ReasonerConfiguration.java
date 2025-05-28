@@ -134,7 +134,7 @@ public class ReasonerConfiguration {
   private String url = null;
   //    private List<ProjectConfiguration> worldview = new ArrayList<>();
   private List<ProjectConfiguration> authorities = new ArrayList<>();
-  private URI brokerURI;
+//  private URI brokerURI;
 
   private String serviceId;
 
@@ -193,13 +193,13 @@ public class ReasonerConfiguration {
     this.serviceId = serviceId;
   }
 
-  public URI getBrokerURI() {
-    return brokerURI;
-  }
-
-  public void setBrokerURI(URI brokerURI) {
-    this.brokerURI = brokerURI;
-  }
+//  public URI getBrokerURI() {
+//    return brokerURI;
+//  }
+//
+//  public void setBrokerURI(URI brokerURI) {
+//    this.brokerURI = brokerURI;
+//  }
 
   // this generates a first-boot config with only the im project from the connected resources
   public static void main(String[] deus) {

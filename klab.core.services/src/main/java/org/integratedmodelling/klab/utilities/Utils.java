@@ -41,12 +41,14 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.view.UI;
+import org.integratedmodelling.klab.api.view.UIView;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -87,6 +89,70 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                 "org" + ".integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT", true));
   }
 
+  public static class Templates extends org.integratedmodelling.klab.api.utils.Utils.Templates {
+
+    public static class TemplateBuilder {
+
+      private final File rootFolder;
+      private final List<Pair<String, Map<Object, Object>>> templates = new ArrayList<>();
+      private final List<Pair<String, String>> verbatim = new ArrayList<>();
+      private Map<Object, Object> data = new HashMap<>();
+
+      public TemplateBuilder(File rootFolder) {
+        this.rootFolder = rootFolder;
+      }
+
+      /**
+       * Add data that will be used in substitutions.
+       *
+       * @param data key,value pairs for templates
+       * @return this same builder instance
+       */
+      public TemplateBuilder with(Object... data) {
+        this.data.putAll(Parameters.create(data));
+        return this;
+      }
+
+      /**
+       * Create a file at build() at the passed relative path (using slash separators). Contents of
+       * the file depend on the remaining arguments.
+       *
+       * @param relativePath either a .jte template found in the classpath or another file name to
+       *     use as is
+       * @param content key,value pairs for templates, which will be added to the data set so far
+       *     (overriding any existing key, locally to this template); string content or nothing for
+       *     verbatim. If nothing is passed, the file will be created empty.
+       * @return this same builder instance
+       */
+      public TemplateBuilder file(String relativePath, Object... content) {
+        if (relativePath.endsWith(".jte")) {
+          var sData = new HashMap<>(this.data);
+          if (content != null) {
+            var aData = Parameters.create(content);
+            sData.putAll(aData);
+          }
+          this.templates.add(Pair.of(relativePath, sData));
+        } else {
+          this.verbatim.add(
+              Pair.of(
+                  relativePath,
+                  content == null || content.length == 0 ? "" : content[0].toString()));
+        }
+        return this;
+      }
+
+      public File build() {
+        return null;
+      }
+
+      // TODO may add some more methods to automatically set up git
+    }
+
+    public static TemplateBuilder builder(File rootFolder) {
+      return new TemplateBuilder(rootFolder);
+    }
+  }
+
   public static class Data extends org.integratedmodelling.klab.api.utils.Utils.Data {
 
     public static Histogram adaptHistogram(com.dynatrace.dynahist.Histogram histogram) {
@@ -102,8 +168,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       }
       return ret;
     }
-
-
   }
 
   /** Functions to access Maven artifacts */
@@ -501,7 +565,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                       Notification.error(
                           "Conflicts during merge of "
                               + Strings.join(result.getMergeResult().getConflicts().keySet(), ", "),
-                          UI.Interactivity.DISPLAY));
+                          UIView.Interactivity.DISPLAY));
             } else {
 
               // commit locally
@@ -516,14 +580,14 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                 pushCommand.setCredentialsProvider(getCredentialsProvider(git, scope));
                 pushCommand.call();
               } catch (GitAPIException ex) {
-                ret.getNotifications().add(Notification.error(ex, UI.Interactivity.DISPLAY));
+                ret.getNotifications().add(Notification.error(ex, UIView.Interactivity.DISPLAY));
               }
             }
           }
           compileDiff(repo, git, oldHead, ret);
         }
       } catch (Exception e) {
-        ret.getNotifications().add(Notification.error(e, UI.Interactivity.DISPLAY));
+        ret.getNotifications().add(Notification.error(e, UIView.Interactivity.DISPLAY));
       }
       return ret;
     }
@@ -632,7 +696,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                       Notification.error(
                           "Conflicts during merge of "
                               + Strings.join(result.getMergeResult().getConflicts().keySet(), ", "),
-                          UI.Interactivity.DISPLAY));
+                          UIView.Interactivity.DISPLAY));
             } else {
               compileDiff(repo, git, oldHead, ret);
             }
@@ -644,7 +708,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                             + "repository "
                             + repo.getIdentifier()
                             + " unsuccessful",
-                        UI.Interactivity.DISPLAY));
+                        UIView.Interactivity.DISPLAY));
           }
 
           /*
@@ -669,7 +733,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         }
 
         ret.getNotifications()
-            .add(Notification.error(message.toString(), UI.Interactivity.DISPLAY));
+            .add(Notification.error(message.toString(), UIView.Interactivity.DISPLAY));
 
       } catch (Throwable e) {
         ret.getNotifications().add(Notification.create(e));

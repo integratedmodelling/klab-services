@@ -2,8 +2,10 @@ package org.integratedmodelling.klab.services.resources.lang;
 
 import java.util.*;
 
+import org.integratedmodelling.common.lang.kactors.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.services.runtime.impl.ExpressionCodeImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
@@ -21,6 +23,7 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.languages.BehaviorSyntaxImpl;
 import org.integratedmodelling.languages.RangeLiteral;
 import org.integratedmodelling.languages.api.*;
 
@@ -1092,6 +1095,14 @@ public enum LanguageAdapter {
     for (var child : definition.getChildren()) {
       ret.getChildren().add(adaptConceptDefinition(child, namespace, projectName));
     }
+    return ret;
+  }
+
+  public KActorsBehavior adaptBehavior(
+      BehaviorSyntaxImpl syntax, String name, List<Notification> notifications) {
+    var ret = new KActorsBehaviorImpl();
+    ret.setUrn(name);
+
     return ret;
   }
 }

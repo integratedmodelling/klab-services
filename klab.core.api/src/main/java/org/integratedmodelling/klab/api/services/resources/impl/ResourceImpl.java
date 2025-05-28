@@ -54,28 +54,28 @@ public class ResourceImpl implements Resource {
     public ResourceImpl() {
     }
 
-    public ResourceImpl(ResourceImpl other) {
-        this.urn = other.urn;
-        this.version = other.version;
-        this.adapterType = other.adapterType;
-        this.localPath = other.localPath;
-        this.geometry = other.geometry;
-        this.projectName = other.projectName;
-        this.localName = other.localName;
-        this.type = other.type;
-        this.timestamp = other.timestamp;
-        this.metadata.putAll(other.metadata);
-        this.parameters.putAll(other.parameters);
-        this.localPaths.addAll(other.localPaths);
-        this.history.addAll(other.history);
-        this.notifications.addAll(other.notifications);
-        this.attributes.addAll(other.attributes);
-        this.inputs = other.inputs == null ? null : new ArrayList<>(other.inputs);
-        this.outputs = other.outputs == null ? null : new ArrayList<>(other.outputs);
-        this.categorizables.addAll(other.categorizables);
-        this.codelists.addAll(other.codelists);
-        this.localProjectName = other.localProjectName;
-    }
+//    public ResourceImpl(ResourceImpl other) {
+//        this.urn = other.urn;
+//        this.version = other.version;
+//        this.adapterType = other.adapterType;
+//        this.localPath = other.localPath;
+//        this.geometry = other.geometry;
+//        this.projectName = other.projectName;
+//        this.localName = other.localName;
+//        this.type = other.type;
+//        this.timestamp = other.timestamp;
+//        this.metadata.putAll(other.metadata);
+//        this.parameters.putAll(other.parameters);
+//        this.localPaths.addAll(other.localPaths);
+//        this.history.addAll(other.history);
+//        this.notifications.addAll(other.notifications);
+//        this.attributes.addAll(other.attributes);
+//        this.inputs = other.inputs == null ? null : new ArrayList<>(other.inputs);
+//        this.outputs = other.outputs == null ? null : new ArrayList<>(other.outputs);
+//        this.categorizables.addAll(other.categorizables);
+//        this.codelists.addAll(other.codelists);
+//        this.localProjectName = other.localProjectName;
+//    }
 
     public String getUrn() {
         return urn;

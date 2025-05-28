@@ -38,7 +38,9 @@ public interface ServicesAPI {
    * Response header for the URN of a AMQP messaging service, returned along with the {@link
    * RUNTIME#CREATE_SESSION} response when messaging is available.
    */
-  String MESSAGING_URN_HEADER = "messaging-urn";
+  String MESSAGING_URL_HEADER = "messaging-urn";
+
+  String FEDERATION_ID_HEADER = "federation-id";
 
   /**
    * Header used to both request and confirm the set of messaging queues wanted or offered for
@@ -410,7 +412,7 @@ public interface ServicesAPI {
     String RETRIEVE_RESOURCE = "/retrieveResource";
     String RETRIEVE_WORKSPACE = "/retrieveWorkspace/{urn}";
     String RESOLVE_SERVICE_CALL = "/resolveServiceCall/{name}";
-    String RESOURCE_STATUS = "/resourceStatus/{urn}";
+    String RESOURCE_INFO = "/resourceInfo/{urn}";
     String RETRIEVE_OBSERVABLE = "/retrieveObservable";
     String DESCRIBE_CONCEPT = "/describeConcept/{conceptUrn}";
     String RETRIEVE_CONCEPT = "/retrieveConcept/{definition}";
@@ -435,6 +437,8 @@ public interface ServicesAPI {
      */
     public interface ADMIN extends PluginAPI {
 
+      /** create a new workspace, posting metadata */
+      String CREATE_WORKSPACE = "/createWorkspace/{workspaceName}";
       /** Create new empty project in passed workspace. */
       String CREATE_PROJECT = "/createProject/{workspaceName}/{projectName}";
 

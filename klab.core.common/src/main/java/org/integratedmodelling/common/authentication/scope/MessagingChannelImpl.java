@@ -1,51 +1,33 @@
 package org.integratedmodelling.common.authentication.scope;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.DeliverCallback;
-import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import java.util.*;
+import java.util.function.Consumer;
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
 /**
- * A channel instrumented for messaging, containing the AMQP connections and channels for all the
- * subscribed queues. In service use, creates the queues and advertises them. In client
- * configurations, consumes the queues and dispatches the messages to their respective handlers. Can
- * be configured as a sender, receiver or both.
+ * Abstract base implementation of a messaging channel, providing functionality for sending and
+ * receiving messages, managing connections, and setting up messaging queues on a compliant AMQP
+ * 0.9.1 broker. This class extends {@link ChannelImpl} and implements the {@link MessagingChannel}
+ * interface.
+ *
+ * <p>The class is designed to enable communication through messaging frameworks by establishing
+ * connections, configuring message queues, and facilitating message dispatching to local handlers
+ * or through message brokers.
  */
 public abstract class MessagingChannelImpl extends ChannelImpl implements MessagingChannel {
 
-  private Channel channel_;
   private boolean sender;
   private boolean receiver;
-  private ConnectionFactory connectionFactory = null;
-  private Connection connection = null;
-  private final Map<Message.Queue, String> queueNames = new HashMap<>();
-  private boolean connected;
+  private AMQPChannel amqpChannel = null;
 
   private static final Map<String, Map<String, List<Consumer<Message>>>> queueConsumers =
       new HashMap<>();
-  private static final Map<String, Map<Message.Match, MessageFuture<?>>> messageFutures =
-      Collections.synchronizedMap(new HashMap<>());
-  private static final Map<String, Set<Message.Match>> messageMatchers =
-      Collections.synchronizedMap(new HashMap<>());
 
   public abstract String getId();
 
@@ -57,35 +39,22 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
 
   protected MessagingChannelImpl(MessagingChannelImpl other) {
     super(other);
-    copyMessagingSetup(other);
+    this.amqpChannel = other.amqpChannel;
+    this.sender = other.sender;
+    this.receiver = other.receiver;
   }
 
   protected void copyMessagingSetup(MessagingChannelImpl parent) {
-    this.channel_ = parent.channel_;
-    this.sender = parent.sender;
-    this.receiver = parent.receiver;
-    this.connectionFactory = parent.connectionFactory;
-    this.connection = parent.connection;
-    this.connected = parent.connected;
-    this.queueNames.putAll(parent.queueNames);
+    this.amqpChannel = parent.amqpChannel;
     copyListeners(parent);
   }
 
   @Override
   public Message send(Object... args) {
-    if (this.sender) {
+    if (this.sender && this.amqpChannel != null && this.amqpChannel.isOnline()) {
       // dispatch to queue if the queue is there
       var message = Message.create(this, args);
-      var queue = queueNames.get(message.getQueue());
-      if (queue != null) {
-        try {
-          getChannel(message.getQueue())
-              .basicPublish(
-                  "", queue, null, Utils.Json.asString(message).getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-          error(e);
-        }
-      }
+      this.amqpChannel.post(message);
     }
     // this will dispatch to the local handlers
     return super.send(args);
@@ -108,258 +77,200 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   }
 
   protected void closeMessaging() {
-    if (this.channel_ != null) {
-      try {
-        for (var queue : queueNames.values()) {
-          this.channel_.queueDelete(queue);
-        }
-        queueNames.clear();
-      } catch (Exception e) {
-        error("Error closing messaging channel", e);
-      }
+    if (this.amqpChannel != null) {
+      this.amqpChannel.close();
     }
-  }
-
-  protected Channel getOrCreateChannel(Message.Queue queue) {
-
-    //        if (!queueNames.containsKey(queue)) {
-
-    /*
-    Looks like just one channel is enough - so one connection factory, one
-    connection, one channel. Maybe the whole API could be simpler. Maybe channels are synchronizing? In
-     all cases we now can have a queue name w/o a channel so we would need to keep a hash of channels
-     and dispose
-    properly.
-     */
-    if (this.channel_ == null) {
-      var holder = findParent((p) -> p.channel_ != null);
-      if (holder != null) {
-        return holder.channel_;
-      }
-      try {
-        this.channel_ = this.connection.createChannel();
-      } catch (IOException e) {
-        // just return null
-      }
-    }
-
-    return this.channel_;
-  }
-
-  protected Channel getChannel(Message.Queue queue) {
-    return getOrCreateChannel(queue);
-  }
-
-  /*
-   * Channels are not hierarchically organized but most of their derivatives are. If this is a scope,
-   * this methods finds the first parent that meets the passed condition.
-   *
-   * @param filter
-   * @return
-   */
-  private MessagingChannelImpl findParent(Predicate<MessagingChannelImpl> filter) {
-
-    if (filter.test(this)) {
-      return this;
-    }
-
-    if (this instanceof Scope scope
-        && scope.getParentScope() instanceof MessagingChannelImpl parent) {
-      return parent.findParent(filter);
-    }
-
-    return null;
   }
 
   /**
-   * Called on the intended target, should use the local connection fields. This is normally only
-   * called on scopes below the user scope.
+   * Sets up messaging by establishing an AMQP channel and configuring it for the specified queues.
+   * This method ensures the messaging system is properly initialized and ready for operation.
    *
-   * @param brokerUrl
-   * @param queuesHeader
-   * @return
+   * @param federation the {@link Federation} instance representing the messaging federation context
+   * @param queues the collection of {@link Message.Queue} instances to be initialized and
+   *     configured
+   * @return a collection of {@link Message.Queue} instances that were successfully set up and
+   *     connected
    */
   public Collection<Message.Queue> setupMessaging(
-      String brokerUrl, String scopeId, Collection<Message.Queue> queuesHeader) {
+      Federation federation, String ownId, Collection<Message.Queue> queues) {
 
-    if (brokerUrl == null) {
-      return EnumSet.noneOf(Message.Queue.class);
-    }
+    this.amqpChannel =
+        new AMQPChannel(
+            federation,
+            switch (this) {
+              case ContextScope ignored1 -> ownId;
+              case SessionScope ignored -> ownId;
+              default -> federation.getId();
+            },
+            this.receiver ? this::messageHandler : null);
 
-    try {
-      this.connectionFactory = new ConnectionFactory();
-      this.connectionFactory.setUri(brokerUrl);
-      this.connection = this.connectionFactory.newConnection();
-      return setupMessagingQueues(scopeId, queuesHeader);
-    } catch (Throwable t) {
-      error("Error connecting to broker: no messaging available", t);
-      return EnumSet.noneOf(Message.Queue.class);
-    }
+    return setupQueues(queues);
+  }
+
+  private void messageHandler(Message message) {
+
+    Logging.INSTANCE.info("ZIO PERA " + message);
+
+    // TODO listeners, resend to handlers in super, handle reply() in posted messages
+
+    // if there is a consumer installed for this queue, run it
+    //                      var consumers = queueConsumers.get(baseQueueName);
+    //                      if (consumers != null && consumers.containsKey(queueId)) {
+    //                        for (var consumer : consumers.get(queueId)) {
+    //                          consumer.accept(message);
+    //                          // TODO the consumer may call reply() on the message and if that was
+    //     done,
+    //                          //  we could reply with the message ID as long as the channel is
+    // also a
+    //                          //  sender.
+    //                          //  reply() would take all the parameters of Message.create() and
+    // would
+    //                          //  automatically
+    //                          //  install the requesting message ID.
+    //                        }
+    //                      }
   }
 
   /**
-   * Called on anything that has a broker connection either locally or in one of the parents.
+   * Sets up the queues for messaging by declaring them with the broker and configuring message
+   * consumers if applicable. This method ensures the queues are connected and ready for either
+   * sending or receiving messages based on the channel configuration.
    *
-   * @param queuesHeader
-   * @return
+   * @param queues the collection of {@link Message.Queue} instances to be set up
+   * @return a collection of {@link Message.Queue} instances that were successfully set up and
+   *     connected
    */
-  public Collection<Message.Queue> setupMessagingQueues(
-      String scopeId, Collection<Message.Queue> queuesHeader) {
+  public Collection<Message.Queue> setupQueues(Collection<Message.Queue> queues) {
 
-    Connection conn = this.connection;
-    if (conn == null) {
-      var holder = findParent((s) -> s.connection != null);
-      if (holder != null) {
-        conn = holder.connection;
-      }
-    }
+    //    Connection conn = this.connection;
+    //    if (conn == null) {
+    //      var holder = findParent((s) -> s.connection != null);
+    //      if (holder != null) {
+    //        conn = holder.connection;
+    //      }
+    //    }
 
-    Set<Message.Queue> ret = EnumSet.noneOf(Message.Queue.class);
-    if (conn != null) {
-      for (var queue : queuesHeader) {
-        try {
-          String queueId = scopeId + "." + queue.name().toLowerCase();
-          getOrCreateChannel(queue)
-              .queueDeclare(queueId, true, false, true /* TODO LINK TO SCOPE
-                     PERSISTENCE */, Map.of());
-          this.queueNames.put(queue, queueId);
-          ret.add(queue);
-        } catch (Throwable e) {
-          // just don't add the queue, THis includes channel_ == null.
-        }
-      }
+    //    Set<Message.Queue> ret = EnumSet.noneOf(Message.Queue.class);
+    //    if (conn != null) {
+    //      for (var queue : queues) {
+    //        try {
+    //          String queueId = baseQueueName + "." + queue.name().toLowerCase();
+    //          var result = getOrCreateChannel(queue)
+    //              .queueDeclare(queueId, true, false, true /* TODO LINK TO SCOPE
+    //                     PERSISTENCE */, Map.of());
+    //          if (result.getQueue() == null) {
+    //            error("Queue " + queueId + " could not be declared");
+    //            continue;
+    //          }
+    //          this.queueNames.put(queue, queueId);
+    //          ret.add(queue);
+    //        } catch (Throwable e) {
+    //          // just don't add the queue, THis includes channel_ == null.
+    //        }
+    //      }
+    //
+    //      if (this.receiver) {
+    //        Set<Message.Queue> toRemove = EnumSet.noneOf(Message.Queue.class);
+    //        // setup consumers. The service-side scopes only receive messages from paired DTs.
+    //        for (var queue : ret) {
+    //          String queueId = baseQueueName + "." + queue.name().toLowerCase();
+    //          try {
+    //
+    //            DeliverCallback deliverCallback =
+    //                (consumerTag, delivery) -> {
+    //                  var message =
+    //                      Utils.Json.parseObject(
+    //                          new String(delivery.getBody(), StandardCharsets.UTF_8),
+    // Message.class);
+    //
+    //                  Logging.INSTANCE.info("ZIO PERA " + message);
+    //
+    //                  // if there is a consumer installed for this queue, run it
+    //                  var consumers = queueConsumers.get(baseQueueName);
+    //                  if (consumers != null && consumers.containsKey(queueId)) {
+    //                    for (var consumer : consumers.get(queueId)) {
+    //                      consumer.accept(message);
+    //                      // TODO the consumer may call reply() on the message and if that was
+    // done,
+    //                      //  we could reply with the message ID as long as the channel is also a
+    //                      //  sender.
+    //                      //  reply() would take all the parameters of Message.create() and would
+    //                      //  automatically
+    //                      //  install the requesting message ID.
+    //                    }
+    //                  }
+    //
+    //                  switch (queue) {
+    //                    case Events -> {
+    //                      event(message);
+    //                    }
+    //                    case Errors -> {
+    //                      error(message);
+    //                    }
+    //                    case Warnings -> {
+    //                      warn(message);
+    //                    }
+    //                    case Info -> {
+    //                      info(message);
+    //                    }
+    //                    case Debug -> {
+    //                      debug(message);
+    //                    }
+    //                    case Clock -> {
+    //                      // TODO
+    //                    }
+    //                    case Status -> {
+    //                      // TODO
+    //                    }
+    //                    case UI -> {
+    //                      ui(message);
+    //                    }
+    //                    case None -> {}
+    //                  }
+    //                };
+    //            getChannel(queue)
+    //                .basicConsume(
+    //                    queueId,
+    //                    true,
+    //                    deliverCallback,
+    //                    consumerTag -> {
+    //                      queueNames.remove(queue);
+    //                    });
+    //          } catch (IOException e) {
+    //            this.queueNames.remove(queue);
+    //            error(e);
+    //            toRemove.add(queue);
+    //          }
+    //        }
+    //
+    //        if (!toRemove.isEmpty()) {
+    //          ret.removeAll(toRemove);
+    //        }
+    //      }
+    //
+    //      if (connectionFactory != null) {
+    //        info(
+    //            this.getClass().getCanonicalName()
+    //                + " scope connected to queues "
+    //                + ret
+    //                + " through broker "
+    //                + connectionFactory.getHost()
+    //                + (receiver ? " (R)" : "")
+    //                + (sender ? " (T)" : ""));
+    //
+    //        if (!ret.isEmpty()) {
+    //          configureQueueConsumers(ret);
+    //        }
+    //      }
+    //
+    //      return ret;
+    //    } else {
+    //      error("No connection to broker");
+    //    }
 
-      if (this.receiver) {
-        Set<Message.Queue> toRemove = EnumSet.noneOf(Message.Queue.class);
-        // setup consumers. The service-side scopes only receive messages from paired DTs.
-        for (var queue : ret) {
-          String queueId = scopeId + "." + queue.name().toLowerCase();
-          try {
-
-            DeliverCallback deliverCallback =
-                (consumerTag, delivery) -> {
-                  var message =
-                      Utils.Json.parseObject(
-                          new String(delivery.getBody(), StandardCharsets.UTF_8), Message.class);
-
-//                  System.out.println("ZIO PERA " + message);
-
-                  // if there is a consumer installed for this queue, run it
-                  var consumers = queueConsumers.get(scopeId);
-                  if (consumers != null && consumers.containsKey(queueId)) {
-                    for (var consumer : consumers.get(queueId)) {
-                      consumer.accept(message);
-                      // TODO the consumer may call reply() on the message and if that was done,
-                      //  we could reply with the message ID as long as the channel is also a
-                      //  sender.
-                      //  reply() would take all the parameters of Message.create() and would
-                      //  automatically
-                      //  install the requesting message ID.
-                    }
-                  }
-
-                  // TODO skip this and put the ID in MessagingScope
-                  if (this instanceof SessionScope scope) {
-                    var id = scope.getId();
-                    var mMatchers = messageMatchers.get(id);
-                    var mFutures = messageFutures.get(id);
-
-                    if (mMatchers != null) {
-                      List<Message.Match> remove = new ArrayList<>();
-                      for (var match : mMatchers) {
-                        if (matchApplies(match, message)) {
-                          if (match.getMessageConsumer() != null) {
-                            // TODO put this in a virtual thread?
-                            match.getMessageConsumer().accept(message);
-                          }
-                          if (!match.isPersistent()) {
-                            remove.add(match);
-                          }
-                        }
-                      }
-                      remove.forEach(mMatchers::remove);
-                    }
-
-                    if (mFutures != null) {
-                      List<Message.Match> remove = new ArrayList<>();
-                      for (var match : mFutures.keySet()) {
-                        if (matchApplies(match, message)) {
-                          if (match.getMessageConsumer() != null) {
-                            // TODO put this in a virtual thread?
-                            match.getMessageConsumer().accept(message);
-                          }
-                          mFutures.get(match).resolve(message);
-                          remove.add(match);
-                        }
-                      }
-                      remove.forEach(mFutures::remove);
-                    }
-                  }
-
-                  switch (queue) {
-                    case Events -> {
-                      event(message);
-                    }
-                    case Errors -> {
-                      error(message);
-                    }
-                    case Warnings -> {
-                      warn(message);
-                    }
-                    case Info -> {
-                      info(message);
-                    }
-                    case Debug -> {
-                      debug(message);
-                    }
-                    case Clock -> {
-                      // TODO
-                    }
-                    case Status -> {
-                      // TODO
-                    }
-                    case UI -> {
-                      ui(message);
-                    }
-                    case None -> {}
-                  }
-                };
-            getChannel(queue)
-                .basicConsume(
-                    queueId,
-                    true,
-                    deliverCallback,
-                    consumerTag -> {
-                      queueNames.remove(queue);
-                    });
-          } catch (IOException e) {
-            this.queueNames.remove(queue);
-            error(e);
-            toRemove.add(queue);
-          }
-        }
-
-        if (!toRemove.isEmpty()) {
-          ret.removeAll(toRemove);
-        }
-      }
-
-      if (connectionFactory != null) {
-        info(
-            this.getClass().getCanonicalName()
-                + " scope connected to queues "
-                + ret
-                + " through broker "
-                + connectionFactory.getHost()
-                + (receiver ? " (R)" : "")
-                + (sender ? " (T)" : ""));
-
-        if (!ret.isEmpty()) {
-          configureQueueConsumers(ret);
-        }
-      }
-
-      return ret;
+    if (this.amqpChannel != null) {
+      this.amqpChannel.filter(queues);
     }
 
     return EnumSet.noneOf(Message.Queue.class);
@@ -395,102 +306,12 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
 
   @Override
   public boolean hasMessaging() {
-    return connection != null && connection.isOpen();
-  }
-
-  /**
-   * Do nothing implementation, override to install consumers when needed.
-   *
-   * @param availableQueues
-   */
-  protected void configureQueueConsumers(Set<Message.Queue> availableQueues) {}
-
-  @Override
-  public void connectToService(
-      KlabService.ServiceCapabilities capabilities,
-      UserIdentity identity,
-      Consumer<Message> consumer) {
-
-    this.connected = true;
-
-    if (capabilities.getAvailableMessagingQueues().isEmpty()
-        || capabilities.getBrokerURI() == null) {
-      return;
-    }
-    setupMessaging(
-        capabilities.getBrokerURI().toString(),
-        capabilities.getType().name().toLowerCase() + "." + identity.getUsername(),
-        capabilities.getAvailableMessagingQueues());
-
-    for (var queue : capabilities.getAvailableMessagingQueues()) {
-      installQueueConsumer(
-          capabilities.getType().name().toLowerCase()
-              + "."
-              + identity.getUsername()
-              + "."
-              + queue.name().toLowerCase(),
-          consumer);
-    }
-  }
-
-  public void trackMessages(Message.Match... matchers) {
-    if (this instanceof SessionScope scope && matchers != null) {
-      for (var matcher : matchers) {
-        messageMatchers
-            .computeIfAbsent(scope.getId(), s -> Collections.synchronizedSet(new HashSet<>()))
-            .add(matcher);
-      }
-    }
-    // TODO skip this and put the ID in MessagingScope
-    throw new KlabInternalErrorException("trackMessages called on unexpected object");
-  }
-
-  @Override
-  public <T> CompletableFuture<T> trackMessages(
-      Message.Match match, Function<Message, T> supplier) {
-    if (this instanceof SessionScope scope) {
-      var ret = new MessageFuture<T>(match, supplier, scope.getId());
-      messageFutures
-          .computeIfAbsent(scope.getId(), s -> Collections.synchronizedMap(new HashMap<>()))
-          .put(match, ret);
-      return ret;
-    }
-    // TODO skip this and put the ID in MessagingScope
-    throw new KlabInternalErrorException("trackMessages called on unexpected object");
-  }
-
-  @Override
-  public void close() {
-    if (this.connection != null) {
-      try {
-        this.connection.close();
-      } catch (Throwable t) {
-        this.connection = null;
-      }
-    }
-    // TODO skip this and put the ID in MessagingScope
-    if (this instanceof SessionScope scope) {
-      messageFutures.remove(scope.getId());
-      messageMatchers.remove(scope.getId());
-      queueConsumers.remove(scope.getId());
-    }
+    return this.amqpChannel != null;
   }
 
   @Override
   public boolean isConnected() {
-    return connected;
-  }
-
-  /**
-   * Only called in advance of setupMessaging() when setup happens in {@link
-   * #getChannel(Message.Queue)} and can only be called after scope creation, which is in local
-   * services when the user must receive notifications. TODO check if we can make this simpler.
-   *
-   * @param queue
-   * @param s
-   */
-  public void presetMessagingQueue(Message.Queue queue, String s) {
-    queueNames.put(queue, s + "." + queue.name().toLowerCase());
+    return this.amqpChannel != null && this.amqpChannel.isOnline();
   }
 
   @Override
@@ -501,63 +322,5 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   @Override
   public boolean isReceiver() {
     return receiver;
-  }
-
-  private static class MessageFuture<T> extends CompletableFuture<T> {
-
-    private AtomicReference<T> payload = new AtomicReference<>();
-    private AtomicBoolean resolved = new AtomicBoolean(false);
-    private boolean cancelled;
-    private final Message.Match match;
-    private final Function<Message, T> supplier;
-    private String scopeId;
-
-    public MessageFuture(Message.Match match, Function<Message, T> supplier, String scopeId) {
-      this.match = match;
-      this.supplier = supplier;
-      this.scopeId = scopeId;
-    }
-
-    public void resolve(Message message) {
-      this.resolved.set(true);
-      this.payload.set(supplier.apply(message));
-    }
-
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-      this.cancelled = true;
-      return messageFutures.get(scopeId).remove(match) != null;
-    }
-
-    @Override
-    public boolean isCancelled() {
-      return this.cancelled;
-    }
-
-    @Override
-    public boolean isDone() {
-      return this.resolved.get();
-    }
-
-    @Override
-    public T get() throws InterruptedException, ExecutionException {
-      while (!this.resolved.get()) {
-        Thread.sleep(200);
-      }
-      return payload.get();
-    }
-
-    @Override
-    public T get(long timeout, TimeUnit unit)
-        throws InterruptedException, ExecutionException, TimeoutException {
-      long mss = System.currentTimeMillis() + unit.toMillis(timeout);
-      while (!this.resolved.get()) {
-        Thread.sleep(200);
-        if (System.currentTimeMillis() > mss) {
-          break;
-        }
-      }
-      return payload.get();
-    }
   }
 }

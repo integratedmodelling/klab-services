@@ -13,159 +13,169 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * An abstract scope delegating all communication to an externally supplied Channel. Provides the basic API to
- * set and retrieve services according to the context of usage.
+ * An abstract scope delegating all communication to an externally supplied Channel. Provides the
+ * basic API to set and retrieve services according to the context of usage.
  */
 public abstract class AbstractDelegatingScope implements Scope {
 
-    Channel delegateChannel;
-    Parameters<String> data = Parameters.create();
-    Status status = Status.EMPTY;
-    Scope parentScope;
-    private Persistence persistence = Persistence.SERVICE_SHUTDOWN;
+  Channel delegateChannel;
+  Parameters<String> data = Parameters.create();
+  Status status = Status.EMPTY;
+  Scope parentScope;
+  private Persistence persistence = Persistence.SERVICE_SHUTDOWN;
 
-    public AbstractDelegatingScope(Channel delegateChannel) {
-        this.delegateChannel = delegateChannel;
-    }
+  public AbstractDelegatingScope(Channel delegateChannel) {
+    this.delegateChannel = delegateChannel;
+  }
 
-    public Channel getDelegateChannel() {
-        return delegateChannel;
-    }
+  @Override
+  public Channel onMessage(BiConsumer<Channel, Message> consumer) {
+    return this.delegateChannel.onMessage(consumer);
+  }
 
-    @Override
-    public Parameters<String> getData() {
-        return data;
-    }
+  public Channel getDelegateChannel() {
+    return delegateChannel;
+  }
 
-    @Override
-    public Status getStatus() {
-        return this.status;
-    }
+  @Override
+  public Parameters<String> getData() {
+    return data;
+  }
 
-    @Override
-    public void setStatus(Status status) {
-        this.status = status;
-    }
+  @Override
+  public Status getStatus() {
+    return this.status;
+  }
 
-    @Override
-    public Identity getIdentity() {
-        return delegateChannel.getIdentity();
-    }
+  @Override
+  public void setStatus(Status status) {
+    this.status = status;
+  }
 
-    @Override
-    public void info(Object... info) {
-        delegateChannel.info(info);
-    }
+  @Override
+  public Identity getIdentity() {
+    return delegateChannel.getIdentity();
+  }
 
-    @Override
-    public void warn(Object... o) {
-        delegateChannel.warn(o);
-    }
+  @Override
+  public void info(Object... info) {
+    delegateChannel.info(info);
+  }
 
-    @Override
-    public void error(Object... o) {
-        delegateChannel.error(o);
-    }
+  @Override
+  public void warn(Object... o) {
+    delegateChannel.warn(o);
+  }
 
-    @Override
-    public void debug(Object... o) {
-        delegateChannel.debug(o);
-    }
+  @Override
+  public void error(Object... o) {
+    delegateChannel.error(o);
+  }
 
-    @Override
-    public Message send(Object... message) {
-        return delegateChannel.send(message);
-    }
+  @Override
+  public void debug(Object... o) {
+    delegateChannel.debug(o);
+  }
 
-    @Override
-    public void interrupt() {
-        delegateChannel.interrupt();
-    }
+  @Override
+  public Message send(Object... message) {
+    return delegateChannel.send(message);
+  }
 
-    @Override
-    public boolean isInterrupted() {
-        return delegateChannel.isInterrupted();
-    }
+  @Override
+  public void interrupt() {
+    delegateChannel.interrupt();
+  }
 
-    @Override
-    public boolean hasErrors() {
-        return delegateChannel.hasErrors();
-    }
+  @Override
+  public boolean isInterrupted() {
+    return delegateChannel.isInterrupted();
+  }
 
-    @Override
-    public void setData(String key, Object value) {
-        this.data.put(key, value);
-    }
+  @Override
+  public boolean hasErrors() {
+    return delegateChannel.hasErrors();
+  }
 
-    @Override
-    public void status(Status status) {
-        delegateChannel.status(status);
-    }
+  @Override
+  public void setData(String key, Object value) {
+    this.data.put(key, value);
+  }
 
-    @Override
-    public void event(Message message) {
-        delegateChannel.event(message);
-    }
+  //    @Override
+  //    public void status(Status status) {
+  //        delegateChannel.status(status);
+  //    }
 
-    @Override
-    public Channel onEvent(Message.MessageClass messageClass, Message.MessageType messageType,
-                           Consumer<Message> runnable, Object... matchArguments) {
-        return delegateChannel.onEvent(messageClass, messageType, runnable, matchArguments);
-    }
+  @Override
+  public void event(Message message) {
+    delegateChannel.event(message);
+  }
 
-    @Override
-    public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
-        for (var service : getServices(serviceClass)) {
-            if (serviceId.equals(service.serviceId())) {
-                return service;
-            }
-        }
-        throw new KlabResourceAccessException("cannot find service with ID=" + serviceId + " in the scope");
-    }
+  @Override
+  public Channel onEvent(
+      Message.MessageClass messageClass,
+      Message.MessageType messageType,
+      Consumer<Message> runnable,
+      Object... matchArguments) {
+    return delegateChannel.onEvent(messageClass, messageType, runnable, matchArguments);
+  }
 
-    @Override
-    public void ui(Message message) {
-        delegateChannel.ui(message);
+  @Override
+  public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
+    for (var service : getServices(serviceClass)) {
+      if (serviceId.equals(service.serviceId())) {
+        return service;
+      }
     }
+    throw new KlabResourceAccessException(
+        "cannot find service with ID=" + serviceId + " in the scope");
+  }
 
-    public Scope getParentScope() {
-        return parentScope;
-    }
+  @Override
+  public void ui(Message message) {
+    delegateChannel.ui(message);
+  }
 
-    public void setParentScope(Scope parentScope) {
-        this.parentScope = parentScope;
-    }
+  public Scope getParentScope() {
+    return parentScope;
+  }
 
-    public void addListener(BiConsumer<Channel, Message> listener) {
-        if (delegateChannel instanceof ChannelImpl channel) {
-            channel.addListener(listener);
-        } // TODO maybe warn otherwise
-    }
+  public void setParentScope(Scope parentScope) {
+    this.parentScope = parentScope;
+  }
 
-    public BiConsumer<Channel, Message>[] listeners() {
-        return delegateChannel instanceof ChannelImpl channel ?
-               channel.listeners().toArray(BiConsumer[]::new) : null;
-    }
+  public void addListener(BiConsumer<Channel, Message> listener) {
+    if (delegateChannel instanceof ChannelImpl channel) {
+      channel.addListener(listener);
+    } // TODO maybe warn otherwise
+  }
 
-    @Override
-    public Persistence getPersistence() {
-        return persistence;
-    }
+  public BiConsumer<Channel, Message>[] listeners() {
+    return delegateChannel instanceof ChannelImpl channel
+        ? channel.listeners().toArray(BiConsumer[]::new)
+        : null;
+  }
 
-    public void setExpiration(Persistence expiration) {
-        this.persistence = expiration;
-    }
+  @Override
+  public Persistence getPersistence() {
+    return persistence;
+  }
 
-    @Override
-    public <T extends Scope> T getParentScope(Type type, Class<T> scopeClass) {
-        if (delegateChannel instanceof Scope scope) {
-            return scope.getParentScope(type, scopeClass);
-        }
-        return null;
-    }
+  public void setExpiration(Persistence expiration) {
+    this.persistence = expiration;
+  }
 
-    @Override
-    public void close() {
-        delegateChannel.close();
+  @Override
+  public <T extends Scope> T getParentScope(Type type, Class<T> scopeClass) {
+    if (delegateChannel instanceof Scope scope) {
+      return scope.getParentScope(type, scopeClass);
     }
+    return null;
+  }
+
+  @Override
+  public void close() {
+    delegateChannel.close();
+  }
 }

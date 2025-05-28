@@ -216,11 +216,11 @@ public class ResourcesConfiguration implements Serializable {
   /** The service work directory path within the k.LAB work directory */
   private String servicePath = "resources";
 
-  /** all other paths are relative to the service path */
-  private String localResourcePath = "local";
-
-  private String publicResourcePath = "public";
-  private URI brokerURI = null;
+//  /** all other paths are relative to the service path */
+//  private String localResourcePath = "local";
+//
+//  private String publicResourcePath = "public";
+//  private URI brokerURI = null;
 
   /**
    * Each workspace name is a subdirectory with a number of projects in them. All are relative to
@@ -269,33 +269,33 @@ public class ResourcesConfiguration implements Serializable {
     this.projectConfiguration = projectConfiguration;
   }
 
-  public String getLocalResourcePath() {
-    return localResourcePath;
-  }
-
-  public void setLocalResourcePath(String localResourcePath) {
-    this.localResourcePath = localResourcePath;
-  }
-
-  public String getPublicResourcePath() {
-    return publicResourcePath;
-  }
-
-  public void setPublicResourcePath(String publicResourcePath) {
-    this.publicResourcePath = publicResourcePath;
-  }
+//  public String getLocalResourcePath() {
+//    return localResourcePath;
+//  }
+//
+//  public void setLocalResourcePath(String localResourcePath) {
+//    this.localResourcePath = localResourcePath;
+//  }
+//
+//  public String getPublicResourcePath() {
+//    return publicResourcePath;
+//  }
+//
+//  public void setPublicResourcePath(String publicResourcePath) {
+//    this.publicResourcePath = publicResourcePath;
+//  }
 
   public String getServiceId() {
     return serviceId;
   }
 
-  public URI getBrokerURI() {
-    return brokerURI;
-  }
-
-  public void setBrokerURI(URI brokerURI) {
-    this.brokerURI = brokerURI;
-  }
+//  public URI getBrokerURI() {
+//    return brokerURI;
+//  }
+//
+//  public void setBrokerURI(URI brokerURI) {
+//    this.brokerURI = brokerURI;
+//  }
 
   public void setServiceId(String serviceId) {
     this.serviceId = serviceId;

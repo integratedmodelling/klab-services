@@ -23,7 +23,7 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Obviously a placeholder for the resolver 2.0 */
+/** Resolution compiler for k.LAB 1.0. Contains the majority of the resolution logics. */
 public class ResolutionCompiler {
 
   private final ResolverService resolver;
@@ -212,12 +212,6 @@ public class ResolutionCompiler {
           ret.setDependencies(Utils.Resources.merge(ret.getDependencies(), requirements));
         }
       }
-
-      if (!ret.isEmpty()) {
-
-        // add any deferrals to the compiled strategy node and return it
-        for (var deferral : operation.getContextualStrategies()) {}
-      }
     }
 
     return ret;
@@ -338,11 +332,6 @@ public class ResolutionCompiler {
   public List<Model> queryModels(Observable observable, ContextScope scope, Scale scale) {
 
     var prioritizer = new PrioritizerImpl(scope, scale);
-
-    System.out.println("QUERYING MODELS FOR " + observable);
-
-    // FIXME use virtual threads & join() to obtain a synchronized list of ResourceSet, then
-    //  use a merging strategy to get models one by one in their latest release
 
     var resources = scope.getService(ResourcesService.class);
     ResourceSet models = resources.resolveModels(observable, scope);

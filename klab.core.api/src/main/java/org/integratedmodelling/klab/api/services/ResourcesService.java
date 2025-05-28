@@ -18,7 +18,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 
@@ -27,6 +27,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Management of all {@link KlabAsset}s, collectively called "resources" (although this conflicts
@@ -88,7 +89,7 @@ public interface ResourcesService extends KlabService {
      * If true, the service is connected to an operational reasoner and can support semantically
      * aware calls such as {@link #resolveModels(Observable, ContextScope)}.
      *
-     * @return
+     * @return true if semantic search is supported, false otherwise
      */
     boolean isSemanticSearchCapable();
 
@@ -98,7 +99,7 @@ public interface ResourcesService extends KlabService {
      * Return the workspace IDs handled by this service and accessible to the requesting scope. All
      * workspaces should be editable according to the permissions.
      *
-     * @return
+     * @return list of workspace names accessible to the requesting scope
      */
     List<String> getWorkspaceNames();
 
@@ -120,8 +121,9 @@ public interface ResourcesService extends KlabService {
   /**
    * Scope CAN be null for generic public capabilities.
    *
-   * @param scope
-   * @return
+   * @param scope the requesting scope for permission validation, can be null for public
+   *     capabilities
+   * @return the capabilities available to the requesting scope
    */
   Capabilities capabilities(Scope scope);
 
@@ -159,8 +161,9 @@ public interface ResourcesService extends KlabService {
    * returned a ResourceSet to ensure correct dependency handling.
    *
    * @param urn
-   * @param scope
-   * @return
+   * @param urn the URN identifier of the workspace to retrieve
+   * @param scope the requesting scope for permission validation
+   * @return the workspace corresponding to the URN, or null if not found
    */
   KimNamespace retrieveNamespace(String urn, Scope scope);
 
@@ -172,7 +175,7 @@ public interface ResourcesService extends KlabService {
    * Return a list of all the workspaces available with their contents, filtering according to the
    * requesting identity.
    *
-   * @return
+   * @return collection of accessible workspaces with their contents
    */
   Collection<Workspace> listWorkspaces();
 
@@ -180,9 +183,9 @@ public interface ResourcesService extends KlabService {
    * Return the parsed contents of a behavior. This only be called after a request that returned a
    * ResourceSet to ensure correct dependency handling.
    *
-   * @param urn
-   * @param scope
-   * @return
+   * @param urn the URN identifier of the behavior to retrieve
+   * @param scope the requesting scope for permission validation
+   * @return the parsed behavior, or null if not found or not accessible
    */
   KActorsBehavior retrieveBehavior(String urn, Scope scope);
 
@@ -190,9 +193,9 @@ public interface ResourcesService extends KlabService {
    * Return the parsed contents of a resource. One or more resource URNs can be passed; if multiple,
    * the result will be a validated multi-resource container.
    *
-   * @param urns
-   * @param scope
-   * @return
+   * @param urns list of URN identifiers for the resources to retrieve
+   * @param scope the requesting scope for permission validation
+   * @return the parsed resource or multi-resource container, or null if not found
    */
   Resource retrieveResource(List<String> urns, Scope scope);
 
@@ -241,11 +244,22 @@ public interface ResourcesService extends KlabService {
    * @param scope
    * @return
    */
-  ResourceStatus resourceStatus(String urn, Scope scope);
+  ResourceInfo resourceInfo(String urn, Scope scope);
 
   /**
-   * @param definition
+   * Set all the asset metadata in one shot. Applies to all kinds of assets that deserve their own
+   * resource metadata - i.e. workspaces, projects, components and resources.
+   *
+   * @param urn
+   * @param info the new resource status from now on
+   * @param scope
    * @return
+   */
+  boolean setResourceInfo(String urn, ResourceInfo info, Scope scope);
+
+  /**
+   * @param definition the observable definition string to parse
+   * @return the parsed KimObservable object, or null if definition is invalid
    */
   KimObservable retrieveObservable(String definition);
 
@@ -259,25 +273,30 @@ public interface ResourcesService extends KlabService {
   KimConcept.Descriptor describeConcept(String conceptUrn);
 
   /**
-   * @param definition
-   * @return
+   * @param definition the concept definition string to parse
+   * @return the parsed KimConcept object, or null if definition is invalid
    */
   KimConcept retrieveConcept(String definition);
 
   /**
-   * @param contextualizedResource
+   * @param contextualizedResource the resource that needs to be contextualized
    * @param observation must have a geometry set
+   * @param event the scheduler event that triggered this contextualization
    * @param input may be null, pass if the resource requires inputs
-   * @param scope
-   * @return
+   * @param scope the scope under which contextualization happens
+   * @return the contextualized data object
    */
   Data contextualize(
-          Resource contextualizedResource, Observation observation, Scheduler.Event event, Data input, Scope scope);
+      Resource contextualizedResource,
+      Observation observation,
+      Scheduler.Event event,
+      Data input,
+      Scope scope);
 
   /**
-   * @param urn
-   * @param scope
-   * @return
+   * @param urn the URN of the dataflow document to retrieve
+   * @param scope the requesting scope for permission validation
+   * @return the parsed dataflow document, or null if not found
    */
   KimObservationStrategyDocument retrieveDataflow(String urn, Scope scope);
 
@@ -299,8 +318,8 @@ public interface ResourcesService extends KlabService {
   /**
    * Return all the namespaces that depend on the passed namespace.
    *
-   * @param namespaceId
-   * @return
+   * @param namespaceId the ID of the namespace to find dependents for
+   * @return list of namespaces that depend on the specified namespace
    */
   List<KimNamespace> dependents(String namespaceId);
 
@@ -310,8 +329,8 @@ public interface ResourcesService extends KlabService {
    * matter if they come from this service or others: a service cannot serve a namespace unless it's
    * prepared to serve its entire closure under the same scope.
    *
-   * @param namespaceId
-   * @return
+   * @param namespaceId the ID of the namespace to find precursors for
+   * @return list of namespaces that are dependencies of the specified namespace
    */
   List<KimNamespace> precursors(String namespaceId);
 
@@ -320,9 +339,9 @@ public interface ResourcesService extends KlabService {
    * resource types are passed, only return URNs for those. The pattern should allow simple
    * wildcards like * and .
    *
-   * @param urnPattern
-   * @param resourceTypes
-   * @return
+   * @param urnPattern the pattern to match resource URNs against
+   * @param resourceTypes optional types to filter the results by
+   * @return list of matching resource URNs
    */
   List<String> queryResources(String urnPattern, KlabAsset.KnowledgeClass... resourceTypes);
 
@@ -330,9 +349,9 @@ public interface ResourcesService extends KlabService {
    * Return the actual (local) project with its contents. Used mostly internally with a likely heavy
    * result payload, should not resolve the project beyond the local workspaces.
    *
-   * @param projectName
-   * @param scope
-   * @return
+   * @param projectName name of the project to retrieve
+   * @param scope the requesting scope for permission validation
+   * @return the project with its complete contents, or null if not found
    */
   Project retrieveProject(String projectName, Scope scope);
 
@@ -342,9 +361,9 @@ public interface ResourcesService extends KlabService {
    * URNs (in {@link ResourceSet#getResults()}) along with the needed resources, namespaces and
    * behaviors needed to run them. Prioritization and final resource access happens in the resolver.
    *
-   * @param observable
-   * @param scope
-   * @return
+   * @param observable the observable to find matching models for
+   * @param scope the context scope containing the reasoner service
+   * @return resource set containing matching models and their dependencies
    */
   ResourceSet resolveModels(Observable observable, ContextScope scope);
 
@@ -382,15 +401,15 @@ public interface ResourcesService extends KlabService {
    * KlabService#importAsset(ResourceTransport.Schema, ResourceTransport.Schema.Asset, String,
    * Scope)} mechanism; the resources service adds management of distribution, ownership and review.
    *
-   * @param urn
-   * @param knowledgeClass
+   * @param urn the URN identifier for the resource
+   * @param knowledgeClass the knowledge class of the resource
    * @param fileLocation local file if any, or null. Should also build hash and backup file for
    *     unburdened copying if the file is opened.
-   * @param submittingScope
+   * @param submittingScope the scope requesting the registration
    * @deprecated should be non-API, part of the import mechanism
-   * @return
+   * @return resource info for the registered resource
    */
-  ResourceStatus registerResource(
+  ResourceInfo registerResource(
       String urn, KnowledgeClass knowledgeClass, File fileLocation, Scope submittingScope);
 
   /**
@@ -400,33 +419,28 @@ public interface ResourcesService extends KlabService {
    */
   interface Admin {
 
-    //        /**
-    //         * Add or update a project from an external source to the local repository.
-    //         *
-    //         * @param workspaceName
-    //         * @param projectUrl          can be a file (zip or existing folder), a git URL (with
-    // a potential
-    //         *                            branch name after a # sign) or a http URL from another
-    // resource
-    //         *                            manager.
-    //         * @param overwriteIfExisting self-explanatory. If the project is remote, reload if
-    // true.
-    //         * @param scope               a scope that must have previously locked the project
-    //         * @return true if operation succeeded and anything was done (false if project existed
-    // and wasn't
-    //         * overwritten)
-    //         */
-    //        List<ResourceSet> importProject(String workspaceName, String projectUrl, boolean
-    // overwriteIfExisting,
-    //                                        UserScope scope);
+    /**
+     * Create a workspace with the passed ID and metadata. While workspaces can still be created
+     * automatically on demand, calling this is the proper workflow and automatic creation may be
+     * disabled in the future. The workspace will initially be accessible only to the owning user,
+     * and the rights management system can be used to change that.
+     *
+     * @param workspace
+     * @param metadata
+     * @param scope
+     * @return true if the workspace creation succeeded. False will be returned if there were errors
+     *     or the workspace already existed.
+     */
+    boolean createWorkspace(String workspace, Metadata metadata, UserScope scope);
 
     /**
      * Create a new empty project. Use the update function to configure the manifest and the
      * create/update content functions to define the content.
      *
-     * @param workspaceName
-     * @param projectName
-     * @return
+     * @param workspaceName name of the workspace to create the project in
+     * @param projectName name of the project to create
+     * @param scope the user scope for permission validation
+     * @return resource set containing the created project
      */
     ResourceSet createProject(String workspaceName, String projectName, UserScope scope);
 
@@ -447,9 +461,11 @@ public interface ResourcesService extends KlabService {
      * returned. Errors are reported with the namespace itself; fatal errors will cause an
      * unparseable namespace exception (TODO).
      *
-     * @param projectName
+     * @param projectName name of the existing project
+     * @param documentUrn URN of the document to create
+     * @param documentType type of the document to create
      * @param scope a scope that must have previously locked the project
-     * @return
+     * @return list of resource sets containing the created document and any dependencies
      */
     List<ResourceSet> createDocument(
         String projectName,
@@ -493,84 +509,39 @@ public interface ResourcesService extends KlabService {
     List<ResourceSet> manageRepository(
         String projectName, RepositoryState.Operation operation, String... arguments);
 
-    //        /**
-    //         * Add a resource fully specified by a resource object to those managed by this
-    // service. Resource is
-    //         * invisible from the outside until published. The resource adapter must be available
-    // to the service.
-    //         *
-    //         * @param resource
-    //         * @return the resource URN, potentially modified w.r.t. the one in the request.
-    //         * @deprecated subsume in the importAsset mechanism
-    //         */
-    //        ResourceSet createResource(Resource resource, UserScope scope);
-    //
-    //        /**
-    //         * Create a resource from a dataflow, storing it in serialized form. The dataflow must
-    // be fully
-    //         * resolved and all dependencies must be stated.
-    //         *
-    //         * @param dataflow
-    //         * @param scope
-    //         * @return
-    //         * @deprecated subsume in the importAsset mechanism
-    //         */
-    //        ResourceSet createResource(Dataflow<Observation> dataflow, UserScope scope);
-    //
-    //        /**
-    //         * Add a resource with file content or a k.LAB component to those managed by this
-    // service. Resource is
-    //         * invisible from the outside until published. The resource adapter must be available
-    // to the service.
-    //         *
-    //         * @param resourcePath the URL to a local or remote directory or archive file that
-    // contains the
-    //         *                     resource files. A resource.json file must be present, along
-    // with anything else
-    //         *                     required by the adapter. If the file is a .jar file, the
-    // resource is assumed to
-    //         *                     be a component and is treated as such.
-    //         * @return the result including the resource URN in results, potentially modified
-    // w.r.t. the one in
-    //         * the request. If a component, the URN is the plugin name from the jar manifest.
-    //         * <p>
-    //         * @deprecated use the resource import mechanism
-    //         */
-    //        ResourceSet createResource(File resourcePath, UserScope scope);
-
-    //        /**
-    //         * @param projectName
-    //         * @param urnId
-    //         * @param adapter
-    //         * @param resourceData
-    //         * @param scope
-    //         * @return
-    //         * @deprecated use the import mechanism
-    //         */
-    //        Resource createResource(String projectName, String urnId, String adapter,
-    //                                Parameters<String> resourceData, UserScope scope);
-
     /**
      * Remove a document in a project. May be a resource when it's exclusive to the project.
      *
-     * @param projectName
-     * @param assetUrn
-     * @param scope
-     * @return
+     * @param projectName name of the project containing the document to delete
+     * @param assetUrn URN of the document/asset to delete
+     * @param scope the user scope for permission validation
+     * @return list of resource sets affected by the deletion
      */
     List<ResourceSet> deleteDocument(String projectName, String assetUrn, UserScope scope);
 
     /**
-     * @param projectName
+     * Publish an observation from the passed context scope into a persistent resource. The resource
+     * will be published at tier 0 with rights restricted to the published.
+     *
+     * @param observation
      * @param scope
-     * @return true if operation was carried out
+     * @return a future for the completed resource
+     */
+    CompletableFuture<Resource> publishObservation(Observation observation, ContextScope scope);
+
+    /**
+     * @param projectName name of the project to delete
+     * @param scope the user scope for permission validation
+     * @return list of resource sets affected by the project deletion
      */
     List<ResourceSet> deleteProject(String projectName, UserScope scope);
 
     /**
      * Remove an entire workspace and all the projects and resources in it.
      *
-     * @param workspaceName
+     * @param workspaceName name of the workspace to delete
+     * @param scope the user scope for permission validation
+     * @return list of resource sets affected by the workspace deletion
      */
     List<ResourceSet> deleteWorkspace(String workspaceName, UserScope scope);
 
@@ -578,14 +549,16 @@ public interface ResourcesService extends KlabService {
      * Return a list of all the projects available with their contents. Bound to produce a large
      * payload.
      *
-     * @return
+     * @param scope the requesting scope for permission validation
+     * @return collection of all available projects with their contents
      */
     Collection<Project> listProjects(Scope scope);
 
     /**
      * Return the URNs of all the resources available locally.
      *
-     * @return
+     * @param scope the requesting scope for permission validation
+     * @return collection of URNs for all locally available resources
      */
     Collection<String> listResourceUrns(Scope scope);
 
@@ -596,8 +569,9 @@ public interface ResourcesService extends KlabService {
      * @param urn the URN of the project to lock
      * @throws org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException if the
      *     project is already locked or isn't accessible for any other reason
+     * @return true if lock was successful
      */
-    URL lockProject(String urn, UserScope scope);
+    boolean lockProject(String urn, UserScope scope);
 
     /**
      * Unlock a previously locked project.

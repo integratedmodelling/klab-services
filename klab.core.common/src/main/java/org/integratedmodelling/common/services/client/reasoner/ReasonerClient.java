@@ -4,6 +4,12 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
+import java.io.File;
+import java.net.URL;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
@@ -12,6 +18,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -24,20 +31,9 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearch
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
-import org.integratedmodelling.klab.rest.ServiceReference;
-
-import java.io.File;
-import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.function.BiConsumer;
 
 /**
  * TODO the reasoner client should cache a configurable amount of info so to minimize the likely
@@ -76,19 +72,37 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
                 }
               });
 
-  public ReasonerClient(
-      URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
-    super(Type.REASONER, url, identity, List.of(), settings, owner);
-    // TODO check why the server key is wrong
+  public static ReasonerClient create(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new ReasonerClient(url, identity, settings);
+  }
+
+  public static ReasonerClient createOffline(
+      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    return new ReasonerClient(url, identity, settings, false);
+  }
+
+  public static ReasonerClient createLocal(Identity identity, Parameters<Engine.Setting> settings) {
+    return new ReasonerClient(Type.REASONER.localServiceUrl(), identity, settings);
+  }
+
+  public static ReasonerClient createLocalOffline(
+      Identity identity, Parameters<Engine.Setting> settings) {
+    return new ReasonerClient(Type.REASONER.localServiceUrl(), identity, settings, false);
   }
 
   public ReasonerClient(
-      URL url,
-      Identity identity,
-      List<ServiceReference> services,
-      Parameters<Engine.Setting> settings,
-      BiConsumer<Channel, Message>... listeners) {
-    super(Type.REASONER, url, identity, settings, services, listeners);
+      URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
+    super(Type.REASONER, url, identity, settings, owner);
+  }
+
+  public ReasonerClient(URL url, Identity identity, Parameters<Engine.Setting> settings) {
+    super(Type.REASONER, url, identity, settings, true);
+  }
+
+  public ReasonerClient(
+      URL url, Identity identity, Parameters<Engine.Setting> settings, boolean connect) {
+    super(Type.REASONER, url, identity, settings, connect);
   }
 
   @Override
@@ -732,14 +746,15 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
    * @return
    */
   @Override
-  public String registerSession(SessionScope scope) {
+  public String registerSession(SessionScope scope, Federation federation) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
 
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
-            && messagingChannel.hasMessaging();
+            && messagingChannel.hasMessaging()
+            && federation != null;
 
     for (var service : scope.getServices(ResourcesService.class)) {
       if (service instanceof ServiceClient serviceClient) {
@@ -777,14 +792,13 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
       }
     }
 
-    if (hasMessaging) {
-      // TODO setup desired request. This will send no header and use the defaults.
-      // Resolver should probably only catch events and errors.
-    }
-
     var ret =
         client
-            .withScope(scope.getParentScope())
+            .withHeader(
+                ServicesAPI.MESSAGING_URL_HEADER,
+                federation == null ? null : federation.getBroker())
+            .withHeader(
+                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
             .post(
                 ServicesAPI.CREATE_SESSION,
                 request,
@@ -794,11 +808,10 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
                     ? serviceSideScope.getId()
                     : null);
 
-    var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
-    if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
+    if (federation != null && scope instanceof MessagingChannelImpl messagingChannel) {
       var queues =
           getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
-      messagingChannel.setupMessaging(brokerURI, ret, queues);
+      messagingChannel.setupMessaging(federation, ret, queues);
     }
 
     return ret;
@@ -813,14 +826,15 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
    * @return
    */
   @Override
-  public String registerContext(ContextScope scope) {
+  public String registerContext(ContextScope scope, Federation federation) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
 
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
-            && messagingChannel.hasMessaging();
+            && messagingChannel.hasMessaging()
+            && federation != null;
 
     // The runtime needs to use our resolver(s) and resource service(s), as long as they're
     // accessible.
@@ -861,15 +875,20 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
       }
     }
 
-    if (hasMessaging) {
-      // TODO setup desired request. This will send no header and use the defaults.
-      // Resolver should probably only catch events and errors.
-    }
+//    if (hasMessaging) {
+//      // TODO setup desired request. This will send no header and use the defaults.
+//      // Resolver should probably only catch events and errors.
+//    }
 
     var ret =
         client
             .withScope(scope.getParentScope())
             .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
+            .withHeader(
+                ServicesAPI.MESSAGING_URL_HEADER,
+                federation == null ? null : federation.getBroker())
+            .withHeader(
+                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
             .post(
                 ServicesAPI.CREATE_CONTEXT,
                 request,
@@ -880,10 +899,11 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
                     : null);
 
     if (hasMessaging) {
-      var queues =
-          getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
       if (scope instanceof MessagingChannelImpl messagingChannel) {
-        messagingChannel.setupMessagingQueues(ret, queues);
+        var queues =
+            getQueuesFromHeader(
+                scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+        messagingChannel.setupMessaging(federation, ret, queues);
       }
     }
 

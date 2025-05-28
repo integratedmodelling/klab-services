@@ -12,7 +12,7 @@ import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.view.UI;
+import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
@@ -103,7 +103,7 @@ public class FileProjectStorage implements ProjectStorage {
                     }
                 }
             } catch (Exception e) {
-                ret.getNotifications().add(Notification.error(e, UI.Interactivity.DISPLAY));
+                ret.getNotifications().add(Notification.error(e, UIView.Interactivity.DISPLAY));
             }
 
             ret.setOverallStatus(overallStatus);
@@ -379,7 +379,7 @@ public class FileProjectStorage implements ProjectStorage {
                     collectResources(".kactors", "scripts", false, ret);
                 }
                 case TESTCASE -> {
-                    collectResources(".kactors", "tests", false, ret);
+                    collectResources(".kactors", "testcases", false, ret);
                 }
                 case BEHAVIOR_COMPONENT -> {
                     collectResources(".kactors", "components", false, ret);

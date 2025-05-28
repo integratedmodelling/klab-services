@@ -52,7 +52,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private Observation contextObservation;
   private URL url;
   private DigitalTwin digitalTwin;
-//  private KnowledgeGraph.Operation currentOperation;
 
   // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
   protected ServiceContextScope parent;
@@ -263,7 +262,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return runtime.submit(observation, this);
   }
 
-//  public void finalizeObservation(
+  @Override
+  public CompletableFuture<Observation> submit(Observation observation, Data observationData) {
+    return null;
+  }
+
+  //  public void finalizeObservation(
 //      Observation observation, KnowledgeGraph.Operation operation, boolean successful) {
 //    if (successful) {
 //      if (observation.getObservable().is(SemanticType.QUALITY)) {
@@ -498,21 +502,22 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     // but
     // no big deal for now. Alternative is a complicated restructuring of messages to take multiple
     // payloads.
-    setId(scopeId);
-    setStatus(Status.WAITING);
-    KActorsBehavior.Ref contextAgent =
-        parentScope.ask(
-            KActorsBehavior.Ref.class,
-            Message.MessageClass.ActorCommunication,
-            Message.MessageType.CreateContext,
-            this);
-    if (contextAgent != null && !contextAgent.isEmpty()) {
-      setStatus(Status.STARTED);
-      setAgent(contextAgent);
-      return true;
-    }
-    setStatus(Status.ABORTED);
-    return false;
+//    setId(scopeId);
+//    setStatus(Status.WAITING);
+//    KActorsBehavior.Ref contextAgent =
+//        parentScope.ask(
+//            KActorsBehavior.Ref.class,
+//            Message.MessageClass.ActorCommunication,
+//            Message.MessageType.CreateContext,
+//            this);
+//    if (contextAgent != null && !contextAgent.isEmpty()) {
+//      setStatus(Status.STARTED);
+//      setAgent(contextAgent);
+//      return true;
+//    }
+//    setStatus(Status.ABORTED);
+//    return false;
+    return true;
   }
 
   @Override

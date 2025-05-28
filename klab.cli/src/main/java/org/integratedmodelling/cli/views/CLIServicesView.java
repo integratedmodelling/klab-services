@@ -7,6 +7,7 @@ import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.ServicesViewController;
@@ -22,7 +23,8 @@ import picocli.CommandLine;
       ""
     },
     subcommands = {
-      org.integratedmodelling.cli.views.CLIServicesView.Connect.class,
+      CLIServicesView.Start.class,
+      CLIServicesView.Stop.class,
       CLIServicesView.Resources.class,
       CLIServicesView.Runtime.class
     })
@@ -104,9 +106,8 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
         // TODO describe the engine
       } else {
 
-        boolean first = true;
-        for (var service :
-            KlabCLI.INSTANCE.engine().serviceScope().getServices(serviceType.classify())) {
+        //        boolean first = true;
+        for (var service : KlabCLI.INSTANCE.user().getServices(serviceType.classify())) {
 
           if (reasoners && serviceType != KlabService.Type.REASONER
               || resolvers && serviceType != KlabService.Type.RESOLVER
@@ -116,38 +117,38 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
             continue;
           }
 
+          var isDefault =
+              service.equals(KlabCLI.INSTANCE.user().getService(serviceType.classify()));
+
           /*
            * TODO tag each service with a keyword or parameter so that it can be easily
            *  referenced using connect. Keep the services dictionary in the superclass.
            */
 
-          if (first) {
-            //                            out.println(serviceType);
-            // TODO number for selection; highlight the name of the "current" service in
-            //  each category
+          //                            out.println(serviceType);
+          // TODO number for selection; highlight the name of the "current" service in
+          //  each category
+          out.println(
+              (isDefault ? "* " : "  ")
+                  + Utils.Paths.getLast(service.getClass().getName(), '.')
+                  + ": "
+                  + service.getServiceName()
+                  + " "
+                  + " ["
+                  + (service.status().isAvailable() ? "available" : "not available")
+                  + (service instanceof ServiceClient client && client.isLocal()
+                      ? "," + "local"
+                      : "")
+                  + "] "
+                  + service.getUrl()
+                  + ServicesAPI.CAPABILITIES);
+          if (verbose) {
             out.println(
-                "  "
-                    + Utils.Paths.getLast(service.getClass().getName(), '.')
-                    + ": "
-                    + service.getServiceName()
-                    + " "
-                    + " ["
-                    + (service.status().isAvailable() ? "available" : "not available")
-                    + (service instanceof ServiceClient client && client.isLocal()
-                        ? "," + "local"
-                        : "")
-                    + "] "
-                    + service.getUrl()
-                    + ServicesAPI.CAPABILITIES);
-            if (verbose) {
-              out.println(
-                  Utils.Strings.indent(
-                      Utils.Json.printAsJson(
-                          service.capabilities(KlabCLI.INSTANCE.engine().getUsers().get(0))),
-                      6));
-            }
+                Utils.Strings.indent(
+                    Utils.Json.printAsJson(
+                        service.capabilities(KlabCLI.INSTANCE.engine().getUsers().get(0))),
+                    6));
           }
-          first = false;
         }
       }
     }
@@ -342,25 +343,55 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
   }
 
   @CommandLine.Command(
-      name = "connect",
+      name = "start",
       mixinStandardHelpOptions = true,
-      description = {
-        "Connect to an " + "available " + "service",
-        "Makes the service " + "available" + " for " + "requests."
-      })
-  static class Connect implements Runnable {
+      description = {"Start local services if a distribution is available."})
+  static class Start implements Runnable {
+
+    @CommandLine.Spec CommandLine.Model.CommandSpec commandSpec;
 
     @CommandLine.Option(
         names = {"-d", "--default"},
         defaultValue = "false",
-        description = {"Make the connected service also the default to answer requests."},
+        description = {"Make the connected services default"},
         required = false)
     boolean makeDefault = false;
 
     @Override
     public void run() {
-      // TODO Auto-generated method stub
 
+      PrintWriter out = commandSpec.commandLine().getOut();
+      var dStatus = KlabCLI.INSTANCE.engine().getDistributionStatus();
+      if (dStatus.getDevelopmentStatus() == Product.Status.UP_TO_DATE) {
+        out.println("Starting services from local source distribution");
+      } else if (dStatus.getDownloadedStatus() != Product.Status.UNAVAILABLE) {
+        out.println(
+            CommandLine.Help.Ansi.AUTO.string(
+                "Starting services from "
+                    + (dStatus.getDownloadedStatus() == Product.Status.OBSOLETE
+                        ? "@|yellow obsolete|@ "
+                        : "up to date ")
+                    + "local source distribution"));
+      } else {
+        out.println(
+            CommandLine.Help.Ansi.AUTO.string(
+                "@|yellow No k.LAB distribution is available locally|@"));
+        return;
+      }
+
+      KlabCLI.INSTANCE.engine().startLocalServices();
+    }
+  }
+
+  @CommandLine.Command(
+      name = "stop",
+      mixinStandardHelpOptions = true,
+      description = {"Stop any local services started by this engine."})
+  static class Stop implements Runnable {
+
+    @Override
+    public void run() {
+      KlabCLI.INSTANCE.engine().stopLocalServices();
     }
   }
 
@@ -369,6 +400,11 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
 
   @Override
   public void notifyServiceStatus(KlabService.ServiceStatus status) {}
+
+  @Override
+  public void serviceFocusChanged(KlabService.ServiceCapabilities serviceCapabilities) {
+
+  }
 
   @Override
   public void engineStatusChanged(Engine.Status status) {

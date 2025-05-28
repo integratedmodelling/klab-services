@@ -3,11 +3,9 @@ package org.integratedmodelling.klab.api.digitaltwin;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.integratedmodelling.klab.api.collections.Identifier;
-import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -31,7 +29,7 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
  * org.integratedmodelling.klab.api.scope.ContextScope} points to a digital twin and contains the
  * methods to access it. Digital twins can be built from pairing others in a federated fashion.
  */
-public interface DigitalTwin {
+public interface DigitalTwin extends RuntimeAsset {
 
   /**
    * An executor is a runnable operation linked to an observation, compiled from an actuator in the
@@ -47,7 +45,7 @@ public interface DigitalTwin {
      * @param geometry
      * @param event
      * @param scope
-     * @return
+     * @return true if execution was successful
      */
     boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope);
   }
@@ -89,6 +87,14 @@ public interface DigitalTwin {
         GraphModel.Relationship relationship,
         Object... data);
 
+    /**
+     * Register the current state of an asset so that it will be updated in the knowledge graph at
+     * commit.
+     *
+     * @param asset
+     */
+    void update(RuntimeAsset asset);
+
     void resolveWith(Observation observation, Executor executor);
 
     /**
@@ -103,9 +109,20 @@ public interface DigitalTwin {
      * commit() with as much tracking info as practical.
      *
      * @param compilationError
-     * @return
+     * @return a failed transaction that will throw the error at commit
      */
     Transaction fail(Throwable compilationError);
+
+    /**
+     * Produce the serializable and visualizable graph containing all the new assets created and
+     * their structure in the graph. The incremental graph structure is sent using a {@link
+     * org.integratedmodelling.klab.api.services.runtime.Message.MessageType#KnowledgeGraphCommitted}
+     * message. Upon reception, the parent of each root observation should be looked up in the scope
+     * for proper bookkeeping if a global KG is kept at client side.
+     *
+     * @return the runtime asset graph for this transaction
+     */
+    RuntimeAssetGraph getGraph();
   }
 
   /**
@@ -117,7 +134,7 @@ public interface DigitalTwin {
    * @param runtimeAssets any other assets related to the transaction that may be relevant or may
    *     need to be finalized on commit. For example a resolution transaction may set the final
    *     knowledge graph IDs in the arguments, so that they are available after commit.
-   * @return
+   * @return a new transaction object to modify the knowledge graph
    */
   Transaction transaction(Activity activity, ContextScope scope, Object... runtimeAssets);
 
@@ -125,14 +142,14 @@ public interface DigitalTwin {
    * The full knowledge graph, including observations, actuators and provenance, referring to this
    * digital twin.
    *
-   * @return
+   * @return the complete knowledge graph for this digital twin
    */
   KnowledgeGraph getKnowledgeGraph();
 
   /**
    * Return the storage for all "datacube" content.
    *
-   * @return
+   * @return the storage manager for this digital twin
    */
   StorageManager getStorageManager();
 
@@ -140,7 +157,7 @@ public interface DigitalTwin {
    * The scheduler manages everything having to do with time, and coordinates with the {@link
    * KnowledgeGraph} for the management of events and occurrent observers and observations.
    *
-   * @return
+   * @return the dataflow graph starting at the given context
    */
   Scheduler getScheduler();
 
@@ -169,7 +186,7 @@ public interface DigitalTwin {
    *
    * @param data
    * @param target
-   * @return
+   * @return true if ingestion was successful
    */
   boolean ingest(Data data, Observation target, Scheduler.Event event, ContextScope scope);
 
@@ -185,7 +202,7 @@ public interface DigitalTwin {
    *
    * @param scope a scope used to resolve semantics.
    * @param resolvables
-   * @return
+   * @return a new unresolved observation, or null if the parameters do not resolve to a valid one
    */
   static ObservationImpl createObservation(Scope scope, Object... resolvables) {
 
@@ -255,7 +272,8 @@ public interface DigitalTwin {
             /*            if (isObserver) {
               observerGeometry = geometry;
               geometry = ogeom == null ? Geometry.builder().build() : ogeom;
-            } else */ if (geometry == null && ogeom != null) {
+            } else */
+            if (geometry == null && ogeom != null) {
               geometry = ogeom;
             }
 

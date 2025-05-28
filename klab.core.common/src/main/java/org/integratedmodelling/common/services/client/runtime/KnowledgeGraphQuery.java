@@ -57,6 +57,21 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
     DATA;
 
     public static AssetType classify(Object asset) {
+
+      if (asset == RuntimeAsset.CONTEXT_ASSET
+          || asset instanceof RuntimeAsset runtimeAsset
+              && runtimeAsset.getId() == RuntimeAsset.CONTEXT_ASSET.getId()) {
+        return AssetType.SCOPE;
+      } else if (asset == RuntimeAsset.PROVENANCE_ASSET
+          || asset instanceof RuntimeAsset runtimeAsset
+              && runtimeAsset.getId() == RuntimeAsset.PROVENANCE_ASSET.getId()) {
+        return AssetType.PROVENANCE;
+      } else if (asset == RuntimeAsset.DATAFLOW_ASSET
+          || asset instanceof RuntimeAsset runtimeAsset
+              && runtimeAsset.getId() == RuntimeAsset.DATAFLOW_ASSET.getId()) {
+        return AssetType.DATAFLOW;
+      }
+
       return switch (asset) {
         case Observation ignored -> AssetType.OBSERVATION;
         case Actuator ignored -> AssetType.ACTUATOR;
@@ -162,7 +177,6 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   private Asset relationshipSource;
   private Asset relationshipTarget;
 
-
   public KnowledgeGraphQuery() {}
 
   public KnowledgeGraphQuery(AssetType assetType) {
@@ -188,31 +202,31 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   private Asset makeAsset(Object startingPoint) {
     var ret = new Asset();
     ret.type = AssetType.classify(startingPoint);
-      ret.urn =
-          switch (startingPoint) {
-            case Observation ignored -> ignored.getUrn();
-            case Actuator ignored -> ignored.getId() + "";
-            case Activity ignored -> ignored.getUrn();
-            case Observable ignored -> ignored.getUrn();
-            case KimObservable ignored -> ignored.getUrn();
-            case Concept ignored -> ignored.getUrn();
-            case KimConcept ignored -> ignored.getUrn();
-            case ServiceSideScope ignored ->
-                ignored instanceof ContextScope contextScope
-                        && contextScope.getContextObservation() != null
-                    ? contextScope.getContextObservation().getUrn()
-                    : ignored.getId();
-            case ClientContextScope ignored ->
-                ignored.getContextObservation() == null
-                    ? ignored.getId()
-                    : ignored.getContextObservation().getUrn();
-            case Storage.Buffer ignored -> ignored.getId() + "";
-            default -> null;
-          };
+    ret.urn =
+        switch (startingPoint) {
+          case Observation ignored -> ignored.getUrn();
+          case Actuator ignored -> ignored.getId() + "";
+          case Activity ignored -> ignored.getUrn();
+          case Observable ignored -> ignored.getUrn();
+          case KimObservable ignored -> ignored.getUrn();
+          case Concept ignored -> ignored.getUrn();
+          case KimConcept ignored -> ignored.getUrn();
+          case ServiceSideScope ignored ->
+              ignored instanceof ContextScope contextScope
+                      && contextScope.getContextObservation() != null
+                  ? contextScope.getContextObservation().getUrn()
+                  : ignored.getId();
+          case ClientContextScope ignored ->
+              ignored.getContextObservation() == null
+                  ? ignored.getId()
+                  : ignored.getContextObservation().getUrn();
+          case Storage.Buffer ignored -> ignored.getId() + "";
+          default -> null;
+        };
 
-      if (ret.urn == null) {
-        throw new KlabIllegalStateException("Unresolved asset passed to a query");
-      }
+    if (ret.urn == null) {
+      throw new KlabIllegalStateException("Unresolved asset passed to a query");
+    }
     return ret;
   }
 
@@ -230,7 +244,8 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   }
 
   @Override
-  public KnowledgeGraph.Query<T> between(Object source, Object target, GraphModel.Relationship relationship) {
+  public KnowledgeGraph.Query<T> between(
+      Object source, Object target, GraphModel.Relationship relationship) {
     this.relationship = relationship;
     this.relationshipSource = makeAsset(source);
     this.relationshipTarget = makeAsset(target);

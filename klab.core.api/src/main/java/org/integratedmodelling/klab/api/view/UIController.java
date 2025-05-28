@@ -37,7 +37,7 @@ public interface UIController extends UIReactor {
      *
      * @return the UI if one was installed. May be null.
      */
-    UI getUI();
+    UIView getUI();
 
     /**
      * A controller runs under one user at a time. The authentication view may be used to authenticate new
@@ -74,7 +74,7 @@ public interface UIController extends UIReactor {
     void dispatch(UIReactor sender, UIReactor.UIEvent event, Object... payload);
 
     /**
-     * Register a view controller (normally implementing {@link UI} or {@link ViewController}) so that it can
+     * Register a view controller (normally implementing {@link UIView} or {@link ViewController}) so that it can
      * be informed of all UI-relevant events. The view interfaces specify default methods that turn UI actions
      * into events which go back to the modeler for wiring. This must be done for all persistent reactive
      * objects, including all views, prior to booting the UI: views pre-exist although they may be invisible
@@ -187,14 +187,14 @@ public interface UIController extends UIReactor {
      */
     void storeView(Object... changedElements);
 
-    /**
-     * Set the passed service into the engine as the "current" service to serve requests for the engine scope.
-     * This comes from the UI, defaulting at a previously selected service if that is remembered or
-     * configured, or, lacking that, the first service that reaches the controller.
-     *
-     * @param service
-     */
-    void setDefaultService(KlabService.ServiceCapabilities service);
+//    /**
+//     * Set the passed service into the engine as the "current" service to serve requests for the engine scope.
+//     * This comes from the UI, defaulting at a previously selected service if that is remembered or
+//     * configured, or, lacking that, the first service that reaches the controller.
+//     *
+//     * @param service
+//     */
+//    void setDefaultService(KlabService.ServiceCapabilities service);
 
     /**
      * If a panel of the requested class is handling the passed payload, return its controller.
