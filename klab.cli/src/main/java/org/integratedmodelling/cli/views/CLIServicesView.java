@@ -396,13 +396,7 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
   }
 
   @Override
-  public void servicesConfigurationChanged(KlabService.ServiceCapabilities service) {}
-
-  @Override
   public void notifyServiceStatus(KlabService service, KlabService.ServiceStatus status) {}
-
-  @Override
-  public void serviceFocusChanged(KlabService.ServiceCapabilities serviceCapabilities) {}
 
   @Override
   public void engineStatusChanged(Engine.Status status) {

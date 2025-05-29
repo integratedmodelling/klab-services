@@ -297,9 +297,6 @@ public class DigitalTwinImpl implements DigitalTwin {
     //        } else if (asset == knowledgeGraph.provenance()) {
     //            return PROVENANCE_ASSET.getId() + "";
     //        }
-    if (asset.getId() <= 0 ) {
-      System.out.println("DIO POPRCO");
-    }
     return asset.getId() + "";
   }
 

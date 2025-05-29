@@ -49,6 +49,15 @@ public class ClientDigitalTwin implements DigitalTwin {
   }
 
   /**
+   * Add a message consumer to be called after the said message has modified the knowledge graph.
+   *
+   * @param consumer
+   */
+  public void addEventConsumer(Consumer<Message> consumer) {
+    this.eventConsumers.add(consumer);
+  }
+
+  /**
    * Main function that constructs the client-side KG structure. Not all elements in the remote KG
    * will be present, but those that are must be coherently linked.
    *

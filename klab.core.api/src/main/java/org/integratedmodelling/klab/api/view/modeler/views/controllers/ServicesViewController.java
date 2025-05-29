@@ -28,7 +28,4 @@ public interface ServicesViewController extends ViewController<ServicesView> {
 
   @UIEventHandler(UIEvent.ServiceStatus)
   void serviceStatusNotified(KlabService service, KlabService.ServiceStatus status);
-
-  @UIActionHandler(value = UIReactor.UIAction.FocusService, sends = UIEvent.ServiceFocused)
-  void focusService(KlabService.ServiceCapabilities service);
 }

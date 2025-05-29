@@ -34,10 +34,4 @@ public class ServicesViewControllerImpl extends AbstractUIViewController<Service
     view().notifyServiceStatus(service, status);
   }
 
-  @Override
-  public void focusService(KlabService.ServiceCapabilities service) {
-    // inform all other views
-    view().serviceFocusChanged(service);
-    getController().dispatch(this, UIEvent.ServiceFocused, service);
-  }
 }
