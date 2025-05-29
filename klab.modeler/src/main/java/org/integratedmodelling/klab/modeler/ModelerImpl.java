@@ -329,12 +329,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     final boolean observering = isObserver;
 
-    // for the benefit of linked DTs
+    // for the benefit of linked DTs - ACHTUNG, this has no ID yet, should be sent by the scope
     currentContext.send(
         Message.MessageClass.DigitalTwin,
         Message.MessageType.ObservationSubmissionStarted,
         observation);
-    // for the UI
+    // for the UI - TODO deprecate, we should just need the actual messages
     dispatch(
         this,
         UIEvent.ObservationSubmissionStarted,
@@ -374,14 +374,14 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
               currentContext.send(
                   Message.MessageClass.DigitalTwin,
                   Message.MessageType.ObservationSubmissionFinished,
-                  observation);
+                  obs);
               // for the UI
               dispatch(
                   this,
                   UIEvent.ObservationSubmissionFinished,
                   currentContext,
                   currentContext.getService(RuntimeService.class),
-                  observation);
+                  obs);
               if (obs.isEmpty()) {
                 currentContext.error(
                     "Observation " + observation + " was not resolved due to errors");
@@ -402,7 +402,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                       UIEvent.ObserverResolved,
                       currentContext,
                       currentContext.getService(RuntimeService.class),
-                      observation);
+                      obs);
                   currentContext.info(obs + " is now the current observer");
                 } else if (currentContext.getContextObservation() == null
                     && obs.getObservable().is(SemanticType.SUBJECT)
@@ -417,7 +417,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                       UIEvent.ContextObservationResolved,
                       currentContext,
                       currentContext.getService(RuntimeService.class),
-                      observation);
+                      obs);
                   setCurrentContext(currentContext.within(obs));
                   currentContext.ui(
                       Message.create(
