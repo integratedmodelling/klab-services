@@ -265,5 +265,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       this.relationship = relationship;
       this.metadata = metadata;
     }
+
+    public String toString() {
+      return relationship.toString().toLowerCase();
+    }
   }
 }
