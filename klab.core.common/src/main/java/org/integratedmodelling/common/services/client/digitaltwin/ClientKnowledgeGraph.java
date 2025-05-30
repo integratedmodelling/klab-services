@@ -2,6 +2,8 @@ package org.integratedmodelling.common.services.client.digitaltwin;
 
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
+import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -21,19 +23,23 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 
 import java.net.URL;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * ClientKnowledgeGraph represents a local client-specific implementation of the KnowledgeGraph
+ * The ClientKnowledgeGraph represents a local client-specific implementation of the KnowledgeGraph
  * interface, which allows interaction with a runtime knowledge graph, handling assets,
  * relationships, and queries. This implementation does not permit modifying operations directly on
  * the graph but facilitates querying and ingesting new data from external sources.
  *
- * <p>The ClientKnowledgeGraph manages a directed graph of RuntimeAssets and their relationships. It
- * initializes a default graph with predefined assets and supports ingestion of additional graph
- * data, updates to asset metadata, and querying of assets and relationships.
+ * <p>The ClientKnowledgeGraph maintains a directed graph of RuntimeAssets in RAM and their
+ * relationships. It initializes a default graph with predefined assets and supports ingestion of
+ * additional graph data, updates to asset metadata, and querying of assets and relationships. It
+ * also exposes local methods for querying that do not require a round-trip to the runtime.
+ *
+ * TODO make it smart and lazy re: large amounts of children
  */
 public class ClientKnowledgeGraph implements KnowledgeGraph {
 
@@ -158,6 +164,42 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         .filter(edge -> relationship == null || edge.relationship == relationship)
         .map(defaultEdge -> graph.getEdgeSource(defaultEdge))
         .toList();
+  }
+
+  /**
+   * Retrieves a list of incoming {@link RuntimeAsset} nodes connected to the given target node
+   * through edges that match the specified relationship, if provided.
+   *
+   * @param target the source {@link RuntimeAsset} node for which incoming and outoling assets will
+   *     be retrieved
+   * @param relationships the relationship types to filter by; pass nothing to include all
+   *     relationships
+   * @return a list of {@link RuntimeAsset} nodes that are incoming or outgoing to the source node
+   *     along with the relationship they are connected to it with. Use {@link
+   *     GraphModel.Relationship#direction()} to understand the direction if needed
+   * @see #incoming(RuntimeAsset, GraphModel.Relationship)
+   * @see #outgoing(RuntimeAsset, GraphModel.Relationship)
+   */
+  public List<Pair<RuntimeAsset, GraphModel.Relationship>> related(
+      RuntimeAsset target, GraphModel.Relationship... relationships) {
+
+    EnumSet<GraphModel.Relationship> rels = EnumSet.noneOf(GraphModel.Relationship.class);
+    if (relationships != null) {
+      rels.addAll(List.of(relationships));
+    }
+
+    var asset = catalog.get(target.getId());
+    var incoming =
+        graph.incomingEdgesOf(asset).stream()
+            .filter(edge -> rels.isEmpty() || rels.contains(edge.relationship))
+            .map(defaultEdge -> Pair.of(graph.getEdgeSource(defaultEdge), defaultEdge.relationship))
+            .toList();
+    var outgoing =
+        graph.outgoingEdgesOf(asset).stream()
+            .filter(edge -> rels.isEmpty() || rels.contains(edge.relationship))
+            .map(defaultEdge -> Pair.of(graph.getEdgeTarget(defaultEdge), defaultEdge.relationship))
+            .toList();
+    return Utils.Collections.join(incoming, outgoing);
   }
 
   /**

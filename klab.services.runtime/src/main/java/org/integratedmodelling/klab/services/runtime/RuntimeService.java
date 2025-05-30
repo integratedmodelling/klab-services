@@ -408,7 +408,12 @@ public class RuntimeService extends BaseService
       var agent =
           serviceContextScope.getConstraint(ResolutionConstraint.Type.Provenance, Agent.class);
       var storedAgent =
-          serviceContextScope.getDigitalTwin().getKnowledgeGraph().requireAgent(agent.getName());
+          agent == null
+              ? null
+              : serviceContextScope
+                  .getDigitalTwin()
+                  .getKnowledgeGraph()
+                  .requireAgent(agent.getName());
       var contextScope = serviceContextScope.initializeResolution();
       var resolver = scope.getService(Resolver.class);
       var resolution =

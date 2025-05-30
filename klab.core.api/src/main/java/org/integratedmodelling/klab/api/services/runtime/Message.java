@@ -137,7 +137,10 @@ public interface Message extends Serializable {
      * selection with no scenarios is a reset.
      */
     ScenariosSelected(Queue.Events, String[].class),
-    /** Sent by the runtime when a new portion of the knowledge graph has been committed. */
+    /**
+     * Sent by the runtime when a new portion of the knowledge graph has been committed after a new
+     * successful resolution.
+     */
     KnowledgeGraphCommitted(Queue.Events, RuntimeAssetGraph.class),
     /**
      * Sent after a new individual agent observation tagged as an observer has been explicitly
@@ -151,9 +154,8 @@ public interface Message extends Serializable {
     ContextObservationResolved(Queue.Events, Observation.class),
 
     /*
-     * --- Notification-class types ---
+     * Notification-class types. Sent only if the correspondent Queue is enabled.
      */
-
     Debug(Queue.Debug, Notification.class),
     Info(Queue.Info, Notification.class),
     Warning(Queue.Warnings, Notification.class),
@@ -165,16 +167,22 @@ public interface Message extends Serializable {
     TestStarted(Queue.Events, ActionStatistics.class),
     TestFinished(Queue.Events, ActionStatistics.class),
 
-    RunApplication,
-    RunBehavior,
-    CreateContext,
-    CreateSession,
-    Fire,
-
+    /**
+     * Notify the successful completion of the contextualization process according to the resolution
+     * stored in the knowledge graph.
+     */
     ContextualizationSuccessful(Queue.Events, Observation.class),
 
+    /**
+     * Notify the abnormal end of contextualization. The resolved observation remains in the
+     * knowledge graph.
+     */
     ContextualizationAborted(Queue.Events, Observation.class),
 
+    /**
+     * Notify the start of the contextualization process for a resolved observation which is
+     * included in the knowledge graph.
+     */
     ContextualizationStarted(Queue.Events, Observation.class),
 
     ContextClosed(Queue.Events, String.class),
@@ -191,19 +199,25 @@ public interface Message extends Serializable {
     CreateModalWindow,
 
     /**
-     * Explicit submission of a single observation to the digital twin. TODO should add the current
-     * context path and the user to the metadata in case it comes from a linked DT.
+     * Explicit submission of a single observation to the digital twin. The observation in the
+     * message is UNRESOLVED and NOT in the knowledge graph. Its ID is -1.
+     *
+     * <p>TODO add the current context path and the user to the metadata in case it comes from a
+     * linked DT.
      */
     ObservationSubmissionStarted(Queue.Events, Observation.class),
     /**
      * Failure (with an exception) after submission of a single observation to the digital twin.
-     * TODO should add the exception to the metadata.
+     *
+     * <p>TODO add the exception to the metadata.
      */
     ObservationSubmissionAborted(Queue.Events, Observation.class),
     /**
      * Regular termination of a single observation to the digital twin. The observation may be
-     * empty! TODO should add the current * context path and the user to the metadata in case it
-     * comes from a linked DT.
+     * empty! If not, the observation is in the knowledge graph and has a valid ID and URN.
+     *
+     * <p>TODO add the current context path and the user to the metadata in case it comes from a
+     * linked DT.
      */
     ObservationSubmissionFinished(Queue.Events, Observation.class);
 
@@ -226,7 +240,7 @@ public interface Message extends Serializable {
    * details can be opaque: filtering conditions are specified in the match() function that produces
    * it.
    *
-   * <p>TODO deprecate? Not used at the moment
+   * <p>TODO deprecate? Not used at the moment and seems overkill.
    */
   interface Match {
 

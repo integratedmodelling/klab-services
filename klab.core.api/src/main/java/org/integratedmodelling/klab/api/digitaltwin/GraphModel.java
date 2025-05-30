@@ -113,6 +113,15 @@ public interface GraphModel {
         HAS_CHILD,
         TRIGGERED,
         RESOLVED;
+
+        enum Direction {
+            INCOMING, OUTGOING
+        }
+
+        public Direction direction() {
+            return this == HAS_PARENT || this == HAS_SIBLING ? Direction.INCOMING : Direction.OUTGOING;
+        }
+
     }
 
     record Link(long sourceId, long targetId, LinkType type) {

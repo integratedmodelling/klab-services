@@ -86,6 +86,8 @@ public class AMQPChannel {
               .build();
 
       // Declare a fanout exchange
+      // FIXME either pass to a direct exchange or refactor to have just one fanout exchange per
+      // user scope
       channel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT, true);
 
       connected = true;
@@ -104,6 +106,7 @@ public class AMQPChannel {
             (consumerTag, delivery) -> {
               try {
 
+                // filter messages from self. TODO this may need configuration
                 Map<String, Object> headers = delivery.getProperties().getHeaders();
                 if (headers != null && headers.containsKey("channelId")) {
                   if (channelTag.equals(headers.get("channelId").toString())) {
@@ -122,6 +125,9 @@ public class AMQPChannel {
                 }
 
                 if (klabChannel != null) {
+                  // filter identity route. FIXME use direct, so that AMQP does the job and not me,
+                  //  or leave fanout with one exchange per user scope. Early experiments were
+                  //  painful.
                   if (!klabChannel.getDispatchId().equals(message.getDispatchId())) {
                     return;
                   }
