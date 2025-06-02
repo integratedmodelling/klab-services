@@ -75,6 +75,7 @@ public class RuntimeAssetGraph {
     }
 
     public static class Edge {
+
         private String source;
         private String target;
         private String relationship;

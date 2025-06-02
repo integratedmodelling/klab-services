@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services;
 
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -19,6 +20,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
@@ -168,6 +170,8 @@ public interface RuntimeService extends KlabService {
    */
   interface Capabilities extends ServiceCapabilities {
     Storage.Type getDefaultStorageType();
+
+      Set<CRUDOperation> getPermissions();
   }
 
   /**

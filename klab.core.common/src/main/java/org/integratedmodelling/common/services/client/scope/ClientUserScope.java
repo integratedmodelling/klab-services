@@ -39,9 +39,10 @@ import java.util.function.BiConsumer;
 public abstract class ClientUserScope extends AbstractReactiveScopeImpl implements UserScope {
 
   protected final EngineImpl engine;
+  private Federation federation;
   // the data hash is the SAME OBJECT throughout the child
   protected Parameters<String> data;
-  private Identity user;
+  private UserIdentity user;
   protected Scope parentScope;
   private Status status = Status.STARTED;
   private String id;
@@ -53,12 +54,15 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
 
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-  public ClientUserScope(Identity user, EngineImpl engine) {
+  public ClientUserScope(UserIdentity user, EngineImpl engine) {
     super(user, true, true);
     this.user = user;
     this.data = Parameters.create();
     this.id = user.getId();
     this.engine = engine;
+    if (user.getData().containsKey(UserIdentity.FEDERATION_DATA_PROPERTY)) {
+      this.federation = user.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+    }
   }
 
   @Override
@@ -88,6 +92,11 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
   @Override
   public String getId() {
     return id;
+  }
+
+  @Override
+  public String getDispatchId() {
+    return federation == null ? user.getUsername() : federation.getId();
   }
 
   public void setId(String id) {
@@ -144,6 +153,17 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
     }
 
     return ret;
+  }
+
+  public String toString() {
+    return "[ClientUserScope] "
+        + user.getUsername()
+        + ((federation == null || federation.getId().equals(Federation.LOCAL_FEDERATION_ID))
+            ? ""
+            : ("@" + federation.getId()))
+        + " ("
+        + (isConnected() ? "connected" : "not connected")
+        + ")";
   }
 
   @Override

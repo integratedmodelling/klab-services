@@ -454,7 +454,12 @@ public class DistributionImpl extends AbstractDistributionImpl {
     var resources = distribution.findProduct(Product.ProductType.RESOURCES_SERVICE);
     var instance =
         resources.launch(
-            new AbstractDelegatingScope(new ChannelImpl(new AnonymousUser())) {
+            new AbstractDelegatingScope(new ChannelImpl(new AnonymousUser()) {
+              @Override
+              public String getDispatchId() {
+                return "anonymous";
+              }
+            }) {
               @Override
               public <T extends KlabService> T getService(Class<T> serviceClass) {
                 return null;

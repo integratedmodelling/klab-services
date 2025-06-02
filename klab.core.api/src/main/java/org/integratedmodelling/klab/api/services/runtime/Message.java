@@ -1,21 +1,13 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
-import org.integratedmodelling.klab.api.data.GraphReference;
 import org.integratedmodelling.klab.api.data.RuntimeAssetGraph;
-import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.engine.distribution.Distribution;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
-import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
-import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.impl.MatchImpl;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
-import org.integratedmodelling.klab.api.services.runtime.impl.ScopeOptions;
 
 import java.io.Serializable;
 import java.util.Set;
@@ -74,16 +66,13 @@ public interface Message extends Serializable {
      * Used within a UI for communicating things to react to and between F/B to gather user input.
      */
     UserInterface,
-
     /** F->B when user selects context */
     UserContextChange,
-
     /**
      * B->F after UserContextChange was received, containing the remaining definition set by the
      * engine
      */
     UserContextDefinition,
-
     /** Any event referring to a service */
     ServiceLifecycle,
     /** */
@@ -97,8 +86,6 @@ public interface Message extends Serializable {
 
     /** */
     ProjectLifecycle,
-    /** */
-    Authorization,
     /** */
     TaskLifecycle,
     /** DT events */
@@ -116,13 +103,10 @@ public interface Message extends Serializable {
     Search,
     /** Query messages are sent by the back end upon receiving Search-class messages. */
     Query,
-
     /** Run-class messages start scripts and tests. */
     Run,
-
     /** Messages sent or received by the view actor, called from behaviors. */
     ViewActor,
-
     /** These are skipped from queues and sent directly to the scope's agent. */
     ActorCommunication;
 
@@ -140,37 +124,12 @@ public interface Message extends Serializable {
    */
   enum MessageType {
 
-    /*
-     * Service messages, coming with service capabilities
-     */
-    @Deprecated
-    ServiceInitializing(Queue.Events, KlabService.ServiceCapabilities.class),
-    //        ReasoningAvailable(Queue.Events, Reasoner.Capabilities.class),
-    @Deprecated
-    ServiceAvailable(Queue.Events, KlabService.ServiceCapabilities.class),
-    @Deprecated
-    ServiceUnavailable(Queue.Events, KlabService.ServiceCapabilities.class),
-    ServiceStatus(Queue.Status, KlabService.ServiceStatus.class),
-    ServiceStatusChanged(Queue.Events, KlabService.ServiceStatus.class),
-
-    /** UI selections */
-    @Deprecated
-    WorkspaceSelected(Queue.UI, String.class),
-    @Deprecated
-    ServiceSwitched(Queue.UI, KlabService.ServiceCapabilities.class),
-
     /**
      * Sent whenever a file modification (external or through the API) implies a change in a
      * workspace. Accompanied by a ResourceSet that details all the assets affected and their order
      * of loading.
      */
     WorkspaceChanged(Queue.UI, ResourceSet.class),
-
-    @Deprecated
-    DocumentSelected(Queue.UI, KlabDocument.class),
-//    @Deprecated
-//    UserAuthorized(Queue.Events, UserIdentity.class),
-
     /**
      * F <-> B: scenario selection from user action (if class == UserInterface) and/or from engine
      * (after selection or from API) with class == SessionLifecycle. In all cases the list of
@@ -178,8 +137,10 @@ public interface Message extends Serializable {
      * selection with no scenarios is a reset.
      */
     ScenariosSelected(Queue.Events, String[].class),
-
-    /** Sent by the runtime when a new portion of the knowledge graph has been committed. */
+    /**
+     * Sent by the runtime when a new portion of the knowledge graph has been committed after a new
+     * successful resolution.
+     */
     KnowledgeGraphCommitted(Queue.Events, RuntimeAssetGraph.class),
     /**
      * Sent after a new individual agent observation tagged as an observer has been explicitly
@@ -193,88 +154,82 @@ public interface Message extends Serializable {
     ContextObservationResolved(Queue.Events, Observation.class),
 
     /*
-     * --- Notification-class types ---
+     * Notification-class types. Sent only if the correspondent Queue is enabled.
      */
     Debug(Queue.Debug, Notification.class),
-
     Info(Queue.Info, Notification.class),
-
     Warning(Queue.Warnings, Notification.class),
-
     Error(Queue.Errors, Notification.class),
 
-    /*
-     * --- reasoning-related messages
-     */
-    @Deprecated
-    LogicalValidation(Queue.Events, ResourceSet.class),
-
-    /** Runtime event messages */
+    /* Runtime event messages */
     TestCaseStarted(Queue.Events, TestStatistics.class),
-
     TestCaseFinished(Queue.Events, TestStatistics.class),
-
     TestStarted(Queue.Events, ActionStatistics.class),
-
     TestFinished(Queue.Events, ActionStatistics.class),
 
-    RunApplication,
-    RunBehavior,
-    CreateContext,
-    CreateSession,
-    Fire,
-
+    /**
+     * Notify the successful completion of the contextualization process according to the resolution
+     * stored in the knowledge graph.
+     */
     ContextualizationSuccessful(Queue.Events, Observation.class),
 
+    /**
+     * Notify the abnormal end of contextualization. The resolved observation remains in the
+     * knowledge graph.
+     */
     ContextualizationAborted(Queue.Events, Observation.class),
 
+    /**
+     * Notify the start of the contextualization process for a resolved observation which is
+     * included in the knowledge graph.
+     */
     ContextualizationStarted(Queue.Events, Observation.class),
 
     ContextClosed(Queue.Events, String.class),
 
     CurrentContextModified(Queue.UI, Void.class),
 
-    /** Engine status has changed */
-    EngineStatusChanged(Queue.Events, Engine.Status.class),
-
     /*
      * --- View actor messages
      */
+
     CreateViewComponent,
     SetupInterface,
     CreateWindow,
     CreateModalWindow,
 
-    /** Engine lifecycle, should only be client-wide */
-    @Deprecated
-    UsingDistribution(Queue.UI, Distribution.class),
-
     /**
-     * Explicit submission of a single observation to the digital twin. TODO should add the current
-     * context path and the user to the metadata in case it comes from a linked DT.
+     * Explicit submission of a single observation to the digital twin. The observation in the
+     * message is UNRESOLVED and NOT in the knowledge graph. Its ID is -1.
+     *
+     * <p>TODO add the current context path and the user to the metadata in case it comes from a
+     * linked DT.
      */
     ObservationSubmissionStarted(Queue.Events, Observation.class),
     /**
      * Failure (with an exception) after submission of a single observation to the digital twin.
-     * TODO should add the exception to the metadata.
+     *
+     * <p>TODO add the exception to the metadata.
      */
     ObservationSubmissionAborted(Queue.Events, Observation.class),
     /**
      * Regular termination of a single observation to the digital twin. The observation may be
-     * empty! TODO should add the current * context path and the user to the metadata in case it
-     * comes from a linked DT.
+     * empty! If not, the observation is in the knowledge graph and has a valid ID and URN.
+     *
+     * <p>TODO add the current context path and the user to the metadata in case it comes from a
+     * linked DT.
      */
     ObservationSubmissionFinished(Queue.Events, Observation.class);
 
     public final Class<?> payloadClass;
     public final Queue queue;
 
-    private MessageType() {
+    MessageType() {
       this.payloadClass = Void.class;
       this.queue = Queue.None;
     }
 
-    private MessageType(Queue queue, Class<?> payloadClass) {
+    MessageType(Queue queue, Class<?> payloadClass) {
       this.queue = queue;
       this.payloadClass = payloadClass;
     }
@@ -284,6 +239,8 @@ public interface Message extends Serializable {
    * Matcher that can be used to match messages and specify actions to be taken upon match. The
    * details can be opaque: filtering conditions are specified in the match() function that produces
    * it.
+   *
+   * <p>TODO deprecate? Not used at the moment and seems overkill.
    */
   interface Match {
 
@@ -343,12 +300,11 @@ public interface Message extends Serializable {
   long getId();
 
   /**
-   * If the message is coming from a task started by the client or the server, an ID can be supplied
-   * and it can be a path so that task structure can be followed and monitored.
+   * If the message is emitted during the execution of an activity, the activity URN is returned.
    *
    * @return
    */
-  String getTaskId();
+  String getActivityUrn();
 
   /**
    * Return this or a new message with the response ID set to that of the passed message, so that
@@ -362,14 +318,13 @@ public interface Message extends Serializable {
   Message respondingTo(Message message);
 
   /**
-   * The message exposes the identity that created it through a token, which may or may not be
-   * parseable at the receiving end but will be consistently linked to the message type. For
-   * example, task messages will have the identity of the task that generated them so they can be
-   * correctly distributed among tasks.
+   * The message exposes the identity that created it through a dispatch ID that corresponds to the
+   * {@link Channel#getDispatchId()} of the channel that sent it. This is matched to the dispatch ID
+   * of the receiver by the message router.
    *
    * @return the sender's identity. Never null.
    */
-  String getIdentity();
+  String getDispatchId();
 
   /**
    * @return the message class
@@ -409,8 +364,8 @@ public interface Message extends Serializable {
     return this.getMessageClass() == messageClass && getMessageType() == messageType;
   }
 
-  public static Message create(Channel scope, Object... o) {
-    return create(scope.getIdentity().getId(), o);
+  static Message create(Channel scope, Object... o) {
+    return create(scope.getDispatchId(), o);
   }
 
   /**
@@ -427,7 +382,7 @@ public interface Message extends Serializable {
    * @throws IllegalArgumentException if there are not enough arguments or more than one payload was
    *     passed
    */
-  public static Message create(String identity, Object... o) {
+  static Message create(String identity, Object... o) {
 
     if (o == null) {
       return null;
@@ -440,7 +395,7 @@ public interface Message extends Serializable {
     boolean queueOverridden = false;
     Object payloadIfAbsent = null;
     MessageImpl ret = new MessageImpl();
-    ret.setIdentity(identity);
+    ret.setDispatchId(identity);
     //        Notification.Type notype = null;
     for (Object ob : o) {
       if (ob instanceof MessageType) {
@@ -509,10 +464,10 @@ public interface Message extends Serializable {
    * @param identity
    * @return a new message
    */
-  public static MessageImpl create(Notification notification, String identity) {
+  static MessageImpl create(Notification notification, String identity) {
 
     MessageImpl ret = new MessageImpl();
-    ret.setIdentity(identity);
+    ret.setDispatchId(identity);
     ret.setMessageClass(MessageClass.Notification);
     ret.setPayload(notification);
     ret.setPayloadClass("String");

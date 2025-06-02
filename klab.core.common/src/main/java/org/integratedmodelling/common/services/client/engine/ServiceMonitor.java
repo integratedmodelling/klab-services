@@ -91,22 +91,19 @@ public class ServiceMonitor {
       }
 
       for (var client : clients.keySet()) {
-        client.connect((scope, message) -> handleMessage((ServiceClient) client, message));
+        client.connect((status, message) -> handleStatus(client, status, message));
       }
     }
   }
 
-  private void handleMessage(ServiceClient service, Message message) {
-
-    if (message.getMessageClass() == Message.MessageClass.ServiceLifecycle) {
-      var status = message.getPayload(KlabService.ServiceStatus.class);
-      clients.put(service, status);
-      for (var serviceListener : serviceConsumers) {
-        serviceListener.accept(service, status);
-      }
-      if (message.getMessageType() == Message.MessageType.ServiceStatusChanged) {
-        recomputeEngineStatus();
-      }
+  private void handleStatus(
+      ServiceClient service, KlabService.ServiceStatus status, Boolean statusChanged) {
+    clients.put(service, status);
+    for (var serviceListener : serviceConsumers) {
+      serviceListener.accept(service, status);
+    }
+    if (statusChanged) {
+      recomputeEngineStatus();
     }
   }
 

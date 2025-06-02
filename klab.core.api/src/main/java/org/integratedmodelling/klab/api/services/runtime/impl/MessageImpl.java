@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
@@ -43,7 +42,7 @@ public class MessageImpl implements Message, Serializable {
 
   private MessageType messageType;
   private MessageClass messageClass;
-  private String identity;
+  private String dispatchId;
   private String payloadClass;
   private Object payload;
   private long id = nextId.incrementAndGet();
@@ -111,8 +110,8 @@ public class MessageImpl implements Message, Serializable {
   }
 
   @Override
-  public String getIdentity() {
-    return identity;
+  public String getDispatchId() {
+    return dispatchId;
   }
 
   public long getId() {
@@ -145,8 +144,8 @@ public class MessageImpl implements Message, Serializable {
     this.messageClass = messageClass;
   }
 
-  public void setIdentity(String identity) {
-    this.identity = identity;
+  public void setDispatchId(String dispatchId) {
+    this.dispatchId = dispatchId;
   }
 
   public String getPayloadClass() {
@@ -192,7 +191,7 @@ public class MessageImpl implements Message, Serializable {
   }
 
   @Override
-  public String getTaskId() {
+  public String getActivityUrn() {
     return taskId;
   }
 

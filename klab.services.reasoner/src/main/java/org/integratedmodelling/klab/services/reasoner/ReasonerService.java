@@ -281,11 +281,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     Logging.INSTANCE.setSystemIdentifier("Reasoner service: ");
 
-    serviceScope()
-        .send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceInitializing,
-            capabilities(serviceScope()));
+//    serviceScope()
+//        .send(
+//            Message.MessageClass.ServiceLifecycle,
+//            Message.MessageType.ServiceInitializing,
+//            capabilities(serviceScope()));
 
     for (ProjectConfiguration authority : configuration.getAuthorities()) {
       loadAuthority(authority);
@@ -341,11 +341,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     // TODO keep logical notifications around for the capabilities, or have a separate status call
     // for
     //  notifications.
-    serviceScope()
-        .send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceAvailable,
-            capabilities(serviceScope()));
+//    serviceScope()
+//        .send(
+//            Message.MessageClass.ServiceLifecycle,
+//            Message.MessageType.ServiceAvailable,
+//            capabilities(serviceScope()));
   }
 
   @Override
@@ -2787,11 +2787,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public boolean shutdown() {
 
-    serviceScope()
-        .send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceUnavailable,
-            capabilities(serviceScope()));
+//    serviceScope()
+//        .send(
+//            Message.MessageClass.ServiceLifecycle,
+//            Message.MessageType.ServiceUnavailable,
+//            capabilities(serviceScope()));
     // TODO Auto-generated method stub
     return super.shutdown();
   }

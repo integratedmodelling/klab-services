@@ -6,7 +6,6 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.scope.Persistence;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -26,7 +25,7 @@ import java.util.function.Predicate;
  * <p>Listeners can be added at any time and only get invoked by send(), never by the handlers when
  * directly called.
  */
-public class ChannelImpl implements Channel {
+public abstract class ChannelImpl implements Channel {
 
   static class EventMatcher {
     public Message.MessageClass messageClass;
@@ -40,8 +39,8 @@ public class ChannelImpl implements Channel {
   private final Identity identity;
   private AtomicBoolean interrupted = new AtomicBoolean(false);
   private final AtomicBoolean errors = new AtomicBoolean(false);
-  private final List<BiConsumer<Channel, Message>> messageListeners =
-      Collections.synchronizedList(new ArrayList<>());
+  private final Map<Message.Queue, List<BiConsumer<Channel, Message>>> messageListeners =
+      Collections.synchronizedMap(new HashMap<>());
   private Multimap<Pair<Message.MessageClass, Message.MessageType>, EventMatcher> eventMatchers;
 
   public ChannelImpl(Identity identity) {
@@ -53,13 +52,18 @@ public class ChannelImpl implements Channel {
     this.identity = other.identity;
     this.interrupted = other.interrupted;
     this.errors.set(other.errors.get());
-    this.messageListeners.addAll(other.messageListeners);
+    this.messageListeners.putAll(other.messageListeners);
     this.eventMatchers = other.eventMatchers;
+  }
+
+  protected List<BiConsumer<Channel, Message>> getListeners(Message.Queue queue) {
+    return this.messageListeners.computeIfAbsent(
+        queue, q -> Collections.synchronizedList(new ArrayList<>()));
   }
 
   @Deprecated
   protected void copyListeners(ChannelImpl channel) {
-    this.messageListeners.addAll(channel.messageListeners);
+    this.messageListeners.putAll(channel.messageListeners);
     this.eventMatchers = channel.eventMatchers;
   }
 
@@ -70,7 +74,7 @@ public class ChannelImpl implements Channel {
 
   @Override
   public void info(Object... info) {
-    for (var listener : messageListeners) {
+    for (var listener : getListeners(Message.Queue.Info)) {
       listener.accept(this, Message.create(this, Notification.error(info)));
     }
     Logging.INSTANCE.info(info);
@@ -78,7 +82,7 @@ public class ChannelImpl implements Channel {
 
   @Override
   public void warn(Object... o) {
-    for (var listener : messageListeners) {
+    for (var listener : getListeners(Message.Queue.Warnings)) {
       listener.accept(this, Message.create(this, Notification.error(o)));
     }
     Logging.INSTANCE.warn(o);
@@ -87,7 +91,7 @@ public class ChannelImpl implements Channel {
   @Override
   public void error(Object... o) {
     errors.set(true);
-    for (var listener : messageListeners) {
+    for (var listener : getListeners(Message.Queue.Errors)) {
       listener.accept(this, Message.create(this, Notification.error(o)));
     }
     Logging.INSTANCE.error(o);
@@ -102,7 +106,7 @@ public class ChannelImpl implements Channel {
   public void event(Message message) {
     var key = Pair.of(message.getMessageClass(), message.getMessageType());
     var matches = new ArrayList<>(eventMatchers.get(key));
-    for (var listener : messageListeners) {
+    for (var listener : getListeners(Message.Queue.Events)) {
       listener.accept(this, message);
     }
     for (var matcher : matches) {
@@ -143,14 +147,18 @@ public class ChannelImpl implements Channel {
 
   @Override
   public void ui(Message message) {
-    for (var listener : messageListeners) {
+    for (var listener : getListeners(Message.Queue.UI)) {
       listener.accept(this, message);
     }
   }
 
   @Override
-  public Channel onMessage(BiConsumer<Channel, Message> consumer) {
-    this.messageListeners.add(consumer);
+  public Channel onMessage(BiConsumer<Channel, Message> consumer, Message.Queue... queues) {
+    if (queues != null) {
+      for (var queue : queues) {
+        this.getListeners(queue).add(consumer);
+      }
+    }
     return this;
   }
 
@@ -235,13 +243,5 @@ public class ChannelImpl implements Channel {
   @Override
   public boolean hasErrors() {
     return errors.get();
-  }
-
-  public List<BiConsumer<Channel, Message>> listeners() {
-    return this.messageListeners;
-  }
-
-  public void addListener(BiConsumer<Channel, Message> listener) {
-    this.messageListeners.add(listener);
   }
 }

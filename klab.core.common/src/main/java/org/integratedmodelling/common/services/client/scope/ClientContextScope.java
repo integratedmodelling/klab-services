@@ -348,6 +348,16 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     this.digitalTwin = new ClientDigitalTwin(this, id);
   }
 
+  public String toString() {
+    return "[ClientContextScope] "
+        + name
+        + ": "
+        + getId()
+        + " ("
+        + (isConnected() ? "connected" : "not connected")
+        + ")";
+  }
+
   @Override
   public CompletableFuture<Observation> submit(Observation observation, Data observationData) {
     return null;

@@ -1,10 +1,7 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -13,6 +10,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -109,11 +107,11 @@ public class RuntimeService extends BaseService
 
     Logging.INSTANCE.setSystemIdentifier("Runtime service: ");
 
-    serviceScope()
-        .send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceInitializing,
-            capabilities(serviceScope()).toString());
+    //    serviceScope()
+    //        .send(
+    //            Message.MessageClass.ServiceLifecycle,
+    //            Message.MessageType.ServiceInitializing,
+    //            capabilities(serviceScope()).toString());
 
     if (createMainKnowledgeGraph()) {
 
@@ -122,18 +120,18 @@ public class RuntimeService extends BaseService
       getComponentRegistry()
           .initializeComponents(
               BaseService.getConfigurationSubdirectory(startupOptions, "components"));
-      serviceScope()
-          .send(
-              Message.MessageClass.ServiceLifecycle,
-              Message.MessageType.ServiceAvailable,
-              capabilities(serviceScope()));
+      //      serviceScope()
+      //          .send(
+      //              Message.MessageClass.ServiceLifecycle,
+      //              Message.MessageType.ServiceAvailable,
+      //              capabilities(serviceScope()));
     } else {
 
-      serviceScope()
-          .send(
-              Message.MessageClass.ServiceLifecycle,
-              Message.MessageType.ServiceUnavailable,
-              capabilities(serviceScope()));
+      //      serviceScope()
+      //          .send(
+      //              Message.MessageClass.ServiceLifecycle,
+      //              Message.MessageType.ServiceUnavailable,
+      //              capabilities(serviceScope()));
     }
   }
 
@@ -159,11 +157,11 @@ public class RuntimeService extends BaseService
       }
     }
 
-    serviceScope()
-        .send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceUnavailable,
-            capabilities(serviceScope()));
+    //    serviceScope()
+    //        .send(
+    //            Message.MessageClass.ServiceLifecycle,
+    //            Message.MessageType.ServiceUnavailable,
+    //            capabilities(serviceScope()));
     if (systemLauncher != null) {
       systemLauncher.shutdown();
     }
@@ -183,12 +181,16 @@ public class RuntimeService extends BaseService
     ret.setServerId(hardwareSignature == null ? null : ("RUNTIME_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
     ret.setServiceName("Runtime");
-    //        ret.setBrokerURI(
-    //                embeddedBroker != null ? embeddedBroker.getURI() :
-    // configuration.getBrokerURI());
-    //        ret.setBrokerURI(
-    //                embeddedBroker != null ? embeddedBroker.getURI() :
-    // configuration.getBrokerURI());
+
+    // TODO this enables creating DTs from the passed scope
+    ret.getPermissions()
+        .addAll(
+            EnumSet.of(
+                CRUDOperation.CREATE,
+                CRUDOperation.READ,
+                CRUDOperation.UPDATE,
+                CRUDOperation.DELETE));
+
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
     ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
@@ -407,6 +409,13 @@ public class RuntimeService extends BaseService
 
       var agent =
           serviceContextScope.getConstraint(ResolutionConstraint.Type.Provenance, Agent.class);
+      var storedAgent =
+          agent == null
+              ? null
+              : serviceContextScope
+                  .getDigitalTwin()
+                  .getKnowledgeGraph()
+                  .requireAgent(agent.getName());
       var contextScope = serviceContextScope.initializeResolution();
       var resolver = scope.getService(Resolver.class);
       var resolution =
@@ -425,7 +434,7 @@ public class RuntimeService extends BaseService
                   var transaction =
                       scope
                           .getDigitalTwin()
-                          .transaction(resolution, scope, dataflow, observation, agent);
+                          .transaction(resolution, scope, dataflow, observation, storedAgent);
 
                   if (compile(observation, dataflow, contextScope, transaction)) {
                     if (transaction.commit()) {

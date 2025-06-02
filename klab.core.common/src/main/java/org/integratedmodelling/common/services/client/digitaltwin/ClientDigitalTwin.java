@@ -42,16 +42,19 @@ public class ClientDigitalTwin implements DigitalTwin {
     this.runtimeClient = scope.getService(RuntimeService.class);
     if (this.runtimeClient instanceof RuntimeClient rc) {
       this.knowledgeGraph = new ClientKnowledgeGraph(scope, rc);
-      if (scope instanceof ClientContextScope clientContextScope) {
-        clientContextScope.installQueueConsumer(id, Message.Queue.Events, this::ingest);
-      }
+      scope.onMessage((channel, message) -> ingest(message), Message.Queue.Events);
     } else {
       throw new KlabInternalErrorException("Non-client runtime class in client digital twin");
     }
   }
 
+  /**
+   * Add a message consumer to be called after the said message has modified the knowledge graph.
+   *
+   * @param consumer
+   */
   public void addEventConsumer(Consumer<Message> consumer) {
-    eventConsumers.add(consumer);
+    this.eventConsumers.add(consumer);
   }
 
   /**
@@ -82,7 +85,6 @@ public class ClientDigitalTwin implements DigitalTwin {
     for (var consumer : eventConsumers) {
       consumer.accept(event);
     }
-    // nah    this.scope.send(event);
   }
 
   @Override
@@ -95,7 +97,6 @@ public class ClientDigitalTwin implements DigitalTwin {
   public KnowledgeGraph getKnowledgeGraph() {
     return knowledgeGraph;
   }
-
 
   @Override
   public Provenance getProvenanceGraph(ContextScope context) {

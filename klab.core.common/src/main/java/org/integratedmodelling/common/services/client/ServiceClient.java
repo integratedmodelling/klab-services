@@ -31,13 +31,14 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.impl.AbstractServiceCapabilities;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.rest.ServiceReference;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Common implementation of a service client, to be specialized for all service types and APIs.
@@ -54,16 +55,15 @@ public abstract class ServiceClient implements KlabService {
   private AbstractServiceDelegatingScope scope;
   private final URL url;
   private String token;
-  private long pollCycleSeconds = 5;
+  private long localPollCycleSeconds = 5;
+  private long onlinePollCycleSeconds = 5;
   protected Utils.Http.Client client;
   protected ServiceCapabilities capabilities;
-  // this is not null only if the client is used by another service. In that case, the service
-  // should be
-  // added to scope requests for talkback.
   private KlabService ownerService;
   private boolean local;
   private Parameters<Engine.Setting> settings;
   private String serviceId;
+  private final List<BiConsumer<ServiceStatus, Boolean>> statusListeners = new ArrayList<>();
 
   public Utils.Http.Client getHttpClient() {
     return client;
@@ -137,18 +137,22 @@ public abstract class ServiceClient implements KlabService {
   }
 
   /**
-   * Connection has succeeded; we have a URL and (possibly) a token. Create client with the token we
-   * have stored and if needed, authenticate further using the token. Start polling at regular
-   * intervals to ensure the connection remains alive. Build the service scope and if we're on the
-   * LAN or LOCALHOST locality, establish the Websocket link between the client and the server so we
-   * can listen to events.
+   * Connects the service client to the specified service and sets up its status monitoring.
    *
-   * @return null if server is remote (the auth key is the ID of the identity) or non-null if using
-   *     a local server; in that case, the return value is the value for {@link
-   *     ServicesAPI#SERVER_KEY_HEADER}.
+   * <p>This method handles setting up the client with the necessary credentials, initializes local
+   * or remote communication channels based on the service configuration, schedules periodic tasks,
+   * and attaches listeners for monitoring service status updates.
+   *
+   * @param statusListeners optional list of listeners that will be notified about service status
+   *     updates. Each listener is a {@link BiConsumer} that receives a {@link ServiceStatus} object
+   *     indicating the current state of the service and a {@code Boolean} indicating whether the
+   *     status has changed in a way that requires action apart from monitored parameters.
+   * @return a {@code String} representing a secret token used for local service authentication if
+   *     the service is local to the machine where the client is running, or {@code null} if no such
+   *     token is necessary.
    */
   @SuppressWarnings("unchecked")
-  public String connect(BiConsumer<Channel, Message>... messageBiConsumers) {
+  public String connect(BiConsumer<ServiceStatus, Boolean>... statusListeners) {
 
     if (this.identity instanceof PartnerIdentity) {
       this.token = ((PartnerIdentity)identity).getToken();
@@ -166,21 +170,28 @@ public abstract class ServiceClient implements KlabService {
       }
     }
 
-    /**
-     * Service scopes are non-messaging at service side, but if the services are local, messaging
-     * happens through the user scope used for admin calls. Messages sent to the service-side user
-     * scope use service channels intercepted here, set up when the service becomes available based
-     * on capabilities. We disable all messaging passing isReceiver = false if the service client is
-     * operating within a service.
-     */
+    if (statusListeners != null) {
+      this.statusListeners.addAll(Arrays.asList(statusListeners));
+    }
+
     Channel channel =
-        local
+            local
             ? new MessagingChannelImpl(this.identity, false, ownerService != null) {
-              public String getId() {
+          @Override
+          public String getDispatchId() {
+            return serviceId();
+          }
+
+          public String getId() {
                 return serviceId();
               }
             }
-            : new ChannelImpl(this.identity);
+            : new ChannelImpl(this.identity) {
+              @Override
+              public String getDispatchId() {
+                return serviceId();
+              }
+            };
 
     this.scope =
         new AbstractServiceDelegatingScope(channel) {
@@ -205,13 +216,11 @@ public abstract class ServiceClient implements KlabService {
           }
         };
 
-    if (messageBiConsumers != null) {
-      for (var messageConsumer : messageBiConsumers) {
-        this.scope.onMessage(messageConsumer);
-      }
-    }
-
-    scheduler.scheduleAtFixedRate(this::timedTasks, 2, pollCycleSeconds, TimeUnit.SECONDS);
+    scheduler.scheduleAtFixedRate(
+        this::timedTasks,
+        2,
+        this.local ? localPollCycleSeconds : onlinePollCycleSeconds,
+        TimeUnit.SECONDS);
 
     return ret;
   }
@@ -223,10 +232,10 @@ public abstract class ServiceClient implements KlabService {
     }
 
     if (this.shutdown.get()) {
-      scope.send(
-          Message.MessageClass.ServiceLifecycle,
-          Message.MessageType.ServiceStatus,
-          ServiceStatus.offline(serviceType, this.serviceId()));
+//      scope.send(
+//          Message.MessageClass.ServiceLifecycle,
+//          Message.MessageType.ServiceStatus,
+//          ServiceStatus.offline(serviceType, this.serviceId()));
       return;
     }
 
@@ -280,25 +289,13 @@ public abstract class ServiceClient implements KlabService {
           }
         }
 
-        // send specific message if status has changed
         if (statusHasChanged) {
-
-          // refresh the capabilities after change
           this.capabilities = capabilities(scope);
-
-          scope.send(
-              Message.MessageClass.ServiceLifecycle,
-              Message.MessageType.ServiceStatusChanged,
-              status.get() == null ? ServiceStatus.offline(serviceType, null) : status.get());
         }
-      }
 
-      // send the status for monitoring
-      if (connected.get() && status.get() != null) {
-        scope.send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceStatus,
-            status.get() == null ? ServiceStatus.offline(serviceType, null) : status.get());
+        for (var listener : statusListeners) {
+          listener.accept(status.get(), statusHasChanged);
+        }
       }
 
     } catch (Throwable t) {

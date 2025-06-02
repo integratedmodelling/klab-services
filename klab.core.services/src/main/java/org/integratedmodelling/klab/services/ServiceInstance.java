@@ -209,7 +209,13 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     this.identity = authenticateService();
 
-    return new AbstractServiceDelegatingScope(new ChannelImpl(identity.getFirst())) {
+    return new AbstractServiceDelegatingScope(
+        new ChannelImpl(identity.getFirst()) {
+          @Override
+          public String getDispatchId() {
+            return service.serviceId();
+          }
+        }) {
 
       @Override
       public UserScope createUser(String username, String password) {
@@ -378,26 +384,26 @@ public abstract class ServiceInstance<T extends BaseService> {
 
       //            firstCall = false;
 
-      if (wasAvailable != okEssentials) {
-        if (okEssentials) {
-          if (initialized.get()) {
-            serviceScope.send(
-                Message.MessageClass.ServiceLifecycle,
-                Message.MessageType.ServiceAvailable,
-                klabService().capabilities(serviceScope));
-          } else {
-            serviceScope.send(
-                Message.MessageClass.ServiceLifecycle,
-                Message.MessageType.ServiceInitializing,
-                klabService().capabilities(serviceScope));
-          }
-        } else {
-          serviceScope.send(
-              Message.MessageClass.ServiceLifecycle,
-              Message.MessageType.ServiceUnavailable,
-              klabService().capabilities(serviceScope));
-        }
-      }
+//      if (wasAvailable != okEssentials) {
+//        if (okEssentials) {
+//          if (initialized.get()) {
+//            serviceScope.send(
+//                Message.MessageClass.ServiceLifecycle,
+//                Message.MessageType.ServiceAvailable,
+//                klabService().capabilities(serviceScope));
+//          } else {
+//            serviceScope.send(
+//                Message.MessageClass.ServiceLifecycle,
+//                Message.MessageType.ServiceInitializing,
+//                klabService().capabilities(serviceScope));
+//          }
+//        } else {
+//          serviceScope.send(
+//              Message.MessageClass.ServiceLifecycle,
+//              Message.MessageType.ServiceUnavailable,
+//              klabService().capabilities(serviceScope));
+//        }
+//      }
 
       /*
       if status is OK and the service hasn't been initialized, set maintenance mode and call
@@ -408,10 +414,10 @@ public abstract class ServiceInstance<T extends BaseService> {
         klabService().initializeService();
         klabService().setInitialized(true);
         initialized.set(true);
-        serviceScope.send(
-            Message.MessageClass.ServiceLifecycle,
-            Message.MessageType.ServiceAvailable,
-            klabService().capabilities(serviceScope));
+//        serviceScope.send(
+//            Message.MessageClass.ServiceLifecycle,
+//            Message.MessageType.ServiceAvailable,
+//            klabService().capabilities(serviceScope));
         setBusy(false);
       }
 

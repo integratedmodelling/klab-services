@@ -3,11 +3,9 @@ package org.integratedmodelling.common.authentication.scope;
 import com.rabbitmq.client.*;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
 import java.io.IOException;
@@ -28,6 +26,7 @@ public class AMQPChannel {
   private final String brokerUri;
   private final String queue;
   private final String exchangeName;
+  private final org.integratedmodelling.klab.api.services.runtime.Channel klabChannel;
   private ConnectionFactory connectionFactory;
   private Connection connection;
   private Channel channel;
@@ -46,13 +45,18 @@ public class AMQPChannel {
    * @param federation the federation containing the broker URI
    * @param queue the queue name
    */
-  public AMQPChannel(Federation federation, String queue, Consumer<Message> messageConsumer) {
+  public AMQPChannel(
+      Federation federation,
+      String queue,
+      org.integratedmodelling.klab.api.services.runtime.Channel channel,
+      Consumer<Message> messageConsumer) {
     this.brokerUri = federation.getBroker();
     this.queue = queue;
     this.exchangeName = federation.getId() + ".exchange";
     this.messageConsumer = messageConsumer;
     this.online = connect();
     this.federationWide = queue.equals(federation.getId());
+    this.klabChannel = channel;
   }
 
   public void filter(Collection<Message.Queue> queues) {
@@ -82,6 +86,8 @@ public class AMQPChannel {
               .build();
 
       // Declare a fanout exchange
+      // FIXME either pass to a direct exchange or refactor to have just one fanout exchange per
+      // user scope
       channel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT, true);
 
       connected = true;
@@ -100,6 +106,7 @@ public class AMQPChannel {
             (consumerTag, delivery) -> {
               try {
 
+                // filter messages from self. TODO this may need configuration
                 Map<String, Object> headers = delivery.getProperties().getHeaders();
                 if (headers != null && headers.containsKey("channelId")) {
                   if (channelTag.equals(headers.get("channelId").toString())) {
@@ -117,7 +124,14 @@ public class AMQPChannel {
                   return;
                 }
 
-                if (!federationWide && !message.getIdentity().equals(queue)) {
+                if (klabChannel != null) {
+                  // filter identity route. FIXME use direct, so that AMQP does the job and not me,
+                  //  or leave fanout with one exchange per user scope. Early experiments were
+                  //  painful.
+                  if (!klabChannel.getDispatchId().equals(message.getDispatchId())) {
+                    return;
+                  }
+                } else if (!federationWide && !message.getDispatchId().equals(queue)) {
                   return;
                 }
 

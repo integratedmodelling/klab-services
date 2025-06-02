@@ -13,17 +13,12 @@
  */
 package org.integratedmodelling.klab.api.services.runtime;
 
-import java.io.Closeable;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import javax.sound.midi.Receiver;
-
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message.MessageClass;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 
@@ -34,18 +29,17 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
  * they implement.
  *
  * <p>The {@link #error(Object...)}, {@link #warn(Object...)}, {@link #info(Object...)}, {@link
- * #ui(Message)}, {@link #debug(Object...)}, {@link #status(Scope.Status)} and {@link
- * #event(Message)} methods are the point of entry into the channel. Each corresponds to the handler
- * for one of the messaging queues classified by {@link
- * org.integratedmodelling.klab.api.services.runtime.Message.Queue}. They can be called explicitly
- * from the API or be called in response to a message sent through {@link #send(Object...)}, either
- * on the channel itself or on a channel that is paired to this through the messaging system.
- * Channels instrumented for messaging (implementing MessagingChannel) may send to one or more other
- * channels in addition to their own handlers. The paired channels will receive the messages through
- * their respective handlers, packed as needed, only on the queues that they have subscribed to.
- * Others just send the messages to their own handlers according to the {@link
- * org.integratedmodelling.klab.api.services.runtime.Message.Queue} associated with the {@link
- * Message} sent unless the channel has unsubscribed. The default queues are specified by the
+ * #ui(Message)}, {@link #debug(Object...)} and {@link #event(Message)} methods are the point of
+ * entry into the channel. Each corresponds to the handler for one of the messaging queues
+ * classified by {@link org.integratedmodelling.klab.api.services.runtime.Message.Queue}. They can
+ * be called explicitly from the API or be called in response to a message sent through {@link
+ * #send(Object...)}, either on the channel itself or on a channel that is paired to this through
+ * the messaging system. Channels instrumented for messaging (implementing MessagingChannel) may
+ * send to one or more other channels in addition to their own handlers. The paired channels will
+ * receive the messages through their respective handlers, packed as needed, only on the queues that
+ * they have subscribed to. Others just send the messages to their own handlers according to the
+ * {@link org.integratedmodelling.klab.api.services.runtime.Message.Queue} associated with the
+ * {@link Message} sent unless the channel has unsubscribed. The default queues are specified by the
  * interface.
  *
  * <p>An important function of the monitor is to obtain the current identity that owns the
@@ -76,6 +70,16 @@ public interface Channel {
    * @return
    */
   Identity getIdentity();
+
+  /**
+   * The dispatch ID is the identifier of the channel that gets into messages sent through the
+   * messaging system. It is used to set the {@link Message#getDispatchId()} field, used to dispatch
+   * messages to their respective channels. Channels will filter all messages and only keep those
+   * that have their same ID.
+   *
+   * @return
+   */
+  String getDispatchId();
 
   /**
    * For info to be seen by users: pass a string. Will also take an exception, but usually
@@ -132,12 +136,15 @@ public interface Channel {
   void ui(Message message);
 
   /**
-   * Subscribe the passed listener to all messages going through this channels.
+   * Registers a consumer to handle messages from a specific message queue. The consumer will be
+   * invoked whenever a message is received from the specified queue.
    *
-   * @param consumer
-   * @return
+   * @param consumer the {@link BiConsumer} that will process messages. The first parameter is the
+   *     {@link Channel} that received the message, and the second parameter is the {@link Message}.
+   * @param queues the {@link Message.Queue} from which messages will be consumed.
+   * @return the current {@link Channel} instance, to allow method chaining.
    */
-  Channel onMessage(BiConsumer<Channel, Message> consumer);
+  Channel onMessage(BiConsumer<Channel, Message> consumer, Message.Queue... queues);
 
   /**
    * Install a reactor to specific messages getting through the event queue.

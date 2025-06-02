@@ -4,6 +4,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
@@ -53,8 +55,13 @@ public class EngineImpl implements Engine, PropertyHolder {
   private DistributionImpl downloadedDistribution;
   private final Distribution.Status distributionStatus;
   private Federation federationData;
+  private Consumer<Status> engineStatusMonitor;
+  private BiConsumer<KlabService, ServiceStatus> serviceStatusMonitor;
 
-  public EngineImpl() {
+  public EngineImpl(
+      Consumer<Status> engineStatusMonitor,
+      BiConsumer<KlabService, ServiceStatus> serviceStatusMonitor) {
+
     settings.put(Setting.POLLING, "on");
     settings.put(Setting.POLLING_INTERVAL, 5);
     settings.put(Setting.LOG_EVENTS, false);
@@ -64,6 +71,8 @@ public class EngineImpl implements Engine, PropertyHolder {
       this.developmentDistribution = new DevelopmentDistributionImpl();
     }
 
+    this.serviceStatusMonitor = serviceStatusMonitor;
+    this.engineStatusMonitor = engineStatusMonitor;
     this.downloadedDistribution = new DistributionImpl();
     this.distribution =
         this.developmentDistribution == null
@@ -230,30 +239,24 @@ public class EngineImpl implements Engine, PropertyHolder {
       messagingChannel.setupMessaging(
           federation, federation.getId(), messagingChannel.defaultQueues());
     }
-
-    //    this.defaultUser.send(
-    //        Message.MessageClass.EngineLifecycle,
-    //        Message.MessageType.ServiceInitializing,
-    //        capabilities(serviceScope()));
-    //    //    scheduler.scheduleAtFixedRate(this::timedTasks, 0, 2, TimeUnit.SECONDS);
-    //    booted.set(true);
-    //
-    //    if (distribution != null) {
-    //      this.defaultUser.send(
-    //          Message.MessageClass.EngineLifecycle,
-    //          Message.MessageType.UsingDistribution,
-    //          distribution);
-    //    }
   }
 
   private void notifyLocalEngine(Engine.Status status) {
-    this.defaultUser.send(
-        Message.MessageClass.EngineLifecycle, Message.MessageType.EngineStatusChanged, status);
+    if (engineStatusMonitor != null) {
+      engineStatusMonitor.accept(status);
+    }
+    //    this.defaultUser.send(
+    //        Message.MessageClass.EngineLifecycle, Message.MessageType.EngineStatusChanged,
+    // status);
   }
 
   private void notifyLocalService(KlabService klabService, ServiceStatus serviceStatus) {
-    this.defaultUser.send(
-        Message.MessageClass.EngineLifecycle, Message.MessageType.ServiceStatus, serviceStatus);
+    if (serviceStatusMonitor != null) {
+      serviceStatusMonitor.accept(klabService, serviceStatus);
+    }
+    //    this.defaultUser.send(
+    //        Message.MessageClass.EngineLifecycle, Message.MessageType.ServiceStatus,
+    // serviceStatus);
     //    Logging.INSTANCE.info("GOT SERVICE STATUS " + serviceStatus);
   }
 
@@ -263,16 +266,29 @@ public class EngineImpl implements Engine, PropertyHolder {
     if (this.defaultUser == null) {
 
       this.authData = Authentication.INSTANCE.authenticate(settings);
-      this.serviceMonitor =
-          new ServiceMonitor(
-              authData.getFirst(),
-              settings,
-              true,
-              authData.getSecond(),
-              this::notifyLocalService,
-              this::notifyLocalEngine);
+
+      /*
+       * If user is federated, we don't start the local broker. Otherwise, we set up a local
+       * federated identity and tell the runtime service to create an embedded broker on the default
+       * URL and port.
+       */
+      this.federationData =
+          authData
+              .getFirst()
+              .getData()
+              .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+
+      if (federationData == null || federationData.getBroker() == null) {
+        var id = federationData == null ? null : federationData.getId();
+        if (id == null) {
+          id = Federation.LOCAL_FEDERATION_ID;
+        }
+        federationData = new Federation(id, Channel.LOCAL_BROKER_URL + Channel.LOCAL_BROKER_PORT);
+      }
+
+      /* federation must be already established at this point */
       this.defaultUser =
-          new ClientUserScope(authData.getFirst(), this) {
+          new ClientUserScope((UserIdentity) authData.getFirst(), this) {
             @Override
             public <T extends KlabService> T getService(Class<T> serviceClass) {
               return (T) serviceMonitor.getService(serviceClass);
@@ -283,34 +299,17 @@ public class EngineImpl implements Engine, PropertyHolder {
               return serviceMonitor.getServices(serviceClass);
             }
           };
+
       this.users.add(this.defaultUser);
-      //      this.defaultUser.send(
-      //          Message.MessageClass.Authorization,
-      //          Message.MessageType.UserAuthorized,
-      //          authData.getFirst());
-    }
 
-    /*
-     * If user is federated, we don't start the local broker. Otherwise, we set up a local
-     * federated identity and tell the runtime service to create an embedded broker on the default
-     * URL and port.
-     */
-    this.federationData =
-        this.defaultUser
-            .getUser()
-            .getData()
-            .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
-
-    if (federationData == null || federationData.getBroker() == null) {
-      var id = federationData == null ? null : federationData.getId();
-      if (id == null) {
-        id = Federation.LOCAL_FEDERATION_ID;
-      }
-      federationData = new Federation(id, Channel.LOCAL_BROKER_URL + Channel.LOCAL_BROKER_PORT);
-      this.defaultUser
-          .getUser()
-          .getData()
-          .put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
+      this.serviceMonitor =
+          new ServiceMonitor(
+              authData.getFirst(),
+              settings,
+              true,
+              authData.getSecond(),
+              this::notifyLocalService,
+              this::notifyLocalEngine);
     }
 
     return this.defaultUser;
