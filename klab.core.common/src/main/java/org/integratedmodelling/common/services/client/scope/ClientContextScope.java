@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -30,6 +31,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   private Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
       new LinkedHashMap<>();
   private DigitalTwin digitalTwin;
+  private Activity activity;
 
   /**
    * The default client scope has the user as the embedded agent.
@@ -346,6 +348,11 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
   public void createDigitalTwin(String id) {
     this.digitalTwin = new ClientDigitalTwin(this, id);
+  }
+
+  @Override
+  public Activity getCurrentActivity() {
+    return activity;
   }
 
   public String toString() {

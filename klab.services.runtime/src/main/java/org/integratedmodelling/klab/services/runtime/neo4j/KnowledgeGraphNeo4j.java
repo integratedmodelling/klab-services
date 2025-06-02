@@ -274,10 +274,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   private Agent getOrCreateAgent(String name, String ai) {
     var result =
         adapt(
-            query(
-                "MATCH (a:Agent {name: $agentName}) RETURN a",
-                Map.of("agentName", name),
-                scope),
+            query("MATCH (a:Agent {name: $agentName}) RETURN a", Map.of("agentName", name), scope),
             Agent.class,
             scope);
     if (!result.isEmpty()) {

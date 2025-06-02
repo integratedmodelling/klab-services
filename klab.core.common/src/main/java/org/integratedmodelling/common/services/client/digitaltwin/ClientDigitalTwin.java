@@ -140,4 +140,10 @@ public class ClientDigitalTwin implements DigitalTwin {
   public Type classify() {
     return Type.CONTEXT;
   }
+
+  @Override
+  public Options getOptions() {
+    // TODO
+    return null;
+  }
 }

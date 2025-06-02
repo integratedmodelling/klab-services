@@ -452,7 +452,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   @Override
   public SessionScope openNewSession(String sessionName) {
-    var ret = user().createSession(sessionName);
+    var ret = user().getUserSession(user().getService(RuntimeService.class));
     this.sessions.add(ret);
     return ret;
   }

@@ -153,7 +153,10 @@ public class SchedulerImpl implements Scheduler {
             .getDigitalTwin()
             .transaction(
                 Activity.of(
-                    Activity.Type.INITIALIZATION, observation, "Initialization of " + observation),
+                    Activity.Type.INITIALIZATION,
+                    observation,
+                    triggeringResolution,
+                    "Initialization of " + observation),
                 scope,
                 triggeringResolution);
     try {

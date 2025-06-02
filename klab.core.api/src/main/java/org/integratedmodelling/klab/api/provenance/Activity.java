@@ -65,6 +65,14 @@ public interface Activity extends Provenance.Node {
    */
   String getUrn();
 
+  /**
+   * Store the URN of the triggering activity, if any, for situations where we don't have the full
+   * knowledge graph available.
+   *
+   * @return
+   */
+  String getTriggeringActivityUrn();
+
   enum Type {
     CONTEXT_INITIALIZATION,
     INITIALIZATION,
@@ -171,6 +179,8 @@ public interface Activity extends Provenance.Node {
         ret.setServiceId(service.serviceId());
         ret.setServiceName(service.getServiceName());
         ret.setServiceType(KlabService.Type.classify(service));
+      } else if (o instanceof Activity activity) {
+        ret.setTriggeringActivityUrn(activity.getUrn());
       }
     }
     return ret;

@@ -8,11 +8,11 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -23,14 +23,13 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.ojalgo.concurrent.Parallelism;
@@ -71,6 +70,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private int splits = -1;
 
   LoadingCache<Long, Observation> observationCache;
+  private Activity currentActivity;
 
   // This uses the SAME catalog, which should only be redefined when changing context or perspective
   private ServiceContextScope(ServiceContextScope parent) {
@@ -82,10 +82,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.digitalTwin = parent.digitalTwin;
     this.observationCache = parent.observationCache;
     this.resolutionConstraints.putAll(parent.resolutionConstraints);
-//    this.currentOperation = parent.currentOperation;
+    //    this.currentOperation = parent.currentOperation;
     this.resolutionCache = parent.resolutionCache;
     this.nextResolutionId = parent.nextResolutionId;
     this.jobManager = parent.jobManager;
+    this.currentActivity = parent.currentActivity;
   }
 
   @Override
@@ -94,8 +95,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   // next 3 are overridden with the same code as the parent because they need to use the local maps,
-  // not the
-  // parent's
+  // not the parent's
 
   @Override
   public <T extends KlabService> T getService(Class<T> serviceClass) {
@@ -138,10 +138,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                             .getKnowledgeGraph()
                             .get(key, ServiceContextScope.this, Observation.class);
                     if (ret == null) {
-                      System.out.println(
-                          "CATXO null observation "
+                      Logging.INSTANCE.error(
+                          "CATXO null observation retrieved for key "
                               + key
-                              + ": I am "
+                              + " in service "
                               + KlabService.Type.classify(service));
                     }
                     return ret;
@@ -151,6 +151,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     /*
      * TODO choose the services if this context or user requires specific ones
      */
+  }
+
+  @Override
+  public Activity getCurrentActivity() {
+    return currentActivity;
   }
 
   @Override
@@ -198,7 +203,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         }
       }
       return ret;
-//      throw new KlabInternalErrorException("QUERY FOR UNRESOLVED OBSERVATION -- this should no longer happen");
+      //      throw new KlabInternalErrorException("QUERY FOR UNRESOLVED OBSERVATION -- this should
+      // no longer happen");
     }
     try {
       return observationCache.get(id);
@@ -231,28 +237,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
-//  /**
-//   * Store the current KG operation so that we can correctly record provenance and maintain graph
-//   * integrity in secondary resolutions.
-//   *
-//   * @param operation
-//   * @return
-//   */
-//  public ServiceContextScope withinOperation(KnowledgeGraph.Operation operation) {
-//
-//    if (operation == null) {
-//      return this;
-//    }
-//
-//    ServiceContextScope ret = new ServiceContextScope(this);
-//    ret.currentOperation = operation;
-//    return ret;
-//  }
-//
-//  public KnowledgeGraph.Operation getCurrentOperation() {
-//    return currentOperation;
-//  }
-
   @Override
   public CompletableFuture<Observation> observe(Observation observation) {
     if (!isOperative()) {
@@ -266,25 +250,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public CompletableFuture<Observation> submit(Observation observation, Data observationData) {
     return null;
   }
-
-  //  public void finalizeObservation(
-//      Observation observation, KnowledgeGraph.Operation operation, boolean successful) {
-//    if (successful) {
-//      if (observation.getObservable().is(SemanticType.QUALITY)) {
-//        var storage = digitalTwin.getStorageManager().getStorage(observation);
-//        if (storage != null) {
-//          for (var buf : storage.allBuffers()) {
-//
-//            // TODO if geometry is scalar, save state as property instead
-//            operation.store(buf);
-//            // The HAS_DATA link contains the offsets for the geometry, if any.
-//            operation.link(
-//                observation, buf, GraphModel.Relationship.HAS_DATA, "offset", buf.offset());
-//          }
-//        }
-//      }
-//    }
-//  }
 
   @Override
   public Provenance getProvenance() {
@@ -353,23 +318,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         .run(this);
   }
 
-  //  @Override
-  //  public <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData) {
-  //    return getService(RuntimeService.class).retrieveAssets(this, resultClass, queryData);
-  //  }
-
-  //  @Override
-  //  public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
-  //      KnowledgeGraph.Query<T> knowledgeGraphQuery) {
-  //    if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> qc) {
-  //      return digitalTwin
-  //          .getKnowledgeGraph()
-  //          .query(knowledgeGraphQuery, (Class<T>) qc.getResultType().getAssetClass(), this);
-  //    }
-  //    throw new KlabUnimplementedException("Not ready to compile arbitrary KG query
-  // implementations");
-  //  }
-
   @Override
   public void runTransitions() {
     // TODO Auto-generated method stub
@@ -409,6 +357,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     ServiceContextScope ret = new ServiceContextScope(this);
     ret.contextObservation = contextObservation;
     ret.splits = -1;
+    return ret;
+  }
+
+  public ServiceContextScope executing(Activity currentActivity) {
+    ServiceContextScope ret = new ServiceContextScope(this);
+    ret.currentActivity = currentActivity;
     return ret;
   }
 
@@ -502,21 +456,21 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     // but
     // no big deal for now. Alternative is a complicated restructuring of messages to take multiple
     // payloads.
-//    setId(scopeId);
-//    setStatus(Status.WAITING);
-//    KActorsBehavior.Ref contextAgent =
-//        parentScope.ask(
-//            KActorsBehavior.Ref.class,
-//            Message.MessageClass.ActorCommunication,
-//            Message.MessageType.CreateContext,
-//            this);
-//    if (contextAgent != null && !contextAgent.isEmpty()) {
-//      setStatus(Status.STARTED);
-//      setAgent(contextAgent);
-//      return true;
-//    }
-//    setStatus(Status.ABORTED);
-//    return false;
+    //    setId(scopeId);
+    //    setStatus(Status.WAITING);
+    //    KActorsBehavior.Ref contextAgent =
+    //        parentScope.ask(
+    //            KActorsBehavior.Ref.class,
+    //            Message.MessageClass.ActorCommunication,
+    //            Message.MessageType.CreateContext,
+    //            this);
+    //    if (contextAgent != null && !contextAgent.isEmpty()) {
+    //      setStatus(Status.STARTED);
+    //      setAgent(contextAgent);
+    //      return true;
+    //    }
+    //    setStatus(Status.ABORTED);
+    //    return false;
     return true;
   }
 

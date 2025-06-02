@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -64,6 +65,8 @@ public interface ContextScope extends SessionScope {
    * @return
    */
   URL getUrl();
+
+  Activity getCurrentActivity();
 
   /**
    * Return the observer for this context. This should normally not be null even if the context is

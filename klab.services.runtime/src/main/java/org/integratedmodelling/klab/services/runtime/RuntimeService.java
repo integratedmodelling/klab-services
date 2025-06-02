@@ -421,6 +421,7 @@ public class RuntimeService extends BaseService
       var resolution =
           Activity.of("Resolution of " + observation, Activity.Type.RESOLUTION, this, agent);
 
+      var runningScope = contextScope.executing(resolution);
       return resolver
           /* resolve asynchronously */
           .resolve(observation, contextScope)
@@ -434,13 +435,13 @@ public class RuntimeService extends BaseService
                   var transaction =
                       scope
                           .getDigitalTwin()
-                          .transaction(resolution, scope, dataflow, observation, storedAgent);
+                          .transaction(resolution, runningScope, dataflow, observation, storedAgent);
 
-                  if (compile(observation, dataflow, contextScope, transaction)) {
+                  if (compile(observation, dataflow, runningScope, transaction)) {
                     if (transaction.commit()) {
                       // send the committed graph before submitting the observation to the
                       // scheduler,
-                      contextScope.send(
+                      runningScope.send(
                           Message.MessageClass.DigitalTwin,
                           Message.MessageType.KnowledgeGraphCommitted,
                           transaction.getGraph());
@@ -453,7 +454,7 @@ public class RuntimeService extends BaseService
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
               o -> {
-                contextScope.getDigitalTwin().getScheduler().submit(o, resolution);
+                runningScope.getDigitalTwin().getScheduler().submit(o, resolution);
                 return o;
               });
     }

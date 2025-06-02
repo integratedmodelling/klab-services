@@ -153,6 +153,17 @@ public interface Message extends Serializable {
      */
     ContextObservationResolved(Queue.Events, Observation.class),
 
+    /**
+     * Runtime has started an activity. The URN tells us where the activity stands in the triggering
+     * chain.
+     */
+    ActivityStarted(Queue.Events, ActivityImpl.class),
+    /**
+     * Runtime has finished an activity that was notified when started. The outcome must be checked
+     * as there is no ActivityAborted message.
+     */
+    ActivityFinished(Queue.Events, ActivityImpl.class),
+
     /*
      * Notification-class types. Sent only if the correspondent Queue is enabled.
      */
@@ -417,9 +428,6 @@ public interface Message extends Serializable {
               case Error, SystemError -> MessageType.Error;
             });
         ret.setPayload(ob);
-      } else if (ob instanceof ActivityImpl activity) {
-        ret.setTaskId(activity.getUrn());
-        payloadIfAbsent = activity;
       } else if (ob != null) {
         if (ret.getPayload() == null) {
           ret.setPayload(ob);

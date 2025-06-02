@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -20,6 +21,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -30,6 +32,16 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
  * methods to access it. Digital twins can be built from pairing others in a federated fashion.
  */
 public interface DigitalTwin extends RuntimeAsset {
+
+  /** An Options object is passed when the digital twin is created. */
+  interface Options {
+
+    ResourcePrivileges getAccessRights();
+
+    Persistence getPersistence();
+
+    String getName();
+  }
 
   /**
    * An executor is a runnable operation linked to an observation, compiled from an actuator in the
@@ -124,6 +136,14 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     RuntimeAssetGraph getGraph();
   }
+
+  /**
+   * Return the options with which this digital twin was created. Options are immutable after
+   * creation.
+   *
+   * @return
+   */
+  Options getOptions();
 
   /**
    * Obtain a new transaction to make changes in the knowledge graph. Nothing is modified until
