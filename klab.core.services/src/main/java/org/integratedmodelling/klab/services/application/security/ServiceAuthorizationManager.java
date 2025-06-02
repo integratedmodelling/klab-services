@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.services.application.security;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
@@ -120,6 +124,11 @@ public class ServiceAuthorizationManager {
     PublicKey publicKey;
     ServiceAuthenticationResponse response;
     try (var client = Utils.Http.getClient(this.authenticatingHub, null)) {
+      Logging.INSTANCE.info(
+              "authenticating "
+                      + certificate.getProperty(KlabCertificate.KEY_NODENAME)
+                      + " with hub "
+                      + authenticatingHub);
       response =
           client.post(
               ServicesAPI.HUB.AUTHENTICATE_SERVICE, request, ServiceAuthenticationResponse.class);
@@ -163,7 +172,17 @@ public class ServiceAuthorizationManager {
 
     // TODO fill in services from hub response, which at the moment contains no provision for that
     ServiceReference service = new ServiceReference();
+    service.setId(this.nodeName);
+    service.setIdentityType(this.type);
+    try {
+        service.setUrls(List.of(new URI(certificate.getProperty(KlabCertificate.KEY_URL)).toURL()));
+    } catch (MalformedURLException e) {
+        throw new RuntimeException(e);
+    } catch (URISyntaxException e) {
+        throw new RuntimeException(e);
+    }
     List<ServiceReference> services = new ArrayList<>();
+    service.setPrimary(true);
     services.add(service);
 
     /*
@@ -178,7 +197,7 @@ public class ServiceAuthorizationManager {
     for (Group group : response.getGroups()) {
       ret.getGroups().add(group);
     }
-
+    ret.setToken((response.getUserData().getToken()));
     return Pair.of(ret, services);
   }
 

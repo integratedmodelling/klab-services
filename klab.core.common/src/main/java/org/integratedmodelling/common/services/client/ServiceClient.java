@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.PartnerIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -149,7 +150,11 @@ public abstract class ServiceClient implements KlabService {
   @SuppressWarnings("unchecked")
   public String connect(BiConsumer<Channel, Message>... messageBiConsumers) {
 
-    this.token = this.identity.getId();
+    if (this.identity instanceof PartnerIdentity) {
+      this.token = ((PartnerIdentity)identity).getToken();
+    } else {
+      this.token = this.identity.getId();
+    }
     String ret = null;
     this.client = Utils.Http.getServiceClient(token, this);
     var secret = Configuration.INSTANCE.getServiceSecret(serviceType);

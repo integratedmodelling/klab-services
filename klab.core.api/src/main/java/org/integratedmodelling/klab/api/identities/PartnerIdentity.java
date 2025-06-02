@@ -21,6 +21,8 @@ public interface PartnerIdentity extends Identity {
 
     String getPublicKey();
 
+    String getToken();
+
     // TODO institutional stuff
 
 }
