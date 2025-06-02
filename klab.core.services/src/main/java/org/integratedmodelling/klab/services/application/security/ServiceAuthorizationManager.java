@@ -275,6 +275,7 @@ public class ServiceAuthorizationManager {
                   username,
                   brokerUrl,
                   federationId,
+                  token,
                   groupStrings,
                   Collections.unmodifiableList(filterRoles(roleStrings)));
 
@@ -326,7 +327,7 @@ public class ServiceAuthorizationManager {
       /*
       anonymous user case also intercepts JWT token failure
        */
-      ret = new EngineAuthorization("nohub", "anonymous", null, null, List.of(), null);
+      ret = new EngineAuthorization("nohub", "anonymous", null, null, null, List.of(), null);
       ret.setTokenString(ServicesAPI.ANONYMOUS_TOKEN);
     }
 

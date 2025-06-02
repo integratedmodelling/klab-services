@@ -75,6 +75,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken
    */
   private Collection<Role> roles;
 
+
   /** JWT token string, in 3 dot-separated sections. Each section is base 64 encoded. */
   private Credentials tokenString;
 
@@ -98,13 +99,17 @@ public class EngineAuthorization extends AbstractAuthenticationToken
       String username,
       String brokerUrl,
       String federationId,
+      String token,
       Collection<String> groups,
       Collection<Role> roles) {
     super(roles);
     this.partnerId = new Credentials(partnerId);
     this.username = new Credentials(username);
+    this.tokenString = new Credentials(token);
     this.brokerUrl = brokerUrl;
     this.federationId = federationId;
+
+    //this.groups = groups;
     expiration = Instant.now().plusSeconds(TOKEN_TTL_SECONDS);
 
     /*
