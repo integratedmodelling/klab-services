@@ -135,6 +135,11 @@ public interface Provenance extends RuntimeAsset, Iterable<Activity> {
             }
 
             @Override
+            public long getTransientId() {
+                return 0;
+            }
+
+            @Override
             public Iterator<Activity> iterator() {
                 return new ArrayList<Activity>().iterator();
             }

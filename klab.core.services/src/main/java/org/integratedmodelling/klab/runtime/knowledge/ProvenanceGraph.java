@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.knowledge;
 
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.provenance.Activity;
@@ -14,52 +15,61 @@ import java.util.List;
 
 public class ProvenanceGraph implements Provenance {
 
-    private final KnowledgeGraph database;
-    private final ContextScope scope;
+  private final KnowledgeGraph database;
+  private final ContextScope scope;
+  private long transientId = Klab.getNextId();
 
-    public ProvenanceGraph(KnowledgeGraph database, ContextScope contextScope) {
-        this.database = database;
-        this.scope = contextScope;
-    }
+  public ProvenanceGraph(KnowledgeGraph database, ContextScope contextScope) {
+    this.database = database;
+    this.scope = contextScope;
+  }
 
+  @Override
+  public long getTransientId() {
+    return transientId;
+  }
 
-    @Override
-    public boolean isEmpty() {
-        return false;
-    }
+  public void setTransientId(long transientId) {
+    this.transientId = transientId;
+  }
 
-    @Override
-    public List<Activity> getPrimaryActions() {
-        return List.of();
-    }
+  @Override
+  public boolean isEmpty() {
+    return false;
+  }
 
-    @Override
-    public Collection<Artifact> getArtifacts() {
-        return List.of();
-    }
+  @Override
+  public List<Activity> getPrimaryActions() {
+    return List.of();
+  }
 
-    @Override
-    public Activity getCause(Node node) {
-        return null;
-    }
+  @Override
+  public Collection<Artifact> getArtifacts() {
+    return List.of();
+  }
 
-    @Override
-    public Agent getAgent(Node node) {
-        return null;
-    }
+  @Override
+  public Activity getCause(Node node) {
+    return null;
+  }
 
-    @Override
-    public <T> Collection<T> collect(Class<? extends T> cls) {
-        return List.of();
-    }
+  @Override
+  public Agent getAgent(Node node) {
+    return null;
+  }
 
-    @Override
-    public Iterator<Activity> iterator() {
-        return null;
-    }
+  @Override
+  public <T> Collection<T> collect(Class<? extends T> cls) {
+    return List.of();
+  }
 
-    @Override
-    public long getId() {
-        return 0;
-    }
+  @Override
+  public Iterator<Activity> iterator() {
+    return null;
+  }
+
+  @Override
+  public long getId() {
+    return 0;
+  }
 }

@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.runtime;
 
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -30,6 +31,7 @@ public class ActuatorImpl implements Actuator {
   private long id;
   private double resolvedCoverage;
   private List<Annotation> annotations = new ArrayList<>();
+  private long transientId = Klab.getNextId();
 
   @Override
   public String getName() {
@@ -144,6 +146,15 @@ public class ActuatorImpl implements Actuator {
 
   public void setId(long id) {
     this.id = id;
+  }
+
+  @Override
+  public long getTransientId() {
+    return transientId;
+  }
+
+  public void setTransientId(long transientId) {
+    this.transientId = transientId;
   }
 
   @Override

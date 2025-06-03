@@ -11,6 +11,7 @@ import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.RuntimeAssetGraph;
@@ -120,6 +121,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     private long id = 0;
     private Parameters<String> properties = Parameters.create();
     private GraphModel.Relationship type;
+    private long transientId = Klab.getNextId();
 
     @Override
     public GraphModel.Relationship type() {
@@ -159,6 +161,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     public void setType(GraphModel.Relationship type) {
       this.type = type;
+    }
+
+    @Override
+    public long getTransientId() {
+      return transientId;
+    }
+
+    public void setTransientId(long transientId) {
+      this.transientId = transientId;
     }
   }
 

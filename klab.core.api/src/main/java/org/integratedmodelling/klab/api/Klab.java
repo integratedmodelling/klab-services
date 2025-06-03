@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api;
 
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Data;
@@ -28,6 +29,8 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 public enum Klab {
   INSTANCE;
 
+  private static AtomicLong nextId = new AtomicLong(1L);
+
   /**
    * Error codes for all situations. These can (should) be passed, along with an ErrorContext, to
    * {@link org.integratedmodelling.klab.api.services.runtime.Channel#error(Object...)} to qualify
@@ -53,6 +56,10 @@ public enum Klab {
     OBSERVATION_STRATEGY,
     BEHAVIOR,
     RESOURCES_SERVICE
+  }
+
+  public static long getNextId() {
+    return nextId.incrementAndGet();
   }
 
   /**

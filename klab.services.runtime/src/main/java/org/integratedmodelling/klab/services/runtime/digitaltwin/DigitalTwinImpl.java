@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
 import org.integratedmodelling.common.data.DoubleDataImpl;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -41,10 +42,20 @@ public class DigitalTwinImpl implements DigitalTwin {
   private final ContextScope rootScope;
   private final Scheduler scheduler;
   private Options options;
+  private long transientId = Klab.getNextId();
 
   @Override
   public long getId() {
     return 0;
+  }
+
+  @Override
+  public long getTransientId() {
+    return transientId;
+  }
+
+  public void setTransientId(long transientId) {
+    this.transientId = transientId;
   }
 
   @Override
@@ -84,9 +95,11 @@ public class DigitalTwinImpl implements DigitalTwin {
     private boolean primary = true; // activity isn't triggered by another
 
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
+
       this.activity = activity;
       this.scope = scope;
       this.graph.addVertex(activity);
+
       if (data != null) {
         for (Object datum : data) {
           if (datum instanceof Agent agent) {

@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.runtime.storage;
 
 import java.util.*;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -30,6 +31,7 @@ public class StorageImpl implements Storage {
   protected Persistence persistence;
   protected Data.SpaceFillingCurve spaceFillingCurve;
   protected int splits;
+  private long transientId = Klab.getNextId();
 
   /*
    * Buffer storage along slowest-varying dimensions. All dimensions except the
@@ -172,6 +174,16 @@ public class StorageImpl implements Storage {
     }
 
     return ret;
+  }
+
+  @Override
+  public long getTransientId() {
+    return transientId;
+  }
+
+  /** DO NOT CALL - reserved for serialization purposes */
+  public void setTransientId(long transientId) {
+    this.transientId = transientId;
   }
 
   private Buffer adaptBuffer(BufferImpl b, Data.SpaceFillingCurve fillingCurve) {
