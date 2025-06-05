@@ -122,7 +122,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
 
     Logging.INSTANCE.info("ZIO PERA " + message);
 
-    for (var listener : getListeners(message.getQueue())) {
+    for (var listener : getListeners(message.getQueue()).values()) {
       listener.accept(this, message);
     }
   }

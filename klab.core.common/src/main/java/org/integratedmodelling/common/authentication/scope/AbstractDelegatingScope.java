@@ -29,7 +29,7 @@ public abstract class AbstractDelegatingScope implements Scope {
   }
 
   @Override
-  public Channel onMessage(BiConsumer<Channel, Message> consumer, Message.Queue... queues) {
+  public String onMessage(BiConsumer<Channel, Message> consumer, Message.Queue... queues) {
     return this.delegateChannel.onMessage(consumer, queues);
   }
 
@@ -111,13 +111,18 @@ public abstract class AbstractDelegatingScope implements Scope {
     delegateChannel.event(message);
   }
 
+  //  @Override
+  //  public String onEvent(
+  //      Message.MessageClass messageClass,
+  //      Message.MessageType messageType,
+  //      Consumer<Message> runnable,
+  //      Object... matchArguments) {
+  //    return delegateChannel.onEvent(messageClass, messageType, runnable, matchArguments);
+  //  }
+
   @Override
-  public Channel onEvent(
-      Message.MessageClass messageClass,
-      Message.MessageType messageType,
-      Consumer<Message> runnable,
-      Object... matchArguments) {
-    return delegateChannel.onEvent(messageClass, messageType, runnable, matchArguments);
+  public void unregisterMessageListener(String listenerId) {
+    delegateChannel.unregisterMessageListener(listenerId);
   }
 
   @Override
@@ -139,22 +144,6 @@ public abstract class AbstractDelegatingScope implements Scope {
   public Scope getParentScope() {
     return parentScope;
   }
-
-  //  public void setParentScope(Scope parentScope) {
-  //    this.parentScope = parentScope;
-  //  }
-  //
-  //  public void addListener(BiConsumer<Channel, Message> listener) {
-  //    if (delegateChannel instanceof ChannelImpl channel) {
-  //      channel.addListener(listener);
-  //    } // TODO maybe warn otherwise
-  //  }
-  //
-  //  public BiConsumer<Channel, Message>[] listeners() {
-  //    return delegateChannel instanceof ChannelImpl channel
-  //        ? channel.listeners().toArray(BiConsumer[]::new)
-  //        : null;
-  //  }
 
   @Override
   public Persistence getPersistence() {
