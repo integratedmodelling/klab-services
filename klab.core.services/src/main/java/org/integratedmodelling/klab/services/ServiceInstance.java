@@ -213,7 +213,7 @@ public abstract class ServiceInstance<T extends BaseService> {
     for (ServiceReference s : this.identity.getSecond()) {
       switch (s.getIdentityType()) {
         case KlabService.Type.REASONER -> {
-          ReasonerClient reasoner = new ReasonerClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.get, null, s.getUrls()), null);
+          ReasonerClient reasoner = new ReasonerClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls()), null);
           availableReasoners.add(reasoner);
         }
         case KlabService.Type.RUNTIME  -> {
