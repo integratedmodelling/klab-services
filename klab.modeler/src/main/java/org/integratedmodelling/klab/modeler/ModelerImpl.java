@@ -226,47 +226,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   @Override
   public CompletableFuture<Observation> observe(Object asset, boolean adding) {
 
-    if (currentUser() == null) {
-      throw new KlabAuthorizationException("Cannot make observations with an invalid user");
-    }
-
-    /*
-     * Use cases:
-     *
-     * <p>Admitted with a current context or focal scale
-     *
-     * <p>Concept (from ontology, knowledge explorer/inspector or define) Promote to observable (if
-     * countable becomes collective) Observable (from define or knowledge inspector) Observe as
-     * expected Model (from namespace or search) Observe as expected Resource from catalog (local or
-     * remote) Observe with non-semantic observable Observation from define (can be inline, a
-     * URN#ID, other) If adding==true, any existing context is preserved and added to If
-     * adding==false, a new context is created and any previous goes out of focus Observation from
-     * context tree Just sets the target for the next observations
-     *
-     * <p>ALL can be either an object or a URN or DOI from inside or outside
-     *
-     * <p>Admitted w/o a current context or focal scale
-     *
-     * <p>Observation from define (can be inline, a URN#ID, other)
-     *
-     * <p>If there is no session, must create a default session & select it If there is no context,
-     * must create a default empty context within the session & select it
-     */
-    if (currentSession == null) {
-      // TODO use openOrCreateUserSession () for a user-specific single raw session. Session should
-      // have
-      //  the user's name
-      currentSession = openNewSession("S" + (++sessionCount));
-    }
-
-    if (currentContext == null && currentSession != null) {
-      currentContext = openNewContext("C" + (++contextCount));
-    }
-
-    if (currentContext == null) {
-      user().error("cannot create an observation context: aborting", UIView.Interactivity.DISPLAY);
-      return CompletableFuture.completedFuture(Observation.empty());
-    }
+    requireContext();
 
     List<Object> resolvables = new ArrayList<>();
     List<ResolutionConstraint> constraints = new ArrayList<>();
@@ -469,6 +429,30 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   @Override
   public ContextScope getCurrentContext() {
+    return currentContext;
+  }
+
+  @Override
+  public ContextScope requireContext() {
+
+    if (currentUser() == null) {
+      throw new KlabAuthorizationException("Cannot make observations with an invalid user");
+    }
+    if (currentSession == null) {
+      // TODO use openOrCreateUserSession () for a user-specific single raw session. Session should
+      // have
+      //  the user's name
+      currentSession = openNewSession("S" + (++sessionCount));
+    }
+
+    if (currentContext == null && currentSession != null) {
+      currentContext = openNewContext("C" + (++contextCount));
+    }
+
+    if (currentContext == null) {
+      user().error("cannot create an observation context: aborting", UIView.Interactivity.DISPLAY);
+    }
+
     return currentContext;
   }
 

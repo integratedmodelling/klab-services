@@ -233,7 +233,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       } catch (Exception e) {
         scope.error(e);
-        ((ActivityImpl) activity).setOutcome(Activity.Outcome.FAILURE);
+        ((ActivityImpl) activity).setOutcome(Activity.Outcome.INTERNAL_FAILURE);
         ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
         ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(e));
         scope.send(
@@ -258,6 +258,9 @@ public class DigitalTwinImpl implements DigitalTwin {
           }
         }
       }
+
+      ((ActivityImpl) activity).setOutcome(Activity.Outcome.SUCCESS);
+      ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
 
       scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, activity);
 

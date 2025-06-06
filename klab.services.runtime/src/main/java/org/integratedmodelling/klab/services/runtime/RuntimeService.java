@@ -361,6 +361,10 @@ public class RuntimeService extends BaseService
    *       RESOLUTION and linked to the Observations affected by a timestamped CONTEXTUALIZED link.
    * </ul>
    *
+   * TODO the observation may come with resolution informations added from the outside, in the form
+   *  of metadata that point to an adapter configuration. That needs to be validated and ingested by
+   *  the DT before assigning an ID and returning.
+   *
    * @param observation
    * @param scope
    * @return
@@ -435,7 +439,8 @@ public class RuntimeService extends BaseService
                   var transaction =
                       scope
                           .getDigitalTwin()
-                          .transaction(resolution, runningScope, dataflow, observation, storedAgent);
+                          .transaction(
+                              resolution, runningScope, dataflow, observation, storedAgent);
 
                   if (compile(observation, dataflow, runningScope, transaction)) {
                     if (transaction.commit()) {
