@@ -171,6 +171,7 @@ public class ServiceAuthorizationManager {
     jwksVerifiers.put(response.getAuthenticatingHub(), jwtVerifier);
 
     // TODO fill in services from hub response, which at the moment contains no provision for that
+    /*
     ServiceReference service = new ServiceReference();
     service.setId(this.nodeName);
     service.setIdentityType(this.type);
@@ -184,7 +185,7 @@ public class ServiceAuthorizationManager {
     List<ServiceReference> services = new ArrayList<>();
     service.setPrimary(true);
     services.add(service);
-
+    */
     /*
      * return the institutional identity this certificate belongs to.
      */
@@ -198,7 +199,7 @@ public class ServiceAuthorizationManager {
       ret.getGroups().add(group);
     }
     ret.setToken((response.getUserData().getToken()));
-    return Pair.of(ret, services);
+    return Pair.of(ret, response.getServices());
   }
 
   /**

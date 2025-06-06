@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services;
 
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.authentication.ServiceIdentityImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -208,6 +209,29 @@ public abstract class ServiceInstance<T extends BaseService> {
   protected AbstractServiceDelegatingScope createServiceScope() {
 
     this.identity = authenticateService();
+
+    for (ServiceReference s : this.identity.getSecond()) {
+      switch (s.getIdentityType()) {
+        case KlabService.Type.REASONER -> {
+          ReasonerClient reasoner = new ReasonerClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.get, null, s.getUrls()), null);
+          availableReasoners.add(reasoner);
+        }
+        case KlabService.Type.RUNTIME  -> {
+          RuntimeClient runtime = new RuntimeClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls()), null);
+          availableRuntimeServices.add(runtime);
+        }
+        case KlabService.Type.RESOURCES -> {
+          ResourcesClient resources = new ResourcesClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls()), null);
+          availableResourcesServices.add(resources);
+        }
+        case KlabService.Type.RESOLVER -> {
+          ResolverClient resolver = new ResolverClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls()), null);
+          availableResolvers.add(resolver);
+        }
+        default -> {
+        }
+      }
+    }
 
     return new AbstractServiceDelegatingScope(
         new ChannelImpl(identity.getFirst()) {
