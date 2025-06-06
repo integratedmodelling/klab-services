@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
+import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 
 /**
  * Abstract base implementation of a messaging channel, providing functionality for sending and
@@ -26,8 +27,8 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   private boolean receiver;
   private AMQPChannel amqpChannel = null;
 
-//  private static final Map<String, Map<String, List<Consumer<Message>>>> queueConsumers =
-//      new HashMap<>();
+  //  private static final Map<String, Map<String, List<Consumer<Message>>>> queueConsumers =
+  //      new HashMap<>();
 
   public abstract String getId();
 
@@ -54,6 +55,14 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
     if (this.sender && this.amqpChannel != null && this.amqpChannel.isOnline()) {
       // dispatch to queue if the queue is there
       var message = Message.create(this, args);
+      if (this instanceof ContextScope contextScope
+          && message instanceof MessageImpl message1
+          && contextScope.getCurrentActivity() != null) {
+        message1.setTaskId(
+            contextScope.getCurrentActivity() == null
+                ? null
+                : contextScope.getCurrentActivity().getUrn());
+      }
       this.amqpChannel.post(message);
     }
     // this will dispatch to the local handlers
@@ -61,20 +70,20 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   }
 
   //  public void installQueueConsumer(
-//      String scopeId, Message.Queue queue, Consumer<Message> consumer) {
-//    queueConsumers
-//        .computeIfAbsent(scopeId, k -> new HashMap<>())
-//        .computeIfAbsent(
-//            scopeId + "." + queue.name().toLowerCase(), q -> new ArrayList<Consumer<Message>>())
-//        .add(consumer);
-//  }
-//
-//  public void installQueueConsumer(String queueId, Consumer<Message> consumer) {
-//    queueConsumers
-//        .computeIfAbsent(getId(), k -> new HashMap<>())
-//        .computeIfAbsent(queueId, q -> new ArrayList<Consumer<Message>>())
-//        .add(consumer);
-//  }
+  //      String scopeId, Message.Queue queue, Consumer<Message> consumer) {
+  //    queueConsumers
+  //        .computeIfAbsent(scopeId, k -> new HashMap<>())
+  //        .computeIfAbsent(
+  //            scopeId + "." + queue.name().toLowerCase(), q -> new ArrayList<Consumer<Message>>())
+  //        .add(consumer);
+  //  }
+  //
+  //  public void installQueueConsumer(String queueId, Consumer<Message> consumer) {
+  //    queueConsumers
+  //        .computeIfAbsent(getId(), k -> new HashMap<>())
+  //        .computeIfAbsent(queueId, q -> new ArrayList<Consumer<Message>>())
+  //        .add(consumer);
+  //  }
 
   protected void closeMessaging() {
     if (this.amqpChannel != null) {
@@ -113,7 +122,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
 
     Logging.INSTANCE.info("ZIO PERA " + message);
 
-    for (var listener : getListeners(message.getQueue())) {
+    for (var listener : getListeners(message.getQueue()).values()) {
       listener.accept(this, message);
     }
   }

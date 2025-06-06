@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -153,7 +154,10 @@ public class SchedulerImpl implements Scheduler {
             .getDigitalTwin()
             .transaction(
                 Activity.of(
-                    Activity.Type.INITIALIZATION, observation, "Initialization of " + observation),
+                    Activity.Type.INITIALIZATION,
+                    observation,
+                    triggeringResolution,
+                    "Initialization of " + observation),
                 scope,
                 triggeringResolution);
     try {
@@ -329,7 +333,13 @@ public class SchedulerImpl implements Scheduler {
       this.epochEnd = tEnd;
     }
     /* ensure that all events are there */
-    timeEmitter.updateEvents(tStart, tEnd, time.getResolution());
+    if (timeEmitter.updateEvents(tStart, tEnd, time.getResolution())) {
+      // if anything has changed, notify the scope listeners
+      rootScope.send(
+          Message.MessageClass.DigitalTwin,
+          Message.MessageType.ScheduleModified,
+          timeEmitter.getSchedule());
+    }
     return Triple.of(tStart, tEnd, time.getResolution());
   }
 

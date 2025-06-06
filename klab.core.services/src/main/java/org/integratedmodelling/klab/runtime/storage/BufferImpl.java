@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.storage;
 
 import com.dynatrace.dynahist.layout.Layout;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.CursorImpl;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
@@ -23,6 +24,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   private final StorageImpl storage;
   private final long timestamp;
   protected com.dynatrace.dynahist.Histogram histogram;
+  private long transientId = Klab.getNextId();
 
   /**
    * @param geometry The <em>overall</em> geometry for the buffer
@@ -77,6 +79,15 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
 
   public Storage.Type getDataType() {
     return dataType;
+  }
+
+  @Override
+  public long getTransientId() {
+    return transientId;
+  }
+
+  public void setTransientId(long transientId) {
+    this.transientId = transientId;
   }
 
   public Data.SpaceFillingCurve getFillingCurve() {

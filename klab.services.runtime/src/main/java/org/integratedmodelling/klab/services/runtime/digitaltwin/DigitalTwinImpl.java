@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
 import org.integratedmodelling.common.data.DoubleDataImpl;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -18,6 +19,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.runtime.knowledge.DataflowGraph;
 import org.integratedmodelling.klab.runtime.knowledge.ProvenanceGraph;
 import org.integratedmodelling.klab.runtime.storage.StorageManagerImpl;
@@ -39,10 +41,21 @@ public class DigitalTwinImpl implements DigitalTwin {
   private final StorageManager storageManager;
   private final ContextScope rootScope;
   private final Scheduler scheduler;
+  private Options options;
+  private long transientId = Klab.getNextId();
 
   @Override
   public long getId() {
     return 0;
+  }
+
+  @Override
+  public long getTransientId() {
+    return transientId;
+  }
+
+  public void setTransientId(long transientId) {
+    this.transientId = transientId;
   }
 
   @Override
@@ -82,9 +95,11 @@ public class DigitalTwinImpl implements DigitalTwin {
     private boolean primary = true; // activity isn't triggered by another
 
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
+
       this.activity = activity;
       this.scope = scope;
       this.graph.addVertex(activity);
+
       if (data != null) {
         for (Object datum : data) {
           if (datum instanceof Agent agent) {
@@ -106,6 +121,7 @@ public class DigitalTwinImpl implements DigitalTwin {
           }
         }
       }
+      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, activity);
     }
 
     public void setTarget(Observation observation) {
@@ -217,6 +233,11 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       } catch (Exception e) {
         scope.error(e);
+        ((ActivityImpl) activity).setOutcome(Activity.Outcome.INTERNAL_FAILURE);
+        ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
+        ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(e));
+        scope.send(
+            Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, activity);
         return false;
       }
 
@@ -237,6 +258,11 @@ public class DigitalTwinImpl implements DigitalTwin {
           }
         }
       }
+
+      ((ActivityImpl) activity).setOutcome(Activity.Outcome.SUCCESS);
+      ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
+
+      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, activity);
 
       return true;
     }
@@ -263,6 +289,10 @@ public class DigitalTwinImpl implements DigitalTwin {
     @Override
     public Transaction fail(Throwable compilationError) {
       this.failures.add(compilationError);
+      ((ActivityImpl) activity).setOutcome(Activity.Outcome.FAILURE);
+      ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
+      ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(compilationError));
+      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, activity);
       return this;
     }
 
@@ -467,6 +497,11 @@ public class DigitalTwinImpl implements DigitalTwin {
   @Override
   public Dataflow getDataflowGraph(ContextScope context) {
     return new DataflowGraph(this.knowledgeGraph, this.rootScope);
+  }
+
+  @Override
+  public Options getOptions() {
+    return this.options;
   }
 
   @Override

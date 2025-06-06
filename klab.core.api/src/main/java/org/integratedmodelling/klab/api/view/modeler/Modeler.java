@@ -33,7 +33,6 @@ import java.util.concurrent.Future;
  */
 public interface Modeler extends UIController {
 
-
   /** TODO move into Settings */
   public enum Option {
     UseAnsiEscapeSequences(Boolean.class);
@@ -64,6 +63,7 @@ public interface Modeler extends UIController {
   Distribution getDistribution();
 
   URL serviceUrl(String serviceId);
+
   /**
    * Set any of the options above with passed payload, which should be validated before use.
    *
@@ -110,6 +110,14 @@ public interface Modeler extends UIController {
    * @return
    */
   SessionScope getCurrentSession();
+
+  /**
+   * Return the current context scope if set, or create a default session and a default digital twin
+   * if not.
+   *
+   * @return
+   */
+  ContextScope requireContext();
 
   /**
    * Return the current context, or null if there is no current context or session.

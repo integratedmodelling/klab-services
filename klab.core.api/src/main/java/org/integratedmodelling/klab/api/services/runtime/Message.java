@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services.runtime;
 
 import org.integratedmodelling.klab.api.data.RuntimeAssetGraph;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Schedule;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
@@ -153,6 +154,17 @@ public interface Message extends Serializable {
      */
     ContextObservationResolved(Queue.Events, Observation.class),
 
+    /**
+     * Runtime has started an activity. The URN tells us where the activity stands in the triggering
+     * chain.
+     */
+    ActivityStarted(Queue.Events, ActivityImpl.class),
+    /**
+     * Runtime has finished an activity that was notified when started. The outcome must be checked
+     * as there is no ActivityAborted message.
+     */
+    ActivityFinished(Queue.Events, ActivityImpl.class),
+
     /*
      * Notification-class types. Sent only if the correspondent Queue is enabled.
      */
@@ -189,6 +201,8 @@ public interface Message extends Serializable {
 
     CurrentContextModified(Queue.UI, Void.class),
 
+    /** Sent by the DT's scheduler whenever an observation modifies the overall schedule. */
+    ScheduleModified(Queue.Events, Schedule.class),
     /*
      * --- View actor messages
      */
@@ -417,9 +431,6 @@ public interface Message extends Serializable {
               case Error, SystemError -> MessageType.Error;
             });
         ret.setPayload(ob);
-      } else if (ob instanceof ActivityImpl activity) {
-        ret.setTaskId(activity.getUrn());
-        payloadIfAbsent = activity;
       } else if (ob != null) {
         if (ret.getPayload() == null) {
           ret.setPayload(ob);

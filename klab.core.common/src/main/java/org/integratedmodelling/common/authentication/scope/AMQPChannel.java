@@ -86,8 +86,8 @@ public class AMQPChannel {
               .build();
 
       // Declare a fanout exchange
-      // FIXME either pass to a direct exchange or refactor to have just one fanout exchange per
-      // user scope
+      // FIXME either switch to a direct exchange or refactor to have just one fanout exchange per
+      //  user scope
       channel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT, true);
 
       connected = true;
@@ -95,12 +95,9 @@ public class AMQPChannel {
       consumerQueue = channel.queueDeclare().getQueue();
 
       // Bind the queue to the exchange
-      // START: Method using routingKey parameter
       channel.queueBind(consumerQueue, exchangeName, queue);
 
       if (messageConsumer != null) {
-
-        // END: Method using routingKey parameter
 
         DeliverCallback deliverCallback =
             (consumerTag, delivery) -> {

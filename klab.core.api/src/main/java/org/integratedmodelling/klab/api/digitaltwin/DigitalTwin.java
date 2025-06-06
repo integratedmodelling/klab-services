@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.*;
+import org.integratedmodelling.klab.api.digitaltwin.impl.OptionsBuilder;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -20,6 +22,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -30,6 +33,52 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
  * methods to access it. Digital twins can be built from pairing others in a federated fashion.
  */
 public interface DigitalTwin extends RuntimeAsset {
+
+  /** An Options object is passed when the digital twin is created. */
+  interface Options {
+
+    /**
+     * The timeout multiplier for operations on this digital twin.
+     *
+     * @return the timeout multiplier
+     */
+    long getTimeout();
+
+    /**
+     * The time unit for the timeout operations on this digital twin.
+     *
+     * @return the time unit for timeouts
+     */
+    java.util.concurrent.TimeUnit getTimeoutUnit();
+
+    /**
+     * Access rights define who can access the digital twin and the modality of the access.
+     * Individual observations should also allow distinct levels of access within the scope of the
+     * overall rights.
+     *
+     * @return
+     */
+    ResourcePrivileges getAccessRights();
+
+    Persistence getPersistence();
+
+    String getName();
+
+    /**
+     * Passing a ID is only allowed if the user is federated, so that the digital twin identity can
+     * be assigned in a coordinated way among federated users. Any pre-existing DT with ID <code>
+     * <federation_id>/<requested-id></code> will be usable by all members of the federation; the DT
+     * will be created if not existing with the remaining options, which will be ignored if
+     * pre-existing, with a warning if they differ.
+     *
+     * @return
+     */
+    String getId();
+
+    static OptionsBuilder builder() {
+      return new OptionsBuilder();
+    }
+  }
 
   /**
    * An executor is a runnable operation linked to an observation, compiled from an actuator in the
@@ -124,6 +173,14 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     RuntimeAssetGraph getGraph();
   }
+
+  /**
+   * Return the options with which this digital twin was created. Options are immutable after
+   * creation.
+   *
+   * @return
+   */
+  Options getOptions();
 
   /**
    * Obtain a new transaction to make changes in the knowledge graph. Nothing is modified until

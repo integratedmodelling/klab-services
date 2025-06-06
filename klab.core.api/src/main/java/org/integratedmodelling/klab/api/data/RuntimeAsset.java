@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.data;
 
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -25,9 +26,9 @@ public interface RuntimeAsset {
   ContextAsset CONTEXT_ASSET = new ContextAsset();
   ProvenanceAsset PROVENANCE_ASSET = new ProvenanceAsset();
   DataflowAsset DATAFLOW_ASSET = new DataflowAsset();
-    long CONTEXT_ID = 1L;
+  long CONTEXT_ID = 1L;
 
-    /** The status of an asset, which may be added to the metadata using the "status" property. */
+  /** The status of an asset, which may be added to the metadata using the "status" property. */
   enum Status {
     UNRESOLVED,
     CONTEXTUALIZED,
@@ -88,7 +89,30 @@ public interface RuntimeAsset {
     }
   }
 
+  /**
+   * The primary ID is assigned only upon insertion in the knowledge graph and is stored in it. This
+   * means that it is unique and persistent, but also that it is not guaranteed to be assigned when
+   * an asset is first created, for example before a {@link DigitalTwin.Transaction} is started. If
+   * an object must be tracked from its creation to the end of its lifetime in RAM, use the {@link
+   * #getTransientId()} instead.
+   *
+   * @return the primary ID of this object. Will be -1 if the object has not yet been inserted into
+   *     the knowledge graph.
+   */
   long getId();
+
+  /**
+   * The transientId is assigned on creation but is not stored in the knowledge graph. It is used to
+   * track the lifetime of an object only from the time of creation to the time of last use. When
+   * retrieved from the knowledge graph, the objectId will be different from that of the object that
+   * was stored.
+   *
+   * <p>The transient ID differs from the simple object hash as it is transmitted through serialized
+   * objects and can be used to track ownership when objects are created on another service.
+   *
+   * @return the transient ID of this object
+   */
+  long getTransientId();
 
   Type classify();
 
@@ -96,6 +120,11 @@ public interface RuntimeAsset {
 
     @Override
     public long getId() {
+      return -1000;
+    }
+
+    @Override
+    public long getTransientId() {
       return -1000;
     }
 
@@ -113,6 +142,11 @@ public interface RuntimeAsset {
     }
 
     @Override
+    public long getTransientId() {
+      return -1001;
+    }
+
+    @Override
     public Type classify() {
       return Type.PROVENANCE;
     }
@@ -122,6 +156,11 @@ public interface RuntimeAsset {
 
     @Override
     public long getId() {
+      return -1002;
+    }
+
+    @Override
+    public long getTransientId() {
       return -1002;
     }
 

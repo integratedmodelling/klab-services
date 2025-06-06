@@ -4,6 +4,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractReactiveScope
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -103,58 +104,6 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
     this.id = id;
   }
 
-  @Override
-  public SessionScope createSession(String sessionName) {
-
-    /*
-     * Must have runtime
-     *
-     * Send REGISTER_SCOPE to runtime; returned ID becomes part of the token for requests
-     * Wait for result, set ID and data/permissions/metadata, expirations, quotas into metadata
-     * Create peer object and return
-     */
-
-    var runtime = getService(RuntimeService.class);
-    if (runtime == null) {
-      throw new KlabResourceAccessException(
-          "Runtime service is not accessible: cannot create session");
-    }
-
-    /**
-     * Registration with the runtime succeeded. Return a peer scope locked to the runtime service
-     * that hosts it.
-     */
-    var ret =
-        new ClientSessionScope(this, sessionName, runtime) {
-
-          @Override
-          public <T extends KlabService> T getService(Class<T> serviceClass) {
-            if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-              return (T) runtime;
-            }
-            return ClientUserScope.this.getService(serviceClass);
-          }
-
-          @Override
-          public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-            if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-              return List.of((T) runtime);
-            }
-            return ClientUserScope.this.getServices(serviceClass);
-          }
-        };
-
-    var id =
-        engine.registerSession(
-            ret, user.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class));
-
-    if (id != null) {
-      ret.setId(id);
-    }
-
-    return ret;
-  }
-
   public String toString() {
     return "[ClientUserScope] "
         + user.getUsername()
@@ -167,23 +116,54 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
   }
 
   @Override
-  public SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType) {
+  public ContextScope createDigitalTwin(RuntimeService hostService, DigitalTwin.Options options) {
+    return null;
+  }
 
-    /** Same as above plus: Send URN as URL or content as request body if available */
+  @Override
+  public SessionScope getUserSession(RuntimeService hostService) {
 
-    //		final EngineSessionScope ret = new EngineSessionScope(this);
-    //		ret.setStatus(Status.WAITING);
-    //		Ref sessionAgent = this.agent.ask(new CreateApplication(ret, behaviorName, behaviorType),
-    //		Ref.class);
-    //		if (!sessionAgent.isEmpty()) {
-    //			ret.setStatus(Status.STARTED);
-    //			ret.setAgent(sessionAgent);
-    //			ret.setName(behaviorName);
-    //			sessionAgent.tell(new RunBehavior(behaviorName));
-    //		} else {
-    //			ret.setStatus(Status.ABORTED);
-    //		}
-    //		return ret;
+    /**
+     * Registration with the hostService succeeded. Return a peer scope locked to the hostService service
+     * that hosts it.
+     */
+    var federation = user.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+    var ret =
+        new ClientSessionScope(
+            this,
+            federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
+                ? user.getUsername()
+                : federation.getId(),
+            hostService) {
+
+          @Override
+          public <T extends KlabService> T getService(Class<T> serviceClass) {
+            if (serviceClass.isAssignableFrom(RuntimeService.class)) {
+              return (T) hostService;
+            }
+            return ClientUserScope.this.getService(serviceClass);
+          }
+
+          @Override
+          public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+            if (serviceClass.isAssignableFrom(RuntimeService.class)) {
+              return List.of((T) hostService);
+            }
+            return ClientUserScope.this.getServices(serviceClass);
+          }
+        };
+
+    var id = engine.registerSession(ret, federation);
+
+    if (id != null) {
+      ret.setId(id);
+    }
+
+    return ret;
+  }
+
+  @Override
+  public SessionScope run(String behaviorName, RuntimeService hostService) {
     return null;
   }
 

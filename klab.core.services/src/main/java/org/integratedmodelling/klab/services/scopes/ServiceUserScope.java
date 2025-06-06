@@ -9,6 +9,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -145,6 +146,27 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     this.status = other.status;
   }
 
+  @Override
+  public ContextScope createDigitalTwin(RuntimeService hostService, DigitalTwin.Options options) {
+    return null;
+  }
+
+  @Override
+  public SessionScope getUserSession(RuntimeService hostService) {
+
+    final ServiceSessionScope ret = new ServiceSessionScope(this);
+    ret.setStatus(Status.WAITING);
+    ret.setName(
+            federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
+            ? user.getUsername()
+            : federation.getId());
+    ret.jobManager = new JobManager();
+    // Scope is incomplete and will be instrumented with ID, messaging connection, queues and agent
+    // by
+    // the caller explicitly calling the methods.
+    return ret;
+  }
+
   /**
    * Must be called with clients for all services accessible from the client's environment, plus the
    * singleton of the hosting service. If this is called on a scope with non-empty services, the
@@ -183,22 +205,15 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     }
   }
 
-  @Override
-  public SessionScope createSession(String sessionName) {
-    final ServiceSessionScope ret = new ServiceSessionScope(this);
-    ret.setStatus(Status.WAITING);
-    ret.setName(sessionName);
-    ret.jobManager = new JobManager();
-    // Scope is incomplete and will be instrumented with ID, messaging connection, queues and agent
-    // by
-    // the caller explicitly calling the methods.
-    return ret;
-  }
+//  @Override
+//  public SessionScope getUserSession() {
+//
+//  }
 
   @Override
-  public SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType) {
+  public SessionScope run(String behaviorName, RuntimeService host) {
 
-    var ret = createSession(behaviorName);
+    SessionScope ret = null; // getUserSession();
     // TODO add the behavior info
     return ret;
   }
@@ -270,8 +285,8 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   //	@Override
   public void stop() {
     if (agent != null) {
-//      agent.tell(ReActorStop.STOP);
-//      this.agent = null;
+      //      agent.tell(ReActorStop.STOP);
+      //      this.agent = null;
     }
     this.data.clear();
     setStatus(Status.EMPTY);
@@ -315,30 +330,32 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     return user.toString();
   }
 
-//  /**
-//   * This implementation ensures that if we don't have channels set up but the service has an
-//   * embedded broker (which means it's local and talking to local users) these get set up. Channel
-//   * setup is only called once after the service has been initialized.
-//   *
-//   * @param queue
-//   * @return
-//   */
-//  @Override
-//  protected Channel getChannel(Message.Queue queue) {
-//
-//    if (!messagingChecked
-//        && service instanceof BaseService baseService
-//        && baseService.isInitialized()
-//        && baseService.getEmbeddedBroker() != null) {
-//      setupMessaging(
-//          baseService.getEmbeddedBroker().getURI().toString(),
-//          service.capabilities(this).getType().name().toLowerCase() + "." + getUser().getUsername(),
-//          service.capabilities(this).getAvailableMessagingQueues());
-//      messagingChecked = true;
-//    }
-//
-//    return super.getChannel(queue);
-//  }
+  //  /**
+  //   * This implementation ensures that if we don't have channels set up but the service has an
+  //   * embedded broker (which means it's local and talking to local users) these get set up.
+  // Channel
+  //   * setup is only called once after the service has been initialized.
+  //   *
+  //   * @param queue
+  //   * @return
+  //   */
+  //  @Override
+  //  protected Channel getChannel(Message.Queue queue) {
+  //
+  //    if (!messagingChecked
+  //        && service instanceof BaseService baseService
+  //        && baseService.isInitialized()
+  //        && baseService.getEmbeddedBroker() != null) {
+  //      setupMessaging(
+  //          baseService.getEmbeddedBroker().getURI().toString(),
+  //          service.capabilities(this).getType().name().toLowerCase() + "." +
+  // getUser().getUsername(),
+  //          service.capabilities(this).getAvailableMessagingQueues());
+  //      messagingChecked = true;
+  //    }
+  //
+  //    return super.getChannel(queue);
+  //  }
 
   @Override
   public void event(Message message) {

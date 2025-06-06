@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.knowledge;
 
 import org.integratedmodelling.common.runtime.DataflowImpl;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -20,6 +21,7 @@ public class DataflowGraph implements Dataflow {
 
     private final KnowledgeGraph database;
     private final ContextScope scope;
+    private long transientId = Klab.getNextId();
 
     public DataflowGraph(KnowledgeGraph database, ContextScope contextScope) {
         this.database = database;
@@ -46,10 +48,14 @@ public class DataflowGraph implements Dataflow {
         return List.of();
     }
 
-//    @Override
-//    public Observation getTarget() {
-//        return null;
-//    }
+    @Override
+    public long getTransientId() {
+        return transientId;
+    }
+
+    public void setTransientId(long transientId) {
+        this.transientId = transientId;
+    }
 
     public DataflowImpl adapt() {
         return null;

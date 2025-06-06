@@ -23,6 +23,7 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
     private String dataflow;
     private String urn;
     private String observationUrn;
+    private String triggeringActivityUrn;
 
     @Override
     public long getStart() {
@@ -155,6 +156,15 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
     public void setUrn(String urn) {
         this.urn = urn;
+    }
+
+    @Override
+    public String getTriggeringActivityUrn() {
+        return triggeringActivityUrn;
+    }
+
+    public void setTriggeringActivityUrn(String triggeringActivityUrn) {
+        this.triggeringActivityUrn = triggeringActivityUrn;
     }
 
     @Override

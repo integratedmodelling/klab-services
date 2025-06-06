@@ -74,7 +74,7 @@ public class KlabScopeController {
           federation = new Federation(federationId, brokerUrl);
         }
 
-        var ret = userScope.createSession(request.getName());
+        var ret = userScope.getUserSession(userScope.getService(RuntimeService.class));
         var identity = userScope.getIdentity();
 
         if (federation != null

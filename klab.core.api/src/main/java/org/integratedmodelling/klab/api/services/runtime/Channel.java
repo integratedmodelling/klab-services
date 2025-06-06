@@ -142,29 +142,45 @@ public interface Channel {
    * @param consumer the {@link BiConsumer} that will process messages. The first parameter is the
    *     {@link Channel} that received the message, and the second parameter is the {@link Message}.
    * @param queues the {@link Message.Queue} from which messages will be consumed.
-   * @return the current {@link Channel} instance, to allow method chaining.
+   * @return a consumer ID that can be used to unregister the consumer.
    */
-  Channel onMessage(BiConsumer<Channel, Message> consumer, Message.Queue... queues);
+  String onMessage(BiConsumer<Channel, Message> consumer, Message.Queue... queues);
+
+  //  /**
+  //   * Install a consumer to specific messages getting through the event queue.
+  //   *
+  //   * TODO check if we need this in the API or we should filter in other ways. This is probably
+  //   *  overkill here.
+  //   *
+  //   * @param messageClass mandatory message class
+  //   * @param messageType mandatory message type
+  //   * @param runnable code to invoke on match
+  //   * @param matchArguments optional match arguments, including a {@link
+  //   *     org.integratedmodelling.klab.api.scope.Persistence} value to define what to do after
+  // match
+  //   *     (default is {@link org.integratedmodelling.klab.api.scope.Persistence#ONE_OFF}, i.e.
+  // the
+  //   *     handler disappears after matching), or any {@link
+  // java.util.function.Predicate<Message>} to
+  //   *     apply to the message, or any other Object that will be matched to the payload using
+  //   *     equals(). If objects are passed, all the messages that use that object as a match and
+  // have
+  //   *     ONE_OFF as persistence will be removed after one of them has matched.
+  //   * @return a consumer ID that can be used to unregister the consumer.
+  //   */
+  //  String onEvent(
+  //      MessageClass messageClass,
+  //      Message.MessageType messageType,
+  //      Consumer<Message> runnable,
+  //      Object... matchArguments);
 
   /**
-   * Install a reactor to specific messages getting through the event queue.
+   * Unregister a consumer that was previously registered with {@link #onMessage(BiConsumer,
+   * Message.Queue...)}.
    *
-   * @param messageClass mandatory message class
-   * @param messageType mandatory message type
-   * @param runnable code to invoke on match
-   * @param matchArguments optional match arguments, including a {@link
-   *     org.integratedmodelling.klab.api.scope.Persistence} value to define what to do after match
-   *     (default is {@link org.integratedmodelling.klab.api.scope.Persistence#ONE_OFF}, i.e. the
-   *     handler disappears after matching), or any {@link java.util.function.Predicate<Message>} to
-   *     apply to the message, or any other Object that will be matched to the payload using
-   *     equals(). If objects are passed, all the messages that use that object as a match and have
-   *     ONE_OFF as persistence will be removed after one of them has matched.
+   * @param listenerId
    */
-  Channel onEvent(
-      MessageClass messageClass,
-      Message.MessageType messageType,
-      Consumer<Message> runnable,
-      Object... matchArguments);
+  void unregisterMessageListener(String listenerId);
 
   /**
    * This is to send out serializable objects or other messages through any messaging channel

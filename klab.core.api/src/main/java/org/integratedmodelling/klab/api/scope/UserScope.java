@@ -1,8 +1,9 @@
 package org.integratedmodelling.klab.api.scope;
 
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 
 import java.net.URL;
 import java.util.List;
@@ -40,6 +41,16 @@ public interface UserScope extends ReactiveScope {
   ContextScope connect(URL digitalTwinURL);
 
   /**
+   * Create a new digital twin for the user in a given runtime. The session hosting the digital twin
+   * will be transparently created.
+   *
+   * @param hostService
+   * @param options
+   * @return
+   */
+  ContextScope createDigitalTwin(RuntimeService hostService, DigitalTwin.Options options);
+
+  /**
    * Any active sessions that have not expired, including running applications and scripts. They may
    * or may not have contexts available.
    *
@@ -48,13 +59,14 @@ public interface UserScope extends ReactiveScope {
   List<SessionScope> getActiveSessions();
 
   /**
-   * Start a raw session with a given identifier and return the scope that controls it. This will
-   * locate and connect an available runtime among those that are visible to the user.
+   * Start or create a user session attributed to the user or, if the user is federated, to the
+   * federation. Return the scope that controls it. The session will be hosted within the passed
+   * runtime. Non-federated users who have a local service will get a session in the local runtime.
+   * Federated users will get a session hosted in one of the runtimes available to the federation.
    *
-   * @param sessionName
    * @return
    */
-  SessionScope createSession(String sessionName);
+  SessionScope getUserSession(RuntimeService hostService);
 
   /**
    * Run an individual application, test case or script and return the scope that controls it.
@@ -64,8 +76,8 @@ public interface UserScope extends ReactiveScope {
    * after termination of the application or script.
    *
    * @param behaviorName
-   * @param behaviorType
+   * @param hostService
    * @return
    */
-  SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType);
+  SessionScope run(String behaviorName, RuntimeService hostService);
 }

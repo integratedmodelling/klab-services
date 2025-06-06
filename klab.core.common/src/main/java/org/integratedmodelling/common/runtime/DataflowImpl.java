@@ -4,6 +4,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -21,7 +22,7 @@ public class DataflowImpl implements Dataflow {
     private ResourceSet requirements;
     private Coverage coverage;
     private List<Actuator> computation = new ArrayList<>();
-//    private Observation target;
+    private long transientId = Klab.getNextId();
     private double resolvedCoverage;
     @Deprecated private long id;
 
@@ -78,6 +79,15 @@ public class DataflowImpl implements Dataflow {
 
         computeCoverage();
 
+    }
+
+    @Override
+    public long getTransientId() {
+        return transientId;
+    }
+
+    public void setTransientId(long transientId) {
+        this.transientId = transientId;
     }
 
     private Actuator findActuator(long id) {

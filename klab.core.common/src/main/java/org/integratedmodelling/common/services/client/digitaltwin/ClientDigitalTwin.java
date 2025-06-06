@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -36,6 +37,7 @@ public class ClientDigitalTwin implements DigitalTwin {
   private ClientKnowledgeGraph knowledgeGraph;
   private RuntimeService runtimeClient;
   private List<Consumer<Message>> eventConsumers = new ArrayList<>();
+  private long transientId = Klab.getNextId();
 
   public ClientDigitalTwin(ContextScope scope, String id) {
     this.scope = scope;
@@ -46,6 +48,15 @@ public class ClientDigitalTwin implements DigitalTwin {
     } else {
       throw new KlabInternalErrorException("Non-client runtime class in client digital twin");
     }
+  }
+
+  @Override
+  public long getTransientId() {
+    return transientId;
+  }
+
+  public void setTransientId(long transientId) {
+    this.transientId = transientId;
   }
 
   /**
@@ -139,5 +150,11 @@ public class ClientDigitalTwin implements DigitalTwin {
   @Override
   public Type classify() {
     return Type.CONTEXT;
+  }
+
+  @Override
+  public Options getOptions() {
+    // TODO
+    return null;
   }
 }

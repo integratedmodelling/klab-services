@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.knowledge.observation.impl;
 
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -34,6 +35,7 @@ public class ObservationImpl implements Observation {
   private double resolvedCoverage;
   private List<Long> eventTimestamps = new ArrayList<>();
   private boolean substantialQuality;
+  private long transientId = Klab.getNextId();
 
   public ObservationImpl() {}
 
@@ -213,6 +215,16 @@ public class ObservationImpl implements Observation {
 
   public void setEventTimestamps(List<Long> eventTimestamps) {
     this.eventTimestamps = eventTimestamps;
+  }
+
+  @Override
+  public long getTransientId() {
+    return transientId;
+  }
+
+  /** DO NOT CALL - reserved for serialization purposes */
+  public void setTransientId(long transientId) {
+    this.transientId = transientId;
   }
 
   @Override

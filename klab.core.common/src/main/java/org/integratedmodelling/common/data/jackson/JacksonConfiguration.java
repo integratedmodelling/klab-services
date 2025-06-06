@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
@@ -349,7 +351,8 @@ public class JacksonConfiguration {
           ServiceInfo.Argument.class,
           Urn.class,
           ExpressionCode.class,
-          Federation.class
+          Federation.class,
+          Scheduler.Event.class
         }) {
       module.addSerializer(cls, new PolymorphicSerializer<>());
       module.addDeserializer(cls, new PolymorphicDeserializer<>(cls));

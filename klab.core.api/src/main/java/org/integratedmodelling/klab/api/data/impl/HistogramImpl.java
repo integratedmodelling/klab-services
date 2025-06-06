@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.data.Histogram;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class HistogramImpl implements Histogram {
@@ -159,25 +160,25 @@ public class HistogramImpl implements Histogram {
         int divs = bins == null ? 0 : bins.size();
 
         BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-//        img.createGraphics();
-//        Graphics2D g = (Graphics2D) img.getGraphics();
-//        g.setColor(Color.WHITE);
-//        g.fillRect(0, 0, w, h);
-//        if (empty) {
-//            g.setColor(Color.RED);
-//            g.drawLine(0, 0, w - 1, h - 1);
-//            g.drawLine(0, h - 1, w - 1, 0);
-//        } else {
+        img.createGraphics();
+        Graphics2D g = (Graphics2D) img.getGraphics();
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, w, h);
+        if (empty) {
+            g.setColor(Color.RED);
+            g.drawLine(0, 0, w - 1, h - 1);
+            g.drawLine(0, h - 1, w - 1, 0);
+        } else {
 //            int max = Arrays.stream(bins).max().getAsInt();
 //            int dw = w / divs;
 //            int dx = 0;
 //            g.setColor(Color.GRAY);
-//            for (int d : bins) {
-//                int dh = (int) ((double) h * (double) d / max);
-//                g.fillRect(dx, h - dh, dw, dh);
+//            for (var d : bins) {
+////                int dh = (int) ((double) h * (double) d. / max);
+////                g.fillRect(dx, h - dh, dw, dh);
 //                dx += dw;
 //            }
-//        }
+        }
         return img;
     }
 }

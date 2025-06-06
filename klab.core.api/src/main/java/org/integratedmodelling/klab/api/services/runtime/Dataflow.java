@@ -103,6 +103,11 @@ public interface Dataflow extends Serializable, RuntimeAsset {
         return 0;
       }
 
+      @Override
+      public long getTransientId() {
+        return 0;
+      }
+
       @Serial private static final long serialVersionUID = -1115441423700817816L;
 
       @Override
@@ -139,6 +144,11 @@ public interface Dataflow extends Serializable, RuntimeAsset {
 
       @Override
       public long getId() {
+        return 0;
+      }
+
+      @Override
+      public long getTransientId() {
         return 0;
       }
 
