@@ -1,9 +1,9 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.*;
@@ -34,8 +34,17 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
  */
 public interface DigitalTwin extends RuntimeAsset {
 
-  /** An Options object is passed when the digital twin is created. */
-  interface Options {
+  /**
+   * A Configuration object is passed when the digital twin is created. The Configuration object is
+   * also the payload of all {@link org.integratedmodelling.klab.api.services.runtime.Message}s
+   * regarding digital twin creation, deletion or connection.
+   */
+  interface Configuration {
+
+    /**
+     * @return
+     */
+    URL getUrl();
 
     /**
      * The timeout multiplier for operations on this digital twin.
@@ -180,7 +189,7 @@ public interface DigitalTwin extends RuntimeAsset {
    *
    * @return
    */
-  Options getOptions();
+  Configuration getOptions();
 
   /**
    * Obtain a new transaction to make changes in the knowledge graph. Nothing is modified until

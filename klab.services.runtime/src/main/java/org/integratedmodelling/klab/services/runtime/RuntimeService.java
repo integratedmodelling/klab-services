@@ -262,6 +262,9 @@ public class RuntimeService extends BaseService
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
+      // TODO the ID could have come with the configuration if we are federated. In that case we
+      //  should already have it in the contextScope.
+
       serviceContextScope.setHostServiceId(serviceId());
 
       serviceContextScope.setId(
@@ -304,6 +307,8 @@ public class RuntimeService extends BaseService
                 "Error registering context with other services:" + " context is inoperative",
                 UIView.Interactivity.DISPLAY));
         serviceContextScope.setOperative(false);
+      } else {
+        // TODO create DT configuration object and send it through the channel
       }
 
       return serviceContextScope.getId();
@@ -362,8 +367,8 @@ public class RuntimeService extends BaseService
    * </ul>
    *
    * TODO the observation may come with resolution informations added from the outside, in the form
-   *  of metadata that point to an adapter configuration. That needs to be validated and ingested by
-   *  the DT before assigning an ID and returning.
+   * of metadata that point to an adapter configuration. That needs to be validated and ingested by
+   * the DT before assigning an ID and returning.
    *
    * @param observation
    * @param scope

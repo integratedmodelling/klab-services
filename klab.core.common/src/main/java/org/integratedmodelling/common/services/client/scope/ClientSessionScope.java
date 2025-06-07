@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client.scope;
 
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
@@ -56,7 +57,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
   }
 
   @Override
-  public ContextScope createContext(String contextName) {
+  public ContextScope createContext(String contextName, DigitalTwin.Configuration configuration) {
 
     var runtime = getService(RuntimeService.class);
     if (runtime == null) {
@@ -64,12 +65,18 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
           "Runtime service is not accessible: cannot create context");
     }
 
-    /**
+    var federation =
+        getParentScope(Type.USER, UserScope.class)
+            .getUser()
+            .getData()
+            .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+
+    /*
      * Registration with the runtime succeeded. Return a peer scope locked to the runtime service
      * that hosts it.
      */
     var ret =
-        new ClientContextScope(this, contextName, runtime) {
+        new ClientContextScope(this, contextName, runtime, configuration) {
 
           @Override
           public <T extends KlabService> T getService(Class<T> serviceClass) {
@@ -88,13 +95,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
           }
         };
 
-    var id =
-        engine.registerContext(
-            ret,
-            getParentScope(Type.USER, UserScope.class)
-                .getUser()
-                .getData()
-                .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class));
+    var id = engine.registerContext(ret, federation);
 
     if (id != null) {
       ret.setId(id);

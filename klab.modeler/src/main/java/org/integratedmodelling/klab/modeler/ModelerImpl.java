@@ -14,6 +14,7 @@ import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.RepositoryState;
@@ -30,10 +31,7 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.lang.kim.*;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -394,11 +392,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   @Override
-  public ContextScope openNewContext(String contextName) {
+  public ContextScope openNewContext(String contextName, DigitalTwin.Configuration configuration) {
     if (currentSession == null) {
       return null;
     }
-    var ret = currentSession.createContext(contextName);
+    var ret = currentSession.createContext(contextName, configuration);
     if (ret != null) {
       contexts.add(currentSession, ret);
       dispatch(
@@ -446,7 +444,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
 
     if (currentContext == null && currentSession != null) {
-      currentContext = openNewContext("C" + (++contextCount));
+      currentContext = openNewContext("C" + (++contextCount), defaultDigitalTwinConfiguration());
     }
 
     if (currentContext == null) {
@@ -454,6 +452,13 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
 
     return currentContext;
+  }
+
+  private DigitalTwin.Configuration defaultDigitalTwinConfiguration() {
+    return DigitalTwin.Configuration.builder()
+        .accessRights(ResourcePrivileges.create(user()))
+        .persistence(Persistence.IDLE_TIMEOUT)
+        .build();
   }
 
   @Override

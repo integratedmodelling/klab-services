@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.api.scope;
 
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 
 import java.net.URL;
@@ -45,10 +44,10 @@ public interface UserScope extends ReactiveScope {
    * will be transparently created.
    *
    * @param hostService
-   * @param options
+   * @param configuration
    * @return
    */
-  ContextScope createDigitalTwin(RuntimeService hostService, DigitalTwin.Options options);
+  ContextScope createDigitalTwin(RuntimeService hostService, DigitalTwin.Configuration configuration);
 
   /**
    * Any active sessions that have not expired, including running applications and scripts. They may

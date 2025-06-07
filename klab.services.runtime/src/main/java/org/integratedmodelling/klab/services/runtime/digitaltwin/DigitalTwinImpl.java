@@ -41,7 +41,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   private final StorageManager storageManager;
   private final ContextScope rootScope;
   private final Scheduler scheduler;
-  private Options options;
+  private Configuration configuration;
   private long transientId = Klab.getNextId();
 
   @Override
@@ -500,8 +500,8 @@ public class DigitalTwinImpl implements DigitalTwin {
   }
 
   @Override
-  public Options getOptions() {
-    return this.options;
+  public Configuration getOptions() {
+    return this.configuration;
   }
 
   @Override

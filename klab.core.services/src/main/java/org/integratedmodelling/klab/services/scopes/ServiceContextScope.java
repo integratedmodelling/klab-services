@@ -46,6 +46,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   // TODO make this configurable
   private static long MAX_CACHED_OBSERVATIONS = 100;
   private static long MAX_CACHED_GEOMETRIES = 20;
+  private DigitalTwin.Configuration configuration;
 
   private Observation observer;
   private Observation contextObservation;
@@ -87,6 +88,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.nextResolutionId = parent.nextResolutionId;
     this.jobManager = parent.jobManager;
     this.currentActivity = parent.currentActivity;
+    this.configuration = parent.configuration;
   }
 
   @Override
@@ -119,13 +121,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         .cast((Collection<KlabService>) serviceMap.get(KlabService.Type.classify(serviceClass)));
   }
 
-  ServiceContextScope(ServiceSessionScope parent) {
+  ServiceContextScope(ServiceSessionScope parent, DigitalTwin.Configuration configuration) {
     super(parent);
     this.observer = null;
     this.data = Parameters.create();
     this.data.putAll(parent.data);
     this.resolutionCache = new HashMap<>();
     this.jobManager = parent.jobManager;
+    this.configuration = configuration;
     this.observationCache =
         CacheBuilder.newBuilder()
             .maximumSize(MAX_CACHED_OBSERVATIONS)

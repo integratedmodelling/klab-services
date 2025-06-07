@@ -4,11 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
-import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.RuntimeAssetGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -153,7 +151,7 @@ public class ClientDigitalTwin implements DigitalTwin {
   }
 
   @Override
-  public Options getOptions() {
+  public Configuration getOptions() {
     // TODO
     return null;
   }
