@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
+import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -156,6 +157,8 @@ public abstract class ServiceClient implements KlabService {
 
     if (this.identity instanceof PartnerIdentity) {
       this.token = ((PartnerIdentity)identity).getToken();
+    } else if (this.identity instanceof ServiceIdentity) {
+      this.token =  ((ServiceIdentity)identity).getToken();
     } else {
       this.token = this.identity.getId();
     }

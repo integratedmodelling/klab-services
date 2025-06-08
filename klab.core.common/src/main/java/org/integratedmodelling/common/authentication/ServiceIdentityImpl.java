@@ -13,8 +13,9 @@ public class ServiceIdentityImpl extends IdentityImpl implements ServiceIdentity
   private Date bootTime;
   private Collection<String> urls = new ArrayList<String>();
   private boolean online = false;
+  private String token;
 
-  public ServiceIdentityImpl(String id, String name, Date bootTime, List<URL> urls) {
+  public ServiceIdentityImpl(String id, String name, Date bootTime, List<URL> urls, String token) {
     this.setId(id);
     this.name = name;
     this.bootTime = bootTime;
@@ -41,6 +42,11 @@ public class ServiceIdentityImpl extends IdentityImpl implements ServiceIdentity
   @Override
   public boolean isOnline() {
     return online;
+  }
+
+  @Override
+  public String getToken() {
+    return token;
   }
 
   @Override

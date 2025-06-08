@@ -8,3 +8,4 @@ target
 **/*._trace
 **/*.puml
 .mvn/wrapper/maven-wrapper.jar
+**/*.run.xml

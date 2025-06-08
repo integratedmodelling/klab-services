@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -209,23 +210,26 @@ public abstract class ServiceInstance<T extends BaseService> {
   protected AbstractServiceDelegatingScope createServiceScope() {
 
     this.identity = authenticateService();
-
+    String token = null;
+    if (identity.getFirst() instanceof ServiceIdentity) {
+      token = ((ServiceIdentity)identity.getFirst()).getToken();
+    }
     for (ServiceReference s : this.identity.getSecond()) {
       switch (s.getIdentityType()) {
         case KlabService.Type.REASONER -> {
-          ReasonerClient reasoner = new ReasonerClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls()), null);
+          ReasonerClient reasoner = new ReasonerClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(),token), null);
           availableReasoners.add(reasoner);
         }
         case KlabService.Type.RUNTIME  -> {
-          RuntimeClient runtime = new RuntimeClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls()), null);
+          RuntimeClient runtime = new RuntimeClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(),token), null);
           availableRuntimeServices.add(runtime);
         }
         case KlabService.Type.RESOURCES -> {
-          ResourcesClient resources = new ResourcesClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls()), null);
+          ResourcesClient resources = new ResourcesClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(),token), null);
           availableResourcesServices.add(resources);
         }
         case KlabService.Type.RESOLVER -> {
-          ResolverClient resolver = new ResolverClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls()), null);
+          ResolverClient resolver = new ResolverClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(),  null, s.getUrls(),token), null);
           availableResolvers.add(resolver);
         }
         default -> {
