@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.PartnerIdentity;
 import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -211,8 +212,8 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     this.identity = authenticateService();
     AtomicReference<String> token = new AtomicReference<>();
-    if (identity.getFirst() instanceof ServiceIdentity) {
-      token.set(((ServiceIdentity) identity.getFirst()).getToken());
+    if (identity.getFirst() instanceof PartnerIdentity) {
+      token.set(((PartnerIdentity) identity.getFirst()).getToken());
     }
     for (ServiceReference s : this.identity.getSecond()) {
       switch (s.getIdentityType()) {
