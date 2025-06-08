@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.PartnerIdentity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
@@ -128,7 +129,10 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     ret.setLocality(ServiceScope.Locality.LOCALHOST);
     if (ret.getIdentity() instanceof UserIdentity user && !user.isAnonymous()) {
       ret.setLocality(ServiceScope.Locality.LAN);
-    } /* else if certified by partner/institution and configured for cloud, set to WAN */
+    } else if (ret.getIdentity() instanceof PartnerIdentity) {
+      ret.setLocality(ServiceScope.Locality.WAN);
+    }
+    /* else if certified by partner/institution and configured for cloud, set to WAN */
     return ret;
   }
 

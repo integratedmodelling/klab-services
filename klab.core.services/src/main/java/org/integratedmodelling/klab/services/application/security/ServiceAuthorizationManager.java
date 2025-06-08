@@ -199,6 +199,7 @@ public class ServiceAuthorizationManager {
       ret.getGroups().add(group);
     }
     ret.setToken((response.getUserData().getToken()));
+    ret.setUrl(certificate.getProperty(KlabCertificate.KEY_URL));
     return Pair.of(ret, response.getServices());
   }
 
