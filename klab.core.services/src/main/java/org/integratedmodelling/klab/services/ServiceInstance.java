@@ -21,7 +21,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
@@ -33,6 +32,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * This class is a wrapper for a {@link KlabService} whose main purpose is to provide it with a
@@ -210,26 +210,26 @@ public abstract class ServiceInstance<T extends BaseService> {
   protected AbstractServiceDelegatingScope createServiceScope() {
 
     this.identity = authenticateService();
-    String token = null;
+    AtomicReference<String> token = new AtomicReference<>();
     if (identity.getFirst() instanceof ServiceIdentity) {
-      token = ((ServiceIdentity)identity.getFirst()).getToken();
+      token.set(((ServiceIdentity) identity.getFirst()).getToken());
     }
     for (ServiceReference s : this.identity.getSecond()) {
       switch (s.getIdentityType()) {
         case KlabService.Type.REASONER -> {
-          ReasonerClient reasoner = new ReasonerClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(),token), null);
+          ReasonerClient reasoner = new ReasonerClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()), null);
           availableReasoners.add(reasoner);
         }
         case KlabService.Type.RUNTIME  -> {
-          RuntimeClient runtime = new RuntimeClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(),token), null);
+          RuntimeClient runtime = new RuntimeClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()), null);
           availableRuntimeServices.add(runtime);
         }
         case KlabService.Type.RESOURCES -> {
-          ResourcesClient resources = new ResourcesClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(),token), null);
+          ResourcesClient resources = new ResourcesClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()), null);
           availableResourcesServices.add(resources);
         }
         case KlabService.Type.RESOLVER -> {
-          ResolverClient resolver = new ResolverClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(),  null, s.getUrls(),token), null);
+          ResolverClient resolver = new ResolverClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(),  null, s.getUrls(), token.get()), null);
           availableResolvers.add(resolver);
         }
         default -> {
