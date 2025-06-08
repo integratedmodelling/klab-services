@@ -444,7 +444,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
 
     if (currentContext == null && currentSession != null) {
-      currentContext = openNewContext("C" + (++contextCount), defaultDigitalTwinConfiguration());
+      currentContext = openNewContext("Digital Twin " + (++contextCount), defaultDigitalTwinConfiguration());
     }
 
     if (currentContext == null) {
