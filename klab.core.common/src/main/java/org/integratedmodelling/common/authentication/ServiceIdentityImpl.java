@@ -22,7 +22,7 @@ public class ServiceIdentityImpl extends IdentityImpl implements ServiceIdentity
     for (URL u : urls) {
       this.urls.add(u.toString());
     }
-
+    this.token = token;
   }
   @Override
   public String getName() {
