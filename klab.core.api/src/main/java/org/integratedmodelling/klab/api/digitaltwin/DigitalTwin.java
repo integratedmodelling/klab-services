@@ -180,7 +180,7 @@ public interface DigitalTwin extends RuntimeAsset {
      *
      * @return the runtime asset graph for this transaction
      */
-    RuntimeAssetGraph getGraph();
+    GraphModel.KnowledgeGraph getGraph();
   }
 
   /**

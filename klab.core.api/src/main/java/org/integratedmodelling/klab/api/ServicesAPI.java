@@ -355,8 +355,11 @@ public interface ServicesAPI {
 
     String GET_SESSION_INFO = "/sessions";
 
-    /** The GraphQL endpoint for digital twin access. */
-    String DIGITAL_TWIN_GRAPH = "/dt";
+    /**
+     * The endpoint for digital twin access. With JSON media type, this will send the top-level DT
+     * information. With HTML media type, this will return the DT's explorer application.
+     */
+    String DIGITAL_TWIN_GRAPH = "/dt/{id}";
 
     /**
      * PUT endpoint to ingest and start resolving an observation. Returns the observation ID that
@@ -439,6 +442,7 @@ public interface ServicesAPI {
 
       /** create a new workspace, posting metadata */
       String CREATE_WORKSPACE = "/createWorkspace/{workspaceName}";
+
       /** Create new empty project in passed workspace. */
       String CREATE_PROJECT = "/createProject/{workspaceName}/{projectName}";
 

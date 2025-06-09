@@ -7,8 +7,8 @@ import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.RuntimeAssetGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -87,7 +87,7 @@ public class ClientDigitalTwin implements DigitalTwin {
      */
     switch (event.getMessageType()) {
       case KnowledgeGraphCommitted ->
-          knowledgeGraph.ingest(event.getPayload(RuntimeAssetGraph.class));
+          knowledgeGraph.ingest(event.getPayload(GraphModel.KnowledgeGraph.class));
       case ContextualizationStarted, ContextualizationAborted, ContextualizationSuccessful ->
           knowledgeGraph.update(event.getPayload(Observation.class), event.getMessageType());
     }

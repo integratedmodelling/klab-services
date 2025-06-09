@@ -6,10 +6,13 @@ import java.util.concurrent.ExecutionException;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -19,6 +22,7 @@ import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.runtime.server.RuntimeServer;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
@@ -72,6 +76,30 @@ public class RuntimeServerController {
       return runtimeService.klabService().getSessionInfo(authorization.getScope());
     }
     return List.of();
+  }
+
+  @GetMapping(
+      value = ServicesAPI.RUNTIME.DIGITAL_TWIN_GRAPH,
+      produces = MediaType.APPLICATION_JSON_VALUE)
+  public @ResponseBody GraphModel.DigitalTwin getDigitalTwin(
+      Principal principal,
+      @PathVariable(name = "id") String id,
+      @RequestParam(name = "focus", required = false) String focus,
+      @RequestParam(name = "depth", required = false) int depth) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var userScope = authorization.getScope(UserScope.class);
+      // if the scope is a context or session
+    }
+    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
+
+  @GetMapping(value = ServicesAPI.RUNTIME.DIGITAL_TWIN_GRAPH, produces = MediaType.TEXT_HTML_VALUE)
+  public void getDigitalTwinExplorer(Principal principal, @PathVariable(name = "id") String id) {
+    if (principal instanceof EngineAuthorization authorization) {
+      var contextScope = authorization.getScope(UserScope.class);
+      // TODO launch a session with the scope's explorer
+    }
+    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
   @PostMapping(ServicesAPI.RUNTIME.QUERY)

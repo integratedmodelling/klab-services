@@ -1,13 +1,16 @@
 package org.integratedmodelling.common.services.client.digitaltwin;
 
+import java.net.URL;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.data.RuntimeAssetGraph;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
@@ -22,12 +25,6 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 
-import java.net.URL;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * The ClientKnowledgeGraph represents a local client-specific implementation of the KnowledgeGraph
  * interface, which allows interaction with a runtime knowledge graph, handling assets,
@@ -39,7 +36,7 @@ import java.util.Map;
  * additional graph data, updates to asset metadata, and querying of assets and relationships. It
  * also exposes local methods for querying that do not require a round-trip to the runtime.
  *
- * TODO make it smart and lazy re: large amounts of children
+ * <p>TODO make it smart and lazy re: large amounts of children
  */
 public class ClientKnowledgeGraph implements KnowledgeGraph {
 
@@ -59,7 +56,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     this.catalog.put(RuntimeAsset.DATAFLOW_ASSET.getId(), RuntimeAsset.DATAFLOW_ASSET);
   }
 
-  public void ingest(RuntimeAssetGraph graph) {
+  public void ingest(GraphModel.KnowledgeGraph graph) {
 
     for (var nodeId : graph.getNodes().keySet()) {
 
