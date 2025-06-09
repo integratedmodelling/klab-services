@@ -40,14 +40,14 @@ public interface UserScope extends ReactiveScope {
   ContextScope connect(URL digitalTwinURL);
 
   /**
-   * Create a new digital twin for the user in a given runtime. The session hosting the digital twin
-   * will be transparently created.
+   * Create or connect to a shared digital twin. The session hosting the digital twin will be
+   * transparently created if needed. The configuration will need to specify the service URL unless
+   * the method is called on a session or context scope.
    *
-   * @param hostService
    * @param configuration
    * @return
    */
-  ContextScope createDigitalTwin(RuntimeService hostService, DigitalTwin.Configuration configuration);
+  ContextScope connect(DigitalTwin.Configuration configuration);
 
   /**
    * Any active sessions that have not expired, including running applications and scripts. They may

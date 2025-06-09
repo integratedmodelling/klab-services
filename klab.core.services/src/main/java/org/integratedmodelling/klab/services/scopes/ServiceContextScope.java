@@ -345,7 +345,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
-  public ContextScope connect(URL remoteContext) {
+  public ContextScope connect(ContextScope remoteContext) {
     // TODO Auto-generated method stub
     return null;
   }

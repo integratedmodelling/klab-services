@@ -146,7 +146,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   }
 
   @Override
-  public ContextScope createDigitalTwin(RuntimeService hostService, DigitalTwin.Configuration configuration) {
+  public ContextScope connect(DigitalTwin.Configuration configuration) {
     return null;
   }
 

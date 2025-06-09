@@ -120,7 +120,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   }
 
   @Override
-  public ContextScope connect(URL remoteContext) {
+  public ContextScope connect(ContextScope remoteContext) {
     return null;
   }
 
