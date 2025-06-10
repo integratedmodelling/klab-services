@@ -80,7 +80,7 @@ public class TestOutput extends TestCaseBase {
                       t, this, null /* TODO compile the lexical scope in */, ContextScope.class, s))
           .thenApply(
               dt -> {
-                CompletableFuture.supplyAsync(() -> dt.observe(_observation1))
+                CompletableFuture.supplyAsync(() -> dt.submit(_observation1))
                     .handle(
                         (result, t) ->
                             testScope.handle(
@@ -100,7 +100,7 @@ public class TestOutput extends TestCaseBase {
                           var observation =
                               DigitalTwin.createObservation(dt, _observable1, obs1_.getGeometry());
                           var childScope = dt.within(observation);
-                          CompletableFuture.supplyAsync(() -> childScope.observe(observation))
+                          CompletableFuture.supplyAsync(() -> childScope.submit(observation))
                               .handle(
                                   (result, t) ->
                                       testScope.handle(

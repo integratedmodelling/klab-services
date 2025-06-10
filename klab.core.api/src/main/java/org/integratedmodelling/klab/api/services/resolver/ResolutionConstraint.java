@@ -59,6 +59,7 @@ public interface ResolutionConstraint extends Serializable {
     Geometry(Geometry.class, false),
     ResolutionNamespace(String.class, false),
     ResolutionProject(String.class, false),
+    ResolutionData(ResolutionData.class, false),
     /**
      * this is used when communicating a scope whose context observation is not in the remote
      * knowledge graph yet

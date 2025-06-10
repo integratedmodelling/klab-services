@@ -125,7 +125,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   }
 
   @Override
-  public CompletableFuture<Observation> observe(Observation observation) {
+  public CompletableFuture<Observation> submit(Observation observation) {
     var runtime = getService(RuntimeService.class);
     return runtime.submit(observation, this);
   }
@@ -372,8 +372,4 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         + ")";
   }
 
-  @Override
-  public CompletableFuture<Observation> submit(Observation observation, Data observationData) {
-    return null;
-  }
 }

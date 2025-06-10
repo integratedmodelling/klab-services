@@ -4,6 +4,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.*;
@@ -42,28 +44,41 @@ public interface DigitalTwin extends RuntimeAsset {
   interface Configuration {
 
     /**
+     * The URL does not need to be filled in if the configuration is passed to a {@link
+     * org.integratedmodelling.klab.api.scope.SessionScope#createContext(String, Configuration)}.
+     * Otherwise, the URL should be that of the chosen runtime, with or without the <code>/dt/<id>
+     * </code> path.
+     *
      * @return
      */
     URL getUrl();
 
     /**
-     * The timeout multiplier for operations on this digital twin.
+     * The timeout in {@link #getTimeoutUnit()}. If {@link #getPersistence()} returns {@link
+     * Persistence#IDLE_TIMEOUT}, the digital twin will be removed after this many {@link
+     * #getTimeoutUnit()}s.
      *
      * @return the timeout multiplier
      */
     long getTimeout();
 
     /**
-     * The time unit for the timeout operations on this digital twin.
+     * The time unit for the timeout of the digital twin if {@link #getPersistence()} returns {@link
+     * Persistence#IDLE_TIMEOUT}.
      *
      * @return the time unit for timeouts
      */
-    java.util.concurrent.TimeUnit getTimeoutUnit();
+    TimeUnit getTimeoutUnit();
 
     /**
      * Access rights define who can access the digital twin and the modality of the access.
      * Individual observations should also allow distinct levels of access within the scope of the
      * overall rights.
+     *
+     * <p>Federated users will
+     *
+     * <p>Even if the user is federated, a digital twin whose rights enable access only to the owner
+     * user (default) will not be advertised through the messaging system.
      *
      * @return
      */
@@ -77,8 +92,8 @@ public interface DigitalTwin extends RuntimeAsset {
      * Passing a ID is only allowed if the user is federated, so that the digital twin identity can
      * be assigned in a coordinated way among federated users. Any pre-existing DT with ID <code>
      * <federation_id>/<requested-id></code> will be usable by all members of the federation; the DT
-     * will be created if not existing with the remaining options, which will be ignored if
-     * pre-existing, with a warning if they differ.
+     * will be created if not existing using the remaining options. The latter will be ignored if
+     * the DT is pre-existing, with a warning if they differ.
      *
      * @return
      */

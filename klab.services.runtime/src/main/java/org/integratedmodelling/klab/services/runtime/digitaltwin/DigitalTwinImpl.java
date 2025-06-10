@@ -368,7 +368,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                   () -> {
                     var result =
                         observationScope
-                            .observe(observation)
+                            .submit(observation)
                             .thenAccept(
                                 (obs -> {
                                   // resolve any child observations, states or instances
