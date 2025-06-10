@@ -2089,6 +2089,28 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       return ret;
     }
 
+    /**
+     * Create a key->value map by pairing keys with the object that follows them.
+     *
+     * @param parameters
+     * @return a key-value map
+     * @throws KlabIllegalArgumentException if keys aren't matched
+     */
+    public static Map<String, String> makeStringMap(Object[] parameters) {
+      var ret = new LinkedHashMap<String, String>();
+      if (parameters != null) {
+        for (int i = 0; i < parameters.length; i++) {
+          if (i == parameters.length - 1) {
+            throw new KlabIllegalArgumentException(
+                    "Utils.Maps.makeKeyMap: unmatched keys " + "in " + "argument list");
+          }
+          ret.put(parameters[i].toString(), parameters[++i].toString());
+        }
+      }
+      return ret;
+    }
+
+
     public static <K, V> Map<K, V> removeNullValues(Map<K, V> map) {
       Set<K> toRemove = new HashSet<>();
       for (K key : map.keySet()) {

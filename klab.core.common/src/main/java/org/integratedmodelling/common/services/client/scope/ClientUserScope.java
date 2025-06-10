@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -116,7 +115,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
   }
 
   @Override
-  public ContextScope createDigitalTwin(RuntimeService hostService, DigitalTwin.Options options) {
+  public ContextScope connect(DigitalTwin.Configuration configuration) {
     return null;
   }
 
@@ -124,8 +123,8 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
   public SessionScope getUserSession(RuntimeService hostService) {
 
     /**
-     * Registration with the hostService succeeded. Return a peer scope locked to the hostService service
-     * that hosts it.
+     * Registration with the hostService succeeded. Return a peer scope locked to the hostService
+     * service that hosts it.
      */
     var federation = user.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
     var ret =

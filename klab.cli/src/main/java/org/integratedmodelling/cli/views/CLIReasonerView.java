@@ -3,6 +3,7 @@ package org.integratedmodelling.cli.views;
 import org.integratedmodelling.cli.KlabCLI;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -10,6 +11,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
@@ -129,7 +131,9 @@ public class CLIReasonerView {
       ContextScope ctx =
           context == null
               ? KlabCLI.INSTANCE.modeler().getCurrentContext()
-              : KlabCLI.INSTANCE.modeler().openNewContext(context);
+              : KlabCLI.INSTANCE
+                  .modeler()
+                  .openNewContext(context, defaultDigitalTwinConfiguration());
 
       if (within != null) {
         // TODO find the context observation and switch the context to it. If a dot,
@@ -167,6 +171,13 @@ public class CLIReasonerView {
                 strategy.toString(),
                 Utils.Strings.fillUpLeftAligned(strategy.getRank() + ".", " ", 4)));
       }
+    }
+
+    private DigitalTwin.Configuration defaultDigitalTwinConfiguration() {
+      return DigitalTwin.Configuration.builder()
+          .accessRights(ResourcePrivileges.create(KlabCLI.INSTANCE.user()))
+          .persistence(Persistence.IDLE_TIMEOUT)
+          .build();
     }
   }
 
@@ -402,9 +413,7 @@ public class CLIReasonerView {
         if (concept.is(SemanticType.TRAIT)) {
           out.println(
               AUTO.string(
-                  "Lexical root: @|green "
-                      + reasoner.lexicalRoot(concept).getUrn()
-                      + "|@"));
+                  "Lexical root: @|green " + reasoner.lexicalRoot(concept).getUrn() + "|@"));
         } else {
           out.println(
               AUTO.string(

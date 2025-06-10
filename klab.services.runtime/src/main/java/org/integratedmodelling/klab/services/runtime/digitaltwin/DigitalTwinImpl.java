@@ -41,7 +41,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   private final StorageManager storageManager;
   private final ContextScope rootScope;
   private final Scheduler scheduler;
-  private Options options;
+  private Configuration configuration;
   private long transientId = Klab.getNextId();
 
   @Override
@@ -65,7 +65,8 @@ public class DigitalTwinImpl implements DigitalTwin {
 
   public class TransactionImpl implements Transaction {
 
-    private final RuntimeAssetGraph graphReference = new RuntimeAssetGraph();
+    private final GraphModel.KnowledgeGraph graphReference =
+        new GraphModel.KnowledgeGraph();
 
     static class RelationshipEdge extends DefaultEdge {
       GraphModel.Relationship relationship;
@@ -185,13 +186,13 @@ public class DigitalTwinImpl implements DigitalTwin {
        */
       try (var kgTransaction = knowledgeGraph.createTransaction()) {
 
-        Map<String, RuntimeAssetGraph.Node> nodes = new HashMap<>();
+        Map<String, GraphModel.KnowledgeGraph.Node> nodes = new HashMap<>();
 
         for (var asset : graph.vertexSet()) {
           if (setupForStorage(asset, trivial)) {
             kgTransaction.store(asset);
           }
-          if (!nodes.containsKey(encodeRuntimeAssetLabel(asset))) {
+          if (!nodes.containsKey(asset.getId() + "")) {
             var node = encodeRuntimeAsset(asset, nodes);
             this.graphReference.getNodes().put(node.getLabel(), node);
           }
@@ -199,7 +200,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
         for (var asset : modified) {
           kgTransaction.update(asset);
-          if (!nodes.containsKey(encodeRuntimeAssetLabel(asset))) {
+          if (!nodes.containsKey(asset.getId() + "")) {
             var node = encodeRuntimeAsset(asset, nodes);
             // TODO set flag to indicate that the asset was modified
             this.graphReference.getNodes().put(node.getLabel(), node);
@@ -297,59 +298,30 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     @Override
-    public RuntimeAssetGraph getGraph() {
+    public GraphModel.KnowledgeGraph getGraph() {
       return graphReference;
     }
   }
 
-  private RuntimeAssetGraph.Edge encodeLink(
+  private GraphModel.KnowledgeGraph.Edge encodeLink(
       RuntimeAsset source,
       RuntimeAsset target,
       GraphModel.Relationship relationship,
       Object... relationshipData) {
-    var ret = new RuntimeAssetGraph.Edge();
-    ret.setLabel(relationship.name());
-    ret.setDirected(true);
-    if (relationshipData != null) {
-      var metadata = Metadata.create(relationshipData);
-      // TODO add the metadata to the edge
-    }
-    ret.setSource(encodeRuntimeAssetLabel(source));
-    ret.setTarget(encodeRuntimeAssetLabel(target));
-    return ret;
+    return new GraphModel.KnowledgeGraph.Edge(
+        source.getId() + "",
+        target.getId() + "",
+        relationship.name(),
+        true,
+        relationship.name(),
+        Utils.Maps.makeStringMap(relationshipData));
   }
 
-  private String encodeRuntimeAssetLabel(RuntimeAsset asset) {
-    //        if (asset == knowledgeGraph.scope()) {
-    //            return CONTEXT_ASSET.getId() + "";
-    //        } else if (asset == knowledgeGraph.dataflow()) {
-    //            return DATAFLOW_ASSET.getId() + "";
-    //        } else if (asset == knowledgeGraph.provenance()) {
-    //            return PROVENANCE_ASSET.getId() + "";
-    //        }
-    return asset.getId() + "";
-  }
-
-  private RuntimeAssetGraph.Node encodeRuntimeAsset(
-      RuntimeAsset asset, Map<String, RuntimeAssetGraph.Node> nodes) {
-    //        if (asset == knowledgeGraph.scope()) {
-    //            nodes.put(contextAssetNode.getLabel(), contextAssetNode);
-    //            return contextAssetNode;
-    //        } else if (asset == knowledgeGraph.dataflow()) {
-    //            nodes.put(dataflowAssetNode.getLabel(), dataflowAssetNode);
-    //            return dataflowAssetNode;
-    //        } else if (asset == knowledgeGraph.provenance()) {
-    //            nodes.put(provenanceAssetNode.getLabel(), provenanceAssetNode);
-    //            return provenanceAssetNode;
-    //        }
+  private GraphModel.KnowledgeGraph.Node encodeRuntimeAsset(
+      RuntimeAsset asset, Map<String, GraphModel.KnowledgeGraph.Node> nodes) {
     return nodes.computeIfAbsent(
         asset.getId() + "",
-        id -> {
-          RuntimeAssetGraph.Node node = new RuntimeAssetGraph.Node();
-          node.setLabel(asset.getId() + "");
-          node.setAsset(asset);
-          return node;
-        });
+        id -> new GraphModel.KnowledgeGraph.Node(asset));
   }
 
   public DigitalTwinImpl(
@@ -358,9 +330,6 @@ public class DigitalTwinImpl implements DigitalTwin {
     this.knowledgeGraph = (KnowledgeGraphNeo4j) database.contextualize(scope);
     this.storageManager = new StorageManagerImpl(service, scope);
     this.scheduler = new SchedulerImpl(scope, this);
-    //        this.contextAssetNode = new RuntimeAssetGraph.Node(RuntimeAsset.CONTEXT_ASSET);
-    //        this.provenanceAssetNode = new RuntimeAssetGraph.Node(RuntimeAsset.PROVENANCE_ASSET);
-    //        this.dataflowAssetNode = new RuntimeAssetGraph.Node(RuntimeAsset.DATAFLOW_ASSET);
   }
 
   @Override
@@ -500,8 +469,8 @@ public class DigitalTwinImpl implements DigitalTwin {
   }
 
   @Override
-  public Options getOptions() {
-    return this.options;
+  public Configuration getOptions() {
+    return this.configuration;
   }
 
   @Override

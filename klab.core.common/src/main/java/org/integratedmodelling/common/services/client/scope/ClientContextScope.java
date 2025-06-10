@@ -32,6 +32,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
       new LinkedHashMap<>();
   private DigitalTwin digitalTwin;
   private Activity activity;
+  private DigitalTwin.Configuration configuration;
 
   /**
    * The default client scope has the user as the embedded agent.
@@ -41,8 +42,12 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
    * @param runtimeService
    */
   public ClientContextScope(
-      ClientUserScope parent, String contextName, RuntimeService runtimeService) {
+      ClientUserScope parent,
+      String contextName,
+      RuntimeService runtimeService,
+      DigitalTwin.Configuration configuration) {
     super(parent, contextName, runtimeService);
+    this.configuration = configuration;
     resolutionConstraints.put(
         ResolutionConstraint.Type.Provenance,
         ResolutionConstraint.of(
@@ -56,7 +61,9 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     this.digitalTwin = parent.digitalTwin;
     resolutionConstraints.putAll(parent.resolutionConstraints);
     observer = parent.observer;
+    configuration = parent.configuration;
     contextObservation = parent.contextObservation;
+    this.activity = parent.activity;
   }
 
   @Override
@@ -113,7 +120,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   }
 
   @Override
-  public ContextScope connect(URL remoteContext) {
+  public ContextScope connect(ContextScope remoteContext) {
     return null;
   }
 

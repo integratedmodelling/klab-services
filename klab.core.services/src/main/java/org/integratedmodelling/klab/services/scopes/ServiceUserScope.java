@@ -14,7 +14,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -147,7 +146,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   }
 
   @Override
-  public ContextScope createDigitalTwin(RuntimeService hostService, DigitalTwin.Options options) {
+  public ContextScope connect(DigitalTwin.Configuration configuration) {
     return null;
   }
 

@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.scope.Persistence;
 
+import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 public class OptionsBuilder {
@@ -13,6 +14,7 @@ public class OptionsBuilder {
   private String id;
   private long timeout;
   private TimeUnit timeoutUnit;
+  private URL url;
 
   public OptionsBuilder accessRights(ResourcePrivileges accessRights) {
     this.accessRights = accessRights;
@@ -34,13 +36,19 @@ public class OptionsBuilder {
     return this;
   }
 
+  public OptionsBuilder url(URL url) {
+    this.url = url;
+    return this;
+  }
+
+
   public OptionsBuilder timeout(long timeout, TimeUnit timeoutUnit) {
     this.timeout = timeout;
     this.timeoutUnit = timeoutUnit;
     return this;
   }
 
-  public DigitalTwin.Options build() {
-    return new OptionsImpl(accessRights, persistence, name, id, this.timeout, this.timeoutUnit);
+  public DigitalTwin.Configuration build() {
+    return new ConfigurationImpl(accessRights, persistence, name, id, this.timeout, this.timeoutUnit, this.url);
   }
 }

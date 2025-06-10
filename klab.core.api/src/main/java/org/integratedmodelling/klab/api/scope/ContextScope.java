@@ -202,15 +202,14 @@ public interface ContextScope extends SessionScope {
   DigitalTwin getDigitalTwin();
 
   /**
-   * In a ContextScope, {@link #connect(URL)} is redefined to produce merged DTs that exchange
-   * messages and build a higher-level one merging contents and events between the remote DT and the
-   * one on which connect is called. Authentication details will define what can be seen and done.
+   * Pass a connected ContextScope (possibly the result of {@link #connect(URL)} or {@link
+   * #connect(DigitalTwin.Configuration)}) and return a new ContextScope that merges this
+   * ContextScope with the passed one. Permissions must allow the merge.
    *
    * @param remoteContext
    * @return
    */
-  @Override
-  ContextScope connect(URL remoteContext);
+  ContextScope connect(ContextScope remoteContext);
 
   /**
    * Submit an observation to the digital twin and start its resolution in this scope. Returns a

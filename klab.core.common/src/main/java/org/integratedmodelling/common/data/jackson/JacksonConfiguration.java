@@ -352,7 +352,8 @@ public class JacksonConfiguration {
           Urn.class,
           ExpressionCode.class,
           Federation.class,
-          Scheduler.Event.class
+          Scheduler.Event.class,
+          DigitalTwin.Configuration.class
         }) {
       module.addSerializer(cls, new PolymorphicSerializer<>());
       module.addDeserializer(cls, new PolymorphicDeserializer<>(cls));

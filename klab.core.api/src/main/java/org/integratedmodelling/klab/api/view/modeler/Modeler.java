@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.view.modeler;
 
 import org.integratedmodelling.klab.api.data.RepositoryState;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -140,7 +141,7 @@ public interface Modeler extends UIController {
    * @param contextName
    * @return
    */
-  ContextScope openNewContext(String contextName);
+  ContextScope openNewContext(String contextName, DigitalTwin.Configuration configuration);
 
   /**
    * Make the passed session the current one.
