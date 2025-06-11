@@ -89,7 +89,8 @@ public abstract class BaseService implements KlabService {
     this.startupOptions = options;
     try {
       this.url =
-          new URL(options.getServiceHostUrl() + ":" + options.getPort() + options.getContextPath());
+          new URL(options.getServiceHostUrl() + (options.getPort() != -1 ? ":" + options.getPort() : "")
+                  + (options.getContextPath() != null ? options.getContextPath() : ""));
     } catch (MalformedURLException e) {
       throw new KlabIllegalStateException(e);
     }
