@@ -302,7 +302,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     return currentContext
         .withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new))
-        .observe(observation)
+        .submit(observation)
         .exceptionally(
             t -> {
               // for the benefit of linked DTs

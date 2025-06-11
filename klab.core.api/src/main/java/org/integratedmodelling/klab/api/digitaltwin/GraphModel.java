@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Schedule;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * Holds the types and field constants for the digital twin graph model (*and the correspondent
@@ -242,6 +243,11 @@ public interface GraphModel {
     public static final String OBSERVATION_URN_FIELD = "observationUrn";
   }
 
+  /**
+   * The serializable version of a KnowledgeGraph entire or incremental portion, whose JSON
+   * translation is compatible with existing representational "standards" for graphs. Not a record
+   * due to JSON serialization having hard times with them.
+   */
   public static class KnowledgeGraph {
     private Map<String, String> metadata;
     private Map<String, Node> nodes;
@@ -394,12 +400,17 @@ public interface GraphModel {
     }
   }
 
-  /** Digital twin descriptor for JSON communication. */
+  /**
+   * Digital twin descriptor for JSON communication. This is returned by the {@link
+   * org.integratedmodelling.klab.api.ServicesAPI.RUNTIME#DIGITAL_TWIN_GRAPH} call, with depth of
+   * info depending on call parameters.
+   */
   class DigitalTwin {
 
     private org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Configuration configuration;
     private KnowledgeGraph knowledgeGraph;
     private Schedule schedule;
+    private List<Notification> notifications = new ArrayList<>();
 
     public org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Configuration
         getConfiguration() {
@@ -425,6 +436,14 @@ public interface GraphModel {
 
     public void setSchedule(Schedule schedule) {
       this.schedule = schedule;
+    }
+
+    public List<Notification> getNotifications() {
+      return notifications;
+    }
+
+    public void setNotifications(List<Notification> notifications) {
+      this.notifications = notifications;
     }
   }
 }

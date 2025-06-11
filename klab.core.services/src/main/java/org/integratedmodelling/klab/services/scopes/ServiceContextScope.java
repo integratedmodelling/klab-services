@@ -241,17 +241,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
-  public CompletableFuture<Observation> observe(Observation observation) {
+  public CompletableFuture<Observation> submit(Observation observation) {
     if (!isOperative()) {
       return null;
     }
     var runtime = getService(RuntimeService.class);
     return runtime.submit(observation, this);
-  }
-
-  @Override
-  public CompletableFuture<Observation> submit(Observation observation, Data observationData) {
-    return null;
   }
 
   @Override

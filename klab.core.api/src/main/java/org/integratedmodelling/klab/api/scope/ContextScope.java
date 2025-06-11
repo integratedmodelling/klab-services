@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.api.scope;
 
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -35,9 +34,9 @@ import java.util.concurrent.Future;
  * the same observable with different observers are different observations.
  *
  * <p>A context scope is used to add observations, which will trigger resolution, through {@link
- * #observe(Observation)} and carries information (parent observation, observer, namespace, project,
+ * #submit(Observation)} and carries information (parent observation, observer, namespace, project,
  * scenarios) that is relevant to the resolver. Scopes can be specialized to customize resolution
- * before {@link #observe(Observation)} is called, and their status is passed across network
+ * before {@link #submit(Observation)} is called, and their status is passed across network
  * boundaries, encoded in the scope header added to requests that trigger resolution. If resolution
  * in the runtime fails, the resulting observation will be in an unresolved state, unusable to make
  * any further resolution, and the context is inconsistent unless all the inconsistent observations
@@ -151,10 +150,10 @@ public interface ContextScope extends SessionScope {
   Data getData(Observation... observations);
 
   /**
-   * Return the consistent observations made in the root context using {@link
-   * #observe(Observation)}. The resulting collection must iterate in order of observation,
-   * established by provenance. All the root observations must be direct, so they cannot be
-   * inconsistent even if they are unresolved.
+   * Return the consistent observations made in the root context using {@link #submit(Observation)}.
+   * The resulting collection must iterate in order of observation, established by provenance. All
+   * the root observations must be direct, so they cannot be inconsistent even if they are
+   * unresolved.
    *
    * @return
    */
@@ -212,30 +211,28 @@ public interface ContextScope extends SessionScope {
   ContextScope connect(ContextScope remoteContext);
 
   /**
-   * Submit an observation to the digital twin and start its resolution in this scope. Returns a
-   * future for the resolved (or unresolved in case of failure) observation. The scope will be
-   * notified of all events related to the resolution, with messages that will carry a task ID equal
-   * to the URN of the observation or derived from it so that what is happening can be reconstructed
-   * at the client side.
+   * Submit an observation for inclusion into the knowledge graph at the point implied by the
+   * current scope, starting its resolution and/or validation, returning a future for the resolved
+   * observation or for an {@link Observation#isEmpty() empty} one in case of failure. This method
+   * is the key operation to operate on a digital twin in k.LAB.
+   *
+   * <p>The scope is notified of any events related to the resolution. Messages will be sent for
+   * each activity undertaken, including resolution and initialization of any secondary
+   * observations. Any connected scope will receive all messages related to the same digital twin.
+   *
+   * <p>The observation may contain resolution metadata (still TBD) which can be used to resolve it
+   * from an existing, possibly remote, storage. The resolution metadata must contain an adapter ID
+   * and all the necessary information for it. If validation and ingestion at the appropriate
+   * position in the knowledge graph succeeds, the resolved observation, now part of the knowledge
+   * graph, is returned.
    *
    * @param observation an unresolved observation to be resolved by the runtime and added to the
-   *     digital twin.
-   * @return a {@link Future} producing the resolved observation when resolution is finished. If
-   *     resolution has failed, the observation in the future will be unresolved.
+   *     knowledge graph.
+   * @return a {@link Future} producing the resolved observation when resolution is finished and the
+   *     observation is part of the knowledge graph. If resolution has failed, the observation in
+   *     the future will be {@link Observation#isEmpty() empty}.
    */
-  CompletableFuture<Observation> observe(@Mutable Observation observation);
-
-  /**
-   * Create an observation in this context, which must be able to include it both semantically
-   * (compatible context observation) and physically (compatible geometry). The observation must not
-   * already exist. The passed data may defer to an adapter. The built observation should be "lazy"
-   * if binary content is not passed.
-   *
-   * @param observation the new unresolved observation
-   * @param observationData the data that resolve the observation
-   * @return a future for the resolved observation
-   */
-  CompletableFuture<Observation> submit(Observation observation, Data observationData);
+  CompletableFuture<Observation> submit(Observation observation);
 
   /**
    * Return all observations affected by the passed one in this scope, either through model
