@@ -157,6 +157,7 @@ public class SchedulerImpl implements Scheduler {
                     Activity.Type.INITIALIZATION,
                     observation,
                     triggeringResolution,
+                    scope,
                     "Initialization of " + observation),
                 scope,
                 triggeringResolution);
@@ -483,7 +484,10 @@ public class SchedulerImpl implements Scheduler {
             .INITIALIZATION) { // FIXME this should not be necessary when the filter works
       var observation = rootScope.getObservation(registration.id());
       if (observation != null) {
-        initialize(observation, rootScope.of(observation), registration.activity());
+        initialize(
+            observation,
+            rootScope.of(observation).executing(registration.activity()),
+            registration.activity());
       }
     }
   }

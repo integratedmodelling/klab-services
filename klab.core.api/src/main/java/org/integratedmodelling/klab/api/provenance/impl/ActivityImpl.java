@@ -8,172 +8,182 @@ import java.util.List;
 
 public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
-    private long start;
-    private long end;
-    private List<Long> schedulerTime = new ArrayList<>();
-    private long size;
-    private long credits;
-    private Activity.Type type;
-    private String description;
-    private Outcome outcome;
-    private String stackTrace;
-    private String serviceId;
-    private String serviceName;
-    private KlabService.Type serviceType;
-    private String dataflow;
-    private String urn;
-    private String observationUrn;
-    private String triggeringActivityUrn;
+  // this is to reconstruct the activity tree at client side, as triggering activity is not enough
+  // for that. Parent activity depends on resolution and contextualization dynamics.
+  public static final String PARENT_ACTIVITY_TRANSIENT_ID_KEY = "internal.parent.task.transient.id";
 
-    @Override
-    public long getStart() {
-        return start;
-    }
+  private long start;
+  private long end;
+  private List<Long> schedulerTime = new ArrayList<>();
+  private long size;
+  private long credits;
+  private Activity.Type type;
+  private String description;
+  private Outcome outcome;
+  private String stackTrace;
+  private String serviceId;
+  private String serviceName;
+  private KlabService.Type serviceType;
+  private String dataflow;
+  private String urn;
+  private String observationUrn;
+  private String triggeringActivityUrn;
 
-    public void setStart(long start) {
-        this.start = start;
-    }
+  @Override
+  public long getStart() {
+    return start;
+  }
 
-    @Override
-    public long getEnd() {
-        return end;
-    }
+  public void setStart(long start) {
+    this.start = start;
+  }
 
-    public void setEnd(long end) {
-        this.end = end;
-    }
+  @Override
+  public long getEnd() {
+    return end;
+  }
 
-    @Override
-    public List<Long> getSchedulerTime() {
-        return schedulerTime;
-    }
+  public void setEnd(long end) {
+    this.end = end;
+  }
 
-    public void setSchedulerTime(List<Long> schedulerTime) {
-        this.schedulerTime = schedulerTime;
-    }
+  @Override
+  public List<Long> getSchedulerTime() {
+    return schedulerTime;
+  }
 
-    public long getSize() {
-        return size;
-    }
+  public void setSchedulerTime(List<Long> schedulerTime) {
+    this.schedulerTime = schedulerTime;
+  }
 
-    public void setSize(long size) {
-        this.size = size;
-    }
+  public long getSize() {
+    return size;
+  }
 
-    public long getCredits() {
-        return credits;
-    }
+  public void setSize(long size) {
+    this.size = size;
+  }
 
-    public void setCredits(long credits) {
-        this.credits = credits;
-    }
+  public long getCredits() {
+    return credits;
+  }
 
-    @Override
-    public Activity.Type getType() {
-        return type;
-    }
+  public void setCredits(long credits) {
+    this.credits = credits;
+  }
 
-    public void setType(Activity.Type type) {
-        this.type = type;
-    }
+  @Override
+  public Activity.Type getType() {
+    return type;
+  }
 
-    @Override
-    public String getDescription() {
-        return description;
-    }
+  public void setType(Activity.Type type) {
+    this.type = type;
+  }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+  @Override
+  public String getDescription() {
+    return description;
+  }
 
-    @Override
-    public String getObservationUrn() {
-        return this.observationUrn;
-    }
+  public void setDescription(String description) {
+    this.description = description;
+  }
 
-    public void setObservationUrn(String observationUrn) {
-        this.observationUrn = observationUrn;
-    }
+  @Override
+  public String getObservationUrn() {
+    return this.observationUrn;
+  }
 
-    @Override
-    public Outcome getOutcome() {
-        return outcome;
-    }
+  public void setObservationUrn(String observationUrn) {
+    this.observationUrn = observationUrn;
+  }
 
-    public void setOutcome(Outcome outcome) {
-        this.outcome = outcome;
-    }
+  @Override
+  public Outcome getOutcome() {
+    return outcome;
+  }
 
-    @Override
-    public String getStackTrace() {
-        return stackTrace;
-    }
+  public void setOutcome(Outcome outcome) {
+    this.outcome = outcome;
+  }
 
-    public void setStackTrace(String stackTrace) {
-        this.stackTrace = stackTrace;
-    }
+  @Override
+  public String getStackTrace() {
+    return stackTrace;
+  }
 
-    @Override
-    public String getServiceId() {
-        return serviceId;
-    }
+  public void setStackTrace(String stackTrace) {
+    this.stackTrace = stackTrace;
+  }
 
-    public void setServiceId(String serviceId) {
-        this.serviceId = serviceId;
-    }
+  @Override
+  public String getServiceId() {
+    return serviceId;
+  }
 
-    @Override
-    public String getServiceName() {
-        return serviceName;
-    }
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
+  }
 
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
+  @Override
+  public String getServiceName() {
+    return serviceName;
+  }
 
-    @Override
-    public KlabService.Type getServiceType() {
-        return serviceType;
-    }
+  public void setServiceName(String serviceName) {
+    this.serviceName = serviceName;
+  }
 
-    public void setServiceType(KlabService.Type serviceType) {
-        this.serviceType = serviceType;
-    }
+  @Override
+  public KlabService.Type getServiceType() {
+    return serviceType;
+  }
 
-    @Override
-    public String getDataflow() {
-        return dataflow;
-    }
+  public void setServiceType(KlabService.Type serviceType) {
+    this.serviceType = serviceType;
+  }
 
-    public void setDataflow(String dataflow) {
-        this.dataflow = dataflow;
-    }
+  @Override
+  public String getDataflow() {
+    return dataflow;
+  }
 
-    @Override
-    public String getUrn() {
-        return urn;
-    }
+  public void setDataflow(String dataflow) {
+    this.dataflow = dataflow;
+  }
 
-    public void setUrn(String urn) {
-        this.urn = urn;
-    }
+  @Override
+  public String getUrn() {
+    return urn;
+  }
 
-    @Override
-    public String getTriggeringActivityUrn() {
-        return triggeringActivityUrn;
-    }
+  public void setUrn(String urn) {
+    this.urn = urn;
+  }
 
-    public void setTriggeringActivityUrn(String triggeringActivityUrn) {
-        this.triggeringActivityUrn = triggeringActivityUrn;
-    }
+  @Override
+  public String getTriggeringActivityUrn() {
+    return triggeringActivityUrn;
+  }
 
-    @Override
-    public String toString() {
-        return "ActivityImpl{" +
-                "type=" + type +
-                ", urn='" + urn + '\'' +
-                ", outcome=" + outcome +
-                ", description='" + description + '\'' +
-                '}';
-    }
+  public void setTriggeringActivityUrn(String triggeringActivityUrn) {
+    this.triggeringActivityUrn = triggeringActivityUrn;
+  }
+
+  @Override
+  public String toString() {
+    return "ActivityImpl{"
+        + "type="
+        + type
+        + ", urn='"
+        + urn
+        + '\''
+        + ", outcome="
+        + outcome
+        + ", description='"
+        + description
+        + '\''
+        + '}';
+  }
 }
