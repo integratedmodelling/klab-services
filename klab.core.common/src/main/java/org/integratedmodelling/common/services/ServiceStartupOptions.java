@@ -351,4 +351,8 @@ public class ServiceStartupOptions implements StartupOptions {
   public void setMaxMultipartRequestSize(String maxMultipartRequestSize) {
     this.maxMultipartRequestSize = maxMultipartRequestSize;
   }
+
+  public void updateOptionsFromCertificate(KlabCertificate certificate) {
+    this.serviceHostUrl = certificate.getProperty(KlabCertificate.KEY_URL);
+  }
 }

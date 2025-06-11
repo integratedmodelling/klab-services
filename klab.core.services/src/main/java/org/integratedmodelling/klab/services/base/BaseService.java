@@ -95,7 +95,6 @@ public abstract class BaseService implements KlabService {
     }
     createServiceSecret();
     componentRegister = new ComponentRegistry(this, options);
-    
     serviceMonitor =
         new ServiceMonitor(
             scope.getIdentity(),

@@ -14,6 +14,7 @@ import java.util.function.Supplier;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.PartnerIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
@@ -200,6 +201,7 @@ public class ServiceAuthorizationManager {
     }
     ret.setToken((response.getUserData().getToken()));
     ret.setUrl(certificate.getProperty(KlabCertificate.KEY_URL));
+    ((ServiceStartupOptions)options).updateOptionsFromCertificate(certificate);
     return Pair.of(ret, response.getServices());
   }
 
