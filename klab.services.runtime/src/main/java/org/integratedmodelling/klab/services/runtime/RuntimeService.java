@@ -428,7 +428,8 @@ public class RuntimeService extends BaseService
       var contextScope = serviceContextScope.initializeResolution();
       var resolver = scope.getService(Resolver.class);
       var resolution =
-          Activity.of("Resolution of " + observation, Activity.Type.RESOLUTION, this, agent);
+          Activity.of(
+              "Resolution of " + observation, Activity.Type.RESOLUTION, this, agent, contextScope);
 
       var runningScope = contextScope.executing(resolution);
       return resolver

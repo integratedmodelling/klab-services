@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -181,6 +182,12 @@ public interface Activity extends Provenance.Node {
         ret.setServiceType(KlabService.Type.classify(service));
       } else if (o instanceof Activity activity) {
         ret.setTriggeringActivityUrn(activity.getUrn());
+      } else if (o instanceof ContextScope contextScope
+          && contextScope.getCurrentActivity() != null) {
+        ret.getMetadata()
+            .put(
+                ActivityImpl.PARENT_ACTIVITY_TRANSIENT_ID_KEY,
+                contextScope.getCurrentActivity().getTransientId());
       }
     }
     return ret;

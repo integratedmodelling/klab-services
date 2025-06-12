@@ -16,14 +16,18 @@ import java.io.Serial;
 import java.util.*;
 
 /**
- * A "naked" observation only has an observable + metadata and provenance info. This is not abstract
- * because descriptions like contextualizing a generic concept produce pure semantics, which is
- * expressed as a simple Observation with an observable that is the OR of all the contextualized
- * components corresponding to the generic ones in the observed one.
+ * A "naked" observation only has an observable + metadata and provenance info. Additional metadata
+ * are inserted to distinguish submitted observations from those that have been generated during
+ * resolution.
  */
 public class ObservationImpl implements Observation {
 
   @Serial private static final long serialVersionUID = 8993700853991252827L;
+
+  // Keys for metadata to track provenance, execution and debugging. If they start with `internal.`
+  // they should not be shown in visualization. These apply to activities as well.
+  public static final String ACTIVITY_TRANSIENT_ID_KEY = "internal.activity.transient.id";
+  public static final String IS_SUBMITTED_KEY = "internal.observation.is.submitted";
 
   private Observable observable;
   private Geometry geometry;
