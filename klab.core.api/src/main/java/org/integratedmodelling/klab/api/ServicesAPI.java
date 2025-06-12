@@ -368,27 +368,15 @@ public interface ServicesAPI {
      */
     String SUBMIT_OBSERVATION = "/submit";
 
-    //    /**
-    //     * POST endpoint to start the resolution of a previously submitted observation whose ID
-    // must be
-    //     * passed through the URL. Returns true/false; any notification happens through scope
-    // messaging
-    //     * and the scope must be the same that generated the observation through {@link
-    //     * #SUBMIT_OBSERVATION}. Both the request and the response may/must contain a {@link
-    //     * #TASK_ID_HEADER} with the ID of the task started.
-    //     */
-    //    String START_RESOLUTION = "/startResolution";
-
-    //    /**
-    //     * POST endpoint to retrieve an asset from the digital twin's knowledge graph based on its
-    //     * internal ID
-    //     *
-    //     * @deprecated use the query endpoint
-    //     */
-    //    String RETRIEVE_ASSET_BY_ID = "/asset";
-
     /** Structured Knowledge Graph query */
     String QUERY = "/query";
+
+    /**
+     * POST or GET endpoint for visualization of a URN, including the "adapter" identifier and the
+     * URN of the visualized asset. GET will return the full visualization with the standard
+     * geometry and options. POST will enable specifying different options and geometry.
+     */
+    String VISUALIZE_ASSET = "/visualize/{method}/{urn}";
 
     /**
      * POST endpoint that takes a list of contextualizer references and returns the ResourceSet that

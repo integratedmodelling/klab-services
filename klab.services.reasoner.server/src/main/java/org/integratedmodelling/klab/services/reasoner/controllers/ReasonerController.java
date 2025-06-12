@@ -4,6 +4,11 @@ import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -19,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@Tag(name = "Reasoner API", description = "API for semantic reasoning operations")
 public class ReasonerController {
 
   @Autowired private ReasonerServer reasoner;
@@ -29,10 +35,16 @@ public class ReasonerController {
    * @param definition
    * @return
    */
+  @Operation(summary = "Resolve concept from URN", 
+            description = "Resolves a concept from its URN definition")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Concept resolved successfully"),
+      @ApiResponse(responseCode = "400", description = "Invalid concept definition")
+  })
   @PostMapping(ServicesAPI.REASONER.RESOLVE_CONCEPT)
   public @ResponseBody Concept resolveConcept(
-      @RequestBody String definition,
-      @RequestParam(name = "alt", required = false) boolean alternative) {
+      @Parameter(description = "Concept definition") @RequestBody String definition,
+      @Parameter(description = "Use alternative resolution method") @RequestParam(name = "alt", required = false) boolean alternative) {
     if (alternative) {
       var syntax =
           reasoner
@@ -47,9 +59,17 @@ public class ReasonerController {
     return reasoner.klabService().resolveConcept(definition);
   }
 
+  @Operation(summary = "Compute observation strategies", 
+            description = "Infers strategies for observing the specified resolution request")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Strategies computed successfully"),
+      @ApiResponse(responseCode = "400", description = "Invalid resolution request"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized")
+  })
   @PostMapping(ServicesAPI.REASONER.COMPUTE_OBSERVATION_STRATEGIES)
   public @ResponseBody List<ObservationStrategy> inferStrategies(
-      @RequestBody ResolutionRequest request, Principal principal) {
+      @Parameter(description = "Resolution request") @RequestBody ResolutionRequest request, 
+      Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope =
           authorization
@@ -69,8 +89,14 @@ public class ReasonerController {
    * @param definition
    * @return
    */
+  @Operation(summary = "Resolve observable", 
+            description = "Resolves an observable from its definition")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Observable resolved successfully"),
+      @ApiResponse(responseCode = "400", description = "Invalid observable definition")
+  })
   @PostMapping(ServicesAPI.REASONER.RESOLVE_OBSERVABLE)
-  public @ResponseBody Observable resolveObservable(@RequestBody String definition) {
+  public @ResponseBody Observable resolveObservable(@Parameter(description = "Observable definition") @RequestBody String definition) {
     return reasoner.klabService().resolveObservable(definition);
   }
 
@@ -99,8 +125,13 @@ public class ReasonerController {
    * @param concepts
    * @return
    */
+  @Operation(summary = "Check if one concept subsumes another", 
+            description = "Determines if the first concept subsumes the second concept")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Subsumption check completed successfully")
+  })
   @PostMapping(ServicesAPI.REASONER.SUBSUMES)
-  public boolean subsumes(@RequestBody Concept[] concepts) {
+  public boolean subsumes(@Parameter(description = "Array of two concepts to check") @RequestBody Concept[] concepts) {
     return reasoner.klabService().is(concepts[0], concepts[1]);
   }
 
@@ -110,8 +141,13 @@ public class ReasonerController {
    * @param concepts
    * @return
    */
+  @Operation(summary = "Check if concepts match", 
+            description = "Determines if the first concept matches the second concept")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Match check completed successfully")
+  })
   @PostMapping(ServicesAPI.REASONER.MATCHES)
-  public boolean matches(@RequestBody Concept[] concepts) {
+  public boolean matches(@Parameter(description = "Array of two concepts to check") @RequestBody Concept[] concepts) {
     return reasoner.klabService().match(concepts[0], concepts[1]);
   }
 
@@ -121,8 +157,13 @@ public class ReasonerController {
    * @param target
    * @return
    */
+  @Operation(summary = "Get concept operands", 
+            description = "Retrieves the operands of the specified concept")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Operands retrieved successfully")
+  })
   @PostMapping(ServicesAPI.REASONER.OPERANDS)
-  public @ResponseBody Collection<Concept> operands(@RequestBody Concept target) {
+  public @ResponseBody Collection<Concept> operands(@Parameter(description = "Target concept") @RequestBody Concept target) {
     return reasoner.klabService().operands(target);
   }
 
@@ -132,8 +173,13 @@ public class ReasonerController {
    * @param target
    * @return
    */
+  @Operation(summary = "Get concept children", 
+            description = "Retrieves the direct children of the specified concept")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Children retrieved successfully")
+  })
   @PostMapping(ServicesAPI.REASONER.CHILDREN)
-  public @ResponseBody Collection<Concept> children(@RequestBody Concept target) {
+  public @ResponseBody Collection<Concept> children(@Parameter(description = "Target concept") @RequestBody Concept target) {
     return reasoner.klabService().children(target);
   }
 
@@ -143,8 +189,13 @@ public class ReasonerController {
    * @param target
    * @return
    */
+  @Operation(summary = "Get concept parents", 
+            description = "Retrieves the direct parents of the specified concept")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Parents retrieved successfully")
+  })
   @PostMapping(ServicesAPI.REASONER.PARENTS)
-  public @ResponseBody Collection<Concept> parents(@RequestBody Concept target) {
+  public @ResponseBody Collection<Concept> parents(@Parameter(description = "Target concept") @RequestBody Concept target) {
     return reasoner.klabService().parents(target);
   }
 
@@ -154,8 +205,13 @@ public class ReasonerController {
    * @param c
    * @return
    */
+  @Operation(summary = "Get concept parent", 
+            description = "Retrieves the direct parent of the specified concept")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Parent retrieved successfully")
+  })
   @PostMapping(ServicesAPI.REASONER.PARENT)
-  public @ResponseBody Concept parent(@RequestBody Concept c) {
+  public @ResponseBody Concept parent(@Parameter(description = "Target concept") @RequestBody Concept c) {
     return reasoner.klabService().parent(c);
   }
 
@@ -165,8 +221,13 @@ public class ReasonerController {
    * @param target
    * @return
    */
+  @Operation(summary = "Get all concept children", 
+            description = "Retrieves all children (direct and indirect) of the specified concept")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "All children retrieved successfully")
+  })
   @PostMapping(ServicesAPI.REASONER.ALL_CHILDREN)
-  public @ResponseBody Collection<Concept> allChildren(@RequestBody Concept target) {
+  public @ResponseBody Collection<Concept> allChildren(@Parameter(description = "Target concept") @RequestBody Concept target) {
     return reasoner.klabService().allChildren(target);
   }
 
@@ -176,8 +237,13 @@ public class ReasonerController {
    * @param target
    * @return
    */
+  @Operation(summary = "Get all concept parents", 
+            description = "Retrieves all parents (direct and indirect) of the specified concept")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "All parents retrieved successfully")
+  })
   @PostMapping(ServicesAPI.REASONER.ALL_PARENTS)
-  public @ResponseBody Collection<Concept> allParents(@RequestBody Concept target) {
+  public @ResponseBody Collection<Concept> allParents(@Parameter(description = "Target concept") @RequestBody Concept target) {
     return reasoner.klabService().allParents(target);
   }
 
@@ -187,34 +253,58 @@ public class ReasonerController {
    * @param target
    * @return
    */
+  @Operation(summary = "Get concept closure", 
+            description = "Retrieves the closure (all related concepts) of the specified concept")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Closure retrieved successfully")
+  })
   @PostMapping(ServicesAPI.REASONER.CLOSURE)
-  public @ResponseBody Collection<Concept> closure(@RequestBody Concept target) {
+  public @ResponseBody Collection<Concept> closure(@Parameter(description = "Target concept") @RequestBody Concept target) {
     return reasoner.klabService().closure(target);
   }
 
+  /**
+   * Get the core observable of a concept
+   */
+  @Operation(summary = "Get core observable", 
+            description = "Retrieves the core observable of the specified concept")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Core observable retrieved successfully")
+  })
   @PostMapping(ServicesAPI.REASONER.CORE_OBSERVABLE)
-  public @ResponseBody Concept coreObservable(@RequestBody Concept first) {
+  public @ResponseBody Concept coreObservable(@Parameter(description = "Target concept") @RequestBody Concept first) {
     return reasoner.klabService().coreObservable(first);
   }
 
+  /**
+   * Split operators from a concept
+   */
+  @Operation(summary = "Split operators", 
+            description = "Splits operators from the specified concept")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Operators split successfully")
+  })
   @PostMapping(ServicesAPI.REASONER.SPLIT_OPERATORS)
   public @ResponseBody Pair<Concept, List<SemanticType>> splitOperators(
-      @RequestBody Concept concept) {
+      @Parameter(description = "Target concept") @RequestBody Concept concept) {
     return reasoner.klabService().splitOperators(concept);
   }
 
-  //    @ApiOperation("Asserted or semantic distance between two concepts. If asserted is false
-  // (default)
-  //    the asserted "
-  //            + " distance will be returned as an integer. Otherwise, the semantic distance will
-  // be
-  //            computed and "
-  //            + "the input data array may contain a third concept to compute the distance in its
-  //            context.")
+  /**
+   * Asserted or semantic distance between two concepts. If asserted is false (default)
+   * the asserted distance will be returned as an integer. Otherwise, the semantic distance will
+   * be computed and the input data array may contain a third concept to compute the distance in its
+   * context.
+   */
+  @Operation(summary = "Calculate distance between concepts", 
+            description = "Calculates the asserted or semantic distance between two concepts")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Distance calculated successfully")
+  })
   @PostMapping(ServicesAPI.REASONER.DISTANCE)
   public int assertedDistance(
-      @RequestBody Concept[] concepts,
-      @RequestParam(name = "asserted", defaultValue = "false") boolean asserted) {
+      @Parameter(description = "Array of concepts (2 or 3)") @RequestBody Concept[] concepts,
+      @Parameter(description = "Whether to use asserted distance") @RequestParam(name = "asserted", defaultValue = "false") boolean asserted) {
     return asserted
         ? reasoner.klabService().assertedDistance(concepts[0], concepts[1])
         : reasoner

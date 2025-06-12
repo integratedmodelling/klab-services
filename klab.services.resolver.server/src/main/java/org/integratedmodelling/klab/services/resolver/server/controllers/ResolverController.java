@@ -1,6 +1,11 @@
 package org.integratedmodelling.klab.services.resolver.server.controllers;
 
 import java.security.Principal;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -18,15 +23,27 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Tag(name = "Resolver API", description = "API for resolving observations and contextual requests")
 public class ResolverController {
 
   @Autowired private ResolverServer resolverServer;
 
   @Autowired private ServiceAuthorizationManager authenticationManager;
 
+  /**
+   * Resolve an observation request
+   */
+  @Operation(summary = "Resolve observation", 
+            description = "Resolves an observation based on the provided resolution request")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Resolution job submitted successfully"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "500", description = "Internal server error")
+  })
   @PostMapping(ServicesAPI.RESOLVER.RESOLVE_OBSERVATION)
   public @ResponseBody long resolveObservation(
-      @RequestBody ResolutionRequest resolutionRequest, Principal principal) {
+      @Parameter(description = "Resolution request parameters") @RequestBody ResolutionRequest resolutionRequest, 
+      Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope =
           authorization
