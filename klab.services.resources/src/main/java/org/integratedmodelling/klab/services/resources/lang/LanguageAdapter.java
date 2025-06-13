@@ -2,10 +2,14 @@ package org.integratedmodelling.klab.services.resources.lang;
 
 import java.util.*;
 
+import org.integratedmodelling.common.lang.kactors.KActorsActionImpl;
 import org.integratedmodelling.common.lang.kactors.KActorsBehaviorImpl;
+import org.integratedmodelling.common.lang.kactors.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.services.runtime.impl.ExpressionCodeImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
@@ -1099,10 +1103,68 @@ public enum LanguageAdapter {
   }
 
   public KActorsBehavior adaptBehavior(
-      BehaviorSyntaxImpl syntax, String name, List<Notification> notifications) {
+      BehaviorSyntaxImpl syntax,
+      String name,
+      String projectName,
+      List<Notification> notifications) {
     var ret = new KActorsBehaviorImpl();
     ret.setUrn(name);
 
+    for (var action : syntax.getActions()) {
+      ret.getStatements().add(adaptAction(action, name, projectName, notifications));
+    }
+
     return ret;
+  }
+
+  private KActorsAction adaptAction(
+      ActionSyntax action, String namespace, String projectName, List<Notification> notifications) {
+
+    var ret = new KActorsActionImpl();
+    ret.setUrn(action.getName());
+    for (var annotation : action.getAnnotations()) {
+      adaptAnnotation(annotation, namespace, projectName, KlabAsset.KnowledgeClass.BEHAVIOR);
+    }
+    for (var statement : action.getStatements()) {
+      ret.getCode().add(adaptActionStatement(statement, notifications));
+    }
+    return ret;
+  }
+
+  private KActorsStatement adaptActionStatement(
+      ActionStatementSyntax statement, List<Notification> notifications) {
+    // TODO
+    return switch (statement) {
+      case ActionStatementSyntax.Assert assertion -> {
+        yield null;
+      }
+      case ActionStatementSyntax.Assignment assign -> {
+        yield null;
+      }
+      case ActionStatementSyntax.Verb verbStatement -> {
+        yield adaptVerb(verbStatement, notifications);
+      }
+      case ActionStatementSyntax.Do doStatement -> {
+        yield null;
+      }
+      case ActionStatementSyntax.For forStatement -> {
+        yield null;
+      }
+      case ActionStatementSyntax.If ifStatement -> {
+        yield null;
+      }
+      case ActionStatementSyntax.Return returnStatement -> {
+        yield null;
+      }
+      case ActionStatementSyntax.While whileStatement -> {
+        yield null;
+      }
+      default -> throw new IllegalArgumentException("unknown action statement type");
+    };
+  }
+
+  private KActorsStatement adaptVerb(
+      ActionStatementSyntax.Verb verbStatement, List<Notification> notifications) {
+    return null;
   }
 }
