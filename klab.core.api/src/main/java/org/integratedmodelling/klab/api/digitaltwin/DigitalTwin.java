@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.*;
-import org.integratedmodelling.klab.api.digitaltwin.impl.OptionsBuilder;
+import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationBuilder;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -110,8 +110,8 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     Configuration validate() throws KlabValidationException;
 
-    static OptionsBuilder builder() {
-      return new OptionsBuilder();
+    static ConfigurationBuilder builder() {
+      return new ConfigurationBuilder();
     }
   }
 
