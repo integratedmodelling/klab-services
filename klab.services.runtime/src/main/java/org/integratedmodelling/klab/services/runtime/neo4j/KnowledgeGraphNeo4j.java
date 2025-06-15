@@ -12,9 +12,11 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -30,12 +32,10 @@ import org.integratedmodelling.klab.api.provenance.Plan;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.provenance.impl.PlanImpl;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
@@ -1106,6 +1106,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       contextInfo.setCreationTime((Long) context.get("created"));
       contextInfo.setName(context.get("name").toString());
       contextInfo.setUser(context.get("user").toString());
+
+      contextInfo.setConfiguration(
+          DigitalTwin.Configuration.builder()
+              .url(
+                  Utils.URLs.newURL(
+                      scope.getService(RuntimeService.class).getUrl()
+                          + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
+                              "{id}", context.get("id").toString())))
+              .id(contextInfo.getId())
+              .persistence(Persistence.valueOf(context.get("persistence").toString()))
+              .build()
+              .validate());
+
       contextInfos.add(contextInfo);
     }
 
