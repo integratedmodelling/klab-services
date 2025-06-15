@@ -12,6 +12,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -1111,8 +1112,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               .url(
                   Utils.URLs.newURL(
                       scope.getService(RuntimeService.class).getUrl()
-                          + "/dt/"
-                          + contextInfo.getId()))
+                          + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
+                              "{id}", context.get("id").toString())))
               .id(contextInfo.getId())
               .persistence(Persistence.valueOf(context.get("persistence").toString()))
               .build()
