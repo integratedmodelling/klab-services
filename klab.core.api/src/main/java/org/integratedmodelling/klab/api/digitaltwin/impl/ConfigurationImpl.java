@@ -2,9 +2,11 @@ package org.integratedmodelling.klab.api.digitaltwin.impl;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.scope.Persistence;
 
 import java.net.URL;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class ConfigurationImpl implements DigitalTwin.Configuration {
@@ -16,6 +18,14 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private final long timeout;
   private final TimeUnit timeoutUnit;
   private final URL url;
+  private String behavior;
+  private long creationTime;
+  private long idleTimeMs;
+  private long creditsUsed;
+  private long observations;
+  private long size;
+  private String owner;
+  private int connectedUsers;
 
   ConfigurationImpl(
       ResourcePrivileges accessRights,
@@ -62,6 +72,28 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   @Override
   public String getId() {
     return id;
+  }
+
+  @Override
+  public DigitalTwin.Configuration validate() throws KlabValidationException {
+
+    /*
+    is URL filled in?
+     */
+    if (url != null) {
+
+    /*
+    Do we have a scope ID? Was the URL specifying a different one?
+     */
+
+    }
+
+
+    /*
+    Are we asking for rights that are incompatible with the scope?
+     */
+
+    return this;
   }
 
   @Override

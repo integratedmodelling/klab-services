@@ -52,11 +52,9 @@ public interface SessionScope extends UserScope {
    * pre-exist, otherwise the named scope is returned. Only federated users in the default
    * federation session can access this option.
    *
-   * @param contextName a name for the context. Can be anything and does not uniquely identify the
-   *     context.
    * @param configuration the configuration options for the digital twin. Only federated users can
-   *     submit a pre-chosen ID.
+   *     submit a pre-chosen ID or a URL with one.
    * @return a new context, or null if the request failed
    */
-  ContextScope createContext(String contextName, DigitalTwin.Configuration configuration);
+  ContextScope createContext(DigitalTwin.Configuration configuration);
 }

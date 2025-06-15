@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.impl.OptionsBuilder;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -89,7 +90,7 @@ public interface DigitalTwin extends RuntimeAsset {
     String getName();
 
     /**
-     * Passing a ID is only allowed if the user is federated, so that the digital twin identity can
+     * Passing an ID is only allowed if the user is federated, so that the digital twin identity can
      * be assigned in a coordinated way among federated users. Any pre-existing DT with ID <code>
      * <federation_id>/<requested-id></code> will be usable by all members of the federation; the DT
      * will be created if not existing using the remaining options. The latter will be ignored if
@@ -98,6 +99,16 @@ public interface DigitalTwin extends RuntimeAsset {
      * @return
      */
     String getId();
+
+    /**
+     * Used at client side before a scope request is made. This should add anything implied by the
+     * current scope that wasn't filled or throw an exception if any of the settings requested are
+     * inconsistent.
+     *
+     * @return the same object or a new one with valid and complete settings
+     * @throws KlabValidationException if any settings are inconsistent with the scope
+     */
+    Configuration validate() throws KlabValidationException;
 
     static OptionsBuilder builder() {
       return new OptionsBuilder();

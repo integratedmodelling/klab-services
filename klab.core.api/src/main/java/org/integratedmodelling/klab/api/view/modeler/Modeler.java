@@ -138,10 +138,10 @@ public interface Modeler extends UIController {
   /**
    * Create a new context and make it current. Throw an exception if there is no current session.
    *
-   * @param contextName
+   * @param configuration
    * @return
    */
-  ContextScope openNewContext(String contextName, DigitalTwin.Configuration configuration);
+  ContextScope openNewContext(DigitalTwin.Configuration configuration);
 
   /**
    * Make the passed session the current one.

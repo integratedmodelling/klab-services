@@ -64,11 +64,9 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     }
 
     @Override
-    public ContextScope createContext(String contextName, DigitalTwin.Configuration configuration) {
+    public ContextScope createContext(DigitalTwin.Configuration configuration) {
 
         final ServiceContextScope ret = new ServiceContextScope(this, configuration);
-
-        ret.setName(contextName);
         ret.setServices(
                 new ArrayList<ResourcesService>(getServices(ResourcesService.class)),
                 new ArrayList<>(getServices(Resolver.class)),

@@ -148,6 +148,9 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
+    if (scope instanceof ClientContextScope clientContextScope) {
+      request.setConfiguration(clientContextScope.getConfiguration());
+    }
 
     var runtime = scope.getService(RuntimeService.class);
     var hasMessaging =

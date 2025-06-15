@@ -264,7 +264,7 @@ public class KlabScopeController {
           reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));
         }
 
-        var ret = sessionScope.createContext(request.getName(), request.getConfiguration());
+        var ret = sessionScope.createContext(request.getConfiguration());
 
         if (ret instanceof ServiceContextScope serviceContextScope) {
 

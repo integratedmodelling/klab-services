@@ -38,15 +38,13 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
    * The default client scope has the user as the embedded agent.
    *
    * @param parent
-   * @param contextName
    * @param runtimeService
    */
   public ClientContextScope(
       ClientUserScope parent,
-      String contextName,
       RuntimeService runtimeService,
       DigitalTwin.Configuration configuration) {
-    super(parent, contextName, runtimeService);
+    super(parent, configuration.getName(), runtimeService);
     this.configuration = configuration;
     resolutionConstraints.put(
         ResolutionConstraint.Type.Provenance,
@@ -372,4 +370,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         + ")";
   }
 
+  public DigitalTwin.Configuration getConfiguration() {
+    return configuration;
+  }
 }

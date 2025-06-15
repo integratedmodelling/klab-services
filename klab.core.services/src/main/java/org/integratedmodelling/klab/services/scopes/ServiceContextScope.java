@@ -129,6 +129,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.resolutionCache = new HashMap<>();
     this.jobManager = parent.jobManager;
     this.configuration = configuration;
+    this.setName(configuration.getName());
     this.observationCache =
         CacheBuilder.newBuilder()
             .maximumSize(MAX_CACHED_OBSERVATIONS)

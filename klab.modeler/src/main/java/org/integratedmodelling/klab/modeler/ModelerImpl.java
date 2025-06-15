@@ -392,11 +392,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   @Override
-  public ContextScope openNewContext(String contextName, DigitalTwin.Configuration configuration) {
+  public ContextScope openNewContext(DigitalTwin.Configuration configuration) {
     if (currentSession == null) {
       return null;
     }
-    var ret = currentSession.createContext(contextName, configuration);
+    var ret = currentSession.createContext(configuration);
     if (ret != null) {
       contexts.add(currentSession, ret);
       dispatch(
@@ -444,7 +444,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
 
     if (currentContext == null && currentSession != null) {
-      currentContext = openNewContext("Digital Twin " + (++contextCount), defaultDigitalTwinConfiguration());
+      currentContext =
+          openNewContext(defaultDigitalTwinConfiguration("Digital Twin " + (++contextCount)));
     }
 
     if (currentContext == null) {
@@ -454,8 +455,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     return currentContext;
   }
 
-  private DigitalTwin.Configuration defaultDigitalTwinConfiguration() {
+  private DigitalTwin.Configuration defaultDigitalTwinConfiguration(String name) {
     return DigitalTwin.Configuration.builder()
+        .name(name)
         .accessRights(ResourcePrivileges.create(user()))
         .persistence(Persistence.IDLE_TIMEOUT)
         .build();
