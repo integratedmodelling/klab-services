@@ -243,34 +243,9 @@ public interface KlabService extends Service {
      */
     URL getUrl();
 
-    //    /**
-    //     * Messaging queues listed here are available for user scopes only if the capabilities are
-    //     * retrieved by a privileged user (normally a local, exclusive user or an authorized
-    //     * administrator). These are used in all send() methods invoked on an authorized user
-    // scope.
-    //     * This may return an empty set without jeopardizing the ability to instrument session and
-    //     * context scopes with messaging, as long as {@link #getBrokerURI()} returns a valid URI.
-    //     *
-    //     * @return the set of messaging queues published by this service for the requesting user,
-    // in the
-    //     *     form <code>username.queuetype</code>.
-    //     */
-    //    Set<Message.Queue> getAvailableMessagingQueues();
-
     Map<String, List<ResourceTransport.Schema>> getExportSchemata();
 
     Map<String, List<ResourceTransport.Schema>> getImportSchemata();
-
-    //    /**
-    //     * URI for the message broker. If null, the service doesn't have messaging capabilities
-    // and will
-    //     * not enable distributed digital twin functionalities. If this isn't null, messaging can
-    // be
-    //     * added to scopes.
-    //     *
-    //     * @return the broker URL or null
-    //     */
-    //    URI getBrokerURI();
 
     List<Extensions.ComponentDescriptor> getComponents();
   }
@@ -369,23 +344,6 @@ public interface KlabService extends Service {
    * @return the ID of the new context scope created at server side, or null in case of failure.
    */
   String registerContext(ContextScope contextScope, Federation federation);
-
-//  /**
-//   * Exclusive status means that the service is either an application started by the requesting JVM
-//   * or a client to a server exclusively dedicate to the running application. If a service is
-//   * exclusive, we can be sure that all endpoints are available, including the administrative ones,
-//   * and we should prepare to take care of all needed initialization and maintenance if we change
-//   * content that are relevant to this service.
-//   *
-//   * <p>Exclusive status can be checked in clients when the access token used is the service secret
-//   * only available on the same filesystem as the service. For services exposed to the network, it
-//   * implies that some kind of locking has been done by an authorized client, or that the
-//   * configuration guarantees exclusive use (including refusing connections from non-exclusive
-//   * clients).
-//   *
-//   * @return true if exclusive
-//   */
-//  boolean isExclusive();
 
   /**
    * Get the access rights for the passed resource. If the resource does not exist or is

@@ -7,12 +7,13 @@ public class ContextInfo {
 
   private String name;
   private String id;
+  private String description;
   private String behavior;
   private long creationTime;
   private long idleTimeMs;
   private Persistence persistence;
   private long creditsSoFar;
-  private long observations;
+  private long observationCount;
   private long size;
   private String user;
   private DigitalTwin.Configuration configuration;
@@ -73,12 +74,12 @@ public class ContextInfo {
     this.name = name;
   }
 
-  public long getObservations() {
-    return observations;
+  public long getObservationCount() {
+    return observationCount;
   }
 
-  public void setObservations(long observations) {
-    this.observations = observations;
+  public void setObservationCount(long observationCount) {
+    this.observationCount = observationCount;
   }
 
   public long getSize() {
@@ -103,5 +104,13 @@ public class ContextInfo {
 
   public void setConfiguration(DigitalTwin.Configuration configuration) {
     this.configuration = configuration;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
   }
 }

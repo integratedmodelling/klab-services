@@ -414,6 +414,15 @@ public interface ContextScope extends SessionScope {
   <T> List<T> getConstraints(ResolutionConstraint.Type type, Class<T> resultClass);
 
   /**
+   * The {@link DigitalTwin.Configuration} that this scope was created with. The configuration will
+   * pre-exist to the {@link DigitalTwin} itself, so this is exposed at the scope level for
+   * registration purposes.
+   *
+   * @return
+   */
+  DigitalTwin.Configuration getDigitalTwinConfiguration();
+
+  /**
    * A data structure incorporating the results of parsing a scope token string into all its
    * possible components. The scope token is added to requests that need a scope below UserScope
    * through the {@link org.integratedmodelling.klab.api.ServicesAPI#SCOPE_HEADER} HTTP request

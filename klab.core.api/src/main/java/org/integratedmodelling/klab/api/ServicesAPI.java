@@ -355,11 +355,13 @@ public interface ServicesAPI {
 
     String GET_SESSION_INFO = "/sessions";
 
+    String DIGITAL_TWIN_PREFIX = "/dt/";
+
     /**
      * The endpoint for digital twin access. With JSON media type, this will send the top-level DT
      * information. With HTML media type, this will return the DT's explorer application.
      */
-    String DIGITAL_TWIN = "/dt/{id}";
+    String DIGITAL_TWIN = DIGITAL_TWIN_PREFIX + "{id}";
 
     /**
      * PUT endpoint to ingest and start resolving an observation. Returns the observation ID that

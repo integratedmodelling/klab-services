@@ -226,6 +226,7 @@ public class ResourcesClient extends ServiceClient
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
+    request.setConfiguration(scope.getDigitalTwinConfiguration());
 
     var runtime = scope.getService(RuntimeService.class);
     var hasMessaging =

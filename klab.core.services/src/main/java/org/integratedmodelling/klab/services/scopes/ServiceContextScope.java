@@ -449,6 +449,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
+  public DigitalTwin.Configuration getDigitalTwinConfiguration() {
+    return configuration;
+  }
+
+  @Override
   public boolean initializeAgents(String scopeId) {
     // setting the ID here is dirty as technically this is still being set and will be set again
     // later,

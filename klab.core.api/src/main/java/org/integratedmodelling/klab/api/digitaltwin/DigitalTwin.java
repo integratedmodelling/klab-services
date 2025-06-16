@@ -27,6 +27,7 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
@@ -105,10 +106,12 @@ public interface DigitalTwin extends RuntimeAsset {
      * current scope that wasn't filled or throw an exception if any of the settings requested are
      * inconsistent.
      *
+     * @param scope the scope to validate against. According to the scope class the validation may
+     *     be different.
      * @return the same object or a new one with valid and complete settings
      * @throws KlabValidationException if any settings are inconsistent with the scope
      */
-    Configuration validate() throws KlabValidationException;
+    Configuration validate(Scope scope) throws KlabValidationException;
 
     static ConfigurationBuilder builder() {
       return new ConfigurationBuilder();

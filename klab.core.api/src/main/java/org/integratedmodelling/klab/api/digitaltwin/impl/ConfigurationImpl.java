@@ -1,9 +1,12 @@
 package org.integratedmodelling.klab.api.digitaltwin.impl;
 
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.scope.Persistence;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 
 import java.net.URL;
 import java.util.List;
@@ -11,13 +14,13 @@ import java.util.concurrent.TimeUnit;
 
 public class ConfigurationImpl implements DigitalTwin.Configuration {
 
-  private final ResourcePrivileges accessRights;
-  private final Persistence persistence;
-  private final String name;
-  private final String id;
-  private final long timeout;
-  private final TimeUnit timeoutUnit;
-  private final URL url;
+  private ResourcePrivileges accessRights;
+  private Persistence persistence;
+  private String name;
+  private String id;
+  private long timeout;
+  private TimeUnit timeoutUnit;
+  private URL url;
   private String behavior;
   private long creationTime;
   private long idleTimeMs;
@@ -26,6 +29,9 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private long size;
   private String owner;
   private int connectedUsers;
+
+  // for the object mapper, do not remove
+  ConfigurationImpl() {}
 
   ConfigurationImpl(
       ResourcePrivileges accessRights,
@@ -75,23 +81,42 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   }
 
   @Override
-  public DigitalTwin.Configuration validate() throws KlabValidationException {
+  public DigitalTwin.Configuration validate(Scope scope) throws KlabValidationException {
+
+    var statedScopeID = this.id;
 
     /*
     is URL filled in?
      */
     if (url != null) {
 
-    /*
-    Do we have a scope ID? Was the URL specifying a different one?
-     */
-
+      /*
+      Do we have a scope ID? Was the URL specifying a different one?
+       */
+      if (url.getPath().startsWith(ServicesAPI.RUNTIME.DIGITAL_TWIN_PREFIX)) {
+        var urlId = url.getPath().substring(ServicesAPI.RUNTIME.DIGITAL_TWIN_PREFIX.length());
+        if (statedScopeID != null && !statedScopeID.equals(urlId)) {
+          throw new KlabValidationException("URL path and scope ID do not match");
+        } else {
+          this.id = statedScopeID = urlId;
+        }
+      }
     }
 
+    switch (scope.getType()) {
+      case SESSION -> {}
+      case CONTEXT -> {}
+      case USER -> {}
+      default ->
+          throw new KlabValidationException(
+              "Cannot validate a digital twin configuration against a scope of type: "
+                  + scope.getType());
+    }
 
     /*
     Are we asking for rights that are incompatible with the scope?
      */
+    if (this.accessRights == null) {}
 
     return this;
   }

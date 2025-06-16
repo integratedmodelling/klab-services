@@ -34,7 +34,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
 
-//  private GraphQLClient graphClient;
+  //  private GraphQLClient graphClient;
 
   public static RuntimeClient create(
       URL url, Identity identity, Parameters<Engine.Setting> settings) {
@@ -74,8 +74,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   @Override
   public final String connect(BiConsumer<ServiceStatus, Boolean>... messageBiConsumers) {
     var ret = super.connect(messageBiConsumers);
-//    this.graphClient =
-//        new GraphQLClient(this.getUrl() + ServicesAPI.RUNTIME.DIGITAL_TWIN_GRAPH, ret);
+    //    this.graphClient =
+    //        new GraphQLClient(this.getUrl() + ServicesAPI.RUNTIME.DIGITAL_TWIN_GRAPH, ret);
     return ret;
   }
 
@@ -148,9 +148,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
-    if (scope instanceof ClientContextScope clientContextScope) {
-      request.setConfiguration(clientContextScope.getConfiguration());
-    }
+    request.setConfiguration(scope.getDigitalTwinConfiguration());
 
     var runtime = scope.getService(RuntimeService.class);
     var hasMessaging =
@@ -322,7 +320,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         .post(ServicesAPI.RUNTIME.RESOLVE_CONTEXTUALIZERS, request, ResourceSet.class);
   }
 
-//  public GraphQLClient graphClient() {
-//    return graphClient;
-//  }
+  //  public GraphQLClient graphClient() {
+  //    return graphClient;
+  //  }
 }

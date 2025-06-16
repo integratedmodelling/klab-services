@@ -76,7 +76,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
      * that hosts it.
      */
     var ret =
-        new ClientContextScope(this, runtime, configuration.validate()) {
+        new ClientContextScope(this, runtime, configuration.validate(this)) {
 
           @Override
           public <T extends KlabService> T getService(Class<T> serviceClass) {
