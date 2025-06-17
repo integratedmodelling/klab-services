@@ -25,10 +25,7 @@ import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Persistence;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -614,6 +611,12 @@ public class RuntimeService extends BaseService
   @Override
   public List<SessionInfo> getSessionInfo(Scope scope) {
     return knowledgeGraph.getSessionInfo(scope);
+  }
+
+  @Override
+  public ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
+    // TODO for now we just return the existing. Later we should create it if the user is enabled
+    return getScopeManager().getScope(configuration.getId(), ContextScope.class);
   }
 
   @Override

@@ -167,15 +167,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return this.observer;
   }
 
-  @Override
-  public boolean isConsistent() {
-    return false;
-  }
-
-  @Override
-  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
-    return List.of();
-  }
+//  @Override
+//  public boolean isConsistent() {
+//    return false;
+//  }
+//
+//  @Override
+//  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
+//    return List.of();
+//  }
 
   @Override
   public <T extends Observation> Collection<T> getPerspectives(Observable observable) {

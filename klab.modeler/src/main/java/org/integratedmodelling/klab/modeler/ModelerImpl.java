@@ -392,6 +392,24 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   @Override
+  public ContextScope connect(DigitalTwin.Configuration configuration) {
+    for (var session : getOpenSessions()) {
+      if (configuration.getId().startsWith(session.getId() + ".")) {
+        for (var context : session.getActiveContexts()) {
+          if (configuration.getId().equals(context.getId())) {
+            return context;
+          }
+        }
+      }
+    }
+    var ret = user().connect(configuration);
+    if (ret != null) {
+      contexts.add(ret.getParentScope(Scope.Type.SESSION, SessionScope.class), ret);
+    }
+    return ret;
+  }
+
+  @Override
   public ContextScope openNewContext(DigitalTwin.Configuration configuration) {
     if (currentSession == null) {
       return null;

@@ -41,7 +41,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
    * @param runtimeService
    */
   public ClientContextScope(
-      ClientUserScope parent,
+      ClientSessionScope parent,
       RuntimeService runtimeService,
       DigitalTwin.Configuration configuration) {
     super(parent, configuration.getName(), runtimeService);
@@ -200,6 +200,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
   @Override
   public void close() {
+    ClientScopeManager.INSTANCE.unregister(this);
     var runtime = getService(RuntimeService.class);
     if (runtime != null) {
       runtime.releaseContext(this);
@@ -208,16 +209,16 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
   }
 
-  @Override
-  public boolean isConsistent() {
-    return false;
-  }
-
-  @Override
-  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
-    return List.of();
-  }
-
+//  @Override
+//  public boolean isConsistent() {
+//    return false;
+//  }
+//
+//  @Override
+//  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
+//    return List.of();
+//  }
+//
   @Override
   public <T extends Observation> Collection<T> getPerspectives(Observable observable) {
     return List.of();

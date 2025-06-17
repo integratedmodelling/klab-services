@@ -99,6 +99,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
 
     if (id != null) {
       ret.setId(id);
+      ClientScopeManager.INSTANCE.register(ret);
     }
 
     return ret;
@@ -106,6 +107,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
 
   @Override
   public void close() {
+    ClientScopeManager.INSTANCE.unregister(this);
     closeMessaging();
     var runtime = getService(RuntimeService.class);
     if (runtime != null) {
