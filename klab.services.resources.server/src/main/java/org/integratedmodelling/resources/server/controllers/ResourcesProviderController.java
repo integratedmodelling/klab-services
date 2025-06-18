@@ -1,5 +1,9 @@
 package org.integratedmodelling.resources.server.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -50,7 +54,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @Secured(Role.USER)
-@Tag(name = "Resources service core API")
+@Tag(name = "Resources service core API", description = "Endpoints for managing k.LAB resources, namespaces, and knowledge assets")
 public class ResourcesProviderController {
 
   @Autowired private ResourcesServer resourcesServer;
@@ -65,9 +69,20 @@ public class ResourcesProviderController {
    * @param principal
    * @return the resources to load to ingest the knowledge included in the requested projects
    */
+  @Operation(
+      summary = "Resolve projects",
+      description = "Retrieve all knowledge included in one or more projects with their versions in dependency order"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Projects resolved successfully"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.RESOLVE_PROJECTS)
   public @ResponseBody List<ResourceSet> resolveProjects(
-      @RequestParam Collection<String> projects, Principal principal) {
+      @Parameter(description = "Project identifiers to resolve") 
+      @RequestParam Collection<String> projects,
+      Principal principal) {
     return resourcesServer
         .klabService()
         .resolveProjects(
@@ -77,9 +92,21 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  @Operation(
+      summary = "Resolve model",
+      description = "Resolve a k.LAB model by its name"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Model resolved successfully"),
+      @ApiResponse(responseCode = "404", description = "Model not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.RESOLVE_MODEL)
   public @ResponseBody ResourceSet resolveModel(
-      @PathVariable("modelName") String modelName, Principal principal) {
+      @Parameter(description = "Name of the model to resolve")
+      @PathVariable("modelName") String modelName, 
+      Principal principal) {
     return resourcesServer
         .klabService()
         .resolveModel(
@@ -89,8 +116,21 @@ public class ResourcesProviderController {
                 : null);
   }
 
-  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_URN)
-  public @ResponseBody ResourceSet resolve(@PathVariable("urn") String urn, Principal principal) {
+  @Operation(
+      summary = "Resolve URN",
+      description = "Resolve a resource by its URN identifier"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Resource resolved successfully"),
+      @ApiResponse(responseCode = "404", description = "Resource not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_URN)  
+  public @ResponseBody ResourceSet resolve(
+      @Parameter(description = "URN of the resource to resolve")
+      @PathVariable("urn") String urn,
+      Principal principal) {
     return resourcesServer
         .klabService()
         .resolve(
@@ -100,9 +140,21 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  @Operation(
+      summary = "Retrieve namespace",
+      description = "Get a k.LAB namespace by its URN"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Namespace retrieved successfully"), 
+      @ApiResponse(responseCode = "404", description = "Namespace not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_NAMESPACE)
   public @ResponseBody KimNamespace retrieveNamespace(
-      @PathVariable("urn") String urn, Principal principal) {
+      @Parameter(description = "URN of the namespace to retrieve")
+      @PathVariable("urn") String urn,
+      Principal principal) {
     return resourcesServer
         .klabService()
         .retrieveNamespace(
@@ -112,9 +164,21 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  @Operation(
+      summary = "Retrieve ontology",
+      description = "Get a k.LAB ontology by its URN"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Ontology retrieved successfully"),
+      @ApiResponse(responseCode = "404", description = "Ontology not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_ONTOLOGY)
   public @ResponseBody KimOntology retrieveOntology(
-      @PathVariable("urn") String urn, Principal principal) {
+      @Parameter(description = "URN of the ontology to retrieve")
+      @PathVariable("urn") String urn,
+      Principal principal) {
     return resourcesServer
         .klabService()
         .retrieveOntology(
@@ -124,8 +188,21 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  
+  
+  @Operation(
+      summary = "Retrieve observation strategy document",
+      description = "Get a k.LAB observation strategy document by its URN"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Document retrieved successfully"),
+      @ApiResponse(responseCode = "404", description = "Document not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_OBSERVATION_STRATEGY_DOCUMENT)
   public @ResponseBody KimObservationStrategyDocument resolveObservationStrategyDocument(
+      @Parameter(description = "URN of the document to retrieve")
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
@@ -136,13 +213,33 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  @Operation(
+      summary = "List workspaces",
+      description = "Get a list of all available k.LAB workspaces"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Workspaces listed successfully"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.LIST_WORKSPACES)
   public @ResponseBody Collection<Workspace> listWorkspaces() {
     return resourcesServer.klabService().listWorkspaces();
   }
 
+  @Operation(
+      summary = "Retrieve behavior",
+      description = "Get a k.LAB behavior by its URN"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Behavior retrieved successfully"),
+      @ApiResponse(responseCode = "404", description = "Behavior not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_BEHAVIOR)
   public @ResponseBody KActorsBehavior retrieveBehavior(
+      @Parameter(description = "URN of the behavior to retrieve")
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
@@ -153,9 +250,21 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  @Operation(
+      summary = "Retrieve resource", 
+      description = "Get a k.LAB resource by its URN list"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Resource retrieved successfully"),
+      @ApiResponse(responseCode = "404", description = "Resource not found"), 
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @PostMapping(ServicesAPI.RESOURCES.RETRIEVE_RESOURCE)
   public @ResponseBody Resource retrieveResource(
-      @RequestBody List<String> urns, Principal principal) {
+      @Parameter(description = "List of URNs identifying the resource")
+      @RequestBody List<String> urns,
+      Principal principal) {
     return resourcesServer
         .klabService()
         .retrieveResource(
@@ -165,9 +274,21 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  @Operation(
+      summary = "Contextualize resource",
+      description = "Contextualize a k.LAB resource given a contextualization request"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Resource contextualized successfully"),
+      @ApiResponse(responseCode = "400", description = "Invalid request"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @PostMapping(ServicesAPI.RESOURCES.CONTEXTUALIZE_RESOURCE)
   public @ResponseBody Resource contextualizeResource(
-      @RequestBody ResourceContextualizationRequest request, Principal principal) {
+      @Parameter(description = "Resource contextualization request details")
+      @RequestBody ResourceContextualizationRequest request,
+      Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       return resourcesServer
           .klabService()
@@ -181,8 +302,19 @@ public class ResourcesProviderController {
     throw new KlabInternalErrorException("Resources service: unexpected authorization");
   }
 
+  @Operation(
+      summary = "Resolve resource",
+      description = "Resolve a k.LAB resource by list of URNs"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Resource resolved successfully"),
+      @ApiResponse(responseCode = "404", description = "Resource not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @PostMapping(ServicesAPI.RESOURCES.RESOLVE_RESOURCE)
   public @ResponseBody ResourceSet resolveResource(
+      @Parameter(description = "List of URNs to resolve")
       @RequestBody List<String> urns, Principal principal) {
     return resourcesServer
         .klabService()
@@ -193,8 +325,19 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  @Operation(
+      summary = "Retrieve workspace",
+      description = "Get a k.LAB workspace by its URN"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Workspace retrieved successfully"),
+      @ApiResponse(responseCode = "404", description = "Workspace not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_WORKSPACE)
   public @ResponseBody Workspace resolveWorkspace(
+      @Parameter(description = "URN of the workspace to retrieve")
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
@@ -205,9 +348,21 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  @Operation(
+      summary = "Resolve service call",
+      description = "Resolve a k.LAB service call by name and optional version"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Service call resolved successfully"),
+      @ApiResponse(responseCode = "404", description = "Service call not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.RESOLVE_SERVICE_CALL)
   public @ResponseBody ResourceSet resolveServiceCall(
+      @Parameter(description = "Name of the service call")
       @PathVariable("name") String name,
+      @Parameter(description = "Optional version of the service call")
       @PathVariable(value = "version", required = false) String version,
       Principal principal) {
     Version v = version == null ? null : Version.create(version);
@@ -221,8 +376,19 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  @Operation(
+      summary = "Get resource info",
+      description = "Get information about a k.LAB resource by its URN"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Resource info retrieved successfully"),
+      @ApiResponse(responseCode = "404", description = "Resource not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"), 
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.RESOURCE_INFO)
   public @ResponseBody ResourceInfo getResourceInfo(
+      @Parameter(description = "URN of the resource")
       @PathVariable("urn") String urn, Principal principal) {
     return resourcesServer
         .klabService()
@@ -233,9 +399,21 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  @Operation(
+      summary = "Set resource info",
+      description = "Update information about a k.LAB resource"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Resource info updated successfully"),
+      @ApiResponse(responseCode = "404", description = "Resource not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @PostMapping(ServicesAPI.RESOURCES.RESOURCE_INFO)
   public boolean setResourceInfo(
+      @Parameter(description = "URN of the resource")
       @PathVariable("urn") String urn,
+      @Parameter(description = "Updated resource information")
       @RequestBody ResourceInfo resourceInfo,
       Principal principal) {
     return resourcesServer
@@ -248,20 +426,54 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  @Operation(
+      summary = "Retrieve observable",
+      description = "Get a k.LAB observable by its definition"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Observable retrieved successfully"),
+      @ApiResponse(responseCode = "404", description = "Observable not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_OBSERVABLE)
   public @ResponseBody KimObservable resolveObservable(
+      @Parameter(description = "Definition of the observable")
       @RequestParam("definition") String definition) {
     return resourcesServer.klabService().retrieveObservable(definition);
   }
 
+  @Operation(
+      summary = "Describe concept",
+      description = "Get a descriptor for a k.LAB concept by its URN"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Concept descriptor retrieved successfully"),
+      @ApiResponse(responseCode = "404", description = "Concept not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.DESCRIBE_CONCEPT)
   public @ResponseBody KimConcept.Descriptor describeConcept(
+      @Parameter(description = "URN of the concept")
       @PathVariable("conceptUrn") String conceptUrn) {
     return resourcesServer.klabService().describeConcept(conceptUrn);
   }
 
+  @Operation(
+      summary = "Retrieve concept",
+      description = "Get a k.LAB concept by its definition"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Concept retrieved successfully"),
+      @ApiResponse(responseCode = "404", description = "Concept not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_CONCEPT)
-  public @ResponseBody KimConcept resolveConcept(@PathVariable("definition") String definition) {
+  public @ResponseBody KimConcept resolveConcept(
+      @Parameter(description = "Definition of the concept")
+      @PathVariable("definition") String definition) {
     return resourcesServer.klabService().retrieveConcept(definition);
   }
 
@@ -348,13 +560,33 @@ public class ResourcesProviderController {
                 : null);
   }
 
+  @Operation(
+      summary = "Get worldview",
+      description = "Retrieve the current k.LAB worldview"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Worldview retrieved successfully"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_WORLDVIEW)
   public @ResponseBody Worldview getWorldview() {
     return resourcesServer.klabService().retrieveWorldview();
   }
 
+  @Operation(
+      summary = "Get dependents",
+      description = "Get all namespaces that depend on the specified namespace"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Dependents retrieved successfully"),
+      @ApiResponse(responseCode = "404", description = "Namespace not found"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
   @GetMapping(ServicesAPI.RESOURCES.DEPENDENTS)
   public @ResponseBody List<KimNamespace> dependents(
+      @Parameter(description = "ID of the namespace")
       @PathVariable("namespaceId") String namespaceId) {
     return resourcesServer.klabService().dependents(namespaceId);
   }
