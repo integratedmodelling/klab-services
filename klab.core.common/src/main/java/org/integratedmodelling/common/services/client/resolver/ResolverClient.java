@@ -201,6 +201,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
+    request.setConfiguration(scope.getDigitalTwinConfiguration());
 
     var runtime = scope.getService(RuntimeService.class);
     var hasMessaging =

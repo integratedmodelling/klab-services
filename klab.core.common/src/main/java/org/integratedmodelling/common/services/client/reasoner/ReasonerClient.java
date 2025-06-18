@@ -830,6 +830,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
+    request.setConfiguration(scope.getDigitalTwinConfiguration());
 
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel

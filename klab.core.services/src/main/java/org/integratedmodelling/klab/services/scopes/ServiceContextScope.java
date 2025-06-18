@@ -129,6 +129,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.resolutionCache = new HashMap<>();
     this.jobManager = parent.jobManager;
     this.configuration = configuration;
+    this.setName(configuration.getName());
     this.observationCache =
         CacheBuilder.newBuilder()
             .maximumSize(MAX_CACHED_OBSERVATIONS)
@@ -166,15 +167,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return this.observer;
   }
 
-  @Override
-  public boolean isConsistent() {
-    return false;
-  }
-
-  @Override
-  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
-    return List.of();
-  }
+//  @Override
+//  public boolean isConsistent() {
+//    return false;
+//  }
+//
+//  @Override
+//  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
+//    return List.of();
+//  }
 
   @Override
   public <T extends Observation> Collection<T> getPerspectives(Observable observable) {
@@ -445,6 +446,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       return List.of();
     }
     return constraint.payload(resultClass);
+  }
+
+  @Override
+  public DigitalTwin.Configuration getDigitalTwinConfiguration() {
+    return configuration;
   }
 
   @Override

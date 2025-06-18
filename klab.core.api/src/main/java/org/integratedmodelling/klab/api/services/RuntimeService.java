@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -13,6 +14,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
@@ -171,7 +173,7 @@ public interface RuntimeService extends KlabService {
   interface Capabilities extends ServiceCapabilities {
     Storage.Type getDefaultStorageType();
 
-      Set<CRUDOperation> getPermissions();
+    Set<CRUDOperation> getPermissions();
   }
 
   /**
@@ -191,6 +193,15 @@ public interface RuntimeService extends KlabService {
    * @return the list of sessions with their contexts
    */
   List<SessionInfo> getSessionInfo(Scope scope);
+
+  /**
+   * Establishes a connection to a specific context within the designated session scope. This should
+   * not return null as long as the user scope has rights to the digital twin and the knowledge
+   * graph contains it.
+   *
+   * @return the context scope that represents the connected context, or null
+   */
+  ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope);
 
   /**
    * Release the passed session, releasing any context scopes created in it.

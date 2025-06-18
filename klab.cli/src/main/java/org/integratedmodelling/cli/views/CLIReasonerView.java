@@ -131,9 +131,7 @@ public class CLIReasonerView {
       ContextScope ctx =
           context == null
               ? KlabCLI.INSTANCE.modeler().getCurrentContext()
-              : KlabCLI.INSTANCE
-                  .modeler()
-                  .openNewContext(context, defaultDigitalTwinConfiguration());
+              : KlabCLI.INSTANCE.modeler().openNewContext(defaultDigitalTwinConfiguration());
 
       if (within != null) {
         // TODO find the context observation and switch the context to it. If a dot,

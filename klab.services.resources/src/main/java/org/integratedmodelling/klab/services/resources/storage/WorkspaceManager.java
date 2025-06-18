@@ -1157,7 +1157,10 @@ public class WorkspaceManager {
       _behaviorMap = new HashMap<>();
       // TODO load them from all projects in dependency order, same as ontologies; fill in the URL
       //  cache and everything
-      for (var pd : projectDescriptors.values()) {
+      for (var projectName : projectDescriptors.keySet()) {
+
+        var pd = projectDescriptors.get(projectName);
+
         if (pd.externalProject == null) {
 
           for (var behaviorUrl :
@@ -1221,7 +1224,8 @@ public class WorkspaceManager {
 
                 if (!errors.get()) {
                   var document =
-                      LanguageAdapter.INSTANCE.adaptBehavior(syntax, pd.name, notifications);
+                      LanguageAdapter.INSTANCE.adaptBehavior(
+                          syntax, pd.name, projectName, notifications);
                   _behaviorOrder.add(document);
                   _behaviorMap.put(document.getUrn(), document);
                 }
@@ -1230,7 +1234,7 @@ public class WorkspaceManager {
               // log error and return failure
               scope.error(
                   "Error loading k.Actors behavior " + behaviorUrl,
-//                  Klab.ErrorCode.READ_FAILED,
+                  //                  Klab.ErrorCode.READ_FAILED,
                   Klab.ErrorContext.BEHAVIOR);
             }
           }

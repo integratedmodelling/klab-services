@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Schedule;
+import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
@@ -402,7 +403,7 @@ public interface GraphModel {
 
   /**
    * Digital twin descriptor for JSON communication. This is returned by the {@link
-   * org.integratedmodelling.klab.api.ServicesAPI.RUNTIME#DIGITAL_TWIN_GRAPH} call, with depth of
+   * org.integratedmodelling.klab.api.ServicesAPI.RUNTIME#DIGITAL_TWIN} call, with depth of
    * info depending on call parameters.
    */
   class DigitalTwin {
@@ -411,7 +412,6 @@ public interface GraphModel {
     private KnowledgeGraph knowledgeGraph;
     private Schedule schedule;
     private List<Notification> notifications = new ArrayList<>();
-
     public org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Configuration
         getConfiguration() {
       return configuration;

@@ -92,6 +92,15 @@ public interface Modeler extends UIController {
   CompletableFuture<Observation> observe(Object asset, boolean adding);
 
   /**
+   * Connect to the passed digital twin, checking first if the scope is already known. If not, call
+   * user().connect(configuration).
+   *
+   * @param configuration
+   * @return
+   */
+  ContextScope connect(DigitalTwin.Configuration configuration);
+
+  /**
    * Return all the open sessions for the current user.
    *
    * @return
@@ -138,10 +147,10 @@ public interface Modeler extends UIController {
   /**
    * Create a new context and make it current. Throw an exception if there is no current session.
    *
-   * @param contextName
+   * @param configuration
    * @return
    */
-  ContextScope openNewContext(String contextName, DigitalTwin.Configuration configuration);
+  ContextScope openNewContext(DigitalTwin.Configuration configuration);
 
   /**
    * Make the passed session the current one.

@@ -14,6 +14,8 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.Federation;
@@ -21,20 +23,18 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.provenance.Provenance;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceSideScope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
 
-//  private GraphQLClient graphClient;
+  //  private GraphQLClient graphClient;
 
   public static RuntimeClient create(
       URL url, Identity identity, Parameters<Engine.Setting> settings) {
@@ -74,8 +74,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   @Override
   public final String connect(BiConsumer<ServiceStatus, Boolean>... messageBiConsumers) {
     var ret = super.connect(messageBiConsumers);
-//    this.graphClient =
-//        new GraphQLClient(this.getUrl() + ServicesAPI.RUNTIME.DIGITAL_TWIN_GRAPH, ret);
+    //    this.graphClient =
+    //        new GraphQLClient(this.getUrl() + ServicesAPI.RUNTIME.DIGITAL_TWIN_GRAPH, ret);
     return ret;
   }
 
@@ -148,6 +148,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
+    request.setConfiguration(scope.getDigitalTwinConfiguration());
 
     var runtime = scope.getService(RuntimeService.class);
     var hasMessaging =
@@ -259,6 +260,31 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   }
 
   @Override
+  public ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
+    var descriptor =
+        client
+            .withScope(userScope)
+            .get(
+                ServicesAPI.RUNTIME.DIGITAL_TWIN,
+                GraphModel.DigitalTwin.class,
+                "id",
+                configuration.getId());
+
+    if (descriptor != null && !Utils.Notifications.hasErrors(descriptor.getNotifications())) {
+      // TODO reconstruct session scope
+      // TODO reconstruct context scope
+    } else if (descriptor == null) {
+      userScope.error(
+          "Remote context named " + configuration.getName() + " is not existent or available.");
+    } else {
+      for (Notification notification : descriptor.getNotifications()) {
+        userScope.send(notification);
+      }
+    }
+    return null;
+  }
+
+  @Override
   public boolean releaseSession(SessionScope scope) {
     try {
       return client.withScope(scope).get(ServicesAPI.RELEASE_SESSION, Boolean.class);
@@ -319,7 +345,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         .post(ServicesAPI.RUNTIME.RESOLVE_CONTEXTUALIZERS, request, ResourceSet.class);
   }
 
-//  public GraphQLClient graphClient() {
-//    return graphClient;
-//  }
+  //  public GraphQLClient graphClient() {
+  //    return graphClient;
+  //  }
 }

@@ -57,7 +57,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
   }
 
   @Override
-  public ContextScope createContext(String contextName, DigitalTwin.Configuration configuration) {
+  public ContextScope createContext(DigitalTwin.Configuration configuration) {
 
     var runtime = getService(RuntimeService.class);
     if (runtime == null) {
@@ -76,7 +76,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
      * that hosts it.
      */
     var ret =
-        new ClientContextScope(this, contextName, runtime, configuration) {
+        new ClientContextScope(this, runtime, configuration.validate(this)) {
 
           @Override
           public <T extends KlabService> T getService(Class<T> serviceClass) {
@@ -99,6 +99,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
 
     if (id != null) {
       ret.setId(id);
+      ClientScopeManager.INSTANCE.register(ret);
     }
 
     return ret;
@@ -106,6 +107,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
 
   @Override
   public void close() {
+    ClientScopeManager.INSTANCE.unregister(this);
     closeMessaging();
     var runtime = getService(RuntimeService.class);
     if (runtime != null) {

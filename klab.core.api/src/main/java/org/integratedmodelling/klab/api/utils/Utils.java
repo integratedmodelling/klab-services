@@ -4644,6 +4644,14 @@ public class Utils {
       return count;
     }
 
+    public static URL newURL(String s) {
+      try {
+        return new URI(s).toURL();
+      } catch (Exception e) {
+        throw new KlabIllegalArgumentException(e.getMessage());
+      }
+    }
+
     /**
      * The listener interface for receiving copy events. The class that is interested in processing
      * a copy event implements this interface, and the object created with that class is registered

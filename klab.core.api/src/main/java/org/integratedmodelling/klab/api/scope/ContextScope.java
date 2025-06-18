@@ -76,15 +76,15 @@ public interface ContextScope extends SessionScope {
    * @return
    */
   Observation getObserver();
-
-  /**
-   * A context scope is inconsistent if resolution has failed for one or more <em>dependent</em>
-   * observations, such as qualities and processes. These can be retrieved through {@link
-   * #getInconsistencies(boolean)} passing true as parameter.
-   *
-   * @return
-   */
-  boolean isConsistent();
+//
+//  /**
+//   * A context scope is inconsistent if resolution has failed for one or more <em>dependent</em>
+//   * observations, such as qualities and processes. These can be retrieved through {@link
+//   * #getInconsistencies(boolean)} passing true as parameter.
+//   *
+//   * @return
+//   */
+//  boolean isConsistent();
 
   /**
    * Return all the observations visible in this context, ordered by submission timestamp.
@@ -108,15 +108,15 @@ public interface ContextScope extends SessionScope {
    */
   Observation getObservation(Semantics observable);
 
-  /**
-   * Return all observations in this scope for which resolution has failed. Optionally only return
-   * dependent observations, whose presence makes the context and the associated digital twin
-   * inconsistent.
-   *
-   * @param dependentOnly if true, only dependent observations are returned
-   * @return the requested inconsistent observations in this scope
-   */
-  Collection<Observation> getInconsistencies(boolean dependentOnly);
+//  /**
+//   * Return all observations in this scope for which resolution has failed. Optionally only return
+//   * dependent observations, whose presence makes the context and the associated digital twin
+//   * inconsistent.
+//   *
+//   * @param dependentOnly if true, only dependent observations are returned
+//   * @return the requested inconsistent observations in this scope
+//   */
+//  Collection<Observation> getInconsistencies(boolean dependentOnly);
 
   /**
    * Return all the known observation perspectives for the passed observable. These are the
@@ -412,6 +412,15 @@ public interface ContextScope extends SessionScope {
    * @return
    */
   <T> List<T> getConstraints(ResolutionConstraint.Type type, Class<T> resultClass);
+
+  /**
+   * The {@link DigitalTwin.Configuration} that this scope was created with. The configuration will
+   * pre-exist to the {@link DigitalTwin} itself, so this is exposed at the scope level for
+   * registration purposes.
+   *
+   * @return
+   */
+  DigitalTwin.Configuration getDigitalTwinConfiguration();
 
   /**
    * A data structure incorporating the results of parsing a scope token string into all its

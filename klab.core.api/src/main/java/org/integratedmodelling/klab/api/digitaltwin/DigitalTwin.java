@@ -9,7 +9,8 @@ import java.util.concurrent.TimeUnit;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.*;
-import org.integratedmodelling.klab.api.digitaltwin.impl.OptionsBuilder;
+import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationBuilder;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -26,6 +27,7 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
@@ -89,7 +91,7 @@ public interface DigitalTwin extends RuntimeAsset {
     String getName();
 
     /**
-     * Passing a ID is only allowed if the user is federated, so that the digital twin identity can
+     * Passing an ID is only allowed if the user is federated, so that the digital twin identity can
      * be assigned in a coordinated way among federated users. Any pre-existing DT with ID <code>
      * <federation_id>/<requested-id></code> will be usable by all members of the federation; the DT
      * will be created if not existing using the remaining options. The latter will be ignored if
@@ -99,8 +101,20 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     String getId();
 
-    static OptionsBuilder builder() {
-      return new OptionsBuilder();
+    /**
+     * Used at client side before a scope request is made. This should add anything implied by the
+     * current scope that wasn't filled or throw an exception if any of the settings requested are
+     * inconsistent.
+     *
+     * @param scope the scope to validate against. According to the scope class the validation may
+     *     be different.
+     * @return the same object or a new one with valid and complete settings
+     * @throws KlabValidationException if any settings are inconsistent with the scope
+     */
+    Configuration validate(Scope scope) throws KlabValidationException;
+
+    static ConfigurationBuilder builder() {
+      return new ConfigurationBuilder();
     }
   }
 

@@ -38,15 +38,13 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
    * The default client scope has the user as the embedded agent.
    *
    * @param parent
-   * @param contextName
    * @param runtimeService
    */
   public ClientContextScope(
-      ClientUserScope parent,
-      String contextName,
+      ClientSessionScope parent,
       RuntimeService runtimeService,
       DigitalTwin.Configuration configuration) {
-    super(parent, contextName, runtimeService);
+    super(parent, configuration.getName(), runtimeService);
     this.configuration = configuration;
     resolutionConstraints.put(
         ResolutionConstraint.Type.Provenance,
@@ -202,6 +200,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
   @Override
   public void close() {
+    ClientScopeManager.INSTANCE.unregister(this);
     var runtime = getService(RuntimeService.class);
     if (runtime != null) {
       runtime.releaseContext(this);
@@ -210,16 +209,16 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
   }
 
-  @Override
-  public boolean isConsistent() {
-    return false;
-  }
-
-  @Override
-  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
-    return List.of();
-  }
-
+//  @Override
+//  public boolean isConsistent() {
+//    return false;
+//  }
+//
+//  @Override
+//  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
+//    return List.of();
+//  }
+//
   @Override
   public <T extends Observation> Collection<T> getPerspectives(Observable observable) {
     return List.of();
@@ -372,4 +371,8 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         + ")";
   }
 
+  @Override
+  public DigitalTwin.Configuration getDigitalTwinConfiguration() {
+    return configuration;
+  }
 }
