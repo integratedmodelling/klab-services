@@ -54,9 +54,9 @@ public enum ClientScopeManager {
    */
   public ContextScope getContextScope(
       DigitalTwin.Configuration configuration, boolean createIfMissing, UserScope requestingScope) {
+
     if (scopes.containsKey(configuration.getId())
         && scopes.get(configuration.getId()) instanceof ContextScope) {
-      // TODO check service
       return (ContextScope) scopes.get(configuration.getId());
     }
     if (createIfMissing) {
@@ -70,11 +70,16 @@ public enum ClientScopeManager {
                 .findFirst();
 
         if (info.isEmpty()) {
-          throw new RuntimeException("Session info not found for session ID=" + sessionId);
+          requestingScope.error(
+              "Session info not found for session ID="
+                  + sessionId
+                  + ": scope may have been deleted");
+          return null;
         }
 
         sessionScope =
-            new ClientSessionScope(sessionScope, info.get().getName(), service) {
+            new ClientSessionScope(
+                (ClientUserScope) requestingScope, info.get().getName(), service) {
               @Override
               public <T extends KlabService> T getService(Class<T> serviceClass) {
                 return RuntimeService.class.equals(serviceClass)

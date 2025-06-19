@@ -33,7 +33,8 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
       String id,
       long timeout,
       TimeUnit timeoutUnit,
-      URL url) {
+      URL url,
+      URL serviceUrl) {
     this.accessRights = accessRights;
     this.persistence = persistence;
     this.name = name;
@@ -41,6 +42,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
     this.timeout = timeout;
     this.timeoutUnit = timeoutUnit;
     this.url = url;
+    this.serviceUrl = serviceUrl;
   }
 
   @Override

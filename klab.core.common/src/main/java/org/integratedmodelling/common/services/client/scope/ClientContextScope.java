@@ -211,16 +211,6 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
   }
 
-//  @Override
-//  public boolean isConsistent() {
-//    return false;
-//  }
-//
-//  @Override
-//  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
-//    return List.of();
-//  }
-//
   @Override
   public <T extends Observation> Collection<T> getPerspectives(Observable observable) {
     return List.of();

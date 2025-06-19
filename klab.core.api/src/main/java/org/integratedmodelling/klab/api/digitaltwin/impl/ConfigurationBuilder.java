@@ -55,6 +55,6 @@ public class ConfigurationBuilder {
 
   public DigitalTwin.Configuration build() {
     return new ConfigurationImpl(
-        accessRights, persistence, name, id, this.timeout, this.timeoutUnit, this.url);
+        accessRights, persistence, name, id, this.timeout, this.timeoutUnit, this.url, this.serverUrl);
   }
 }
