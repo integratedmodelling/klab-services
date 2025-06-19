@@ -76,15 +76,6 @@ public interface ContextScope extends SessionScope {
    * @return
    */
   Observation getObserver();
-//
-//  /**
-//   * A context scope is inconsistent if resolution has failed for one or more <em>dependent</em>
-//   * observations, such as qualities and processes. These can be retrieved through {@link
-//   * #getInconsistencies(boolean)} passing true as parameter.
-//   *
-//   * @return
-//   */
-//  boolean isConsistent();
 
   /**
    * Return all the observations visible in this context, ordered by submission timestamp.
@@ -107,16 +98,6 @@ public interface ContextScope extends SessionScope {
    *     unresolved; the implementation decides what to do with it and is responsible for checking.
    */
   Observation getObservation(Semantics observable);
-
-//  /**
-//   * Return all observations in this scope for which resolution has failed. Optionally only return
-//   * dependent observations, whose presence makes the context and the associated digital twin
-//   * inconsistent.
-//   *
-//   * @param dependentOnly if true, only dependent observations are returned
-//   * @return the requested inconsistent observations in this scope
-//   */
-//  Collection<Observation> getInconsistencies(boolean dependentOnly);
 
   /**
    * Return all the known observation perspectives for the passed observable. These are the
@@ -254,12 +235,12 @@ public interface ContextScope extends SessionScope {
    */
   Collection<Observation> affected(Observation observation);
 
-  /**
-   * Start the scheduling if the context occurs; do nothing if not, or if there are no new
-   * transitions to calculate. This can be called multiple times, normally after each observation,
-   * with intelligent "replay" of any transitions that need to be seen again.
-   */
-  void runTransitions();
+//  /**
+//   * Start the scheduling if the context occurs; do nothing if not, or if there are no new
+//   * transitions to calculate. This can be called multiple times, normally after each observation,
+//   * with intelligent "replay" of any transitions that need to be seen again.
+//   */
+//  void runTransitions();
 
   /**
    * Return the portion of the provenance graph that pertains to this scope. This may be empty in an

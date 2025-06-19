@@ -52,6 +52,11 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             ResolutionConstraint.Type.Provenance, Agent.create(parent.getUser().getUsername())));
   }
 
+
+  /**
+   * This is for derived scopes only
+   * @param parent
+   */
   private ClientContextScope(ClientContextScope parent) {
     super(parent, parent.name, parent.runtimeService);
     // this will have been reset by super to the user's id
@@ -137,9 +142,6 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   public Collection<Observation> affected(Observation observation) {
     return List.of();
   }
-
-  @Override
-  public void runTransitions() {}
 
   @Override
   public Provenance getProvenance() {

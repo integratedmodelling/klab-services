@@ -15,6 +15,7 @@ public class ConfigurationBuilder {
   private long timeout;
   private TimeUnit timeoutUnit;
   private URL url;
+  private URL serverUrl;
 
   public ConfigurationBuilder accessRights(ResourcePrivileges accessRights) {
     this.accessRights = accessRights;
@@ -41,6 +42,10 @@ public class ConfigurationBuilder {
     return this;
   }
 
+  public ConfigurationBuilder serverUrl(URL serverUrl) {
+    this.serverUrl = serverUrl;
+    return this;
+  }
 
   public ConfigurationBuilder timeout(long timeout, TimeUnit timeoutUnit) {
     this.timeout = timeout;
@@ -49,6 +54,7 @@ public class ConfigurationBuilder {
   }
 
   public DigitalTwin.Configuration build() {
-    return new ConfigurationImpl(accessRights, persistence, name, id, this.timeout, this.timeoutUnit, this.url);
+    return new ConfigurationImpl(
+        accessRights, persistence, name, id, this.timeout, this.timeoutUnit, this.url);
   }
 }

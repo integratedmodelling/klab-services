@@ -2,14 +2,13 @@ package org.integratedmodelling.common.services.client.scope;
 
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.utils.Utils;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A singleton used to keep track of scopes that were created within an instance. Differently from
@@ -44,8 +43,6 @@ public enum ClientScopeManager {
    * Retrieves a context scope based on the provided runtime and configuration. Optionally, a new
    * scope may be created if it does not already exist.
    *
-   * @param runtime the {@link RuntimeService} instance used to manage contexts and interact with
-   *     the runtime system
    * @param configuration the {@link DigitalTwin.Configuration} containing the configuration details
    *     for this scope. Persistence and other creation metadata are only relevant for scopes that
    *     are created by the call.
@@ -62,11 +59,78 @@ public enum ClientScopeManager {
       // TODO check service
       return (ContextScope) scopes.get(configuration.getId());
     }
+    if (createIfMissing) {
+      var service = findService(configuration, requestingScope);
+      var sessionId = Utils.Paths.getLeading(configuration.getId(), '.');
+      var sessionScope = getScope(service, sessionId, requestingScope, ClientSessionScope.class);
+      if (sessionScope == null) {
+        var info =
+            service.getSessionInfo(requestingScope).stream()
+                .filter(si -> si.getId().equals(sessionId))
+                .findFirst();
+
+        if (info.isEmpty()) {
+          throw new RuntimeException("Session info not found for session ID=" + sessionId);
+        }
+
+        sessionScope =
+            new ClientSessionScope(sessionScope, info.get().getName(), service) {
+              @Override
+              public <T extends KlabService> T getService(Class<T> serviceClass) {
+                return RuntimeService.class.equals(serviceClass)
+                    ? (T) service
+                    : requestingScope.getService(serviceClass);
+              }
+
+              @Override
+              public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+                return RuntimeService.class.equals(serviceClass)
+                    ? List.of((T) service)
+                    : requestingScope.getServices(serviceClass);
+              }
+            };
+        sessionScope.setId(sessionId);
+        register(sessionScope);
+      }
+      var ret =
+          new ClientContextScope(sessionScope, service, configuration) {
+            @Override
+            public <T extends KlabService> T getService(Class<T> serviceClass) {
+              return RuntimeService.class.equals(serviceClass)
+                  ? (T) service
+                  : requestingScope.getService(serviceClass);
+            }
+
+            @Override
+            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+              return RuntimeService.class.equals(serviceClass)
+                  ? List.of((T) service)
+                  : requestingScope.getServices(serviceClass);
+            }
+          };
+      ret.setId(configuration.getId());
+      register(ret);
+      return ret;
+    }
+    return null;
+  }
+
+  private RuntimeService findService(
+      DigitalTwin.Configuration configuration, UserScope requestingScope) {
+    for (var runtime : requestingScope.getServices(RuntimeService.class)) {
+      if (runtime.getUrl().equals(configuration.getServiceUrl())) {
+        return runtime;
+      }
+    }
+    // TODO ask the scope to register a new runtime
     return null;
   }
 
   public void register(ClientSessionScope ret) {
+    scopes.put(ret.getId(), ret);
   }
 
-  public void unregister(ClientSessionScope clientSessionScope) {}
+  public void unregister(ClientSessionScope clientSessionScope) {
+    scopes.remove(clientSessionScope.getId());
+  }
 }

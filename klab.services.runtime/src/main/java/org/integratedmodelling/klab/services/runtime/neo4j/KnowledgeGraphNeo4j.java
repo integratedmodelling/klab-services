@@ -43,6 +43,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.runtime.storage.BufferImpl;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.neo4j.cypherdsl.core.*;
 import org.neo4j.driver.*;
 
@@ -1101,6 +1102,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     List<ContextInfo> contextInfos = new ArrayList<>();
     for (var context : adapt(contexts, Map.class, scope)) {
+
       ContextInfo contextInfo = new ContextInfo();
       contextInfo.setId(context.get("id").toString());
       contextInfo.setCreationTime((Long) context.get("created"));
@@ -1115,6 +1117,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                           + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
                               "{id}", context.get("id").toString())))
               .id(contextInfo.getId())
+              .serverUrl(scope.getService(RuntimeService.class).getUrl())
               .persistence(Persistence.valueOf(context.get("expiration").toString()))
               .build()
               .validate(scope));

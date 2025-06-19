@@ -12,6 +12,7 @@ import java.util.concurrent.Future;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
+import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -393,20 +394,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   @Override
   public ContextScope connect(DigitalTwin.Configuration configuration) {
-    for (var session : getOpenSessions()) {
-      if (configuration.getId().startsWith(session.getId() + ".")) {
-        for (var context : session.getActiveContexts()) {
-          if (configuration.getId().equals(context.getId())) {
-            return context;
-          }
-        }
-      }
-    }
-    var ret = user().connect(configuration);
-    if (ret != null) {
-      contexts.add(ret.getParentScope(Scope.Type.SESSION, SessionScope.class), ret);
-    }
-    return ret;
+    return ClientScopeManager.INSTANCE.getContextScope(configuration, true, user());
   }
 
   @Override
@@ -476,6 +464,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   private DigitalTwin.Configuration defaultDigitalTwinConfiguration(String name) {
     return DigitalTwin.Configuration.builder()
         .name(name)
+        .serverUrl(user().getService(RuntimeService.class).getUrl())
         .accessRights(ResourcePrivileges.create(user()))
         .persistence(Persistence.IDLE_TIMEOUT)
         .build();

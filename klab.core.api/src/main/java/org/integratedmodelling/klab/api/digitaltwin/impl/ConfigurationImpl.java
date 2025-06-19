@@ -1,16 +1,13 @@
 package org.integratedmodelling.klab.api.digitaltwin.impl;
 
+import java.net.URL;
+import java.util.concurrent.TimeUnit;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.UserScope;
-
-import java.net.URL;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class ConfigurationImpl implements DigitalTwin.Configuration {
 
@@ -24,11 +21,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private String behavior;
   private long creationTime;
   private long idleTimeMs;
-  private long creditsUsed;
-  private long observations;
-  private long size;
-  private String owner;
-  private int connectedUsers;
+  private URL serviceUrl;
 
   // for the object mapper, do not remove
   ConfigurationImpl() {}
@@ -124,5 +117,66 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   @Override
   public URL getUrl() {
     return url;
+  }
+
+  public void setAccessRights(ResourcePrivileges accessRights) {
+    this.accessRights = accessRights;
+  }
+
+  public void setPersistence(Persistence persistence) {
+    this.persistence = persistence;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
+  public void setTimeout(long timeout) {
+    this.timeout = timeout;
+  }
+
+  public void setTimeoutUnit(TimeUnit timeoutUnit) {
+    this.timeoutUnit = timeoutUnit;
+  }
+
+  public void setUrl(URL url) {
+    this.url = url;
+  }
+
+  public String getBehavior() {
+    return behavior;
+  }
+
+  public void setBehavior(String behavior) {
+    this.behavior = behavior;
+  }
+
+  public long getCreationTime() {
+    return creationTime;
+  }
+
+  public void setCreationTime(long creationTime) {
+    this.creationTime = creationTime;
+  }
+
+  public long getIdleTimeMs() {
+    return idleTimeMs;
+  }
+
+  public void setIdleTimeMs(long idleTimeMs) {
+    this.idleTimeMs = idleTimeMs;
+  }
+
+  @Override
+  public URL getServiceUrl() {
+    return serviceUrl;
+  }
+
+  public void setServiceUrl(URL serviceUrl) {
+    this.serviceUrl = serviceUrl;
   }
 }

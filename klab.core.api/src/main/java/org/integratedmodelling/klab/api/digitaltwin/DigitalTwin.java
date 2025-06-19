@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.*;
@@ -27,7 +26,6 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
@@ -54,6 +52,14 @@ public interface DigitalTwin extends RuntimeAsset {
      * @return
      */
     URL getUrl();
+
+    /**
+     * The service URL is provided separately to avoid complicated inference and accommodate
+     * possible situations where the DT has been proxied or served through a different URL.
+     *
+     * @return
+     */
+    URL getServiceUrl();
 
     /**
      * The timeout in {@link #getTimeoutUnit()}. If {@link #getPersistence()} returns {@link

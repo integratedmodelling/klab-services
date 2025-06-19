@@ -318,12 +318,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
-  public void runTransitions() {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
   public Collection<Observation> affects(Observation observation) {
     // TODO Auto-generated method stub
     return null;
