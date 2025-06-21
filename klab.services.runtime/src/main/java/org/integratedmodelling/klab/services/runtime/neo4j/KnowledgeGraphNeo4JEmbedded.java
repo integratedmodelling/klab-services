@@ -3,13 +3,12 @@ package org.integratedmodelling.klab.services.runtime.neo4j;
 import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.List;
+
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.connectors.HttpConnector;
@@ -30,6 +29,15 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
   private DatabaseManagementService managementService;
   private GraphDatabaseService graphDb;
   private boolean online = true;
+
+  private KnowledgeGraphNeo4JEmbedded(
+      KnowledgeGraphNeo4JEmbedded parent, UserScope scope, String scopeId) {
+    this.managementService = parent.managementService;
+    this.graphDb = parent.graphDb;
+    this.online = parent.online;
+    this.driver = parent.driver;
+    initializeContext(scope, scopeId);
+  }
 
   private KnowledgeGraphNeo4JEmbedded(KnowledgeGraphNeo4JEmbedded parent, ContextScope scope) {
     this.managementService = parent.managementService;
@@ -85,6 +93,23 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
     }
   }
 
+  @Override
+  public KnowledgeGraph contextualize(UserScope userScope, String contextScopeId) {
+
+    if (this.scope != null) {
+
+      // idempotence
+      if (this.scope.getId().equals(contextScopeId)) {
+        return this;
+      }
+
+      throw new KlabIllegalStateException(
+          "cannot recontextualize a previously contextualized graph " + "database");
+    }
+
+    return new KnowledgeGraphNeo4JEmbedded(this, userScope, contextScopeId);
+  }
+
   private void configureDatabase() {
 
     // TODO all the needed indices
@@ -122,11 +147,11 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
     return ret;
   }
 
-//  @Override
-//  public <T extends RuntimeAsset> List<T> get(
-//      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
-//    return List.of();
-//  }
+  //  @Override
+  //  public <T extends RuntimeAsset> List<T> get(
+  //      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
+  //    return List.of();
+  //  }
 
   @Override
   public KnowledgeGraph merge(URL remoteDigitalTwinURL) {

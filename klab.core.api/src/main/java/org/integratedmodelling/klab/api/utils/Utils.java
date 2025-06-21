@@ -4645,6 +4645,11 @@ public class Utils {
     }
 
     public static URL newURL(String s) {
+
+      if (s == null) {
+        return null;
+      }
+
       try {
         return new URI(s).toURL();
       } catch (Exception e) {

@@ -41,9 +41,11 @@ import org.ojalgo.concurrent.Parallelism;
  *
  * <p>Maintained by the {@link ScopeManager}
  */
-public class ServiceContextScope extends ServiceSessionScope implements ContextScope {
+public abstract class ServiceContextScope extends ServiceSessionScope implements ContextScope {
 
+  public static final String EXISTING_KNOWLEDGE_GRAPH_ID = "existingKnowledgeGraphId";
   // TODO make this configurable
+
   private static long MAX_CACHED_OBSERVATIONS = 100;
   private static long MAX_CACHED_GEOMETRIES = 20;
   private DigitalTwin.Configuration configuration;
@@ -93,16 +95,22 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   ServiceContextScope copy() {
-    return new ServiceContextScope(this);
+    return new ServiceContextScope(this) {
+
+      @Override
+      public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+        return parent.getServices(serviceClass);
+      }
+
+      @Override
+      public <T extends KlabService> T getService(Class<T> serviceClass) {
+        return parent.getService(serviceClass);
+      }
+    };
   }
 
   // next 3 are overridden with the same code as the parent because they need to use the local maps,
   // not the parent's
-
-  @Override
-  public <T extends KlabService> T getService(Class<T> serviceClass) {
-    return (T) defaultServiceMap.get(KlabService.Type.classify(serviceClass));
-  }
 
   @Override
   public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
@@ -113,12 +121,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
     throw new KlabResourceAccessException(
         "cannot find service with ID=" + serviceId + " in the scope");
-  }
-
-  @Override
-  public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-    return new org.integratedmodelling.klab.api.utils.Utils.Casts<KlabService, T>()
-        .cast((Collection<KlabService>) serviceMap.get(KlabService.Type.classify(serviceClass)));
   }
 
   ServiceContextScope(ServiceSessionScope parent, DigitalTwin.Configuration configuration) {
@@ -157,6 +159,46 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
      */
   }
 
+  public ServiceContextScope(
+      ServiceSessionScope parent,
+      String existingScopeId,
+      KnowledgeGraph existingKnowledgeGraph,
+      DigitalTwin.Configuration configuration) {
+    super(parent);
+    this.observer = null;
+    this.data = Parameters.create();
+    this.data.putAll(parent.data);
+    this.setId(existingScopeId);
+    this.data.put(EXISTING_KNOWLEDGE_GRAPH_ID, existingKnowledgeGraph);
+    this.resolutionCache = new HashMap<>();
+    this.jobManager = parent.jobManager;
+    this.configuration = configuration;
+    this.setName(configuration.getName());
+    this.observationCache =
+        CacheBuilder.newBuilder()
+            .maximumSize(MAX_CACHED_OBSERVATIONS)
+            .build(
+                new CacheLoader<Long, Observation>() {
+                  @Override
+                  public Observation load(Long key) throws Exception {
+                    var ret =
+                        digitalTwin
+                            .getKnowledgeGraph()
+                            .get(key, ServiceContextScope.this, Observation.class);
+                    if (ret == null) {
+                      Logging.INSTANCE.error(
+                          "CATXO null observation retrieved for key "
+                              + key
+                              + " in service "
+                              + KlabService.Type.classify(service));
+                    }
+                    return ret;
+                  }
+                });
+    this.nextResolutionId = new AtomicLong(-1L);
+    // TODO needs a callback to build the digital twin.
+  }
+
   @Override
   public Activity getCurrentActivity() {
     return currentActivity;
@@ -167,15 +209,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return this.observer;
   }
 
-//  @Override
-//  public boolean isConsistent() {
-//    return false;
-//  }
-//
-//  @Override
-//  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
-//    return List.of();
-//  }
+  //  @Override
+  //  public boolean isConsistent() {
+  //    return false;
+  //  }
+  //
+  //  @Override
+  //  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
+  //    return List.of();
+  //  }
 
   @Override
   public <T extends Observation> Collection<T> getPerspectives(Observable observable) {
@@ -236,7 +278,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public ServiceContextScope withObserver(Observation observer) {
-    ServiceContextScope ret = new ServiceContextScope(this);
+    ServiceContextScope ret = copy();
     ret.observer = observer;
     return ret;
   }
@@ -347,14 +389,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public ContextScope within(Observation contextObservation) {
-    ServiceContextScope ret = new ServiceContextScope(this);
+    ServiceContextScope ret = copy();
     ret.contextObservation = contextObservation;
     ret.splits = -1;
     return ret;
   }
 
   public ServiceContextScope executing(Activity currentActivity) {
-    ServiceContextScope ret = new ServiceContextScope(this);
+    ServiceContextScope ret = copy();
     ret.currentActivity = currentActivity;
     return ret;
   }
@@ -367,7 +409,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public ServiceContextScope withResolutionConstraints(
       ResolutionConstraint... resolutionConstraints) {
-    ServiceContextScope ret = new ServiceContextScope(this);
+    ServiceContextScope ret = copy();
     if (resolutionConstraints == null) {
       ret.resolutionConstraints.clear();
     } else {
@@ -584,7 +626,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     if (observer != null || contextobs != null) {
-      var ret = new ServiceContextScope(this);
+      var ret = copy();
       ret.contextObservation = contextobs;
       ret.observer = observer;
       return ret;
@@ -606,7 +648,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   public ServiceContextScope initializeResolution() {
-    ServiceContextScope ret = new ServiceContextScope(this);
+    ServiceContextScope ret = copy();
     ret.nextResolutionId.set(-1L);
     ret.resolutionCache.clear();
     return ret;

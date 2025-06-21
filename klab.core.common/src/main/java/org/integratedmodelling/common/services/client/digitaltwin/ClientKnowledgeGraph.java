@@ -11,6 +11,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
@@ -147,6 +148,12 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     return runtimeClient.queryKnowledgeGraph(knowledgeGraphQuery, scope);
   }
 
+  @Override
+  public DigitalTwin.Configuration getContextConfiguration() {
+    // TODO
+    return null;
+  }
+
   /**
    * Retrieves a list of incoming {@link RuntimeAsset} nodes connected to the given target node
    * through edges that match the specified relationship, if provided.
@@ -254,6 +261,11 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
   @Override
   public void clear() {}
+
+  @Override
+  public KnowledgeGraph contextualize(UserScope scope, String contextScopeId) {
+    return null;
+  }
 
   @Override
   public KnowledgeGraph contextualize(ContextScope scope) {

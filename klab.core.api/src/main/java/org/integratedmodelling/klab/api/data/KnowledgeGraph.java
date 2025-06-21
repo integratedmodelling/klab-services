@@ -149,6 +149,7 @@ public interface KnowledgeGraph {
    * @return a new transaction
    */
   Transaction createTransaction();
+
   /**
    * Obtain a query for an object of a specific type, to be specified and then run to obtain the
    * results.
@@ -170,6 +171,16 @@ public interface KnowledgeGraph {
    */
   <T extends RuntimeAsset> List<T> query(
       Query<T> knowledgeGraphQuery, Class<T> resultClass, Scope scope);
+
+  /**
+   * A contextualized knowledge graph should be able to return the full configuration of the digital
+   * twin it represents.
+   *
+   * @return the DT's configuration.
+   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException if the graph is
+   *     not contextualized to a digital twin.
+   */
+  DigitalTwin.Configuration getContextConfiguration();
 
   /**
    * Remove all data relative to the currently contextualized scope. Graph becomes unusable after
@@ -212,6 +223,8 @@ public interface KnowledgeGraph {
    */
   void clear();
 
+  KnowledgeGraph contextualize(UserScope userScope, String contextScopeId);
+
   /**
    * The graph should only be used in a contextualized form, which will establish any possible
    * long-lived connection so that performance is optimal. Implementations should throw an exception
@@ -219,7 +232,7 @@ public interface KnowledgeGraph {
    *
    * <p>If the database serves multiple contexts, the contextualization operation should also build
    * or load a main context node, to which all root observations will be linked, and the
-   * context-specific dataflow and provenance roots..
+   * context-specific dataflow and provenance roots.
    *
    * @param scope
    * @return

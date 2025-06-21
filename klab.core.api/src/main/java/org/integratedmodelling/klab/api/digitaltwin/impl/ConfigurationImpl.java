@@ -22,9 +22,10 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private long creationTime;
   private long idleTimeMs;
   private URL serviceUrl;
+  private String owner;
 
   // for the object mapper, do not remove
-  ConfigurationImpl() {}
+  public ConfigurationImpl() {}
 
   ConfigurationImpl(
       ResourcePrivileges accessRights,
@@ -180,5 +181,14 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
 
   public void setServiceUrl(URL serviceUrl) {
     this.serviceUrl = serviceUrl;
+  }
+
+  @Override
+  public String getOwner() {
+    return owner;
+  }
+
+  public void setOwner(String owner) {
+    this.owner = owner;
   }
 }

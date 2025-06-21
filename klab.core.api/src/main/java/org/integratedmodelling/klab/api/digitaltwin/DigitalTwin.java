@@ -108,6 +108,14 @@ public interface DigitalTwin extends RuntimeAsset {
     String getId();
 
     /**
+     * Username of the user who create this. If the user is federated, the name is postfixed with
+     * <code>@<federation id></code>.
+     *
+     * @return
+     */
+    String getOwner();
+
+    /**
      * Used at client side before a scope request is made. This should add anything implied by the
      * current scope that wasn't filled or throw an exception if any of the settings requested are
      * inconsistent.

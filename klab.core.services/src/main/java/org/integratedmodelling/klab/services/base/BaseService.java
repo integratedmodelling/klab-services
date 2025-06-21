@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
@@ -56,7 +59,7 @@ public abstract class BaseService implements KlabService {
   private final Type type;
   protected EmbeddedBroker embeddedBroker;
   private String serviceSecret;
-//  private boolean provideScopesAutomatically = false;
+  //  private boolean provideScopesAutomatically = false;
   private URL url;
   //    protected AtomicBoolean online = new AtomicBoolean(false);
   protected AtomicBoolean available = new AtomicBoolean(false);
@@ -172,6 +175,29 @@ public abstract class BaseService implements KlabService {
     }
     return _scopeManager;
   }
+
+  /**
+   * If we have a scope manager, this is called whenever a service call contains a scope ID not
+   * already known to the scope manager. The corresponding scope may be non-existing or have been
+   * offloaded to storage.
+   *
+   * @param userScope
+   * @param scopeId
+   * @return the corresponding knowledge graph if it can be reconstructed, or null if not. The scope
+   *     can be a {@link SessionScope} or a {@link ContextScope}.
+   */
+  public Pair<DigitalTwin.Configuration, KnowledgeGraph> scopeResolver(UserScope userScope, String scopeId) {
+    return null;
+  }
+
+  /**
+   * If we have a scope manager, this is called when a scope must be disposed due to timeout or
+   * other non-user-mediated action. The scope can be a {@link SessionScope} or a {@link
+   * ContextScope}.
+   *
+   * @param sessionScope
+   */
+  public void scopeTimeoutHandler(SessionScope sessionScope) {}
 
   /**
    * The service secret is a legitimate API key for the service, only known to clients that can read
@@ -367,8 +393,7 @@ public abstract class BaseService implements KlabService {
    *     ID is null, the call has failed.
    * @return the ID of the new session created at server side, or null in case of failure.
    */
-  public String registerSession(
-      SessionScope sessionScope, Federation federation) {
+  public String registerSession(SessionScope sessionScope, Federation federation) {
     return sessionScope instanceof ServiceSessionScope serviceSessionScope
         ? serviceSessionScope.getId()
         : null;
@@ -386,8 +411,7 @@ public abstract class BaseService implements KlabService {
    *     ID is null, the call has failed.
    * @return the ID of the new context scope created at server side, or null in case of failure.
    */
-  public String registerContext(
-      ContextScope contextScope, Federation federation) {
+  public String registerContext(ContextScope contextScope, Federation federation) {
     return contextScope instanceof ServiceContextScope serviceSessionScope
         ? serviceSessionScope.getId()
         : null;

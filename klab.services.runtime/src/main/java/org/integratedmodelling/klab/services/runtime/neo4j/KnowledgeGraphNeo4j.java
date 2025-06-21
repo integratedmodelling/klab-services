@@ -13,11 +13,14 @@ import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
+import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -78,6 +81,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                   return ret == null ? Observation.empty() : ret;
                 }
               });
+
+  /*
+  Used ONLY when reconstructing digital twins that aren't already held by an existing scope.
+   */
+  public void setScope(ContextScope contextScope) {
+    this.scope = contextScope;
+  }
 
   /**
    * Predefined Cypher queries. FIXME some should be substituted by programmatic queries, leaving
@@ -253,6 +263,34 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return null;
   }
 
+  @Override
+  public DigitalTwin.Configuration getContextConfiguration() {
+
+    var result = query(Queries.FIND_CONTEXT, Map.of("contextId", rootContextId), scope);
+    if (result.records().isEmpty()) {
+      return null;
+    }
+    return adapt(result, DigitalTwin.Configuration.class, scope).getFirst();
+  }
+
+  /**
+   * Initialization for a graph where the ID is known but the scope hasn't been provided yet.
+   * This.scope is NULL!
+   *
+   * @param scopeId
+   */
+  protected void initializeContext(UserScope userScope, String scopeId) {
+
+    this.rootContextId = scopeId;
+    this.klab = getOrCreateAgent("k.LAB", "AI");
+    this.user = getOrCreateAgent(userScope.getUser().getUsername(), "USER");
+
+    var result = query(Queries.FIND_CONTEXT, Map.of("contextId", scopeId), userScope);
+    if (result.records().isEmpty()) {
+      throw new KlabIllegalArgumentException("No context found for id " + scopeId);
+    }
+  }
+
   /** Ensure things are OK re: main agents and the like. Must be called only once */
   protected void initializeContext() {
 
@@ -406,6 +444,20 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         // TODO use a cache storing scales
         ret.add(
             (T) GeometryRepository.INSTANCE.get(node.get("definition").asString(), Geometry.class));
+      } else if (DigitalTwin.Configuration.class.isAssignableFrom(cls)) {
+        var configuration = new ConfigurationImpl();
+
+        // TODO owner with federation and other fields
+        configuration.setId(node.get("id").asString());
+        configuration.setName(node.get("name").asString());
+        configuration.setCreationTime(node.get("created").asLong());
+        configuration.setOwner(node.get("user").asString());
+        configuration.setAccessRights(
+            node.get("rights").isNull()
+                ? ResourcePrivileges.create(scope)
+                : ResourcePrivileges.create(node.get("rights").asString()));
+        configuration.setPersistence(Persistence.valueOf(node.get("expiration").asString()));
+        ret.add((T) configuration);
       }
     }
     return ret;

@@ -2,6 +2,10 @@ package org.integratedmodelling.klab.services.scopes;
 
 // import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 // import io.reacted.core.reactorsystem.ReActorSystem;
+import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.authentication.UserIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -10,8 +14,11 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -22,6 +29,8 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 /**
  * The scope manager maintains service-side scopes that are generated through the orchestrating
@@ -42,6 +51,9 @@ public class ScopeManager {
 
   private Map<String, Long> idleScopeTime = Collections.synchronizedMap(new HashMap<>());
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+  private BiFunction<UserScope, String, Pair<DigitalTwin.Configuration, KnowledgeGraph>>
+      scopeResolver;
+  private Consumer<SessionScope> scopeDisposer;
 
   public ScopeManager(KlabService service) {
 
@@ -58,6 +70,11 @@ public class ScopeManager {
     //
     //      Logging.INSTANCE.info("Actor system booted");
     //    }
+
+    if (service instanceof BaseService baseService) {
+      scopeResolver = baseService::scopeResolver;
+      scopeDisposer = baseService::scopeTimeoutHandler;
+    }
 
     executor.scheduleAtFixedRate(() -> expiredScopeCheck(), 60, 60, TimeUnit.SECONDS);
   }
@@ -270,6 +287,62 @@ public class ScopeManager {
       var ret = scopes.get(scopeId);
       if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
         return (T) ret;
+      } else if (ret == null) {
+        // reconstruct from the knowledge graph if we are able to; otherwise, log an illegal access
+        // and return null. The calls using this scope should report an error.
+        if (scopeResolver != null) {
+          var kg = scopeResolver.apply(scope, scopeId);
+          if (kg != null) {
+            var federation = Authentication.INSTANCE.getFederationData(scope.getUser());
+            UserScope parent = scope;
+            if (scopeClass.isAssignableFrom(ServiceContextScope.class)) {
+              // needs to fetch or reconstruct the session
+              String sessionId = Utils.Paths.getLeading(scopeId, '.');
+              var sessionScope = getScope(sessionId, SessionScope.class);
+              if (sessionScope == null) {
+                sessionScope =
+                    new ServiceSessionScope(scope) {
+                      @Override
+                      public <T extends KlabService> Collection<T> getServices(
+                          Class<T> serviceClass) {
+                        return scope.getServices(serviceClass);
+                      }
+
+                      @Override
+                      public <T extends KlabService> T getService(Class<T> serviceClass) {
+                        // FIXME this must be the runtime that creates it
+                        return scope.getService(serviceClass);
+                      }
+                    };
+                ((ServiceSessionScope) sessionScope).setId(sessionId);
+                registerScope((ServiceSessionScope) sessionScope, federation);
+              }
+              parent = sessionScope;
+            }
+
+            Logging.INSTANCE.info("Reconstructed scope {} from knowledge graph", scopeId);
+            var reconstructed =
+                (T)
+                    new ServiceContextScope(
+                        (ServiceSessionScope) parent, scopeId, kg.getSecond(), kg.getFirst()) {
+                      @Override
+                      public <T extends KlabService> Collection<T> getServices(
+                          Class<T> serviceClass) {
+                        return parent.getServices(serviceClass);
+                      }
+
+                      @Override
+                      public <T extends KlabService> T getService(Class<T> serviceClass) {
+                        return parent.getService(serviceClass);
+                      }
+                    };
+            service.registerContext((ContextScope) reconstructed, federation);
+            registerScope((ServiceContextScope) reconstructed, federation);
+            return reconstructed;
+          } else {
+            Logging.INSTANCE.error("Scope {} not found in scope graph", scopeId);
+          }
+        }
       }
     }
     return null;
@@ -279,6 +352,14 @@ public class ScopeManager {
     //    if (actorSystem != null) {
     //      actorSystem.shutDown();
     //    }
+    try {
+      executor.awaitTermination(5, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      executor.shutdownNow();
+    }
+
+    // TODO remove all the service-bound scopes if we're the service that hosts them
+
   }
 
   /**
@@ -304,5 +385,21 @@ public class ScopeManager {
       return (S) ret;
     }
     return scope;
+  }
+
+  /**
+   * Recreate and register a missing context scope, including the SessionScope as needed, from the
+   * passed knowledge graph and any associated storage. The scheduler will be populated with
+   * observed events for replaying to new observations.
+   *
+   * @param userScope
+   * @param kg
+   * @param scopeId
+   * @return
+   */
+  private ServiceContextScope restoreContextScope(
+      UserScope userScope, KnowledgeGraph kg, String scopeId) {
+    Logging.INSTANCE.info("Restoring context scope {}", scopeId);
+    return null;
   }
 }

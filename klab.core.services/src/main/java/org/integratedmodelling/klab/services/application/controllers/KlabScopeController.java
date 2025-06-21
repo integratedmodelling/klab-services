@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;

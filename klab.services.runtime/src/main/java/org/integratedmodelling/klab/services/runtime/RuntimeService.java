@@ -10,11 +10,14 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
+import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Federation;
@@ -211,9 +214,10 @@ public class RuntimeService extends BaseService
 
     if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
-      serviceSessionScope.setId(Utils.Names.shortUUID());
-      getScopeManager().registerScope(serviceSessionScope, federation);
-
+      if (serviceSessionScope.getId() == null) {
+        serviceSessionScope.setId(Utils.Names.shortUUID());
+        getScopeManager().registerScope(serviceSessionScope, federation);
+      }
       if (serviceSessionScope.getServices(RuntimeService.class).isEmpty()) {
         // add self as the runtime service, which is needed by the slave scopes
         serviceSessionScope.getServices(RuntimeService.class).add(this);
@@ -264,16 +268,27 @@ public class RuntimeService extends BaseService
 
       serviceContextScope.setHostServiceId(serviceId());
 
-      serviceContextScope.setId(
-          serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
+      var knowledgeGraph = getMainKnowledgeGraph();
+      // twisted, but at the moment that's what I have in me.
+      var existingKnowledgeGraph =
+          serviceContextScope.getData().remove(ServiceContextScope.EXISTING_KNOWLEDGE_GRAPH_ID);
+      if (existingKnowledgeGraph instanceof KnowledgeGraphNeo4j knowledgeGraphNeo4j) {
+        knowledgeGraph = knowledgeGraphNeo4j;
+        knowledgeGraphNeo4j.setScope(contextScope);
+      }
+
+      if (serviceContextScope.getId() == null) {
+        serviceContextScope.setId(
+            serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
+      }
       getScopeManager().registerScope(serviceContextScope, federation);
       serviceContextScope.setDigitalTwin(
-          new DigitalTwinImpl(this, serviceContextScope, getMainKnowledgeGraph()));
+          new DigitalTwinImpl(this, serviceContextScope, knowledgeGraph));
 
-      if (serviceContextScope.getServices(RuntimeService.class).isEmpty()) {
-        // add self as the runtime service, which is needed by the slave scopes
-        serviceContextScope.getServices(RuntimeService.class).add(this);
-      }
+//      if (serviceContextScope.getServices(RuntimeService.class).isEmpty()) {
+//        // add self as the runtime service, which is needed by the slave scopes
+//        serviceContextScope.getServices(RuntimeService.class).add(this);
+//      }
 
       // all other services need to know the context we created. TODO we may also need to
       // register with the stats services and maybe any independent authorities
@@ -654,5 +669,29 @@ public class RuntimeService extends BaseService
           "Not ready to compile arbitrary KG query implementations");
     }
     return List.of();
+  }
+
+  @Override
+  public Pair<DigitalTwin.Configuration, KnowledgeGraph> scopeResolver(
+      UserScope userScope, String scopeId) {
+
+    var parsed = ContextScope.parseScopeId(scopeId);
+    if (!parsed.empty()) {
+      var knowledgeGraph = getMainKnowledgeGraph().contextualize(userScope, parsed.scopeId());
+      var configuration = knowledgeGraph.getContextConfiguration();
+      if (configuration instanceof ConfigurationImpl configuration1) {
+        configuration1.setServiceUrl(getUrl());
+        configuration1.setUrl(
+            Utils.URLs.newURL(
+                getUrl() + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace("{id}", scopeId)));
+      }
+      return Pair.of(configuration, knowledgeGraph);
+    }
+    return super.scopeResolver(userScope, scopeId);
+  }
+
+  @Override
+  public void scopeTimeoutHandler(SessionScope sessionScope) {
+    super.scopeTimeoutHandler(sessionScope);
   }
 }

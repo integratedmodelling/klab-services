@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.ExecutableQuery;
@@ -19,6 +20,11 @@ import java.util.List;
 public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements KnowledgeGraph {
 
   // TODO connect to a DB and run a driver
+
+  @Override
+  public KnowledgeGraph contextualize(UserScope userScope, String contextScopeId) {
+    return null;
+  }
 
   @Override
   public KnowledgeGraph contextualize(ContextScope scope) {

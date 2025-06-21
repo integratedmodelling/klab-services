@@ -44,7 +44,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
   // the data hash is the SAME OBJECT throughout the child
   protected Parameters<String> data;
-  private UserIdentity user;
+  private final UserIdentity user;
   protected ServiceUserScope parentScope;
   private Status status = Status.STARTED;
   private Collection<Role> roles;
@@ -60,7 +60,9 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   // if they are of the passed class. Used on scope copies for monitoring and messaging.These are
   // never
   // copied downstream
+  @Deprecated
   private List<Object> payloadCollector = null;
+  @Deprecated
   private Class<?> collectedPayloadClass = null;
 
   // these are users of this service, which we keep around individually so that we can enable
@@ -153,7 +155,19 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   @Override
   public SessionScope getUserSession(RuntimeService hostService) {
 
-    final ServiceSessionScope ret = new ServiceSessionScope(this);
+    final var userScope = this;
+    final ServiceSessionScope ret = new ServiceSessionScope(this) {
+      @Override
+      public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+        return userScope.getServices(serviceClass);
+      }
+
+      @Override
+      public <T extends KlabService> T getService(Class<T> serviceClass) {
+        // FIXME this must be the runtime that creates it
+        return userScope.getService(serviceClass);
+      }
+    };
     ret.setStatus(Status.WAITING);
     ret.setName(
             federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
