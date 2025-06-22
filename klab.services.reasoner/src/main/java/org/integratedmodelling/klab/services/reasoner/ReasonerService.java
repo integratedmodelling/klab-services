@@ -17,7 +17,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
-import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
+import org.integratedmodelling.common.services.client.runtime.ClientDigitalTwin;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.common.lang.Axiom;
@@ -50,7 +50,6 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearch
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;

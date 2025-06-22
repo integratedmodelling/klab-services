@@ -19,7 +19,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
-import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
+import org.integratedmodelling.common.services.client.runtime.ClientDigitalTwin;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -54,7 +54,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;

@@ -97,6 +97,10 @@ public enum ClientScopeManager {
         sessionScope.setId(sessionId);
         register(sessionScope);
       }
+
+      // TODO/FIXME: MUST ADVERTISE SELF TO THE REMOTE SCOPE because we may have services not
+      //  present if the owner is someone else; also remote scope must have the option of
+      //  refusing and log the connection. Same for close() which must detach
       var ret =
           new ClientContextScope(sessionScope, service, configuration) {
             @Override
