@@ -14,7 +14,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -113,6 +115,29 @@ public class RuntimeServerController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
+  /**
+   * Connect to the DT through the service. This may cause the DT to be reconstructed if
+   *
+   * @param principal
+   * @param configuration
+   * @return
+   */
+  @PostMapping(value = ServicesAPI.RUNTIME.CONNECT, produces = MediaType.APPLICATION_JSON_VALUE)
+  public @ResponseBody DigitalTwin.Configuration connectToDigitalTwin(
+      Principal principal, @RequestBody DigitalTwin.Configuration configuration) {
+
+    if (principal instanceof EngineAuthorization authorization) {
+      var scope =
+          runtimeService
+              .klabService()
+              .connectContext(configuration, authorization.getScope(UserScope.class));
+      return scope == null
+          ? DigitalTwin.Configuration.builder().accessRights(ResourcePrivileges.empty()).build()
+          : scope.getDigitalTwinConfiguration();
+    }
+    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
+
   @Operation(
       operationId = ServicesAPI.RUNTIME.DIGITAL_TWIN,
       summary =
@@ -128,9 +153,7 @@ public class RuntimeServerController {
         @ApiResponse(responseCode = "404", description = "Digital twin not found"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
       })
-  @GetMapping(
-      value = ServicesAPI.RUNTIME.DIGITAL_TWIN,
-      produces = MediaType.APPLICATION_JSON_VALUE)
+  @GetMapping(value = ServicesAPI.RUNTIME.DIGITAL_TWIN, produces = MediaType.APPLICATION_JSON_VALUE)
   public @ResponseBody GraphModel.DigitalTwin getDigitalTwin(
       Principal principal,
       @Parameter(description = "Digital twin ID") @PathVariable(name = "id") String id,
@@ -149,7 +172,7 @@ public class RuntimeServerController {
       DigitalTwinImpl digitalTwin = null;
       ServiceSessionScope sessionScope;
       if (scope instanceof ServiceContextScope contextScope && id.equals(contextScope.getId())) {
-        if (contextScope.getDigitalTwin()  instanceof DigitalTwinImpl digitalTwin1) {}
+        if (contextScope.getDigitalTwin() instanceof DigitalTwinImpl digitalTwin1) {}
         digitalTwin = digitalTwin;
       } else {
         sessionScope = scope.getParentScope(Scope.Type.SESSION, ServiceSessionScope.class);

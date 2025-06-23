@@ -195,13 +195,14 @@ public interface RuntimeService extends KlabService {
   List<SessionInfo> getSessionInfo(Scope scope);
 
   /**
-   * Establishes a connection to a specific context within the designated session scope. This should
-   * not return null as long as the user scope has rights to the digital twin and the knowledge
-   * graph contains it.
+   * Establishes a connection to a specific context within the designated session scope. The call
+   * passes a configuration and gets one back, possibly with empty or changed rights, or with error
+   * or info notifications.
    *
    * @return the context scope that represents the connected context, or null
    */
-  ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope);
+  DigitalTwin.Configuration connectContext(
+      DigitalTwin.Configuration configuration, UserScope userScope);
 
   /**
    * Release the passed session, releasing any context scopes created in it.

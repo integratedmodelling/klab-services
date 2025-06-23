@@ -3,8 +3,11 @@ package org.integratedmodelling.klab.api.digitaltwin.impl;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.scope.Persistence;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class ConfigurationBuilder {
@@ -16,6 +19,7 @@ public class ConfigurationBuilder {
   private TimeUnit timeoutUnit;
   private URL url;
   private URL serverUrl;
+  private List<Notification> notifications = new ArrayList<>();
 
   public ConfigurationBuilder accessRights(ResourcePrivileges accessRights) {
     this.accessRights = accessRights;

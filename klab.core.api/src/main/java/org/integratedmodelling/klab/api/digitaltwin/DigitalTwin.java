@@ -28,6 +28,7 @@ import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * The digital twin is a graph model composed of observations and all their history. Each {@link
@@ -91,6 +92,8 @@ public interface DigitalTwin extends RuntimeAsset {
      * @return
      */
     ResourcePrivileges getAccessRights();
+
+    List<Notification> notifications();
 
     Persistence getPersistence();
 

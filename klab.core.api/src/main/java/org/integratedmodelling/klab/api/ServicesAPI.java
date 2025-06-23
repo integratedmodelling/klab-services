@@ -363,6 +363,8 @@ public interface ServicesAPI {
      */
     String DIGITAL_TWIN = DIGITAL_TWIN_PREFIX + "{id}";
 
+    String CONNECT = "/connect";
+
     /**
      * PUT endpoint to ingest and start resolving an observation. Returns the observation ID that
      * can be used to follow the resolution task. Payload is a {@link

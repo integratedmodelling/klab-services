@@ -1,12 +1,17 @@
 package org.integratedmodelling.common.services.client.scope;
 
+import org.integratedmodelling.common.configuration.Settings;
+import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.springframework.context.aot.AbstractAotProcessor;
 
 import java.util.*;
 
@@ -41,7 +46,8 @@ public enum ClientScopeManager {
 
   /**
    * Retrieves a context scope based on the provided runtime and configuration. Optionally, a new
-   * scope may be created if it does not already exist.
+   * scope may be created if it does not already exist. The requested configuration must exist on
+   * the service and a connect call will be made to request connection.
    *
    * @param configuration the {@link DigitalTwin.Configuration} containing the configuration details
    *     for this scope. Persistence and other creation metadata are only relevant for scopes that
@@ -61,6 +67,18 @@ public enum ClientScopeManager {
     }
     if (createIfMissing) {
       var service = findService(configuration, requestingScope);
+
+      /* issue a CONNECT call to the service to ensure we have rights and the scope exists. */
+      if (!service.status().isOperational()) {
+        requestingScope.error(
+            "Cannot connect to remote scope for digital twin "
+                + configuration.getName()
+                + ": service is not operational");
+        return null;
+      }
+
+      configuration = service.connectContext(configuration, requestingScope);
+
       var sessionId = Utils.Paths.getLeading(configuration.getId(), '.');
       var sessionScope = getScope(service, sessionId, requestingScope, ClientSessionScope.class);
       if (sessionScope == null) {
@@ -127,8 +145,16 @@ public enum ClientScopeManager {
         return runtime;
       }
     }
-    // TODO ask the scope to register a new runtime
-    return null;
+
+    var newRuntime =
+        new RuntimeClient(
+            configuration.getUrl(), requestingScope.getIdentity(), Parameters.create());
+
+    // FIXME this will cause an exception as the client list is read-only. The client-side services
+    //  are ultimately stored in the engine - must deal with that.
+    requestingScope.getServices(RuntimeService.class).add(newRuntime);
+
+    return newRuntime;
   }
 
   public void register(ClientSessionScope ret) {
