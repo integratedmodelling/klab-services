@@ -32,7 +32,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 public class ClientDigitalTwin implements DigitalTwin {
 
   private final ContextScope scope;
-  private ClientKnowledgeGraph knowledgeGraph;
+  private KnowledgeGraph knowledgeGraph;
   private RuntimeService runtimeClient;
   private List<Consumer<Message>> eventConsumers = new ArrayList<>();
   private long transientId = Klab.getNextId();
@@ -44,7 +44,7 @@ public class ClientDigitalTwin implements DigitalTwin {
       this.knowledgeGraph = new ClientKnowledgeGraph(scope, rc);
       scope.onMessage((channel, message) -> ingest(message), Message.Queue.Events);
     } else {
-      throw new KlabInternalErrorException("Non-client runtime class in client digital twin");
+      this.knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
     }
   }
 
@@ -85,11 +85,14 @@ public class ClientDigitalTwin implements DigitalTwin {
     /*
     We load contextualization info in each observation's metadata
      */
-    switch (event.getMessageType()) {
-      case KnowledgeGraphCommitted ->
-          knowledgeGraph.ingest(event.getPayload(GraphModel.KnowledgeGraph.class));
-      case ContextualizationStarted, ContextualizationAborted, ContextualizationSuccessful ->
-          knowledgeGraph.update(event.getPayload(Observation.class), event.getMessageType());
+    if (knowledgeGraph instanceof ClientKnowledgeGraph clientKnowledgeGraph) {
+      switch (event.getMessageType()) {
+        case KnowledgeGraphCommitted ->
+            clientKnowledgeGraph.ingest(event.getPayload(GraphModel.KnowledgeGraph.class));
+        case ContextualizationStarted, ContextualizationAborted, ContextualizationSuccessful ->
+            clientKnowledgeGraph.update(
+                event.getPayload(Observation.class), event.getMessageType());
+      }
     }
     for (var consumer : eventConsumers) {
       consumer.accept(event);

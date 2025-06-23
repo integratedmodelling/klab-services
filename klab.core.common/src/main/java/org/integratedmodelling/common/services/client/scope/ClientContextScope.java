@@ -51,7 +51,6 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             ResolutionConstraint.Type.Provenance, Agent.create(parent.getUser().getUsername())));
   }
 
-
   /**
    * This is for derived scopes only
    * @param parent

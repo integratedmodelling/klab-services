@@ -300,20 +300,7 @@ public class ScopeManager {
               String sessionId = Utils.Paths.getLeading(scopeId, '.');
               var sessionScope = getScope(sessionId, SessionScope.class);
               if (sessionScope == null) {
-                sessionScope =
-                    new ServiceSessionScope(scope) {
-                      @Override
-                      public <T extends KlabService> Collection<T> getServices(
-                          Class<T> serviceClass) {
-                        return scope.getServices(serviceClass);
-                      }
-
-                      @Override
-                      public <T extends KlabService> T getService(Class<T> serviceClass) {
-                        // FIXME this must be the runtime that creates it
-                        return scope.getService(serviceClass);
-                      }
-                    };
+                sessionScope = new ServiceSessionScope(scope);
                 ((ServiceSessionScope) sessionScope).setId(sessionId);
                 registerScope((ServiceSessionScope) sessionScope, federation);
               }
@@ -324,18 +311,7 @@ public class ScopeManager {
             var reconstructed =
                 (T)
                     new ServiceContextScope(
-                        (ServiceSessionScope) parent, scopeId, kg.getSecond(), kg.getFirst()) {
-                      @Override
-                      public <T extends KlabService> Collection<T> getServices(
-                          Class<T> serviceClass) {
-                        return parent.getServices(serviceClass);
-                      }
-
-                      @Override
-                      public <T extends KlabService> T getService(Class<T> serviceClass) {
-                        return parent.getService(serviceClass);
-                      }
-                    };
+                        (ServiceSessionScope) parent, scopeId, kg.getSecond(), kg.getFirst());
             service.registerContext((ContextScope) reconstructed, federation);
             registerScope((ServiceContextScope) reconstructed, federation);
             return reconstructed;

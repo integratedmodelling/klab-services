@@ -41,7 +41,7 @@ import org.ojalgo.concurrent.Parallelism;
  *
  * <p>Maintained by the {@link ScopeManager}
  */
-public abstract class ServiceContextScope extends ServiceSessionScope implements ContextScope {
+public class ServiceContextScope extends ServiceSessionScope implements ContextScope {
 
   public static final String EXISTING_KNOWLEDGE_GRAPH_ID = "existingKnowledgeGraphId";
   // TODO make this configurable
@@ -95,18 +95,7 @@ public abstract class ServiceContextScope extends ServiceSessionScope implements
 
   @Override
   ServiceContextScope copy() {
-    return new ServiceContextScope(this) {
-
-      @Override
-      public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-        return parent.getServices(serviceClass);
-      }
-
-      @Override
-      public <T extends KlabService> T getService(Class<T> serviceClass) {
-        return parent.getService(serviceClass);
-      }
-    };
+    return new ServiceContextScope(this);
   }
 
   // next 3 are overridden with the same code as the parent because they need to use the local maps,

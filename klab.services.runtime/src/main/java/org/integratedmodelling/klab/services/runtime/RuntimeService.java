@@ -285,11 +285,6 @@ public class RuntimeService extends BaseService
       serviceContextScope.setDigitalTwin(
           new DigitalTwinImpl(this, serviceContextScope, knowledgeGraph));
 
-//      if (serviceContextScope.getServices(RuntimeService.class).isEmpty()) {
-//        // add self as the runtime service, which is needed by the slave scopes
-//        serviceContextScope.getServices(RuntimeService.class).add(this);
-//      }
-
       // all other services need to know the context we created. TODO we may also need to
       // register with the stats services and maybe any independent authorities
       var fail = new AtomicBoolean(false);

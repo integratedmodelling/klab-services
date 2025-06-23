@@ -235,13 +235,6 @@ public interface ContextScope extends SessionScope {
    */
   Collection<Observation> affected(Observation observation);
 
-//  /**
-//   * Start the scheduling if the context occurs; do nothing if not, or if there are no new
-//   * transitions to calculate. This can be called multiple times, normally after each observation,
-//   * with intelligent "replay" of any transitions that need to be seen again.
-//   */
-//  void runTransitions();
-
   /**
    * Return the portion of the provenance graph that pertains to this scope. This may be empty in an
    * empty context, never null. Provenance will be relative to the context observation this scope

@@ -25,7 +25,7 @@ import java.util.List;
  *
  * <p>Maintained by the {@link ScopeManager}
  */
-public abstract class ServiceSessionScope extends ServiceUserScope implements SessionScope {
+public class ServiceSessionScope extends ServiceUserScope implements SessionScope {
 
   private String name;
   private boolean operative = true;
@@ -55,17 +55,7 @@ public abstract class ServiceSessionScope extends ServiceUserScope implements Se
   @Override
   ServiceSessionScope copy() {
     final ServiceSessionScope parentScope = this;
-    return new ServiceSessionScope(this) {
-      @Override
-      public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-        return parentScope.getServices(serviceClass);
-      }
-
-      @Override
-      public <T extends KlabService> T getService(Class<T> serviceClass) {
-        return parentScope.getService(serviceClass);
-      }
-    };
+    return new ServiceSessionScope(this);
   }
 
   @Override
@@ -81,18 +71,7 @@ public abstract class ServiceSessionScope extends ServiceUserScope implements Se
   public ContextScope createContext(DigitalTwin.Configuration configuration) {
 
     final ServiceContextScope ret =
-        new ServiceContextScope(this, configuration) {
-
-          @Override
-          public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-            return parent.getServices(serviceClass);
-          }
-
-          @Override
-          public <T extends KlabService> T getService(Class<T> serviceClass) {
-            return parent.getService(serviceClass);
-          }
-        };
+        new ServiceContextScope(this, configuration);
     return ret;
   }
 

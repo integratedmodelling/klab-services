@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
@@ -106,12 +107,12 @@ public class ResolverService extends BaseService implements Resolver {
   @Override
   public boolean shutdown() {
 
-//    serviceScope()
-//        .send(
-//            Message.MessageClass.ServiceLifecycle,
-//            Message.MessageType.ServiceUnavailable,
-//            capabilities(serviceScope()));
-//
+    //    serviceScope()
+    //        .send(
+    //            Message.MessageClass.ServiceLifecycle,
+    //            Message.MessageType.ServiceUnavailable,
+    //            capabilities(serviceScope()));
+    //
     // TODO Auto-generated method stub
     return super.shutdown();
   }
@@ -203,11 +204,11 @@ public class ResolverService extends BaseService implements Resolver {
 
     Logging.INSTANCE.setSystemIdentifier("Resolver service: ");
 
-//    serviceScope()
-//        .send(
-//            Message.MessageClass.ServiceLifecycle,
-//            Message.MessageType.ServiceInitializing,
-//            capabilities(serviceScope()).toString());
+    //    serviceScope()
+    //        .send(
+    //            Message.MessageClass.ServiceLifecycle,
+    //            Message.MessageType.ServiceInitializing,
+    //            capabilities(serviceScope()).toString());
 
     /*
      * Components
@@ -231,15 +232,15 @@ public class ResolverService extends BaseService implements Resolver {
      * Setup an embedded broker, possibly to be shared with other services, if we're local and there
      * is no configured broker.
      */
-    if (Utils.URLs.isLocalHost(this.getUrl()) &&  startupOptions.isStartLocalBroker()) {
+    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
       this.embeddedBroker = new EmbeddedBroker();
     }
 
-//    serviceScope()
-//        .send(
-//            Message.MessageClass.ServiceLifecycle,
-//            Message.MessageType.ServiceAvailable,
-//            capabilities(serviceScope()));
+    //    serviceScope()
+    //        .send(
+    //            Message.MessageClass.ServiceLifecycle,
+    //            Message.MessageType.ServiceAvailable,
+    //            capabilities(serviceScope()));
   }
 
   @Override
@@ -366,8 +367,7 @@ public class ResolverService extends BaseService implements Resolver {
    * @return
    */
   @Override
-  public String registerSession(
-      SessionScope sessionScope, Federation federation) {
+  public String registerSession(SessionScope sessionScope, Federation federation) {
 
     if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
@@ -393,8 +393,7 @@ public class ResolverService extends BaseService implements Resolver {
    * @return
    */
   @Override
-  public String registerContext(
-      ContextScope contextScope, Federation federation) {
+  public String registerContext(ContextScope contextScope, Federation federation) {
 
     contextScope.getData().put(RESOLUTION_GRAPH_KEY, ResolutionGraph.create(contextScope));
 

@@ -156,18 +156,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   public SessionScope getUserSession(RuntimeService hostService) {
 
     final var userScope = this;
-    final ServiceSessionScope ret = new ServiceSessionScope(this) {
-      @Override
-      public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-        return userScope.getServices(serviceClass);
-      }
-
-      @Override
-      public <T extends KlabService> T getService(Class<T> serviceClass) {
-        // FIXME this must be the runtime that creates it
-        return userScope.getService(serviceClass);
-      }
-    };
+    final ServiceSessionScope ret = new ServiceSessionScope(this);
     ret.setStatus(Status.WAITING);
     ret.setName(
             federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
