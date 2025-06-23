@@ -28,6 +28,8 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.VisualizationRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -116,24 +118,41 @@ public class RuntimeServerController {
   }
 
   /**
-   * Connect to the DT through the service. This may cause the DT to be reconstructed if
+   * Connect to the DT through the service. This may cause the scope chain to be reconstructed if
+   * it's present in the knowledge graph but there is no a live scope.
    *
    * @param principal
    * @param configuration
    * @return
    */
-  @PostMapping(value = ServicesAPI.RUNTIME.CONNECT, produces = MediaType.APPLICATION_JSON_VALUE)
+  @Operation(
+      summary = "Connect to digital twin",
+      description =
+          "Connect to the digital twin through the service. This may cause the digital twin to be reconstructed.")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Connected successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "404", description = "Digital twin not found")
+      })
+  @PostMapping(value = ServicesAPI.RUNTIME.CONNECT)
   public @ResponseBody DigitalTwin.Configuration connectToDigitalTwin(
-      Principal principal, @RequestBody DigitalTwin.Configuration configuration) {
+      Principal principal,
+      @Parameter(description = "Digital twin configuration") @RequestBody ScopeRequest request) {
 
     if (principal instanceof EngineAuthorization authorization) {
-      var scope =
+      var ret =
           runtimeService
               .klabService()
-              .connectContext(configuration, authorization.getScope(UserScope.class));
-      return scope == null
-          ? DigitalTwin.Configuration.builder().accessRights(ResourcePrivileges.empty()).build()
-          : scope.getDigitalTwinConfiguration();
+              .connectContext(request.getConfiguration(), authorization.getScope(UserScope.class));
+
+      if (ret == null) {
+        return DigitalTwin.Configuration.builder()
+            .withNotification(Notification.error("Cannot find a digital twin with requested ID"))
+            .build();
+      }
+
+      return ret.getDigitalTwinConfiguration();
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }

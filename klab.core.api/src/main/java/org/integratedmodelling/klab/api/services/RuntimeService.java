@@ -6,7 +6,6 @@ import org.integratedmodelling.klab.api.data.Mutable;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -16,7 +15,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 
 import java.util.Arrays;
@@ -24,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 /**
  * The runtime service holds the actual digital twins referred to by context scopes. Client scopes
@@ -196,13 +193,13 @@ public interface RuntimeService extends KlabService {
 
   /**
    * Establishes a connection to a specific context within the designated session scope. The call
-   * passes a configuration and gets one back, possibly with empty or changed rights, or with error
-   * or info notifications.
+   * passes a configuration and gets back a context, which may have been reconstructed at the
+   * service side from existing storage. The scope will later be registered with the needed
+   * services.
    *
    * @return the context scope that represents the connected context, or null
    */
-  DigitalTwin.Configuration connectContext(
-      DigitalTwin.Configuration configuration, UserScope userScope);
+  ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope);
 
   /**
    * Release the passed session, releasing any context scopes created in it.

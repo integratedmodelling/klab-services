@@ -393,11 +393,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   @Override
-  public ContextScope connect(DigitalTwin.Configuration configuration) {
-    return ClientScopeManager.INSTANCE.getContextScope(configuration, true, user());
-  }
-
-  @Override
   public ContextScope openNewContext(DigitalTwin.Configuration configuration) {
     if (currentSession == null) {
       return null;

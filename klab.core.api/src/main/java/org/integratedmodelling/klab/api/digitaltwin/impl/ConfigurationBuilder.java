@@ -51,6 +51,11 @@ public class ConfigurationBuilder {
     return this;
   }
 
+  public ConfigurationBuilder withNotification(Notification notification) {
+    this.notifications.add(notification);
+    return this;
+  }
+
   public ConfigurationBuilder timeout(long timeout, TimeUnit timeoutUnit) {
     this.timeout = timeout;
     this.timeoutUnit = timeoutUnit;
@@ -59,6 +64,14 @@ public class ConfigurationBuilder {
 
   public DigitalTwin.Configuration build() {
     return new ConfigurationImpl(
-        accessRights, persistence, name, id, this.timeout, this.timeoutUnit, this.url, this.serverUrl);
+        accessRights,
+        persistence,
+        name,
+        id,
+        this.timeout,
+        this.timeoutUnit,
+        this.url,
+        this.serverUrl,
+        this.notifications);
   }
 }

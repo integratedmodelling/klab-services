@@ -93,7 +93,12 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     ResourcePrivileges getAccessRights();
 
-    List<Notification> notifications();
+    /**
+     * These may be present when the configuration is the return value of a connect call.
+     *
+     * @return
+     */
+    List<Notification> getNotifications();
 
     Persistence getPersistence();
 

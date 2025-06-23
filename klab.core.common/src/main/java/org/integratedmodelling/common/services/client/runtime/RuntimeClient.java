@@ -1,21 +1,23 @@
 package org.integratedmodelling.common.services.client.runtime;
 
 import java.net.URL;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
-import org.integratedmodelling.common.services.client.GraphQLClient;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
+import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
+import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
+import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.Federation;
@@ -261,26 +263,100 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
   @Override
   public ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
+
+    var ret = ClientScopeManager.INSTANCE.getScope(configuration.getId(), ContextScope.class);
+    if (ret != null) {
+      return ret;
+    }
+
+    ScopeRequest request = new ScopeRequest();
+    request.setConfiguration(configuration);
+    request.getRuntimeServices().add(getUrl());
+    request
+        .getResolverServices()
+        .addAll(userScope.getServices(Resolver.class).stream().map(s -> s.getUrl()).toList());
+    request
+        .getReasonerServices()
+        .addAll(userScope.getServices(Reasoner.class).stream().map(s -> s.getUrl()).toList());
+    request
+        .getResourceServices()
+        .addAll(
+            userScope.getServices(ResourcesService.class).stream().map(s -> s.getUrl()).toList());
+
     var descriptor =
         client
             .withScope(userScope)
-            .get(
-                ServicesAPI.RUNTIME.DIGITAL_TWIN,
-                GraphModel.DigitalTwin.class,
-                "id",
-                configuration.getId());
+            .post(ServicesAPI.RUNTIME.CONNECT, request, DigitalTwin.Configuration.class);
 
     if (descriptor != null && !Utils.Notifications.hasErrors(descriptor.getNotifications())) {
+
       // TODO reconstruct session scope
       // TODO reconstruct context scope
-    } else if (descriptor == null) {
-      userScope.error(
-          "Remote context named " + configuration.getName() + " is not existent or available.");
-    } else {
-      for (Notification notification : descriptor.getNotifications()) {
-        userScope.send(notification);
-      }
+
+      descriptor.getNotifications().forEach(n -> userScope.send(n));
+
+      // FIXME
+
+      //      var sessionId = Utils.Paths.getLeading(configuration.getId(), '.');
+      //      var sessionScope = getScope(service, sessionId, requestingScope,
+      // ClientSessionScope.class);
+      //      if (sessionScope == null) {
+      //        var info =
+      //                service.getSessionInfo(requestingScope).stream()
+      //                       .filter(si -> si.getId().equals(sessionId))
+      //                       .findFirst();
+      //
+      //        if (info.isEmpty()) {
+      //          requestingScope.error(
+      //                  "Session info not found for session ID="
+      //                          + sessionId
+      //                          + ": scope may have been deleted");
+      //          return null;
+      //        }
+      //
+      //        sessionScope =
+      //                new ClientSessionScope(
+      //                        (ClientUserScope) requestingScope, info.get().getName(), service) {
+      //                  @Override
+      //                  public <T extends KlabService> T getService(Class<T> serviceClass) {
+      //                    return RuntimeService.class.equals(serviceClass)
+      //                           ? (T) service
+      //                           : requestingScope.getService(serviceClass);
+      //                  }
+      //
+      //                  @Override
+      //                  public <T extends KlabService> Collection<T> getServices(Class<T>
+      // serviceClass) {
+      //                    return RuntimeService.class.equals(serviceClass)
+      //                           ? List.of((T) service)
+      //                           : requestingScope.getServices(serviceClass);
+      //                  }
+      //                };
+      //        sessionScope.setId(sessionId);
+      //        register(sessionScope);
+      //      }
+      //      var ret =
+      //              new ClientContextScope(sessionScope, service, configuration) {
+      //                @Override
+      //                public <T extends KlabService> T getService(Class<T> serviceClass) {
+      //                  return RuntimeService.class.equals(serviceClass)
+      //                         ? (T) service
+      //                         : requestingScope.getService(serviceClass);
+      //                }
+      //
+      //                @Override
+      //                public <T extends KlabService> Collection<T> getServices(Class<T>
+      // serviceClass) {
+      //                  return RuntimeService.class.equals(serviceClass)
+      //                         ? List.of((T) service)
+      //                         : requestingScope.getServices(serviceClass);
+      //                }
+      //              };
+      //      ret.setId(configuration.getId());
+      //      register(ret);
+      //      return ret;
     }
+
     return null;
   }
 

@@ -1,6 +1,9 @@
 package org.integratedmodelling.klab.api.digitaltwin.impl;
 
+import java.net.NoRouteToHostException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -8,6 +11,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public class ConfigurationImpl implements DigitalTwin.Configuration {
 
@@ -22,6 +26,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private long creationTime;
   private long idleTimeMs;
   private URL serviceUrl;
+  private List<Notification> notifications = new ArrayList<>();
 
   // for the object mapper, do not remove
   ConfigurationImpl() {}
@@ -34,7 +39,8 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
       long timeout,
       TimeUnit timeoutUnit,
       URL url,
-      URL serviceUrl) {
+      URL serviceUrl,
+      List<Notification> notifications) {
     this.accessRights = accessRights;
     this.persistence = persistence;
     this.name = name;
@@ -43,6 +49,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
     this.timeoutUnit = timeoutUnit;
     this.url = url;
     this.serviceUrl = serviceUrl;
+    this.notifications.addAll(notifications);
   }
 
   @Override
@@ -180,5 +187,13 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
 
   public void setServiceUrl(URL serviceUrl) {
     this.serviceUrl = serviceUrl;
+  }
+
+  public List<Notification> getNotifications() {
+    return notifications;
+  }
+
+  public void setNotifications(List<Notification> notifications) {
+    this.notifications = notifications;
   }
 }

@@ -614,9 +614,21 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
+  public ContextScope connectContext(
+      DigitalTwin.Configuration configuration, UserScope userScope) {
     // TODO for now we just return the existing. Later we should create it if the user is enabled
-    return getScopeManager().getScope(configuration.getId(), ContextScope.class);
+    var scope = getScopeManager().getScope(configuration.getId(), ContextScope.class);
+    if (scope == null) {
+      scope = reconstructContext(configuration, userScope);
+    }
+    return scope;
+  }
+
+  private ContextScope reconstructContext(
+      DigitalTwin.Configuration configuration, UserScope userScope) {
+    // TODO find the scope in the knowledge graph. If existing, recreate the scope and the owning
+    //  session.
+    return null;
   }
 
   @Override

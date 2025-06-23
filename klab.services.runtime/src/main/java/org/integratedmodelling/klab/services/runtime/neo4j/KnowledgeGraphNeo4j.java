@@ -7,12 +7,14 @@ import java.util.*;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -97,6 +99,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               + "node\n"
               + "\t(ctx:Context {id: $contextId, name: $name, user: $username, created: "
               + "$timestamp, "
+              + "rights: $rights, "
               + "expiration: $expirationType}),\n"
               + "\t// main provenance and dataflow nodes\n"
               + "\t(prov:Provenance {name: 'Provenance', id: $contextId + '.PROVENANCE'}), "
@@ -267,16 +270,37 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       this.klab = getOrCreateAgent("k.LAB", "AI");
       this.user = getOrCreateAgent(scope.getUser().getUsername(), "USER");
 
+      var username = scope.getUser().getUsername();
+      var federation = Authentication.INSTANCE.getFederationData(scope.getUser());
+      if (federation != null) {
+        username += "@" + federation.getId();
+      }
+      var rights =
+          scope.getDigitalTwinConfiguration() == null
+              ? null
+              : scope.getDigitalTwinConfiguration().getAccessRights();
+      if (rights == null) {
+        rights = ResourcePrivileges.create(scope);
+      }
+
       for (var query : Queries.INITIALIZATION_QUERIES) {
         query(
             query,
             Map.of(
-                "contextId", scope.getId(),
-                "name", scope.getName(),
-                "timestamp", timestamp,
-                "username", scope.getUser().getUsername(),
-                "expirationType", scope.getPersistence().name(),
-                "activityId", activityId),
+                "contextId",
+                scope.getId(),
+                "name",
+                scope.getName(),
+                "rights",
+                rights.toString(),
+                "timestamp",
+                timestamp,
+                "username",
+                username,
+                "expirationType",
+                scope.getPersistence().name(),
+                "activityId",
+                activityId),
             scope);
       }
     }

@@ -28,15 +28,12 @@ public enum ClientScopeManager {
   /**
    * Get an existing scope, interrogating the runtime if we don't have it cached.
    *
-   * @param runtime
    * @param scopeId
-   * @param requestingScope
    * @param scopeClass
    * @return
    * @param <T>
    */
-  public <T extends SessionScope> T getScope(
-      RuntimeService runtime, String scopeId, UserScope requestingScope, Class<T> scopeClass) {
+  public <T extends SessionScope> T getScope(String scopeId, Class<T> scopeClass) {
     if (scopes.containsKey(scopeId)
         && scopeClass.isAssignableFrom(scopes.get(scopeId).getClass())) {
       return (T) scopes.get(scopeId);
@@ -77,64 +74,9 @@ public enum ClientScopeManager {
         return null;
       }
 
-      configuration = service.connectContext(configuration, requestingScope);
-
-      var sessionId = Utils.Paths.getLeading(configuration.getId(), '.');
-      var sessionScope = getScope(service, sessionId, requestingScope, ClientSessionScope.class);
-      if (sessionScope == null) {
-        var info =
-            service.getSessionInfo(requestingScope).stream()
-                .filter(si -> si.getId().equals(sessionId))
-                .findFirst();
-
-        if (info.isEmpty()) {
-          requestingScope.error(
-              "Session info not found for session ID="
-                  + sessionId
-                  + ": scope may have been deleted");
-          return null;
-        }
-
-        sessionScope =
-            new ClientSessionScope(
-                (ClientUserScope) requestingScope, info.get().getName(), service) {
-              @Override
-              public <T extends KlabService> T getService(Class<T> serviceClass) {
-                return RuntimeService.class.equals(serviceClass)
-                    ? (T) service
-                    : requestingScope.getService(serviceClass);
-              }
-
-              @Override
-              public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-                return RuntimeService.class.equals(serviceClass)
-                    ? List.of((T) service)
-                    : requestingScope.getServices(serviceClass);
-              }
-            };
-        sessionScope.setId(sessionId);
-        register(sessionScope);
-      }
-      var ret =
-          new ClientContextScope(sessionScope, service, configuration) {
-            @Override
-            public <T extends KlabService> T getService(Class<T> serviceClass) {
-              return RuntimeService.class.equals(serviceClass)
-                  ? (T) service
-                  : requestingScope.getService(serviceClass);
-            }
-
-            @Override
-            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-              return RuntimeService.class.equals(serviceClass)
-                  ? List.of((T) service)
-                  : requestingScope.getServices(serviceClass);
-            }
-          };
-      ret.setId(configuration.getId());
-      register(ret);
-      return ret;
+      return service.connectContext(configuration, requestingScope);
     }
+
     return null;
   }
 
