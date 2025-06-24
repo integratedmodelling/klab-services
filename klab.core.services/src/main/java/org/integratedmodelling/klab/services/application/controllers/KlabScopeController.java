@@ -143,7 +143,7 @@ public class KlabScopeController {
           }
         }
 
-        var id = instance.klabService().registerSession(ret, federation);
+        var id = instance.klabService().registerNewSession(ret, federation);
         if (brokerUrl != null && ret instanceof ServiceSessionScope serviceSessionScope) {
 
           if (queuesHeader == null) {
@@ -282,7 +282,7 @@ public class KlabScopeController {
             queuesHeader = serviceContextScope.defaultQueues();
           }
 
-          var id = instance.klabService().registerContext(ret, federation);
+          var id = instance.klabService().registerNewContext(ret, federation);
 
           var queuesAvailable = serviceContextScope.setupQueues(queuesHeader);
 

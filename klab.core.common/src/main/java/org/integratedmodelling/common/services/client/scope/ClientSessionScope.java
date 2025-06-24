@@ -95,7 +95,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
           }
         };
 
-    var id = engine.registerContext(ret, federation);
+    var id = engine.registerNewContext(ret, federation);
 
     if (id != null) {
       ret.setId(id);

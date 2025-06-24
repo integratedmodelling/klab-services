@@ -33,8 +33,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -186,10 +184,10 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   @Override
-  public String registerSession(SessionScope sessionScope, Federation federation) {
+  public String registerNewSession(SessionScope sessionScope, Federation federation) {
 
     var sessionId =
-        getUser().getService(RuntimeService.class).registerSession(sessionScope, federation);
+        getUser().getService(RuntimeService.class).registerNewSession(sessionScope, federation);
     if (sessionId != null) {
       // TODO advertise the session to all other services that will use it. Keep only the
       //  services that accepted it.
@@ -198,10 +196,10 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   @Override
-  public String registerContext(ContextScope contextScope, Federation federation) {
+  public String registerNewContext(ContextScope contextScope, Federation federation) {
 
     var contextId =
-        getUser().getService(RuntimeService.class).registerContext(contextScope, federation);
+        getUser().getService(RuntimeService.class).registerNewContext(contextScope, federation);
     if (contextId != null) {
       // TODO advertise the context to all other services that will use it. Keep only the
       // services that accept it.

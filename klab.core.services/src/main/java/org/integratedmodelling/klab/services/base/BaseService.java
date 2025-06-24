@@ -367,7 +367,7 @@ public abstract class BaseService implements KlabService {
    *     ID is null, the call has failed.
    * @return the ID of the new session created at server side, or null in case of failure.
    */
-  public String registerSession(
+  public String registerNewSession(
       SessionScope sessionScope, Federation federation) {
     return sessionScope instanceof ServiceSessionScope serviceSessionScope
         ? serviceSessionScope.getId()
@@ -386,7 +386,7 @@ public abstract class BaseService implements KlabService {
    *     ID is null, the call has failed.
    * @return the ID of the new context scope created at server side, or null in case of failure.
    */
-  public String registerContext(
+  public String registerNewContext(
       ContextScope contextScope, Federation federation) {
     return contextScope instanceof ServiceContextScope serviceSessionScope
         ? serviceSessionScope.getId()

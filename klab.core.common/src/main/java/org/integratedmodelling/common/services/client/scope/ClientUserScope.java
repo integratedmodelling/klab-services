@@ -1,6 +1,5 @@
 package org.integratedmodelling.common.services.client.scope;
 
-import jdk.jfr.Configuration;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -150,7 +149,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
           }
         };
 
-    var id = engine.registerSession(ret, federation);
+    var id = engine.registerNewSession(ret, federation);
 
     if (id != null) {
       ret.setId(id);

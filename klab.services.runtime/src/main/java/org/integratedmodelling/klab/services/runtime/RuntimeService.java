@@ -207,7 +207,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public String registerSession(SessionScope sessionScope, Federation federation) {
+  public String registerNewSession(SessionScope sessionScope, Federation federation) {
 
     if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
@@ -230,7 +230,7 @@ public class RuntimeService extends BaseService
                       // if things are OK, the service repeats the ID back
                       if (!serviceSessionScope
                           .getId()
-                          .equals(service.registerSession(serviceSessionScope, federation))) {
+                          .equals(service.registerNewSession(serviceSessionScope, federation))) {
                         fail.set(true);
                       }
                     }
@@ -255,7 +255,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public String registerContext(ContextScope contextScope, Federation federation) {
+  public String registerNewContext(ContextScope contextScope, Federation federation) {
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
@@ -287,7 +287,7 @@ public class RuntimeService extends BaseService
                       // if things are OK, the service repeats the ID back
                       if (!serviceContextScope
                           .getId()
-                          .equals(service.registerContext(serviceContextScope, federation))) {
+                          .equals(service.registerNewContext(serviceContextScope, federation))) {
                         fail.set(true);
                       }
                     }

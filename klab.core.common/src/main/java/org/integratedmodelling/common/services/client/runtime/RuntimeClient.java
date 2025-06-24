@@ -83,7 +83,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   }
 
   @Override
-  public String registerSession(SessionScope scope, Federation federation) {
+  public String registerNewSession(SessionScope scope, Federation federation) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
@@ -147,7 +147,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   }
 
   @Override
-  public String registerContext(ContextScope scope, Federation federation) {
+  public String registerNewContext(ContextScope scope, Federation federation) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());

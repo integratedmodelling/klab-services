@@ -30,6 +30,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.ojalgo.concurrent.Parallelism;
@@ -167,15 +168,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return this.observer;
   }
 
-//  @Override
-//  public boolean isConsistent() {
-//    return false;
-//  }
-//
-//  @Override
-//  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
-//    return List.of();
-//  }
+  //  @Override
+  //  public boolean isConsistent() {
+  //    return false;
+  //  }
+  //
+  //  @Override
+  //  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
+  //    return List.of();
+  //  }
 
   @Override
   public <T extends Observation> Collection<T> getPerspectives(Observable observable) {
@@ -484,12 +485,16 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public void close() {
 
+    send(Message.MessageType.ContextClosed, Message.MessageClass.DigitalTwin, this.configuration);
+
     // TODO when we're not in a runtime, we should not touch the digital twin (which is null) and
     //  we MUST call closeContext on all the other services we have paired with
 
     // TODO we also must persist the current observed geometries for all observers.
 
     digitalTwin.dispose();
+
+    // TODO if the DT has no more owners, also send a DigitalTwinDeleted message before continuing.
 
     // Call close() on all closeables in our dataset, including AutoCloseable if any.
     for (String key : getData().keySet()) {

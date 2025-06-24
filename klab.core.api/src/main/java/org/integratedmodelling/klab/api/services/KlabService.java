@@ -327,7 +327,7 @@ public interface KlabService extends Service {
    *     channels
    * @return the ID of the new session created at server side, or null in case of failure.
    */
-  String registerSession(SessionScope sessionScope, Federation federation);
+  String registerNewSession(SessionScope sessionScope, Federation federation);
 
   /**
    * Register a context scope created by the scope manager. Return a unique session ID that may be
@@ -343,7 +343,7 @@ public interface KlabService extends Service {
    *     channels
    * @return the ID of the new context scope created at server side, or null in case of failure.
    */
-  String registerContext(ContextScope contextScope, Federation federation);
+  String registerNewContext(ContextScope contextScope, Federation federation);
 
   /**
    * Get the access rights for the passed resource. If the resource does not exist or is
