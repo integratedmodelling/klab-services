@@ -257,13 +257,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   /** Ensure things are OK re: main agents and the like. Must be called only once */
-  protected void initializeContext() {
+  protected void initializeContext(String scopeId, String name, UserScope scope, ResourcePrivileges rights) {
 
-    this.rootContextId = scope.getId();
+    this.rootContextId = scopeId;
 
-    var result = query(Queries.FIND_CONTEXT, Map.of("contextId", scope.getId()), scope);
+    var result = query(Queries.FIND_CONTEXT, Map.of("contextId", scopeId), scope);
 
     if (result.records().isEmpty()) {
+
       long timestamp = System.currentTimeMillis();
       var activityId = nextKey();
 
@@ -275,10 +276,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       if (federation != null) {
         username += "@" + federation.getId();
       }
-      var rights =
-          scope.getDigitalTwinConfiguration() == null
-              ? null
-              : scope.getDigitalTwinConfiguration().getAccessRights();
       if (rights == null) {
         rights = ResourcePrivileges.create(scope);
       }
@@ -288,9 +285,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             query,
             Map.of(
                 "contextId",
-                scope.getId(),
+                scopeId,
                 "name",
-                scope.getName(),
+                name,
                 "rights",
                 rights.toString(),
                 "timestamp",
@@ -324,7 +321,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   @Override
   public void deleteContext() {
-    query(Queries.REMOVE_CONTEXT, Map.of("contextId", scope.getId()), scope);
+    query(Queries.REMOVE_CONTEXT, Map.of("contextId", rootContextId), scope);
   }
 
   /**
@@ -479,7 +476,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     if (scope == null) {
       driver.executableQuery("MATCH (n) DETACH DELETE n").execute();
     } else {
-      query(Queries.REMOVE_CONTEXT, Map.of("contextId", scope.getId()), scope);
+      query(Queries.REMOVE_CONTEXT, Map.of("contextId", rootContextId), scope);
     }
   }
 
@@ -505,7 +502,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var ret = nextKey();
     props.put("id", ret);
     if (asset instanceof Observation) {
-      props.put("urn", this.scope.getId() + "." + ret);
+      props.put("urn", rootContextId + "." + ret);
     }
     var result =
         query(
@@ -544,7 +541,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var ret = nextKey();
     props.put("id", ret);
     if (asset instanceof Observation || asset instanceof Activity) {
-      props.put("urn", this.scope.getId() + "." + ret);
+      props.put("urn", rootContextId + "." + ret);
     }
     var result =
         query(
@@ -760,9 +757,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       // it's one of the preset ones
       ret =
           switch (asset.classify()) {
-            case CONTEXT -> scope.getId();
-            case DATAFLOW -> scope.getId() + ".DATAFLOW";
-            case PROVENANCE -> scope.getId() + ".PROVENANCE";
+            case CONTEXT -> rootContextId;
+            case DATAFLOW -> rootContextId + ".DATAFLOW";
+            case PROVENANCE -> rootContextId + ".PROVENANCE";
             default -> throw new KlabIllegalStateException("Unexpected value: " + asset.classify());
           };
     }
@@ -773,13 +770,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     switch (asset) {
       case ObservationImpl observation -> {
         observation.setId(id);
-        observation.setUrn(scope.getId() + "." + id);
+        observation.setUrn(rootContextId + "." + id);
       }
       case ActuatorImpl actuator -> actuator.setId(id);
       case BufferImpl buffer -> buffer.setId(id);
       case ActivityImpl activity -> {
         activity.setId(id);
-        activity.setUrn(scope.getId() + "." + id);
+        activity.setUrn(rootContextId + "." + id);
       }
       case AgentImpl agent -> agent.setId(id);
       default -> {}
@@ -893,7 +890,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   public void update(
       org.neo4j.driver.Transaction transaction,
       RuntimeAsset runtimeAsset,
-      ContextScope scope,
+      Scope scope,
       Object... parameters) {
     var props = asParameters(runtimeAsset, parameters);
     props.remove("id");
@@ -906,7 +903,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   @Override
-  public void update(RuntimeAsset runtimeAsset, ContextScope scope, Object... parameters) {
+  public void update(RuntimeAsset runtimeAsset, Scope scope, Object... parameters) {
     var props = asParameters(runtimeAsset, parameters);
     props.remove("id");
     var result =

@@ -115,6 +115,8 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     String getId();
 
+    boolean isCreateWhenAbsent();
+
     /**
      * Used at client side before a scope request is made. This should add anything implied by the
      * current scope that wasn't filled or throw an exception if any of the settings requested are

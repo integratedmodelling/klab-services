@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.runtime.storage.BufferImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -22,7 +23,7 @@ import java.util.Map;
 
 public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
-  protected ContextScope scope;
+  protected UserScope scope;
 
   protected abstract long nextKey();
 
@@ -63,7 +64,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
       Object... additionalProperties);
 
   @Override
-  public <T extends RuntimeAsset> T get(long id, ContextScope scope, Class<T> resultClass) {
+  public <T extends RuntimeAsset> T get(long id, Scope scope, Class<T> resultClass) {
     return retrieve(id, resultClass, scope);
   }
 

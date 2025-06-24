@@ -52,7 +52,7 @@ public interface RuntimeAsset {
 
     public final Class<? extends RuntimeAsset> assetClass;
 
-    private Type(Class<? extends RuntimeAsset> assetClass) {
+    Type(Class<? extends RuntimeAsset> assetClass) {
       this.assetClass = assetClass;
     }
 
@@ -113,6 +113,16 @@ public interface RuntimeAsset {
    * @return the transient ID of this object
    */
   long getTransientId();
+
+//  /**
+//   * Used when a RuntimeAsset is requested at client side to optimize "lazy" access to the whole
+//   * graph. This will only return a positive number when the number of incoming relationships in the
+//   * graph is known; the number should only be considered valid at the time of the request. If the
+//   * number cannot be assessed, a negative value will be returned.
+//   *
+//   * @return number of incoming relationships in the knowledge graph, or < 0 for unknown.
+//   */
+//  long getChildCount();
 
   Type classify();
 

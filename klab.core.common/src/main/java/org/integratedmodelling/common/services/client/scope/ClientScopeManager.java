@@ -63,6 +63,7 @@ public enum ClientScopeManager {
       return (ContextScope) scopes.get(configuration.getId());
     }
     if (createIfMissing) {
+
       var service = findService(configuration, requestingScope);
 
       /* issue a CONNECT call to the service to ensure we have rights and the scope exists. */

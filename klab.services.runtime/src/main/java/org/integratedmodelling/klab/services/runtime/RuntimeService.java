@@ -628,6 +628,16 @@ public class RuntimeService extends BaseService
       DigitalTwin.Configuration configuration, UserScope userScope) {
     // TODO find the scope in the knowledge graph. If existing, recreate the scope and the owning
     //  session.
+    var sessionId = configuration.getId().substring(0, configuration.getId().lastIndexOf("."));
+    var session = getScopeManager().getScope(sessionId, SessionScope.class);
+    if (session == null) {
+      session = userScope.getUserSession(this);
+      // TODO register it
+    }
+
+    // TODO make the KG && create the scope with the passed ID
+    // TODO register and return it
+
     return null;
   }
 

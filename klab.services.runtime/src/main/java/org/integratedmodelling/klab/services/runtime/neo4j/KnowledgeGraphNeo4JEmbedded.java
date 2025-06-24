@@ -3,13 +3,13 @@ package org.integratedmodelling.klab.services.runtime.neo4j;
 import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.List;
+
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.connectors.HttpConnector;
@@ -37,6 +37,14 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
     this.online = parent.online;
     this.scope = scope;
     this.driver = parent.driver;
+  }
+
+  private KnowledgeGraphNeo4JEmbedded(KnowledgeGraphNeo4JEmbedded parent, String scopeId) {
+    this.managementService = parent.managementService;
+    this.graphDb = parent.graphDb;
+    this.online = parent.online;
+    this.driver = parent.driver;
+    this.rootContextId = scopeId;
   }
 
   /**
@@ -107,7 +115,7 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
     if (this.scope != null) {
 
       // idempotence
-      if (this.scope.getId().equals(scope.getId())) {
+      if (rootContextId.equals(scope.getId())) {
         return this;
       }
 
@@ -117,16 +125,29 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
 
     var ret = new KnowledgeGraphNeo4JEmbedded(this, scope);
 
-    ret.initializeContext();
+    ret.initializeContext(
+        scope.getId(),
+        scope.getName(),
+        scope,
+        scope.getDigitalTwinConfiguration().getAccessRights());
 
     return ret;
   }
 
-//  @Override
-//  public <T extends RuntimeAsset> List<T> get(
-//      RuntimeAsset source, DigitalTwin.Relationship linkType, Class<T> resultClass) {
-//    return List.of();
-//  }
+  @Override
+  public KnowledgeGraph contextualize(DigitalTwin.Configuration scope, UserScope userScope) {
+
+    // idempotence
+    if (scope.getId().equals(rootContextId)) {
+      return this;
+    }
+
+    var ret = new KnowledgeGraphNeo4JEmbedded(this, scope.getId());
+
+    ret.initializeContext(scope.getId(), scope.getName(), userScope, scope.getAccessRights());
+
+    return ret;
+  }
 
   @Override
   public KnowledgeGraph merge(URL remoteDigitalTwinURL) {

@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.services.client.runtime;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -264,7 +265,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   @Override
   public ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
 
-    var ret = ClientScopeManager.INSTANCE.getScope(configuration.getId(), ContextScope.class);
+    var ret = ClientScopeManager.INSTANCE.getScope(configuration.getId(), ClientContextScope.class);
     if (ret != null) {
       return ret;
     }
@@ -290,71 +291,35 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     if (descriptor != null && !Utils.Notifications.hasErrors(descriptor.getNotifications())) {
 
-      // TODO reconstruct session scope
-      // TODO reconstruct context scope
-
+      final var service = this;
       descriptor.getNotifications().forEach(n -> userScope.send(n));
 
-      // FIXME
+      var sessionId = Utils.Paths.getLeading(configuration.getId(), '.');
+      var sessionScope = ClientScopeManager.INSTANCE.getScope(sessionId, ClientSessionScope.class);
+      if (sessionScope == null) {
+        sessionScope = (ClientSessionScope) userScope.getUserSession(this);
+        ClientScopeManager.INSTANCE.register(sessionScope);
+      }
 
-      //      var sessionId = Utils.Paths.getLeading(configuration.getId(), '.');
-      //      var sessionScope = getScope(service, sessionId, requestingScope,
-      // ClientSessionScope.class);
-      //      if (sessionScope == null) {
-      //        var info =
-      //                service.getSessionInfo(requestingScope).stream()
-      //                       .filter(si -> si.getId().equals(sessionId))
-      //                       .findFirst();
-      //
-      //        if (info.isEmpty()) {
-      //          requestingScope.error(
-      //                  "Session info not found for session ID="
-      //                          + sessionId
-      //                          + ": scope may have been deleted");
-      //          return null;
-      //        }
-      //
-      //        sessionScope =
-      //                new ClientSessionScope(
-      //                        (ClientUserScope) requestingScope, info.get().getName(), service) {
-      //                  @Override
-      //                  public <T extends KlabService> T getService(Class<T> serviceClass) {
-      //                    return RuntimeService.class.equals(serviceClass)
-      //                           ? (T) service
-      //                           : requestingScope.getService(serviceClass);
-      //                  }
-      //
-      //                  @Override
-      //                  public <T extends KlabService> Collection<T> getServices(Class<T>
-      // serviceClass) {
-      //                    return RuntimeService.class.equals(serviceClass)
-      //                           ? List.of((T) service)
-      //                           : requestingScope.getServices(serviceClass);
-      //                  }
-      //                };
-      //        sessionScope.setId(sessionId);
-      //        register(sessionScope);
-      //      }
-      //      var ret =
-      //              new ClientContextScope(sessionScope, service, configuration) {
-      //                @Override
-      //                public <T extends KlabService> T getService(Class<T> serviceClass) {
-      //                  return RuntimeService.class.equals(serviceClass)
-      //                         ? (T) service
-      //                         : requestingScope.getService(serviceClass);
-      //                }
-      //
-      //                @Override
-      //                public <T extends KlabService> Collection<T> getServices(Class<T>
-      // serviceClass) {
-      //                  return RuntimeService.class.equals(serviceClass)
-      //                         ? List.of((T) service)
-      //                         : requestingScope.getServices(serviceClass);
-      //                }
-      //              };
-      //      ret.setId(configuration.getId());
-      //      register(ret);
-      //      return ret;
+      ret =
+          new ClientContextScope(sessionScope, this, configuration) {
+            @Override
+            public <T extends KlabService> T getService(Class<T> serviceClass) {
+              return RuntimeService.class.equals(serviceClass)
+                  ? (T) service
+                  : userScope.getService(serviceClass);
+            }
+
+            @Override
+            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+              return RuntimeService.class.equals(serviceClass)
+                  ? List.of((T) service)
+                  : userScope.getServices(serviceClass);
+            }
+          };
+      ret.setId(configuration.getId());
+      ClientScopeManager.INSTANCE.register(ret);
+      return ret;
     }
 
     return null;

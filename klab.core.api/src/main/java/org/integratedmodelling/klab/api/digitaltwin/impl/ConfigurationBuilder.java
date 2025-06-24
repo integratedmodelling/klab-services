@@ -20,6 +20,7 @@ public class ConfigurationBuilder {
   private URL url;
   private URL serverUrl;
   private List<Notification> notifications = new ArrayList<>();
+  private boolean createWhenAbsent;
 
   public ConfigurationBuilder accessRights(ResourcePrivileges accessRights) {
     this.accessRights = accessRights;
@@ -33,6 +34,11 @@ public class ConfigurationBuilder {
 
   public ConfigurationBuilder name(String name) {
     this.name = name;
+    return this;
+  }
+
+  public ConfigurationBuilder createWhenAbsent(boolean b) {
+    this.createWhenAbsent = b;
     return this;
   }
 
@@ -72,6 +78,7 @@ public class ConfigurationBuilder {
         this.timeoutUnit,
         this.url,
         this.serverUrl,
-        this.notifications);
+        this.notifications,
+        this.createWhenAbsent);
   }
 }

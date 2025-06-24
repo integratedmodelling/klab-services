@@ -27,6 +27,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private long idleTimeMs;
   private URL serviceUrl;
   private List<Notification> notifications = new ArrayList<>();
+  private boolean createWhenAbsent;
 
   // for the object mapper, do not remove
   ConfigurationImpl() {}
@@ -40,7 +41,8 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
       TimeUnit timeoutUnit,
       URL url,
       URL serviceUrl,
-      List<Notification> notifications) {
+      List<Notification> notifications,
+      boolean createWhenAbsent) {
     this.accessRights = accessRights;
     this.persistence = persistence;
     this.name = name;
@@ -50,6 +52,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
     this.url = url;
     this.serviceUrl = serviceUrl;
     this.notifications.addAll(notifications);
+    this.createWhenAbsent = createWhenAbsent;
   }
 
   @Override
@@ -195,5 +198,14 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
 
   public void setNotifications(List<Notification> notifications) {
     this.notifications = notifications;
+  }
+
+  @Override
+  public boolean isCreateWhenAbsent() {
+    return createWhenAbsent;
+  }
+
+  public void setCreateWhenAbsent(boolean createWhenAbsent) {
+    this.createWhenAbsent = createWhenAbsent;
   }
 }
