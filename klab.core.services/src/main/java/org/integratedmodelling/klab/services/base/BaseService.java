@@ -6,6 +6,8 @@ import io.github.classgraph.ScanResult;
 import java.io.*;
 import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -88,10 +90,13 @@ public abstract class BaseService implements KlabService {
     this.type = serviceType;
     this.startupOptions = options;
     try {
-      this.url =
-          new URL(options.getServiceHostUrl() + (options.getPort() != -1 ? ":" + options.getPort() : "")
-                  + (options.getContextPath() != null ? options.getContextPath() : ""));
-    } catch (MalformedURLException e) {
+      URL serviceHostUrl = (new URI(options.getServiceHostUrl())).toURL();
+      if (Utils.URLs.isLocalHost(serviceHostUrl)) {
+        this.url = (new URI(options.getServiceHostUrl() + ":" + options.getPort() + options.getContextPath())).toURL();
+      } else {
+        this.url = serviceHostUrl;
+      }
+    } catch (MalformedURLException | URISyntaxException e) {
       throw new KlabIllegalStateException(e);
     }
     createServiceSecret();

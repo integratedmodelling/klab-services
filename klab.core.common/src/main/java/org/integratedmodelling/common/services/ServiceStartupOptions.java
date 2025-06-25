@@ -354,7 +354,5 @@ public class ServiceStartupOptions implements StartupOptions {
 
   public void updateOptionsFromCertificate(KlabCertificate certificate) {
     this.serviceHostUrl = certificate.getProperty(KlabCertificate.KEY_URL);
-    this.port = -1;
-    this.contextPath = null; //they are ppart of certificate url
   }
 }

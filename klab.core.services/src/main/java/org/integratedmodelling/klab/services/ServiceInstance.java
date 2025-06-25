@@ -284,7 +284,8 @@ public abstract class ServiceInstance<T extends BaseService> {
   public boolean start(ServiceStartupOptions options) {
 
     setEnvironment(options);
-    this.service = createPrimaryService(this.serviceScope = createServiceScope(), options);
+    this.serviceScope = createServiceScope();
+    this.service = createPrimaryService(serviceScope, options);
 
     /** Must do this now */
     switch (this.service) {
