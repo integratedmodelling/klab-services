@@ -367,7 +367,7 @@ public class ResolverService extends BaseService implements Resolver {
    * @return
    */
   @Override
-  public String registerSession(
+  public String registerNewSession(
       SessionScope sessionScope, Federation federation) {
 
     if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
@@ -394,7 +394,7 @@ public class ResolverService extends BaseService implements Resolver {
    * @return
    */
   @Override
-  public String registerContext(
+  public String registerNewContext(
       ContextScope contextScope, Federation federation) {
 
     contextScope.getData().put(RESOLUTION_GRAPH_KEY, ResolutionGraph.create(contextScope));

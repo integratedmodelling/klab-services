@@ -1,21 +1,24 @@
 package org.integratedmodelling.common.services.client.runtime;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
-import org.integratedmodelling.common.services.client.GraphQLClient;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
+import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
+import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
+import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.Federation;
@@ -80,7 +83,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   }
 
   @Override
-  public String registerSession(SessionScope scope, Federation federation) {
+  public String registerNewSession(SessionScope scope, Federation federation) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
@@ -144,7 +147,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   }
 
   @Override
-  public String registerContext(ContextScope scope, Federation federation) {
+  public String registerNewContext(ContextScope scope, Federation federation) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
@@ -261,26 +264,64 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
   @Override
   public ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
+
+    var ret = ClientScopeManager.INSTANCE.getScope(configuration.getId(), ClientContextScope.class);
+    if (ret != null) {
+      return ret;
+    }
+
+    ScopeRequest request = new ScopeRequest();
+    request.setConfiguration(configuration);
+    request.getRuntimeServices().add(getUrl());
+    request
+        .getResolverServices()
+        .addAll(userScope.getServices(Resolver.class).stream().map(s -> s.getUrl()).toList());
+    request
+        .getReasonerServices()
+        .addAll(userScope.getServices(Reasoner.class).stream().map(s -> s.getUrl()).toList());
+    request
+        .getResourceServices()
+        .addAll(
+            userScope.getServices(ResourcesService.class).stream().map(s -> s.getUrl()).toList());
+
     var descriptor =
         client
             .withScope(userScope)
-            .get(
-                ServicesAPI.RUNTIME.DIGITAL_TWIN,
-                GraphModel.DigitalTwin.class,
-                "id",
-                configuration.getId());
+            .post(ServicesAPI.RUNTIME.CONNECT, request, DigitalTwin.Configuration.class);
 
     if (descriptor != null && !Utils.Notifications.hasErrors(descriptor.getNotifications())) {
-      // TODO reconstruct session scope
-      // TODO reconstruct context scope
-    } else if (descriptor == null) {
-      userScope.error(
-          "Remote context named " + configuration.getName() + " is not existent or available.");
-    } else {
-      for (Notification notification : descriptor.getNotifications()) {
-        userScope.send(notification);
+
+      final var service = this;
+      descriptor.getNotifications().forEach(n -> userScope.send(n));
+
+      var sessionId = Utils.Paths.getLeading(configuration.getId(), '.');
+      var sessionScope = ClientScopeManager.INSTANCE.getScope(sessionId, ClientSessionScope.class);
+      if (sessionScope == null) {
+        sessionScope = (ClientSessionScope) userScope.getUserSession(this);
+        ClientScopeManager.INSTANCE.register(sessionScope);
       }
+
+      ret =
+          new ClientContextScope(sessionScope, this, configuration) {
+            @Override
+            public <T extends KlabService> T getService(Class<T> serviceClass) {
+              return RuntimeService.class.equals(serviceClass)
+                  ? (T) service
+                  : userScope.getService(serviceClass);
+            }
+
+            @Override
+            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+              return RuntimeService.class.equals(serviceClass)
+                  ? List.of((T) service)
+                  : userScope.getServices(serviceClass);
+            }
+          };
+      ret.setId(configuration.getId());
+      ClientScopeManager.INSTANCE.register(ret);
+      return ret;
     }
+
     return null;
   }
 

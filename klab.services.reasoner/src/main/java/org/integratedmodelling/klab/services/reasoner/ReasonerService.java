@@ -3007,7 +3007,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    * @return
    */
   @Override
-  public String registerSession(SessionScope sessionScope, Federation federation) {
+  public String registerNewSession(SessionScope sessionScope, Federation federation) {
 
     if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
@@ -3034,7 +3034,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    * @return
    */
   @Override
-  public String registerContext(ContextScope contextScope, Federation federation) {
+  public String registerNewContext(ContextScope contextScope, Federation federation) {
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 

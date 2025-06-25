@@ -14,7 +14,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -26,6 +28,8 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.VisualizationRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -113,6 +117,46 @@ public class RuntimeServerController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
+  /**
+   * Connect to the DT through the service. This may cause the scope chain to be reconstructed if
+   * it's present in the knowledge graph but there is no a live scope.
+   *
+   * @param principal
+   * @param configuration
+   * @return
+   */
+  @Operation(
+      summary = "Connect to digital twin",
+      description =
+          "Connect to the digital twin through the service. This may cause the digital twin to be reconstructed.")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Connected successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "404", description = "Digital twin not found")
+      })
+  @PostMapping(value = ServicesAPI.RUNTIME.CONNECT)
+  public @ResponseBody DigitalTwin.Configuration connectToDigitalTwin(
+      Principal principal,
+      @Parameter(description = "Digital twin configuration") @RequestBody ScopeRequest request) {
+
+    if (principal instanceof EngineAuthorization authorization) {
+      var ret =
+          runtimeService
+              .klabService()
+              .connectContext(request.getConfiguration(), authorization.getScope(UserScope.class));
+
+      if (ret == null) {
+        return DigitalTwin.Configuration.builder()
+            .withNotification(Notification.error("Cannot find a digital twin with requested ID"))
+            .build();
+      }
+
+      return ret.getDigitalTwinConfiguration();
+    }
+    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
+
   @Operation(
       operationId = ServicesAPI.RUNTIME.DIGITAL_TWIN,
       summary =
@@ -128,9 +172,7 @@ public class RuntimeServerController {
         @ApiResponse(responseCode = "404", description = "Digital twin not found"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
       })
-  @GetMapping(
-      value = ServicesAPI.RUNTIME.DIGITAL_TWIN,
-      produces = MediaType.APPLICATION_JSON_VALUE)
+  @GetMapping(value = ServicesAPI.RUNTIME.DIGITAL_TWIN, produces = MediaType.APPLICATION_JSON_VALUE)
   public @ResponseBody GraphModel.DigitalTwin getDigitalTwin(
       Principal principal,
       @Parameter(description = "Digital twin ID") @PathVariable(name = "id") String id,
@@ -149,7 +191,7 @@ public class RuntimeServerController {
       DigitalTwinImpl digitalTwin = null;
       ServiceSessionScope sessionScope;
       if (scope instanceof ServiceContextScope contextScope && id.equals(contextScope.getId())) {
-        if (contextScope.getDigitalTwin()  instanceof DigitalTwinImpl digitalTwin1) {}
+        if (contextScope.getDigitalTwin() instanceof DigitalTwinImpl digitalTwin1) {}
         digitalTwin = digitalTwin;
       } else {
         sessionScope = scope.getParentScope(Scope.Type.SESSION, ServiceSessionScope.class);

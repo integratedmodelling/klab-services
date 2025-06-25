@@ -3,8 +3,11 @@ package org.integratedmodelling.klab.api.digitaltwin.impl;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.scope.Persistence;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class ConfigurationBuilder {
@@ -15,6 +18,9 @@ public class ConfigurationBuilder {
   private long timeout;
   private TimeUnit timeoutUnit;
   private URL url;
+  private URL serverUrl;
+  private List<Notification> notifications = new ArrayList<>();
+  private boolean createWhenAbsent;
 
   public ConfigurationBuilder accessRights(ResourcePrivileges accessRights) {
     this.accessRights = accessRights;
@@ -31,6 +37,11 @@ public class ConfigurationBuilder {
     return this;
   }
 
+  public ConfigurationBuilder createWhenAbsent(boolean b) {
+    this.createWhenAbsent = b;
+    return this;
+  }
+
   public ConfigurationBuilder id(String id) {
     this.id = id;
     return this;
@@ -41,6 +52,15 @@ public class ConfigurationBuilder {
     return this;
   }
 
+  public ConfigurationBuilder serverUrl(URL serverUrl) {
+    this.serverUrl = serverUrl;
+    return this;
+  }
+
+  public ConfigurationBuilder withNotification(Notification notification) {
+    this.notifications.add(notification);
+    return this;
+  }
 
   public ConfigurationBuilder timeout(long timeout, TimeUnit timeoutUnit) {
     this.timeout = timeout;
@@ -49,6 +69,16 @@ public class ConfigurationBuilder {
   }
 
   public DigitalTwin.Configuration build() {
-    return new ConfigurationImpl(accessRights, persistence, name, id, this.timeout, this.timeoutUnit, this.url);
+    return new ConfigurationImpl(
+        accessRights,
+        persistence,
+        name,
+        id,
+        this.timeout,
+        this.timeoutUnit,
+        this.url,
+        this.serverUrl,
+        this.notifications,
+        this.createWhenAbsent);
   }
 }

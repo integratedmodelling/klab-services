@@ -1,15 +1,19 @@
 package org.integratedmodelling.common.services.client.scope;
 
+import org.integratedmodelling.common.configuration.Settings;
+import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
+import org.integratedmodelling.klab.api.utils.Utils;
+import org.springframework.context.aot.AbstractAotProcessor;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A singleton used to keep track of scopes that were created within an instance. Differently from
@@ -24,15 +28,12 @@ public enum ClientScopeManager {
   /**
    * Get an existing scope, interrogating the runtime if we don't have it cached.
    *
-   * @param runtime
    * @param scopeId
-   * @param requestingScope
    * @param scopeClass
    * @return
    * @param <T>
    */
-  public <T extends SessionScope> T getScope(
-      RuntimeService runtime, String scopeId, UserScope requestingScope, Class<T> scopeClass) {
+  public <T extends SessionScope> T getScope(String scopeId, Class<T> scopeClass) {
     if (scopes.containsKey(scopeId)
         && scopeClass.isAssignableFrom(scopes.get(scopeId).getClass())) {
       return (T) scopes.get(scopeId);
@@ -42,10 +43,9 @@ public enum ClientScopeManager {
 
   /**
    * Retrieves a context scope based on the provided runtime and configuration. Optionally, a new
-   * scope may be created if it does not already exist.
+   * scope may be created if it does not already exist. The requested configuration must exist on
+   * the service and a connect call will be made to request connection.
    *
-   * @param runtime the {@link RuntimeService} instance used to manage contexts and interact with
-   *     the runtime system
    * @param configuration the {@link DigitalTwin.Configuration} containing the configuration details
    *     for this scope. Persistence and other creation metadata are only relevant for scopes that
    *     are created by the call.
@@ -57,16 +57,54 @@ public enum ClientScopeManager {
    */
   public ContextScope getContextScope(
       DigitalTwin.Configuration configuration, boolean createIfMissing, UserScope requestingScope) {
+
     if (scopes.containsKey(configuration.getId())
         && scopes.get(configuration.getId()) instanceof ContextScope) {
-      // TODO check service
       return (ContextScope) scopes.get(configuration.getId());
     }
+    if (createIfMissing) {
+
+      var service = findService(configuration, requestingScope);
+
+      /* issue a CONNECT call to the service to ensure we have rights and the scope exists. */
+      if (!service.status().isOperational()) {
+        requestingScope.error(
+            "Cannot connect to remote scope for digital twin "
+                + configuration.getName()
+                + ": service is not operational");
+        return null;
+      }
+
+      return service.connectContext(configuration, requestingScope);
+    }
+
     return null;
   }
 
-  public void register(ClientSessionScope ret) {
+  private RuntimeService findService(
+      DigitalTwin.Configuration configuration, UserScope requestingScope) {
+    for (var runtime : requestingScope.getServices(RuntimeService.class)) {
+      if (runtime.getUrl().equals(configuration.getServiceUrl())) {
+        return runtime;
+      }
+    }
+
+    var newRuntime =
+        new RuntimeClient(
+            configuration.getUrl(), requestingScope.getIdentity(), Parameters.create());
+
+    // FIXME this will cause an exception as the client list is read-only. The client-side services
+    //  are ultimately stored in the engine - must deal with that.
+    requestingScope.getServices(RuntimeService.class).add(newRuntime);
+
+    return newRuntime;
   }
 
-  public void unregister(ClientSessionScope clientSessionScope) {}
+  public void register(ClientSessionScope ret) {
+    scopes.put(ret.getId(), ret);
+  }
+
+  public void unregister(ClientSessionScope clientSessionScope) {
+    scopes.remove(clientSessionScope.getId());
+  }
 }

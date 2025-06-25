@@ -207,7 +207,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public String registerSession(SessionScope sessionScope, Federation federation) {
+  public String registerNewSession(SessionScope sessionScope, Federation federation) {
 
     if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
@@ -230,7 +230,7 @@ public class RuntimeService extends BaseService
                       // if things are OK, the service repeats the ID back
                       if (!serviceSessionScope
                           .getId()
-                          .equals(service.registerSession(serviceSessionScope, federation))) {
+                          .equals(service.registerNewSession(serviceSessionScope, federation))) {
                         fail.set(true);
                       }
                     }
@@ -255,7 +255,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public String registerContext(ContextScope contextScope, Federation federation) {
+  public String registerNewContext(ContextScope contextScope, Federation federation) {
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
@@ -287,7 +287,7 @@ public class RuntimeService extends BaseService
                       // if things are OK, the service repeats the ID back
                       if (!serviceContextScope
                           .getId()
-                          .equals(service.registerContext(serviceContextScope, federation))) {
+                          .equals(service.registerNewContext(serviceContextScope, federation))) {
                         fail.set(true);
                       }
                     }
@@ -614,9 +614,31 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
+  public ContextScope connectContext(
+      DigitalTwin.Configuration configuration, UserScope userScope) {
     // TODO for now we just return the existing. Later we should create it if the user is enabled
-    return getScopeManager().getScope(configuration.getId(), ContextScope.class);
+    var scope = getScopeManager().getScope(configuration.getId(), ContextScope.class);
+    if (scope == null) {
+      scope = reconstructContext(configuration, userScope);
+    }
+    return scope;
+  }
+
+  private ContextScope reconstructContext(
+      DigitalTwin.Configuration configuration, UserScope userScope) {
+    // TODO find the scope in the knowledge graph. If existing, recreate the scope and the owning
+    //  session.
+    var sessionId = configuration.getId().substring(0, configuration.getId().lastIndexOf("."));
+    var session = getScopeManager().getScope(sessionId, SessionScope.class);
+    if (session == null) {
+      session = userScope.getUserSession(this);
+      // TODO register it
+    }
+
+    // TODO make the KG && create the scope with the passed ID
+    // TODO register and return it
+
+    return null;
   }
 
   @Override

@@ -47,7 +47,6 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
   private Status status = Status.STARTED;
   private String id;
   protected Type type;
-  //    private List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
   private Map<Long, Pair<Message, BiConsumer<Message, Message>>> responseHandlers =
       Collections.synchronizedMap(new HashMap<>());
   private String hostServiceId;
@@ -67,9 +66,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
 
   @Override
   public ContextScope connect(URL digitalTwinURL) {
-    // TODO connect to a scope on a runtime. Unless the runtime is local, we should produce a
-    //  client without having to pass through other services.
-    return null;
+    return connect(DigitalTwin.Configuration.builder().url(digitalTwinURL).build().validate(this));
   }
 
   @Override
@@ -116,15 +113,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
 
   @Override
   public ContextScope connect(DigitalTwin.Configuration configuration) {
-
-    // FIXME use the ClientScopeManager
-    for (var service : getServices(RuntimeService.class)) {
-      if (configuration.getUrl().getHost().equals(service.getUrl().getHost())
-          && configuration.getUrl().getPort() == service.getUrl().getPort()) {
-        return service.connectContext(configuration, this);
-      }
-    }
-    return null;
+    return ClientScopeManager.INSTANCE.getContextScope(configuration, true, this);
   }
 
   @Override
@@ -160,7 +149,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
           }
         };
 
-    var id = engine.registerSession(ret, federation);
+    var id = engine.registerNewSession(ret, federation);
 
     if (id != null) {
       ret.setId(id);

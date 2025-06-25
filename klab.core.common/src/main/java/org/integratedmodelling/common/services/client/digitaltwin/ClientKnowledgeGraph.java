@@ -11,6 +11,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
@@ -261,19 +262,24 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
-  public <T extends RuntimeAsset> T get(long id, ContextScope scope, Class<T> resultClass) {
+  public <T extends RuntimeAsset> T get(long id, Scope scope, Class<T> resultClass) {
     var ret = query(resultClass, scope).id(id).peek(scope);
     return (T) ret.orElse(null);
   }
 
   @Override
-  public void update(RuntimeAsset observation, ContextScope scope, Object... arguments) {
+  public void update(RuntimeAsset observation, Scope scope, Object... arguments) {
     throw new KlabIllegalStateException(
         "Modifying operations not allowed on the client-side knowledge graph");
   }
 
   @Override
   public Agent requireAgent(String agentName) {
+    return null;
+  }
+
+  @Override
+  public KnowledgeGraph contextualize(DigitalTwin.Configuration scope, UserScope userScope) {
     return null;
   }
 

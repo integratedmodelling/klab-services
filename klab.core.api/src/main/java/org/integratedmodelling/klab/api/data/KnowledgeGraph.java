@@ -264,7 +264,7 @@ public interface KnowledgeGraph {
    * @param <T>
    * @return
    */
-  <T extends RuntimeAsset> T get(long id, ContextScope scope, Class<T> resultClass);
+  <T extends RuntimeAsset> T get(long id, Scope scope, Class<T> resultClass);
 
   /**
    * Called when an observation has been contextualized
@@ -274,7 +274,7 @@ public interface KnowledgeGraph {
    * @param arguments additional parameters to add to the observation or to override existing ones
    * @deprecated remove from API and move to {@link Transaction}
    */
-  void update(RuntimeAsset observation, ContextScope scope, Object... arguments);
+  void update(RuntimeAsset observation, Scope scope, Object... arguments);
 
   /**
    * Find an agent by name. If the agent is not found, create it with the passed name. If the name
@@ -286,7 +286,9 @@ public interface KnowledgeGraph {
    */
   Agent requireAgent(String agentName);
 
-  /**
+    KnowledgeGraph contextualize(DigitalTwin.Configuration scope, UserScope userScope);
+
+    /**
    * Build a federated graph resulting from merging with the URL pointing to a remote digital twin.
    *
    * @param remoteDigitalTwinURL

@@ -202,7 +202,7 @@ public interface Message extends Serializable {
      */
     ContextualizationStarted(Queue.Events, Observation.class),
 
-    ContextClosed(Queue.Events, String.class),
+    ContextClosed(Queue.Events, DigitalTwin.Configuration.class),
 
     CurrentContextModified(Queue.UI, Void.class),
 
