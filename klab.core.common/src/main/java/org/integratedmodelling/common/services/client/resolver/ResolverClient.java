@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client.resolver;
 
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
@@ -9,6 +10,7 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
@@ -112,10 +114,12 @@ public class ResolverClient extends ServiceClient implements Resolver {
    * @return
    */
   @Override
-  public String registerNewSession(SessionScope scope, Federation federation) {
+  public String registerNewSession(
+      SessionScope scope, UserScope userScope, KActorsBehavior behavior) {
+
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
-
+    var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
             && messagingChannel.hasMessaging()
@@ -197,13 +201,12 @@ public class ResolverClient extends ServiceClient implements Resolver {
    * @return
    */
   @Override
-  public String registerNewContext(ContextScope scope, Federation federation) {
+  public String registerNewContext(ContextScope scope, UserScope userScope) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
     request.setConfiguration(scope.getDigitalTwinConfiguration());
-
-    var runtime = scope.getService(RuntimeService.class);
+    var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
             && messagingChannel.hasMessaging()

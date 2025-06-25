@@ -109,42 +109,42 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
     //        }
   }
 
+//  @Override
+//  public KnowledgeGraph contextualize(ContextScope scope) {
+//
+//    if (this.scope != null) {
+//
+//      // idempotence
+//      if (rootContextId.equals(scope.getId())) {
+//        return this;
+//      }
+//
+//      throw new KlabIllegalStateException(
+//          "cannot recontextualize a previously contextualized graph " + "database");
+//    }
+//
+//    var ret = new KnowledgeGraphNeo4JEmbedded(this, scope);
+//
+//    ret.initializeContext(
+//        scope.getId(),
+//        scope.getName(),
+//        scope,
+//        scope.getDigitalTwinConfiguration().getAccessRights());
+//
+//    return ret;
+//  }
+
   @Override
-  public KnowledgeGraph contextualize(ContextScope scope) {
-
-    if (this.scope != null) {
-
-      // idempotence
-      if (rootContextId.equals(scope.getId())) {
-        return this;
-      }
-
-      throw new KlabIllegalStateException(
-          "cannot recontextualize a previously contextualized graph " + "database");
-    }
-
-    var ret = new KnowledgeGraphNeo4JEmbedded(this, scope);
-
-    ret.initializeContext(
-        scope.getId(),
-        scope.getName(),
-        scope,
-        scope.getDigitalTwinConfiguration().getAccessRights());
-
-    return ret;
-  }
-
-  @Override
-  public KnowledgeGraph contextualize(DigitalTwin.Configuration scope, UserScope userScope) {
+  public KnowledgeGraph contextualize(DigitalTwin.Configuration digitalTwinConfig, UserScope userScope) {
 
     // idempotence
-    if (scope.getId().equals(rootContextId)) {
+    if (digitalTwinConfig.getId().equals(rootContextId)) {
       return this;
     }
 
-    var ret = new KnowledgeGraphNeo4JEmbedded(this, scope.getId());
+    var ret = new KnowledgeGraphNeo4JEmbedded(this, digitalTwinConfig.getId());
 
-    ret.initializeContext(scope.getId(), scope.getName(), userScope, scope.getAccessRights());
+    ret.initializeContext(digitalTwinConfig.getId(), digitalTwinConfig.getName(), userScope, digitalTwinConfig.getAccessRights());
 
     return ret;
   }

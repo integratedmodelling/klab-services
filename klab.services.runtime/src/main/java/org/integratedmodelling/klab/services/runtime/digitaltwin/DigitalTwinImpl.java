@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -65,8 +66,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
   public class TransactionImpl implements Transaction {
 
-    private final GraphModel.KnowledgeGraph graphReference =
-        new GraphModel.KnowledgeGraph();
+    private final GraphModel.KnowledgeGraph graphReference = new GraphModel.KnowledgeGraph();
 
     static class RelationshipEdge extends DefaultEdge {
       GraphModel.Relationship relationship;
@@ -320,14 +320,18 @@ public class DigitalTwinImpl implements DigitalTwin {
   private GraphModel.KnowledgeGraph.Node encodeRuntimeAsset(
       RuntimeAsset asset, Map<String, GraphModel.KnowledgeGraph.Node> nodes) {
     return nodes.computeIfAbsent(
-        asset.getId() + "",
-        id -> new GraphModel.KnowledgeGraph.Node(asset));
+        asset.getId() + "", id -> new GraphModel.KnowledgeGraph.Node(asset));
   }
 
   public DigitalTwinImpl(
-      RuntimeService service, ServiceContextScope scope, KnowledgeGraphNeo4j database) {
+      RuntimeService service,
+      ServiceContextScope scope, // root scope used by the scheduler
+      String scopeId, // the ID to use. The scope may or may not have it according to state
+      UserScope userScope,
+      KnowledgeGraphNeo4j database) {
     this.rootScope = scope;
-    this.knowledgeGraph = (KnowledgeGraphNeo4j) database.contextualize(scope);
+    var configuration = DigitalTwin.Configuration.builder(scope.getDigitalTwinConfiguration()).id(scopeId).build();
+    this.knowledgeGraph = (KnowledgeGraphNeo4j) database.contextualize(configuration, userScope);
     this.storageManager = new StorageManagerImpl(service, scope);
     this.scheduler = new SchedulerImpl(scope, this);
   }

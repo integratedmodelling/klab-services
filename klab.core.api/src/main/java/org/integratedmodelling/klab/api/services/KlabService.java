@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
@@ -323,11 +324,13 @@ public interface KlabService extends Service {
    *
    * @param sessionScope a client scope that should record the ID for future communication. If the
    *     ID is null, the call has failed.
-   * @param federation if not null, sets up the scope for communication in the passed federation's
-   *     channels
+   * @param userScope used to set up federated behavior
+   * @param behavior the application, script or test case we want to run. If null, the result should
+   *     be the default user or federation session.
    * @return the ID of the new session created at server side, or null in case of failure.
    */
-  String registerNewSession(SessionScope sessionScope, Federation federation);
+  String registerNewSession(
+      SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior);
 
   /**
    * Register a context scope created by the scope manager. Return a unique session ID that may be
@@ -339,11 +342,10 @@ public interface KlabService extends Service {
    *
    * @param contextScope a client scope that should record the ID for future communication. If the
    *     ID is null, the call has failed.
-   * @param federation if not null, sets up the scope for communication in the passed federation's
-   *     channels
+   * @param userScope used to set up federated behavior
    * @return the ID of the new context scope created at server side, or null in case of failure.
    */
-  String registerNewContext(ContextScope contextScope, Federation federation);
+  String registerNewContext(ContextScope contextScope, UserScope userScope);
 
   /**
    * Get the access rights for the passed resource. If the resource does not exist or is

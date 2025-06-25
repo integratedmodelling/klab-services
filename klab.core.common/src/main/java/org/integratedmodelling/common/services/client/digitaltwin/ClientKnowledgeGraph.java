@@ -257,11 +257,6 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   public void clear() {}
 
   @Override
-  public KnowledgeGraph contextualize(ContextScope scope) {
-    return null;
-  }
-
-  @Override
   public <T extends RuntimeAsset> T get(long id, Scope scope, Class<T> resultClass) {
     var ret = query(resultClass, scope).id(id).peek(scope);
     return (T) ret.orElse(null);
@@ -279,7 +274,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
-  public KnowledgeGraph contextualize(DigitalTwin.Configuration scope, UserScope userScope) {
+  public KnowledgeGraph contextualize(DigitalTwin.Configuration digitalTwinConfig, UserScope userScope) {
     return null;
   }
 

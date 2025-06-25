@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -24,6 +26,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.application.security.Role;
+import org.integratedmodelling.klab.services.base.BaseService;
 
 /**
  * Service-side user scope and parent class for other scopes, created and maintained on request upon
@@ -67,14 +70,12 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   // messaging for
   // local users
   protected KlabService service;
-  protected Federation federation;
 
   public ServiceUserScope(UserIdentity user, KlabService service) {
     super(user, true, false);
     this.user = user;
     this.data = Parameters.create();
     this.service = service;
-    this.federation = user.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
   }
 
   @Override
@@ -134,6 +135,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
   @Override
   public String getDispatchId() {
+    var federation = Authentication.INSTANCE.getFederationData(user);
     return federation == null ? user.getUsername() : federation.getId();
   }
 
@@ -153,16 +155,27 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   @Override
   public SessionScope getUserSession(RuntimeService hostService) {
 
-    final ServiceSessionScope ret = new ServiceSessionScope(this);
+    var federation = Authentication.INSTANCE.getFederationData(user);
+    var scopeId =
+        federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
+            ? user.getUsername()
+            : federation.getId();
+
+    var scopeManager =
+        service instanceof BaseService baseService ? baseService.getScopeManager() : null;
+    var scope = scopeManager == null ? null : scopeManager.getScope(scopeId, SessionScope.class);
+
+    if (scope != null) {
+      return scope;
+    }
+
+    final ServiceSessionScope ret = new ServiceSessionScope(this, new JobManager());
     ret.setStatus(Status.WAITING);
     ret.setName(
-            federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
+        federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
             ? user.getUsername()
             : federation.getId());
-    ret.jobManager = new JobManager();
-    // Scope is incomplete and will be instrumented with ID, messaging connection, queues and agent
-    // by
-    // the caller explicitly calling the methods.
+
     return ret;
   }
 
@@ -204,10 +217,10 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     }
   }
 
-//  @Override
-//  public SessionScope getUserSession() {
-//
-//  }
+  //  @Override
+  //  public SessionScope getUserSession() {
+  //
+  //  }
 
   @Override
   public SessionScope run(String behaviorName, RuntimeService host) {

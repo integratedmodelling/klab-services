@@ -20,12 +20,14 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
@@ -107,12 +109,12 @@ public class ResolverService extends BaseService implements Resolver {
   @Override
   public boolean shutdown() {
 
-//    serviceScope()
-//        .send(
-//            Message.MessageClass.ServiceLifecycle,
-//            Message.MessageType.ServiceUnavailable,
-//            capabilities(serviceScope()));
-//
+    //    serviceScope()
+    //        .send(
+    //            Message.MessageClass.ServiceLifecycle,
+    //            Message.MessageType.ServiceUnavailable,
+    //            capabilities(serviceScope()));
+    //
     // TODO Auto-generated method stub
     return super.shutdown();
   }
@@ -204,11 +206,11 @@ public class ResolverService extends BaseService implements Resolver {
 
     Logging.INSTANCE.setSystemIdentifier("Resolver service: ");
 
-//    serviceScope()
-//        .send(
-//            Message.MessageClass.ServiceLifecycle,
-//            Message.MessageType.ServiceInitializing,
-//            capabilities(serviceScope()).toString());
+    //    serviceScope()
+    //        .send(
+    //            Message.MessageClass.ServiceLifecycle,
+    //            Message.MessageType.ServiceInitializing,
+    //            capabilities(serviceScope()).toString());
 
     /*
      * Components
@@ -232,15 +234,15 @@ public class ResolverService extends BaseService implements Resolver {
      * Setup an embedded broker, possibly to be shared with other services, if we're local and there
      * is no configured broker.
      */
-    if (Utils.URLs.isLocalHost(this.getUrl()) &&  startupOptions.isStartLocalBroker()) {
+    if (Utils.URLs.isLocalHost(this.getUrl()) && startupOptions.isStartLocalBroker()) {
       this.embeddedBroker = new EmbeddedBroker();
     }
 
-//    serviceScope()
-//        .send(
-//            Message.MessageClass.ServiceLifecycle,
-//            Message.MessageType.ServiceAvailable,
-//            capabilities(serviceScope()));
+    //    serviceScope()
+    //        .send(
+    //            Message.MessageClass.ServiceLifecycle,
+    //            Message.MessageType.ServiceAvailable,
+    //            capabilities(serviceScope()));
   }
 
   @Override
@@ -368,7 +370,7 @@ public class ResolverService extends BaseService implements Resolver {
    */
   @Override
   public String registerNewSession(
-      SessionScope sessionScope, Federation federation) {
+      SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
 
     if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
@@ -377,7 +379,7 @@ public class ResolverService extends BaseService implements Resolver {
             "resolver: session scope has no ID, cannot register " + "a scope autonomously");
       }
 
-      getScopeManager().registerScope(serviceSessionScope, federation);
+      getScopeManager().registerScope(serviceSessionScope);
       return serviceSessionScope.getId();
     }
 
@@ -394,8 +396,7 @@ public class ResolverService extends BaseService implements Resolver {
    * @return
    */
   @Override
-  public String registerNewContext(
-      ContextScope contextScope, Federation federation) {
+  public String registerNewContext(ContextScope contextScope, UserScope userScope) {
 
     contextScope.getData().put(RESOLUTION_GRAPH_KEY, ResolutionGraph.create(contextScope));
 
@@ -418,7 +419,7 @@ public class ResolverService extends BaseService implements Resolver {
             "Registering context scope without service ID: digital twin will be inoperative");
       }
 
-      getScopeManager().registerScope(serviceContextScope, federation);
+      getScopeManager().registerScope(serviceContextScope);
       return serviceContextScope.getId();
     }
 

@@ -10,6 +10,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
@@ -23,6 +25,7 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
@@ -746,11 +749,12 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
    * @return
    */
   @Override
-  public String registerNewSession(SessionScope scope, Federation federation) {
+  public String registerNewSession(
+      SessionScope scope, UserScope userScope, KActorsBehavior behavior) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
-
+    var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
             && messagingChannel.hasMessaging()
@@ -826,12 +830,12 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
    * @return
    */
   @Override
-  public String registerNewContext(ContextScope scope, Federation federation) {
+  public String registerNewContext(ContextScope scope, UserScope userScope) {
 
     ScopeRequest request = new ScopeRequest();
     request.setName(scope.getName());
     request.setConfiguration(scope.getDigitalTwinConfiguration());
-
+    var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
             && messagingChannel.hasMessaging()
@@ -876,10 +880,10 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
       }
     }
 
-//    if (hasMessaging) {
-//      // TODO setup desired request. This will send no header and use the defaults.
-//      // Resolver should probably only catch events and errors.
-//    }
+    //    if (hasMessaging) {
+    //      // TODO setup desired request. This will send no header and use the defaults.
+    //      // Resolver should probably only catch events and errors.
+    //    }
 
     var ret =
         client

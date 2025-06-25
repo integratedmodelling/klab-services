@@ -58,10 +58,10 @@ public interface UserScope extends ReactiveScope {
   List<SessionScope> getActiveSessions();
 
   /**
-   * Start or create a user session attributed to the user or, if the user is federated, to the
-   * federation. Return the scope that controls it. The session will be hosted within the passed
-   * runtime. Non-federated users who have a local service will get a session in the local runtime.
-   * Federated users will get a session hosted in one of the runtimes available to the federation.
+   * Retrieve the scope for the user session attributed to the user or, if the user is federated, to
+   * the federation. The session will be hosted within the passed runtime. There is only one user
+   * session per service, with ID equal to the user ID or the federation ID if the user is
+   * federated.
    *
    * @return
    */

@@ -22,12 +22,7 @@ public class KnowledgeGraphNeo4JClient extends KnowledgeGraphNeo4j implements Kn
   // TODO connect to a DB and run a driver
 
   @Override
-  public KnowledgeGraph contextualize(ContextScope scope) {
-    return null;
-  }
-
-  @Override
-  public KnowledgeGraph contextualize(DigitalTwin.Configuration scope, UserScope userScope) {
+  public KnowledgeGraph contextualize(DigitalTwin.Configuration digitalTwinConfig, UserScope userScope) {
     return null;
   }
 

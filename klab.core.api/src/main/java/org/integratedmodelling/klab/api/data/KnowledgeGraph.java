@@ -149,6 +149,7 @@ public interface KnowledgeGraph {
    * @return a new transaction
    */
   Transaction createTransaction();
+
   /**
    * Obtain a query for an object of a specific type, to be specified and then run to obtain the
    * results.
@@ -212,19 +213,8 @@ public interface KnowledgeGraph {
    */
   void clear();
 
-  /**
-   * The graph should only be used in a contextualized form, which will establish any possible
-   * long-lived connection so that performance is optimal. Implementations should throw an exception
-   * when contextualization has not happened.
-   *
-   * <p>If the database serves multiple contexts, the contextualization operation should also build
-   * or load a main context node, to which all root observations will be linked, and the
-   * context-specific dataflow and provenance roots..
-   *
-   * @param scope
-   * @return
-   */
-  KnowledgeGraph contextualize(ContextScope scope);
+  //
+  //  KnowledgeGraph contextualize(ContextScope scope);
 
   /**
    * The graph node that represents the scope we run under. If the KG is not the return value of a
@@ -286,9 +276,28 @@ public interface KnowledgeGraph {
    */
   Agent requireAgent(String agentName);
 
-    KnowledgeGraph contextualize(DigitalTwin.Configuration scope, UserScope userScope);
+  /**
+   * The graph should only be used in a contextualized form, which will establish any possible
+   * long-lived connection so that performance is optimal. This method must return a new instance of
+   * the knowledge graph contextualized on the passed configuration. Implementations should throw an
+   * exception when contextualization has not happened.
+   *
+   * <p>The ID in the digitalTwinConfig configuration may not exist in the graph, or exist from
+   * previous operations, with the same OR a different user reconnecting to an existing knowledge
+   * graph. If the connection is requested, the rights of the passed user to connect have been
+   * validated upstream.
+   *
+   * <p>If the database serves multiple contexts, the contextualization operation should also build
+   * or load a main context node, to which all root observations will be linked, and the
+   * context-specific dataflow and provenance roots.
+   *
+   * @param digitalTwinConfig
+   * @param userScope
+   * @return
+   */
+  KnowledgeGraph contextualize(DigitalTwin.Configuration digitalTwinConfig, UserScope userScope);
 
-    /**
+  /**
    * Build a federated graph resulting from merging with the URL pointing to a remote digital twin.
    *
    * @param remoteDigitalTwinURL

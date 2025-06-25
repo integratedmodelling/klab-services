@@ -100,6 +100,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               + "\t(ctx:Context {id: $contextId, name: $name, user: $username, created: "
               + "$timestamp, "
               + "rights: $rights, "
+              + "lastUpdate: $lastUpdate, "
               + "expiration: $expirationType}),\n"
               + "\t// main provenance and dataflow nodes\n"
               + "\t(prov:Provenance {name: 'Provenance', id: $contextId + '.PROVENANCE'}), "
@@ -209,6 +210,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     @Override
     public void close() throws IOException {
+      // update time of last successful operation
+      var props = Map.of("lastUpdate", System.currentTimeMillis());
+      query(
+          transaction,
+          Queries.UPDATE_PROPERTIES.replace("{type}", "Context"),
+          Map.of("id", rootContextId, "properties", props),
+          scope);
       transaction.commit();
     }
   }
@@ -257,7 +265,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   /** Ensure things are OK re: main agents and the like. Must be called only once */
-  protected void initializeContext(String scopeId, String name, UserScope scope, ResourcePrivileges rights) {
+  protected void initializeContext(
+      String scopeId, String name, UserScope scope, ResourcePrivileges rights) {
 
     this.rootContextId = scopeId;
 
@@ -292,6 +301,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 rights.toString(),
                 "timestamp",
                 timestamp,
+                "lastUpdate",
+                System.currentTimeMillis(),
                 "username",
                 username,
                 "expirationType",

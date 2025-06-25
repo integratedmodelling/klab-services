@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.application.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.services.client.resolver.ResolverClient;
@@ -9,9 +10,12 @@ import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -20,10 +24,12 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
+import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,7 +52,6 @@ public class KlabScopeController {
    * same ID in case of success.
    *
    * @param request
-   * @param sessionId
    * @param principal
    * @param response
    * @param queuesHeader
@@ -55,7 +60,6 @@ public class KlabScopeController {
   @PostMapping(ServicesAPI.CREATE_SESSION)
   public String createSession(
       @RequestBody ScopeRequest request,
-      @RequestParam(name = "id", required = false) String sessionId,
       Principal principal,
       HttpServletResponse response,
       @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required = false)
@@ -66,25 +70,15 @@ public class KlabScopeController {
 
     if (principal instanceof EngineAuthorization authorization) {
 
-      var userScope = authorization.getScope(UserScope.class);
+      var userScope = authorization.getScope(ServiceUserScope.class);
       if (userScope != null) {
 
-        Federation federation = null;
-        if (federationId != null) {
-          federation = new Federation(federationId, brokerUrl);
-        }
+        var ret =
+            request.getBehaviorUrn() == null
+                ? userScope.getUserSession(userScope.getService(RuntimeService.class))
+                : new ServiceSessionScope(userScope, new JobManager());
 
-        var ret = userScope.getUserSession(userScope.getService(RuntimeService.class));
         var identity = userScope.getIdentity();
-
-        if (federation != null
-            && !identity.getData().containsKey(UserIdentity.FEDERATION_DATA_PROPERTY)) {
-          // this way the federation goes into the service clients. TODO the logic here is really
-          // stateful and not clean as things can be invalidated simply by improper client behavior.
-          // It should be revised by moving the federation info at first authentication
-          // with the hub, which would  require it to be in the JWT, or a specific hub call.
-          identity.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federation);
-        }
 
         List<Reasoner> reasoners =
             instance.klabService() instanceof Reasoner r
@@ -131,26 +125,27 @@ public class KlabScopeController {
           reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));
         }
 
+        KActorsBehavior behavior = null;
+        if (request.getBehaviorUrn() != null) {
+          // TODO resolve the behavior with all resources services
+        }
+
         // TODO check presence and availability of all services and fail if no response
 
         if (ret instanceof ServiceSessionScope serviceSessionScope) {
-
           serviceSessionScope.setServices(resources, resolvers, reasoners, runtimes);
-          if (sessionId != null) {
-            // slave mode: session ID is provided by a calling service. The service's
-            // registerSession should check that.
-            serviceSessionScope.setId(sessionId);
-          }
         }
 
-        var id = instance.klabService().registerNewSession(ret, federation);
+        var id = instance.klabService().registerNewSession(ret, userScope, behavior);
         if (brokerUrl != null && ret instanceof ServiceSessionScope serviceSessionScope) {
 
           if (queuesHeader == null) {
             queuesHeader = serviceSessionScope.defaultQueues();
           }
 
-          var implementedQueues = serviceSessionScope.setupMessaging(federation, id, queuesHeader);
+          var implementedQueues =
+              serviceSessionScope.setupMessaging(
+                  Authentication.INSTANCE.getFederationData(userScope.getUser()), id, queuesHeader);
 
           Logging.INSTANCE.info(
               "Queues set up for session " + id + ": " + implementedQueues + " on session scope");
@@ -206,6 +201,7 @@ public class KlabScopeController {
 
       if (sessionScope != null) {
 
+        var userScope = sessionScope.getParentScope(Scope.Type.USER, UserScope.class);
         var identity = sessionScope.getIdentity();
         Federation federation = null;
         if (federationId != null) {
@@ -282,7 +278,7 @@ public class KlabScopeController {
             queuesHeader = serviceContextScope.defaultQueues();
           }
 
-          var id = instance.klabService().registerNewContext(ret, federation);
+          var id = instance.klabService().registerNewContext(ret, userScope);
 
           var queuesAvailable = serviceContextScope.setupQueues(queuesHeader);
 

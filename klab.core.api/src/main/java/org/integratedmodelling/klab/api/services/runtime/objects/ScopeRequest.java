@@ -21,6 +21,7 @@ public class ScopeRequest {
   private List<URL> resolverServices = new ArrayList<>();
   private List<URL> reasonerServices = new ArrayList<>();
   private List<URL> runtimeServices = new ArrayList<>();
+  private String behaviorUrn;
 
   public String getName() {
     return name;
@@ -64,6 +65,14 @@ public class ScopeRequest {
 
   public DigitalTwin.Configuration getConfiguration() {
     return configuration;
+  }
+
+  public String getBehaviorUrn() {
+    return behaviorUrn;
+  }
+
+  public void setBehaviorUrn(String behaviorUrn) {
+    this.behaviorUrn = behaviorUrn;
   }
 
   public void setConfiguration(DigitalTwin.Configuration configuration) {

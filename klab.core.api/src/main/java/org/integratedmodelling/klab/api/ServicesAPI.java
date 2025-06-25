@@ -37,9 +37,15 @@ public interface ServicesAPI {
   /**
    * Response header for the URN of a AMQP messaging service, returned along with the {@link
    * RUNTIME#CREATE_SESSION} response when messaging is available.
+   * @deprecated federation data should come with groups that come with the JWT header
    */
+  @Deprecated
   String MESSAGING_URL_HEADER = "messaging-urn";
 
+  /*
+   * @deprecated federation data should come with groups that come with the JWT header
+   */
+  @Deprecated
   String FEDERATION_ID_HEADER = "federation-id";
 
   /**

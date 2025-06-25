@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.server.SystemLauncher;
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
@@ -22,6 +23,7 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -207,17 +209,19 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public String registerNewSession(SessionScope sessionScope, Federation federation) {
+  public String registerNewSession(
+      SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
 
     if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
-      serviceSessionScope.setId(Utils.Names.shortUUID());
-      getScopeManager().registerScope(serviceSessionScope, federation);
+      var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
+      String sessionId =
+          behavior == null
+              ? (federation == null ? userScope.getUser().getUsername() : federation.getId())
+              : Utils.Names.shortUUID();
 
-      if (serviceSessionScope.getServices(RuntimeService.class).isEmpty()) {
-        // add self as the runtime service, which is needed by the slave scopes
-        serviceSessionScope.getServices(RuntimeService.class).add(this);
-      }
+      serviceSessionScope.setId(sessionId);
+      getScopeManager().registerScope(serviceSessionScope);
 
       // all other services need to know the session we created
       var fail = new AtomicBoolean(false);
@@ -230,7 +234,9 @@ public class RuntimeService extends BaseService
                       // if things are OK, the service repeats the ID back
                       if (!serviceSessionScope
                           .getId()
-                          .equals(service.registerNewSession(serviceSessionScope, federation))) {
+                          .equals(
+                              service.registerNewSession(
+                                  serviceSessionScope, userScope, behavior))) {
                         fail.set(true);
                       }
                     }
@@ -255,25 +261,22 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public String registerNewContext(ContextScope contextScope, Federation federation) {
+  public String registerNewContext(ContextScope contextScope, UserScope userScope) {
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
-      // TODO the ID could have come with the configuration if we are federated. In that case we
-      //  should already have it in the contextScope.
-
       serviceContextScope.setHostServiceId(serviceId());
+      boolean isNew = serviceContextScope.getDigitalTwinConfiguration().getId() == null;
+      String scopeId =
+          isNew
+              ? serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID()
+              : serviceContextScope.getDigitalTwinConfiguration().getId();
 
-      serviceContextScope.setId(
-          serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
-      getScopeManager().registerScope(serviceContextScope, federation);
+      serviceContextScope.setId(scopeId);
+      getScopeManager().registerScope(serviceContextScope);
       serviceContextScope.setDigitalTwin(
-          new DigitalTwinImpl(this, serviceContextScope, getMainKnowledgeGraph()));
-
-      if (serviceContextScope.getServices(RuntimeService.class).isEmpty()) {
-        // add self as the runtime service, which is needed by the slave scopes
-        serviceContextScope.getServices(RuntimeService.class).add(this);
-      }
+          new DigitalTwinImpl(
+              this, serviceContextScope, scopeId, userScope, getMainKnowledgeGraph()));
 
       // all other services need to know the context we created. TODO we may also need to
       // register with the stats services and maybe any independent authorities
@@ -287,7 +290,7 @@ public class RuntimeService extends BaseService
                       // if things are OK, the service repeats the ID back
                       if (!serviceContextScope
                           .getId()
-                          .equals(service.registerNewContext(serviceContextScope, federation))) {
+                          .equals(service.registerNewContext(serviceContextScope, userScope))) {
                         fail.set(true);
                       }
                     }
@@ -614,8 +617,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public ContextScope connectContext(
-      DigitalTwin.Configuration configuration, UserScope userScope) {
+  public ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
     // TODO for now we just return the existing. Later we should create it if the user is enabled
     var scope = getScopeManager().getScope(configuration.getId(), ContextScope.class);
     if (scope == null) {
@@ -632,13 +634,10 @@ public class RuntimeService extends BaseService
     var session = getScopeManager().getScope(sessionId, SessionScope.class);
     if (session == null) {
       session = userScope.getUserSession(this);
-      // TODO register it
     }
-
-    // TODO make the KG && create the scope with the passed ID
-    // TODO register and return it
-
-    return null;
+    var ret = new ServiceContextScope((ServiceSessionScope) session, configuration);
+    registerNewContext(ret, userScope);
+    return ret;
   }
 
   @Override

@@ -6,13 +6,11 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
-import org.integratedmodelling.common.services.ServiceStartupOptions;
-import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
 import org.integratedmodelling.common.distribution.DistributionImpl;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -24,8 +22,10 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -184,10 +184,13 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   @Override
-  public String registerNewSession(SessionScope sessionScope, Federation federation) {
+  public String registerNewSession(
+      SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
 
     var sessionId =
-        getUser().getService(RuntimeService.class).registerNewSession(sessionScope, federation);
+        getUser()
+            .getService(RuntimeService.class)
+            .registerNewSession(sessionScope, userScope, behavior);
     if (sessionId != null) {
       // TODO advertise the session to all other services that will use it. Keep only the
       //  services that accepted it.
@@ -196,10 +199,10 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   @Override
-  public String registerNewContext(ContextScope contextScope, Federation federation) {
+  public String registerNewContext(ContextScope contextScope, UserScope userScope) {
 
     var contextId =
-        getUser().getService(RuntimeService.class).registerNewContext(contextScope, federation);
+        getUser().getService(RuntimeService.class).registerNewContext(contextScope, userScope);
     if (contextId != null) {
       // TODO advertise the context to all other services that will use it. Keep only the
       // services that accept it.

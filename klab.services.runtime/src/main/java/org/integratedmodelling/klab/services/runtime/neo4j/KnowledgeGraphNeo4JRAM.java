@@ -19,12 +19,8 @@ import java.util.List;
 public class KnowledgeGraphNeo4JRAM extends KnowledgeGraphNeo4j implements KnowledgeGraph {
 
   @Override
-  public KnowledgeGraph contextualize(ContextScope scope) {
-    return null;
-  }
-
-  @Override
-  public KnowledgeGraph contextualize(DigitalTwin.Configuration scope, UserScope userScope) {
+  public KnowledgeGraph contextualize(
+      DigitalTwin.Configuration digitalTwinConfig, UserScope userScope) {
     return null;
   }
 

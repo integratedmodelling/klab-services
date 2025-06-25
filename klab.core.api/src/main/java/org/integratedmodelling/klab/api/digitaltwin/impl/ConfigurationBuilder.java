@@ -22,6 +22,21 @@ public class ConfigurationBuilder {
   private List<Notification> notifications = new ArrayList<>();
   private boolean createWhenAbsent;
 
+  public ConfigurationBuilder() {}
+
+  public ConfigurationBuilder(DigitalTwin.Configuration configuration) {
+    this.accessRights = configuration.getAccessRights();
+    this.persistence = configuration.getPersistence();
+    this.name = configuration.getName();
+    this.id = configuration.getId();
+    this.timeout = configuration.getTimeout();
+    this.timeoutUnit = configuration.getTimeoutUnit();
+    this.url = configuration.getUrl();
+    this.serverUrl = configuration.getServiceUrl();
+    this.notifications.addAll(configuration.getNotifications());
+    this.createWhenAbsent = configuration.isCreateWhenAbsent();
+  }
+
   public ConfigurationBuilder accessRights(ResourcePrivileges accessRights) {
     this.accessRights = accessRights;
     return this;

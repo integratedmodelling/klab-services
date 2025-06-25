@@ -122,7 +122,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         .cast((Collection<KlabService>) serviceMap.get(KlabService.Type.classify(serviceClass)));
   }
 
-  ServiceContextScope(ServiceSessionScope parent, DigitalTwin.Configuration configuration) {
+  public ServiceContextScope(ServiceSessionScope parent, DigitalTwin.Configuration configuration) {
     super(parent);
     this.observer = null;
     this.data = Parameters.create();

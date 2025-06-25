@@ -65,11 +65,10 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
           "Runtime service is not accessible: cannot create context");
     }
 
-    var federation =
-        getParentScope(Type.USER, UserScope.class)
-            .getUser()
-            .getData()
-            .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+    var userScope = getParentScope(Type.USER, UserScope.class);
+    //            .getUser()
+    //            .getData()
+    //            .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
 
     /*
      * Registration with the runtime succeeded. Return a peer scope locked to the runtime service
@@ -95,7 +94,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
           }
         };
 
-    var id = engine.registerNewContext(ret, federation);
+    var id = engine.registerNewContext(ret, userScope);
 
     if (id != null) {
       ret.setId(id);

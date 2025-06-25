@@ -124,7 +124,8 @@ public class ResourcesProvider extends BaseService
   //   * used for individual resources and whole projects. It also holds and maintains the review
   //   * status, which in the case of projects propagates to the namespaces and models. Reviews and
   // the
-  //   * rest of the editorial material should be part of the provenance info associated to the
+  //   * rest of the editorial material should be part of the provenance info associCREATEated to
+  // the
   // items.
   //   * The review process is organized and maintained in the community service; only its
   // initiation
@@ -224,12 +225,12 @@ public class ResourcesProvider extends BaseService
   public void initializeService() {
 
     Logging.INSTANCE.setSystemIdentifier("Resources service: ");
-//
-//    serviceScope()
-//        .send(
-//            Message.MessageClass.ServiceLifecycle,
-//            Message.MessageType.ServiceInitializing,
-//            capabilities(serviceScope()).toString());
+    //
+    //    serviceScope()
+    //        .send(
+    //            Message.MessageClass.ServiceLifecycle,
+    //            Message.MessageType.ServiceInitializing,
+    //            capabilities(serviceScope()).toString());
 
     //        this.workspaceManager.loadWorkspace();
     /*
@@ -269,11 +270,11 @@ public class ResourcesProvider extends BaseService
     //      this.lspThread.start();
     //    }
 
-//    serviceScope()
-//        .send(
-//            Message.MessageClass.ServiceLifecycle,
-//            Message.MessageType.ServiceAvailable,
-//            capabilities(serviceScope()));
+    //    serviceScope()
+    //        .send(
+    //            Message.MessageClass.ServiceLifecycle,
+    //            Message.MessageType.ServiceAvailable,
+    //            capabilities(serviceScope()));
   }
 
   @Override
@@ -821,12 +822,12 @@ public class ResourcesProvider extends BaseService
 
   public boolean shutdown(int secondsToWait) {
 
-//    serviceScope()
-//        .send(
-//            Message.MessageClass.ServiceLifecycle,
-//            Message.MessageType.ServiceUnavailable,
-//            capabilities(serviceScope()));
-//
+    //    serviceScope()
+    //        .send(
+    //            Message.MessageClass.ServiceLifecycle,
+    //            Message.MessageType.ServiceUnavailable,
+    //            capabilities(serviceScope()));
+    //
     if (this.lspThread != null) {
       this.lspThread.interrupt();
     }
@@ -1528,7 +1529,8 @@ public class ResourcesProvider extends BaseService
    * @return
    */
   @Override
-  public String registerNewSession(SessionScope sessionScope, Federation federation) {
+  public String registerNewSession(
+      SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
 
     if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
@@ -1537,7 +1539,7 @@ public class ResourcesProvider extends BaseService
             "resolver: session scope has no ID, cannot register " + "a scope autonomously");
       }
 
-      getScopeManager().registerScope(serviceSessionScope, federation);
+      getScopeManager().registerScope(serviceSessionScope);
       return serviceSessionScope.getId();
     }
 
@@ -1554,7 +1556,7 @@ public class ResourcesProvider extends BaseService
    * @return
    */
   @Override
-  public String registerNewContext(ContextScope contextScope, Federation federation) {
+  public String registerNewContext(ContextScope contextScope, UserScope userScope) {
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
@@ -1575,7 +1577,7 @@ public class ResourcesProvider extends BaseService
             "Registering context scope without service ID: digital twin will be inoperative");
       }
 
-      getScopeManager().registerScope(serviceContextScope, federation);
+      getScopeManager().registerScope(serviceContextScope);
       return serviceContextScope.getId();
     }
 

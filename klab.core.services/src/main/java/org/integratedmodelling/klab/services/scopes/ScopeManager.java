@@ -67,7 +67,7 @@ public class ScopeManager {
     // send each scope closing to a virtual thread after removing from the scope map
   }
 
-  public void registerScope(ServiceUserScope serviceScope, Federation federation) {
+  public void registerScope(ServiceUserScope serviceScope) {
     scopes.put(serviceScope.getId(), serviceScope);
   }
 
@@ -136,18 +136,12 @@ public class ScopeManager {
   }
 
   private UserIdentity createUserIdentity(EngineAuthorization engineAuthorization) {
+
     UserIdentityImpl ret = new UserIdentityImpl();
     ret.setUsername(engineAuthorization.getUsername());
     ret.setId(engineAuthorization.getToken());
     ret.setAuthenticated(engineAuthorization.isAuthenticated());
-    // TODO continue
-
-    if (engineAuthorization.getFederationId() != null) {
-      var federationData =
-          new Federation(engineAuthorization.getFederationId(), engineAuthorization.getBrokerUrl());
-      ret.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
-    }
-
+    ret.getGroups().addAll(engineAuthorization.getGroups());
     return ret;
   }
 
@@ -169,6 +163,8 @@ public class ScopeManager {
     }
 
     ret = login(createUserIdentity(authorization));
+
+    ret.getRoles().addAll(authorization.getRoles());
 
     if (authorization.isLocal()) {
       ret.setLocal(true);

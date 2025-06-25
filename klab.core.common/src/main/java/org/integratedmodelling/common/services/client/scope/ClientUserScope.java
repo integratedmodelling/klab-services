@@ -119,18 +119,18 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
   @Override
   public SessionScope getUserSession(RuntimeService hostService) {
 
-    /**
-     * Registration with the hostService succeeded. Return a peer scope locked to the hostService
-     * service that hosts it.
-     */
-    var federation = user.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+    var sessionId =
+        federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
+            ? user.getUsername()
+            : federation.getId();
+
+    var existing = ClientScopeManager.INSTANCE.getScope(sessionId, SessionScope.class);
+    if (existing != null) {
+      return existing;
+    }
+
     var ret =
-        new ClientSessionScope(
-            this,
-            federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
-                ? user.getUsername()
-                : federation.getId(),
-            hostService) {
+        new ClientSessionScope(this, sessionId, hostService) {
 
           @Override
           public <T extends KlabService> T getService(Class<T> serviceClass) {
@@ -149,7 +149,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
           }
         };
 
-    var id = engine.registerNewSession(ret, federation);
+    var id = engine.registerNewSession(ret, this, null);
 
     if (id != null) {
       ret.setId(id);
