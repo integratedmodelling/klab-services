@@ -191,7 +191,6 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
               + Version.CURRENT
               + " on "
               + new Date());
-
       String url;
       try {
         URL serviceHostUrl = (new URI(options.getServiceHostUrl())).toURL();
