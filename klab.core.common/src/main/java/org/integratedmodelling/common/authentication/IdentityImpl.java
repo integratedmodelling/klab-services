@@ -44,9 +44,9 @@ public class IdentityImpl implements Identity {
         this.data = data;
     }
 
-//    public void setIdentityType(Type identityType) {
-//        this.identityType = identityType;
-//    }
+    public void setIdentityType(Type identityType) {
+        this.identityType = identityType;
+    }
 
     public void setId(String id) {
         this.id = id;

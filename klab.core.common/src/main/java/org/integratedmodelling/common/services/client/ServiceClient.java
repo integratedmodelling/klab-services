@@ -162,6 +162,7 @@ public abstract class ServiceClient implements KlabService {
     } else {
       this.token = this.identity.getId();
     }
+    this.serviceId = identity.getId();
     String ret = null;
     this.client = Utils.Http.getServiceClient(token, this);
     var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
@@ -230,7 +231,7 @@ public abstract class ServiceClient implements KlabService {
 
   private void timedTasks() {
 
-    if ("off".equals(settings.get(Engine.Setting.POLLING, String.class))) {
+    if (settings != null && "off".equals(settings.get(Engine.Setting.POLLING, String.class))) {
       return;
     }
 
@@ -261,7 +262,7 @@ public abstract class ServiceClient implements KlabService {
         } else {
           status.set(currentServiceStatus);
           connected.set(true);
-          System.out.println(currentServiceStatus.getServiceType() + ": "+currentServiceStatus.getServiceId());
+          System.out.println(currentServiceStatus.getServiceType() + ": "+currentServiceStatus.getServiceId() + " is " + currentServiceStatus.isAvailable());
           if (this.capabilities == null) {
             this.capabilities = capabilities(scope);
           }

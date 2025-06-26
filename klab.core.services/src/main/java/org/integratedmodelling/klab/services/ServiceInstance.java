@@ -373,18 +373,31 @@ public abstract class ServiceInstance<T extends BaseService> {
        *  and fill it if we are local.
        */
 
-      // create all clients that we may need and know how to create
+        // create all clients that we may need and know how to create
       for (var serviceType : allservices) {
         var service = currentServices.get(serviceType);
         if (service == null) {
-          service =
-              this.createDefaultService(
-                  serviceType, serviceScope, (System.currentTimeMillis() - bootTime) / 1000);
-          if (service != null) {
-            registerService(service, true);
+          if (this.identity.getFirst().is(Identity.Type.SERVICE)) {
+            switch(serviceType) {
+              case KlabService.Type.REASONER -> service =  availableReasoners.iterator().next();
+              case KlabService.Type.RESOLVER -> service =  availableResolvers.iterator().next();
+              case KlabService.Type.RESOURCES -> service =  availableResourcesServices.iterator().next();
+              case KlabService.Type.RUNTIME -> service =  availableRuntimeServices.iterator().next();
+              default -> {}
+            }
+            this.currentServices.put(KlabService.Type.classify(service), service);
+          } else {
+            service =
+                    this.createDefaultService(
+                            serviceType, serviceScope, (System.currentTimeMillis() - bootTime) / 1000);
+            if (service != null) {
+              registerService(service, true);
+            }
           }
+
         }
       }
+
 
       // now check if they're OK
       boolean okEssentials = true;

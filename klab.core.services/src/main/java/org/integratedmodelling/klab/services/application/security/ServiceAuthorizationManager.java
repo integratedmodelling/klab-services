@@ -201,6 +201,7 @@ public class ServiceAuthorizationManager {
     }
     ret.setToken((response.getUserData().getToken()));
     ret.setUrl(certificate.getProperty(KlabCertificate.KEY_URL));
+    ret.setIdentityType(Identity.Type.SERVICE);
     ((ServiceStartupOptions)options).updateOptionsFromCertificate(certificate);
     return Pair.of(ret, response.getServices());
   }
