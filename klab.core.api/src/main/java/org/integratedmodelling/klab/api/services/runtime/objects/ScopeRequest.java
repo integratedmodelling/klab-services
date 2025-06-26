@@ -15,21 +15,12 @@ import java.util.List;
  */
 public class ScopeRequest {
 
-  private String name;
   private DigitalTwin.Configuration configuration;
   private List<URL> resourceServices = new ArrayList<>();
   private List<URL> resolverServices = new ArrayList<>();
   private List<URL> reasonerServices = new ArrayList<>();
   private List<URL> runtimeServices = new ArrayList<>();
   private String behaviorUrn;
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
 
   public List<URL> getResourceServices() {
     return resourceServices;

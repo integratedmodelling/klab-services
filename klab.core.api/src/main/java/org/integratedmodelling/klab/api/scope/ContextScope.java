@@ -401,7 +401,7 @@ public interface ContextScope extends SessionScope {
    *
    * @return
    */
-  DigitalTwin.Configuration getDigitalTwinConfiguration();
+  DigitalTwin.Configuration getConfiguration();
 
   /**
    * A data structure incorporating the results of parsing a scope token string into all its

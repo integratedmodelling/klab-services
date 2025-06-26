@@ -444,7 +444,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
-  public DigitalTwin.Configuration getDigitalTwinConfiguration() {
+  public DigitalTwin.Configuration getConfiguration() {
     return configuration;
   }
 

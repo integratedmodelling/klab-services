@@ -19,8 +19,8 @@ import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -753,7 +753,12 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
       SessionScope scope, UserScope userScope, KActorsBehavior behavior) {
 
     ScopeRequest request = new ScopeRequest();
-    request.setName(scope.getName());
+    request.setConfiguration(
+        DigitalTwin.Configuration.builder()
+            .id(scope.getId())
+            .name(scope.getName())
+            .serverUrl(scope.getService(RuntimeService.class).getUrl())
+            .build());
     var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
@@ -833,8 +838,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
   public String registerNewContext(ContextScope scope, UserScope userScope) {
 
     ScopeRequest request = new ScopeRequest();
-    request.setName(scope.getName());
-    request.setConfiguration(scope.getDigitalTwinConfiguration());
+    request.setConfiguration(scope.getConfiguration());
     var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel

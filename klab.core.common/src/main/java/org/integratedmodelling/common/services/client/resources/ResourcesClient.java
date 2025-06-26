@@ -20,12 +20,12 @@ import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.*;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -145,7 +145,12 @@ public class ResourcesClient extends ServiceClient
   public String registerNewSession(
       SessionScope scope, UserScope userScope, KActorsBehavior behavior) {
     ScopeRequest request = new ScopeRequest();
-    request.setName(scope.getName());
+    request.setConfiguration(
+        DigitalTwin.Configuration.builder()
+            .id(scope.getId())
+            .name(scope.getName())
+            .serverUrl(scope.getService(RuntimeService.class).getUrl())
+            .build());
     var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
@@ -229,8 +234,7 @@ public class ResourcesClient extends ServiceClient
   public String registerNewContext(ContextScope scope, UserScope userScope) {
 
     ScopeRequest request = new ScopeRequest();
-    request.setName(scope.getName());
-    request.setConfiguration(scope.getDigitalTwinConfiguration());
+    request.setConfiguration(scope.getConfiguration());
     var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
     //    var runtime = scope.getService(RuntimeService.class);
     var hasMessaging =

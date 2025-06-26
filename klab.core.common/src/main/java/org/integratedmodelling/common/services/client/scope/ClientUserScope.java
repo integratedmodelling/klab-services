@@ -122,7 +122,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
     var sessionId =
         federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
             ? user.getUsername()
-            : federation.getId();
+            : federation.getId().replace(".", "_");
 
     var existing = ClientScopeManager.INSTANCE.getScope(sessionId, SessionScope.class);
     if (existing != null) {

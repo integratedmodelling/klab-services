@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -152,7 +151,7 @@ public class RuntimeServerController {
             .build();
       }
 
-      return ret.getDigitalTwinConfiguration();
+      return ret.getConfiguration();
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }

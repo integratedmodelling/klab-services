@@ -1,10 +1,7 @@
 package org.integratedmodelling.klab.services.scopes;
 
 import java.net.URL;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -76,6 +73,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     this.user = user;
     this.data = Parameters.create();
     this.service = service;
+    this.roles = EnumSet.noneOf(Role.class);
   }
 
   @Override
@@ -92,6 +90,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     this.user = parent.user;
     this.parentScope = parent;
     this.data = parent.data;
+    this.roles = parent.roles;
     this.local = parent.local;
     this.serviceMap.putAll(parent.serviceMap);
     this.defaultServiceMap.putAll(parent.defaultServiceMap);
@@ -159,7 +158,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     var scopeId =
         federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
             ? user.getUsername()
-            : federation.getId();
+            : federation.getId().replace(".", "_");
 
     var scopeManager =
         service instanceof BaseService baseService ? baseService.getScopeManager() : null;

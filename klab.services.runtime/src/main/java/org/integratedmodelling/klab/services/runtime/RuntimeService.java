@@ -18,7 +18,6 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -266,11 +265,11 @@ public class RuntimeService extends BaseService
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
       serviceContextScope.setHostServiceId(serviceId());
-      boolean isNew = serviceContextScope.getDigitalTwinConfiguration().getId() == null;
+      boolean isNew = serviceContextScope.getConfiguration().getId() == null;
       String scopeId =
           isNew
               ? serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID()
-              : serviceContextScope.getDigitalTwinConfiguration().getId();
+              : serviceContextScope.getConfiguration().getId();
 
       serviceContextScope.setId(scopeId);
       getScopeManager().registerScope(serviceContextScope);

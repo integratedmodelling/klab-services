@@ -1,7 +1,6 @@
 package org.integratedmodelling.common.services.client.runtime;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -14,7 +13,6 @@ import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
-import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -22,7 +20,6 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -89,8 +86,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
       SessionScope scope, UserScope userScope, KActorsBehavior behavior) {
 
     ScopeRequest request = new ScopeRequest();
-    request.setName(scope.getName());
-
+    request.setConfiguration(
+        DigitalTwin.Configuration.builder().name(scope.getName()).serverUrl(getUrl()).build());
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
             && messagingChannel.hasMessaging();
@@ -146,8 +143,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   public String registerNewContext(ContextScope scope, UserScope userScope) {
 
     ScopeRequest request = new ScopeRequest();
-    request.setName(scope.getName());
-    request.setConfiguration(scope.getDigitalTwinConfiguration());
+    request.setConfiguration(scope.getConfiguration());
     var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
     //    var runtime = scope.getService(RuntimeService.class);
     var hasMessaging =

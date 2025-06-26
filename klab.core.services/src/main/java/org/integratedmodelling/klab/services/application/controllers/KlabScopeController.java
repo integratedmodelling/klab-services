@@ -78,6 +78,9 @@ public class KlabScopeController {
                 ? userScope.getUserSession(userScope.getService(RuntimeService.class))
                 : new ServiceSessionScope(userScope, new JobManager());
 
+        ((ServiceSessionScope)ret).setId(request.getConfiguration().getId());
+        ((ServiceSessionScope)ret).setName(request.getConfiguration().getName());
+
         var identity = userScope.getIdentity();
 
         List<Reasoner> reasoners =

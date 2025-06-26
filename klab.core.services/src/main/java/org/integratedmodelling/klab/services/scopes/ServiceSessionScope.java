@@ -41,7 +41,8 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     // the job manager is created upstream
   }
 
-  public ServiceSessionScope(ServiceUserScope parent, JobManager jobManager) {
+  public ServiceSessionScope(
+      ServiceUserScope parent, JobManager jobManager) {
     super(parent);
     this.data = Parameters.create();
     this.data.putAll(parent.data);

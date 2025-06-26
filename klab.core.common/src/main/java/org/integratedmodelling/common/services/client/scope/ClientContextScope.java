@@ -364,7 +364,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   }
 
   @Override
-  public DigitalTwin.Configuration getDigitalTwinConfiguration() {
+  public DigitalTwin.Configuration getConfiguration() {
     return configuration;
   }
 }

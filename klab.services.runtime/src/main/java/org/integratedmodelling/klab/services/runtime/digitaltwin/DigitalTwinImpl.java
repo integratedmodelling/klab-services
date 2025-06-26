@@ -330,7 +330,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       UserScope userScope,
       KnowledgeGraphNeo4j database) {
     this.rootScope = scope;
-    var configuration = DigitalTwin.Configuration.builder(scope.getDigitalTwinConfiguration()).id(scopeId).build();
+    var configuration = DigitalTwin.Configuration.builder(scope.getConfiguration()).id(scopeId).build();
     this.knowledgeGraph = (KnowledgeGraphNeo4j) database.contextualize(configuration, userScope);
     this.storageManager = new StorageManagerImpl(service, scope);
     this.scheduler = new SchedulerImpl(scope, this);
