@@ -16,11 +16,13 @@ import org.integratedmodelling.klab.api.branding.Branding;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.ServiceInstance;
@@ -47,6 +49,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import javax.annotation.PreDestroy;
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -185,12 +191,21 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
               + Version.CURRENT
               + " on "
               + new Date());
+
+      String url;
+      try {
+        URL serviceHostUrl = (new URI(options.getServiceHostUrl())).toURL();
+        if (Utils.URLs.isLocalHost(serviceHostUrl)) {
+          url = options.getServiceHostUrl() + ":" + options.getPort() + options.getContextPath();
+        } else {
+          url = serviceHostUrl.toString();
+        }
+      } catch (MalformedURLException | URISyntaxException e) {
+        throw new KlabIllegalStateException(e);
+      }
       System.out.println(
           "Capabilities: "
-              + options.getServiceHostUrl()
-              + ":"
-              + options.getPort()
-              + options.getContextPath()
+              + url
               + ServicesAPI.CAPABILITIES);
     } catch (Throwable e) {
       Logging.INSTANCE.error(e);
