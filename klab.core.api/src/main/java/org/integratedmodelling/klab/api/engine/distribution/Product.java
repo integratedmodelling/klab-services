@@ -234,31 +234,6 @@ public interface Product {
             }
 
         },
-        COMMUNITY_SERVICE {
-            @Override
-            public String getRemoteUrl(String baseUrl) {
-                return baseUrl + "/" + getId();
-            }
-
-            @Override
-            public String getId() {
-                return "community";
-            }
-
-            @Override
-            public String getName() {
-                return "k.LAB Community service";
-            }
-
-            @Override
-            public int getDebugPort() {return 5010; }
-
-            @Override
-            public int defaultMaxMemoryLimitMB() {
-                return 2048;
-            }
-
-        },
         MODELER {
             @Override
             public String getRemoteUrl(String baseUrl) {
@@ -290,7 +265,6 @@ public interface Product {
                 case RESOURCES -> RESOURCES_SERVICE;
                 case RESOLVER -> RESOLVER_SERVICE;
                 case RUNTIME -> RUNTIME_SERVICE;
-                case COMMUNITY -> COMMUNITY_SERVICE;
                 default -> throw new KlabIllegalArgumentException("wrong service type for product");
             };
         }

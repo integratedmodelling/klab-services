@@ -29,6 +29,18 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
     this.runtimeService = runtimeService;
     this.name = sessionName;
     this.parentScope = parent;
+    setId(null);
+  }
+
+  /**
+   * Use to pre-define the ID when necessary.
+   *
+   * @param id
+   * @return
+   */
+  public ClientSessionScope withId(String id) {
+    this.setId(id);
+    return this;
   }
 
   @Override
@@ -94,7 +106,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
           }
         };
 
-    var id = engine.registerNewContext(ret, userScope);
+    var id = runtime.registerNewContext(ret, userScope);
 
     if (id != null) {
       ret.setId(id);

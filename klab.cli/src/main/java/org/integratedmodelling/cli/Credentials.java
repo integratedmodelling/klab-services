@@ -40,7 +40,7 @@ public class Credentials {
         public void run() {
 
             if (resources) {
-                var rs = KlabCLI.INSTANCE.engine().serviceScope().getService(ResourcesService.class);
+                var rs = KlabCLI.INSTANCE.engine().getOwner().getService(ResourcesService.class);
                 if (rs != null) {
                     for (var info : rs.getCredentialInfo(rs.serviceScope())) {
                         commandSpec.commandLine().getOut().println(info);
@@ -168,7 +168,7 @@ public class Credentials {
             }
 
             if (resources) {
-                var rs = KlabCLI.INSTANCE.engine().serviceScope().getService(ResourcesService.class);
+                var rs = KlabCLI.INSTANCE.engine().getOwner().getService(ResourcesService.class);
                 if (rs != null) {
                     if (rs.addCredentials(host, credentials, rs.serviceScope()) == null) {
                         commandSpec.commandLine().getErr().println("Failed to add external credentials");

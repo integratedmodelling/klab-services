@@ -260,7 +260,7 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
       if (service instanceof ResourcesService.Admin) {
         for (var urn :
             ((ResourcesService.Admin) service)
-                .listResourceUrns(KlabCLI.INSTANCE.engine().serviceScope())) {
+                .listResourceUrns(KlabCLI.INSTANCE.engine().getOwner())) {
           System.out.println("   " + urn);
         }
       }
@@ -364,7 +364,7 @@ public class CLIResourcesView extends CLIView implements ResourcesNavigator {
       if (service instanceof ResourcesService.Admin) {
         for (var project :
             ((ResourcesService.Admin) service)
-                .listProjects(KlabCLI.INSTANCE.engine().serviceScope())) {
+                .listProjects(KlabCLI.INSTANCE.engine().getOwner())) {
           out.println("   " + project.getUrn());
           if (verbose) {
 

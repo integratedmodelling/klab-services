@@ -60,7 +60,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     if (!changes.isEmpty()) {
       container = assetMap.get(changes.getWorkspace());
       if (container != null) {
-        if (!container.mergeChanges(changes, getController().engine().serviceScope()).isEmpty()) {
+        if (!container.mergeChanges(changes, getController().engine().getOwner()).isEmpty()) {
           if (!changes.getObservationStrategies().isEmpty() || !changes.getOntologies().isEmpty()) {
             // send resource set to reasoner to update the knowledge if there are relevant changes
             var reasoner = getController().user().getService(Reasoner.class);
@@ -78,7 +78,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
           if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(container.getUrn())) {
             getController()
                 .engine()
-                .serviceScope()
+                .getOwner()
                 .send(
                     Message.MessageClass.KnowledgeLifecycle,
                     Message.MessageType.WorkspaceChanged,
@@ -89,7 +89,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
       } else {
 
         // new workspace!
-        var service = getController().engine().serviceScope().getService(ResourcesService.class);
+        var service = getController().engine().getOwner().getService(ResourcesService.class);
         if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(changes.getWorkspace())) {
           var worldview = service.retrieveWorldview();
           if (worldview != null) {
@@ -170,7 +170,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
   private void negotiateLocking(NavigableWorkspace workspace) {
     releaseLocks();
-    var service = getController().engine().serviceScope().getService(ResourcesService.class);
+    var service = getController().engine().getOwner().getService(ResourcesService.class);
     var anythingLocked = false;
     if (service instanceof ResourcesService.Admin admin) {
       for (var asset : workspace.children()) {
@@ -201,7 +201,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
   private void releaseLocks() {
     if (currentWorkspace != null) {
-      var service = getController().engine().serviceScope().getService(ResourcesService.class);
+      var service = getController().engine().getOwner().getService(ResourcesService.class);
       if (service instanceof ResourcesService.Admin admin) {
         for (var asset : currentWorkspace.children()) {
           if (asset instanceof NavigableProject project && project.isLocked()) {
@@ -250,7 +250,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
      * TODO we could ingest the notifications into the assets
      */
     for (var asset : assetMap.values()) {
-      if (!asset.mergeChanges(notifications, getController().engine().serviceScope()).isEmpty()) {
+      if (!asset.mergeChanges(notifications, getController().engine().getOwner()).isEmpty()) {
         view().resetValidationNotifications(asset);
       }
     }
@@ -268,7 +268,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
   private void createNavigableAssets(ResourcesService service) {
     assetMap.clear();
-    var capabilities = service.capabilities(getController().engine().serviceScope());
+    var capabilities = service.capabilities(getController().engine().getOwner());
     if (capabilities.isWorldviewProvider()) {
       assetMap.put(
           Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER,

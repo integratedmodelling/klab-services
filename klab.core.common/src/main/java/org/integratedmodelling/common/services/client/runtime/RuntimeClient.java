@@ -87,7 +87,11 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     ScopeRequest request = new ScopeRequest();
     request.setConfiguration(
-        DigitalTwin.Configuration.builder().name(scope.getName()).serverUrl(getUrl()).build());
+        DigitalTwin.Configuration.builder()
+            .id(scope.getId())
+            .name(scope.getName())
+            .serverUrl(getUrl())
+            .build());
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
             && messagingChannel.hasMessaging();

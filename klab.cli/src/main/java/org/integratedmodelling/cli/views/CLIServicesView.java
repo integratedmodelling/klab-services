@@ -98,7 +98,6 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
           KlabService.Type.RESOURCES,
           KlabService.Type.RESOLVER,
           KlabService.Type.RUNTIME,
-          KlabService.Type.COMMUNITY,
           KlabService.Type.ENGINE
         }) {
 
@@ -112,8 +111,7 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
           if (reasoners && serviceType != KlabService.Type.REASONER
               || resolvers && serviceType != KlabService.Type.RESOLVER
               || resources && serviceType != KlabService.Type.RESOURCES
-              || runtimes && serviceType != KlabService.Type.RUNTIME
-              || community && serviceType != KlabService.Type.COMMUNITY) {
+              || runtimes && serviceType != KlabService.Type.RUNTIME) {
             continue;
           }
 

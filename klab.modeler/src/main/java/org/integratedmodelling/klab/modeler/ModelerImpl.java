@@ -441,7 +441,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       // TODO use openOrCreateUserSession () for a user-specific single raw session. Session should
       // have
       //  the user's name
-      currentSession = openNewSession("S" + (++sessionCount));
+      currentSession = currentUser().getUserSession(user().getService(RuntimeService.class));
     }
 
     if (currentContext == null && currentSession != null) {
@@ -495,7 +495,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   @Override
   public void importProject(String workspaceName, String projectUrl, boolean overwriteExisting) {
 
-    var resources = engine().serviceScope().getService(ResourcesService.class);
+    var resources = engine().getOwner().getService(ResourcesService.class);
     if (resources instanceof ResourcesService.Admin admin) {
       Thread.ofVirtual()
           .start(
@@ -528,7 +528,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       }
     }
 
-    var resources = engine().serviceScope().getService(ResourcesService.class);
+    var resources = engine().getOwner().getService(ResourcesService.class);
     if (resources instanceof ResourcesService.Admin admin) {
       Thread.ofVirtual()
           .start(
@@ -555,7 +555,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       }
     }
 
-    var resources = engine().serviceScope().getService(ResourcesService.class);
+    var resources = engine().getOwner().getService(ResourcesService.class);
     if (resources instanceof ResourcesService.Admin admin) {
       Thread.ofVirtual()
           .start(
@@ -576,7 +576,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   public void manageProject(
       String projectId, RepositoryState.Operation operation, String... arguments) {
 
-    var resources = engine().serviceScope().getService(ResourcesService.class);
+    var resources = engine().getOwner().getService(ResourcesService.class);
     if (resources instanceof ResourcesService.Admin admin) {
       Thread.ofVirtual()
           .start(
@@ -609,7 +609,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   @Override
   public void createDocument(
       String newDocumentUrn, String projectName, ProjectStorage.ResourceType documentType) {
-    var resources = engine().serviceScope().getService(ResourcesService.class);
+    var resources = engine().getOwner().getService(ResourcesService.class);
     if (resources instanceof ResourcesService.Admin admin) {
       Thread.ofVirtual()
           .start(
@@ -646,7 +646,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     List<ServiceClient> services = new ArrayList<>();
     for (var serviceType : List.of(KlabService.Type.RESOURCES)) {
-      for (var service : engine().serviceScope().getServices(serviceType.classify())) {
+      for (var service : engine().getOwner().getServices(serviceType.classify())) {
         if (service instanceof ServiceClient serviceClient && serviceClient.isLocal()) {
           services.add(serviceClient);
         }

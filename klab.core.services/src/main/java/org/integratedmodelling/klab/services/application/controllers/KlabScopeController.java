@@ -73,13 +73,28 @@ public class KlabScopeController {
       var userScope = authorization.getScope(ServiceUserScope.class);
       if (userScope != null) {
 
+        // an existing session can be reused by multiple clients that don't know about its existence
+        // shouldn't need to validate id==null && behavior != null as clients should never request that
+        if (request.getConfiguration().getId() != null) {
+          var existing =
+              instance
+                  .klabService()
+                  .getScopeManager()
+                  .getScope(request.getConfiguration().getId(), SessionScope.class);
+          if (existing != null) {
+            // TODO bookkeeping of users connected if user is different, possibly validate other
+            //  parameters
+            return existing.getId();
+          }
+        }
+
         var ret =
             request.getBehaviorUrn() == null
                 ? userScope.getUserSession(userScope.getService(RuntimeService.class))
                 : new ServiceSessionScope(userScope, new JobManager());
 
-        ((ServiceSessionScope)ret).setId(request.getConfiguration().getId());
-        ((ServiceSessionScope)ret).setName(request.getConfiguration().getName());
+        ((ServiceSessionScope) ret).setId(request.getConfiguration().getId());
+        ((ServiceSessionScope) ret).setName(request.getConfiguration().getName());
 
         var identity = userScope.getIdentity();
 
@@ -135,9 +150,7 @@ public class KlabScopeController {
 
         // TODO check presence and availability of all services and fail if no response
 
-        if (ret instanceof ServiceSessionScope serviceSessionScope) {
-          serviceSessionScope.setServices(resources, resolvers, reasoners, runtimes);
-        }
+        ((ServiceSessionScope) ret).setServices(resources, resolvers, reasoners, runtimes);
 
         var id = instance.klabService().registerNewSession(ret, userScope, behavior);
         if (brokerUrl != null && ret instanceof ServiceSessionScope serviceSessionScope) {

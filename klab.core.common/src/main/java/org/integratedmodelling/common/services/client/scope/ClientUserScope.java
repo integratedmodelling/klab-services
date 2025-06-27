@@ -1,5 +1,10 @@
 package org.integratedmodelling.common.services.client.scope;
 
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -15,12 +20,6 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.BiConsumer;
 
 /**
  * Implementations must fill in the getService() strategy. This is a scope that contains an agent
@@ -147,11 +146,12 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
             }
             return ClientUserScope.this.getServices(serviceClass);
           }
-        };
+        }.withId(sessionId);
 
-    var id = engine.registerNewSession(ret, this, null);
+    var id = hostService.registerNewSession(ret, this, null);
 
     if (id != null) {
+      // should be the same
       ret.setId(id);
       ClientScopeManager.INSTANCE.register(ret);
     }
@@ -161,6 +161,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
 
   @Override
   public SessionScope run(String behaviorName, RuntimeService hostService) {
+    // TODO as above, pass the behavior and the services and let the remote assign the ID
     return null;
   }
 

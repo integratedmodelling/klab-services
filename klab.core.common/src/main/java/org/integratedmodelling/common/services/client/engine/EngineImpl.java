@@ -1,7 +1,6 @@
 package org.integratedmodelling.common.services.client.engine;
 
 import java.io.InputStream;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
@@ -54,11 +53,11 @@ public class EngineImpl implements Engine, PropertyHolder {
   private final Distribution.Status distributionStatus;
   private Federation federationData;
   private Consumer<Status> engineStatusMonitor;
-  private BiConsumer<KlabService, ServiceStatus> serviceStatusMonitor;
+  private BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor;
 
   public EngineImpl(
       Consumer<Status> engineStatusMonitor,
-      BiConsumer<KlabService, ServiceStatus> serviceStatusMonitor) {
+      BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor) {
 
     settings.put(Setting.POLLING, "on");
     settings.put(Setting.POLLING_INTERVAL, 5);
@@ -106,34 +105,39 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   @Override
-  public ServiceCapabilities capabilities(Scope scope) {
-    return null;
-  }
-
-  @Override
-  public ServiceStatus status() {
-    return null;
-  }
-
-  @Override
-  public URL getUrl() {
-    return null;
-  }
-
-  @Override
-  public String getLocalName() {
-    return null;
-  }
-
-  /**
-   * The client engine works under a user scope.
-   *
-   * @return
-   */
-  @Override
-  public UserScope serviceScope() {
+  public UserScope getOwner() {
     return defaultUser;
   }
+
+  //  @Override
+  //  public KlabService.ServiceCapabilities capabilities(Scope scope) {
+  //    return null;
+  //  }
+  //
+  //  @Override
+  //  public KlabService.ServiceStatus status() {
+  //    return null;
+  //  }
+  //
+  //  @Override
+  //  public URL getUrl() {
+  //    return null;
+  //  }
+  //
+  //  @Override
+  //  public String getLocalName() {
+  //    return null;
+  //  }
+
+  //  /**
+  //   * The client engine works under a user scope.
+  //   *
+  //   * @return
+  //   */
+  //  @Override
+  //  public UserScope serviceScope() {
+  //    return defaultUser;
+  //  }
 
   @Override
   public boolean shutdown() {
@@ -161,20 +165,24 @@ public class EngineImpl implements Engine, PropertyHolder {
     if (distribution != null && distribution.isAvailable()) {
 
       for (var serviceType :
-          new KlabService.Type[] {Type.RESOURCES, Type.REASONER, Type.RUNTIME, Type.RESOLVER}) {
+          new KlabService.Type[] {
+            KlabService.Type.RESOURCES,
+            KlabService.Type.REASONER,
+            KlabService.Type.RUNTIME,
+            KlabService.Type.RESOLVER
+          }) {
         var product = distribution.findProduct(Product.ProductType.forService(serviceType));
         if (product != null) {
           var instance = product.getInstance(defaultUser);
-          if (serviceType == Type.RUNTIME
+          if (serviceType == KlabService.Type.RUNTIME
               && instance.getSettings() instanceof ServiceStartupOptions serviceStartupOptions) {
             serviceStartupOptions.setStartLocalBroker(true);
           }
 
           if (instance.start()) {
-            serviceScope()
-                .info(
-                    "Service is starting: will be attempting connection to locally running "
-                        + serviceType);
+            this.defaultUser.info(
+                "Service is starting: will be attempting connection to locally running "
+                    + serviceType);
           }
         }
       }
@@ -183,43 +191,44 @@ public class EngineImpl implements Engine, PropertyHolder {
     return ret;
   }
 
-  @Override
-  public String registerNewSession(
-      SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
+  //  @Override
+  //  public String registerNewSession(
+  //      SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
+  //
+  //    var sessionId =
+  //        getUser()
+  //            .getService(RuntimeService.class)
+  //            .registerNewSession(sessionScope, userScope, behavior);
+  //    if (sessionId != null) {
+  //      // TODO advertise the session to all other services that will use it. Keep only the
+  //      //  services that accepted it.
+  //    }
+  //    return sessionId;
+  //  }
+  //
+  //  @Override
+  //  public String registerNewContext(ContextScope contextScope, UserScope userScope) {
+  //
+  //    var contextId =
+  //        getUser().getService(RuntimeService.class).registerNewContext(contextScope, userScope);
+  //    if (contextId != null) {
+  //      // TODO advertise the context to all other services that will use it. Keep only the
+  //      // services that accept it.
+  //
+  //    }
+  //    return contextId;
+  //  }
 
-    var sessionId =
-        getUser()
-            .getService(RuntimeService.class)
-            .registerNewSession(sessionScope, userScope, behavior);
-    if (sessionId != null) {
-      // TODO advertise the session to all other services that will use it. Keep only the
-      //  services that accepted it.
-    }
-    return sessionId;
-  }
-
-  @Override
-  public String registerNewContext(ContextScope contextScope, UserScope userScope) {
-
-    var contextId =
-        getUser().getService(RuntimeService.class).registerNewContext(contextScope, userScope);
-    if (contextId != null) {
-      // TODO advertise the context to all other services that will use it. Keep only the
-      // services that accept it.
-
-    }
-    return contextId;
-  }
-
-  @Override
-  public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
-    return null;
-  }
-
-  @Override
-  public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
-    return false;
-  }
+  //  @Override
+  //  public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
+  //    return null;
+  //  }
+  //
+  //  @Override
+  //  public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope
+  // scope) {
+  //    return false;
+  //  }
 
   @Override
   public void boot() {
@@ -251,7 +260,8 @@ public class EngineImpl implements Engine, PropertyHolder {
     // status);
   }
 
-  private void notifyLocalService(KlabService klabService, ServiceStatus serviceStatus) {
+  private void notifyLocalService(
+      KlabService klabService, KlabService.ServiceStatus serviceStatus) {
     if (serviceStatusMonitor != null) {
       serviceStatusMonitor.accept(klabService, serviceStatus);
     }
@@ -330,50 +340,50 @@ public class EngineImpl implements Engine, PropertyHolder {
     return this.stopped.get();
   }
 
-  @Override
-  public String getServiceName() {
-    return null;
-  }
+  //  @Override
+  //  public String getServiceName() {
+  //    return null;
+  //  }
 
   public String serviceId() {
     return serviceId;
   }
 
-  @Override
-  public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
-    return Authentication.INSTANCE.getCredentialInfo(scope);
-  }
-
-  @Override
-  public ExternalAuthenticationCredentials.CredentialInfo addCredentials(
-      String host, ExternalAuthenticationCredentials credentials, Scope scope) {
-    return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
-  }
+  //  @Override
+  //  public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
+  //    return Authentication.INSTANCE.getCredentialInfo(scope);
+  //  }
+  //
+  //  @Override
+  //  public ExternalAuthenticationCredentials.CredentialInfo addCredentials(
+  //      String host, ExternalAuthenticationCredentials credentials, Scope scope) {
+  //    return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
+  //  }
 
   @Override
   public Map<Setting, Object> getSettings() {
     return settings;
   }
 
-  @Override
-  public InputStream exportAsset(
-      String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope) {
-    // TODO establish which service we're targeting and route the request to it
-    return null;
-  }
+  //  @Override
+  //  public InputStream exportAsset(
+  //      String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope) {
+  //    // TODO establish which service we're targeting and route the request to it
+  //    return null;
+  //  }
 
-  @Override
-  public String importAsset(
-      ResourceTransport.Schema schema,
-      ResourceTransport.Schema.Asset assetCoordinates,
-      String suggestedUrn,
-      Scope scope) {
-    // TODO establish which service we're targeting and route the request to it
-    if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
-
-    } else if (schema.getType() == ResourceTransport.Schema.Type.STREAM) {
-
-    }
-    return null;
-  }
+  //  @Override
+  //  public String importAsset(
+  //      ResourceTransport.Schema schema,
+  //      ResourceTransport.Schema.Asset assetCoordinates,
+  //      String suggestedUrn,
+  //      Scope scope) {
+  //    // TODO establish which service we're targeting and route the request to it
+  //    if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
+  //
+  //    } else if (schema.getType() == ResourceTransport.Schema.Type.STREAM) {
+  //
+  //    }
+  //    return null;
+  //  }
 }

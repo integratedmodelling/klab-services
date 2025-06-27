@@ -39,7 +39,7 @@ import java.util.Map;
  * can be implemented as a service; for this reason <code>ENGINE</code> is one of the service
  * categories listed as {@link KlabService.Type}.
  */
-public interface Engine extends KlabService {
+public interface Engine /*extends KlabService*/ {
 
   /**
    * Engine settings that can be changed at runtime through the CLI or the API. Most of these are
@@ -93,7 +93,7 @@ public interface Engine extends KlabService {
    * choosing a different service as the current one, a message is sent (intercepted by the modeler
    * and also sent to the UI).
    */
-  interface Status extends ServiceStatus {
+  interface Status extends KlabService.ServiceStatus {
 
     /**
      * Return the current status of each specific service. If the service is not even connected, a
@@ -101,7 +101,7 @@ public interface Engine extends KlabService {
      *
      * @return
      */
-    Map<Type, ServiceStatus> getServicesStatus();
+    Map<KlabService.Type, KlabService.ServiceStatus> getServicesStatus();
 
     /**
      * User names for all users that have currently active scopes. List may be filtered according to
@@ -110,7 +110,6 @@ public interface Engine extends KlabService {
      * @return
      */
     Collection<String> getConnectedUsernames();
-
   }
 
   /**
@@ -142,6 +141,16 @@ public interface Engine extends KlabService {
   List<UserScope> getUsers();
 
   /**
+   * The engine runs under a valid certificate. The owning user scope serves as a service scope for
+   * the engine.
+   *
+   * @return
+   */
+  UserScope getOwner();
+
+  boolean shutdown();
+
+  /**
    * Stop any local services that were started by calling {@link #startLocalServices()}. This does
    * not wait for the services to stop.
    *
@@ -155,7 +164,7 @@ public interface Engine extends KlabService {
    *
    * @return
    */
-  Map<Type, KlabService> startLocalServices();
+  Map<KlabService.Type, KlabService> startLocalServices();
 
   /**
    * To facilitate implementations, we expose the boot and shutdown as explicitly called phases.

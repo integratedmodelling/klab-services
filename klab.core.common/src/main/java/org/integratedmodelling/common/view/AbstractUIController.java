@@ -212,9 +212,9 @@ public abstract class AbstractUIController implements UIController {
 
     switch (message.getMessageClass()) {
       case Void -> {}
-//      case UserInterface -> {
-//        // shouldn't happen
-//      }
+      //      case UserInterface -> {
+      //        // shouldn't happen
+      //      }
       case UserContextChange -> {}
       case UserContextDefinition -> {}
       case ServiceLifecycle -> {
@@ -228,31 +228,32 @@ public abstract class AbstractUIController implements UIController {
           //                              case ServiceInitializing -> dispatch(this,
           //           UIReactor.UIEvent.ServiceStarting,
           //                                      message.getPayload(Object.class));
-//          case ServiceStatus -> {
-//            dispatch(
-//                this,
-//                UIReactor.UIEvent.ServiceStatus,
-//                message.getPayload(KlabService.ServiceStatus.class));
-//          }
+          //          case ServiceStatus -> {
+          //            dispatch(
+          //                this,
+          //                UIReactor.UIEvent.ServiceStatus,
+          //                message.getPayload(KlabService.ServiceStatus.class));
+          //          }
           default -> {}
         }
       }
-//      case EngineLifecycle -> {
-//        // TODO engine ready event and status
-//        switch (message.getMessageType()) {
-////          case ServiceStatus -> {
-////            dispatch(
-////                this,
-////                UIReactor.UIEvent.ServiceStatus,
-////                message.getPayload(KlabService.ServiceStatus.class));
-////          }
-//          }
-////          case UsingDistribution -> {
-////            dispatch(this, UIEvent.DistributionAvailable, message.getPayload(Distribution.class));
-////          }
-//          default -> {}
-//        }
-//      }
+      //      case EngineLifecycle -> {
+      //        // TODO engine ready event and status
+      //        switch (message.getMessageType()) {
+      ////          case ServiceStatus -> {
+      ////            dispatch(
+      ////                this,
+      ////                UIReactor.UIEvent.ServiceStatus,
+      ////                message.getPayload(KlabService.ServiceStatus.class));
+      ////          }
+      //          }
+      ////          case UsingDistribution -> {
+      ////            dispatch(this, UIEvent.DistributionAvailable,
+      // message.getPayload(Distribution.class));
+      ////          }
+      //          default -> {}
+      //        }
+      //      }
       case KimLifecycle -> {}
       case ResourceLifecycle -> {
         if (message.is(Message.MessageType.WorkspaceChanged)) {
@@ -540,7 +541,7 @@ public abstract class AbstractUIController implements UIController {
    * @return
    */
   public <S extends KlabService> S serviceById(String serviceId, Class<S> serviceClass) {
-    for (var service : engine.serviceScope().getServices(serviceClass)) {
+    for (var service : engine.getOwner().getServices(serviceClass)) {
       if (serviceId.equals(service.serviceId())) {
         return service;
       }
@@ -607,12 +608,12 @@ public abstract class AbstractUIController implements UIController {
   public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentials(
       KlabService.Type serviceType, String serviceId) {
 
-    if (serviceType == KlabService.Type.ENGINE
-        && (serviceId == null
-            || (engine.serviceId() != null && engine.serviceId().equals(serviceId)))) {
-      // TODO local credentials, no scope check
-      return List.of();
-    }
+    //    if (serviceType == KlabService.Type.ENGINE
+    //        && (serviceId == null
+    //            || (engine.serviceId() != null && engine.serviceId().equals(serviceId)))) {
+    //      // TODO local credentials, no scope check
+    //      return List.of();
+    //    }
     var service = serviceById(serviceId, serviceType.classify());
     if (service != null) {
       return service.getCredentialInfo(user());
@@ -627,14 +628,14 @@ public abstract class AbstractUIController implements UIController {
       KlabService.Type serviceType,
       String serviceId) {
     if (serviceType == KlabService.Type.ENGINE
-        && (serviceId == null
-            || (engine.serviceId() != null && engine.serviceId().equals(serviceId)))) {
+    /*&& (serviceId == null
+    || (engine.serviceId() != null && engine.serviceId().equals(serviceId)))*/ ) {
       // TODO add to local credentials, no scope check
       return null;
     }
     var service = serviceById(serviceId, serviceType.classify());
     if (service != null) {
-      return service.addCredentials(host, credentials, engine().serviceScope());
+      return service.addCredentials(host, credentials, engine().getOwner());
     }
     return null;
   }

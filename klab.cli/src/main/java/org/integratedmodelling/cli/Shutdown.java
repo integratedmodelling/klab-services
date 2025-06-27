@@ -39,7 +39,7 @@ public class Shutdown implements Runnable {
             List<ServiceClient> services = new ArrayList<>();
             for (var serviceType : List.of(KlabService.Type.RESOURCES)) {
                 for (var service :
-                        KlabCLI.INSTANCE.engine().serviceScope().getServices(serviceType.classify())) {
+                        KlabCLI.INSTANCE.engine().getOwner().getServices(serviceType.classify())) {
                     if (service instanceof ServiceClient serviceClient && serviceClient.isLocal()) {
                         services.add(serviceClient);
                     }

@@ -211,13 +211,12 @@ public class RuntimeService extends BaseService
   public String registerNewSession(
       SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
 
-    if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
+    var sessionId = sessionScope.getId();
+    if (sessionId == null) {
+      sessionId = Utils.Names.shortUUID();
+    }
 
-      var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
-      String sessionId =
-          behavior == null
-              ? (federation == null ? userScope.getUser().getUsername() : federation.getId())
-              : Utils.Names.shortUUID();
+    if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
       serviceSessionScope.setId(sessionId);
       getScopeManager().registerScope(serviceSessionScope);

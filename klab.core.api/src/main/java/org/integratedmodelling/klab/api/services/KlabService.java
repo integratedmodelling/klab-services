@@ -54,12 +54,10 @@ public interface KlabService extends Service {
     /** */
     RUNTIME(8094),
 
-    /** */
-    COMMUNITY(8095),
-
     /**
      * The engine is an orchestrator of other k.LAB Services and a provider of scopes at user level
-     * and below. It serves the public observation API.
+     * and below. It serves the public observation API. It's not implemented as a service in the
+     * base stack.
      */
     ENGINE(8283),
 
@@ -101,9 +99,7 @@ public interface KlabService extends Service {
         case RESOURCES -> ResourcesService.class;
         case RESOLVER -> Resolver.class;
         case RUNTIME -> RuntimeService.class;
-        case COMMUNITY -> Community.class;
-        case ENGINE -> Engine.class;
-        case DISCOVERY, LEGACY_NODE, NODE -> null;
+        case DISCOVERY, LEGACY_NODE, NODE, ENGINE -> null;
       };
     }
 
@@ -112,7 +108,6 @@ public interface KlabService extends Service {
         case ResourcesService s -> RESOURCES;
         case RuntimeService s -> RUNTIME;
         case Reasoner s -> REASONER;
-        case Community s -> COMMUNITY;
         case Resolver s -> RESOLVER;
         default -> null;
       };
@@ -121,8 +116,6 @@ public interface KlabService extends Service {
     public static <T extends KlabService> Type classify(Class<T> serviceClass) {
       if (Reasoner.class.isAssignableFrom(serviceClass)) {
         return Type.REASONER;
-      } else if (Community.class.isAssignableFrom(serviceClass)) {
-        return Type.COMMUNITY;
       } else if (ResourcesService.class.isAssignableFrom(serviceClass)) {
         return Type.RESOURCES;
       } else if (Resolver.class.isAssignableFrom(serviceClass)) {

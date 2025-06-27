@@ -31,12 +31,12 @@ public class DocumentEditorControllerImpl extends AbstractUIPanelController<Navi
         // temporarily disable the panel to give us time to modify
         panel().disable();
 
-        var service = getController().engine().serviceScope().getService(ResourcesService.class);
-        var reasoner = getController().engine().serviceScope().getService(Reasoner.class);
+        // FIXME this is wrong - each doc must be in a scope
+        var service = getController().engine().getOwner().getService(ResourcesService.class);
+        var reasoner = getController().engine().getOwner().getService(Reasoner.class);
 
         if (service instanceof ResourcesService.Admin admin) {
 
-            var scope = getController().engine().serviceScope();
             List<ResourceSet> changes = switch (getPayload()) {
                 case KimOntology ontology -> {
                     List<ResourceSet> ret = new ArrayList<>();

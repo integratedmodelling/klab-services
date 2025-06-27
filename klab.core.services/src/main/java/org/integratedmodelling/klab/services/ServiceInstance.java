@@ -239,10 +239,6 @@ public abstract class ServiceInstance<T extends BaseService> {
           case RESOURCES -> (Collection<T>) availableResourcesServices;
           case RESOLVER -> (Collection<T>) availableResolvers;
           case RUNTIME -> (Collection<T>) availableRuntimeServices;
-          case COMMUNITY -> {
-            var cs = getService(serviceClass);
-            yield cs == null ? Collections.emptyList() : (Collection<T>) List.of(cs);
-          }
           case ENGINE -> Collections.emptyList();
           case LEGACY_NODE, NODE, DISCOVERY ->
               throw new KlabIllegalArgumentException(
@@ -274,9 +270,6 @@ public abstract class ServiceInstance<T extends BaseService> {
       case Resolver resolver -> {
         currentServices.put(KlabService.Type.RESOLVER, resolver);
         availableResolvers.add(resolver);
-      }
-      case Community community -> {
-        currentServices.put(KlabService.Type.COMMUNITY, community);
       }
       default -> {}
     }
