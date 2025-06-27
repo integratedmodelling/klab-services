@@ -63,6 +63,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     settings.put(Setting.POLLING_INTERVAL, 5);
     settings.put(Setting.LOG_EVENTS, false);
     settings.put(Setting.LAUNCH_PRODUCT, true);
+    settings.put(Setting.LOCAL_ONLY, false);
 
     if (DistributionImpl.isDevelopmentDistributionAvailable()) {
       this.developmentDistribution = new DevelopmentDistributionImpl();
@@ -108,36 +109,6 @@ public class EngineImpl implements Engine, PropertyHolder {
   public UserScope getOwner() {
     return defaultUser;
   }
-
-  //  @Override
-  //  public KlabService.ServiceCapabilities capabilities(Scope scope) {
-  //    return null;
-  //  }
-  //
-  //  @Override
-  //  public KlabService.ServiceStatus status() {
-  //    return null;
-  //  }
-  //
-  //  @Override
-  //  public URL getUrl() {
-  //    return null;
-  //  }
-  //
-  //  @Override
-  //  public String getLocalName() {
-  //    return null;
-  //  }
-
-  //  /**
-  //   * The client engine works under a user scope.
-  //   *
-  //   * @return
-  //   */
-  //  @Override
-  //  public UserScope serviceScope() {
-  //    return defaultUser;
-  //  }
 
   @Override
   public boolean shutdown() {
@@ -191,45 +162,6 @@ public class EngineImpl implements Engine, PropertyHolder {
     return ret;
   }
 
-  //  @Override
-  //  public String registerNewSession(
-  //      SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
-  //
-  //    var sessionId =
-  //        getUser()
-  //            .getService(RuntimeService.class)
-  //            .registerNewSession(sessionScope, userScope, behavior);
-  //    if (sessionId != null) {
-  //      // TODO advertise the session to all other services that will use it. Keep only the
-  //      //  services that accepted it.
-  //    }
-  //    return sessionId;
-  //  }
-  //
-  //  @Override
-  //  public String registerNewContext(ContextScope contextScope, UserScope userScope) {
-  //
-  //    var contextId =
-  //        getUser().getService(RuntimeService.class).registerNewContext(contextScope, userScope);
-  //    if (contextId != null) {
-  //      // TODO advertise the context to all other services that will use it. Keep only the
-  //      // services that accept it.
-  //
-  //    }
-  //    return contextId;
-  //  }
-
-  //  @Override
-  //  public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
-  //    return null;
-  //  }
-  //
-  //  @Override
-  //  public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope
-  // scope) {
-  //    return false;
-  //  }
-
   @Override
   public void boot() {
 
@@ -282,6 +214,8 @@ public class EngineImpl implements Engine, PropertyHolder {
        * If user is federated, we don't start the local broker. Otherwise, we set up a local
        * federated identity and tell the runtime service to create an embedded broker on the default
        * URL and port.
+       *
+       * FIXME check if this still applies (federation is a group)
        */
       this.federationData =
           authData
@@ -340,50 +274,12 @@ public class EngineImpl implements Engine, PropertyHolder {
     return this.stopped.get();
   }
 
-  //  @Override
-  //  public String getServiceName() {
-  //    return null;
-  //  }
-
   public String serviceId() {
     return serviceId;
   }
-
-  //  @Override
-  //  public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
-  //    return Authentication.INSTANCE.getCredentialInfo(scope);
-  //  }
-  //
-  //  @Override
-  //  public ExternalAuthenticationCredentials.CredentialInfo addCredentials(
-  //      String host, ExternalAuthenticationCredentials credentials, Scope scope) {
-  //    return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
-  //  }
 
   @Override
   public Map<Setting, Object> getSettings() {
     return settings;
   }
-
-  //  @Override
-  //  public InputStream exportAsset(
-  //      String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope) {
-  //    // TODO establish which service we're targeting and route the request to it
-  //    return null;
-  //  }
-
-  //  @Override
-  //  public String importAsset(
-  //      ResourceTransport.Schema schema,
-  //      ResourceTransport.Schema.Asset assetCoordinates,
-  //      String suggestedUrn,
-  //      Scope scope) {
-  //    // TODO establish which service we're targeting and route the request to it
-  //    if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
-  //
-  //    } else if (schema.getType() == ResourceTransport.Schema.Type.STREAM) {
-  //
-  //    }
-  //    return null;
-  //  }
 }

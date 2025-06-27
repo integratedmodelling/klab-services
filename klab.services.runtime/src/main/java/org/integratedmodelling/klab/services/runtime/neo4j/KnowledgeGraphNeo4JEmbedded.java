@@ -7,7 +7,6 @@ import java.time.Duration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.neo4j.configuration.GraphDatabaseSettings;
@@ -35,7 +34,7 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
     this.managementService = parent.managementService;
     this.graphDb = parent.graphDb;
     this.online = parent.online;
-    this.scope = scope;
+    this.userScope = scope;
     this.driver = parent.driver;
   }
 

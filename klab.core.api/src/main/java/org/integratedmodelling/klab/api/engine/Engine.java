@@ -53,7 +53,8 @@ public interface Engine /*extends KlabService*/ {
     LAUNCH_PRODUCT(
         "Launch a local service if there is no online service and a distribution is " + "available",
         Boolean.class),
-    LOG_EVENTS("Log server-side events", Boolean.class);
+    LOG_EVENTS("Log server-side events", Boolean.class),
+    LOCAL_ONLY("Disable use of remote services", Boolean.class);
 
     // if this is empty, any string value is admitted
     public final String[] values;

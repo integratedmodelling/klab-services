@@ -411,6 +411,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   @Override
   public SessionScope openNewSession(String sessionName) {
+    // HERE check out the services. A default session should be on a local service, so use that if
+    // available (with an info message). Otherwise the service should be specified and an error
+    // should be sent for notification.
     var ret = user().getUserSession(user().getService(RuntimeService.class));
     this.sessions.add(ret);
     return ret;

@@ -10,12 +10,10 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.runtime.storage.BufferImpl;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.util.HashMap;
@@ -23,7 +21,7 @@ import java.util.Map;
 
 public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
-  protected UserScope scope;
+  protected UserScope userScope;
 
   protected abstract long nextKey();
 
