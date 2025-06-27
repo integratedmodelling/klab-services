@@ -262,7 +262,9 @@ public abstract class ServiceClient implements KlabService {
         } else {
           status.set(currentServiceStatus);
           connected.set(true);
-          System.out.println(currentServiceStatus.getServiceType() + ": "+currentServiceStatus.getServiceId() + " is " + currentServiceStatus.isAvailable());
+          System.out.println("Service " + currentServiceStatus.getServiceType()
+                  + " with id "+currentServiceStatus.getServiceId() + " is "
+                  + ((currentServiceStatus.isAvailable()) ? "online" : "offline"));
           if (this.capabilities == null) {
             this.capabilities = capabilities(scope);
           }
