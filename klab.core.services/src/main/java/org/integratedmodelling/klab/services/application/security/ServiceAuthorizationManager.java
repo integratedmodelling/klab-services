@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.services.application.security;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
@@ -10,6 +14,7 @@ import java.util.function.Supplier;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.PartnerIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
@@ -120,6 +125,11 @@ public class ServiceAuthorizationManager {
     PublicKey publicKey;
     ServiceAuthenticationResponse response;
     try (var client = Utils.Http.getClient(this.authenticatingHub, null)) {
+      Logging.INSTANCE.info(
+              "authenticating "
+                      + certificate.getProperty(KlabCertificate.KEY_NODENAME)
+                      + " with hub "
+                      + authenticatingHub);
       response =
           client.post(
               ServicesAPI.HUB.AUTHENTICATE_SERVICE, request, ServiceAuthenticationResponse.class);
@@ -162,10 +172,21 @@ public class ServiceAuthorizationManager {
     jwksVerifiers.put(response.getAuthenticatingHub(), jwtVerifier);
 
     // TODO fill in services from hub response, which at the moment contains no provision for that
+    /*
     ServiceReference service = new ServiceReference();
+    service.setId(this.nodeName);
+    service.setIdentityType(this.type);
+    try {
+        service.setUrls(List.of(new URI(certificate.getProperty(KlabCertificate.KEY_URL)).toURL()));
+    } catch (MalformedURLException e) {
+        throw new RuntimeException(e);
+    } catch (URISyntaxException e) {
+        throw new RuntimeException(e);
+    }
     List<ServiceReference> services = new ArrayList<>();
+    service.setPrimary(true);
     services.add(service);
-
+    */
     /*
      * return the institutional identity this certificate belongs to.
      */
@@ -178,8 +199,11 @@ public class ServiceAuthorizationManager {
     for (Group group : response.getGroups()) {
       ret.getGroups().add(group);
     }
-
-    return Pair.of(ret, services);
+    ret.setToken((response.getUserData().getToken()));
+    ret.setUrl(certificate.getProperty(KlabCertificate.KEY_URL));
+    ret.setIdentityType(Identity.Type.SERVICE);
+    ((ServiceStartupOptions)options).updateOptionsFromCertificate(certificate);
+    return Pair.of(ret, response.getServices());
   }
 
   /**
@@ -256,6 +280,7 @@ public class ServiceAuthorizationManager {
                   username,
                   brokerUrl,
                   federationId,
+                  token,
                   groupStrings,
                   Collections.unmodifiableList(filterRoles(roleStrings)));
 
@@ -307,7 +332,7 @@ public class ServiceAuthorizationManager {
       /*
       anonymous user case also intercepts JWT token failure
        */
-      ret = new EngineAuthorization("nohub", "anonymous", null, null, List.of(), null);
+      ret = new EngineAuthorization("nohub", "anonymous", null, null, null, List.of(), null);
       ret.setTokenString(ServicesAPI.ANONYMOUS_TOKEN);
     }
 

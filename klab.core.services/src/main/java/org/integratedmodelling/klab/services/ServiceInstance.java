@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services;
 
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.authentication.ServiceIdentityImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -15,11 +16,12 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.PartnerIdentity;
+import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
@@ -31,6 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * This class is a wrapper for a {@link KlabService} whose main purpose is to provide it with a
@@ -208,6 +211,32 @@ public abstract class ServiceInstance<T extends BaseService> {
   protected AbstractServiceDelegatingScope createServiceScope() {
 
     this.identity = authenticateService();
+    AtomicReference<String> token = new AtomicReference<>();
+    if (identity.getFirst() instanceof PartnerIdentity) {
+      token.set(((PartnerIdentity) identity.getFirst()).getToken());
+    }
+    for (ServiceReference s : this.identity.getSecond()) {
+      switch (s.getIdentityType()) {
+        case KlabService.Type.REASONER -> {
+          ReasonerClient reasoner = new ReasonerClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()), null);
+          availableReasoners.add(reasoner);
+        }
+        case KlabService.Type.RUNTIME  -> {
+          RuntimeClient runtime = new RuntimeClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()), null);
+          availableRuntimeServices.add(runtime);
+        }
+        case KlabService.Type.RESOURCES -> {
+          ResourcesClient resources = new ResourcesClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()), null);
+          availableResourcesServices.add(resources);
+        }
+        case KlabService.Type.RESOLVER -> {
+          ResolverClient resolver = new ResolverClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(),  null, s.getUrls(), token.get()), null);
+          availableResolvers.add(resolver);
+        }
+        default -> {
+        }
+      }
+    }
 
     return new AbstractServiceDelegatingScope(
         new ChannelImpl(identity.getFirst()) {
@@ -251,7 +280,8 @@ public abstract class ServiceInstance<T extends BaseService> {
   public boolean start(ServiceStartupOptions options) {
 
     setEnvironment(options);
-    this.service = createPrimaryService(this.serviceScope = createServiceScope(), options);
+    this.serviceScope = createServiceScope();
+    this.service = createPrimaryService(serviceScope, options);
 
     /** Must do this now */
     switch (this.service) {
@@ -336,18 +366,31 @@ public abstract class ServiceInstance<T extends BaseService> {
        *  and fill it if we are local.
        */
 
-      // create all clients that we may need and know how to create
+        // create all clients that we may need and know how to create
       for (var serviceType : allservices) {
         var service = currentServices.get(serviceType);
         if (service == null) {
-          service =
-              this.createDefaultService(
-                  serviceType, serviceScope, (System.currentTimeMillis() - bootTime) / 1000);
-          if (service != null) {
-            registerService(service, true);
+          if (this.identity.getFirst().is(Identity.Type.SERVICE)) {
+            switch(serviceType) {
+              case KlabService.Type.REASONER -> service =  availableReasoners.iterator().next();
+              case KlabService.Type.RESOLVER -> service =  availableResolvers.iterator().next();
+              case KlabService.Type.RESOURCES -> service =  availableResourcesServices.iterator().next();
+              case KlabService.Type.RUNTIME -> service =  availableRuntimeServices.iterator().next();
+              default -> {}
+            }
+            this.currentServices.put(KlabService.Type.classify(service), service);
+          } else {
+            service =
+                    this.createDefaultService(
+                            serviceType, serviceScope, (System.currentTimeMillis() - bootTime) / 1000);
+            if (service != null) {
+              registerService(service, true);
+            }
           }
+
         }
       }
+
 
       // now check if they're OK
       boolean okEssentials = true;

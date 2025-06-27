@@ -15,6 +15,8 @@ public class PartnerIdentityImpl extends IdentityImpl implements PartnerIdentity
   private Set<Group> groups = new HashSet<>();
   private String authenticatingHub;
   private String publicKey;
+  private String token;
+  private String url;
 
   @Override
   public String getName() {
@@ -78,6 +80,14 @@ public class PartnerIdentityImpl extends IdentityImpl implements PartnerIdentity
   public void setPublicKey(String publicKey) {
     this.publicKey = publicKey;
   }
+
+  public void setToken(String token) {this.token = token; }
+
+  public String getToken() { return this.token; }
+
+  public void setUrl(String url) { this.url = url; }
+
+  public String getUrl() { return this.url; }
 
   @Override
   public String toString() {

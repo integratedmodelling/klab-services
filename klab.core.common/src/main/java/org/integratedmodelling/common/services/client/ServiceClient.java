@@ -25,6 +25,8 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.PartnerIdentity;
+import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -153,7 +155,14 @@ public abstract class ServiceClient implements KlabService {
   @SuppressWarnings("unchecked")
   public String connect(BiConsumer<ServiceStatus, Boolean>... statusListeners) {
 
-    this.token = this.identity.getId();
+    if (this.identity instanceof PartnerIdentity) {
+      this.token = ((PartnerIdentity)identity).getToken();
+    } else if (this.identity instanceof ServiceIdentity) {
+      this.token =  ((ServiceIdentity)identity).getToken();
+    } else {
+      this.token = this.identity.getId();
+    }
+    this.serviceId = identity.getId();
     String ret = null;
     this.client = Utils.Http.getServiceClient(token, this);
     var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
@@ -222,7 +231,7 @@ public abstract class ServiceClient implements KlabService {
 
   private void timedTasks() {
 
-    if ("off".equals(settings.get(Engine.Setting.POLLING, String.class))) {
+    if (settings != null && "off".equals(settings.get(Engine.Setting.POLLING, String.class))) {
       return;
     }
 
@@ -253,6 +262,12 @@ public abstract class ServiceClient implements KlabService {
         } else {
           status.set(currentServiceStatus);
           connected.set(true);
+          /*
+          System.out.println("Service " + currentServiceStatus.getServiceType()
+                  + " with id "+currentServiceStatus.getServiceId() + " is "
+                  + ((currentServiceStatus.isAvailable()) ? "online" : "offline"));
+
+           */
           if (this.capabilities == null) {
             this.capabilities = capabilities(scope);
           }

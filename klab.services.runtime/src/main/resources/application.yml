@@ -1,0 +1,19 @@
+server:
+  port: 8094
+  servlet:
+    contextPath: /runtime
+security:
+  basic:
+    enabled: false
+management:
+  endpoint:
+    health:
+      show-details: always
+  security:
+    enabled: false
+application:
+  info:
+    title: "k.LAB Runtime"
+    description: "Runtime services for k.LAB"
+    contactName: "Integrated Modelling Partnership"
+    contactEmail: "info@integratedmodelling.org"

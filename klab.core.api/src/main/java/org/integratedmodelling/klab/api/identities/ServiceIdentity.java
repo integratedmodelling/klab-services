@@ -59,4 +59,9 @@ public abstract interface ServiceIdentity extends RuntimeIdentity {
      */
     boolean isOnline();
 
+	/**
+	 * The token used to connect to this service
+	 * @return
+	 */
+	String getToken();
 }

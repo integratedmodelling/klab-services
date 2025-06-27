@@ -1,0 +1,16 @@
+server:
+    port: 8093
+    servlet:
+       contextPath: /resolver
+security:
+   basic:
+      enabled: false
+management:
+   security:
+      enabled: false
+application:
+   info:
+      title: "k.LAB Resolver"
+      description: "Resolving services for k.LAB"
+      contactName: "Integrated Modelling Partnership"
+      contactEmail: "info@integratedmodelling.org"
