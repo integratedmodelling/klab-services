@@ -72,21 +72,28 @@ public class ServiceMonitor {
         clients.put(service, service.status());
       }
 
-      for (var service : services) {
-        if (accepted.contains(service.getIdentityType())) {
-          var client =
-              switch (service.getIdentityType()) {
-                case REASONER ->
-                    ReasonerClient.createOffline(service.getUrls().getFirst(), identity, settings);
-                case RESOURCES ->
-                    ResourcesClient.createOffline(service.getUrls().getFirst(), identity, settings);
-                case RESOLVER ->
-                    ResolverClient.createOffline(service.getUrls().getFirst(), identity, settings);
-                case RUNTIME ->
-                    RuntimeClient.createOffline(service.getUrls().getFirst(), identity, settings);
-                default -> throw new KlabIllegalStateException("Can't happen");
-              };
-          clients.put(client, client.status());
+      var localOnly = settings.get(Engine.Setting.LOCAL_ONLY, Boolean.FALSE);
+
+      if (!localOnly) {
+        for (var service : services) {
+          if (accepted.contains(service.getIdentityType())) {
+            var client =
+                switch (service.getIdentityType()) {
+                  case REASONER ->
+                      ReasonerClient.createOffline(
+                          service.getUrls().getFirst(), identity, settings);
+                  case RESOURCES ->
+                      ResourcesClient.createOffline(
+                          service.getUrls().getFirst(), identity, settings);
+                  case RESOLVER ->
+                      ResolverClient.createOffline(
+                          service.getUrls().getFirst(), identity, settings);
+                  case RUNTIME ->
+                      RuntimeClient.createOffline(service.getUrls().getFirst(), identity, settings);
+                  default -> throw new KlabIllegalStateException("Can't happen");
+                };
+            clients.put(client, client.status());
+          }
         }
       }
 
