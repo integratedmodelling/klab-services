@@ -99,6 +99,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               + "\t(ctx:Context {id: $contextId, name: $name, user: $username, created: "
               + "$timestamp, "
               + "rights: $rights, "
+              + "federation: $federation, "
               + "lastUpdate: $lastUpdate, "
               + "expiration: $expirationType}),\n"
               + "\t// main provenance and dataflow nodes\n"
@@ -280,11 +281,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       this.klab = getOrCreateAgent("k.LAB", "AI");
       this.user = getOrCreateAgent(scope.getUser().getUsername(), "USER");
 
-      var username = scope.getUser().getUsername();
+      //      var username = scope.getUser().getUsername();
       var federation = Authentication.INSTANCE.getFederationData(scope.getUser());
-      if (federation != null) {
-        username += "@" + federation.getId();
-      }
+      //      if (federation != null) {
+      //        username += "@" + federation.getId();
+      //      }
       if (rights == null) {
         rights = ResourcePrivileges.create(scope);
       }
@@ -301,10 +302,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 rights.toString(),
                 "timestamp",
                 timestamp,
+                "federation",
+                (federation == null ? "" : federation.getId()),
                 "lastUpdate",
                 System.currentTimeMillis(),
                 "username",
-                username,
+                scope.getUser().getUsername(),
                 "expirationType",
                 scope.getPersistence().name(),
                 "activityId",

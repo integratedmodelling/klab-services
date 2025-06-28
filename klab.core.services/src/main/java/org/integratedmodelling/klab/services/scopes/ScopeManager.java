@@ -228,7 +228,7 @@ public class ScopeManager {
 
   public <T extends Scope> T getScope(String scopeId, Class<T> scopeClass) {
     var ret = scopes.get(scopeId);
-    if (ret != null && ret.getClass().isAssignableFrom(scopeClass)) {
+    if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
       return (T) ret;
     }
     return null;

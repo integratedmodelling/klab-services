@@ -299,7 +299,7 @@ public class KlabScopeController {
           var queuesAvailable = serviceContextScope.setupQueues(queuesHeader);
 
           Logging.INSTANCE.info(
-              "Queues set up for session " + id + ": " + queuesAvailable + " on context scope");
+              "Queues set up for digital twin " + id + ": " + queuesAvailable);
 
           if (!serviceContextScope.initializeAgents(id)) {
             Logging.INSTANCE.warn("agent initialization failed in context creation");
