@@ -13,6 +13,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -289,30 +290,30 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
-  public Collection<Observation> getChildrenOf(Observation observation) {
+  public Collection<RuntimeAsset> getChildrenOf(RuntimeAsset observation) {
     return digitalTwin
         .getKnowledgeGraph()
-        .query(Observation.class, this)
+        .query(RuntimeAsset.class, this)
         .source(observation)
         .along(GraphModel.Relationship.HAS_CHILD)
         .run(this);
   }
 
   @Override
-  public Collection<Observation> getOutgoingRelationshipsOf(Observation observation) {
+  public Collection<RuntimeAsset> getOutgoingRelationshipsOf(RuntimeAsset observation) {
     return digitalTwin
         .getKnowledgeGraph()
-        .query(Observation.class, this)
+        .query(RuntimeAsset.class, this)
         .source(observation)
         .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);
   }
 
   @Override
-  public Collection<Observation> getIncomingRelationshipsOf(Observation observation) {
+  public Collection<RuntimeAsset> getIncomingRelationshipsOf(RuntimeAsset observation) {
     return digitalTwin
         .getKnowledgeGraph()
-        .query(Observation.class, this)
+        .query(RuntimeAsset.class, this)
         .target(observation)
         .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);

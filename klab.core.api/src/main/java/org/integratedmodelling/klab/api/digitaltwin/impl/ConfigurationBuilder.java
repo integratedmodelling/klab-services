@@ -1,9 +1,13 @@
 package org.integratedmodelling.klab.api.digitaltwin.impl;
 
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.scope.Persistence;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -35,6 +39,38 @@ public class ConfigurationBuilder {
     this.serverUrl = configuration.getServiceUrl();
     this.notifications.addAll(configuration.getNotifications());
     this.createWhenAbsent = configuration.isCreateWhenAbsent();
+  }
+
+  public ConfigurationBuilder(URL url, Scope scope) {
+    // set from a full URL with query options that determine what to do if the DT does not exist.
+    var query = url.getQuery();
+    var path = url.getPath();
+    var index = path.lastIndexOf(ServicesAPI.RUNTIME.DIGITAL_TWIN_PREFIX);
+    var undex = url.toString().lastIndexOf(ServicesAPI.RUNTIME.DIGITAL_TWIN_PREFIX);
+    var serviceUrl = url.toString().substring(0, undex);
+    this.url = url;
+    this.serverUrl = Utils.URLs.newURL(serviceUrl);
+    this.id = path.substring(index + ServicesAPI.RUNTIME.DIGITAL_TWIN_PREFIX.length());
+    this.createWhenAbsent = true;
+    this.persistence = Persistence.IDLE_TIMEOUT;
+    this.timeout = 3;
+    this.timeoutUnit = TimeUnit.HOURS;
+    this.accessRights = ResourcePrivileges.create(scope);
+    if (query != null) {
+      var options = query.split("&");
+      for (var option : options) {
+        var parts = option.split("=");
+        if (parts.length == 2) {
+          switch (parts[0]) {
+            case "rights":
+              this.accessRights = ResourcePrivileges.create(parts[1]);
+              break;
+            case "persistence":
+              this.persistence = Persistence.valueOf(parts[1]);
+          }
+        }
+      }
+    }
   }
 
   public ConfigurationBuilder accessRights(ResourcePrivileges accessRights) {

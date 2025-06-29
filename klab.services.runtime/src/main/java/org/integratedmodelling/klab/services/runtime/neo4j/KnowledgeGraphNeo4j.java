@@ -3,6 +3,9 @@ package org.integratedmodelling.klab.services.runtime.neo4j;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -67,6 +70,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   private final RuntimeAsset contextNode = RuntimeAsset.CONTEXT_ASSET;
   private final RuntimeAsset dataflowNode = RuntimeAsset.DATAFLOW_ASSET;
   private final RuntimeAsset provenanceNode = RuntimeAsset.PROVENANCE_ASSET;
+  private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
   private LoadingCache<Long, Observation> observationCache =
       CacheBuilder.newBuilder()
@@ -79,6 +83,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                   return ret == null ? Observation.empty() : ret;
                 }
               });
+
+  protected void startMaintenanceThread(int periodInSeconds) {
+    executor.scheduleAtFixedRate(() -> maintenanceThread(), 0, periodInSeconds, TimeUnit.SECONDS);
+  }
+
+  private void maintenanceThread() {
+
+  }
 
   /**
    * Predefined Cypher queries. FIXME some should be substituted by programmatic queries, leaving

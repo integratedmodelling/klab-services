@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.scope;
 
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -89,7 +90,7 @@ public interface ContextScope extends SessionScope {
    * This will only retrieve one observation. Calling this one with a countable observable may
    * produce a singular observation or a collective whose children are the requested observation in
    * case there are multiple observations in this scope. To retrieve all the instances of the
-   * collective, retrieve the collective and then call {@link #getChildrenOf(Observation)} on it.
+   * collective, retrieve the collective and then call {@link #getChildrenOf(RuntimeAsset)} on it.
    * The API user is responsible for checking the collective status of the result.
    *
    * @param observable can pass an observable, but the result will be insensitive to units, name or
@@ -235,12 +236,13 @@ public interface ContextScope extends SessionScope {
    */
   Collection<Observation> affected(Observation observation);
 
-//  /**
-//   * Start the scheduling if the context occurs; do nothing if not, or if there are no new
-//   * transitions to calculate. This can be called multiple times, normally after each observation,
-//   * with intelligent "replay" of any transitions that need to be seen again.
-//   */
-//  void runTransitions();
+  //  /**
+  //   * Start the scheduling if the context occurs; do nothing if not, or if there are no new
+  //   * transitions to calculate. This can be called multiple times, normally after each
+  // observation,
+  //   * with intelligent "replay" of any transitions that need to be seen again.
+  //   */
+  //  void runTransitions();
 
   /**
    * Return the portion of the provenance graph that pertains to this scope. This may be empty in an
@@ -297,20 +299,6 @@ public interface ContextScope extends SessionScope {
    */
   ContextScope getRootContextScope();
 
-  //  /**
-  //   * The main method to retrieve anything visible to this scope from the knowledge graph.
-  //   *
-  //   * @param resultClass
-  //   * @param queryData
-  //   * @param <T>
-  //   * @return
-  //   * @deprecated use query on KG
-  //   */
-  //  <T extends RuntimeAsset> List<T> query(Class<T> resultClass, Object... queryData);
-
-  //  <T extends RuntimeAsset> List<T> queryKnowledgeGraph(KnowledgeGraph.Query<T>
-  // knowledgeGraphQuery);
-
   /**
    * Return the parent observation of the passed observation. The runtime context maintains the
    * logical structure graph (ignores grouping of artifacts).
@@ -324,29 +312,29 @@ public interface ContextScope extends SessionScope {
    * Return all children of the passed observation, using the logical structure (i.e. skipping
    * observation groups). The runtime context maintains the structure graph.
    *
-   * @param observation an observation. Quality observations have no children but no error should be
+   * @param asset an observation. Quality observations have no children but no error should be
    *     raised.
    * @return the parent, or an empty collection if no children
    */
-  Collection<Observation> getChildrenOf(Observation observation);
+  Collection<RuntimeAsset> getChildrenOf(RuntimeAsset asset);
 
   /**
    * Inspect the network graph of the current context, returning all relationships that have the
    * passed subject as target.
    *
-   * @param observation a {@link Observation} object.
+   * @param asset a {@link Observation} object.
    * @return a {@link java.util.Collection} object.
    */
-  Collection<Observation> getOutgoingRelationshipsOf(Observation observation);
+  Collection<RuntimeAsset> getOutgoingRelationshipsOf(RuntimeAsset asset);
 
   /**
    * Inspect the network graph of the current context, returning all relationships that have the
    * passed subject as target.
    *
-   * @param observation a {@link Observation} object.
+   * @param asset a {@link Observation} object.
    * @return a {@link java.util.Collection} object.
    */
-  Collection<Observation> getIncomingRelationshipsOf(Observation observation);
+  Collection<RuntimeAsset> getIncomingRelationshipsOf(RuntimeAsset asset);
 
   /**
    * Set resolution constraints here. Returns a new scope with all the constraints added to the ones

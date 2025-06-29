@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -128,6 +129,10 @@ public interface DigitalTwin extends RuntimeAsset {
      * @throws KlabValidationException if any settings are inconsistent with the scope
      */
     Configuration validate(Scope scope) throws KlabValidationException;
+
+    static Configuration create(URL url, UserScope scope) {
+      return new ConfigurationBuilder(url, scope).build();
+    }
 
     static ConfigurationBuilder builder() {
       return new ConfigurationBuilder();

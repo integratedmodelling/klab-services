@@ -98,6 +98,7 @@ public class KlabScopeController {
 
         var identity = userScope.getIdentity();
 
+        // FIXME see if we can/should cache all these clients - they may get a lot of concurrent use
         List<Reasoner> reasoners =
             instance.klabService() instanceof Reasoner r
                 ? new ArrayList<>(List.of(r))
@@ -109,7 +110,9 @@ public class KlabScopeController {
                                     url, identity, instance.klabService(), instance.settings()))
                         .toList());
         List<RuntimeService> runtimes =
-            instance.klabService() instanceof RuntimeService r
+            instance.klabService(
+
+            ) instanceof RuntimeService r
                 ? new ArrayList<>(List.of(r))
                 : new ArrayList<>(
                     request.getRuntimeServices().stream()

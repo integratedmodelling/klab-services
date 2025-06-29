@@ -57,6 +57,11 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     this.catalog.put(RuntimeAsset.DATAFLOW_ASSET.getId(), RuntimeAsset.DATAFLOW_ASSET);
   }
 
+  /**
+   * Called when a new resolution produces new assets to pre-cache the server-side objects.
+   *
+   * @param graph
+   */
   public void ingest(GraphModel.KnowledgeGraph graph) {
 
     for (var nodeId : graph.getNodes().keySet()) {
@@ -201,6 +206,19 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   /**
+   * If the passed asset, assumed available at server side, is not represented in the graph, collect
+   * it from the server, ensuring that all its relationships are represented to the passed depth.
+   *
+   * @param asset
+   * @param depth
+   */
+  public void focusAsset(RuntimeAsset asset, int depth) {
+    if (!catalog.containsKey(asset.getId())) {
+      // TODO dio can
+    }
+  }
+
+  /**
    * Retrieves a list of outgoing {@link RuntimeAsset} nodes connected to the given source node
    * through edges that match the specified relationship, if provided.
    *
@@ -274,7 +292,8 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   @Override
-  public KnowledgeGraph contextualize(DigitalTwin.Configuration digitalTwinConfig, UserScope userScope) {
+  public KnowledgeGraph contextualize(
+      DigitalTwin.Configuration digitalTwinConfig, UserScope userScope) {
     return null;
   }
 

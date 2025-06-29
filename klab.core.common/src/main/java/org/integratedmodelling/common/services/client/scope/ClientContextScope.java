@@ -30,7 +30,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   private Observation contextObservation;
   private Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
       new LinkedHashMap<>();
-  private DigitalTwin digitalTwin;
+  private ClientDigitalTwin digitalTwin;
   private Activity activity;
   private DigitalTwin.Configuration configuration;
 
@@ -171,30 +171,30 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   }
 
   @Override
-  public Collection<Observation> getChildrenOf(Observation observation) {
+  public Collection<RuntimeAsset> getChildrenOf(RuntimeAsset observation) {
     return getDigitalTwin()
         .getKnowledgeGraph()
-        .query(Observation.class, this)
+        .query(RuntimeAsset.class, this)
         .source(observation)
         .along(GraphModel.Relationship.HAS_CHILD)
         .run(this);
   }
 
   @Override
-  public Collection<Observation> getOutgoingRelationshipsOf(Observation observation) {
+  public Collection<RuntimeAsset> getOutgoingRelationshipsOf(RuntimeAsset observation) {
     return digitalTwin
         .getKnowledgeGraph()
-        .query(Observation.class, this)
+        .query(RuntimeAsset.class, this)
         .source(observation)
         .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);
   }
 
   @Override
-  public Collection<Observation> getIncomingRelationshipsOf(Observation observation) {
+  public Collection<RuntimeAsset> getIncomingRelationshipsOf(RuntimeAsset observation) {
     return digitalTwin
         .getKnowledgeGraph()
-        .query(Observation.class, this)
+        .query(RuntimeAsset.class, this)
         .target(observation)
         .along(GraphModel.Relationship.HAS_RELATIONSHIP_TARGET)
         .run(this);
@@ -340,7 +340,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   }
 
   @Override
-  public DigitalTwin getDigitalTwin() {
+  public ClientDigitalTwin getDigitalTwin() {
     return this.digitalTwin;
   }
 

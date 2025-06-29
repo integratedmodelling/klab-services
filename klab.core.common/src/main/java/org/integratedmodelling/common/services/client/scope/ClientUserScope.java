@@ -65,7 +65,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
 
   @Override
   public ContextScope connect(URL digitalTwinURL) {
-    return connect(DigitalTwin.Configuration.builder().url(digitalTwinURL).build().validate(this));
+    return connect(DigitalTwin.Configuration.create(digitalTwinURL, this).validate(this));
   }
 
   @Override

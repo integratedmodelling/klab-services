@@ -314,6 +314,11 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
             }
           };
       ret.setId(configuration.getId());
+      ret.createDigitalTwin(configuration.getId());
+      // fill in enough content to show at depth 2. TODO this should be moved to the UI, depth 1
+      //  should be enough here
+      ret.getDigitalTwin().getKnowledgeGraph().focusAsset(RuntimeAsset.CONTEXT_ASSET, 2);
+
       ClientScopeManager.INSTANCE.register(ret);
       return ret;
     }

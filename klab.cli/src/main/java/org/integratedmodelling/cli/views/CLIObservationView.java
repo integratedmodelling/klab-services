@@ -1,6 +1,7 @@
 package org.integratedmodelling.cli.views;
 
 import java.io.PrintWriter;
+import java.net.URL;
 import java.util.List;
 import org.integratedmodelling.cli.KlabCLI;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
@@ -11,6 +12,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -155,34 +157,24 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
   public void notifyDigitalTwinModified(DigitalTwin digitalTwin, Message change) {}
 
   @Override
-  public void notifyObservationSubmission(Observation observation, ContextScope contextScope,
-                                          RuntimeService service) {
-
-  }
+  public void notifyObservationSubmission(
+      Observation observation, ContextScope contextScope, RuntimeService service) {}
 
   @Override
-  public void notifyObservationSubmissionAborted(Observation observation, ContextScope contextScope,
-                                                 RuntimeService service) {
-
-  }
+  public void notifyObservationSubmissionAborted(
+      Observation observation, ContextScope contextScope, RuntimeService service) {}
 
   @Override
-  public void notifyObservationSubmissionFinished(Observation observation, ContextScope contextScope,
-                                                  RuntimeService service) {
-
-  }
+  public void notifyObservationSubmissionFinished(
+      Observation observation, ContextScope contextScope, RuntimeService service) {}
 
   @Override
-  public void notifyContextObservationResolved(Observation observation, ContextScope contextScope,
-                                               RuntimeService service) {
-
-  }
+  public void notifyContextObservationResolved(
+      Observation observation, ContextScope contextScope, RuntimeService service) {}
 
   @Override
-  public void notifyObserverResolved(Observation observation, ContextScope contextScope,
-                                     RuntimeService service) {
-
-  }
+  public void notifyObserverResolved(
+      Observation observation, ContextScope contextScope, RuntimeService service) {}
 
   @CommandLine.Command(
       name = "close",
@@ -359,19 +351,33 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
   }
 
   @CommandLine.Command(
-      name = "context",
+      name = "connect",
       mixinStandardHelpOptions = true,
       version = Version.CURRENT,
       description = {"Connect to an existing context.", ""},
       subcommands = {})
   public static class Context implements Runnable {
 
+    @CommandLine.Spec CommandLine.Model.CommandSpec commandSpec;
     @CommandLine.ParentCommand CLIObservationView parent;
+    @CommandLine.Parameters URL url;
 
     @Override
     public void run() {
-      var runtime = KlabCLI.INSTANCE.user().getService(RuntimeService.class);
-      for (var session : runtime.getSessionInfo(KlabCLI.INSTANCE.user())) {}
+
+      PrintWriter out = commandSpec.commandLine().getOut();
+      var context = KlabCLI.INSTANCE.user().connect(url);
+      if (context != null) {
+        KlabCLI.INSTANCE.modeler().setCurrentContext(context);
+        KlabCLI.INSTANCE
+            .modeler()
+            .setCurrentSession(context.getParentScope(Scope.Type.SESSION, SessionScope.class));
+        out.println(
+            CommandLine.Help.Ansi.AUTO.string(
+                "@|green Context " + context.getName() + " connected|@"));
+      } else {
+        out.println(CommandLine.Help.Ansi.AUTO.string("@|yellow Context connection failed|@"));
+      }
     }
   }
 }

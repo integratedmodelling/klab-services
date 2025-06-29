@@ -1,9 +1,7 @@
 package org.integratedmodelling.klab.api.authentication;
 
 import org.integratedmodelling.klab.api.identities.Group;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.scope.*;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -91,8 +89,9 @@ public class ResourcePrivileges implements Serializable {
   }
 
   public static ResourcePrivileges create(Scope scope) {
-
-    if (scope instanceof UserScope userScope) {
+    if (scope instanceof ContextScope contextScope) {
+      return contextScope.getConfiguration().getAccessRights();
+    } else if (scope instanceof UserScope userScope) {
       if (!userScope.getUser().isAnonymous() && userScope.getUser().isAuthenticated()) {
         return create(userScope.getUser().getUsername());
       }

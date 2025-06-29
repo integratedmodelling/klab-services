@@ -44,8 +44,8 @@ public interface KnowledgeGraph {
   }
 
   /**
-   * Simple query interface. Obtain a query, if needed combine it with others, and run it to obtain
-   * the contents of the knowledge graph.
+   * Simple query interface. Get a new query; if necessary combine it with other queries, and run it
+   * to get the contents of the knowledge graph.
    *
    * @param <T>
    */

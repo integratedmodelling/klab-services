@@ -103,7 +103,7 @@ public class ClientDigitalTwin implements DigitalTwin {
   }
 
   @Override
-  public KnowledgeGraph getKnowledgeGraph() {
+  public ClientKnowledgeGraph getKnowledgeGraph() {
     return knowledgeGraph;
   }
 

@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.runtime.server.controllers;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -12,7 +13,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
+import org.integratedmodelling.common.services.client.resolver.ResolverClient;
+import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
+import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -24,6 +29,10 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.Resolver;
+import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -121,13 +130,12 @@ public class RuntimeServerController {
    * it's present in the knowledge graph but there is no a live scope.
    *
    * @param principal
-   * @param configuration
    * @return
    */
   @Operation(
       summary = "Connect to digital twin",
       description =
-          "Connect to the digital twin through the service. This may cause the digital twin to be reconstructed.")
+          "Connect to the digital twin through the service. This may cause the digital twin to be reconstructed from the knowledge graph.")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "Connected successfully"),
@@ -140,15 +148,55 @@ public class RuntimeServerController {
       @Parameter(description = "Digital twin configuration") @RequestBody ScopeRequest request) {
 
     if (principal instanceof EngineAuthorization authorization) {
-      var ret =
-          runtimeService
-              .klabService()
-              .connectContext(request.getConfiguration(), authorization.getScope(UserScope.class));
+
+      var userScope = authorization.getScope(UserScope.class);
+      var ret = runtimeService.klabService().connectContext(request.getConfiguration(), userScope);
 
       if (ret == null) {
         return DigitalTwin.Configuration.builder()
             .withNotification(Notification.error("Cannot find a digital twin with requested ID"))
             .build();
+      }
+
+      // FIXME see if we can/should cache all these clients
+      List<Reasoner> reasoners =
+          new ArrayList<>(
+              request.getReasonerServices().stream()
+                  .map(
+                      url ->
+                          new ReasonerClient(
+                              url,
+                              userScope.getUser(),
+                              runtimeService.klabService(),
+                              runtimeService.settings()))
+                  .toList());
+      List<RuntimeService> runtimes = List.of(runtimeService.klabService());
+      List<ResourcesService> resources =
+          new ArrayList<>(
+              request.getResourceServices().stream()
+                  .map(
+                      url ->
+                          new ResourcesClient(
+                              url,
+                              userScope.getUser(),
+                              runtimeService.klabService(),
+                              runtimeService.settings()))
+                  .toList());
+      List<Resolver> resolvers =
+          new ArrayList<>(
+              request.getResolverServices().stream()
+                  .map(
+                      url ->
+                          new ResolverClient(
+                              url,
+                              userScope.getUser(),
+                              runtimeService.klabService(),
+                              runtimeService.settings()))
+                  .toList());
+
+      if (ret instanceof ServiceContextScope serviceContextScope) {
+        serviceContextScope.setHostServiceId(runtimeService.klabService().serviceId());
+        serviceContextScope.setServices(resources, resolvers, reasoners, runtimes);
       }
 
       return ret.getConfiguration();

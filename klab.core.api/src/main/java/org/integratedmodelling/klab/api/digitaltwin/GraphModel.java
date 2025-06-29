@@ -121,7 +121,7 @@ public interface GraphModel {
     TRIGGERED,
     RESOLVED;
 
-    enum Direction {
+    public enum Direction {
       INCOMING,
       OUTGOING
     }

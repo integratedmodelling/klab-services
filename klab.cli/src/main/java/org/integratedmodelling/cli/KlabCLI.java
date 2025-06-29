@@ -15,6 +15,7 @@ import org.integratedmodelling.cli.views.CLIServicesView;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -904,7 +905,7 @@ public enum KlabCLI {
   }
 
   private void printObservation(
-      Observation observation, int indent, int depth, boolean verbose, ContextScope scope) {
+          RuntimeAsset observation, int indent, int depth, boolean verbose, ContextScope scope) {
     var spacer = Utils.Strings.spaces(indent * 2);
     INSTANCE
         .commandLine

@@ -75,6 +75,8 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
 
       configureDatabase();
 
+      startMaintenanceThread(20 /* TODO configure */);
+
       Logging.INSTANCE.info("Embedded Neo4J database initialized");
 
       Runtime.getRuntime()
