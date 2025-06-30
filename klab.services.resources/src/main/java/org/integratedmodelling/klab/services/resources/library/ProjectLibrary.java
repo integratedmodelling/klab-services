@@ -1,10 +1,12 @@
 package org.integratedmodelling.klab.services.resources.library;
 
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
@@ -45,7 +47,10 @@ public class ProjectLibrary {
             optional = true)
       })
   public static String importProjectGit(
-      Parameters<String> properties, BaseService service, Scope scope) {
+          Parameters<String> properties, ResourcesService service, Scope scope) {
+
+    Logging.INSTANCE.info("Importing project from Git repository: " + properties.get("url"));
+    
     return null;
   }
 
