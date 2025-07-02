@@ -216,11 +216,11 @@ public class ResourcesConfiguration implements Serializable {
   /** The service work directory path within the k.LAB work directory */
   private String servicePath = "resources";
 
-//  /** all other paths are relative to the service path */
-//  private String localResourcePath = "local";
-//
-//  private String publicResourcePath = "public";
-//  private URI brokerURI = null;
+  //  /** all other paths are relative to the service path */
+  //  private String localResourcePath = "local";
+  //
+  //  private String publicResourcePath = "public";
+  //  private URI brokerURI = null;
 
   /**
    * Each workspace name is a subdirectory with a number of projects in them. All are relative to
@@ -228,7 +228,13 @@ public class ResourcesConfiguration implements Serializable {
    */
   private Map<String, Set<String>> workspaces = new LinkedHashMap<>();
 
+  private String serviceOwner;
+  private String serviceDescription;
+  private String serviceDisclaimers;
+
   private String serviceId;
+
+  private String serviceName;
 
   /** Each project managed by this service */
   private Map<String, ProjectConfiguration> projectConfiguration = new HashMap<>();
@@ -269,33 +275,9 @@ public class ResourcesConfiguration implements Serializable {
     this.projectConfiguration = projectConfiguration;
   }
 
-//  public String getLocalResourcePath() {
-//    return localResourcePath;
-//  }
-//
-//  public void setLocalResourcePath(String localResourcePath) {
-//    this.localResourcePath = localResourcePath;
-//  }
-//
-//  public String getPublicResourcePath() {
-//    return publicResourcePath;
-//  }
-//
-//  public void setPublicResourcePath(String publicResourcePath) {
-//    this.publicResourcePath = publicResourcePath;
-//  }
-
   public String getServiceId() {
     return serviceId;
   }
-
-//  public URI getBrokerURI() {
-//    return brokerURI;
-//  }
-//
-//  public void setBrokerURI(URI brokerURI) {
-//    this.brokerURI = brokerURI;
-//  }
 
   public void setServiceId(String serviceId) {
     this.serviceId = serviceId;
@@ -307,6 +289,38 @@ public class ResourcesConfiguration implements Serializable {
 
   public void setResourceConfiguration(Map<String, ResourceConfiguration> resourceConfiguration) {
     this.resourceConfiguration = resourceConfiguration;
+  }
+
+  public String getServiceName() {
+    return serviceName;
+  }
+
+  public void setServiceName(String serviceName) {
+    this.serviceName = serviceName;
+  }
+
+  public String getServiceOwner() {
+    return serviceOwner;
+  }
+
+  public void setServiceOwner(String serviceOwner) {
+    this.serviceOwner = serviceOwner;
+  }
+
+  public String getServiceDescription() {
+    return serviceDescription;
+  }
+
+  public void setServiceDescription(String serviceDescription) {
+    this.serviceDescription = serviceDescription;
+  }
+
+  public String getServiceDisclaimers() {
+    return serviceDisclaimers;
+  }
+
+  public void setServiceDisclaimers(String serviceDisclaimers) {
+    this.serviceDisclaimers = serviceDisclaimers;
   }
 
   public Map<String, ComponentConfiguration> getComponentConfiguration() {

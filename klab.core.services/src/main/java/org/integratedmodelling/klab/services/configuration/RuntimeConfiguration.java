@@ -12,8 +12,11 @@ public class RuntimeConfiguration {
   private List<String> allowedGroups = new ArrayList<>();
   private String url = null;
   private String serviceId;
-//  private URI brokerURI;
   private Storage.Type numericStorageType = Storage.Type.DOUBLE;
+  private String serviceName;
+  private String serviceOwner;
+  private String serviceDescription;
+  private String serviceDisclaimers;
 
   public List<String> getAllowedGroups() {
     return allowedGroups;
@@ -51,6 +54,38 @@ public class RuntimeConfiguration {
 
   public void setNumericStorageType(Storage.Type numericStorageType) {
     this.numericStorageType = numericStorageType;
+  }
+
+  public String getServiceName() {
+    return serviceName;
+  }
+
+  public void setServiceName(String serviceName) {
+    this.serviceName = serviceName;
+  }
+
+  public String getServiceOwner() {
+    return serviceOwner;
+  }
+
+  public void setServiceOwner(String serviceOwner) {
+    this.serviceOwner = serviceOwner;
+  }
+
+  public String getServiceDescription() {
+    return serviceDescription;
+  }
+
+  public void setServiceDescription(String serviceDescription) {
+    this.serviceDescription = serviceDescription;
+  }
+
+  public String getServiceDisclaimers() {
+    return serviceDisclaimers;
+  }
+
+  public void setServiceDisclaimers(String serviceDisclaimers) {
+    this.serviceDisclaimers = serviceDisclaimers;
   }
 
 //  /**

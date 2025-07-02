@@ -136,6 +136,10 @@ public class ResolverConfiguration {
   private List<ProjectConfiguration> authorities = new ArrayList<>();
 //  private URI brokerURI;
   private String serviceId;
+  private String serviceName;
+  private String serviceOwner;
+  private String serviceDescription;
+  private String serviceDisclaimers;
 
   public int getRefreshIntervalMinutes() {
     return refreshIntervalMinutes;
@@ -192,6 +196,37 @@ public class ResolverConfiguration {
     this.serviceId = serviceId;
   }
 
+  public String getServiceName() {
+    return serviceName;
+  }
+
+  public void setServiceName(String serviceName) {
+    this.serviceName = serviceName;
+  }
+
+  public String getServiceOwner() {
+    return serviceOwner;
+  }
+
+  public void setServiceOwner(String serviceOwner) {
+    this.serviceOwner = serviceOwner;
+  }
+
+  public String getServiceDescription() {
+    return serviceDescription;
+  }
+
+  public void setServiceDescription(String serviceDescription) {
+    this.serviceDescription = serviceDescription;
+  }
+
+  public String getServiceDisclaimers() {
+    return serviceDisclaimers;
+  }
+
+  public void setServiceDisclaimers(String serviceDisclaimers) {
+    this.serviceDisclaimers = serviceDisclaimers;
+  }
 //  public URI getBrokerURI() {
 //    return brokerURI;
 //  }

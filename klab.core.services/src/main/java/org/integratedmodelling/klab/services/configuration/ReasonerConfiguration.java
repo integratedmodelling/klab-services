@@ -11,6 +11,11 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 
 public class ReasonerConfiguration {
 
+  private String serviceOwner;
+  private String serviceName;
+  private String serviceDescription;
+  private String serviceDisclaimers;
+
   public static class ProjectConfiguration {
 
     private String project;
@@ -132,9 +137,7 @@ public class ReasonerConfiguration {
   private int refreshIntervalMinutes = 10;
   private List<String> allowedGroups = new ArrayList<>();
   private String url = null;
-  //    private List<ProjectConfiguration> worldview = new ArrayList<>();
   private List<ProjectConfiguration> authorities = new ArrayList<>();
-//  private URI brokerURI;
 
   private String serviceId;
 
@@ -162,13 +165,6 @@ public class ReasonerConfiguration {
     this.url = url;
   }
 
-  //    public List<ProjectConfiguration> getWorldview() {
-  //        return worldview;
-  //    }
-  //    public void setWorldview(List<ProjectConfiguration> worldview) {
-  //        this.worldview = worldview;
-  //    }
-
   public Services getServices() {
     return services;
   }
@@ -193,14 +189,38 @@ public class ReasonerConfiguration {
     this.serviceId = serviceId;
   }
 
-//  public URI getBrokerURI() {
-//    return brokerURI;
-//  }
-//
-//  public void setBrokerURI(URI brokerURI) {
-//    this.brokerURI = brokerURI;
-//  }
+  public String getServiceName() {
+    return serviceName;
+  }
 
+  public void setServiceName(String serviceName) {
+    this.serviceName = serviceName;
+  }
+
+  public String getServiceOwner() {
+    return serviceOwner;
+  }
+
+  public void setServiceOwner(String serviceOwner) {
+    this.serviceOwner = serviceOwner;
+  }
+
+  public String getServiceDescription() {
+    return serviceDescription;
+  }
+
+  public void setServiceDescription(String serviceDescription) {
+    this.serviceDescription = serviceDescription;
+  }
+
+  public String getServiceDisclaimers() {
+    return serviceDisclaimers;
+  }
+
+  public void setServiceDisclaimers(String serviceDisclaimers) {
+    this.serviceDisclaimers = serviceDisclaimers;
+  }
+  
   // this generates a first-boot config with only the im project from the connected resources
   public static void main(String[] deus) {
 
