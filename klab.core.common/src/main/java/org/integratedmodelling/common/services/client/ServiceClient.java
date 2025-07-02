@@ -27,6 +27,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
 import org.integratedmodelling.klab.api.identities.ServiceIdentity;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -156,9 +157,9 @@ public abstract class ServiceClient implements KlabService {
   public String connect(BiConsumer<ServiceStatus, Boolean>... statusListeners) {
 
     if (this.identity instanceof PartnerIdentity) {
-      this.token = ((PartnerIdentity)identity).getToken();
+      this.token = ((PartnerIdentity) identity).getToken();
     } else if (this.identity instanceof ServiceIdentity) {
-      this.token =  ((ServiceIdentity)identity).getToken();
+      this.token = ((ServiceIdentity) identity).getToken();
     } else {
       this.token = this.identity.getId();
     }
@@ -179,14 +180,14 @@ public abstract class ServiceClient implements KlabService {
     }
 
     Channel channel =
-            local
+        local
             ? new MessagingChannelImpl(this.identity, false, ownerService != null) {
-          @Override
-          public String getDispatchId() {
-            return serviceId();
-          }
+              @Override
+              public String getDispatchId() {
+                return serviceId();
+              }
 
-          public String getId() {
+              public String getId() {
                 return serviceId();
               }
             }
@@ -236,10 +237,10 @@ public abstract class ServiceClient implements KlabService {
     }
 
     if (this.shutdown.get()) {
-//      scope.send(
-//          Message.MessageClass.ServiceLifecycle,
-//          Message.MessageType.ServiceStatus,
-//          ServiceStatus.offline(serviceType, this.serviceId()));
+      //      scope.send(
+      //          Message.MessageClass.ServiceLifecycle,
+      //          Message.MessageType.ServiceStatus,
+      //          ServiceStatus.offline(serviceType, this.serviceId()));
       return;
     }
 
@@ -434,7 +435,7 @@ public abstract class ServiceClient implements KlabService {
               "schema",
               schema.getSchemaId(),
               "urn",
-              suggestedUrn);
+              suggestedUrn == null ? Urn.UNDEFINED_URN : suggestedUrn);
     } else if (schema.getType() == ResourceTransport.Schema.Type.STREAM) {
       var file = assetCoordinates.getFile();
       if (file == null && assetCoordinates.getUrl() != null) {

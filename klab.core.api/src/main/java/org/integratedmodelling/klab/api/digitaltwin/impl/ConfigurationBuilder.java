@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.digitaltwin.impl;
 
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -8,6 +9,8 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.api.view.UIReactor;
+import org.integratedmodelling.klab.api.view.modeler.views.controllers.AuthenticationViewController;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -41,6 +44,13 @@ public class ConfigurationBuilder {
     this.createWhenAbsent = configuration.isCreateWhenAbsent();
   }
 
+  /**
+   * Build a scope from a digital twin URL. The ID may not mention the session, which will be
+   * added according to conventions.
+   *
+   * @param url
+   * @param scope
+   */
   public ConfigurationBuilder(URL url, Scope scope) {
     // set from a full URL with query options that determine what to do if the DT does not exist.
     var query = url.getQuery();
@@ -51,7 +61,18 @@ public class ConfigurationBuilder {
     this.url = url;
     this.serverUrl = Utils.URLs.newURL(serviceUrl);
     this.id = path.substring(index + ServicesAPI.RUNTIME.DIGITAL_TWIN_PREFIX.length());
-    this.createWhenAbsent = true;
+    if (!this.id.contains(".") && scope instanceof UserScope userScope) {
+      /*
+      Add the default session ID from the scope
+       */
+      var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
+      this.id =
+          (federation == null ? userScope.getUser().getUsername() : federation.getId())
+                  .replace(".", "_")
+              + "."
+              + this.id;
+    }
+    this.createWhenAbsent = true; // default when creating from a URL
     this.persistence = Persistence.IDLE_TIMEOUT;
     this.timeout = 3;
     this.timeoutUnit = TimeUnit.HOURS;

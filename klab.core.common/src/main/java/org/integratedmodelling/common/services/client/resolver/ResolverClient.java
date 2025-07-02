@@ -4,6 +4,7 @@ import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -124,7 +125,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
             .name(scope.getName())
             .serverUrl(scope.getService(RuntimeService.class).getUrl())
             .build());
-    var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
+    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
             && messagingChannel.hasMessaging()
@@ -210,7 +211,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
 
     ScopeRequest request = new ScopeRequest();
     request.setConfiguration(scope.getConfiguration());
-    var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
+    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
             && messagingChannel.hasMessaging()

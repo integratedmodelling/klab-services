@@ -7,6 +7,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
@@ -134,7 +135,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
   @Override
   public String getDispatchId() {
-    var federation = Authentication.INSTANCE.getFederationData(user);
+    var federation = Klab.INSTANCE.getFederationData(user);
     return federation == null ? user.getUsername() : federation.getId();
   }
 
@@ -154,7 +155,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   @Override
   public SessionScope getUserSession(RuntimeService hostService) {
 
-    var federation = Authentication.INSTANCE.getFederationData(user);
+    var federation = Klab.INSTANCE.getFederationData(user);
     var scopeId =
         federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
             ? user.getUsername()

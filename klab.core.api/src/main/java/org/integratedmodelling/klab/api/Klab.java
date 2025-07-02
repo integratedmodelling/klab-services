@@ -3,9 +3,13 @@ package org.integratedmodelling.klab.api;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.integratedmodelling.klab.api.authentication.CustomProperty;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -176,5 +180,34 @@ public enum Klab {
 
   public Configuration getConfiguration() {
     return this.configuration;
+  }
+
+  public Federation getFederationData(UserIdentity identity) {
+
+    var federations =
+            identity.getGroups().stream()
+                    .filter(
+                            g ->
+                                    g.getCustomProperties().stream()
+                                     .anyMatch(
+                                             customProperty ->
+                                                     ("federation.id".equals(customProperty.getKey()))
+                                                             && "true".equals(customProperty.getValue())))
+                    .toList();
+
+    if (federations.size() > 1) {
+      throw new KlabAuthorizationException(
+              "multiple federations found for user " + identity.getUsername());
+    } else if (federations.size() == 1) {
+      return new Federation(
+              federations.getFirst().getName(),
+              federations.getFirst().getCustomProperties().stream()
+                         .filter(cp -> "federation.broker.url".equals(cp.getKey()))
+                         .map(CustomProperty::getValue)
+                         .findFirst()
+                         .orElse(null));
+    }
+
+    return null;
   }
 }

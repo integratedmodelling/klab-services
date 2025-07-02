@@ -18,6 +18,12 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
  */
 public class Urn implements Serializable {
 
+  /**
+   * A URN to pass to a service when submitting a resource, to indicate that the service is expected
+   * to generate a complete URN from scratch.
+   */
+  public static final String UNDEFINED_URN = "X:X:X:X";
+
   public static final String SINGLE_PARAMETER_KEY = "value";
 
   public static final Pattern URN_RESOURCE_PATTERN =

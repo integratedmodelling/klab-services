@@ -13,6 +13,7 @@ import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -124,7 +125,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
       // TODO setup desired request. This will send no header and use the defaults.
       // Resolver should probably only catch events and errors.
     }
-    var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
+    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
     var ret =
         client
             .withHeader(
@@ -148,7 +149,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     ScopeRequest request = new ScopeRequest();
     request.setConfiguration(scope.getConfiguration());
-    var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
+    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
     //    var runtime = scope.getService(RuntimeService.class);
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel

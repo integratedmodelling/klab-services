@@ -294,7 +294,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       this.user = getOrCreateAgent(scope.getUser().getUsername(), "USER");
 
       //      var username = scope.getUser().getUsername();
-      var federation = Authentication.INSTANCE.getFederationData(scope.getUser());
+      var federation = Klab.INSTANCE.getFederationData(scope.getUser());
       //      if (federation != null) {
       //        username += "@" + federation.getId();
       //      }

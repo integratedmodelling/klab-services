@@ -9,6 +9,7 @@ import org.integratedmodelling.common.services.client.resolver.ResolverClient;
 import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.identities.Federation;
@@ -74,7 +75,8 @@ public class KlabScopeController {
       if (userScope != null) {
 
         // an existing session can be reused by multiple clients that don't know about its existence
-        // shouldn't need to validate id==null && behavior != null as clients should never request that
+        // shouldn't need to validate id==null && behavior != null as clients should never request
+        // that
         if (request.getConfiguration().getId() != null) {
           var existing =
               instance
@@ -110,9 +112,7 @@ public class KlabScopeController {
                                     url, identity, instance.klabService(), instance.settings()))
                         .toList());
         List<RuntimeService> runtimes =
-            instance.klabService(
-
-            ) instanceof RuntimeService r
+            instance.klabService() instanceof RuntimeService r
                 ? new ArrayList<>(List.of(r))
                 : new ArrayList<>(
                     request.getRuntimeServices().stream()
@@ -164,7 +164,7 @@ public class KlabScopeController {
 
           var implementedQueues =
               serviceSessionScope.setupMessaging(
-                  Authentication.INSTANCE.getFederationData(userScope.getUser()), id, queuesHeader);
+                  Klab.INSTANCE.getFederationData(userScope.getUser()), id, queuesHeader);
 
           Logging.INSTANCE.info(
               "Queues set up for session " + id + ": " + implementedQueues + " on session scope");
@@ -301,8 +301,7 @@ public class KlabScopeController {
 
           var queuesAvailable = serviceContextScope.setupQueues(queuesHeader);
 
-          Logging.INSTANCE.info(
-              "Queues set up for digital twin " + id + ": " + queuesAvailable);
+          Logging.INSTANCE.info("Queues set up for digital twin " + id + ": " + queuesAvailable);
 
           if (!serviceContextScope.initializeAgents(id)) {
             Logging.INSTANCE.warn("agent initialization failed in context creation");

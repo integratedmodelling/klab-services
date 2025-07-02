@@ -395,7 +395,9 @@ public interface KlabService extends Service {
    * @param schema a valid schema that comes from those admitted in the service
    * @param assetCoordinates the submission, either a file or URL that specifies a byte stream or a
    *     set of properties.
-   * @param suggestedUrn may be null if the submission does not specify one
+   * @param suggestedUrn the desired URN, which may be honored if valid and unambiguous, but may
+   *     also be modified. Pass {@link org.integratedmodelling.klab.api.knowledge.Urn#UNDEFINED_URN}
+   *     to request that the URN is generated at service side.
    * @param scope
    * @return the URN of the asset imported.
    */

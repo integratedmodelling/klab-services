@@ -20,11 +20,6 @@ public class IdentityImpl implements Identity {
         return this.id;
     }
 
-//    @Override
-//    public Identity getParentIdentity() {
-//        return this.parentIdentity;
-//    }
-
     @Override
     public boolean is(Type type) {
         return this.identityType == type;
@@ -34,11 +29,6 @@ public class IdentityImpl implements Identity {
     public Parameters<String> getData() {
         return this.data;
     }
-
-//    @Override
-//    public <T extends Identity> T getParentIdentity(Class<T> type) {
-//        return null;
-//    }
 
     public void setData(Parameters<String> data) {
         this.data = data;
@@ -51,10 +41,6 @@ public class IdentityImpl implements Identity {
     public void setId(String id) {
         this.id = id;
     }
-
-//    public void setParentIdentity(Identity parentIdentity) {
-//        this.parentIdentity = parentIdentity;
-//    }
 
     @Override
     public boolean isAuthenticated() {

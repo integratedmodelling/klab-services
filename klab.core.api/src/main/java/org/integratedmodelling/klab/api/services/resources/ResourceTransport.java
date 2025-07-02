@@ -92,6 +92,7 @@ public enum ResourceTransport {
       private String urn;
       private URL url;
       private File file;
+      private boolean empty = true;
 
       public Parameters<String> getProperties() {
         return properties;
@@ -99,6 +100,7 @@ public enum ResourceTransport {
 
       public void setProperties(Parameters<String> properties) {
         this.properties = properties;
+        empty = properties.isEmpty();
       }
 
       public String getUrn() {
@@ -123,6 +125,15 @@ public enum ResourceTransport {
 
       public void setFile(File file) {
         this.file = file;
+        empty = file == null;
+      }
+
+      public boolean isEmpty() {
+        return empty;
+      }
+
+      public void setEmpty(boolean empty) {
+        this.empty = empty;
       }
     }
 

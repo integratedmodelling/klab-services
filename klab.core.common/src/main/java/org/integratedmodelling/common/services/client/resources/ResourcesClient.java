@@ -17,6 +17,7 @@ import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.*;
@@ -151,7 +152,7 @@ public class ResourcesClient extends ServiceClient
             .name(scope.getName())
             .serverUrl(scope.getService(RuntimeService.class).getUrl())
             .build());
-    var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
+    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel
             && messagingChannel.hasMessaging()
@@ -235,7 +236,7 @@ public class ResourcesClient extends ServiceClient
 
     ScopeRequest request = new ScopeRequest();
     request.setConfiguration(scope.getConfiguration());
-    var federation = Authentication.INSTANCE.getFederationData(userScope.getUser());
+    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
     //    var runtime = scope.getService(RuntimeService.class);
     var hasMessaging =
         scope.getParentScope() instanceof MessagingChannel messagingChannel

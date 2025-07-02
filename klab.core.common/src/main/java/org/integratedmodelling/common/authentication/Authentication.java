@@ -13,6 +13,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.CustomProperty;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
@@ -245,7 +246,7 @@ public enum Authentication {
                 + hubNode.getPartner().getId());
 
         /* validate federation data */
-        var federationData = getFederationData(ret);
+        var federationData = Klab.INSTANCE.getFederationData(ret);
         if (federationData != null) {
           Logging.INSTANCE.info("User " + ret.getUsername() + " is part of the " + federationData);
           ret.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
@@ -278,35 +279,6 @@ public enum Authentication {
     }
 
     return Pair.of(new AnonymousUser(), Collections.emptyList());
-  }
-
-  public Federation getFederationData(UserIdentity identity) {
-
-    var federations =
-        identity.getGroups().stream()
-            .filter(
-                g ->
-                    g.getCustomProperties().stream()
-                        .anyMatch(
-                            customProperty ->
-                                ("federation.id".equals(customProperty.getKey()))
-                                    && "true".equals(customProperty.getValue())))
-            .toList();
-
-    if (federations.size() > 1) {
-      throw new KlabAuthorizationException(
-          "multiple federations found for user " + identity.getUsername());
-    } else if (federations.size() == 1) {
-      return new Federation(
-          federations.getFirst().getName(),
-          federations.getFirst().getCustomProperties().stream()
-              .filter(cp -> "federation.broker.url".equals(cp.getKey()))
-              .map(CustomProperty::getValue)
-              .findFirst()
-              .orElse(null));
-    }
-
-    return null;
   }
 
   Utils.FileCatalog<ExternalAuthenticationCredentials> getExternalCredentialsCatalog(Scope scope) {

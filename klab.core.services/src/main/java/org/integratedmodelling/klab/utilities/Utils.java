@@ -191,7 +191,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       try {
         zoaz = Maven.system.resolveArtifact(session, request);
       } catch (ArtifactResolutionException e) {
-        throw new RuntimeException(e);
+        Logging.INSTANCE.warn("Failed to resolve artifact: " + e.getMessage(), e);
+        return null;
       }
 
       if (zoaz.isResolved() && zoaz.getLocalArtifactResult().isAvailable()) {

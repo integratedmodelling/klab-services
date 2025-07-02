@@ -8,6 +8,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.ServicesViewController;
@@ -302,7 +303,7 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
 
       @CommandLine.Option(
           names = {"-u", "--urn"},
-          defaultValue = "X:X:X:X",
+          defaultValue = Urn.UNDEFINED_URN,
           description = {"Pass suggested URN for import (result may differ)"},
           required = false)
       String urn;
