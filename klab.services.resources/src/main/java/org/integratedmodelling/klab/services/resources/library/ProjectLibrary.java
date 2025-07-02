@@ -54,7 +54,7 @@ public class ProjectLibrary {
             description = "Git access token",
             optional = true)
       })
-  public static String importProjectGit(
+  public static boolean importProjectGit(
       Parameters<String> properties, ResourcesProvider service, UserScope scope) {
 
     Logging.INSTANCE.info(
@@ -71,12 +71,33 @@ public class ProjectLibrary {
       if (!service.createWorkspace(
           properties.get("workspace").toString(), Metadata.create(), scope)) {
         Logging.INSTANCE.error("Could not create workspace " + properties.get("workspace"));
-        return null;
+        return false;
       }
       workspace = service.retrieveWorkspace(properties.get("workspace").toString(), scope);
     }
 
-    return null;
+    var ret =
+        service.importProject(workspace.getUrn(), properties.get("url").toString(), true, scope);
+
+    if (ret.isEmpty()) {
+      Logging.INSTANCE.error(
+          "Project import failed: Git repository: "
+              + properties.get("url")
+              + " on service "
+              + service.getUrl()
+              + " as user "
+              + scope.getUser().getUsername());
+    } else {
+      Logging.INSTANCE.info(
+          "Project import successful: Git repository: "
+              + properties.get("url")
+              + " on service "
+              + service.getUrl()
+              + " as user "
+              + scope.getUser().getUsername());
+    }
+
+    return !ret.isEmpty();
   }
 
   @Importer(
