@@ -70,6 +70,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
      */
     System.out.println("Fetching....");
 
+    var diocul =
+        Maven.synchronizeArtifact(
+            "org.integratedmodelling", "klab.component.generators", "1.0-SNAPSHOT", false);
+
     var result =
         Maven.mavenFetcher.fetchArtifacts(
             new MavenFetchRequest(
@@ -177,7 +181,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         new MavenFetcher()
             .localRepositoryPath(System.getProperty("user.home") + "/.m2/repository")
             .addRemoteRepository(
-                "ossrh", "https://oss.sonatype.org/content/repositories/snapshots");
+                "ossrh-snapshots", "https://central.sonatype.com/repository/maven-snapshots/")
+            .addRemoteRepository(
+                "ossrh-staging",
+                "https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/");
 
     public static File getLocalJarArtifact(
         String mavenGroupId, String mavenArtifactId, String version) {
@@ -191,7 +198,14 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       try {
         zoaz = Maven.system.resolveArtifact(session, request);
       } catch (ArtifactResolutionException e) {
-        Logging.INSTANCE.warn("Failed to resolve artifact: " + e.getMessage(), e);
+        Logging.INSTANCE.info(
+            "Artifact "
+                + mavenGroupId
+                + ":"
+                + mavenArtifactId
+                + ":"
+                + version
+                + " not found in local repository");
         return null;
       }
 
@@ -225,10 +239,19 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     public static File synchronizeArtifact(
         String mavenGroupId, String mavenArtifactId, String version, boolean verifySignature) {
-      if (needsUpdate(mavenGroupId, mavenArtifactId, version)) {
+      if (true || needsUpdate(mavenGroupId, mavenArtifactId, version)) {
         var request = new MavenFetchRequest(mavenGroupId + ":" + mavenArtifactId + ":" + version);
         var result = mavenFetcher.fetchArtifacts(request);
         if (result.artifacts().findAny().isPresent()) {
+          Logging.INSTANCE.info(
+              "Artifact "
+                  + mavenGroupId
+                  + ":"
+                  + mavenArtifactId
+                  + ":"
+                  + version
+                  + " successfully synchronized from "
+                  + mavenFetcher.remoteRepositories());
           return result.artifacts().toList().getFirst().path().toFile();
         }
       }
