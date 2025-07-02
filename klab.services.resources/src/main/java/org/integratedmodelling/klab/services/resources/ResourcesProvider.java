@@ -634,7 +634,7 @@ public class ResourcesProvider extends BaseService
     resourcesKbox.putStatus(status);
     //    db.commit();
 
-    return collectProject(project.getUrn(), CRUDOperation.CREATE, workspaceName, scope);
+    return collectProject(project, CRUDOperation.CREATE, workspaceName, scope);
   }
 
   @Override
@@ -1016,30 +1016,30 @@ public class ResourcesProvider extends BaseService
    * the results by dependency as this could be one step in a multiple-project setup. If external
    * dependencies are needed and unsatisfied, return an empty resourceset.
    *
-   * @param projectName
+   * @param project
    * @param scope
    * @return
    */
   private List<ResourceSet> collectProject(
-      String projectName, CRUDOperation operation, String workspace, Scope scope) {
+      Project project, CRUDOperation operation, String workspace, Scope scope) {
 
     List<ResourceSet> ret = new ArrayList<>();
 
     List<KimOntology> ontologies =
         this.workspaceManager.getOntologies(false).stream()
-            .filter(o -> projectName.equals(o.getProjectName()))
+            .filter(o -> project.getUrn().equals(o.getProjectName()))
             .toList();
     List<KimNamespace> namespaces =
         this.workspaceManager.getNamespaces().stream()
-            .filter(o -> projectName.equals(o.getProjectName()))
+            .filter(o -> project.getUrn().equals(o.getProjectName()))
             .toList();
     List<KimObservationStrategyDocument> strategies =
         this.workspaceManager.getStrategyDocuments().stream()
-            .filter(o -> projectName.equals(o.getProjectName()))
+            .filter(o -> project.getUrn().equals(o.getProjectName()))
             .toList();
     List<KActorsBehavior> behaviors =
         this.workspaceManager.getBehaviors().stream()
-            .filter(o -> projectName.equals(o.getProjectName()))
+            .filter(o -> project.getUrn().equals(o.getProjectName()))
             .toList();
 
     // Resources work independently and do not come with the project data.
@@ -1082,6 +1082,20 @@ public class ResourcesProvider extends BaseService
             operation,
             Utils.Collections.shallowCollection(ontologies, strategies, namespaces, behaviors)
                 .toArray(new KlabAsset[0])));
+
+    /*
+    Add project info as result to everything that has changed
+     */
+    ret.forEach(
+        r ->
+            r.getResults()
+                .add(
+                    new ResourceSet.Resource(
+                        serviceId(),
+                        project.getUrn(),
+                        project.getUrn(),
+                        project.getManifest().getVersion(),
+                        KnowledgeClass.PROJECT)));
 
     return ret;
   }
