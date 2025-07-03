@@ -123,6 +123,10 @@ public interface Scope extends Channel {
    * for the class and a selector predicate is not passed, the implementation should choose a
    * default one should be chosen based on load factor, vicinity or any other sensible logic.
    *
+   * <p>TODO reimplement and document so that the predicates are used as priority: if the first
+   * matches, return the match, otherwise move to the second until satisfied or finished. Currently
+   * the implementation just ANDs them.
+   *
    * @param <T>
    * @param serviceClass
    * @param selectors one or more predicates that the returned service must match. If more than one
@@ -132,37 +136,9 @@ public interface Scope extends Channel {
    */
   <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors);
 
-  //
-  //    /**
-  //     * The service ID serves as a unique key into a specific service instance (or its clients).
-  // This is the
-  //     * equivalent of {@link #getService(String, Class)} when a serviceId is communicated and a
-  // specific
-  //     * service is wanted. Because this is a precise request, it is expected that the service
-  // exists; if not,
-  //     * this method should throw a
-  //     * {@link org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException}
-  // exception.
-  //     *
-  //     * @param serviceId
-  //     * @param serviceClass
-  //     * @param <T>
-  //     * @return the service of the passed class and ID.
-  //     * @throws org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException if the
-  // service isn't
-  //     *                                                                                 among
-  // those listed by
-  //     *                                                                                 {@link
-  //     *
-  // #getServices(Class)}
-  //     *                                                                                 for
-  // serviceClass.
-  //     */
-  //    <T extends KlabService> T getService(String serviceId, Class<T> serviceClass);
-
   /**
    * Retrieve all the currently available services corresponding to the passed class, including the
-   * default one returned by {@link #getService(Class)} if applicable.
+   * default one returned by {@link #getService(Class, Predicate...)} if applicable.
    *
    * @param <T>
    * @param serviceClass

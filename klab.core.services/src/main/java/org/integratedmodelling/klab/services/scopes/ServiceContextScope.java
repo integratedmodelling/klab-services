@@ -100,7 +100,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return new ServiceContextScope(this);
   }
 
-  // next 3 are overridden with the same code as the parent because they need to use the local maps,
+  // next 2 are overridden with the same code as the parent because they need to use the local maps,
   // not the parent's
 
   @Override
@@ -119,17 +119,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
     return (T) ret.get();
   }
-
-  //  @Override
-  //  public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
-  //    for (var service : getServices(serviceClass)) {
-  //      if (serviceId.equals(service.serviceId())) {
-  //        return service;
-  //      }
-  //    }
-  //    throw new KlabResourceAccessException(
-  //        "cannot find service with ID=" + serviceId + " in the scope");
-  //  }
 
   @Override
   public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {

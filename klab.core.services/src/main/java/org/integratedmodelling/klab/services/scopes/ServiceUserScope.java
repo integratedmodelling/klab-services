@@ -44,7 +44,7 @@ import org.integratedmodelling.klab.services.base.BaseService;
 public class ServiceUserScope extends AbstractReactiveScopeImpl
     implements UserScope, ServiceSideScope {
 
-  // the data hash is the SAME OBJECT throughout the child
+  // the data hash is the SAME OBJECT throughout the child hierarchy
   protected Parameters<String> data;
   private UserIdentity user;
   protected ServiceUserScope parentScope;
@@ -54,7 +54,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   private boolean local;
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
   protected Map<KlabService.Type, List<? extends KlabService>> serviceMap = new HashMap<>();
-  //  protected Map<KlabService.Type, KlabService> defaultServiceMap = new HashMap<>();
   private boolean messagingChecked = false;
 
   // if the next two are filled in, the payloads of any message generated will be collected in the
@@ -62,6 +61,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   // if they are of the passed class. Used on scope copies for monitoring and messaging.These are
   // never
   // copied downstream
+  // FIXME unused and messy, remove
   private List<Object> payloadCollector = null;
   private Class<?> collectedPayloadClass = null;
 
@@ -125,12 +125,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
           public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
             return originalScope.getServices(serviceClass);
           }
-
-          //          @Override
-          //          public <T extends KlabService> T getService(String serviceId, Class<T>
-          // serviceClass) {
-          //            return originalScope.getService(serviceId, serviceClass);
-          //          }
         };
     ret.copyInfo(this);
     return ret;
@@ -199,31 +193,11 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
       List<RuntimeService> runtimes) {
 
     serviceMap.clear();
-    //    defaultServiceMap.clear();
-
     serviceMap.put(KlabService.Type.REASONER, reasoners);
     serviceMap.put(KlabService.Type.RESOLVER, resolvers);
     serviceMap.put(KlabService.Type.RESOURCES, resources);
     serviceMap.put(KlabService.Type.RUNTIME, runtimes);
-
-    //    if (!reasoners.isEmpty()) {
-    //      defaultServiceMap.put(KlabService.Type.REASONER, reasoners.getFirst());
-    //    }
-    //    if (!resolvers.isEmpty()) {
-    //      defaultServiceMap.put(KlabService.Type.RESOLVER, resolvers.getFirst());
-    //    }
-    //    if (!resources.isEmpty()) {
-    //      defaultServiceMap.put(KlabService.Type.RESOURCES, resources.getFirst());
-    //    }
-    //    if (!runtimes.isEmpty()) {
-    //      defaultServiceMap.put(KlabService.Type.RUNTIME, runtimes.getFirst());
-    //    }
   }
-
-  //  @Override
-  //  public SessionScope getUserSession() {
-  //
-  //  }
 
   @Override
   public SessionScope run(String behaviorName, RuntimeService host) {
@@ -299,18 +273,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     return (T) ret.getFirst();
   }
 
-  //  @Override
-  //  public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
-  //    for (var service : getServices(serviceClass)) {
-  //      if (serviceId.equals(service.serviceId())) {
-  //        return service;
-  //      }
-  //    }
-  //    throw new KlabResourceAccessException(
-  //        "cannot find service with ID=" + serviceId + " in the scope");
-  //  }
-
-  //	@Override
   public void stop() {
     if (agent != null) {
       //      agent.tell(ReActorStop.STOP);
