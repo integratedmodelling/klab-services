@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.ServiceClient;
@@ -115,13 +116,19 @@ public class ServiceMonitor {
   }
 
   @SuppressWarnings("unchecked")
-  public <T extends KlabService> T getService(Class<T> serviceClass) {
-    return (T)
+  public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
+    var stream =
         clients.keySet().stream()
             .filter(
-                s -> serviceClass.isAssignableFrom(s.getClass()) && clients.get(s).isOperational())
-            .findFirst()
-            .orElse(null);
+                s -> serviceClass.isAssignableFrom(s.getClass()) && clients.get(s).isOperational());
+
+    if (selectors != null) {
+      for (var selector : selectors) {
+        stream = stream.filter(serviceClient -> selector.test((T) serviceClient));
+      }
+    }
+
+    return (T) stream.findFirst().orElse(null);
   }
 
   @SuppressWarnings("unchecked")

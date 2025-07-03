@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * The main {@link Distribution} implementation looks up a synchronized, remote distribution in the
@@ -454,14 +455,16 @@ public class DistributionImpl extends AbstractDistributionImpl {
     var resources = distribution.findProduct(Product.ProductType.RESOURCES_SERVICE);
     var instance =
         resources.launch(
-            new AbstractDelegatingScope(new ChannelImpl(new AnonymousUser()) {
+            new AbstractDelegatingScope(
+                new ChannelImpl(new AnonymousUser()) {
+                  @Override
+                  public String getDispatchId() {
+                    return "anonymous";
+                  }
+                }) {
               @Override
-              public String getDispatchId() {
-                return "anonymous";
-              }
-            }) {
-              @Override
-              public <T extends KlabService> T getService(Class<T> serviceClass) {
+              public <T extends KlabService> T getService(
+                  Class<T> serviceClass, Predicate<T>... selectors) {
                 return null;
               }
 

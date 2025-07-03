@@ -8,6 +8,8 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
+
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -102,20 +104,32 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   // not the parent's
 
   @Override
-  public <T extends KlabService> T getService(Class<T> serviceClass) {
-    return (T) defaultServiceMap.get(KlabService.Type.classify(serviceClass));
-  }
-
-  @Override
-  public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
-    for (var service : getServices(serviceClass)) {
-      if (serviceId.equals(service.serviceId())) {
-        return service;
+  public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
+    var stream = serviceMap.get(KlabService.Type.classify(serviceClass)).stream();
+    if (selectors != null) {
+      for (var selector : selectors) {
+        stream = stream.filter(s -> selector.test((T) s));
       }
     }
-    throw new KlabResourceAccessException(
-        "cannot find service with ID=" + serviceId + " in the scope");
+    var ret = stream.findFirst();
+
+    if (ret.isEmpty()) {
+      throw new KlabResourceAccessException(
+          "cannot find service of type " + serviceClass.getSimpleName() + " in the scope");
+    }
+    return (T) ret.get();
   }
+
+  //  @Override
+  //  public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
+  //    for (var service : getServices(serviceClass)) {
+  //      if (serviceId.equals(service.serviceId())) {
+  //        return service;
+  //      }
+  //    }
+  //    throw new KlabResourceAccessException(
+  //        "cannot find service with ID=" + serviceId + " in the scope");
+  //  }
 
   @Override
   public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {

@@ -35,6 +35,7 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.persistence.h2.H2Database;
 import org.integratedmodelling.klab.persistence.h2.H2Kbox;
 import org.integratedmodelling.klab.persistence.h2.SQL;
+import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.sql.PreparedStatement;
@@ -445,13 +446,13 @@ public abstract class ObservableKbox extends H2Kbox {
     return ret;
   }
 
-  public ObservableKbox(String name, Scope scope) {
+  public ObservableKbox(ResourcesService service) {
 
-    super(name);
+    super(service.getLocalName());
 
-    this.scope = scope;
+    this.scope = service.serviceScope();
     //        this.reasoner = scope.getService(Reasoner.class);
-    this.resourceService = scope.getService(ResourcesService.class);
+    this.resourceService = service;
 
     //        if (this.reasoner == null || this.resourceService == null) {
     //            throw new KlabIllegalStateException("cannot initialize kbox without a valid

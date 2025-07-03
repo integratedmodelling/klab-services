@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 
 /** Client-side session scope */
 public abstract class ClientSessionScope extends ClientUserScope implements SessionScope {
@@ -90,11 +91,12 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
         new ClientContextScope(this, runtime, configuration.validate(this)) {
 
           @Override
-          public <T extends KlabService> T getService(Class<T> serviceClass) {
+          public <T extends KlabService> T getService(
+              Class<T> serviceClass, Predicate<T>... selectors) {
             if (serviceClass.isAssignableFrom(RuntimeService.class)) {
               return (T) runtime;
             }
-            return ClientSessionScope.this.getService(serviceClass);
+            return ClientSessionScope.this.getService(serviceClass, selectors);
           }
 
           @Override

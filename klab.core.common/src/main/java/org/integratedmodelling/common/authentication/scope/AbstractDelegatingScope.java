@@ -125,16 +125,16 @@ public abstract class AbstractDelegatingScope implements Scope {
     delegateChannel.unregisterMessageListener(listenerId);
   }
 
-  @Override
-  public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
-    for (var service : getServices(serviceClass)) {
-      if (serviceId.equals(service.serviceId())) {
-        return service;
-      }
-    }
-    throw new KlabResourceAccessException(
-        "cannot find service with ID=" + serviceId + " in the scope");
-  }
+//  @Override
+//  public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
+//    for (var service : getServices(serviceClass)) {
+//      if (serviceId.equals(service.serviceId())) {
+//        return service;
+//      }
+//    }
+//    throw new KlabResourceAccessException(
+//        "cannot find service with ID=" + serviceId + " in the scope");
+//  }
 
   @Override
   public void ui(Message message) {

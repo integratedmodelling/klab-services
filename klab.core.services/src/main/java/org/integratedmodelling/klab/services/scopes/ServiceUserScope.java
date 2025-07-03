@@ -4,6 +4,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Predicate;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
@@ -53,7 +54,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   private boolean local;
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
   protected Map<KlabService.Type, List<? extends KlabService>> serviceMap = new HashMap<>();
-  protected Map<KlabService.Type, KlabService> defaultServiceMap = new HashMap<>();
+  //  protected Map<KlabService.Type, KlabService> defaultServiceMap = new HashMap<>();
   private boolean messagingChecked = false;
 
   // if the next two are filled in, the payloads of any message generated will be collected in the
@@ -94,7 +95,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     this.roles = parent.roles;
     this.local = parent.local;
     this.serviceMap.putAll(parent.serviceMap);
-    this.defaultServiceMap.putAll(parent.defaultServiceMap);
+    //    this.defaultServiceMap.putAll(parent.defaultServiceMap);
     this.id = parent.id;
   }
 
@@ -115,8 +116,9 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     var ret =
         new ServiceUserScope(this) {
           @Override
-          public <T extends KlabService> T getService(Class<T> serviceClass) {
-            return originalScope.getService(serviceClass);
+          public <T extends KlabService> T getService(
+              Class<T> serviceClass, Predicate<T>... selectors) {
+            return originalScope.getService(serviceClass, selectors);
           }
 
           @Override
@@ -124,10 +126,11 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
             return originalScope.getServices(serviceClass);
           }
 
-          @Override
-          public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
-            return originalScope.getService(serviceId, serviceClass);
-          }
+          //          @Override
+          //          public <T extends KlabService> T getService(String serviceId, Class<T>
+          // serviceClass) {
+          //            return originalScope.getService(serviceId, serviceClass);
+          //          }
         };
     ret.copyInfo(this);
     return ret;
@@ -196,25 +199,25 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
       List<RuntimeService> runtimes) {
 
     serviceMap.clear();
-    defaultServiceMap.clear();
+    //    defaultServiceMap.clear();
 
     serviceMap.put(KlabService.Type.REASONER, reasoners);
     serviceMap.put(KlabService.Type.RESOLVER, resolvers);
     serviceMap.put(KlabService.Type.RESOURCES, resources);
     serviceMap.put(KlabService.Type.RUNTIME, runtimes);
 
-    if (!reasoners.isEmpty()) {
-      defaultServiceMap.put(KlabService.Type.REASONER, reasoners.getFirst());
-    }
-    if (!resolvers.isEmpty()) {
-      defaultServiceMap.put(KlabService.Type.RESOLVER, resolvers.getFirst());
-    }
-    if (!resources.isEmpty()) {
-      defaultServiceMap.put(KlabService.Type.RESOURCES, resources.getFirst());
-    }
-    if (!runtimes.isEmpty()) {
-      defaultServiceMap.put(KlabService.Type.RUNTIME, runtimes.getFirst());
-    }
+    //    if (!reasoners.isEmpty()) {
+    //      defaultServiceMap.put(KlabService.Type.REASONER, reasoners.getFirst());
+    //    }
+    //    if (!resolvers.isEmpty()) {
+    //      defaultServiceMap.put(KlabService.Type.RESOLVER, resolvers.getFirst());
+    //    }
+    //    if (!resources.isEmpty()) {
+    //      defaultServiceMap.put(KlabService.Type.RESOURCES, resources.getFirst());
+    //    }
+    //    if (!runtimes.isEmpty()) {
+    //      defaultServiceMap.put(KlabService.Type.RUNTIME, runtimes.getFirst());
+    //    }
   }
 
   //  @Override
@@ -279,20 +282,33 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   }
 
   @Override
-  public <T extends KlabService> T getService(Class<T> serviceClass) {
-    return (T) defaultServiceMap.get(KlabService.Type.classify(serviceClass));
-  }
-
-  @Override
-  public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
-    for (var service : getServices(serviceClass)) {
-      if (serviceId.equals(service.serviceId())) {
-        return service;
+  public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
+    var stream = serviceMap.get(KlabService.Type.classify(serviceClass)).stream();
+    if (selectors != null) {
+      for (var selector : selectors) {
+        stream = stream.filter(service1 -> selector.test((T) service1));
       }
     }
-    throw new KlabResourceAccessException(
-        "cannot find service with ID=" + serviceId + " in the scope");
+
+    var ret = stream.toList();
+    if (ret.isEmpty()) {
+      throw new KlabResourceAccessException(
+          "cannot find service of type=" + serviceClass.getName() + " in the scope");
+    }
+
+    return (T) ret.getFirst();
   }
+
+  //  @Override
+  //  public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
+  //    for (var service : getServices(serviceClass)) {
+  //      if (serviceId.equals(service.serviceId())) {
+  //        return service;
+  //      }
+  //    }
+  //    throw new KlabResourceAccessException(
+  //        "cannot find service with ID=" + serviceId + " in the scope");
+  //  }
 
   //	@Override
   public void stop() {

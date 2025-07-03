@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.services.base.BaseService;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * The service-side {@link SessionScope}. One of these will be created by {@link ServiceUserScope}
@@ -41,8 +42,7 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     // the job manager is created upstream
   }
 
-  public ServiceSessionScope(
-      ServiceUserScope parent, JobManager jobManager) {
+  public ServiceSessionScope(ServiceUserScope parent, JobManager jobManager) {
     super(parent);
     this.data = Parameters.create();
     this.data.putAll(parent.data);
@@ -92,9 +92,9 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
   }
 
   @Override
-  public <T extends KlabService> T getService(Class<T> serviceClass) {
+  public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
     // TODO
-    return parentScope.getService(serviceClass);
+    return parentScope.getService(serviceClass, selectors);
   }
 
   @Override

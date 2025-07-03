@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
@@ -63,7 +65,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     settings.put(Setting.POLLING_INTERVAL, 5);
     settings.put(Setting.LOG_EVENTS, false);
     settings.put(Setting.LAUNCH_PRODUCT, true);
-    settings.put(Setting.LOCAL_ONLY, false);
+    settings.put(Setting.LOCAL_ONLY, true);
 
     if (DistributionImpl.isDevelopmentDistributionAvailable()) {
       this.developmentDistribution = new DevelopmentDistributionImpl();
@@ -235,8 +237,8 @@ public class EngineImpl implements Engine, PropertyHolder {
       this.defaultUser =
           new ClientUserScope((UserIdentity) authData.getFirst(), this) {
             @Override
-            public <T extends KlabService> T getService(Class<T> serviceClass) {
-              return (T) serviceMonitor.getService(serviceClass);
+            public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
+              return (T) serviceMonitor.getService(serviceClass, selectors);
             }
 
             @Override

@@ -41,6 +41,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Common implementation of a service client, to be specialized for all service types and APIs.
@@ -207,7 +208,7 @@ public abstract class ServiceClient implements KlabService {
           }
 
           @Override
-          public <T extends KlabService> T getService(Class<T> serviceClass) {
+          public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
             return KlabService.Type.classify(serviceClass) == serviceType
                 ? (T) ServiceClient.this
                 : null;

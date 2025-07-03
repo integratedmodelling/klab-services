@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
+
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -68,22 +70,22 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
     return connect(DigitalTwin.Configuration.create(digitalTwinURL, this).validate(this));
   }
 
-  @Override
-  public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
-
-    for (var service : getServices(serviceClass)) {
-
-      if (service == null) {
-        return null;
-      }
-
-      if (serviceId.equals(service.serviceId())) {
-        return service;
-      }
-    }
-    throw new KlabResourceAccessException(
-        "cannot find service with ID=" + serviceId + " in the scope");
-  }
+  //  @Override
+  //  public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
+  //
+  //    for (var service : getServices(serviceClass)) {
+  //
+  //      if (service == null) {
+  //        return null;
+  //      }
+  //
+  //      if (serviceId.equals(service.serviceId())) {
+  //        return service;
+  //      }
+  //    }
+  //    throw new KlabResourceAccessException(
+  //        "cannot find service with ID=" + serviceId + " in the scope");
+  //  }
 
   @Override
   public String getId() {
@@ -132,11 +134,12 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
         new ClientSessionScope(this, sessionId, hostService) {
 
           @Override
-          public <T extends KlabService> T getService(Class<T> serviceClass) {
+          public <T extends KlabService> T getService(
+              Class<T> serviceClass, Predicate<T>... selectors) {
             if (serviceClass.isAssignableFrom(RuntimeService.class)) {
               return (T) hostService;
             }
-            return ClientUserScope.this.getService(serviceClass);
+            return ClientUserScope.this.getService(serviceClass, selectors);
           }
 
           @Override

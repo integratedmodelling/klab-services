@@ -3,6 +3,8 @@ package org.integratedmodelling.common.services.client.scope;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
+
 import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Data;
@@ -96,8 +98,9 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         new ClientContextScope(parent) {
 
           @Override
-          public <T extends KlabService> T getService(Class<T> serviceClass) {
-            return parent.getService(serviceClass);
+          public <T extends KlabService> T getService(
+              Class<T> serviceClass, Predicate<T>... selectors) {
+            return parent.getService(serviceClass, selectors);
           }
 
           @Override

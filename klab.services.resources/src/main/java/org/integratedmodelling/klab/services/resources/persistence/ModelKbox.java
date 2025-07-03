@@ -55,7 +55,7 @@ public class ModelKbox extends ObservableKbox {
   }
 
   private ModelKbox(ResourcesService service) {
-    super(service.getLocalName(), service.serviceScope());
+    super(service);
     this.resourceService = service;
   }
 

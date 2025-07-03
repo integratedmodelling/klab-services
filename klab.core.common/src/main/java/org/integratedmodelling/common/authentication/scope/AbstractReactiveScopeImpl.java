@@ -67,20 +67,20 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl imp
         return null;
     }
 
-    public KlabService getService(String serviceId) {
-        KlabService ret = null;
-        for (var sc : List.of(Reasoner.class, ResourcesService.class, Resolver.class, RuntimeService.class)) {
-            try {
-                ret = getService(serviceId, sc);
-            } catch (KlabResourceAccessException e) {
-                // that's OK here
-            }
-            if (ret != null) {
-                return ret;
-            }
-        }
-        return null;
-    }
+//    public KlabService getService(String serviceId) {
+//        KlabService ret = null;
+//        for (var sc : List.of(Reasoner.class, ResourcesService.class, Resolver.class, RuntimeService.class)) {
+//            try {
+//                ret = getService(serviceId, sc);
+//            } catch (KlabResourceAccessException e) {
+//                // that's OK here
+//            }
+//            if (ret != null) {
+//                return ret;
+//            }
+//        }
+//        return null;
+//    }
 
     @Override
     public <T extends Serializable> T ask(Class<T> responseClass, Object... args) {

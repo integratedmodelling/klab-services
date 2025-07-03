@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
@@ -301,10 +302,10 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
       ret =
           new ClientContextScope(sessionScope, this, configuration) {
             @Override
-            public <T extends KlabService> T getService(Class<T> serviceClass) {
+            public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
               return RuntimeService.class.equals(serviceClass)
                   ? (T) service
-                  : userScope.getService(serviceClass);
+                  : userScope.getService(serviceClass, selectors);
             }
 
             @Override

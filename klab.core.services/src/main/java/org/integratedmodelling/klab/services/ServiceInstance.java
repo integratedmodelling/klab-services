@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
 import org.integratedmodelling.klab.api.identities.ServiceIdentity;
@@ -34,6 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 /**
  * This class is a wrapper for a {@link KlabService} whose main purpose is to provide it with a
@@ -71,15 +73,9 @@ public abstract class ServiceInstance<T extends BaseService> {
   private ServiceStartupOptions startupOptions;
   private T service;
   private AbstractServiceDelegatingScope serviceScope;
-
-  /** Holders of "other" services for the ServiceScope */
-  Map<KlabService.Type, KlabService> currentServices = new HashMap<>();
-
   ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-  Set<Resolver> availableResolvers = new HashSet<>();
-  Set<RuntimeService> availableRuntimeServices = new HashSet<>();
-  Set<ResourcesService> availableResourcesServices = new HashSet<>();
-  Set<Reasoner> availableReasoners = new HashSet<>();
+
+  Map<KlabService.Type, Set<KlabService>> currentServices = new HashMap<>();
 
   private long bootTime;
   private Pair<Identity, List<ServiceReference>> identity;
@@ -215,25 +211,52 @@ public abstract class ServiceInstance<T extends BaseService> {
     if (identity.getFirst() instanceof PartnerIdentity) {
       token.set(((PartnerIdentity) identity.getFirst()).getToken());
     }
-    for (ServiceReference s : this.identity.getSecond()) {
-      switch (s.getIdentityType()) {
-        case KlabService.Type.REASONER -> {
-          ReasonerClient reasoner = new ReasonerClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()), null);
-          availableReasoners.add(reasoner);
-        }
-        case KlabService.Type.RUNTIME  -> {
-          RuntimeClient runtime = new RuntimeClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()), null);
-          availableRuntimeServices.add(runtime);
-        }
-        case KlabService.Type.RESOURCES -> {
-          ResourcesClient resources = new ResourcesClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()), null);
-          availableResourcesServices.add(resources);
-        }
-        case KlabService.Type.RESOLVER -> {
-          ResolverClient resolver = new ResolverClient(s.getUrls().getFirst(), new ServiceIdentityImpl(s.getId(), s.getId(),  null, s.getUrls(), token.get()), null);
-          availableResolvers.add(resolver);
-        }
-        default -> {
+    // local services (user-level certificate) only see other local services
+    boolean iAmLocal = !this.identity.getFirst().is(Identity.Type.SERVICE);
+    if (!iAmLocal) {
+      for (ServiceReference s : this.identity.getSecond()) {
+        switch (s.getIdentityType()) {
+          case KlabService.Type.REASONER -> {
+            ReasonerClient reasoner =
+                new ReasonerClient(
+                    s.getUrls().getFirst(),
+                    new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()),
+                    null);
+            currentServices
+                .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
+                .add(reasoner);
+          }
+          case KlabService.Type.RUNTIME -> {
+            RuntimeClient runtime =
+                new RuntimeClient(
+                    s.getUrls().getFirst(),
+                    new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()),
+                    null);
+            currentServices
+                .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
+                .add(runtime);
+          }
+          case KlabService.Type.RESOURCES -> {
+            ResourcesClient resources =
+                new ResourcesClient(
+                    s.getUrls().getFirst(),
+                    new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()),
+                    null);
+            currentServices
+                .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
+                .add(resources);
+          }
+          case KlabService.Type.RESOLVER -> {
+            ResolverClient resolver =
+                new ResolverClient(
+                    s.getUrls().getFirst(),
+                    new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()),
+                    null);
+            currentServices
+                .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
+                .add(resolver);
+          }
+          default -> {}
         }
       }
     }
@@ -257,22 +280,41 @@ public abstract class ServiceInstance<T extends BaseService> {
       }
 
       @Override
-      public <T extends KlabService> T getService(Class<T> serviceClass) {
-        return (T) currentServices.get(KlabService.Type.classify(serviceClass));
+      public <T extends KlabService> T getService(
+          Class<T> serviceClass, Predicate<T>... selectors) {
+        var stream =
+            currentServices
+                .computeIfAbsent(
+                    KlabService.Type.classify(serviceClass), s -> new LinkedHashSet<>())
+                .stream();
+        if (selectors != null) {
+          for (var selector : selectors) {
+            stream = stream.filter(s -> selector.test((T) s));
+          }
+        }
+        var ret = stream.toList();
+        if (ret.isEmpty()) {
+          throw new KlabServiceAccessException(
+              "Service not available: " + serviceClass.getName() + " in " + service.serviceType());
+        }
+        return /*ret.isEmpty() ? null : */ (T) ret.getFirst();
       }
 
       @Override
       public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-        return switch (KlabService.Type.classify(serviceClass)) {
-          case REASONER -> (Collection<T>) availableReasoners;
-          case RESOURCES -> (Collection<T>) availableResourcesServices;
-          case RESOLVER -> (Collection<T>) availableResolvers;
-          case RUNTIME -> (Collection<T>) availableRuntimeServices;
-          case ENGINE -> Collections.emptyList();
-          case LEGACY_NODE, NODE, DISCOVERY ->
-              throw new KlabIllegalArgumentException(
-                  "Cannot ask a scope for a legacy " + "service" + " ");
-        };
+        return (Collection<T>)
+            currentServices.computeIfAbsent(
+                KlabService.Type.classify(serviceClass), k -> new LinkedHashSet<>());
+        //        return switch () {
+        //          case REASONER -> (Collection<T>) availableReasoners;
+        //          case RESOURCES -> (Collection<T>) availableResourcesServices;
+        //          case RESOLVER -> (Collection<T>) availableResolvers;
+        //          case RUNTIME -> (Collection<T>) availableRuntimeServices;
+        //          case ENGINE -> Collections.emptyList();
+        //          case LEGACY_NODE, NODE, DISCOVERY ->
+        //              throw new KlabIllegalArgumentException(
+        //                  "Cannot ask a scope for a legacy " + "service" + " ");
+        //        };
       }
     };
   }
@@ -282,27 +324,31 @@ public abstract class ServiceInstance<T extends BaseService> {
     setEnvironment(options);
     this.serviceScope = createServiceScope();
     this.service = createPrimaryService(serviceScope, options);
-
-    /** Must do this now */
-    switch (this.service) {
-      case Reasoner reasoner -> {
-        currentServices.put(KlabService.Type.REASONER, reasoner);
-        availableReasoners.add(reasoner);
-      }
-      case RuntimeService runtime -> {
-        currentServices.put(KlabService.Type.RUNTIME, runtime);
-        availableRuntimeServices.add(runtime);
-      }
-      case ResourcesService resources -> {
-        currentServices.put(KlabService.Type.RESOURCES, resources);
-        availableResourcesServices.add(resources);
-      }
-      case Resolver resolver -> {
-        currentServices.put(KlabService.Type.RESOLVER, resolver);
-        availableResolvers.add(resolver);
-      }
-      default -> {}
-    }
+    this.currentServices
+        .computeIfAbsent(KlabService.Type.classify(this.service), k -> new LinkedHashSet<>())
+        .add(this.service);
+    //
+    //    /** Must do this now */
+    //    switch (this.service) {
+    //      case Reasoner reasoner -> {
+    ////        currentServices.put(KlabService.Type.REASONER, reasoner);
+    //        availableServices
+    //        availableReasoners.add(reasoner);
+    //      }
+    //      case RuntimeService runtime -> {
+    ////        currentServices.put(KlabService.Type.RUNTIME, runtime);
+    //        availableRuntimeServices.add(runtime);
+    //      }
+    //      case ResourcesService resources -> {
+    ////        currentServices.put(KlabService.Type.RESOURCES, resources);
+    //        availableResourcesServices.add(resources);
+    //      }
+    //      case Resolver resolver -> {
+    ////        currentServices.put(KlabService.Type.RESOLVER, resolver);
+    //        availableResolvers.add(resolver);
+    //      }
+    //      default -> {}
+    //    }
 
     bootTime = System.currentTimeMillis();
     serviceScope.setStatus(Scope.Status.STARTED);
@@ -319,30 +365,15 @@ public abstract class ServiceInstance<T extends BaseService> {
     }
   }
 
-  private void registerService(KlabService service, boolean isDefault) {
-
-    if (isDefault) {
-      this.currentServices.put(KlabService.Type.classify(service), service);
-    }
-
-    switch (service) {
-      case Reasoner reasoner -> {
-        availableReasoners.add(reasoner);
-      }
-      case ResourcesService resources -> {
-        availableResourcesServices.add(resources);
-      }
-      case Resolver resolver -> {
-        availableResolvers.add(resolver);
-      }
-      case RuntimeService runtime -> {
-        availableRuntimeServices.add(runtime);
-      }
-      default -> {}
-    }
+  private void registerService(KlabService service) {
+    currentServices
+        .computeIfAbsent(KlabService.Type.classify(service), k -> new LinkedHashSet<>())
+        .add(service);
   }
 
   private void timedTasks() {
+
+    boolean iAmLocal = !this.identity.getFirst().is(Identity.Type.SERVICE);
 
     try {
 
@@ -359,45 +390,50 @@ public abstract class ServiceInstance<T extends BaseService> {
 
       boolean wasAvailable = serviceScope.isAvailable();
 
-      /**
-       * TODO if we start with remote services and we are local (starting with a user certificate), we MUST
-       *  switch the default service to a local service as soon as one comes online. So here we must detect
-       *  local services for all the needed ones and keep checking their status. Keep a map of local clients
-       *  and fill it if we are local.
-       */
-
-        // create all clients that we may need and know how to create
+      // create all clients that we may need and know how to create
       for (var serviceType : allservices) {
-        var service = currentServices.get(serviceType);
-        if (service == null) {
-          if (this.identity.getFirst().is(Identity.Type.SERVICE)) {
-            switch(serviceType) {
-              case KlabService.Type.REASONER -> service =  availableReasoners.iterator().next();
-              case KlabService.Type.RESOLVER -> service =  availableResolvers.iterator().next();
-              case KlabService.Type.RESOURCES -> service =  availableResourcesServices.iterator().next();
-              case KlabService.Type.RUNTIME -> service =  availableRuntimeServices.iterator().next();
-              default -> {}
-            }
-            this.currentServices.put(KlabService.Type.classify(service), service);
-          } else {
-            service =
-                    this.createDefaultService(
-                            serviceType, serviceScope, (System.currentTimeMillis() - bootTime) / 1000);
-            if (service != null) {
-              registerService(service, true);
-            }
-          }
+        var services = currentServices.computeIfAbsent(serviceType, k -> new LinkedHashSet<>());
+        if (services.isEmpty() && iAmLocal) {
+          //          if (this.identity.getFirst().is(Identity.Type.SERVICE)) {
+          //            switch (serviceType) {
+          //              case KlabService.Type.REASONER -> service =
+          // availableReasoners.iterator().next();
+          //              case KlabService.Type.RESOLVER -> service =
+          // availableResolvers.iterator().next();
+          //              case KlabService.Type.RESOURCES ->
+          //                  service = availableResourcesServices.iterator().next();
+          //              case KlabService.Type.RUNTIME -> service =
+          // availableRuntimeServices.iterator().next();
+          //              default -> {}
+          //            }
+          //            this.currentServices.put(KlabService.Type.classify(service), service);
+          //          } else {
 
+          Logging.INSTANCE.info(
+              "Service is starting in local mode: creating client for local "
+                  + serviceType.name().toLowerCase()
+                  + "");
+
+          var service =
+              this.createDefaultService(
+                  serviceType, serviceScope, (System.currentTimeMillis() - bootTime) / 1000);
+          if (service != null) {
+            registerService(service);
+          }
         }
       }
-
+      //      }
 
       // now check if they're OK
       boolean okEssentials = true;
       boolean okOperationals = true;
 
       for (var serviceType : allservices) {
-        var service = currentServices.get(serviceType);
+        var service =
+            currentServices
+                .computeIfAbsent(serviceType, type -> new LinkedHashSet<>())
+                .iterator()
+                .next();
         if (essentials.contains(serviceType)) {
           if (service == null || !service.status().isAvailable()) {
             okEssentials = false;
@@ -420,26 +456,26 @@ public abstract class ServiceInstance<T extends BaseService> {
 
       //            firstCall = false;
 
-//      if (wasAvailable != okEssentials) {
-//        if (okEssentials) {
-//          if (initialized.get()) {
-//            serviceScope.send(
-//                Message.MessageClass.ServiceLifecycle,
-//                Message.MessageType.ServiceAvailable,
-//                klabService().capabilities(serviceScope));
-//          } else {
-//            serviceScope.send(
-//                Message.MessageClass.ServiceLifecycle,
-//                Message.MessageType.ServiceInitializing,
-//                klabService().capabilities(serviceScope));
-//          }
-//        } else {
-//          serviceScope.send(
-//              Message.MessageClass.ServiceLifecycle,
-//              Message.MessageType.ServiceUnavailable,
-//              klabService().capabilities(serviceScope));
-//        }
-//      }
+      //      if (wasAvailable != okEssentials) {
+      //        if (okEssentials) {
+      //          if (initialized.get()) {
+      //            serviceScope.send(
+      //                Message.MessageClass.ServiceLifecycle,
+      //                Message.MessageType.ServiceAvailable,
+      //                klabService().capabilities(serviceScope));
+      //          } else {
+      //            serviceScope.send(
+      //                Message.MessageClass.ServiceLifecycle,
+      //                Message.MessageType.ServiceInitializing,
+      //                klabService().capabilities(serviceScope));
+      //          }
+      //        } else {
+      //          serviceScope.send(
+      //              Message.MessageClass.ServiceLifecycle,
+      //              Message.MessageType.ServiceUnavailable,
+      //              klabService().capabilities(serviceScope));
+      //        }
+      //      }
 
       /*
       if status is OK and the service hasn't been initialized, set maintenance mode and call
@@ -450,10 +486,10 @@ public abstract class ServiceInstance<T extends BaseService> {
         klabService().initializeService();
         klabService().setInitialized(true);
         initialized.set(true);
-//        serviceScope.send(
-//            Message.MessageClass.ServiceLifecycle,
-//            Message.MessageType.ServiceAvailable,
-//            klabService().capabilities(serviceScope));
+        //        serviceScope.send(
+        //            Message.MessageClass.ServiceLifecycle,
+        //            Message.MessageType.ServiceAvailable,
+        //            klabService().capabilities(serviceScope));
         setBusy(false);
       }
 

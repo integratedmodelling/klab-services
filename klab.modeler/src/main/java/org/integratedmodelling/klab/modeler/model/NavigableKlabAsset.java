@@ -246,12 +246,16 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
 
     switch (change.getOperation()) {
       case CREATE -> {
-        var service = scope.getService(change.getServiceId(), ResourcesService.class);
-        var ret = addChild(
-            resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service, scope));
+        var service =
+            scope.getService(
+                ResourcesService.class, s -> s.serviceId().equals(change.getServiceId()));
+        var ret =
+            addChild(
+                resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service, scope));
         if (ret != null) {
           changedAssets.add(ret);
-          ret.localMetadata().put(NavigableAsset.REPOSITORY_STATUS_KEY, RepositoryState.Status.ADDED);
+          ret.localMetadata()
+              .put(NavigableAsset.REPOSITORY_STATUS_KEY, RepositoryState.Status.ADDED);
         }
         return ret != null;
       }
@@ -264,12 +268,16 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
                   .filter(child -> !child.getUrn().equals(change.getResourceUrn()))
                   .toList();
           changedAssets.add(parent);
-          parent.localMetadata().put(NavigableAsset.REPOSITORY_STATUS_KEY, RepositoryState.Status.REMOVED);
+          parent
+              .localMetadata()
+              .put(NavigableAsset.REPOSITORY_STATUS_KEY, RepositoryState.Status.REMOVED);
           return true;
         }
       }
       case UPDATE -> {
-        var service = scope.getService(change.getServiceId(), ResourcesService.class);
+        var service =
+            scope.getService(
+                ResourcesService.class, s -> s.serviceId().equals(change.getServiceId()));
         var physicalChanges =
             updateChild(
                 resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service, scope));
@@ -280,7 +288,9 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
             asset != null && asset.mergeMetadata(change.getMetadata(), change.getNotifications());
         if (physicalChanges || metadataChanges) {
           changedAssets.add(asset);
-          asset.localMetadata().put(NavigableAsset.REPOSITORY_STATUS_KEY, RepositoryState.Status.MODIFIED);
+          asset
+              .localMetadata()
+              .put(NavigableAsset.REPOSITORY_STATUS_KEY, RepositoryState.Status.MODIFIED);
         }
         return physicalChanges || metadataChanges;
       }
@@ -291,7 +301,9 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
         var ret = asset.mergeMetadata(change.getMetadata(), change.getNotifications());
         if (ret) {
           changedAssets.add(asset);
-          asset.localMetadata().put(NavigableAsset.REPOSITORY_STATUS_KEY, RepositoryState.Status.MODIFIED);
+          asset
+              .localMetadata()
+              .put(NavigableAsset.REPOSITORY_STATUS_KEY, RepositoryState.Status.MODIFIED);
         }
         return ret;
       }

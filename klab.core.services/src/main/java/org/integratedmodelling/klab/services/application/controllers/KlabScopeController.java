@@ -90,15 +90,30 @@ public class KlabScopeController {
           }
         }
 
+        // must use the runtime in the request; a request without a runtime is illegal
+        var identity = userScope.getIdentity();
+        List<RuntimeService> runtimes =
+            instance.klabService() instanceof RuntimeService r
+                ? new ArrayList<>(List.of(r))
+                : new ArrayList<>(
+                    request.getRuntimeServices().stream()
+                        .map(
+                            url ->
+                                new RuntimeClient(
+                                    url, identity, instance.klabService(), instance.settings()))
+                        .toList());
+
+        if (runtimes.isEmpty()) {
+          throw new KlabAuthorizationException("No valid runtime service found in session request");
+        }
+
         var ret =
             request.getBehaviorUrn() == null
-                ? userScope.getUserSession(userScope.getService(RuntimeService.class))
+                ? userScope.getUserSession(runtimes.getFirst())
                 : new ServiceSessionScope(userScope, new JobManager());
 
         ((ServiceSessionScope) ret).setId(request.getConfiguration().getId());
         ((ServiceSessionScope) ret).setName(request.getConfiguration().getName());
-
-        var identity = userScope.getIdentity();
 
         // FIXME see if we can/should cache all these clients - they may get a lot of concurrent use
         List<Reasoner> reasoners =
@@ -109,16 +124,6 @@ public class KlabScopeController {
                         .map(
                             url ->
                                 new ReasonerClient(
-                                    url, identity, instance.klabService(), instance.settings()))
-                        .toList());
-        List<RuntimeService> runtimes =
-            instance.klabService() instanceof RuntimeService r
-                ? new ArrayList<>(List.of(r))
-                : new ArrayList<>(
-                    request.getRuntimeServices().stream()
-                        .map(
-                            url ->
-                                new RuntimeClient(
                                     url, identity, instance.klabService(), instance.settings()))
                         .toList());
         List<ResourcesService> resources =

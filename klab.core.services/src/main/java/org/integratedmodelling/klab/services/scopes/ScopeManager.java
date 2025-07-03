@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 /**
  * The scope manager maintains service-side scopes that are generated through the orchestrating
@@ -91,16 +92,18 @@ public class ScopeManager {
             }
 
             @Override
-            public <T extends KlabService> T getService(Class<T> serviceClass) {
+            public <T extends KlabService> T getService(
+                Class<T> serviceClass, Predicate<T>... selectors) {
               // TODO filter by permission
-              return service.serviceScope().getService(serviceClass);
+              return service.serviceScope().getService(serviceClass, selectors);
             }
 
-            @Override
-            public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
-              // TODO filter by permission
-              return service.serviceScope().getService(serviceId, serviceClass);
-            }
+            //            @Override
+            //            public <T extends KlabService> T getService(String serviceId, Class<T>
+            // serviceClass) {
+            //              // TODO filter by permission
+            //              return service.serviceScope().getService(serviceId, serviceClass);
+            //            }
           };
 
       File userBehavior =

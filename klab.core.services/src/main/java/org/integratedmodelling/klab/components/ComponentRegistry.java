@@ -393,11 +393,10 @@ public class ComponentRegistry {
     return componentDescriptor;
   }
 
-
   private void registerActor(
-          Actor annotation, Class<?> cls, List<Extensions.LibraryDescriptor> libraries) {
+      Actor annotation, Class<?> cls, List<Extensions.LibraryDescriptor> libraries) {
 
-    String namespacePrefix =  (annotation.name() + ".");
+    String namespacePrefix = (annotation.name() + ".");
 
     var prototypes = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
     var annotations = new ArrayList<Pair<ServiceInfo, Extensions.FunctionDescriptor>>();
@@ -406,14 +405,14 @@ public class ComponentRegistry {
     for (Class<?> clss : cls.getClasses()) {
       if (clss.isAnnotationPresent(KlabFunction.class)) {
         var serviceInfo =
-                createContextualizerPrototype(namespacePrefix, clss.getAnnotation(KlabFunction.class));
+            createContextualizerPrototype(namespacePrefix, clss.getAnnotation(KlabFunction.class));
         prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
       } else if (clss.isAnnotationPresent(Verb.class)) {
         var serviceInfo = createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class));
         verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
       } else if (clss.isAnnotationPresent(KlabAnnotation.class)) {
         var serviceInfo =
-                createPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation.class));
+            createPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation.class));
         annotations.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, clss, null)));
       }
     }
@@ -421,14 +420,14 @@ public class ComponentRegistry {
     // annotated methods
     for (Method method : cls.getDeclaredMethods()) {
       if (Modifier.isPublic(method.getModifiers())
-              && method.isAnnotationPresent(KlabFunction.class)) {
+          && method.isAnnotationPresent(KlabFunction.class)) {
         var serviceInfo =
-                createContextualizerPrototype(
-                        namespacePrefix, method.getAnnotation(KlabFunction.class));
+            createContextualizerPrototype(
+                namespacePrefix, method.getAnnotation(KlabFunction.class));
         prototypes.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
       } else if (method.isAnnotationPresent(KlabAnnotation.class)) {
         var serviceInfo =
-                createPrototype(namespacePrefix, method.getAnnotation(KlabAnnotation.class));
+            createPrototype(namespacePrefix, method.getAnnotation(KlabAnnotation.class));
         annotations.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
       } else if (method.isAnnotationPresent(Verb.class)) {
         var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
@@ -445,8 +444,8 @@ public class ComponentRegistry {
     }
 
     libraries.add(
-            new Extensions.LibraryDescriptor(
-                    annotation.name(), annotation.description(), prototypes, annotations, verbs));
+        new Extensions.LibraryDescriptor(
+            annotation.name(), annotation.description(), prototypes, annotations, verbs));
   }
 
   private void registerLibrary(
@@ -814,7 +813,9 @@ public class ComponentRegistry {
 
       if (!available.contains(result.getResourceUrn())) {
         // load from service
-        var service = scope.getService(result.getServiceId(), ResourcesService.class);
+        var service =
+            scope.getService(
+                ResourcesService.class, s -> s.serviceId().equals(result.getServiceId()));
         if (service == null) {
           return false;
         }
@@ -914,21 +915,21 @@ public class ComponentRegistry {
 
     ret.setName(namespacePrefix + annotation.name());
     ret.setDescription(annotation.description());
-//    ret.setFilter(annotation.filter());
-//    ret.setGeometry(
-//            annotation.geometry().isEmpty() ? null : Geometry.create(annotation.geometry()));
-//    ret.setLabel(annotation.dataflowLabel());
-//    ret.setReentrant(annotation.reentrant());
+    //    ret.setFilter(annotation.filter());
+    //    ret.setGeometry(
+    //            annotation.geometry().isEmpty() ? null : Geometry.create(annotation.geometry()));
+    //    ret.setLabel(annotation.dataflowLabel());
+    //    ret.setReentrant(annotation.reentrant());
     ret.setFunctionType(ServiceInfo.FunctionType.VERB);
 
-//    for (Artifact.Type a : annotation.type()) {
-//      ret.getType().add(a);
-//    }
+    //    for (Artifact.Type a : annotation.type()) {
+    //      ret.getType().add(a);
+    //    }
 
-//    for (KlabFunction.Argument argument : annotation.parameters()) {
-//      var arg = createArgument(argument);
-//      ret.getArguments().put(arg.getName(), arg);
-//    }
+    //    for (KlabFunction.Argument argument : annotation.parameters()) {
+    //      var arg = createArgument(argument);
+    //      ret.getArguments().put(arg.getName(), arg);
+    //    }
 
     AnnotationImpl storageAnnotation = null;
 
