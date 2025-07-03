@@ -97,13 +97,6 @@ public class ScopeManager {
               // TODO filter by permission
               return service.serviceScope().getService(serviceClass, selectors);
             }
-
-            //            @Override
-            //            public <T extends KlabService> T getService(String serviceId, Class<T>
-            // serviceClass) {
-            //              // TODO filter by permission
-            //              return service.serviceScope().getService(serviceId, serviceClass);
-            //            }
           };
 
       File userBehavior =

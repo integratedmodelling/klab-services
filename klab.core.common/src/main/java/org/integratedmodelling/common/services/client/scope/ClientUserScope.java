@@ -70,23 +70,6 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
     return connect(DigitalTwin.Configuration.create(digitalTwinURL, this).validate(this));
   }
 
-  //  @Override
-  //  public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
-  //
-  //    for (var service : getServices(serviceClass)) {
-  //
-  //      if (service == null) {
-  //        return null;
-  //      }
-  //
-  //      if (serviceId.equals(service.serviceId())) {
-  //        return service;
-  //      }
-  //    }
-  //    throw new KlabResourceAccessException(
-  //        "cannot find service with ID=" + serviceId + " in the scope");
-  //  }
-
   @Override
   public String getId() {
     return id;

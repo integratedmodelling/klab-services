@@ -226,12 +226,8 @@ public interface KlabService extends Service {
     String getServerId();
 
     /**
-     * The URL may be null, which means that the service isn't accessible through a client. Any
-     * service that is accessible by clients should send the URL at least with the capabilities sent
-     * through the {@link
-     * org.integratedmodelling.klab.api.services.runtime.Message.MessageType#ServiceAvailable}
-     * message. The URL may be filled in by the server itself or, if empty, by the service
-     * orchestrator.
+     * The URL may be null in an embedded server. Obviously getUrl should never be called in that
+     * case, so this should throw an exception rather than returning null.
      *
      * @return
      */
@@ -392,6 +388,8 @@ public interface KlabService extends Service {
       String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope);
 
   /**
+   * FIXME this must return a Future<String> and use the JobManager internally
+   *
    * @param schema a valid schema that comes from those admitted in the service
    * @param assetCoordinates the submission, either a file or URL that specifies a byte stream or a
    *     set of properties.

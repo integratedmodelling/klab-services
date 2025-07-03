@@ -79,10 +79,6 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
     }
 
     var userScope = getParentScope(Type.USER, UserScope.class);
-    //            .getUser()
-    //            .getData()
-    //            .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
-
     /*
      * Registration with the runtime succeeded. Return a peer scope locked to the runtime service
      * that hosts it.

@@ -305,16 +305,6 @@ public abstract class ServiceInstance<T extends BaseService> {
         return (Collection<T>)
             currentServices.computeIfAbsent(
                 KlabService.Type.classify(serviceClass), k -> new LinkedHashSet<>());
-        //        return switch () {
-        //          case REASONER -> (Collection<T>) availableReasoners;
-        //          case RESOURCES -> (Collection<T>) availableResourcesServices;
-        //          case RESOLVER -> (Collection<T>) availableResolvers;
-        //          case RUNTIME -> (Collection<T>) availableRuntimeServices;
-        //          case ENGINE -> Collections.emptyList();
-        //          case LEGACY_NODE, NODE, DISCOVERY ->
-        //              throw new KlabIllegalArgumentException(
-        //                  "Cannot ask a scope for a legacy " + "service" + " ");
-        //        };
       }
     };
   }
@@ -327,29 +317,6 @@ public abstract class ServiceInstance<T extends BaseService> {
     this.currentServices
         .computeIfAbsent(KlabService.Type.classify(this.service), k -> new LinkedHashSet<>())
         .add(this.service);
-    //
-    //    /** Must do this now */
-    //    switch (this.service) {
-    //      case Reasoner reasoner -> {
-    ////        currentServices.put(KlabService.Type.REASONER, reasoner);
-    //        availableServices
-    //        availableReasoners.add(reasoner);
-    //      }
-    //      case RuntimeService runtime -> {
-    ////        currentServices.put(KlabService.Type.RUNTIME, runtime);
-    //        availableRuntimeServices.add(runtime);
-    //      }
-    //      case ResourcesService resources -> {
-    ////        currentServices.put(KlabService.Type.RESOURCES, resources);
-    //        availableResourcesServices.add(resources);
-    //      }
-    //      case Resolver resolver -> {
-    ////        currentServices.put(KlabService.Type.RESOLVER, resolver);
-    //        availableResolvers.add(resolver);
-    //      }
-    //      default -> {}
-    //    }
-
     bootTime = System.currentTimeMillis();
     serviceScope.setStatus(Scope.Status.STARTED);
     serviceScope.setMaintenanceMode(true);
@@ -394,26 +361,9 @@ public abstract class ServiceInstance<T extends BaseService> {
       for (var serviceType : allservices) {
         var services = currentServices.computeIfAbsent(serviceType, k -> new LinkedHashSet<>());
         if (services.isEmpty() && iAmLocal) {
-          //          if (this.identity.getFirst().is(Identity.Type.SERVICE)) {
-          //            switch (serviceType) {
-          //              case KlabService.Type.REASONER -> service =
-          // availableReasoners.iterator().next();
-          //              case KlabService.Type.RESOLVER -> service =
-          // availableResolvers.iterator().next();
-          //              case KlabService.Type.RESOURCES ->
-          //                  service = availableResourcesServices.iterator().next();
-          //              case KlabService.Type.RUNTIME -> service =
-          // availableRuntimeServices.iterator().next();
-          //              default -> {}
-          //            }
-          //            this.currentServices.put(KlabService.Type.classify(service), service);
-          //          } else {
-
           Logging.INSTANCE.info(
               "Service is starting in local mode: creating client for local "
-                  + serviceType.name().toLowerCase()
-                  + "");
-
+                  + serviceType.name().toLowerCase());
           var service =
               this.createDefaultService(
                   serviceType, serviceScope, (System.currentTimeMillis() - bootTime) / 1000);
@@ -454,29 +404,6 @@ public abstract class ServiceInstance<T extends BaseService> {
         serviceScope.setStatus(Scope.Status.WAITING);
       }
 
-      //            firstCall = false;
-
-      //      if (wasAvailable != okEssentials) {
-      //        if (okEssentials) {
-      //          if (initialized.get()) {
-      //            serviceScope.send(
-      //                Message.MessageClass.ServiceLifecycle,
-      //                Message.MessageType.ServiceAvailable,
-      //                klabService().capabilities(serviceScope));
-      //          } else {
-      //            serviceScope.send(
-      //                Message.MessageClass.ServiceLifecycle,
-      //                Message.MessageType.ServiceInitializing,
-      //                klabService().capabilities(serviceScope));
-      //          }
-      //        } else {
-      //          serviceScope.send(
-      //              Message.MessageClass.ServiceLifecycle,
-      //              Message.MessageType.ServiceUnavailable,
-      //              klabService().capabilities(serviceScope));
-      //        }
-      //      }
-
       /*
       if status is OK and the service hasn't been initialized, set maintenance mode and call
       initializeService().
@@ -486,10 +413,6 @@ public abstract class ServiceInstance<T extends BaseService> {
         klabService().initializeService();
         klabService().setInitialized(true);
         initialized.set(true);
-        //        serviceScope.send(
-        //            Message.MessageClass.ServiceLifecycle,
-        //            Message.MessageType.ServiceAvailable,
-        //            klabService().capabilities(serviceScope));
         setBusy(false);
       }
 
