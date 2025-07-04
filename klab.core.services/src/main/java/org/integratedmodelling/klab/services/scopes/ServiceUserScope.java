@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -219,14 +220,10 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
   @Override
   public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-    var ret =
-        new Utils.Casts<KlabService, T>()
-            .cast(
-                (Collection<KlabService>) serviceMap.get(KlabService.Type.classify(serviceClass)));
-    if (ret == null) {
-      return List.of();
-    }
-    return ret;
+    return (Collection<T>)
+        serviceMap.get(KlabService.Type.classify(serviceClass)).stream()
+            .filter(s -> s.status().isOperational())
+            .toList();
   }
 
   @Override
@@ -257,20 +254,27 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
   @Override
   public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
-    var stream = serviceMap.get(KlabService.Type.classify(serviceClass)).stream();
-    if (selectors != null) {
-      for (var selector : selectors) {
-        stream = stream.filter(service1 -> selector.test((T) service1));
+
+    var services = getServices(serviceClass);
+
+    if (selectors == null || selectors.length == 0) {
+      if (services.isEmpty()) {
+        throw new KlabServiceAccessException(
+            "No suitable service for request of " + serviceClass.getSimpleName());
+      }
+      return (T) services.iterator().next();
+    }
+
+    for (var selector : selectors) {
+      var ret =
+          services.stream().filter(serviceClient -> selector.test((T) serviceClient)).toList();
+      if (!ret.isEmpty()) {
+        return (T) ret.getFirst();
       }
     }
 
-    var ret = stream.toList();
-    if (ret.isEmpty()) {
-      throw new KlabResourceAccessException(
-          "cannot find service of type=" + serviceClass.getName() + " in the scope");
-    }
-
-    return (T) ret.getFirst();
+    throw new KlabServiceAccessException(
+        "No suitable service for request of " + serviceClass.getSimpleName());
   }
 
   public void stop() {

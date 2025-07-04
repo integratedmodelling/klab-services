@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -15,6 +16,7 @@ import org.integratedmodelling.klab.services.base.BaseService;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -91,10 +93,40 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     return this.name;
   }
 
+  // next 2 are overridden with the same code as the parent because they need to use the local maps,
+  // not the parent's
+
   @Override
   public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
-    // TODO
-    return parentScope.getService(serviceClass, selectors);
+
+    var services = getServices(serviceClass);
+
+    if (selectors == null || selectors.length == 0) {
+      if (services.isEmpty()) {
+        throw new KlabServiceAccessException(
+            "No suitable service for request of " + serviceClass.getSimpleName());
+      }
+      return (T) services.iterator().next();
+    }
+
+    for (var selector : selectors) {
+      var ret =
+          services.stream().filter(serviceClient -> selector.test((T) serviceClient)).toList();
+      if (!ret.isEmpty()) {
+        return (T) ret.getFirst();
+      }
+    }
+
+    throw new KlabServiceAccessException(
+        "No suitable service for request of " + serviceClass.getSimpleName());
+  }
+
+  @Override
+  public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+    return (Collection<T>)
+        serviceMap.get(KlabService.Type.classify(serviceClass)).stream()
+            .filter(s -> s.status().isOperational())
+            .toList();
   }
 
   @Override

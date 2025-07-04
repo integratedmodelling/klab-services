@@ -351,14 +351,14 @@ public abstract class ServiceInstance<T extends BaseService> {
 
       var essentials = getEssentialServices();
       var operational = getOperationalServices();
-      var allservices = EnumSet.noneOf(KlabService.Type.class);
-      allservices.addAll(essentials);
-      allservices.addAll(operational);
+      var allServices = EnumSet.noneOf(KlabService.Type.class);
+      allServices.addAll(essentials);
+      allServices.addAll(operational);
 
       boolean wasAvailable = serviceScope.isAvailable();
 
       // create all clients that we may need and know how to create
-      for (var serviceType : allservices) {
+      for (var serviceType : allServices) {
         var services = currentServices.computeIfAbsent(serviceType, k -> new LinkedHashSet<>());
         if (services.isEmpty() && iAmLocal) {
           Logging.INSTANCE.info(
@@ -378,7 +378,7 @@ public abstract class ServiceInstance<T extends BaseService> {
       boolean okEssentials = true;
       boolean okOperationals = true;
 
-      for (var serviceType : allservices) {
+      for (var serviceType : allServices) {
         var service =
             currentServices
                 .computeIfAbsent(serviceType, type -> new LinkedHashSet<>())

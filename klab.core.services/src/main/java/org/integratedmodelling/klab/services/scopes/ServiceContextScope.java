@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -105,25 +106,35 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
-    var stream = serviceMap.get(KlabService.Type.classify(serviceClass)).stream();
-    if (selectors != null) {
-      for (var selector : selectors) {
-        stream = stream.filter(s -> selector.test((T) s));
+
+    var services = getServices(serviceClass);
+
+    if (selectors == null || selectors.length == 0) {
+      if (services.isEmpty()) {
+        throw new KlabServiceAccessException(
+                "No suitable service for request of " + serviceClass.getSimpleName());
+      }
+      return (T) services.iterator().next();
+    }
+
+    for (var selector : selectors) {
+      var ret =
+              services.stream().filter(serviceClient -> selector.test((T) serviceClient)).toList();
+      if (!ret.isEmpty()) {
+        return (T) ret.getFirst();
       }
     }
-    var ret = stream.findFirst();
 
-    if (ret.isEmpty()) {
-      throw new KlabResourceAccessException(
-          "cannot find service of type " + serviceClass.getSimpleName() + " in the scope");
-    }
-    return (T) ret.get();
+    throw new KlabServiceAccessException(
+            "No suitable service for request of " + serviceClass.getSimpleName());
   }
 
   @Override
   public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-    return new org.integratedmodelling.klab.api.utils.Utils.Casts<KlabService, T>()
-        .cast((Collection<KlabService>) serviceMap.get(KlabService.Type.classify(serviceClass)));
+    return (Collection<T>)
+            serviceMap.get(KlabService.Type.classify(serviceClass)).stream()
+                    .filter(s -> s.status().isOperational())
+                    .toList();
   }
 
   public ServiceContextScope(ServiceSessionScope parent, DigitalTwin.Configuration configuration) {

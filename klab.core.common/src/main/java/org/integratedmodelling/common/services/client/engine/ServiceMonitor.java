@@ -16,6 +16,7 @@ import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -117,18 +118,27 @@ public class ServiceMonitor {
 
   @SuppressWarnings("unchecked")
   public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
-    var stream =
-        clients.keySet().stream()
-            .filter(
-                s -> serviceClass.isAssignableFrom(s.getClass()) && clients.get(s).isOperational());
 
-    if (selectors != null) {
-      for (var selector : selectors) {
-        stream = stream.filter(serviceClient -> selector.test((T) serviceClient));
+    var services = getServices(serviceClass);
+
+    if (selectors == null || selectors.length == 0) {
+      if (services.isEmpty()) {
+        throw new KlabServiceAccessException(
+            "No suitable service for request of " + serviceClass.getSimpleName());
+      }
+      return (T) services.getFirst();
+    }
+
+    for (var selector : selectors) {
+      var ret =
+          services.stream().filter(serviceClient -> selector.test((T) serviceClient)).toList();
+      if (!ret.isEmpty()) {
+        return (T) ret.getFirst();
       }
     }
 
-    return (T) stream.findFirst().orElse(null);
+    throw new KlabServiceAccessException(
+        "No suitable service for request of " + serviceClass.getSimpleName());
   }
 
   @SuppressWarnings("unchecked")

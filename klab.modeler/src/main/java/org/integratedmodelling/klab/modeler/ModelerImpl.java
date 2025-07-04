@@ -15,6 +15,7 @@ import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
@@ -414,7 +415,19 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     // HERE check out the services. A default session should be on a local service, so use that if
     // available (with an info message). Otherwise the service should be specified and an error
     // should be sent for notification.
-    var ret = user().getUserSession(user().getService(RuntimeService.class));
+    var ret =
+        user()
+            .getUserSession(
+                user()
+                    .getService(
+                        RuntimeService.class,
+                        // try 1: local service if available
+                        s -> Utils.URLs.isLocalHost(s.getUrl()),
+                        // try 2: first remote service that allows creating DTs
+                        s ->
+                            s.capabilities(user())
+                                .getPermissions()
+                                .contains(CRUDOperation.CREATE)));
     this.sessions.add(ret);
     return ret;
   }
