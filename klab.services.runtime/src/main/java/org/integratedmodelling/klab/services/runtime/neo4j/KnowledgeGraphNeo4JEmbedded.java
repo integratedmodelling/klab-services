@@ -36,6 +36,7 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
     this.online = parent.online;
     this.userScope = scope;
     this.driver = parent.driver;
+    this.serviceId = scope.getHostServiceId();
   }
 
   private KnowledgeGraphNeo4JEmbedded(KnowledgeGraphNeo4JEmbedded parent, String scopeId) {
@@ -44,6 +45,7 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
     this.online = parent.online;
     this.driver = parent.driver;
     this.rootContextId = scopeId;
+    this.serviceId = parent.serviceId;
   }
 
   /**

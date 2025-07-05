@@ -71,6 +71,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   private final RuntimeAsset dataflowNode = RuntimeAsset.DATAFLOW_ASSET;
   private final RuntimeAsset provenanceNode = RuntimeAsset.PROVENANCE_ASSET;
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+  protected String serviceId;
 
   private LoadingCache<Long, Observation> observationCache =
       CacheBuilder.newBuilder()
@@ -88,9 +89,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     executor.scheduleAtFixedRate(() -> maintenanceThread(), 0, periodInSeconds, TimeUnit.SECONDS);
   }
 
-  private void maintenanceThread() {
-
-  }
+  private void maintenanceThread() {}
 
   /**
    * Predefined Cypher queries. FIXME some should be substituted by programmatic queries, leaving
@@ -282,6 +281,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     this.rootContextId = scopeId;
     this.userScope = scope;
+    this.serviceId = scope.getHostServiceId();
 
     var result = query(Queries.FIND_CONTEXT, Map.of("contextId", scopeId), scope);
 
@@ -494,6 +494,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       info.setId(record.get("contextId").asString());
       info.setName(record.get("contextName").asString());
       info.setCreationTime(record.get("startTime").asLong());
+      info.setServiceId(serviceId);
       // TODO the rest
       ret.add(info);
     }
@@ -1158,6 +1159,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       contextInfo.setCreationTime((Long) context.get("created"));
       contextInfo.setName(context.get("name").toString());
       contextInfo.setUser(context.get("user").toString());
+      contextInfo.setServiceId(serviceId);
 
       contextInfo.setConfiguration(
           DigitalTwin.Configuration.builder()

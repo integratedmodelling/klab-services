@@ -17,6 +17,7 @@ public class ContextInfo {
   private long size;
   private String user;
   private DigitalTwin.Configuration configuration;
+  private String serviceId;
 
   public String getBehavior() {
     return behavior;
@@ -112,5 +113,13 @@ public class ContextInfo {
 
   public void setDescription(String description) {
     this.description = description;
+  }
+
+  public String getServiceId() {
+    return serviceId;
+  }
+
+  public void setServiceId(String serviceId) {
+    this.serviceId = serviceId;
   }
 }
