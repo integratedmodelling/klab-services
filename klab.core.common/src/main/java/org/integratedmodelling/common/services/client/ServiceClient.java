@@ -164,7 +164,6 @@ public abstract class ServiceClient implements KlabService {
     } else {
       this.token = this.identity.getId();
     }
-    this.serviceId = identity.getId();
     String ret = null;
     this.client = Utils.Http.getServiceClient(token, this);
     var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
@@ -208,7 +207,8 @@ public abstract class ServiceClient implements KlabService {
           }
 
           @Override
-          public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
+          public <T extends KlabService> T getService(
+              Class<T> serviceClass, Predicate<T>... selectors) {
             return KlabService.Type.classify(serviceClass) == serviceType
                 ? (T) ServiceClient.this
                 : null;
@@ -272,6 +272,9 @@ public abstract class ServiceClient implements KlabService {
            */
           if (this.capabilities == null) {
             this.capabilities = capabilities(scope);
+            if (this.capabilities != null) {
+              this.serviceId = capabilities.getServiceId();
+            }
           }
         }
 

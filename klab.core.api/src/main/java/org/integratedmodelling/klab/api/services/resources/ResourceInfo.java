@@ -113,6 +113,13 @@ public class ResourceInfo implements Serializable {
     return ret;
   }
 
+  public static ResourceInfo offline(String urn ) {
+    ResourceInfo ret = new ResourceInfo();
+    ret.setType(Type.OFFLINE);
+    ret.setUrn(urn);
+    return ret;
+  }
+
   public List<NotificationImpl> getNotifications() {
     return notifications;
   }

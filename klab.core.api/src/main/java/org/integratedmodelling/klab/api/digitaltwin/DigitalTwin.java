@@ -47,8 +47,8 @@ public interface DigitalTwin extends RuntimeAsset {
 
     /**
      * The URL does not need to be filled in if the configuration is passed to a {@link
-     * org.integratedmodelling.klab.api.scope.SessionScope#createContext(String, Configuration)}.
-     * Otherwise, the URL should be that of the chosen runtime, with or without the <code>/dt/<id>
+     * org.integratedmodelling.klab.api.scope.SessionScope#createContext(Configuration)}. Otherwise,
+     * the URL should be that of the chosen runtime, with or without the <code>/dt/<id>
      * </code> path.
      *
      * @return
@@ -62,6 +62,14 @@ public interface DigitalTwin extends RuntimeAsset {
      * @return
      */
     URL getServiceUrl();
+
+    /**
+     * Service ID is added by the back-end for easy attribution of a specific DT configuration in a
+     * multi-service environment.
+     *
+     * @return
+     */
+    String getServiceId();
 
     /**
      * The timeout in {@link #getTimeoutUnit()}. If {@link #getPersistence()} returns {@link

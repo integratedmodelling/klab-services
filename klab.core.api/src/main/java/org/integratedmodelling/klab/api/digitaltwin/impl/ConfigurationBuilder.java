@@ -28,6 +28,7 @@ public class ConfigurationBuilder {
   private URL serverUrl;
   private List<Notification> notifications = new ArrayList<>();
   private boolean createWhenAbsent;
+  private String serviceId;
 
   public ConfigurationBuilder() {}
 
@@ -42,6 +43,7 @@ public class ConfigurationBuilder {
     this.serverUrl = configuration.getServiceUrl();
     this.notifications.addAll(configuration.getNotifications());
     this.createWhenAbsent = configuration.isCreateWhenAbsent();
+    this.serviceId = configuration.getServiceId();
   }
 
   /**
@@ -119,6 +121,11 @@ public class ConfigurationBuilder {
     return this;
   }
 
+  public ConfigurationBuilder serviceId(String id) {
+    this.serviceId= id;
+    return this;
+  }
+
   public ConfigurationBuilder url(URL url) {
     this.url = url;
     return this;
@@ -151,6 +158,6 @@ public class ConfigurationBuilder {
         this.url,
         this.serverUrl,
         this.notifications,
-        this.createWhenAbsent);
+        this.createWhenAbsent, this.serviceId);
   }
 }

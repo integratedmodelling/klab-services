@@ -496,10 +496,12 @@ public class Utils {
      * Utility method to merge the results of parallel calls to the same method across all services
      * of a passed type and return the merged result.
      *
-     * @param scope
-     * @param serviceClass
-     * @param request
-     * @return
+     * @param scope the scope holding the list of services to be used
+     * @param serviceClass the class of the service of interest
+     * @param request a function taking a KlabService and returning a ResourceSet by calling a
+     *     method on it.
+     * @return the merged results of applying the function to all services of the passed class in
+     *     the scope.
      */
     public static <T extends KlabService> ResourceSet queryResources(
         Scope scope, Class<T> serviceClass, Function<T, ResourceSet> request) {

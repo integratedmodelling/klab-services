@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
+import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -269,6 +270,10 @@ public class RuntimeService extends BaseService
           isNew
               ? serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID()
               : serviceContextScope.getConfiguration().getId();
+
+      if (serviceContextScope.getConfiguration() instanceof ConfigurationImpl configurationImpl) {
+        configurationImpl.setServiceId(serviceId());
+      }
 
       serviceContextScope.setId(scopeId);
       getScopeManager().registerScope(serviceContextScope);

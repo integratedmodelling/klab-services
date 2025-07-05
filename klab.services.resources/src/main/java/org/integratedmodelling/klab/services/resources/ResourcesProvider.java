@@ -1344,10 +1344,14 @@ public class ResourcesProvider extends BaseService
   @Override
   public ResourceInfo resourceInfo(String urn, Scope scope) {
     ResourceInfo ret = resourcesKbox.getStatus(urn, null);
-    if (ret != null && (ret.getType().isUsable())) {
-      /*
-       * TODO check the resource status at this time and in this scope
-       */
+    if (ret == null) {
+      ret = ResourceInfo.offline(urn);
+    }
+    ret.setServiceId(serviceId());
+    if (ret.getType().isUsable()) {
+      if (!ret.getRights().checkAuthorization(scope)) {
+        ret.setType(ResourceInfo.Type.UNAUTHORIZED);
+      }
     }
     return ret;
   }
