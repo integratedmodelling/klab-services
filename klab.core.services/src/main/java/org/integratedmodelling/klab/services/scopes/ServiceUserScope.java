@@ -76,6 +76,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     this.user = user;
     this.data = Parameters.create();
     this.service = service;
+    this.setHostServiceId(service.serviceId());
     this.roles = EnumSet.noneOf(Role.class);
   }
 
@@ -90,13 +91,13 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     super(parent.user, parent.isSender(), parent.isReceiver());
     copyMessagingSetup(parent);
     this.service = parent.service;
+    this.setHostServiceId(parent.getHostServiceId());
     this.user = parent.user;
     this.parentScope = parent;
     this.data = parent.data;
     this.roles = parent.roles;
     this.local = parent.local;
     this.serviceMap.putAll(parent.serviceMap);
-    //    this.defaultServiceMap.putAll(parent.defaultServiceMap);
     this.id = parent.id;
   }
 

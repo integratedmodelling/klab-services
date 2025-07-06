@@ -19,7 +19,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -150,7 +149,7 @@ public class ServiceMonitor {
             .toList();
   }
 
-  private void recomputeEngineStatus() {
+  private synchronized void recomputeEngineStatus() {
 
     EngineStatusImpl status = new EngineStatusImpl();
 
@@ -158,30 +157,99 @@ public class ServiceMonitor {
     Set<KlabService.Type> active = EnumSet.noneOf(KlabService.Type.class);
     Set<KlabService.Type> shutdown = EnumSet.noneOf(KlabService.Type.class);
 
+    Map<KlabService.Type, Integer> localOperational = new HashMap<>();
+    Map<KlabService.Type, Integer> localAvailable = new HashMap<>();
+    Map<KlabService.Type, Integer> remoteOperational = new HashMap<>();
+
     for (var service : clients.keySet()) {
+      var remote = service.getUrl() != null && !Utils.URLs.isLocalHost(service.getUrl());
       var sStatus = clients.get(service);
       if (sStatus.isOperational()) {
+        if (remote) {
+          remoteOperational.merge(sStatus.getServiceType(), 1, Integer::sum);
+        } else {
+          localOperational.merge(sStatus.getServiceType(), 1, Integer::sum);
+        }
         online.add(sStatus.getServiceType());
-      }
-      if (sStatus.isAvailable()) {
+      } else if (sStatus.isAvailable() || sStatus.isShutdown()) {
         active.add(sStatus.getServiceType());
+        if (!remote) {
+          localAvailable.merge(sStatus.getServiceType(), 1, Integer::sum);
+        }
+        if (sStatus.isShutdown()) {
+          shutdown.add(sStatus.getServiceType());
+        }
       }
-      if (sStatus.isShutdown()) {
-        shutdown.add(sStatus.getServiceType());
-      }
+    }
+
+    for (var type : KlabService.Type.operationCritical()) {
+      status
+          .getServicesProvision()
+          .put(type, operationalStatus(type, localOperational, localAvailable, remoteOperational));
     }
 
     status.setAvailable(active.size() > 3);
     status.setOperational(online.size() > 3);
     status.setShutdown(!shutdown.isEmpty());
 
-    // TODO the rest
+    var localTransitioningCount =
+        status.getServicesProvision().values().stream()
+            .filter(p -> !p.isOperational() && p.isLocal())
+            .count();
+
+    var localOperationalCount =
+        status.getServicesProvision().values().stream()
+            .filter(p -> p.isOperational() && p.isLocal())
+            .count();
+
+    var remoteOperationalCount =
+        status.getServicesProvision().values().stream()
+            .filter(p -> p.isOperational() && !p.isLocal())
+            .count();
+
+    if (localTransitioningCount > 0 ) {
+      status.setCondition(Engine.Status.EngineCondition.TRANSITIONING);
+    } else if (localOperationalCount == 0 && remoteOperationalCount < 4) {
+      status.setCondition(Engine.Status.EngineCondition.INOPERATIVE);
+    } else if (localOperationalCount == 0) {
+      status.setCondition(Engine.Status.EngineCondition.ACTIVE_REMOTE_ONLY);
+    } else if (localOperationalCount == 4 && remoteOperationalCount == 0) {
+      status.setCondition(Engine.Status.EngineCondition.ACTIVE_LOCAL_ONLY);
+    } else {
+      status.setCondition(Engine.Status.EngineCondition.ACTIVE_LOCAL_AND_REMOTE);
+    }
 
     if (updateEngineStatus(status)) {
       for (var consumer : engineConsumers) {
         consumer.accept(status);
       }
     }
+  }
+
+  private EngineStatusImpl.ServiceProvision operationalStatus(
+      KlabService.Type type,
+      Map<KlabService.Type, Integer> localOperational,
+      Map<KlabService.Type, Integer> localAvailable,
+      Map<KlabService.Type, Integer> remoteOperational) {
+    if (remoteOperational.containsKey(type)) {
+      if (localOperational.containsKey(type)) {
+        return remoteOperational.containsKey(type)
+            ? (remoteOperational.get(type) > 1
+                ? EngineStatusImpl.ServiceProvision.LOCAL_REMOTE_MULTI
+                : EngineStatusImpl.ServiceProvision.LOCAL_REMOTE_SINGLE)
+            : EngineStatusImpl.ServiceProvision.LOCAL_INOP_SINGLE;
+      } else if (localAvailable.containsKey(type)) {
+        return remoteOperational.containsKey(type)
+            ? (remoteOperational.get(type) > 1
+                ? EngineStatusImpl.ServiceProvision.LOCAL_INOP_REMOTE_MULTI
+                : EngineStatusImpl.ServiceProvision.LOCAL_INOP_REMOTE_SINGLE)
+            : EngineStatusImpl.ServiceProvision.LOCAL_INOP_SINGLE;
+      } else
+        return remoteOperational.get(type) > 1
+            ? EngineStatusImpl.ServiceProvision.REMOTE_MULTI
+            : EngineStatusImpl.ServiceProvision.REMOTE_SINGLE;
+    }
+    return EngineStatusImpl.ServiceProvision.INOP;
   }
 
   private boolean updateEngineStatus(EngineStatusImpl status) {
@@ -195,6 +263,10 @@ public class ServiceMonitor {
         ((this.lastRecordedStatus.isAvailable() != status.isAvailable())
             || (this.lastRecordedStatus.isOperational() != status.isOperational())
             || (this.lastRecordedStatus.isShutdown() != status.isShutdown()));
+
+    if (!ret) {
+      ret = !this.lastRecordedStatus.getServicesProvision().equals(status.getServicesProvision());
+    }
 
     this.lastRecordedStatus = status;
 

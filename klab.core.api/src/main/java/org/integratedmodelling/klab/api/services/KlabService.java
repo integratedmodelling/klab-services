@@ -17,8 +17,10 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URL;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Services may be locally implemented or clients to remote services: each service implementation
@@ -125,6 +127,10 @@ public interface KlabService extends Service {
       }
       throw new KlabIllegalArgumentException(
           "Unexpected service class " + serviceClass.getCanonicalName());
+    }
+
+    public static Set<Type> operationCritical() {
+      return EnumSet.of(RESOURCES, REASONER, RESOLVER, RUNTIME);
     }
   }
 

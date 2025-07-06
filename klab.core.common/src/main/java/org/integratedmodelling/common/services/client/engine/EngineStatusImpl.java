@@ -13,6 +13,8 @@ public class EngineStatusImpl extends ServiceStatusImpl implements Engine.Status
 
   private Map<KlabService.Type, KlabService.ServiceStatus> servicesStatus = new HashMap<>();
   private Set<String> connectedUsernames = new HashSet<>();
+  private Map<KlabService.Type, ServiceProvision> servicesProvision = new HashMap<>();
+  private EngineCondition condition = EngineCondition.INOPERATIVE;
 
   public static EngineStatusImpl inop() {
     return new EngineStatusImpl();
@@ -37,12 +39,31 @@ public class EngineStatusImpl extends ServiceStatusImpl implements Engine.Status
   }
 
   @Override
+  public Map<KlabService.Type, ServiceProvision> getServicesProvision() {
+    return servicesProvision;
+  }
+
+  public void setServicesProvision(Map<KlabService.Type, ServiceProvision> servicesProvision) {
+    this.servicesProvision = servicesProvision;
+  }
+
+  @Override
+  public EngineCondition getCondition() {
+    return condition;
+  }
+
+  public void setCondition(EngineCondition condition) {
+    this.condition = condition;
+  }
+
+  @Override
   public String toString() {
 
-    var ret = "[ENGINE available=" + isAvailable() + ", busy=" + isBusy();
-    for (var status : servicesStatus.keySet()) {
-      ret += "\n  " + status + "=" + servicesStatus.get(status);
+    StringBuilder ret = new StringBuilder("[ENGINE " + condition + " (");
+    int i = 0;
+    for (var type : servicesProvision.keySet()) {
+      ret.append(i++ == 0 ? "" : ",").append(type).append("=").append(servicesProvision.get(type));
     }
-    return ret + "\n]";
+    return ret.toString();
   }
 }

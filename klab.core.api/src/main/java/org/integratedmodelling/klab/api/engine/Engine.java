@@ -97,6 +97,59 @@ public interface Engine /*extends KlabService*/ {
   interface Status extends KlabService.ServiceStatus {
 
     /**
+     * Each service type can be in any one of these states. Computed at each service change and used
+     * to inform clients of what they can do or visualize.
+     */
+    enum ServiceProvision {
+      /** Nothing is available */
+      INOP(false, false),
+      /** A single operational service is available remotely, none locally. */
+      REMOTE_SINGLE(false, true),
+      /** Multiple operational services are available remotely, none locally. */
+      REMOTE_MULTI(false, true),
+      /** A single operational service is available, none remotely */
+      LOCAL_SINGLE(true, true),
+      /** A single operational service is available, one remotely */
+      LOCAL_REMOTE_SINGLE(true, true),
+      /** A single operational service is available, more than one remotely */
+      LOCAL_REMOTE_MULTI(true, true),
+      /** A single non-operational service is available, none remotely */
+      LOCAL_INOP_SINGLE(true, false),
+      /** A single non-operational service is available, one remotely */
+      LOCAL_INOP_REMOTE_SINGLE(true, false),
+      /** A single non-operational service is available, more than one remotely */
+      LOCAL_INOP_REMOTE_MULTI(true, false);
+
+      final boolean local;
+      final boolean operational;
+
+      ServiceProvision(boolean local, boolean operational) {
+        this.local = local;
+        this.operational = operational;
+      }
+
+      public boolean isLocal() {
+        return local;
+      }
+
+      public boolean isOperational() {
+        return operational;
+      }
+    }
+
+    enum EngineCondition {
+      INOPERATIVE,
+      TRANSITIONING,
+      ACTIVE_REMOTE_ONLY,
+      ACTIVE_LOCAL_ONLY,
+      ACTIVE_LOCAL_AND_REMOTE,
+    }
+
+    Map<KlabService.Type, ServiceProvision> getServicesProvision();
+
+    EngineCondition getCondition();
+
+    /**
      * Return the current status of each specific service. If the service is not even connected, a
      * non-null inactive status is returned.
      *
