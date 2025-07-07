@@ -112,29 +112,31 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (selectors == null || selectors.length == 0) {
       if (services.isEmpty()) {
         throw new KlabServiceAccessException(
-                "No suitable service for request of " + serviceClass.getSimpleName());
+            "No suitable service for request of " + serviceClass.getSimpleName());
       }
       return (T) services.iterator().next();
     }
 
     for (var selector : selectors) {
       var ret =
-              services.stream().filter(serviceClient -> selector.test((T) serviceClient)).toList();
+          services.stream().filter(serviceClient -> selector.test((T) serviceClient)).toList();
       if (!ret.isEmpty()) {
         return (T) ret.getFirst();
       }
     }
 
     throw new KlabServiceAccessException(
-            "No suitable service for request of " + serviceClass.getSimpleName());
+        "No suitable service for request of " + serviceClass.getSimpleName());
   }
 
   @Override
   public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
     return (Collection<T>)
-            serviceMap.get(KlabService.Type.classify(serviceClass)).stream()
-                    .filter(s -> s.status().isOperational())
-                    .toList();
+        serviceMap
+            .computeIfAbsent(KlabService.Type.classify(serviceClass), sc -> new ArrayList<>())
+            .stream()
+            .filter(s -> s.status().isOperational())
+            .toList();
   }
 
   public ServiceContextScope(ServiceSessionScope parent, DigitalTwin.Configuration configuration) {

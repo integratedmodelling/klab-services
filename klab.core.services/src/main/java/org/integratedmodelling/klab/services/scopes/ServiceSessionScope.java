@@ -124,7 +124,9 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
   @Override
   public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
     return (Collection<T>)
-        serviceMap.get(KlabService.Type.classify(serviceClass)).stream()
+        serviceMap
+            .computeIfAbsent(KlabService.Type.classify(serviceClass), sc -> new ArrayList<>())
+            .stream()
             .filter(s -> s.status().isOperational())
             .toList();
   }

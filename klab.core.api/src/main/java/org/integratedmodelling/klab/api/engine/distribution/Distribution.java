@@ -106,6 +106,8 @@ public interface Distribution {
    */
   boolean needsSynchronization(Scope scope);
 
+  boolean isUsable();
+
   /**
    * A distribution is a list of products. Each may be individually versioned.
    *

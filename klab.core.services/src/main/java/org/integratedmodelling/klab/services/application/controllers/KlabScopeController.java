@@ -284,6 +284,16 @@ public class KlabScopeController {
           reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));
         }
 
+        if (sessionScope instanceof ServiceSessionScope serviceSessionScope
+            && sessionScope.getServices(RuntimeService.class).isEmpty()) {
+          /* this signals that the session scope was generated ad-hoc for this request, and we need
+             to give it the same services or the clients it will define for the context at the next
+             call will fail.
+          */
+          serviceSessionScope.setHostServiceId(serviceIdHeader);
+          serviceSessionScope.setServices(resources, resolvers, reasoners, runtimes);
+        }
+
         var ret = sessionScope.createContext(request.getConfiguration());
 
         if (ret instanceof ServiceContextScope serviceContextScope) {

@@ -358,6 +358,10 @@ public class ServiceAuthorizationManager {
     /** User scope is created anyway. */
     Scope scope = klabService.get().klabService().getScopeManager().getOrCreateUserScope(ret);
 
+    if (scope == null) {
+      System.out.println("DIO DIO");
+    }
+
     if (scopeHeader != null) {
       // ...then contextualized as needed
       var scopeData = ContextScope.parseScopeId(scopeHeader);

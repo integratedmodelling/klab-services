@@ -199,8 +199,9 @@ public class DistributionImpl extends AbstractDistributionImpl {
     return false;
   }
 
-  public boolean isAvailable() {
-    return getProducts().size() > 0;
+  @Override
+  public boolean isUsable() {
+    return getProducts().size() >= 4;
   }
 
   @Override

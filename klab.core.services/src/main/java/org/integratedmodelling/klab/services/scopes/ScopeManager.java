@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.scopes;
 
 // import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 // import io.reacted.core.reactorsystem.ReActorSystem;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.authentication.UserIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -10,9 +11,11 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.base.BaseService;
 
@@ -253,15 +256,38 @@ public class ScopeManager {
   public <T extends Scope> T getScope(
       EngineAuthorization authorization, Class<T> scopeClass, String scopeId) {
 
-    var scope = getOrCreateUserScope(authorization);
-    if (scopeId == null && scope != null && scopeClass.isAssignableFrom(scope.getClass())) {
-      return (T) scope;
+    var userScope = getOrCreateUserScope(authorization);
+    if (scopeId == null && userScope != null && scopeClass.isAssignableFrom(userScope.getClass())) {
+      return (T) userScope;
     }
 
     if (scopeId != null) {
       var ret = scopes.get(scopeId);
       if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
         return (T) ret;
+      }
+
+      /*
+      only scope ID that we can create is a single session with the same ID of the user or federation
+       */
+      if (SessionScope.class.isAssignableFrom(scopeClass)) {
+        var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
+        var acceptedSessionId =
+            federation == null
+                ? userScope.getUser().getUsername()
+                : federation.getId().replace(".", "_");
+        if (scopeId.equals(acceptedSessionId)) {
+          ret = new ServiceSessionScope(userScope, new JobManager());
+          ret.setStatus(Scope.Status.WAITING);
+          ((ServiceSessionScope) ret).setId(scopeId);
+          ((ServiceSessionScope) ret)
+              .setName(
+                  federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
+                      ? userScope.getUser().getUsername()
+                      : federation.getId());
+          service.registerNewSession((SessionScope) ret, userScope, null);
+          return (T) ret;
+        }
       }
     }
     return null;

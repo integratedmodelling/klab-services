@@ -7,7 +7,10 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+
+import org.integratedmodelling.common.distribution.DistributionImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.services.client.resolver.ResolverClient;
@@ -15,9 +18,11 @@ import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
@@ -207,7 +212,7 @@ public class ServiceMonitor {
             .filter(p -> p.isOperational() && !p.isLocal())
             .count();
 
-    if (localTransitioningCount > 0 ) {
+    if (localTransitioningCount > 0) {
       status.setCondition(Engine.Status.EngineCondition.TRANSITIONING);
     } else if (localOperationalCount == 0 && remoteOperationalCount < 4) {
       status.setCondition(Engine.Status.EngineCondition.INOPERATIVE);
@@ -277,6 +282,15 @@ public class ServiceMonitor {
 
   public int stopLocalServices() {
 
+    var status = lastRecordedStatus;
+    status.setShutdown(true);
+    status.setCondition(Engine.Status.EngineCondition.TRANSITIONING);
+    lastRecordedStatus = status;
+
+    for (var consumer : engineConsumers) {
+      consumer.accept(status);
+    }
+
     List<Supplier<KlabService>> tasks = new ArrayList<>();
     for (var service : clients.keySet()) {
       if (Utils.URLs.isLocalHost(service.getUrl())) {
@@ -300,5 +314,47 @@ public class ServiceMonitor {
     }
 
     return tasks.size();
+  }
+
+  public Map<KlabService.Type, KlabService> startLocalServices(
+      DistributionImpl distribution, UserScope user) {
+
+    var ret = new HashMap<KlabService.Type, KlabService>();
+
+    if (distribution != null && distribution.isUsable()) {
+
+      var status = lastRecordedStatus;
+      status.setShutdown(false);
+      status.setCondition(Engine.Status.EngineCondition.TRANSITIONING);
+      lastRecordedStatus = status;
+
+      for (var consumer : engineConsumers) {
+        consumer.accept(status);
+      }
+      for (var serviceType :
+          new KlabService.Type[] {
+            KlabService.Type.RESOURCES,
+            KlabService.Type.REASONER,
+            KlabService.Type.RUNTIME,
+            KlabService.Type.RESOLVER
+          }) {
+        var product = distribution.findProduct(Product.ProductType.forService(serviceType));
+        if (product != null) {
+          var instance = product.getInstance(user);
+          if (serviceType == KlabService.Type.RUNTIME
+              && instance.getSettings() instanceof ServiceStartupOptions serviceStartupOptions) {
+            serviceStartupOptions.setStartLocalBroker(true);
+          }
+
+          if (instance.start()) {
+            user.info(
+                "Service is starting: will be attempting connection to locally running "
+                    + serviceType);
+          }
+        }
+      }
+    }
+
+    return ret;
   }
 }

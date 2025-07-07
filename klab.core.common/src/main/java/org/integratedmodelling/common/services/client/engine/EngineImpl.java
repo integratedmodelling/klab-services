@@ -132,36 +132,7 @@ public class EngineImpl implements Engine, PropertyHolder {
 
   @Override
   public Map<KlabService.Type, KlabService> startLocalServices() {
-
-    var ret = new HashMap<KlabService.Type, KlabService>();
-
-    if (distribution != null && distribution.isAvailable()) {
-
-      for (var serviceType :
-          new KlabService.Type[] {
-            KlabService.Type.RESOURCES,
-            KlabService.Type.REASONER,
-            KlabService.Type.RUNTIME,
-            KlabService.Type.RESOLVER
-          }) {
-        var product = distribution.findProduct(Product.ProductType.forService(serviceType));
-        if (product != null) {
-          var instance = product.getInstance(defaultUser);
-          if (serviceType == KlabService.Type.RUNTIME
-              && instance.getSettings() instanceof ServiceStartupOptions serviceStartupOptions) {
-            serviceStartupOptions.setStartLocalBroker(true);
-          }
-
-          if (instance.start()) {
-            this.defaultUser.info(
-                "Service is starting: will be attempting connection to locally running "
-                    + serviceType);
-          }
-        }
-      }
-    }
-
-    return ret;
+    return serviceMonitor.startLocalServices(distribution, defaultUser);
   }
 
   @Override
@@ -189,9 +160,6 @@ public class EngineImpl implements Engine, PropertyHolder {
     if (engineStatusMonitor != null) {
       engineStatusMonitor.accept(status);
     }
-    //    this.defaultUser.send(
-    //        Message.MessageClass.EngineLifecycle, Message.MessageType.EngineStatusChanged,
-    // status);
   }
 
   private void notifyLocalService(
@@ -199,10 +167,6 @@ public class EngineImpl implements Engine, PropertyHolder {
     if (serviceStatusMonitor != null) {
       serviceStatusMonitor.accept(klabService, serviceStatus);
     }
-    //    this.defaultUser.send(
-    //        Message.MessageClass.EngineLifecycle, Message.MessageType.ServiceStatus,
-    // serviceStatus);
-    //    Logging.INSTANCE.info("GOT SERVICE STATUS " + serviceStatus);
   }
 
   @Override
@@ -237,7 +201,8 @@ public class EngineImpl implements Engine, PropertyHolder {
       this.defaultUser =
           new ClientUserScope((UserIdentity) authData.getFirst(), this) {
             @Override
-            public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
+            public <T extends KlabService> T getService(
+                Class<T> serviceClass, Predicate<T>... selectors) {
               return (T) serviceMonitor.getService(serviceClass, selectors);
             }
 

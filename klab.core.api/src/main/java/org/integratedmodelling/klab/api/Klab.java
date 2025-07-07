@@ -84,13 +84,13 @@ public enum Klab {
    */
   public interface StandardLibrary {
 
-    public interface Extents {
+    interface Extents {
 
-      public static final String NAMESPACE = Library.CORE_LIBRARY;
+      String NAMESPACE = Library.CORE_LIBRARY;
 
-      public static final String SPACE = "space";
+      String SPACE = "space";
 
-      public static final String TIME = "time";
+      String TIME = "time";
     }
   }
 
