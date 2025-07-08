@@ -176,7 +176,7 @@ public class ServiceMonitor {
           localOperational.merge(sStatus.getServiceType(), 1, Integer::sum);
         }
         online.add(sStatus.getServiceType());
-      } else if (sStatus.isAvailable() || sStatus.isShutdown()) {
+      } else if (sStatus.isAvailable() || sStatus.isConnected()) {
         active.add(sStatus.getServiceType());
         if (!remote) {
           localAvailable.merge(sStatus.getServiceType(), 1, Integer::sum);
@@ -231,30 +231,26 @@ public class ServiceMonitor {
     }
   }
 
-  private EngineStatusImpl.ServiceProvision operationalStatus(
+  private Engine.Status.ServiceProvision operationalStatus(
       KlabService.Type type,
       Map<KlabService.Type, Integer> localOperational,
       Map<KlabService.Type, Integer> localAvailable,
       Map<KlabService.Type, Integer> remoteOperational) {
-    if (remoteOperational.containsKey(type)) {
-      if (localOperational.containsKey(type)) {
-        return remoteOperational.containsKey(type)
-            ? (remoteOperational.get(type) > 1
-                ? EngineStatusImpl.ServiceProvision.LOCAL_REMOTE_MULTI
-                : EngineStatusImpl.ServiceProvision.LOCAL_REMOTE_SINGLE)
-            : EngineStatusImpl.ServiceProvision.LOCAL_INOP_SINGLE;
-      } else if (localAvailable.containsKey(type)) {
-        return remoteOperational.containsKey(type)
-            ? (remoteOperational.get(type) > 1
-                ? EngineStatusImpl.ServiceProvision.LOCAL_INOP_REMOTE_MULTI
-                : EngineStatusImpl.ServiceProvision.LOCAL_INOP_REMOTE_SINGLE)
-            : EngineStatusImpl.ServiceProvision.LOCAL_INOP_SINGLE;
-      } else
-        return remoteOperational.get(type) > 1
-            ? EngineStatusImpl.ServiceProvision.REMOTE_MULTI
-            : EngineStatusImpl.ServiceProvision.REMOTE_SINGLE;
+
+    if (localOperational.containsKey(type) && remoteOperational.containsKey(type)) {
+      return remoteOperational.get(type) > 1
+          ? Engine.Status.ServiceProvision.LOCAL_REMOTE_MULTI
+          : Engine.Status.ServiceProvision.LOCAL_REMOTE_SINGLE;
+    } else if (localOperational.containsKey(type)) {
+      return Engine.Status.ServiceProvision.LOCAL_SINGLE;
+    } else if (localAvailable.containsKey(type)) {
+      return Engine.Status.ServiceProvision.LOCAL_INOP_SINGLE;
+    } else if (remoteOperational.containsKey(type)) {
+      return remoteOperational.get(type) > 1
+          ? Engine.Status.ServiceProvision.REMOTE_MULTI
+          : Engine.Status.ServiceProvision.REMOTE_SINGLE;
     }
-    return EngineStatusImpl.ServiceProvision.INOP;
+    return Engine.Status.ServiceProvision.INOP;
   }
 
   private boolean updateEngineStatus(EngineStatusImpl status) {

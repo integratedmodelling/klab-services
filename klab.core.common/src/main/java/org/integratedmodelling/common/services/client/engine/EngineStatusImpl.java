@@ -64,6 +64,6 @@ public class EngineStatusImpl extends ServiceStatusImpl implements Engine.Status
     for (var type : servicesProvision.keySet()) {
       ret.append(i++ == 0 ? "" : ",").append(type).append("=").append(servicesProvision.get(type));
     }
-    return ret.toString();
+    return ret.append(")]").toString();
   }
 }

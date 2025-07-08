@@ -215,6 +215,7 @@ public abstract class BaseService implements KlabService {
     ret.setAvailable(initialized && serviceScope().isAvailable());
     ret.setBusy(serviceScope().isBusy());
     ret.setOperational(operational);
+    ret.setConnected(true); // obviously
     ret.setUptimeMs(System.currentTimeMillis() - this.bootTime);
     return ret;
   }

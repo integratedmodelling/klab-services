@@ -10,6 +10,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -1582,6 +1583,9 @@ public class ResourcesProvider extends BaseService
         throw new KlabIllegalArgumentException(
             "resolver: context scope has no ID, cannot register " + "a scope autonomously");
       }
+
+      // Necessary to ensure that service clients are operational
+      serviceContextScope.ensureServiceConnection(1, TimeUnit.SECONDS);
 
       /*
        * The resolver needs a digital twin client installed to find existing observations through the

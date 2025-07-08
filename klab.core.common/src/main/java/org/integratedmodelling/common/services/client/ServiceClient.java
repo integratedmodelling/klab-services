@@ -15,6 +15,7 @@ import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -67,6 +68,7 @@ public abstract class ServiceClient implements KlabService {
   private Parameters<Engine.Setting> settings;
   private String serviceId;
   private final List<BiConsumer<ServiceStatus, Boolean>> statusListeners = new ArrayList<>();
+  private AtomicBoolean connectionAttempted = new AtomicBoolean(false);
 
   public Utils.Http.Client getHttpClient() {
     return client;
@@ -224,7 +226,7 @@ public abstract class ServiceClient implements KlabService {
 
     scheduler.scheduleAtFixedRate(
         this::timedTasks,
-        2,
+        0,
         this.local ? localPollCycleSeconds : onlinePollCycleSeconds,
         TimeUnit.SECONDS);
 
@@ -237,17 +239,17 @@ public abstract class ServiceClient implements KlabService {
       return;
     }
 
-    if (this.shutdown.get()) {
-      //      scope.send(
-      //          Message.MessageClass.ServiceLifecycle,
-      //          Message.MessageType.ServiceStatus,
-      //          ServiceStatus.offline(serviceType, this.serviceId()));
-      return;
-    }
+    //    if (this.shutdown.get()) {
+    //      //      scope.send(
+    //      //          Message.MessageClass.ServiceLifecycle,
+    //      //          Message.MessageType.ServiceStatus,
+    //      //          ServiceStatus.offline(serviceType, this.serviceId()));
+    //      return;
+    //    }
 
     try {
 
-      var connectedBeforeChecking = connected.get();
+      //      var connectedBeforeChecking = connected.get();
       var statusBeforeChecking = status.get();
 
       /*
@@ -257,6 +259,7 @@ public abstract class ServiceClient implements KlabService {
         var currentServiceStatus = readServiceStatus(this.url, scope);
         if (currentServiceStatus == null) {
           connected.set(false);
+          shutdown.set(false);
           status.set(
               ServiceStatus.offline(
                   serviceType,
@@ -282,7 +285,6 @@ public abstract class ServiceClient implements KlabService {
 
       } finally {
 
-        //        boolean connectionHasChanged = connected.get() != connectedBeforeChecking;
         boolean statusHasChanged =
             (statusBeforeChecking == null && status.get() != null)
                 || (statusBeforeChecking != null && status.get() == null)
@@ -316,6 +318,8 @@ public abstract class ServiceClient implements KlabService {
     } catch (Throwable t) {
       scope.error(t);
     }
+
+    this.connectionAttempted.set(true);
   }
 
   @Override
@@ -329,7 +333,13 @@ public abstract class ServiceClient implements KlabService {
   }
 
   public final ServiceStatus status() {
-    return status.get() == null ? ServiceStatus.offline(serviceType, serviceId) : status.get();
+    var ret = status.get() == null ? ServiceStatus.offline(serviceType, serviceId) : status.get();
+    if (ret instanceof ServiceStatusImpl serviceStatus
+        && status.get() != null
+        && this.shutdown.get()) {
+      serviceStatus.setOperational(false);
+    }
+    return ret;
   }
 
   @Override
@@ -339,6 +349,10 @@ public abstract class ServiceClient implements KlabService {
 
   @Override
   public final boolean shutdown() {
+
+    // TODO must signal to the status getter that it's transitioning and change when it's
+    //  disconnected, setting shutdown to false
+
     this.shutdown.set(true);
     if (local) {
       return client.put(ServicesAPI.ADMIN.SHUTDOWN);
@@ -473,5 +487,18 @@ public abstract class ServiceClient implements KlabService {
   public void setProperties(ServiceReference serviceReference) {
     // TODO set owner, local/remote names etc. We already have the identity set up in the
     // constructor.
+  }
+
+  public boolean tryConnection(int i, TimeUnit timeUnit) {
+    long timeout = System.currentTimeMillis() + timeUnit.toMillis(i);
+    while (!connectionAttempted.get() && System.currentTimeMillis() < timeout) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return false;
+      }
+    }
+    return connectionAttempted.get();
   }
 }

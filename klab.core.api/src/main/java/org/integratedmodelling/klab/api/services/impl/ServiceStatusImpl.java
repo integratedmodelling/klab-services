@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.api.services.impl;
 
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -26,6 +25,7 @@ public class ServiceStatusImpl implements KlabService.ServiceStatus {
   private KlabService.Type serviceType;
   private String serviceId;
   private boolean shutdown;
+  private boolean connected;
 
   @Override
   public int getHealthPercentage() {
@@ -163,6 +163,15 @@ public class ServiceStatusImpl implements KlabService.ServiceStatus {
   }
 
   @Override
+  public boolean isConnected() {
+    return connected;
+  }
+
+  public void setConnected(boolean connected) {
+    this.connected = connected;
+  }
+
+  @Override
   public String toString() {
     return "ServiceStatusImpl{"
         + "serviceType="
@@ -171,10 +180,8 @@ public class ServiceStatusImpl implements KlabService.ServiceStatus {
         + available
         + ", operational="
         + operational
-        + ", busy="
-        + busy
-        + ", shutdown="
-        + shutdown
+        + ", connected="
+        + connected
         + ", memoryAvailable="
         + memoryAvailableBytes
         + ", memoryUsedBytes="

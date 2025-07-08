@@ -196,9 +196,18 @@ public interface KlabService extends Service {
     default boolean hasChangedComparedTo(ServiceStatus statusBeforeChecking) {
       return this.isAvailable() != statusBeforeChecking.isAvailable()
           || this.isBusy() != statusBeforeChecking.isBusy()
+          || this.isConnected() != statusBeforeChecking.isConnected()
           || this.isOperational() != statusBeforeChecking.isOperational()
           || !this.getAdvisories().equals(statusBeforeChecking.getAdvisories());
     }
+
+    /**
+     * Always true for service side, false at client side if there's no connection to the remote
+     * service.
+     *
+     * @return
+     */
+    boolean isConnected();
   }
 
   /**

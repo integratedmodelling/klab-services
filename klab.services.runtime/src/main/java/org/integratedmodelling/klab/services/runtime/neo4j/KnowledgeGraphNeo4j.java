@@ -50,6 +50,7 @@ import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.runtime.storage.BufferImpl;
 import org.neo4j.cypherdsl.core.*;
 import org.neo4j.driver.*;
+import org.neo4j.driver.exceptions.TransientException;
 
 import javax.annotation.Nullable;
 
@@ -228,8 +229,34 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           Queries.UPDATE_PROPERTIES.replace("{type}", "Context"),
           Map.of("id", rootContextId, "properties", props),
           userScope);
-      transaction.commit();
+      commitTransaction();
     }
+
+    public void commitTransaction() {
+      int maxRetries = 3;
+      int retryCount = 0;
+
+      while (retryCount < maxRetries) {
+        try {
+          transaction.commit();
+          return; // Success
+        } catch (TransientException e) {
+          retryCount++;
+          if (retryCount >= maxRetries) {
+            throw e; // Re-throw after max retries
+          }
+
+          // Wait before retry with exponential backoff
+          try {
+            Thread.sleep(100 * (1 << retryCount));
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Transaction interrupted", ie);
+          }
+        }
+      }
+    }
+
   }
 
   @Override

@@ -65,7 +65,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     settings.put(Setting.POLLING_INTERVAL, 5);
     settings.put(Setting.LOG_EVENTS, false);
     settings.put(Setting.LAUNCH_PRODUCT, true);
-    settings.put(Setting.LOCAL_ONLY, false);
+    settings.put(Setting.LOCAL_ONLY, true);
 
     if (DistributionImpl.isDevelopmentDistributionAvailable()) {
       this.developmentDistribution = new DevelopmentDistributionImpl();

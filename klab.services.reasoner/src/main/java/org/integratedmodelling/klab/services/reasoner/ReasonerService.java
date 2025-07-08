@@ -3045,6 +3045,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             "resolver: context scope has no ID, cannot register " + "a scope autonomously");
       }
 
+      // Necessary to ensure that service clients are operational
+      serviceContextScope.ensureServiceConnection(1, TimeUnit.SECONDS);
+
       /*
        * The resolver needs a digital twin client installed to find existing observations through the
        * service-level context scope.
