@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.klab.api.identities.Federation;
@@ -39,7 +40,6 @@ import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
@@ -47,6 +47,7 @@ import org.integratedmodelling.klab.services.scopes.ScopeManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
+import org.integratedmodelling.klab.utilities.Utils;
 
 /**
  * Base class for service implementations. A BaseService implements all the {@link KlabService}
@@ -59,9 +60,7 @@ public abstract class BaseService implements KlabService {
   private final Type type;
   protected EmbeddedBroker embeddedBroker;
   private String serviceSecret;
-  //  private boolean provideScopesAutomatically = false;
   private URL url;
-  //    protected AtomicBoolean online = new AtomicBoolean(false);
   protected AtomicBoolean available = new AtomicBoolean(false);
   private final List<Notification> serviceNotifications = new ArrayList<>();
   protected AbstractServiceDelegatingScope scope;
@@ -76,6 +75,7 @@ public abstract class BaseService implements KlabService {
   private ServiceMonitor serviceMonitor;
 
   protected Parameters<Engine.Setting> settingsForSlaveServices = Parameters.createSynchronized();
+  private StampedLock lockFile;
 
   protected BaseService(
       AbstractServiceDelegatingScope scope,
@@ -93,7 +93,13 @@ public abstract class BaseService implements KlabService {
     try {
       URL serviceHostUrl = (new URI(options.getServiceHostUrl())).toURL();
       if (Utils.URLs.isLocalHost(serviceHostUrl)) {
-        this.url = (new URI(options.getServiceHostUrl() + ":" + options.getPort() + options.getContextPath())).toURL();
+        this.url =
+            (new URI(
+                    options.getServiceHostUrl()
+                        + ":"
+                        + options.getPort()
+                        + options.getContextPath()))
+                .toURL();
       } else {
         this.url = serviceHostUrl;
       }
@@ -367,10 +373,10 @@ public abstract class BaseService implements KlabService {
     return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
   }
 
-//  public abstract String registerNewSession(SessionScope sessionScope, UserScope userScope);
-//
-//  public abstract String registerNewContext(
-//      ContextScope contextScope, UserScope userScope, KActorsBehavior behavior);
+  //  public abstract String registerNewSession(SessionScope sessionScope, UserScope userScope);
+  //
+  //  public abstract String registerNewContext(
+  //      ContextScope contextScope, UserScope userScope, KActorsBehavior behavior);
 
   /**
    * Called by ServiceInstance after initializeService was successful
@@ -478,5 +484,11 @@ public abstract class BaseService implements KlabService {
 
     var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
     return languageService.execute(serviceCall, scope, String.class);
+  }
+
+  public void setRuntimeLockfile(String serviceId) {
+    var file = getFileInConfigurationDirectory(startupOptions(), serviceId + ".lock");
+    Utils.Files.touch(file);
+    file.deleteOnExit();
   }
 }

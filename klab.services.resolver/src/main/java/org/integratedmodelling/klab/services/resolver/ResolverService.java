@@ -100,6 +100,8 @@ public class ResolverService extends BaseService implements Resolver {
       // TODO anything else we need
       saveConfiguration();
     }
+    // for the local client to know when the service is off
+    super.setRuntimeLockfile(this.configuration.getServiceId());
   }
 
   private void saveConfiguration() {
