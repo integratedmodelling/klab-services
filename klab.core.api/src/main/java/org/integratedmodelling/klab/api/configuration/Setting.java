@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.configuration;
 
+import org.integratedmodelling.klab.api.engine.distribution.Product;
+
 import java.io.File;
 
 /**
@@ -9,7 +11,10 @@ import java.io.File;
  */
 public enum Setting {
   POLLING(
-      Page.SERVICES, "Enable or disable server polling in all service clients", "on", "on", "off"),
+      Page.SERVICES,
+      "Enable or disable server polling in all service clients",
+      Boolean.class,
+      true),
   POLLING_INTERVAL(Page.SERVICES, "Set the service polling interval in seconds", Integer.class, 5),
   WORK_DIRECTORY(
       Page.GENERAL,
@@ -27,7 +32,42 @@ public enum Setting {
       Boolean.class,
       false),
   LOG_EVENTS(Page.SERVICES, "Log server-side events", Boolean.class, false),
-  LOCAL_ONLY(Page.SERVICES, "Disable use of remote services", Boolean.class, false);
+  LOCAL_ONLY(Page.SERVICES, "Disable use of remote services", Boolean.class, false),
+  DETECT_LOCAL_HUB(
+      Page.DEBUGGING,
+      "Look for a hub running on localhost for authentication",
+      Boolean.class,
+      false),
+  RESET_ALL_SERVICE_CONFIGURATION(
+      Page.DEBUGGING,
+      "Reset the configuration of all local services and their data",
+      Boolean.class,
+      false),
+  RESET_ALL_SERVICE_DATA(
+      Page.DEBUGGING,
+      "Remove all data for local services but not their configuration",
+      Boolean.class,
+      false),
+  MAX_RESOLVER_SERVICE_MEMORY(
+      Page.RESOLVER,
+      "Maximum memory for the local resolver in MB",
+      Integer.class,
+      Product.ProductType.RESOLVER_SERVICE.defaultMaxMemoryLimitMB()),
+  MAX_REASONER_SERVICE_MEMORY(
+      Page.REASONER,
+      "Maximum memory for the local reasoner in MB",
+      Integer.class,
+      Product.ProductType.REASONER_SERVICE.defaultMaxMemoryLimitMB()),
+  MAX_RUNTIME_SERVICE_MEMORY(
+      Page.RUNTIME,
+      "Maximum memory for the local runtime in MB",
+      Integer.class,
+      Product.ProductType.RUNTIME_SERVICE.defaultMaxMemoryLimitMB()),
+  MAX_RESOURCES_SERVICE_MEMORY(
+      Page.RESOURCES,
+      "Maximum memory for the local resources service in MB",
+      Integer.class,
+      Product.ProductType.RESOURCES_SERVICE.defaultMaxMemoryLimitMB());
 
   //  private Setting<Boolean> startWithCLI = new Setting<Boolean>();
   //  private Setting<Boolean> detectLocalHub = new Setting<Boolean>();
@@ -98,7 +138,7 @@ public enum Setting {
     DEBUGGING
   }
 
-  // if this is empty, any string value is admitted
+  // if this is null, any string value is admitted
   public final String[] values;
   public final Class<?> valueClass;
   public final String description;
@@ -123,7 +163,7 @@ public enum Setting {
 
   public boolean validate(Object value) {
     if (String.class.equals(valueClass)) {
-      if (value instanceof String && values.length > 0) {
+      if (value instanceof String && values != null && values.length > 0) {
         for (var v : values) {
           if (value.equals(v)) {
             return true;
