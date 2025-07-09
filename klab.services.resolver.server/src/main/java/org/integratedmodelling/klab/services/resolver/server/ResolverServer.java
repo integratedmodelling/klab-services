@@ -22,6 +22,11 @@ public class
 ResolverServer extends ServiceNetworkedInstance<ResolverService> {
 
     @Override
+    protected KlabService.Type serviceType() {
+        return KlabService.Type.RESOLVER;
+    }
+
+    @Override
     protected List<KlabService.Type> getEssentialServices() {
         return List.of(KlabService.Type.REASONER, KlabService.Type.RESOURCES);
     }

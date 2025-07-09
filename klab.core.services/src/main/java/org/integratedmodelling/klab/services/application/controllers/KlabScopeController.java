@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.services.client.resolver.ResolverClient;
 import org.integratedmodelling.common.services.client.resources.ResourcesClient;
@@ -19,10 +20,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.services.JobManager;
@@ -100,7 +98,12 @@ public class KlabScopeController {
                         .map(
                             url ->
                                 new RuntimeClient(
-                                    url, identity, instance.klabService(), instance.settings()))
+                                    url,
+                                    identity,
+                                    instance.klabService(),
+                                    SettingsImpl.forSlaveServices(
+                                        KlabService.Type.RUNTIME,
+                                        instance.klabService().settings())))
                         .toList());
 
         if (runtimes.isEmpty()) {
@@ -124,7 +127,12 @@ public class KlabScopeController {
                         .map(
                             url ->
                                 new ReasonerClient(
-                                    url, identity, instance.klabService(), instance.settings()))
+                                    url,
+                                    identity,
+                                    instance.klabService(),
+                                    SettingsImpl.forSlaveServices(
+                                        KlabService.Type.REASONER,
+                                        instance.klabService().settings())))
                         .toList());
         List<ResourcesService> resources =
             instance.klabService() instanceof ResourcesService r
@@ -134,7 +142,12 @@ public class KlabScopeController {
                         .map(
                             url ->
                                 new ResourcesClient(
-                                    url, identity, instance.klabService(), instance.settings()))
+                                    url,
+                                    identity,
+                                    instance.klabService(),
+                                    SettingsImpl.forSlaveServices(
+                                        KlabService.Type.RESOURCES,
+                                        instance.klabService().settings())))
                         .toList());
         List<Resolver> resolvers =
             instance.klabService() instanceof Resolver r
@@ -144,7 +157,12 @@ public class KlabScopeController {
                         .map(
                             url ->
                                 new ResolverClient(
-                                    url, identity, instance.klabService(), instance.settings()))
+                                    url,
+                                    identity,
+                                    instance.klabService(),
+                                    SettingsImpl.forSlaveServices(
+                                        KlabService.Type.RESOLVER,
+                                        instance.klabService().settings())))
                         .toList());
 
         if (request.getReasonerServices().isEmpty()) {
@@ -247,7 +265,12 @@ public class KlabScopeController {
                         .map(
                             url ->
                                 new ReasonerClient(
-                                    url, identity, instance.klabService(), instance.settings()))
+                                    url,
+                                    identity,
+                                    instance.klabService(),
+                                    SettingsImpl.forSlaveServices(
+                                        KlabService.Type.REASONER,
+                                        instance.klabService().settings())))
                         .toList());
         List<RuntimeService> runtimes =
             instance.klabService() instanceof RuntimeService r
@@ -257,7 +280,12 @@ public class KlabScopeController {
                         .map(
                             url ->
                                 new RuntimeClient(
-                                    url, identity, instance.klabService(), instance.settings()))
+                                    url,
+                                    identity,
+                                    instance.klabService(),
+                                    SettingsImpl.forSlaveServices(
+                                        KlabService.Type.RUNTIME,
+                                        instance.klabService().settings())))
                         .toList());
         List<ResourcesService> resources =
             instance.klabService() instanceof ResourcesService r
@@ -267,7 +295,12 @@ public class KlabScopeController {
                         .map(
                             url ->
                                 new ResourcesClient(
-                                    url, identity, instance.klabService(), instance.settings()))
+                                    url,
+                                    identity,
+                                    instance.klabService(),
+                                    SettingsImpl.forSlaveServices(
+                                        KlabService.Type.RESOURCES,
+                                        instance.klabService().settings())))
                         .toList());
         List<Resolver> resolvers =
             instance.klabService() instanceof Resolver r
@@ -277,7 +310,12 @@ public class KlabScopeController {
                         .map(
                             url ->
                                 new ResolverClient(
-                                    url, identity, instance.klabService(), instance.settings()))
+                                    url,
+                                    identity,
+                                    instance.klabService(),
+                                    SettingsImpl.forSlaveServices(
+                                        KlabService.Type.RESOLVER,
+                                        instance.klabService().settings())))
                         .toList());
 
         if (request.getReasonerServices().isEmpty()) {

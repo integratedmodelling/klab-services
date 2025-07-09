@@ -12,6 +12,11 @@ import java.util.List;
 public class ResourcesServiceInstance extends ServiceInstance<ResourcesProvider> {
 
   @Override
+  protected KlabService.Type serviceType() {
+    return KlabService.Type.RESOURCES;
+  }
+
+  @Override
   protected List<KlabService.Type> getEssentialServices() {
     return Collections.emptyList();
   }

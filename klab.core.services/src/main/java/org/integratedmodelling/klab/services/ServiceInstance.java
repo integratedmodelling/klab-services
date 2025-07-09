@@ -6,19 +6,18 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.services.client.resolver.ResolverClient;
 import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.configuration.Setting;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
-import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -79,15 +78,10 @@ public abstract class ServiceInstance<T extends BaseService> {
 
   private long bootTime;
   private Pair<Identity, List<ServiceReference>> identity;
-  //    private boolean firstCall = true;
-  private Parameters<Engine.Setting> settings = Parameters.createSynchronized();
 
-  protected ServiceInstance() {
-    settings.put(Engine.Setting.POLLING, "on");
-    settings.put(Engine.Setting.POLLING_INTERVAL, 15);
-    settings.put(Engine.Setting.LOG_EVENTS, true);
-    settings.put(Engine.Setting.LAUNCH_PRODUCT, false);
-  }
+  protected ServiceInstance() {}
+
+  protected abstract KlabService.Type serviceType();
 
   /**
    * Return the type of any <em>other</em> services required for this service to become online. The
@@ -139,20 +133,37 @@ public abstract class ServiceInstance<T extends BaseService> {
   protected KlabService createDefaultService(
       KlabService.Type serviceType, Scope scope, long timeUnavailable) {
     return createLocalServiceClient(
-        serviceType, serviceType.localServiceUrl(), scope, serviceScope.getIdentity(), settings);
+        serviceType, serviceType.localServiceUrl(), scope, serviceScope.getIdentity());
   }
 
   private <T extends KlabService> T createLocalServiceClient(
-      KlabService.Type serviceType,
-      URL url,
-      Scope scope,
-      Identity identity,
-      Parameters<Engine.Setting> settings) {
+      KlabService.Type serviceType, URL url, Scope scope, Identity identity) {
+
     return switch (serviceType) {
-      case REASONER -> (T) new ReasonerClient(url, identity, settings);
-      case RESOURCES -> (T) new ResourcesClient(url, identity, settings);
-      case RESOLVER -> (T) new ResolverClient(url, identity, settings);
-      case RUNTIME -> (T) new RuntimeClient(url, identity, settings);
+      case REASONER ->
+          (T)
+              new ReasonerClient(
+                  url,
+                  identity,
+                  SettingsImpl.forSlaveServices(KlabService.Type.REASONER, service.settings()));
+      case RESOURCES ->
+          (T)
+              new ResourcesClient(
+                  url,
+                  identity,
+                  SettingsImpl.forSlaveServices(KlabService.Type.RESOURCES, service.settings()));
+      case RESOLVER ->
+          (T)
+              new ResolverClient(
+                  url,
+                  identity,
+                  SettingsImpl.forSlaveServices(KlabService.Type.RESOLVER, service.settings()));
+      case RUNTIME ->
+          (T)
+              new RuntimeClient(
+                  url,
+                  identity,
+                  SettingsImpl.forSlaveServices(KlabService.Type.RUNTIME, service.settings()));
       default -> throw new IllegalStateException("Unexpected value: " + serviceType);
     };
   }
@@ -195,7 +206,7 @@ public abstract class ServiceInstance<T extends BaseService> {
    * @return
    */
   protected Pair<Identity, List<ServiceReference>> authenticateService() {
-    return Authentication.INSTANCE.authenticate(settings);
+    return Authentication.INSTANCE.authenticate(SettingsImpl.forService(serviceType()));
   }
 
   /**
@@ -459,10 +470,6 @@ public abstract class ServiceInstance<T extends BaseService> {
 
   protected void setAvailable(boolean b) {
     serviceScope.setMaintenanceMode(!b);
-  }
-
-  public Parameters<Engine.Setting> settings() {
-    return settings;
   }
 
   protected void setBusy(boolean b) {

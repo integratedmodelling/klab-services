@@ -1,19 +1,13 @@
 package org.integratedmodelling.common.services.client.scope;
 
-import org.integratedmodelling.common.configuration.Settings;
+import java.util.*;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
-import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
-import org.integratedmodelling.klab.api.utils.Utils;
-import org.springframework.context.aot.AbstractAotProcessor;
-
-import java.util.*;
 
 /**
  * A singleton used to keep track of scopes that were created within an instance. Differently from
@@ -91,7 +85,7 @@ public enum ClientScopeManager {
 
     var newRuntime =
         new RuntimeClient(
-            configuration.getUrl(), requestingScope.getIdentity(), Parameters.create());
+            configuration.getUrl(), requestingScope.getIdentity(), SettingsImpl.forEngine());
 
     // FIXME this will cause an exception as the client list is read-only. The client-side services
     //  are ultimately stored in the engine - must deal with that.

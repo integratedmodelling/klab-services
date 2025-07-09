@@ -22,6 +22,11 @@ import java.util.List;
 public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
 
     @Override
+    protected KlabService.Type serviceType() {
+        return KlabService.Type.RUNTIME;
+    }
+
+    @Override
     protected List<KlabService.Type> getEssentialServices() {
         /**
          * This runtime gets resolvers and resource services from the observation requests, so does not need

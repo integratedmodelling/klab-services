@@ -16,8 +16,9 @@ import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.services.client.resolver.ResolverClient;
 import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.configuration.Setting;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
@@ -46,7 +47,7 @@ public class ServiceMonitor {
   @SuppressWarnings("unchecked")
   public ServiceMonitor(
       Identity identity,
-      Parameters<Engine.Setting> settings,
+      Settings settings,
       boolean useLocalServices,
       List<ServiceReference> services,
       BiConsumer<KlabService, KlabService.ServiceStatus> serviceChangeMonitor,
@@ -78,7 +79,7 @@ public class ServiceMonitor {
         clients.put(service, service.status());
       }
 
-      var localOnly = settings.get(Engine.Setting.LOCAL_ONLY, Boolean.FALSE);
+      var localOnly = settings.get(Setting.LOCAL_ONLY, Boolean.class);
 
       if (!localOnly) {
         for (var service : services) {

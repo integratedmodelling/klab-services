@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.engine;
 
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -40,66 +41,6 @@ import java.util.function.Predicate;
  * categories listed as {@link KlabService.Type}.
  */
 public interface Engine /*extends KlabService*/ {
-
-  /**
-   * Engine settings that can be changed at runtime through the CLI or the API. Most of these are
-   * useful for debugging. Using an enum eases validation and
-   */
-  enum Setting {
-
-    POLLING(Page.SERVICES, "Enable or disable server polling in all service clients", "on", "off"),
-    POLLING_INTERVAL(Page.SERVICES, "Set the service polling interval in seconds", Integer.class),
-    LAUNCH_PRODUCT(
-        Page.DISTRIBUTION,
-        "Launch a local service if there is no online service and a distribution is " + "available",
-        Boolean.class),
-    LOG_EVENTS(Page.SERVICES, "Log server-side events", Boolean.class),
-    LOCAL_ONLY(Page.SERVICES, "Disable use of remote services", Boolean.class);
-
-    enum Page {
-      GENERAL,
-      DISTRIBUTION,
-      SERVICES,
-      USER,
-      MESSAGING,
-      RESOURCES,
-      REASONER,
-      RESOLVER,
-      RUNTIME,
-      DEBUGGING
-    }
-
-    // if this is empty, any string value is admitted
-    public final String[] values;
-    public final Class<?> valueClass;
-    public final String description;
-
-    Setting(Page page, String description, Class<?> valueClass) {
-      this.description = description;
-      this.valueClass = valueClass;
-      this.values = new String[] {};
-    }
-
-    Setting(Page page, String description, String... stringValues) {
-      this.description = description;
-      this.values = stringValues;
-      this.valueClass = String.class;
-    }
-
-    public boolean validate(Object value) {
-      if (String.class.equals(valueClass)) {
-        if (value instanceof String && values.length > 0) {
-          for (var v : values) {
-            if (value.equals(v)) {
-              return true;
-            }
-          }
-          return false;
-        }
-      }
-      return value != null && valueClass.isAssignableFrom(value.getClass());
-    }
-  }
 
   /**
    * Comprehensive engine status is kept up to date by polling or listening to local services.
@@ -250,5 +191,5 @@ public interface Engine /*extends KlabService*/ {
    *
    * @return the current settings.
    */
-  Map<Setting, Object> getSettings();
+  Settings getSettings();
 }

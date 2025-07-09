@@ -1,13 +1,12 @@
 package org.integratedmodelling.cli;
 
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.utils.Utils;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 import java.io.PrintWriter;
-import java.util.List;
 
 @Command(name = "set", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
         "Commands to find, access and manipulate resources.",
@@ -30,10 +29,10 @@ public class Set implements Runnable {
         PrintWriter err = commandSpec.commandLine().getErr();
 
         if (observables == null || observables.isEmpty()) {
-            for (var setting : KlabCLI.INSTANCE.engine().getSettings().keySet()) {
-                out.println(CommandLine.Help.Ansi.AUTO.string("@|cyan " + settingToName(setting) + "|@: " +
-                        "@|green " + KlabCLI.INSTANCE.engine().getSettings().get(setting) + "|@"));
-            }
+//            for (var setting : KlabCLI.INSTANCE.engine().getSettings().keySet()) {
+//                out.println(CommandLine.Help.Ansi.AUTO.string("@|cyan " + settingToName(setting) + "|@: " +
+//                        "@|green " + KlabCLI.INSTANCE.engine().getSettings().get(setting) + "|@"));
+//            }
             return;
         }
 
@@ -43,7 +42,7 @@ public class Set implements Runnable {
             if (setting != null) {
                 var value = Utils.Data.asType(observables.get(1), setting.valueClass);
                 if (setting.validate(value)) {
-                    KlabCLI.INSTANCE.engine().getSettings().put(setting, value);
+                    KlabCLI.INSTANCE.engine().getSettings().set(setting, value);
                     ok = true;
                 }
             }
@@ -58,13 +57,13 @@ public class Set implements Runnable {
 
     }
 
-    private String settingToName(Engine.Setting setting) {
+    private String settingToName(Setting setting) {
         return setting.name().toLowerCase().replace("_", ".");
     }
 
-    private Engine.Setting nameToSetting(String setting, PrintWriter err) {
+    private Setting nameToSetting(String setting, PrintWriter err) {
         try {
-            return Engine.Setting.valueOf(setting.replace(".", "_").toUpperCase());
+            return Setting.valueOf(setting.replace(".", "_").toUpperCase());
         } catch (Throwable t) {
             err.println("Unknown setting " + setting);
         }

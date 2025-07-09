@@ -14,17 +14,23 @@ import java.util.List;
  */
 public class ReasonerInstance extends ServiceInstance<ReasonerService> {
 
-    protected List<KlabService.Type> getEssentialServices() {
-        return List.of(KlabService.Type.RESOURCES);
-    }
+  @Override
+  protected KlabService.Type serviceType() {
+    return KlabService.Type.REASONER;
+  }
 
-    @Override
-    protected List<KlabService.Type> getOperationalServices() {
-        return List.of();
-    }
+  protected List<KlabService.Type> getEssentialServices() {
+    return List.of(KlabService.Type.RESOURCES);
+  }
 
-    @Override
-    protected ReasonerService createPrimaryService(AbstractServiceDelegatingScope serviceScope, ServiceStartupOptions options) {
-        return new ReasonerService(serviceScope, options);
-    }
+  @Override
+  protected List<KlabService.Type> getOperationalServices() {
+    return List.of();
+  }
+
+  @Override
+  protected ReasonerService createPrimaryService(
+      AbstractServiceDelegatingScope serviceScope, ServiceStartupOptions options) {
+    return new ReasonerService(serviceScope, options);
+  }
 }

@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.services.client.resolver.ResolverClient;
 import org.integratedmodelling.common.services.client.resources.ResourcesClient;
@@ -29,10 +30,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -168,7 +166,9 @@ public class RuntimeServerController {
                               url,
                               userScope.getUser(),
                               runtimeService.klabService(),
-                              runtimeService.settings()))
+                              SettingsImpl.forSlaveServices(
+                                  KlabService.Type.REASONER,
+                                  runtimeService.klabService().settings())))
                   .toList());
       List<RuntimeService> runtimes = List.of(runtimeService.klabService());
       List<ResourcesService> resources =
@@ -180,7 +180,9 @@ public class RuntimeServerController {
                               url,
                               userScope.getUser(),
                               runtimeService.klabService(),
-                              runtimeService.settings()))
+                              SettingsImpl.forSlaveServices(
+                                  KlabService.Type.RESOURCES,
+                                  runtimeService.klabService().settings())))
                   .toList());
       List<Resolver> resolvers =
           new ArrayList<>(
@@ -191,7 +193,9 @@ public class RuntimeServerController {
                               url,
                               userScope.getUser(),
                               runtimeService.klabService(),
-                              runtimeService.settings()))
+                              SettingsImpl.forSlaveServices(
+                                  KlabService.Type.RESOLVER,
+                                  runtimeService.klabService().settings())))
                   .toList());
 
       if (ret instanceof ServiceContextScope serviceContextScope) {

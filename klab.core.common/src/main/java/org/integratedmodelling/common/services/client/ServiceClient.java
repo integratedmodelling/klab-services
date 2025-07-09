@@ -15,15 +15,14 @@ import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
-import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
-import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.configuration.Setting;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
@@ -65,7 +64,7 @@ public abstract class ServiceClient implements KlabService {
   protected ServiceCapabilities capabilities;
   private KlabService ownerService;
   private boolean local;
-  private Parameters<Engine.Setting> settings;
+  private Settings settings;
   private String serviceId;
   private final List<BiConsumer<ServiceStatus, Boolean>> statusListeners = new ArrayList<>();
   private AtomicBoolean connectionAttempted = new AtomicBoolean(false);
@@ -91,7 +90,7 @@ public abstract class ServiceClient implements KlabService {
       KlabService.Type serviceType,
       URL url,
       Identity identity,
-      Parameters<Engine.Setting> settings,
+      Settings settings,
       KlabService ownerService) {
     this.settings = settings;
     this.identity = identity;
@@ -107,7 +106,7 @@ public abstract class ServiceClient implements KlabService {
       KlabService.Type serviceType,
       URL url,
       Identity identity,
-      Parameters<Engine.Setting> settings,
+      Settings settings,
       boolean connect) {
     this.settings = settings;
     this.identity = identity;
@@ -119,8 +118,9 @@ public abstract class ServiceClient implements KlabService {
     }
   }
 
-  protected ServiceClient(URL url, Parameters<Engine.Setting> settings) {
+  protected ServiceClient(URL url, Settings settings) {
     this.url = url;
+    this.settings = settings;
     connect();
   }
 
@@ -235,7 +235,7 @@ public abstract class ServiceClient implements KlabService {
 
   private void timedTasks() {
 
-    if (settings != null && "off".equals(settings.get(Engine.Setting.POLLING, String.class))) {
+    if (settings != null && "off".equals(settings.get(Setting.POLLING, String.class))) {
       return;
     }
 
