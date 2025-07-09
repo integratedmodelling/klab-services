@@ -775,6 +775,9 @@ public class WorkspaceManager {
       saveConfiguration();
     }
 
+    // for the local client to know when the service is off
+    service.setRuntimeLockfile(this.configuration.getServiceId());
+
     // clear existing caches (this must be reentrant and be callable again at any new import)
     projectDescriptors.clear();
 

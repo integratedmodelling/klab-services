@@ -83,6 +83,8 @@ public class RuntimeService extends BaseService
       this.configuration.setServiceId(UUID.randomUUID().toString());
       saveConfiguration();
     }
+    // for the local client to know when the service is off
+    super.setRuntimeLockfile(this.configuration.getServiceId());
   }
 
   private boolean createMainKnowledgeGraph() {

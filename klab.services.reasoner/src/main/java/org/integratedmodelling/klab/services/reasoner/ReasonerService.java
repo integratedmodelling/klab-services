@@ -275,6 +275,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       this.configuration.setServiceId(UUID.randomUUID().toString());
       saveConfiguration();
     }
+    // for the local client to know when the service is off
+    super.setRuntimeLockfile(this.configuration.getServiceId());
   }
 
   @Override
