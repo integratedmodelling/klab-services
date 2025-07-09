@@ -250,7 +250,7 @@ public class ServiceMonitor {
           ? Engine.Status.ServiceProvision.REMOTE_MULTI
           : Engine.Status.ServiceProvision.REMOTE_SINGLE;
     }
-    return Engine.Status.ServiceProvision.INOP;
+    return Engine.Status.ServiceProvision.INOPERATIVE;
   }
 
   private boolean updateEngineStatus(EngineStatusImpl status) {

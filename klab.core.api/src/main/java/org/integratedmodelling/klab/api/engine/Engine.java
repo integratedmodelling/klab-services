@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * The k.LAB engine is a service orchestrator that maintains scopes and clients for all services
@@ -17,7 +18,7 @@ import java.util.Map;
  * applications such as command-line or graphical IDEs.
  *
  * <p>The engine instantiates user scopes upon authentication, or anonymously. All scopes access
- * their services through the {@link UserScope#getService(Class)} and {@link
+ * their services through the {@link UserScope#getService(Class, Predicate[])} and {@link
  * UserScope#getServices(Class)} methods. There is no specific API related to authentication, except
  * defining the model for {@link org.integratedmodelling.klab.api.authentication.KlabCertificate}s.
  *
@@ -30,9 +31,8 @@ import java.util.Map;
  *
  * <p>All service events visible to the service clients are reported through the user scopes that
  * own them. In turn, the events are dispatched to the Engine's own service scope. Users of the
- * engine API can listen to all relevant events using the {@link #serviceScope()} handle, or they
- * can install specific listeners directly on the other scopes exposed. The engine will not
- * re-broadcast events below the user level.
+ * engine API can listen to all relevant events by installing specific listeners directly on the
+ * other scopes exposed. The engine will not re-broadcast events below the user level.
  *
  * <p>Engine functions can be exposed through the simple REST API defined in {@link
  * org.integratedmodelling.klab.api.ServicesAPI.ENGINE} and is a {@link KlabService} to ensure it
@@ -43,31 +43,44 @@ public interface Engine /*extends KlabService*/ {
 
   /**
    * Engine settings that can be changed at runtime through the CLI or the API. Most of these are
-   * useful for debugging. Using an enum eases validation.
+   * useful for debugging. Using an enum eases validation and
    */
   enum Setting {
 
-    // TODO add these as the need arises
-    POLLING("Enable or disable server polling in all service clients", "on", "off"),
-    POLLING_INTERVAL("Set the service polling interval in seconds", Integer.class),
+    POLLING(Page.SERVICES, "Enable or disable server polling in all service clients", "on", "off"),
+    POLLING_INTERVAL(Page.SERVICES, "Set the service polling interval in seconds", Integer.class),
     LAUNCH_PRODUCT(
+        Page.DISTRIBUTION,
         "Launch a local service if there is no online service and a distribution is " + "available",
         Boolean.class),
-    LOG_EVENTS("Log server-side events", Boolean.class),
-    LOCAL_ONLY("Disable use of remote services", Boolean.class);
+    LOG_EVENTS(Page.SERVICES, "Log server-side events", Boolean.class),
+    LOCAL_ONLY(Page.SERVICES, "Disable use of remote services", Boolean.class);
+
+    enum Page {
+      GENERAL,
+      DISTRIBUTION,
+      SERVICES,
+      USER,
+      MESSAGING,
+      RESOURCES,
+      REASONER,
+      RESOLVER,
+      RUNTIME,
+      DEBUGGING
+    }
 
     // if this is empty, any string value is admitted
     public final String[] values;
     public final Class<?> valueClass;
     public final String description;
 
-    Setting(String description, Class<?> valueClass) {
+    Setting(Page page, String description, Class<?> valueClass) {
       this.description = description;
       this.valueClass = valueClass;
       this.values = new String[] {};
     }
 
-    Setting(String description, String... stringValues) {
+    Setting(Page page, String description, String... stringValues) {
       this.description = description;
       this.values = stringValues;
       this.valueClass = String.class;
@@ -102,7 +115,7 @@ public interface Engine /*extends KlabService*/ {
      */
     enum ServiceProvision {
       /** Nothing is available */
-      INOP(false, false),
+      INOPERATIVE(false, false),
       /** A single operational service is available remotely, none locally. */
       REMOTE_SINGLE(false, true),
       /** Multiple operational services are available remotely, none locally. */
