@@ -19,6 +19,12 @@ import java.util.List;
                                "org.integratedmodelling.klab.services.application.controllers",
                                "org.integratedmodelling.klab.services.reasoner.controllers"})
 public class ReasonerServer extends ServiceNetworkedInstance<ReasonerService> {
+
+    @Override
+    protected KlabService.Type serviceType() {
+        return KlabService.Type.REASONER;
+    }
+
     @Override
     protected List<KlabService.Type> getEssentialServices() {
         return List.of(KlabService.Type.RESOURCES);

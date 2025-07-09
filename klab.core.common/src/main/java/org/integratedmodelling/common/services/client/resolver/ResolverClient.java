@@ -1,14 +1,12 @@
 package org.integratedmodelling.common.services.client.resolver;
 
-import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -25,39 +23,39 @@ import java.util.concurrent.CompletableFuture;
 public class ResolverClient extends ServiceClient implements Resolver {
 
   public static ResolverClient create(
-      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+      URL url, Identity identity, Settings settings) {
     return new ResolverClient(url, identity, settings);
   }
 
   public static ResolverClient createOffline(
-      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+      URL url, Identity identity, Settings settings) {
     return new ResolverClient(url, identity, settings, false);
   }
 
-  public static ResolverClient createLocal(Identity identity, Parameters<Engine.Setting> settings) {
+  public static ResolverClient createLocal(Identity identity, Settings settings) {
     return new ResolverClient(Type.RESOLVER.localServiceUrl(), identity, settings);
   }
 
   public static ResolverClient createLocalOffline(
-      Identity identity, Parameters<Engine.Setting> settings) {
+      Identity identity, Settings settings) {
     return new ResolverClient(Type.RESOLVER.localServiceUrl(), identity, settings, false);
   }
 
   public ResolverClient(
-      URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
+      URL url, Identity identity, KlabService owner, Settings settings) {
     super(Type.RESOLVER, url, identity, settings, owner);
   }
 
-  public ResolverClient(URL url, Identity identity, Parameters<Engine.Setting> settings) {
+  public ResolverClient(URL url, Identity identity, Settings settings) {
     super(Type.RESOLVER, url, identity, settings, true);
   }
 
   private ResolverClient(
-      URL url, Identity identity, Parameters<Engine.Setting> settings, boolean connect) {
+      URL url, Identity identity, Settings settings, boolean connect) {
     super(Type.RESOLVER, url, identity, settings, connect);
   }
 
-  public ResolverClient(URL url, Parameters<Engine.Setting> settings) {
+  public ResolverClient(URL url, Settings settings) {
     super(url, settings);
   }
 

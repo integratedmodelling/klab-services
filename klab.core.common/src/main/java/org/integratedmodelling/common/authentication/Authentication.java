@@ -15,20 +15,18 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.authentication.CustomProperty;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
-import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.configuration.Setting;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -81,7 +79,7 @@ public enum Authentication {
    * @param settings
    * @return
    */
-  public Pair<Identity, List<ServiceReference>> authenticate(Parameters<Engine.Setting> settings) {
+  public Pair<Identity, List<ServiceReference>> authenticate(Settings settings) {
     File certFile = new File(Configuration.INSTANCE.getDataPath() + File.separator + "klab.cert");
     KlabCertificate certificate =
         certFile.isFile()
@@ -99,12 +97,12 @@ public enum Authentication {
    * @return
    */
   public Pair<Identity, List<ServiceReference>> authenticate(
-      KlabCertificate certificate, Parameters<Engine.Setting> settings) {
+      KlabCertificate certificate, Settings settings) {
 
     if (certificate instanceof AnonymousEngineCertificate) {
       // no partner, no node, no token, no nothing. REST calls automatically accept
       // the anonymous user when secured as Roles.PUBLIC.
-      if (settings.get(Engine.Setting.LOG_EVENTS, Boolean.class)) {
+      if (settings.get(Setting.LOG_EVENTS, Boolean.class)) {
         Logging.INSTANCE.info("No user certificate: continuing in anonymous offline mode");
       }
       return Pair.of(new AnonymousUser(), Collections.emptyList());
@@ -114,7 +112,7 @@ public enum Authentication {
       /*
        * expired or invalid certificate: throw away the identity, continue as anonymous.
        */
-      if (settings.get(Engine.Setting.LOG_EVENTS, Boolean.class)) {
+      if (settings.get(Setting.LOG_EVENTS, Boolean.class)) {
         Logging.INSTANCE.info(
             "Certificate is invalid or expired: continuing in anonymous offline " + "mode");
       }
@@ -128,7 +126,7 @@ public enum Authentication {
 
       try (var client = Utils.Http.getClient(authenticationServer, null)) {
 
-        if (settings.get(Engine.Setting.LOG_EVENTS, Boolean.class)) {
+        if (settings.get(Setting.LOG_EVENTS, Boolean.class)) {
           Logging.INSTANCE.info(
               "authenticating "
                   + certificate.getProperty(KlabCertificate.KEY_USERNAME)

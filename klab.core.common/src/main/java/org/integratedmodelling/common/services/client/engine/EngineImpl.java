@@ -1,6 +1,5 @@
 package org.integratedmodelling.common.services.client.engine;
 
-import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
@@ -11,28 +10,20 @@ import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
 import org.integratedmodelling.common.distribution.DistributionImpl;
-import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
-import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
-import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
@@ -47,7 +38,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   private Pair<Identity, List<ServiceReference>> authData;
   private final List<UserScope> users = new ArrayList<>();
   private final String serviceId = Utils.Names.shortUUID();
-  private final Parameters<Setting> settings = Parameters.createSynchronized();
+  private final Settings settings = SettingsImpl.forEngine();
   private ServiceMonitor serviceMonitor;
   private final DistributionImpl distribution;
   private DistributionImpl developmentDistribution;
@@ -61,11 +52,11 @@ public class EngineImpl implements Engine, PropertyHolder {
       Consumer<Status> engineStatusMonitor,
       BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor) {
 
-    settings.put(Setting.POLLING, "on");
-    settings.put(Setting.POLLING_INTERVAL, 5);
-    settings.put(Setting.LOG_EVENTS, false);
-    settings.put(Setting.LAUNCH_PRODUCT, true);
-    settings.put(Setting.LOCAL_ONLY, false);
+    //    settings.put(Setting.POLLING, "on");
+    //    settings.put(Setting.POLLING_INTERVAL, 5);
+    //    settings.put(Setting.LOG_EVENTS, false);
+    //    settings.put(Setting.LAUNCH_PRODUCT, true);
+    //    settings.put(Setting.LOCAL_ONLY, false);
 
     if (DistributionImpl.isDevelopmentDistributionAvailable()) {
       this.developmentDistribution = new DevelopmentDistributionImpl();
@@ -246,7 +237,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   @Override
-  public Map<Setting, Object> getSettings() {
+  public Settings getSettings() {
     return settings;
   }
 }

@@ -11,7 +11,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 
-import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -19,11 +18,10 @@ import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -82,36 +80,36 @@ public class ResourcesClient extends ServiceClient
               });
 
   public static ResourcesClient create(
-      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+      URL url, Identity identity, Settings settings) {
     return new ResourcesClient(url, identity, settings);
   }
 
   public static ResourcesClient createOffline(
-      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+      URL url, Identity identity, Settings settings) {
     return new ResourcesClient(url, identity, settings, false);
   }
 
   public static ResourcesClient createLocal(
-      Identity identity, Parameters<Engine.Setting> settings) {
+      Identity identity, Settings settings) {
     return new ResourcesClient(Type.RESOURCES.localServiceUrl(), identity, settings);
   }
 
   public static ResourcesClient createLocalOffline(
-      Identity identity, Parameters<Engine.Setting> settings) {
+      Identity identity, Settings settings) {
     return new ResourcesClient(Type.RESOURCES.localServiceUrl(), identity, settings, false);
   }
 
   public ResourcesClient(
-      URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
+      URL url, Identity identity, KlabService owner, Settings settings) {
     super(Type.RESOURCES, url, identity, settings, owner);
   }
 
-  public ResourcesClient(URL url, Identity identity, Parameters<Engine.Setting> settings) {
+  public ResourcesClient(URL url, Identity identity, Settings settings) {
     super(Type.RESOURCES, url, identity, settings, true);
   }
 
   private ResourcesClient(
-      URL url, Identity identity, Parameters<Engine.Setting> settings, boolean connect) {
+      URL url, Identity identity, Settings settings, boolean connect) {
     super(Type.RESOURCES, url, identity, settings, connect);
   }
 

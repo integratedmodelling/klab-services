@@ -21,6 +21,11 @@ import java.util.List;
 public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider> {
 
     @Override
+    protected KlabService.Type serviceType() {
+        return KlabService.Type.RESOURCES;
+    }
+
+    @Override
     protected List<KlabService.Type> getEssentialServices() {
         return List.of();
     }

@@ -7,7 +7,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
-import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
@@ -16,11 +15,10 @@ import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -41,36 +39,36 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
   //  private GraphQLClient graphClient;
 
   public static RuntimeClient create(
-      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+      URL url, Identity identity, Settings settings) {
     return new RuntimeClient(url, identity, settings);
   }
 
   public static RuntimeClient createOffline(
-      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+      URL url, Identity identity, Settings settings) {
     return new RuntimeClient(url, identity, settings, false);
   }
 
-  public static RuntimeClient createLocal(Identity identity, Parameters<Engine.Setting> settings) {
+  public static RuntimeClient createLocal(Identity identity, Settings settings) {
     return new RuntimeClient(Type.RUNTIME.localServiceUrl(), identity, settings);
   }
 
   public static RuntimeClient createLocalOffline(
-      Identity identity, Parameters<Engine.Setting> settings) {
+      Identity identity, Settings settings) {
     return new RuntimeClient(Type.RUNTIME.localServiceUrl(), identity, settings, false);
   }
 
-  public RuntimeClient(URL url, Identity identity, Parameters<Engine.Setting> settings /*,
+  public RuntimeClient(URL url, Identity identity, Settings settings /*,
       BiConsumer<Channel, Message>... listeners*/) {
     super(Type.RUNTIME, url, identity, settings, true);
   }
 
   private RuntimeClient(
-      URL url, Identity identity, Parameters<Engine.Setting> settings, boolean connect) {
+      URL url, Identity identity, Settings settings, boolean connect) {
     super(Type.RUNTIME, url, identity, settings, connect);
   }
 
   public RuntimeClient(
-      URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
+      URL url, Identity identity, KlabService owner, Settings settings) {
     super(Type.RUNTIME, url, identity, settings, owner);
   }
 

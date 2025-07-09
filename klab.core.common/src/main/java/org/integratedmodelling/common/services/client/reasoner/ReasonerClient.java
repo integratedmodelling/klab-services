@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
@@ -19,9 +18,8 @@ import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -77,35 +75,35 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
               });
 
   public static ReasonerClient create(
-      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+      URL url, Identity identity, Settings settings) {
     return new ReasonerClient(url, identity, settings);
   }
 
   public static ReasonerClient createOffline(
-      URL url, Identity identity, Parameters<Engine.Setting> settings) {
+      URL url, Identity identity, Settings settings) {
     return new ReasonerClient(url, identity, settings, false);
   }
 
-  public static ReasonerClient createLocal(Identity identity, Parameters<Engine.Setting> settings) {
+  public static ReasonerClient createLocal(Identity identity, Settings settings) {
     return new ReasonerClient(Type.REASONER.localServiceUrl(), identity, settings);
   }
 
   public static ReasonerClient createLocalOffline(
-      Identity identity, Parameters<Engine.Setting> settings) {
+      Identity identity, Settings settings) {
     return new ReasonerClient(Type.REASONER.localServiceUrl(), identity, settings, false);
   }
 
   public ReasonerClient(
-      URL url, Identity identity, KlabService owner, Parameters<Engine.Setting> settings) {
+      URL url, Identity identity, KlabService owner, Settings settings) {
     super(Type.REASONER, url, identity, settings, owner);
   }
 
-  public ReasonerClient(URL url, Identity identity, Parameters<Engine.Setting> settings) {
+  public ReasonerClient(URL url, Identity identity, Settings settings) {
     super(Type.REASONER, url, identity, settings, true);
   }
 
   public ReasonerClient(
-      URL url, Identity identity, Parameters<Engine.Setting> settings, boolean connect) {
+      URL url, Identity identity, Settings settings, boolean connect) {
     super(Type.REASONER, url, identity, settings, connect);
   }
 

@@ -183,14 +183,7 @@
     </build>
 
     <repositories>
-        <!--<repository>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <name>Maven Central snapshots</name>
-            <id>ossrh</id>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-        </repository>-->
+        <!-- https://central.sonatype.org/publish/publish-portal-snapshots/#consuming-snapshot-releases-for-your-project -->
         <repository>
             <name>Central Portal Snapshots</name>
             <id>central-portal-snapshots</id>

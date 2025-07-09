@@ -17,7 +17,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
-import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
+import org.integratedmodelling.klab.api.configuration.Setting;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
@@ -25,14 +27,12 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.engine.ServiceMonitor;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Language;
@@ -44,8 +44,6 @@ import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 
@@ -74,7 +72,8 @@ public abstract class BaseService implements KlabService {
   private long bootTime = System.currentTimeMillis();
   private ServiceMonitor serviceMonitor;
 
-  protected Parameters<Engine.Setting> settingsForSlaveServices = Parameters.createSynchronized();
+  protected Settings settings;
+  protected Settings settingsForSlaveServices;
   private StampedLock lockFile;
 
   protected BaseService(
@@ -82,10 +81,14 @@ public abstract class BaseService implements KlabService {
       KlabService.Type serviceType,
       ServiceStartupOptions options) {
 
-    settingsForSlaveServices.put(Engine.Setting.POLLING, "on");
-    settingsForSlaveServices.put(Engine.Setting.POLLING_INTERVAL, 15);
-    settingsForSlaveServices.put(Engine.Setting.LOG_EVENTS, true);
-    settingsForSlaveServices.put(Engine.Setting.LAUNCH_PRODUCT, false);
+    settings = SettingsImpl.forService(serviceType);
+
+    settingsForSlaveServices = SettingsImpl.forSlaveServices(serviceType, settings);
+
+    settingsForSlaveServices.setIfUnset(Setting.POLLING, "on");
+    settingsForSlaveServices.setIfUnset(Setting.POLLING_INTERVAL, 15);
+    settingsForSlaveServices.setIfUnset(Setting.LOG_EVENTS, true);
+    settingsForSlaveServices.setIfUnset(Setting.LAUNCH_PRODUCT, false);
 
     this.scope = scope;
     this.type = serviceType;
@@ -130,6 +133,9 @@ public abstract class BaseService implements KlabService {
     return startupOptions;
   }
 
+  public Settings settings() {
+    return settings;
+  }
   /**
    * Each service creates a secret key and stores in a text file in its work directory. The service
    * key is created only if absent and remains the same across boot cycles. It is used to grant

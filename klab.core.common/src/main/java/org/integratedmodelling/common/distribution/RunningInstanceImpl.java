@@ -1,21 +1,20 @@
 package org.integratedmodelling.common.distribution;
 
-import org.apache.commons.exec.*;
-import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.klab.api.configuration.Configuration;
-import org.integratedmodelling.klab.api.engine.distribution.Build;
-import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
-import org.integratedmodelling.klab.api.engine.StartupOptions;
-import org.integratedmodelling.common.configuration.Settings;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.utils.Utils;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.commons.exec.*;
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
+import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.engine.StartupOptions;
+import org.integratedmodelling.klab.api.engine.distribution.Build;
+import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 public class RunningInstanceImpl implements RunningInstance {
 
@@ -60,26 +59,21 @@ public class RunningInstanceImpl implements RunningInstance {
     return ret.toArray(new String[ret.size()]);
   }
 
-  private int debugPort() {
-    // TODO link to product
-    return 8000;
-  }
-
   protected CommandLine getCommandLine(Scope scope) {
     //            /*
     //            create JavaOptions with StartupOptions, use it for createCommandLine in a new
     //            RunningInstanceImpl
     //             */
-    Settings settings = new Settings(build.getRelease());
+    Settings settings = SettingsImpl.forProduct(build.getRelease());
 
-    // load any customizations from the main k.LAB properties
-    settings.initialize(
-        getBuild().getRelease().getProduct(), Configuration.INSTANCE.getProperties());
+    //    // load any customizations from the main k.LAB properties
+    //    settings.initialize(
+    //        getBuild().getRelease().getProduct(), Configuration.INSTANCE.getProperties());
 
     CommandLine ret = new CommandLine(JreModel.INSTANCE.getJavaExecutable());
-    ret.addArguments(getJavaOptions(512, settings.getMaxEngineMemory().getValue(), isServer()));
+    ret.addArguments(getJavaOptions(512, getMaxEngineMemory(), isServer()));
     //
-    if (settings.isUseDebugParameters().getValue()) {
+    if (isUseDebugParameters()) {
       ret.addArgument(
           "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:"
               + getBuild().getRelease().getProduct().getProductType().getDebugPort());
@@ -119,6 +113,16 @@ public class RunningInstanceImpl implements RunningInstance {
     }
 
     return ret;
+  }
+
+  private boolean isUseDebugParameters() {
+    // TODO use settings
+    return true;
+  }
+
+  private int getMaxEngineMemory() {
+    // TODO use settings
+    return build.getProduct().getProductType().defaultMaxMemoryLimitMB();
   }
 
   private String getClassPath() {

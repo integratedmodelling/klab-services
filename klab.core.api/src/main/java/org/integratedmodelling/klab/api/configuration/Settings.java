@@ -1,18 +1,73 @@
-//package org.integratedmodelling.common.configuration;
+package org.integratedmodelling.klab.api.configuration;
+
+/**
+ * Holder and manager for Engine.Setting. Existing settings must be loaded on construction; only
+ * explicitly set values should be stored, and it must be possible to know if a setting was ever
+ * saved or the default is being used. Setting a value must automatically persist it. All set
+ * operations must be validated, and no null values for any setting are allowed. Implementations are
+ * responsible for storing in their preferred registry, which may change based on the application or
+ * service that is using the settings.
+ */
+public interface Settings {
+
+  /**
+   * Retrieve a setting. If not stored, the default will be returned. No null values are allowed.
+   *
+   * @param setting
+   * @param valueType this must correspond to the declared type for the setting. If not, an
+   *     exception will be thrown.
+   * @return
+   * @param <T>
+   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the value
+   *     class is not right for the setting.
+   */
+  <T> T get(Setting setting, Class<T> valueType);
+
+  /**
+   * Set and automatically persist the passed setting. The value will be validated against the value
+   * class for the setting.
+   *
+   * @param setting
+   * @param value
+   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the value
+   *     class is not right for the setting.
+   */
+  void set(Setting setting, Object value);
+
+  /**
+   * Like {@link #set(Setting, Object)} but only acting if a default has not already been
+   * overwritten by a stored specification.
+   *
+   * @param setting
+   * @param value
+   */
+  void setIfUnset(Setting setting, Object value);
+
+  /**
+   * Return true if the setting has been stored after being set explicitly, false if the default
+   * value is being used.
+   *
+   * @param setting
+   * @return
+   */
+  boolean isSet(Setting setting);
+}
+
+// package org.integratedmodelling.common.configuration;
 //
-//import org.integratedmodelling.klab.api.configuration.Configuration;
-//import org.integratedmodelling.klab.api.engine.distribution.Release;
-//import org.integratedmodelling.klab.api.engine.distribution.impl.ProductImpl;
+// import org.integratedmodelling.klab.api.configuration.Configuration;
+// import org.integratedmodelling.klab.api.engine.distribution.Release;
+// import org.integratedmodelling.klab.api.engine.distribution.impl.ProductImpl;
 //
-//import java.io.File;
-//import java.util.Properties;
+// import java.io.File;
+// import java.util.Properties;
 //
-///**
+/// **
 // * FIXME straight port from ControlCenter. This is for the Engine product. Revise for generality,
 // *  add "chapters" for services and applications, implement persistence using TOML or something
 // *  readable, and use key constants for extensibility.
 // */
-//public class Settings {
+// public class Settings {
 //
 //  // Keys for customizable parameters in k.LAB properties, prefixed by lowercase product type
 //  private final String DEBUG_CONFIGURATION_KEY_POSTFIX = ".debug.enabled";
@@ -109,11 +164,13 @@
 //  }
 //
 //  public Settings(File settingsFile) {
-//    // TODO read the file; if not existing or properties are missing, add all properties with their
+//    // TODO read the file; if not existing or properties are missing, add all properties with
+// their
 //    // defaults
 //  }
 //
-//  // TODO move to general settings with save/restore from configured file, and separate per service
+//  // TODO move to general settings with save/restore from configured file, and separate per
+// service
 //  // into chapters
 //  @Deprecated
 //  public Settings(Release release) {
@@ -616,10 +673,11 @@
 //
 //  public void initialize(ProductImpl product, Properties properties) {
 //
-//    var debugKey = product.getProductType().name().toLowerCase() + DEBUG_CONFIGURATION_KEY_POSTFIX;
+//    var debugKey = product.getProductType().name().toLowerCase() +
+// DEBUG_CONFIGURATION_KEY_POSTFIX;
 //
 //    if (properties.containsKey(debugKey)) {
 //      this.setUseDebugParameters(Boolean.parseBoolean(properties.getProperty(debugKey)));
 //    }
 //  }
-//}
+// }
