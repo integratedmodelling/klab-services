@@ -256,7 +256,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
       }
     }
-
   }
 
   @Override
@@ -1370,18 +1369,17 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     var searchField =
         switch (asset.getType()) {
-          case SCOPE -> "id";
-          case DATAFLOW -> "id";
-          case PROVENANCE -> null;
+          case SCOPE, ACTUATOR, PROVENANCE, DATAFLOW, DATA -> "id";
           case LINK -> null;
-          case ACTUATOR -> "id";
-          case ACTIVITY -> "urn";
-          case OBSERVATION -> "urn";
-          case SEMANTICS -> "urn";
-          case OBSERVABLE -> "urn";
-          case DATA -> "id";
+          case ACTIVITY, OBSERVATION, SEMANTICS, OBSERVABLE -> "urn";
         };
-    var searchValue = asset.getUrn();
+    var searchValue =
+        switch (asset.getType()) {
+          case SCOPE -> rootContextId;
+          case PROVENANCE -> rootContextId + ".PROVENANCE";
+          case DATAFLOW -> rootContextId + ".DATAFLOW";
+          default -> asset.getUrn();
+        };
 
     return Cypher.node(getLabel(asset.getType()))
         // TODO any conditions

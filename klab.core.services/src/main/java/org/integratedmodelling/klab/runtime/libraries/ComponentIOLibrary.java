@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.libraries;
 
 import org.apache.commons.codec.binary.Base16InputStream;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -126,7 +127,7 @@ public class ComponentIOLibrary {
       try {
         return new FileInputStream(component.sourceArchive());
       } catch (FileNotFoundException e) {
-        System.out.println("SUCA DIO CAN, CANNOT STREAM " + component.sourceArchive());
+        Logging.INSTANCE.error(e.getMessage(), e);
         // just return null;
       }
     }

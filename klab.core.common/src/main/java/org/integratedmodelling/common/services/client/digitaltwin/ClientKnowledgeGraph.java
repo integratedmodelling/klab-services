@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -213,8 +214,26 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
    * @param depth
    */
   public void focusAsset(RuntimeAsset asset, int depth) {
-    if (!catalog.containsKey(asset.getId())) {
-      // TODO dio can
+    synchronize(asset, depth);
+  }
+
+  private void synchronize(RuntimeAsset asset, int depth) {
+    catalog.put(asset.getId(), asset);
+    graph.addVertex(asset);
+    // TODO use all classes and relationships chosen and loop over them
+    var targetClass = Observation.class;
+    var targetRelationship = GraphModel.Relationship.HAS_CHILD;
+    var query = query(targetClass, scope).source(asset).along(targetRelationship).depth(1);
+    var observations = query.run(scope);
+    for (var observation : observations) {
+      if (!catalog.containsKey(observation.getId())) {
+        catalog.put(observation.getId(), observation);
+        graph.addVertex(observation);
+        graph.addEdge(asset, observation, new Relationship(targetRelationship, null));
+        if (depth > 0) {
+          synchronize(observation, depth - 1);
+        }
+      }
     }
   }
 

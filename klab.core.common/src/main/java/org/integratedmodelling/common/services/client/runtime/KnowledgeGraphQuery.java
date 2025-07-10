@@ -202,30 +202,33 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
   private Asset makeAsset(Object startingPoint) {
     var ret = new Asset();
     ret.type = AssetType.classify(startingPoint);
-    ret.urn =
-        switch (startingPoint) {
-          case Observation ignored -> ignored.getUrn();
-          case Actuator ignored -> ignored.getId() + "";
-          case Activity ignored -> ignored.getUrn();
-          case Observable ignored -> ignored.getUrn();
-          case KimObservable ignored -> ignored.getUrn();
-          case Concept ignored -> ignored.getUrn();
-          case KimConcept ignored -> ignored.getUrn();
-          case ServiceSideScope ignored ->
-              ignored instanceof ContextScope contextScope
-                      && contextScope.getContextObservation() != null
-                  ? contextScope.getContextObservation().getUrn()
-                  : ignored.getId();
-          case ClientContextScope ignored ->
-              ignored.getContextObservation() == null
-                  ? ignored.getId()
-                  : ignored.getContextObservation().getUrn();
-          case Storage.Buffer ignored -> ignored.getId() + "";
-          default -> null;
-        };
-
-    if (ret.urn == null) {
-      throw new KlabIllegalStateException("Unresolved asset passed to a query");
+    if (ret.type != AssetType.SCOPE
+        && ret.type != AssetType.DATAFLOW
+        && ret.type != AssetType.PROVENANCE) {
+      ret.urn =
+          switch (startingPoint) {
+            case Observation ignored -> ignored.getUrn();
+            case Actuator ignored -> ignored.getId() + "";
+            case Activity ignored -> ignored.getUrn();
+            case Observable ignored -> ignored.getUrn();
+            case KimObservable ignored -> ignored.getUrn();
+            case Concept ignored -> ignored.getUrn();
+            case KimConcept ignored -> ignored.getUrn();
+            case ServiceSideScope ignored ->
+                ignored instanceof ContextScope contextScope
+                        && contextScope.getContextObservation() != null
+                    ? contextScope.getContextObservation().getUrn()
+                    : ignored.getId();
+            case ClientContextScope ignored ->
+                ignored.getContextObservation() == null
+                    ? ignored.getId()
+                    : ignored.getContextObservation().getUrn();
+            case Storage.Buffer ignored -> ignored.getId() + "";
+            default -> null;
+          };
+      if (ret.urn == null) {
+        throw new KlabIllegalStateException("Unresolved asset passed to a query");
+      }
     }
     return ret;
   }
