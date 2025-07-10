@@ -149,6 +149,10 @@ public interface DigitalTwin extends RuntimeAsset {
     static ConfigurationBuilder builder(Configuration config) {
       return new ConfigurationBuilder(config);
     }
+
+    String getDescription();
+
+    void defineFromExisting(Configuration descriptor);
   }
 
   /**

@@ -48,6 +48,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
       DigitalTwin.Configuration configuration) {
     super(parent, configuration.getName(), runtimeService);
     this.configuration = configuration;
+    this.name = configuration.getName();
     resolutionConstraints.put(
         ResolutionConstraint.Type.Provenance,
         ResolutionConstraint.of(
