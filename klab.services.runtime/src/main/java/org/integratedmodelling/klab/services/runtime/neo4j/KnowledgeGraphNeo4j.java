@@ -1195,6 +1195,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                           + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
                               "{id}", context.get("id").toString())))
               .id(contextInfo.getId())
+              .name(contextInfo.getName())
               .serverUrl(scope.getService(RuntimeService.class).getUrl())
               .persistence(Persistence.valueOf(context.get("expiration").toString()))
               .build()
