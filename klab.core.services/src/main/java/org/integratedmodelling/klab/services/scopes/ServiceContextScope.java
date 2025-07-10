@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
+import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
@@ -173,6 +174,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     /*
      * TODO choose the services if this context or user requires specific ones
      */
+  }
+
+  @Override
+  public void setId(String id) {
+    super.setId(id);
+    if (this.configuration instanceof ConfigurationImpl configurationImpl) {
+      configurationImpl.setId(id);
+    }
   }
 
   @Override
