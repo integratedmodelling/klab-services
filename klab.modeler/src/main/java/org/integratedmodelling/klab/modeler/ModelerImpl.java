@@ -2,10 +2,7 @@ package org.integratedmodelling.klab.modeler;
 
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import org.integratedmodelling.common.logging.Logging;
@@ -66,11 +63,11 @@ import org.springframework.util.MultiValueMap;
 public class ModelerImpl extends AbstractUIController implements Modeler, PropertyHolder {
 
   private ContextScope currentContext;
-  private SessionScope currentSession;
+  //  private SessionScope currentSession;
   // There should only be one "raw" user session as a principle, the others should be
   // apps/scripts/testcases
   private List<SessionScope> sessions = new ArrayList<>();
-  private MultiValueMap<SessionScope, ContextScope> contexts = new LinkedMultiValueMap<>();
+  private Map<String, ContextScope> contexts = new LinkedHashMap();
 
   EngineConfiguration workbench;
   File workbenchDefinition;
@@ -391,44 +388,45 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             });
   }
 
-  @Override
+  //  @Override
   public ContextScope openNewContext(DigitalTwin.Configuration configuration) {
-    if (currentSession == null) {
-      return null;
+    //    if (currentSession == null) {
+    //      return null;
+    //    }
+    var runtimeService = user().getService(RuntimeService.class);
+    if (runtimeService == null) {
+      throw new KlabAuthorizationException("Cannot create a context without a runtime service");
     }
-    var ret = currentSession.createContext(configuration);
+    var ret = user().getUserSession(runtimeService).createContext(configuration);
     if (ret != null) {
-      contexts.add(currentSession, ret);
-      dispatch(
-          this.getController(),
-          UIEvent.ContextCreated,
-          ret,
-          scope().getService(RuntimeService.class));
+      contexts.put(ret.getId(), ret);
+      dispatch(this.getController(), UIEvent.ContextCreated, ret, runtimeService);
     }
     return ret;
   }
 
-  @Override
-  public SessionScope openNewSession(String sessionName) {
-    // HERE check out the services. A default session should be on a local service, so use that if
-    // available (with an info message). Otherwise the service should be specified and an error
-    // should be sent for notification.
-    var ret =
-        user()
-            .getUserSession(
-                user()
-                    .getService(
-                        RuntimeService.class,
-                        // try 1: local service if available
-                        s -> Utils.URLs.isLocalHost(s.getUrl()),
-                        // try 2: first remote service that allows creating DTs
-                        s ->
-                            s.capabilities(user())
-                                .getPermissions()
-                                .contains(CRUDOperation.CREATE)));
-    this.sessions.add(ret);
-    return ret;
-  }
+  //  @Override
+  //  public SessionScope openNewSession(String sessionName) {
+  //    // HERE check out the services. A default session should be on a local service, so use that
+  // if
+  //    // available (with an info message). Otherwise the service should be specified and an error
+  //    // should be sent for notification.
+  //    var ret =
+  //        user()
+  //            .getUserSession(
+  //                user()
+  //                    .getService(
+  //                        RuntimeService.class,
+  //                        // try 1: local service if available
+  //                        s -> Utils.URLs.isLocalHost(s.getUrl()),
+  //                        // try 2: first remote service that allows creating DTs
+  //                        s ->
+  //                            s.capabilities(user())
+  //                                .getPermissions()
+  //                                .contains(CRUDOperation.CREATE)));
+  //    this.sessions.add(ret);
+  //    return ret;
+  //  }
 
   @Override
   public List<SessionScope> getOpenSessions() {
@@ -437,7 +435,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   @Override
   public List<ContextScope> getOpenContexts() {
-    return new ArrayList<>(contexts.get(currentSession));
+    return new ArrayList<>(contexts.values());
   }
 
   @Override
@@ -451,14 +449,15 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     if (currentUser() == null) {
       throw new KlabAuthorizationException("Cannot make observations with an invalid user");
     }
-    if (currentSession == null) {
-      // TODO use openOrCreateUserSession () for a user-specific single raw session. Session should
-      // have
-      //  the user's name
-      currentSession = currentUser().getUserSession(user().getService(RuntimeService.class));
-    }
+    //    if (currentSession == null) {
+    //      // TODO use openOrCreateUserSession () for a user-specific single raw session. Session
+    // should
+    //      // have
+    //      //  the user's name
+    //      currentSession = currentUser().getUserSession(user().getService(RuntimeService.class));
+    //    }
 
-    if (currentContext == null && currentSession != null) {
+    if (currentContext == null) {
       currentContext =
           openNewContext(defaultDigitalTwinConfiguration("Digital Twin " + (++contextCount)));
     }
@@ -479,32 +478,32 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         .build();
   }
 
-  @Override
-  public SessionScope getCurrentSession() {
-    return currentSession;
-  }
+  //  @Override
+  //  public SessionScope getCurrentSession() {
+  //    return currentSession;
+  //  }
 
   @Override
   public void setCurrentContext(ContextScope context) {
-    if (context != null
-        && (this.currentSession == null
-            || !this.currentSession.equals(
-                context.getParentScope(Scope.Type.SESSION, SessionScope.class)))) {
-      throw new KlabIllegalArgumentException(
-          "Cannot set context: argument is not part of the current" + " session");
-    }
+//    if (context != null
+//        && (this.currentSession == null
+//            || !this.currentSession.equals(
+//                context.getParentScope(Scope.Type.SESSION, SessionScope.class)))) {
+//      throw new KlabIllegalArgumentException(
+//          "Cannot set context: argument is not part of the current" + " session");
+//    }
     this.currentContext = context;
   }
 
-  @Override
-  public void setCurrentService(KlabService service) {
-    // TODO
-  }
-
-  @Override
-  public void setCurrentSession(SessionScope session) {
-    this.currentSession = session;
-  }
+  //  @Override
+  //  public void setCurrentService(KlabService service) {
+  //    // TODO
+  //  }
+  //
+  //  @Override
+  //  public void setCurrentSession(SessionScope session) {
+  //    this.currentSession = session;
+  //  }
 
   @Override
   public void importProject(String workspaceName, String projectUrl, boolean overwriteExisting) {
@@ -760,9 +759,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     if (currentContext != null) {
       return currentContext;
     }
-    if (currentSession != null) {
-      return currentSession;
-    }
+//    if (currentSession != null) {
+//      return currentSession;
+//    }
     return user();
   }
 }

@@ -227,7 +227,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
             default -> null;
           };
       if (ret.urn == null) {
-        throw new KlabIllegalStateException("Unresolved asset passed to a query");
+        throw new KlabIllegalStateException("Unresolved asset passed to a query: " + startingPoint);
       }
     }
     return ret;

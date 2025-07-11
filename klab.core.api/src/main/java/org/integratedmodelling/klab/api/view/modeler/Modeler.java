@@ -54,6 +54,7 @@ public interface Modeler extends UIController {
    */
   UserScope authenticate();
 
+  @Deprecated
   Distribution.Status getDistributionStatus();
 
   /**
@@ -105,12 +106,12 @@ public interface Modeler extends UIController {
    */
   List<ContextScope> getOpenContexts();
 
-  /**
-   * Return the current session, or null if none is current.
-   *
-   * @return
-   */
-  SessionScope getCurrentSession();
+//  /**
+//   * Return the current session, or null if none is current.
+//   *
+//   * @return
+//   */
+//  SessionScope getCurrentSession();
 
   /**
    * Return the current context scope if set, or create a default session and a default digital twin
@@ -127,37 +128,37 @@ public interface Modeler extends UIController {
    */
   ContextScope getCurrentContext();
 
-  /**
-   * Create a new session in the current runtime service and make it current.
-   *
-   * @param sessionName
-   * @return
-   */
-  SessionScope openNewSession(String sessionName);
+//  /**
+//   * Create a new session in the current runtime service and make it current.
+//   *
+//   * @param sessionName
+//   * @return
+//   */
+//  SessionScope openNewSession(String sessionName);
 
-  /**
-   * Create a new context and make it current. Throw an exception if there is no current session.
-   *
-   * @param configuration
-   * @return
-   */
-  ContextScope openNewContext(DigitalTwin.Configuration configuration);
+//  /**
+//   * Create a new context and make it current. Throw an exception if there is no current session.
+//   *
+//   * @param configuration
+//   * @return
+//   */
+//  ContextScope openNewContext(DigitalTwin.Configuration configuration);
 
-  /**
-   * Make the passed session the current one.
-   *
-   * @param session
-   */
-  void setCurrentSession(SessionScope session);
+//  /**
+//   * Make the passed session the current one.
+//   *
+//   * @param session
+//   */
+//  void setCurrentSession(SessionScope session);
 
-  /**
-   * Set the passed service as the current one. The state of the modeler will change according to
-   * the type of service selected, modifying the sessions/contexts if the service is a runtime, the
-   * workspaces if a resources service, etc.
-   *
-   * @param service
-   */
-  void setCurrentService(KlabService service);
+//  /**
+//   * Set the passed service as the current one. The state of the modeler will change according to
+//   * the type of service selected, modifying the sessions/contexts if the service is a runtime, the
+//   * workspaces if a resources service, etc.
+//   *
+//   * @param service
+//   */
+//  void setCurrentService(KlabService service);
 
   /**
    * Return the innermost current scope available.

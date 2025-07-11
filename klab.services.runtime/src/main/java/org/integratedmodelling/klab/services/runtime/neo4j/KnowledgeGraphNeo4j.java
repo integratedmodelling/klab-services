@@ -112,6 +112,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               + "$timestamp, "
               + "rights: $rights, "
               + "federation: $federation, "
+              + "description: $description, "
               + "lastUpdate: $lastUpdate, "
               + "expiration: $expirationType}),\n"
               + "\t// main provenance and dataflow nodes\n"
@@ -303,7 +304,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   /** Ensure things are OK re: main agents and the like. Must be called only once */
   protected void initializeContext(
-      String scopeId, String name, UserScope scope, ResourcePrivileges rights) {
+      String scopeId, String name, UserScope scope, ResourcePrivileges rights, String description) {
 
     this.rootContextId = scopeId;
     this.userScope = scope;
@@ -342,6 +343,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 timestamp,
                 "federation",
                 (federation == null ? "" : federation.getId()),
+                "description",
+                (description == null ? "No description given" : federation.getId()),
                 "lastUpdate",
                 System.currentTimeMillis(),
                 "username",
@@ -1185,6 +1188,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       contextInfo.setCreationTime((Long) context.get("created"));
       contextInfo.setName(context.get("name").toString());
       contextInfo.setUser(context.get("user").toString());
+      contextInfo.setDescription(context.get("description").toString());
       contextInfo.setServiceId(serviceId);
 
       contextInfo.setConfiguration(
