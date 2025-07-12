@@ -22,7 +22,6 @@ public abstract class AbstractDelegatingScope implements Scope {
   Parameters<String> data = Parameters.create();
   Status status = Status.EMPTY;
   Scope parentScope;
-  private Persistence persistence = Persistence.SERVICE_SHUTDOWN;
 
   public AbstractDelegatingScope(Channel delegateChannel) {
     this.delegateChannel = delegateChannel;
@@ -111,30 +110,10 @@ public abstract class AbstractDelegatingScope implements Scope {
     delegateChannel.event(message);
   }
 
-  //  @Override
-  //  public String onEvent(
-  //      Message.MessageClass messageClass,
-  //      Message.MessageType messageType,
-  //      Consumer<Message> runnable,
-  //      Object... matchArguments) {
-  //    return delegateChannel.onEvent(messageClass, messageType, runnable, matchArguments);
-  //  }
-
   @Override
   public void unregisterMessageListener(String listenerId) {
     delegateChannel.unregisterMessageListener(listenerId);
   }
-
-//  @Override
-//  public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
-//    for (var service : getServices(serviceClass)) {
-//      if (serviceId.equals(service.serviceId())) {
-//        return service;
-//      }
-//    }
-//    throw new KlabResourceAccessException(
-//        "cannot find service with ID=" + serviceId + " in the scope");
-//  }
 
   @Override
   public void ui(Message message) {
@@ -143,15 +122,6 @@ public abstract class AbstractDelegatingScope implements Scope {
 
   public Scope getParentScope() {
     return parentScope;
-  }
-
-  @Override
-  public Persistence getPersistence() {
-    return persistence;
-  }
-
-  public void setExpiration(Persistence expiration) {
-    this.persistence = expiration;
   }
 
   @Override

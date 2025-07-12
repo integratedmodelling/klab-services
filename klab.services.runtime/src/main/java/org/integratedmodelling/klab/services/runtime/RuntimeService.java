@@ -148,7 +148,8 @@ public class RuntimeService extends BaseService
     /** Close every scope that's scheduled for closing at service shutdown */
     for (var scope : getScopeManager().getScopes(Scope.Type.CONTEXT, ContextScope.class)) {
       if (scope instanceof ServiceContextScope serviceContextScope
-          && serviceContextScope.getPersistence() == Persistence.SERVICE_SHUTDOWN) {
+          && serviceContextScope.getConfiguration().getPersistence()
+              == Persistence.SERVICE_SHUTDOWN) {
         scope.send(
             Message.MessageClass.SessionLifecycle,
             Message.MessageType.ContextClosed,

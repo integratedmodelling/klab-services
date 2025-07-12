@@ -98,7 +98,7 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
 
   private void configureDatabase() {
 
-    // TODO all the needed indices
+    // TODO all the needed indices!
 
     //        IndexDefinition usernamesIndex;
     //        try ( Transaction tx = graphDb.beginTx() )
@@ -153,7 +153,8 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
         digitalTwinConfig.getName(),
         userScope,
         digitalTwinConfig.getAccessRights(),
-        digitalTwinConfig.getDescription());
+        digitalTwinConfig.getDescription(),
+        digitalTwinConfig.getPersistence());
 
     return ret;
   }

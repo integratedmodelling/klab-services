@@ -304,7 +304,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   /** Ensure things are OK re: main agents and the like. Must be called only once */
   protected void initializeContext(
-      String scopeId, String name, UserScope scope, ResourcePrivileges rights, String description) {
+      String scopeId,
+      String name,
+      UserScope scope,
+      ResourcePrivileges rights,
+      String description,
+      Persistence persistence) {
 
     this.rootContextId = scopeId;
     this.userScope = scope;
@@ -320,11 +325,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       this.klab = getOrCreateAgent("k.LAB", "AI");
       this.user = getOrCreateAgent(scope.getUser().getUsername(), "USER");
 
-      //      var username = scope.getUser().getUsername();
       var federation = Klab.INSTANCE.getFederationData(scope.getUser());
-      //      if (federation != null) {
-      //        username += "@" + federation.getId();
-      //      }
       if (rights == null) {
         rights = ResourcePrivileges.create(scope);
       }
@@ -350,7 +351,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 "username",
                 scope.getUser().getUsername(),
                 "expirationType",
-                scope.getPersistence().name(),
+                persistence.name(),
                 "activityId",
                 activityId),
             scope);

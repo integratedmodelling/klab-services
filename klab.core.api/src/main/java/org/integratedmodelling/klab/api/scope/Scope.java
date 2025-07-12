@@ -11,8 +11,9 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 /**
  * The scope is a communication channel that holds all information about the knowledge environment
  * in the service. That includes other services, which must be set into the scope in either an
- * embedded or client implementation and are made available through {@link #getService(Class)}. A
- * scope of the appropriate class are a required argument to most calls in the k.LAB API.
+ * embedded or client implementation and are made available through {@link #getService(Class,
+ * Predicate[])}. A scope of the appropriate class are a required argument to most calls in the
+ * k.LAB API.
  *
  * <p>There are three major classes of scope: authentication produces a {@link UserScope}, which can
  * spawn sessions and applications as "child" {@link SessionScope}s. Within these, {@link
@@ -42,10 +43,6 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
  * suitable RPC mechanism (the reference implementation uses AMPQ messaging and separate queues for
  * different event streams). The RPC mechanism is crucial to connect observation scopes into
  * distributed digital twins.
- *
- * <p>Scopes expire according to their expiration type returned by {@link #getPersistence()}.
- * Services are configured to define the details and may refuse scope creation requests that require
- * unsupported expiration types.
  *
  * @author Ferd
  */
@@ -81,13 +78,13 @@ public interface Scope extends Channel {
     }
   }
 
-  /**
-   * The expiration type for the scope. The details (e.g. the idle time) depend on service
-   * configuration.
-   *
-   * @return
-   */
-  Persistence getPersistence();
+//  /**
+//   * The expiration type for the scope. The details (e.g. the idle time) depend on service
+//   * configuration.
+//   *
+//   * @return
+//   */
+//  Persistence getPersistence();
 
   /**
    * All scope except a {@link UserScope} have a non-null parent scope. A {@link ContextScope} is
