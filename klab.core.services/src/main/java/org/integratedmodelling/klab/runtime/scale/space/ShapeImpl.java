@@ -5,6 +5,7 @@ import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.geometry.jts.WKBReader;
 import org.geotools.referencing.CRS;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -415,8 +416,9 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         geometry = new WKBReader().read(WKBReader.hexToBytes(s));
       }
     } catch (ParseException e) {
-      throw new KlabValidationException(
-          "error parsing " + (wkt ? "WKT" : "WBT") + ": " + e.getMessage());
+      Logging.INSTANCE.error(
+          new KlabValidationException("error parsing " + (wkt ? "WKT" : "WBT") + ": " + s));
+      setShape(List.of(1L));
     }
 
     this.projection = new ProjectionImpl(pcode);

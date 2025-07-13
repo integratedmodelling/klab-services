@@ -1,16 +1,15 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import org.integratedmodelling.common.authentication.Authentication;
+import javax.annotation.Nullable;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
@@ -51,8 +50,6 @@ import org.integratedmodelling.klab.runtime.storage.BufferImpl;
 import org.neo4j.cypherdsl.core.*;
 import org.neo4j.driver.*;
 import org.neo4j.driver.exceptions.TransientException;
-
-import javax.annotation.Nullable;
 
 /**
  * TODO check spatial queries:
@@ -345,7 +342,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 "federation",
                 (federation == null ? "" : federation.getId()),
                 "description",
-                (description == null ? "No description given" : federation.getId()),
+                (description == null ? "No description given" : description),
                 "lastUpdate",
                 System.currentTimeMillis(),
                 "username",
