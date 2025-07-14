@@ -26,11 +26,6 @@ public enum ResourceTransport {
   private final Map<String, List<Schema>> importSchemata = new HashMap<>();
   private final Map<String, List<Schema>> exportSchemata = new HashMap<>();
 
-  //    public Schema COMPONENT_MAVEN;
-  //    public Schema COMPONENT_JAR;
-  //    public Schema PROJECT_ZIP;
-  //    public Schema PROJECT_GIT;
-
   /**
    * A resource import schema. Each resource type may admit one or more. A few schemata are
    * predefined
