@@ -4,6 +4,7 @@ import java.util.*;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -51,6 +52,10 @@ public enum ClientScopeManager {
    */
   public ContextScope getContextScope(
       DigitalTwin.Configuration configuration, boolean createIfMissing, UserScope requestingScope) {
+
+    if (configuration.getId() == null) {
+      throw new KlabIllegalStateException("Cannot connect to remote scope: missing scope ID");
+    }
 
     if (scopes.containsKey(configuration.getId())
         && scopes.get(configuration.getId()) instanceof ContextScope) {

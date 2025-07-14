@@ -99,16 +99,16 @@ public enum KlabCLI {
   private String getContextPrompt() {
     String ret = null;
     if (modeler.getCurrentContext() != null) {
-      ret = modeler.getCurrentSession().getName() + "/" + modeler.getCurrentContext().getName();
+      ret = /*modeler.user().getUserSession().getName() + "/" + */modeler.getCurrentContext().getName();
       if (modeler.getCurrentContext().getContextObservation() != null) {
         ret += "/" + modeler.getCurrentContext().getContextObservation().getName();
       }
       if (modeler.getCurrentContext().getObserver() != null) {
         ret = modeler.getCurrentContext().getObserver().getName() + "@" + ret;
       }
-    } else if (modeler.getCurrentSession() != null) {
+    } /*else if (modeler.getCurrentSession() != null) {
       ret = modeler.getCurrentSession().getName();
-    }
+    }*/
     return ret;
   }
 
@@ -813,10 +813,10 @@ public enum KlabCLI {
       Scope scope =
           modeler == null
               ? null
-              : (modeler.getCurrentSession() == null
+              : (/*modeler.getCurrentSession() == null
                   ? modeler.user()
-                  : (modeler.getCurrentContext() == null
-                      ? modeler.getCurrentSession()
+                  : */(modeler.getCurrentContext() == null
+                      ? /*modeler.getCurrentSession()*/ null
                       : modeler.getCurrentContext()));
       // context setting
       if (scope == null) {
@@ -833,13 +833,13 @@ public enum KlabCLI {
 
       } else if (scope.getType() == Scope.Type.SESSION) {
         modeler.setCurrentContext(null);
-        modeler.setCurrentSession(null);
+//        modeler.setCurrentSession(null);
         printContextInfo(1);
       }
 
     } else if (line.startsWith("<<")) {
       this.modeler.setCurrentContext(null);
-      this.modeler.setCurrentSession(null);
+//      this.modeler.setCurrentSession(null);
     } else if (line.startsWith("<")) {
       // must have something after the <
     } else if (line.startsWith(">")) {
@@ -864,9 +864,9 @@ public enum KlabCLI {
     var currentContext = user();
     if (modeler.getCurrentContext() != null) {
       currentContext = modeler.getCurrentContext();
-    } else if (modeler.getCurrentSession() != null) {
+    }/* else if (modeler.getCurrentSession() != null) {
       currentContext = modeler.getCurrentSession();
-    }
+    }*/
 
     if (currentContext == null) {
       INSTANCE.commandLine.getOut().println("No context");
@@ -919,12 +919,12 @@ public enum KlabCLI {
   }
 
   private void printContextInfo(int depth) {
-    if (modeler != null && modeler.getCurrentSession() != null) {
-      INSTANCE
-          .commandLine
-          .getOut()
-          .println(
-              Ansi.AUTO.string("Session: @|green " + modeler.getCurrentSession().getName() + "|@"));
+    if (modeler != null/* && modeler.getCurrentSession() != null*/) {
+//      INSTANCE
+//          .commandLine
+//          .getOut()
+//          .println(
+//              Ansi.AUTO.string("Session: @|green " + modeler.getCurrentSession().getName() + "|@"));
       if (modeler.getCurrentContext() != null) {
         INSTANCE
             .commandLine

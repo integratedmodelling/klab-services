@@ -38,13 +38,11 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
   //  private GraphQLClient graphClient;
 
-  public static RuntimeClient create(
-      URL url, Identity identity, Settings settings) {
+  public static RuntimeClient create(URL url, Identity identity, Settings settings) {
     return new RuntimeClient(url, identity, settings);
   }
 
-  public static RuntimeClient createOffline(
-      URL url, Identity identity, Settings settings) {
+  public static RuntimeClient createOffline(URL url, Identity identity, Settings settings) {
     return new RuntimeClient(url, identity, settings, false);
   }
 
@@ -52,8 +50,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     return new RuntimeClient(Type.RUNTIME.localServiceUrl(), identity, settings);
   }
 
-  public static RuntimeClient createLocalOffline(
-      Identity identity, Settings settings) {
+  public static RuntimeClient createLocalOffline(Identity identity, Settings settings) {
     return new RuntimeClient(Type.RUNTIME.localServiceUrl(), identity, settings, false);
   }
 
@@ -62,13 +59,11 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     super(Type.RUNTIME, url, identity, settings, true);
   }
 
-  private RuntimeClient(
-      URL url, Identity identity, Settings settings, boolean connect) {
+  private RuntimeClient(URL url, Identity identity, Settings settings, boolean connect) {
     super(Type.RUNTIME, url, identity, settings, connect);
   }
 
-  public RuntimeClient(
-      URL url, Identity identity, KlabService owner, Settings settings) {
+  public RuntimeClient(URL url, Identity identity, KlabService owner, Settings settings) {
     super(Type.RUNTIME, url, identity, settings, owner);
   }
 
@@ -297,10 +292,14 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         ClientScopeManager.INSTANCE.register(sessionScope);
       }
 
+      // Add the known data that are null; notify for anything that isn't and differs.
+      configuration.defineFromExisting(descriptor);
+
       ret =
           new ClientContextScope(sessionScope, this, configuration) {
             @Override
-            public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
+            public <T extends KlabService> T getService(
+                Class<T> serviceClass, Predicate<T>... selectors) {
               return RuntimeService.class.equals(serviceClass)
                   ? (T) service
                   : userScope.getService(serviceClass, selectors);
@@ -313,8 +312,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
                   : userScope.getServices(serviceClass);
             }
           };
-      ret.setId(configuration.getId());
-      ret.createDigitalTwin(configuration.getId());
+      ret.setId(descriptor.getId());
+      ret.createDigitalTwin(descriptor.getId());
       // fill in enough content to show at depth 2. TODO this should be moved to the UI, depth 1
       //  should be enough here
       ret.getDigitalTwin().getKnowledgeGraph().focusAsset(RuntimeAsset.CONTEXT_ASSET, 2);

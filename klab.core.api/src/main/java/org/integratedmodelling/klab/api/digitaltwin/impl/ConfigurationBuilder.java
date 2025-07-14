@@ -29,6 +29,7 @@ public class ConfigurationBuilder {
   private List<Notification> notifications = new ArrayList<>();
   private boolean createWhenAbsent;
   private String serviceId;
+  private String description;
 
   public ConfigurationBuilder() {}
 
@@ -47,8 +48,8 @@ public class ConfigurationBuilder {
   }
 
   /**
-   * Build a scope from a digital twin URL. The ID may not mention the session, which will be
-   * added according to conventions.
+   * Build a scope from a digital twin URL. The ID may not mention the session, which will be added
+   * according to conventions.
    *
    * @param url
    * @param scope
@@ -122,7 +123,7 @@ public class ConfigurationBuilder {
   }
 
   public ConfigurationBuilder serviceId(String id) {
-    this.serviceId= id;
+    this.serviceId = id;
     return this;
   }
 
@@ -138,6 +139,11 @@ public class ConfigurationBuilder {
 
   public ConfigurationBuilder withNotification(Notification notification) {
     this.notifications.add(notification);
+    return this;
+  }
+
+  public ConfigurationBuilder description(String description) {
+    this.description = description;
     return this;
   }
 
@@ -158,6 +164,8 @@ public class ConfigurationBuilder {
         this.url,
         this.serverUrl,
         this.notifications,
-        this.createWhenAbsent, this.serviceId);
+        this.createWhenAbsent,
+        this.serviceId,
+        this.description);
   }
 }

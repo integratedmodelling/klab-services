@@ -202,10 +202,10 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
 
       boolean isSession = false;
       Channel context = KlabCLI.INSTANCE.modeler().getCurrentContext();
-      if (context == null) {
-        context = KlabCLI.INSTANCE.modeler().getCurrentSession();
-        isSession = true;
-      }
+//      if (context == null) {
+//        context = KlabCLI.INSTANCE.modeler().getCurrentSession();
+//        isSession = true;
+//      }
 
       if (context == null) {
         err.println("No current context or session.");
@@ -227,9 +227,9 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
                 + "data have been deleted");
 
         KlabCLI.INSTANCE.modeler().setCurrentContext(null);
-        if (isSession) {
-          KlabCLI.INSTANCE.modeler().setCurrentSession(null);
-        }
+//        if (isSession) {
+//          KlabCLI.INSTANCE.modeler().setCurrentSession(null);
+//        }
       }
     }
   }
@@ -309,7 +309,7 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
 
         // select the session with the passed number or name/ID
         if (selected != null) {
-          KlabCLI.INSTANCE.modeler().setCurrentSession(selected);
+//          KlabCLI.INSTANCE.modeler().setCurrentSession(selected);
           out.println(
               CommandLine.Help.Ansi.AUTO.string(
                   "@|green Session " + displaySession(selected) + "selected|@ "));
@@ -342,10 +342,10 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
             "__NULL__".equals(this.sessionName)
                 ? ("Session " + (KlabCLI.INSTANCE.modeler().getOpenSessions().size() + 1))
                 : this.sessionName;
-        var ret = KlabCLI.INSTANCE.modeler().openNewSession(sessionName);
-        out.println(
-            CommandLine.Help.Ansi.AUTO.string("@|green New session " + displaySession(ret))
-                + " created|@");
+//        var ret = KlabCLI.INSTANCE.modeler().openNewSession(sessionName);
+//        out.println(
+//            CommandLine.Help.Ansi.AUTO.string("@|green New session " + displaySession(ret))
+//                + " created|@");
       }
     }
   }
@@ -368,10 +368,10 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
       PrintWriter out = commandSpec.commandLine().getOut();
       var context = KlabCLI.INSTANCE.user().connect(url);
       if (context != null) {
-        KlabCLI.INSTANCE.modeler().setCurrentContext(context);
-        KlabCLI.INSTANCE
-            .modeler()
-            .setCurrentSession(context.getParentScope(Scope.Type.SESSION, SessionScope.class));
+//        KlabCLI.INSTANCE.modeler().setCurrentContext(context);
+//        KlabCLI.INSTANCE
+//            .modeler()
+//            .setCurrentSession(context.getParentScope(Scope.Type.SESSION, SessionScope.class));
         out.println(
             CommandLine.Help.Ansi.AUTO.string(
                 "@|green Context " + context.getName() + " connected|@"));

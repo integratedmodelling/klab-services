@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api.digitaltwin.impl;
 
-import java.net.NoRouteToHostException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +28,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private List<Notification> notifications = new ArrayList<>();
   private boolean createWhenAbsent;
   private String serviceId;
+  private String description;
 
   // for the object mapper, do not remove
   ConfigurationImpl() {}
@@ -43,7 +43,9 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
       URL url,
       URL serviceUrl,
       List<Notification> notifications,
-      boolean createWhenAbsent, String serviceId) {
+      boolean createWhenAbsent,
+      String serviceId,
+      String description) {
     this.accessRights = accessRights;
     this.persistence = persistence;
     this.name = name;
@@ -55,6 +57,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
     this.notifications.addAll(notifications);
     this.createWhenAbsent = createWhenAbsent;
     this.serviceId = serviceId;
+    this.description = description;
   }
 
   @Override
@@ -218,5 +221,60 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
 
   public void setServiceId(String serviceId) {
     this.serviceId = serviceId;
+  }
+
+  @Override
+  public String getDescription() {
+    return description;
+  }
+
+  @Override
+  public void defineFromExisting(DigitalTwin.Configuration descriptor) {
+    if (descriptor.getAccessRights() != null) {
+      this.accessRights = descriptor.getAccessRights();
+      if (this.accessRights != null
+          && !this.accessRights.toString().equals(descriptor.getAccessRights().toString())) {
+        notifications.add(
+            Notification.warning("Existing access rights do not match those requested"));
+      }
+    }
+    if (descriptor.getPersistence() != null) {
+      this.persistence = descriptor.getPersistence();
+      if (this.persistence != null && this.persistence != descriptor.getPersistence()) {
+        notifications.add(
+            Notification.warning("Existing persistence settings do not match those requested"));
+      }
+    }
+    if (descriptor.getName() != null) {
+      this.name = descriptor.getName();
+      if (this.name != null && !this.name.equals(descriptor.getName())) {
+        notifications.add(Notification.warning("Existing name does not match those requested"));
+      }
+    }
+    if (descriptor.getDescription() != null) {
+      this.description = descriptor.getDescription();
+    }
+    if (descriptor.getUrl() != null) {
+      this.url = descriptor.getUrl();
+    }
+    if (descriptor.getId() != null) {
+      this.id = descriptor.getId();
+    }
+    if (descriptor.getName() != null) {
+      this.name = descriptor.getName();
+    }
+    if (descriptor.getTimeout() > 0) {
+      this.timeout = descriptor.getTimeout();
+    }
+    if (descriptor.getTimeoutUnit() != null) {
+      this.timeoutUnit = descriptor.getTimeoutUnit();
+    }
+    if (descriptor.getServiceUrl() != null) {
+      this.serviceUrl = descriptor.getServiceUrl();
+    }
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
   }
 }

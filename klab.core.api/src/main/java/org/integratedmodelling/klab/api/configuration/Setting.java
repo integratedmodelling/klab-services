@@ -19,13 +19,18 @@ public enum Setting {
   WORK_DIRECTORY(
       Page.GENERAL,
       "The directory where all k.LAB files are stored",
-      String.class,
-      System.getProperty("user.home") + File.separator + ".klab"),
+      File.class,
+      new File(System.getProperty("user.home") + File.separator + ".klab")),
   CERTIFICATE_FILE(
       Page.GENERAL,
       "The certificate file to use to connect to the k.LAB network",
-      String.class,
-      System.getProperty("user.home") + File.separator + ".klab" + File.separator + "klab.cert"),
+      File.class,
+      new File(
+          System.getProperty("user.home")
+              + File.separator
+              + ".klab"
+              + File.separator
+              + "klab.cert")),
   LAUNCH_PRODUCT(
       Page.GENERAL,
       "Launch a local service if there is no online service and a distribution is " + "available",
@@ -69,6 +74,10 @@ public enum Setting {
       Integer.class,
       Product.ProductType.RESOURCES_SERVICE.defaultMaxMemoryLimitMB());
 
+  //  private Setting<Double> minModelCoverage = new Setting<Double>();
+  //  private Setting<Double> minTotalCoverage = new Setting<Double>();
+  //  private Setting<Double> minCoverageImprovement = new Setting<Double>();
+
   //  private Setting<Boolean> startWithCLI = new Setting<Boolean>();
   //  private Setting<Boolean> detectLocalHub = new Setting<Boolean>();
   //  private Setting<Boolean> resetAllBuilds = new Setting<Boolean>();
@@ -110,9 +119,7 @@ public enum Setting {
   //  private Setting<String> releasePolicy = new Setting<String>();
   //  private Setting<String> selectedRelease = new Setting<String>();
   //
-  //  private Setting<Double> minModelCoverage = new Setting<Double>();
-  //  private Setting<Double> minTotalCoverage = new Setting<Double>();
-  //  private Setting<Double> minCoverageImprovement = new Setting<Double>();
+
   //
   //  private Setting<Boolean> useDebugParameters = new Setting<Boolean>();
   //  private Setting<Boolean> deleteTempStorage = new Setting<Boolean>();

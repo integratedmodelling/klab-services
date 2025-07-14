@@ -1,16 +1,15 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import org.integratedmodelling.common.authentication.Authentication;
+import javax.annotation.Nullable;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
@@ -51,8 +50,6 @@ import org.integratedmodelling.klab.runtime.storage.BufferImpl;
 import org.neo4j.cypherdsl.core.*;
 import org.neo4j.driver.*;
 import org.neo4j.driver.exceptions.TransientException;
-
-import javax.annotation.Nullable;
 
 /**
  * TODO check spatial queries:
@@ -112,6 +109,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               + "$timestamp, "
               + "rights: $rights, "
               + "federation: $federation, "
+              + "description: $description, "
               + "lastUpdate: $lastUpdate, "
               + "expiration: $expirationType}),\n"
               + "\t// main provenance and dataflow nodes\n"
@@ -256,7 +254,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
       }
     }
-
   }
 
   @Override
@@ -304,7 +301,12 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   /** Ensure things are OK re: main agents and the like. Must be called only once */
   protected void initializeContext(
-      String scopeId, String name, UserScope scope, ResourcePrivileges rights) {
+      String scopeId,
+      String name,
+      UserScope scope,
+      ResourcePrivileges rights,
+      String description,
+      Persistence persistence) {
 
     this.rootContextId = scopeId;
     this.userScope = scope;
@@ -320,11 +322,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       this.klab = getOrCreateAgent("k.LAB", "AI");
       this.user = getOrCreateAgent(scope.getUser().getUsername(), "USER");
 
-      //      var username = scope.getUser().getUsername();
       var federation = Klab.INSTANCE.getFederationData(scope.getUser());
-      //      if (federation != null) {
-      //        username += "@" + federation.getId();
-      //      }
       if (rights == null) {
         rights = ResourcePrivileges.create(scope);
       }
@@ -343,12 +341,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 timestamp,
                 "federation",
                 (federation == null ? "" : federation.getId()),
+                "description",
+                (description == null ? "No description given" : description),
                 "lastUpdate",
                 System.currentTimeMillis(),
                 "username",
                 scope.getUser().getUsername(),
                 "expirationType",
-                scope.getPersistence().name(),
+                persistence.name(),
                 "activityId",
                 activityId),
             scope);
@@ -1186,6 +1186,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       contextInfo.setCreationTime((Long) context.get("created"));
       contextInfo.setName(context.get("name").toString());
       contextInfo.setUser(context.get("user").toString());
+      contextInfo.setDescription(context.get("description").toString());
       contextInfo.setServiceId(serviceId);
 
       contextInfo.setConfiguration(
@@ -1196,6 +1197,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                           + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
                               "{id}", context.get("id").toString())))
               .id(contextInfo.getId())
+              .name(contextInfo.getName())
               .serverUrl(scope.getService(RuntimeService.class).getUrl())
               .persistence(Persistence.valueOf(context.get("expiration").toString()))
               .build()
@@ -1370,18 +1372,17 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     var searchField =
         switch (asset.getType()) {
-          case SCOPE -> "id";
-          case DATAFLOW -> "id";
-          case PROVENANCE -> null;
+          case SCOPE, ACTUATOR, PROVENANCE, DATAFLOW, DATA -> "id";
           case LINK -> null;
-          case ACTUATOR -> "id";
-          case ACTIVITY -> "urn";
-          case OBSERVATION -> "urn";
-          case SEMANTICS -> "urn";
-          case OBSERVABLE -> "urn";
-          case DATA -> "id";
+          case ACTIVITY, OBSERVATION, SEMANTICS, OBSERVABLE -> "urn";
         };
-    var searchValue = asset.getUrn();
+    var searchValue =
+        switch (asset.getType()) {
+          case SCOPE -> rootContextId;
+          case PROVENANCE -> rootContextId + ".PROVENANCE";
+          case DATAFLOW -> rootContextId + ".DATAFLOW";
+          default -> asset.getUrn();
+        };
 
     return Cypher.node(getLabel(asset.getType()))
         // TODO any conditions

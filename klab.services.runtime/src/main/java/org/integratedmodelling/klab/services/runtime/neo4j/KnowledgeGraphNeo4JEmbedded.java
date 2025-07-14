@@ -98,7 +98,7 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
 
   private void configureDatabase() {
 
-    // TODO all the needed indices
+    // TODO all the needed indices!
 
     //        IndexDefinition usernamesIndex;
     //        try ( Transaction tx = graphDb.beginTx() )
@@ -112,33 +112,34 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
     //        }
   }
 
-//  @Override
-//  public KnowledgeGraph contextualize(ContextScope scope) {
-//
-//    if (this.scope != null) {
-//
-//      // idempotence
-//      if (rootContextId.equals(scope.getId())) {
-//        return this;
-//      }
-//
-//      throw new KlabIllegalStateException(
-//          "cannot recontextualize a previously contextualized graph " + "database");
-//    }
-//
-//    var ret = new KnowledgeGraphNeo4JEmbedded(this, scope);
-//
-//    ret.initializeContext(
-//        scope.getId(),
-//        scope.getName(),
-//        scope,
-//        scope.getDigitalTwinConfiguration().getAccessRights());
-//
-//    return ret;
-//  }
+  //  @Override
+  //  public KnowledgeGraph contextualize(ContextScope scope) {
+  //
+  //    if (this.scope != null) {
+  //
+  //      // idempotence
+  //      if (rootContextId.equals(scope.getId())) {
+  //        return this;
+  //      }
+  //
+  //      throw new KlabIllegalStateException(
+  //          "cannot recontextualize a previously contextualized graph " + "database");
+  //    }
+  //
+  //    var ret = new KnowledgeGraphNeo4JEmbedded(this, scope);
+  //
+  //    ret.initializeContext(
+  //        scope.getId(),
+  //        scope.getName(),
+  //        scope,
+  //        scope.getDigitalTwinConfiguration().getAccessRights());
+  //
+  //    return ret;
+  //  }
 
   @Override
-  public KnowledgeGraph contextualize(DigitalTwin.Configuration digitalTwinConfig, UserScope userScope) {
+  public KnowledgeGraph contextualize(
+      DigitalTwin.Configuration digitalTwinConfig, UserScope userScope) {
 
     // idempotence
     if (digitalTwinConfig.getId().equals(rootContextId)) {
@@ -147,7 +148,13 @@ public class KnowledgeGraphNeo4JEmbedded extends KnowledgeGraphNeo4j implements 
 
     var ret = new KnowledgeGraphNeo4JEmbedded(this, digitalTwinConfig.getId());
 
-    ret.initializeContext(digitalTwinConfig.getId(), digitalTwinConfig.getName(), userScope, digitalTwinConfig.getAccessRights());
+    ret.initializeContext(
+        digitalTwinConfig.getId(),
+        digitalTwinConfig.getName(),
+        userScope,
+        digitalTwinConfig.getAccessRights(),
+        digitalTwinConfig.getDescription(),
+        digitalTwinConfig.getPersistence());
 
     return ret;
   }

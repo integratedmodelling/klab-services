@@ -23,7 +23,6 @@ import java.util.List;
 public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl implements ReactiveScope {
 
     protected KActorsBehavior.Ref agent;
-    protected Persistence persistence = Persistence.SERVICE_SHUTDOWN;
     private String hostServiceId;
 
     public AbstractReactiveScopeImpl(Identity identity, boolean isSender, boolean isReceiver) {
@@ -98,15 +97,6 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl imp
         }
 
         throw new KlabInternalErrorException("wrong message with class " + message.getMessageClass() + " " + "sent to ReactiveScope::ask");
-    }
-
-    @Override
-    public Persistence getPersistence() {
-        return persistence;
-    }
-
-    public void setPersistence(Persistence expiration) {
-        this.persistence = expiration;
     }
 
     @Override

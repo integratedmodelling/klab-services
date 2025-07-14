@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
+import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -48,6 +49,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
       DigitalTwin.Configuration configuration) {
     super(parent, configuration.getName(), runtimeService);
     this.configuration = configuration;
+    this.name = configuration.getName();
     resolutionConstraints.put(
         ResolutionConstraint.Type.Provenance,
         ResolutionConstraint.of(
@@ -123,6 +125,14 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   public Provenance getProvenanceOf(Observation observation) {
     // TODO
     return null;
+  }
+
+  @Override
+  public void setId(String id) {
+    super.setId(id);
+    if (this.configuration instanceof ConfigurationImpl configurationImpl) {
+      configurationImpl.setId(id);
+    }
   }
 
   @Override

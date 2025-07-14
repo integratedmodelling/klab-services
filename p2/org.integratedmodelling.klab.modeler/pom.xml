@@ -240,7 +240,8 @@
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.fasterxml.jackson.module:jackson-module-parameter-names:jar:2.17.1</id>
+                                            <id>com.fasterxml.jackson.module:jackson-module-parameter-names:jar:2.17.1
+                                            </id>
                                             <override>true</override>
                                             <source>true</source>
                                             <instructions>
@@ -288,7 +289,9 @@
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.google.guava:listenablefuture:jar:9999.0-empty-to-avoid-conflict-with-guava</id>
+                                            <id>
+                                                com.google.guava:listenablefuture:jar:9999.0-empty-to-avoid-conflict-with-guava
+                                            </id>
                                             <override>true</override>
                                             <source>true</source>
                                             <instructions>
@@ -655,16 +658,16 @@
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
-<!--                                        <artifact>
-                                            <id>commons-logging:commons-logging:jar:1.2</id>
-                                            <override>true</override>
-                                            <source>true</source>
-                                            <instructions>
-                                                <_noee>true</_noee>
-                                            </instructions>
-                                        </artifact>-->
+                                        <!--                                        <artifact>
+                                                                                    <id>commons-logging:commons-logging:jar:1.2</id>
+                                                                                    <override>true</override>
+                                                                                    <source>true</source>
+                                                                                    <instructions>
+                                                                                        <_noee>true</_noee>
+                                                                                    </instructions>
+                                                                                </artifact>-->
                                         <artifact>
-                                            <id>commons-codec:commons-codec:jar:1.11</id>
+                                            <id>commons-codec:commons-codec:jar:1.13</id>
                                             <override>true</override>
                                             <source>true</source>
                                             <instructions>
