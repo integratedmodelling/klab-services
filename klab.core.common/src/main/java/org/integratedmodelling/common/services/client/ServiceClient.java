@@ -5,10 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -443,7 +440,7 @@ public abstract class ServiceClient implements KlabService {
   }
 
   @Override
-  public Future<ResourceSet> importAsset(
+  public CompletableFuture<ResourceSet> importAsset(
       ResourceTransport.Schema schema,
       ResourceTransport.Schema.Asset assetCoordinates,
       String suggestedUrn,

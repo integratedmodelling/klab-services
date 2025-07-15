@@ -22,6 +22,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 /**
@@ -418,7 +419,7 @@ public interface KlabService extends Service {
    *     {@link ResourceSet.Resource} accessible through {@link ResourceSet#getResults()}.
    *     Notifications may be added to the main resource.
    */
-  Future<ResourceSet> importAsset(
+  CompletableFuture<ResourceSet> importAsset(
       ResourceTransport.Schema schema,
       ResourceTransport.Schema.Asset assetCoordinates,
       String suggestedUrn,
