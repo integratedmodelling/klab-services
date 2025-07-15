@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,6 +35,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -58,8 +60,8 @@ public abstract class ServiceClient implements KlabService {
   private AbstractServiceDelegatingScope scope;
   private final URL url;
   private String token;
-  private long localPollCycleSeconds = 5;
-  private long onlinePollCycleSeconds = 5;
+  private long localPollCycleSeconds = (Integer) Setting.POLLING_INTERVAL_LOCAL.defaultValue;
+  private long onlinePollCycleSeconds = (Integer) Setting.POLLING_INTERVAL_REMOTE.defaultValue;
   protected Utils.Http.Client client;
   protected ServiceCapabilities capabilities;
   private KlabService ownerService;
@@ -97,6 +99,8 @@ public abstract class ServiceClient implements KlabService {
     this.ownerService = ownerService;
     this.serviceType = serviceType;
     this.url = url;
+    this.localPollCycleSeconds = settings.get(Setting.POLLING_INTERVAL_LOCAL, Integer.class);
+    this.onlinePollCycleSeconds = settings.get(Setting.POLLING_INTERVAL_REMOTE, Integer.class);
     if (this.url != null) {
       connect();
     }
@@ -113,6 +117,8 @@ public abstract class ServiceClient implements KlabService {
     this.serviceType = serviceType;
     this.url = url;
     this.local = Utils.URLs.isLocalHost(url);
+    this.localPollCycleSeconds = settings.get(Setting.POLLING_INTERVAL_LOCAL, Integer.class);
+    this.onlinePollCycleSeconds = settings.get(Setting.POLLING_INTERVAL_REMOTE, Integer.class);
     if (connect) {
       connect();
     }
@@ -437,7 +443,7 @@ public abstract class ServiceClient implements KlabService {
   }
 
   @Override
-  public String importAsset(
+  public Future<ResourceSet> importAsset(
       ResourceTransport.Schema schema,
       ResourceTransport.Schema.Asset assetCoordinates,
       String suggestedUrn,
@@ -446,10 +452,10 @@ public abstract class ServiceClient implements KlabService {
     if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
       return client
           .withScope(scope)
-          .post(
+          .postAsync(
               ServicesAPI.IMPORT,
               assetCoordinates.getProperties(),
-              String.class,
+              ResourceSet.class,
               "schema",
               schema.getSchemaId(),
               "urn",
@@ -470,10 +476,10 @@ public abstract class ServiceClient implements KlabService {
         return client
             .withScope(scope)
             .providing(schema.getMediaTypes())
-            .upload(
+            .uploadAsync(
                 ServicesAPI.IMPORT,
                 assetCoordinates.getFile(),
-                String.class,
+                ResourceSet.class,
                 "schema",
                 schema.getSchemaId(),
                 "urn",

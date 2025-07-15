@@ -11,17 +11,22 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.Principal;
 
 /**
@@ -120,7 +125,7 @@ public class KlabServiceController {
   }
 
   @PostMapping(value = ServicesAPI.IMPORT, consumes = MediaType.APPLICATION_JSON_VALUE)
-  public String importAsset(
+  public long importAsset(
       @PathVariable(name = "schema") String schema,
       @PathVariable(name = "urn") String urn,
       @RequestBody Parameters<String> data,
@@ -137,22 +142,53 @@ public class KlabServiceController {
         throw new KlabAuthorizationException(
             "No authorized import schema for property-based " + "submissions is available");
       }
-
-      return instance.klabService().importAsset(s, s.asset(data), urn, scope);
+      return ((ServiceUserScope) scope)
+          .getJobManager()
+          .submit(
+              instance.klabService().importAsset(s, s.asset(data), urn, scope),
+              "Import of asset using schema " + s.getSchemaId());
     }
-    return null;
+    return -1;
   }
 
   @PostMapping(value = ServicesAPI.IMPORT, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public String uploadAsset(
+  public long uploadAsset(
       @PathVariable(name = "schema") String schema,
       @PathVariable(name = "urn") String urn,
       @RequestParam("file") MultipartFile file,
       Principal principal) {
-    String ret = urn;
-    if (principal instanceof EngineAuthorization authorization) {}
+    if (principal instanceof EngineAuthorization authorization) {
+      try {
+        var scope = authorization.getScope();
+        var s =
+            ResourceTransport.INSTANCE.findSchema(
+                schema, instance.klabService().capabilities(scope).getImportSchemata(), scope);
+        if (s == null) {
+          throw new KlabAuthorizationException(
+              "No authorized import schema for property-based submissions is available");
+        }
 
-    return ret;
+        String originalFilename = file.getOriginalFilename();
+        String extension =
+            originalFilename != null
+                ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                : "";
+        Path tempFile = Files.createTempFile("upload", extension);
+        file.transferTo(tempFile.toFile());
+        var result =
+            ((ServiceUserScope) scope)
+                .getJobManager()
+                .submit(
+                    instance.klabService().importAsset(s, s.asset(tempFile.toFile()), urn, scope),
+                    "Upload of asset using schema " + s.getSchemaId());
+        tempFile.toFile().deleteOnExit();
+        return result;
+      } catch (IOException e) {
+        throw new KlabInternalErrorException(
+            "Error processing uploaded file: " + e.getMessage(), e);
+      }
+    }
+    return -1;
   }
 
   //    @GetMapping(ServicesAPI.DOWNLOAD_ASSET)

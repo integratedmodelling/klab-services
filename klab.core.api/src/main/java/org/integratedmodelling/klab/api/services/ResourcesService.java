@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 /**
  * Management of all {@link KlabAsset}s, collectively called "resources" (although this conflicts
@@ -344,6 +345,24 @@ public interface ResourcesService extends KlabService {
    * @return list of matching resource URNs
    */
   List<String> queryResources(String urnPattern, KlabAsset.KnowledgeClass... resourceTypes);
+
+  /**
+   * Import a new resource, honoring any URN settings (and creating a suitable URN in case the
+   * {@link Urn#UNDEFINED_URN} URN is in the submitted resource). If the resource already exists,
+   * evaluate if the submission is suitable to represent a newer version. If data are associated
+   * with the resource, the submitted resource should contain the full local temporary paths where
+   * they are found.
+   *
+   * <p>Resource validation and ingestion may take time, so the service returns a Future
+   *
+   * @param resource
+   * @param scope
+   * @return the {@link ResourceSet} resulting from the submission. May include error notifications
+   *     from the import process (not from rights issues, which should throw an exception).
+   * @throw KlabResourceAccessException if the scope doesn't have the right to create or modify a
+   *     resource.
+   */
+  Future<ResourceSet> importResource(Resource resource, UserScope scope);
 
   /**
    * Return the actual (local) project with its contents. Used mostly internally with a likely heavy

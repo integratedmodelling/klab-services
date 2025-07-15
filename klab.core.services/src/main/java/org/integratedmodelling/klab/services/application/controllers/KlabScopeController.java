@@ -2,7 +2,10 @@ package org.integratedmodelling.klab.services.application.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
-import org.integratedmodelling.common.authentication.Authentication;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
@@ -23,7 +26,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
-import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -31,11 +33,6 @@ import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 @RestController
 @Tag(name = "Scope management")
@@ -113,7 +110,7 @@ public class KlabScopeController {
         var ret =
             request.getBehaviorUrn() == null
                 ? userScope.getUserSession(runtimes.getFirst())
-                : new ServiceSessionScope(userScope, new JobManager());
+                : new ServiceSessionScope(userScope);
 
         ((ServiceSessionScope) ret).setId(request.getConfiguration().getId());
         ((ServiceSessionScope) ret).setName(request.getConfiguration().getName());

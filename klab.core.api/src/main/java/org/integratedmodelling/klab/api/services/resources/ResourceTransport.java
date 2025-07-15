@@ -64,7 +64,19 @@ public enum ResourceTransport {
      */
     public Asset asset(Object... properties) {
       var ret = new Asset();
-      ret.setProperties(Parameters.create(properties));
+      if (properties != null && properties.length == 1) {
+        // must be a single file or URL
+        if (properties[0] instanceof File) {
+          ret.setFile((File) properties[0]);
+          return ret;
+        } else if (properties[0] instanceof URL) {
+          ret.setUrl((URL) properties[0]);
+        } else {
+          throw new KlabIllegalStateException("Single-argument asset must be a File or URL");
+        }
+      } else {
+        ret.setProperties(Parameters.create(properties));
+      }
       return ret;
     }
 

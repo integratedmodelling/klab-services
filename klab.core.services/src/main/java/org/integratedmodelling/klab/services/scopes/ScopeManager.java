@@ -277,7 +277,7 @@ public class ScopeManager {
                 ? userScope.getUser().getUsername()
                 : federation.getId().replace(".", "_");
         if (scopeId.equals(acceptedSessionId)) {
-          ret = new ServiceSessionScope(userScope, new JobManager());
+          ret = new ServiceSessionScope(userScope);
           ret.setStatus(Scope.Status.WAITING);
           ((ServiceSessionScope) ret).setId(scopeId);
           ((ServiceSessionScope) ret)

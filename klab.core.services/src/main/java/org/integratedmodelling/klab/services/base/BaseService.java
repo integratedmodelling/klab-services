@@ -13,6 +13,8 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiConsumer;
@@ -32,6 +34,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -86,7 +89,7 @@ public abstract class BaseService implements KlabService {
     settingsForSlaveServices = SettingsImpl.forSlaveServices(serviceType, settings);
 
     settingsForSlaveServices.setIfUnset(Setting.POLLING, "on");
-    settingsForSlaveServices.setIfUnset(Setting.POLLING_INTERVAL, 15);
+    settingsForSlaveServices.setIfUnset(Setting.POLLING_INTERVAL_REMOTE, 15);
     settingsForSlaveServices.setIfUnset(Setting.LOG_EVENTS, true);
     settingsForSlaveServices.setIfUnset(Setting.LAUNCH_PRODUCT, false);
 
@@ -136,6 +139,7 @@ public abstract class BaseService implements KlabService {
   public Settings settings() {
     return settings;
   }
+
   /**
    * Each service creates a secret key and stores in a text file in its work directory. The service
    * key is created only if absent and remains the same across boot cycles. It is used to grant
@@ -467,7 +471,7 @@ public abstract class BaseService implements KlabService {
   }
 
   @Override
-  public String importAsset(
+  public CompletableFuture<ResourceSet> importAsset(
       ResourceTransport.Schema schema,
       ResourceTransport.Schema.Asset assetCoordinates,
       String suggestedUrn,
@@ -484,12 +488,14 @@ public abstract class BaseService implements KlabService {
       serviceCall = ServiceCallImpl.create(schema.getSchemaId(), assetCoordinates.getProperties());
     }
 
-    if (suggestedUrn != null && !"X:X:X:X".equals(suggestedUrn)) {
+    if (suggestedUrn != null && !Urn.UNDEFINED_URN.equals(suggestedUrn)) {
       serviceCall.getParameters().put("URN", suggestedUrn);
     }
 
+    final var call = serviceCall;
     var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
-    return languageService.execute(serviceCall, scope, String.class);
+    return CompletableFuture.supplyAsync(
+        () -> languageService.execute(call, scope, ResourceSet.class));
   }
 
   public void setRuntimeLockfile(String serviceId) {

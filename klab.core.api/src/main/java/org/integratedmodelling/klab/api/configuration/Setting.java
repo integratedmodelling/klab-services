@@ -15,7 +15,16 @@ public enum Setting {
       "Enable or disable server polling in all service clients",
       Boolean.class,
       true),
-  POLLING_INTERVAL(Page.SERVICES, "Set the service polling interval in seconds", Integer.class, 5),
+  POLLING_INTERVAL_LOCAL(
+      Page.SERVICES,
+      "Set the service polling interval for local services in seconds",
+      Integer.class,
+      5),
+  POLLING_INTERVAL_REMOTE(
+      Page.SERVICES,
+      "Set the service polling interval for remote services in seconds",
+      Integer.class,
+      20),
   WORK_DIRECTORY(
       Page.GENERAL,
       "The directory where all k.LAB files are stored",
@@ -72,7 +81,32 @@ public enum Setting {
       Page.RESOURCES,
       "Maximum memory for the local resources service in MB",
       Integer.class,
-      Product.ProductType.RESOURCES_SERVICE.defaultMaxMemoryLimitMB());
+      Product.ProductType.RESOURCES_SERVICE.defaultMaxMemoryLimitMB()),
+  START_RESOURCES_SERVICE_IN_DEBUG_MODE(
+      Page.DEBUGGING,
+      "Start the local resources service in debug mode on port "
+          + Product.ProductType.RESOURCES_SERVICE.getDebugPort(),
+      Boolean.class,
+      false),
+  START_RESOLVER_SERVICE_IN_DEBUG_MODE(
+      Page.DEBUGGING,
+      "Start the local resolver in debug mode on port "
+          + Product.ProductType.RESOLVER_SERVICE.getDebugPort(),
+      Boolean.class,
+      false),
+  START_REASONER_SERVICE_IN_DEBUG_MODE(
+      Page.DEBUGGING,
+      "Start the local reasoner in debug mode on port "
+          + Product.ProductType.REASONER_SERVICE.getDebugPort(),
+      Boolean.class,
+      false),
+  START_RUNTIME_SERVICE_IN_DEBUG_MODE(
+      Page.DEBUGGING,
+      "Start the local runtime service in debug mode on port "
+          + Product.ProductType.RUNTIME_SERVICE.getDebugPort(),
+      Boolean.class,
+      false);
+  ;
 
   //  private Setting<Double> minModelCoverage = new Setting<Double>();
   //  private Setting<Double> minTotalCoverage = new Setting<Double>();

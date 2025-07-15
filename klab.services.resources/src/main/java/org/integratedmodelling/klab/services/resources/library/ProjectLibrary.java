@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
@@ -54,7 +55,7 @@ public class ProjectLibrary {
             description = "Git access token",
             optional = true)
       })
-  public static String importProjectGit(
+  public static ResourceSet importProjectGit(
       Parameters<String> properties, ResourcesProvider service, UserScope scope) {
 
     Logging.INSTANCE.info(
@@ -96,9 +97,7 @@ public class ProjectLibrary {
               + " as user "
               + scope.getUser().getUsername());
 
-      return ret.getFirst().getResults().isEmpty()
-          ? null // should never happen
-          : ret.getFirst().getResults().iterator().next().getResourceUrn();
+      return ret.getFirst();
     }
 
     return null;
@@ -110,7 +109,7 @@ public class ProjectLibrary {
       description = "Register a project using a zip archive",
       mediaType = "application/zip",
       fileExtensions = {"zip"})
-  public static String importProjectZip(File archive, BaseService service, Scope scope) {
+  public static ResourceSet importProjectZip(File archive, BaseService service, Scope scope) {
     return null;
   }
 }

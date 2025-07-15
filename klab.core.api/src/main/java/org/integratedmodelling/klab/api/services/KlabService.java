@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
@@ -21,6 +22,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 
 /**
  * Services may be locally implemented or clients to remote services: each service implementation
@@ -412,9 +414,11 @@ public interface KlabService extends Service {
    *     also be modified. Pass {@link org.integratedmodelling.klab.api.knowledge.Urn#UNDEFINED_URN}
    *     to request that the URN is generated at service side.
    * @param scope
-   * @return the URN of the asset imported.
+   * @return the result of the import. If not {@link ResourceSet#empty()}, the result should be a
+   *     {@link ResourceSet.Resource} accessible through {@link ResourceSet#getResults()}.
+   *     Notifications may be added to the main resource.
    */
-  String importAsset(
+  Future<ResourceSet> importAsset(
       ResourceTransport.Schema schema,
       ResourceTransport.Schema.Asset assetCoordinates,
       String suggestedUrn,

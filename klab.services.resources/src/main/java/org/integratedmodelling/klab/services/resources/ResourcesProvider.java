@@ -10,6 +10,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -33,7 +34,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -55,7 +55,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -605,9 +604,7 @@ public class ResourcesProvider extends BaseService
    *     another resource manager. Could also be a service URL for mirroring.
    * @param overwriteIfExisting self-explanatory. If the project is remote, reload if true.
    * @return
-   * @deprecated use project import schema + register resource
    */
-  //    @Override
   public synchronized List<ResourceSet> importProject(
       String workspaceName, String projectUrl, boolean overwriteIfExisting, UserScope scope) {
 
@@ -1608,5 +1605,16 @@ public class ResourcesProvider extends BaseService
 
   public ResourcesKBox getResourcesKbox() {
     return this.resourcesKbox;
+  }
+
+  @Override
+  public Future<ResourceSet> importResource(Resource resource, UserScope scope) {
+    // establish rights
+    // validate resource
+    // check if we're updating and, if so, whether we have the right to modify
+    // find adapter
+    // have it validate the resource and, if any, the contents
+    // if valid, do the import
+    return null;
   }
 }

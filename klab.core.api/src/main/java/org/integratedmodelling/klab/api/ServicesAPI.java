@@ -423,6 +423,7 @@ public interface ServicesAPI {
     String RETRIEVE_WORLDVIEW = "/getWorldview";
     String DEPENDENTS = "/dependents/{namespaceId}";
     String RESOLVE_MODELS = "/resolveModels";
+    String IMPORT_RESOURCE = "importResource";
     String MODEL_GEOMETRY = "/modelGeometry/{modelUrn}";
     String READ_BEHAVIOR = "/readBehavior";
     String LIST_PROJECTS = "/listProjects";

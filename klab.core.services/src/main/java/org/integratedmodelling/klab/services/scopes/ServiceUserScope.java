@@ -60,6 +60,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
   protected Map<KlabService.Type, List<? extends KlabService>> serviceMap = new HashMap<>();
   private boolean messagingChecked = false;
+  private JobManager jobManager;
 
   // if the next two are filled in, the payloads of any message generated will be collected in the
   // list
@@ -80,8 +81,13 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     this.user = user;
     this.data = Parameters.create();
     this.service = service;
+    this.jobManager = new JobManager();
     this.setHostServiceId(service.serviceId());
     this.roles = EnumSet.noneOf(Role.class);
+  }
+
+  public JobManager getJobManager() {
+    return jobManager;
   }
 
   @Override
@@ -103,6 +109,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     this.local = parent.local;
     this.serviceMap.putAll(parent.serviceMap);
     this.id = parent.id;
+    this.jobManager = parent.jobManager;
   }
 
   public KlabService getService() {
@@ -172,7 +179,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
       return scope;
     }
 
-    final ServiceSessionScope ret = new ServiceSessionScope(this, new JobManager());
+    final var ret = new ServiceSessionScope(this);
     ret.setStatus(Status.WAITING);
     ret.setName(
         federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())

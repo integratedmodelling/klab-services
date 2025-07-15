@@ -3,10 +3,14 @@ package org.integratedmodelling.klab.services.resources.library;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.engine.distribution.Product;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
@@ -28,8 +32,12 @@ public class ResourcesLibrary {
       description = "Register a new resource by importing a legacy json manifest",
       mediaType = "application/json",
       fileExtensions = {"json"})
-  public static String importLegacyResourceJson(
+  public static ResourceSet importLegacyResourceJson(
       File archive, ResourcesProvider service, UserScope scope) {
+    var definition = Utils.Json.load(archive, Map.class);
+    if (definition != null) {
+      return loadLegacyResource(definition, service, scope);
+    }
     return null;
   }
 
@@ -51,12 +59,8 @@ public class ResourcesLibrary {
           "Register a new resource without content by importing a compliant json manifest",
       mediaType = "application/json",
       fileExtensions = {"json"})
-  public static String importResourceJson(
+  public static ResourceSet importResourceJson(
       File archive, ResourcesProvider service, UserScope scope) {
-    var definition = Utils.Json.load(archive, Map.class);
-    if (definition != null) {
-      return loadLegacyResource(definition, service, scope);
-    }
     return null;
   }
 
@@ -67,15 +71,30 @@ public class ResourcesLibrary {
           "Register a new resource by importing a zip file with full content, including the json manifest",
       mediaType = "application/zip",
       fileExtensions = {"zip"})
-  public static String importResourceZip(File archive, ResourcesProvider service, UserScope scope) {
+  public static ResourceSet importResourceZip(File archive, ResourcesProvider service, UserScope scope) {
     return null;
   }
 
+  private static ResourceSet loadLegacyResource(
+      Map definition, ResourcesProvider service, UserScope scope) {
 
-  private static String loadLegacyResource(
-          Map definition, ResourcesProvider service, UserScope scope) {
-    return null;
+    Utils.Maps.ensureContains(definition, "urn", "type", "geometry");
+
+    var builder = Resource.builder(definition.get("urn").toString());
+
+    if (definition.containsKey("name")) {
+      builder.withLocalName(definition.get("name").toString());
+    }
+    if (definition.containsKey("geometry")) {
+      var geometry = Geometry.create(definition.get("geometry").toString());
+      if (geometry != null) {
+        builder.withGeometry(geometry);
+      }
+    }
+    builder.withType(Artifact.Type.valueOf(definition.get("type").toString()));
+
+    var resource = builder.build();
+
+    return null; // service.importResource(resource, scope);
   }
-
-
 }

@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.services.resources.impl.ResourceBuilderImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
@@ -436,4 +437,8 @@ public interface Resource extends Knowledge, Resolvable {
    * @return
    */
   List<Notification> getNotifications();
+
+  static Builder builder(String urn) {
+    return new ResourceBuilderImpl(urn);
+  }
 }

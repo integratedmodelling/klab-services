@@ -31,7 +31,6 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
   private String name;
   private boolean operative = true;
-  protected JobManager jobManager;
 
   public void setName(String name) {
     this.name = name;
@@ -41,14 +40,6 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     super(parent);
     this.data = Parameters.create();
     this.data.putAll(parent.data);
-    // the job manager is created upstream
-  }
-
-  public ServiceSessionScope(ServiceUserScope parent, JobManager jobManager) {
-    super(parent);
-    this.data = Parameters.create();
-    this.data.putAll(parent.data);
-    this.jobManager = jobManager;
   }
 
   @Override
@@ -70,9 +61,6 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
   protected void copyInfo(ServiceUserScope other) {
     super.copyInfo(other);
     this.data.putAll(other.data);
-    if (other instanceof ServiceSessionScope serviceSessionScope) {
-      this.jobManager = serviceSessionScope.jobManager;
-    }
   }
 
   @Override
@@ -199,7 +187,4 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     return ret;
   }
 
-  public JobManager getJobManager() {
-    return jobManager;
-  }
 }

@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import javax.annotation.Nullable;
 
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
@@ -79,28 +80,23 @@ public class ResourcesClient extends ServiceClient
                 }
               });
 
-  public static ResourcesClient create(
-      URL url, Identity identity, Settings settings) {
+  public static ResourcesClient create(URL url, Identity identity, Settings settings) {
     return new ResourcesClient(url, identity, settings);
   }
 
-  public static ResourcesClient createOffline(
-      URL url, Identity identity, Settings settings) {
+  public static ResourcesClient createOffline(URL url, Identity identity, Settings settings) {
     return new ResourcesClient(url, identity, settings, false);
   }
 
-  public static ResourcesClient createLocal(
-      Identity identity, Settings settings) {
+  public static ResourcesClient createLocal(Identity identity, Settings settings) {
     return new ResourcesClient(Type.RESOURCES.localServiceUrl(), identity, settings);
   }
 
-  public static ResourcesClient createLocalOffline(
-      Identity identity, Settings settings) {
+  public static ResourcesClient createLocalOffline(Identity identity, Settings settings) {
     return new ResourcesClient(Type.RESOURCES.localServiceUrl(), identity, settings, false);
   }
 
-  public ResourcesClient(
-      URL url, Identity identity, KlabService owner, Settings settings) {
+  public ResourcesClient(URL url, Identity identity, KlabService owner, Settings settings) {
     super(Type.RESOURCES, url, identity, settings, owner);
   }
 
@@ -108,8 +104,7 @@ public class ResourcesClient extends ServiceClient
     super(Type.RESOURCES, url, identity, settings, true);
   }
 
-  private ResourcesClient(
-      URL url, Identity identity, Settings settings, boolean connect) {
+  private ResourcesClient(URL url, Identity identity, Settings settings, boolean connect) {
     super(Type.RESOURCES, url, identity, settings, connect);
   }
 
@@ -528,6 +523,13 @@ public class ResourcesClient extends ServiceClient
   public List<String> queryResources(String urnPattern, KnowledgeClass... resourceTypes) {
     // TODO Auto-generated method stub
     return null;
+  }
+
+  @Override
+  public Future<ResourceSet> importResource(Resource resource, UserScope scope) {
+    return client
+        .withScope(scope)
+        .postAsync(ServicesAPI.RESOURCES.IMPORT_RESOURCE, resource, ResourceSet.class);
   }
 
   @Override

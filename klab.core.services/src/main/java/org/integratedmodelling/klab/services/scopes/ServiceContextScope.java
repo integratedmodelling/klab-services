@@ -92,7 +92,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     //    this.currentOperation = parent.currentOperation;
     this.resolutionCache = parent.resolutionCache;
     this.nextResolutionId = parent.nextResolutionId;
-    this.jobManager = parent.jobManager;
     this.currentActivity = parent.currentActivity;
     this.configuration = parent.configuration;
   }
@@ -146,7 +145,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.data = Parameters.create();
     this.data.putAll(parent.data);
     this.resolutionCache = new HashMap<>();
-    this.jobManager = parent.jobManager;
     this.configuration = configuration;
     this.setName(configuration.getName());
     this.observationCache =

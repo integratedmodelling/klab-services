@@ -13,7 +13,6 @@ import com.jcraft.jsch.JSch;
 import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.view.mxGraph;
-
 import java.io.*;
 import java.lang.reflect.Array;
 import java.net.*;
@@ -26,7 +25,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import javax.swing.*;
-
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
@@ -50,7 +48,6 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -64,9 +61,7 @@ import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 import org.integratedmodelling.klab.api.services.runtime.objects.JobStatus;
@@ -927,6 +922,72 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
         }
         return null;
+      }
+
+      /**
+       * Send over a file with optional parameters, expecting a task ID and returning a completable
+       * future that will finish when the remote job caused by the upload is done.
+       *
+       * @param apiRequest
+       * @param resultClass
+       * @param <T>
+       * @return
+       */
+      public <T> CompletableFuture<T> uploadAsync(
+          String apiRequest, File upload, Class<T> resultClass, Object... parameters) {
+
+        var options = new Options();
+        var params = makeKeyMap(options, parameters);
+        var apiCall = substituteTemplateParameters(apiRequest, params);
+
+        responseHeaders.clear();
+
+        try {
+          final MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+          builder.setMode(HttpMultipartMode.RFC6532);
+          builder.addPart("file", new FileBody(upload));
+          builder.addPart("fileName", new StringBody(Utils.Files.getFileName(upload)));
+          final HttpEntity entity = builder.build();
+          HttpPost post = new HttpPost(URI.create(uri + apiCall + encodeParameters(params)));
+          post.setHeader(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass));
+
+          if (authorization != null) {
+            post.setHeader(HttpHeaders.AUTHORIZATION, authorization);
+          }
+
+          for (String header : headers.keySet()) {
+            post.setHeader(header, headers.get(header));
+          }
+
+          post.setEntity(entity);
+          try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+
+            var response = client.execute(post);
+            final int statusCode = response.getStatusLine().getStatusCode();
+
+            var body = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+            if (statusCode == 200 || statusCode == 202) {
+              var id = Long.parseLong(body);
+              return new PollingFuture<>(this, resultClass, id, 5, 500, 7, 1000, 5, 1800, -1, 3000);
+            } else {
+              var log = parseResponse(body, Map.class);
+              System.out.println(
+                  "============ POST " + apiCall + " EXCEPTION REPORT ==============");
+              MapUtils.debugPrint(System.out, "Server error", log);
+              System.out.println("============ END OF REPORT  ==============");
+              return CompletableFuture.failedFuture(new KlabServiceAccessException(body));
+            }
+
+          } catch (Throwable diocane) {
+            System.out.println("DIOCANE");
+            throw diocane;
+          }
+        } catch (Throwable e) {
+          if (scope != null) {
+            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          }
+          return CompletableFuture.failedFuture(e);
+        }
       }
 
       /**
@@ -2102,14 +2163,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         for (int i = 0; i < parameters.length; i++) {
           if (i == parameters.length - 1) {
             throw new KlabIllegalArgumentException(
-                    "Utils.Maps.makeKeyMap: unmatched keys " + "in " + "argument list");
+                "Utils.Maps.makeKeyMap: unmatched keys " + "in " + "argument list");
           }
           ret.put(parameters[i].toString(), parameters[++i].toString());
         }
       }
       return ret;
     }
-
 
     public static <K, V> Map<K, V> removeNullValues(Map<K, V> map) {
       Set<K> toRemove = new HashSet<>();
@@ -2122,6 +2182,18 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         map.remove(k);
       }
       return map;
+    }
+
+    public static void ensureContains(Map definition, Object... keys) {
+      if (definition != null) {
+        for (Object key : keys) {
+          if (!definition.containsKey(key)) {
+            throw new KlabIllegalArgumentException(
+                "Utils.Maps.ensureContains: missing key " + key + " in " + "definition");
+          }
+        }
+      }
+      throw new KlabIllegalArgumentException("Utils.Maps.ensureContains: map cannot be null");
     }
   }
 

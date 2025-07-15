@@ -44,8 +44,7 @@ public enum Configuration {
     INSTANCE;
 
 
-    // TODO move all these to enum and reconcile with org.integratedmodelling.klab.api.engine.distribution
-    //  .Settings
+    // TODO move all these to enum and reconcile with Settings
     public static final String DEFAULT_PRODUCTS_BRANCH = "master";
     public static final String JREDIR_PROPERTY = "klab.directory.jre";
     public static final String KLAB_OFFLINE = "klab.offline";
@@ -270,6 +269,11 @@ public enum Configuration {
             }
         }
         return null;
+    }
+
+    public File getTemporaryDataPath() {
+        // TODO by default this should point to a subdir of the system temp dir
+        return getDataPath(getProperty(KLAB_TEMPORARY_DATA_DIRECTORY, "temp"));
     }
 
     public File getServiceDataPath() {

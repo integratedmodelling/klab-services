@@ -73,7 +73,7 @@ public class SettingsImpl implements Settings {
   }
 
   @Override
-  public void set(Setting setting, Object value) {
+  public synchronized void set(Setting setting, Object value) {
     Logging.INSTANCE.info(
         "DIO CASTORO SETTING: "
             + setting.name()
