@@ -862,18 +862,6 @@ public class ResourcesProvider extends BaseService
     ret.getPermissions().add(CRUDOperation.UPDATE);
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
-    //    ret.setBrokerURI(
-    //        embeddedBroker != null
-    //            ? embeddedBroker.getURI()
-    //            : workspaceManager.getConfiguration().getBrokerURI());
-    //    ret.setAvailableMessagingQueues(
-    //        Utils.URLs.isLocalHost(getUrl())
-    //            ? EnumSet.of(
-    //                Message.Queue.Info,
-    //                Message.Queue.Errors,
-    //                Message.Queue.Warnings,
-    //                Message.Queue.Events)
-    //            : EnumSet.noneOf(Message.Queue.class));
 
     return ret;
   }
@@ -1408,6 +1396,12 @@ public class ResourcesProvider extends BaseService
       return resourcesKbox.putStatus(status);
     }
     return false;
+  }
+
+  @Override
+  protected org.integratedmodelling.klab.services.configuration.ServiceConfiguration
+      getServiceConfiguration() {
+    return this.workspaceManager.getConfiguration();
   }
 
   @Override

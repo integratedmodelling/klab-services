@@ -383,10 +383,8 @@ public abstract class BaseService implements KlabService {
     return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
   }
 
-  //  public abstract String registerNewSession(SessionScope sessionScope, UserScope userScope);
-  //
-  //  public abstract String registerNewContext(
-  //      ContextScope contextScope, UserScope userScope, KActorsBehavior behavior);
+  protected abstract org.integratedmodelling.klab.services.configuration.ServiceConfiguration
+      getServiceConfiguration();
 
   /**
    * Called by ServiceInstance after initializeService was successful

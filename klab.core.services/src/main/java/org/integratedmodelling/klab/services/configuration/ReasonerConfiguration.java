@@ -1,20 +1,9 @@
 package org.integratedmodelling.klab.services.configuration;
 
-import java.io.File;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import org.integratedmodelling.common.utils.Utils;
+import java.util.*;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 
-public class ReasonerConfiguration {
-
-  private String serviceOwner;
-  private String serviceName;
-  private String serviceDescription;
-  private String serviceDisclaimers;
+public class ReasonerConfiguration extends ServiceConfiguration {
 
   public static class ProjectConfiguration {
 
@@ -139,8 +128,6 @@ public class ReasonerConfiguration {
   private String url = null;
   private List<ProjectConfiguration> authorities = new ArrayList<>();
 
-  private String serviceId;
-
   public int getRefreshIntervalMinutes() {
     return refreshIntervalMinutes;
   }
@@ -181,46 +168,6 @@ public class ReasonerConfiguration {
     this.authorities = authorities;
   }
 
-  public String getServiceId() {
-    return serviceId;
-  }
-
-  public void setServiceId(String serviceId) {
-    this.serviceId = serviceId;
-  }
-
-  public String getServiceName() {
-    return serviceName;
-  }
-
-  public void setServiceName(String serviceName) {
-    this.serviceName = serviceName;
-  }
-
-  public String getServiceOwner() {
-    return serviceOwner;
-  }
-
-  public void setServiceOwner(String serviceOwner) {
-    this.serviceOwner = serviceOwner;
-  }
-
-  public String getServiceDescription() {
-    return serviceDescription;
-  }
-
-  public void setServiceDescription(String serviceDescription) {
-    this.serviceDescription = serviceDescription;
-  }
-
-  public String getServiceDisclaimers() {
-    return serviceDisclaimers;
-  }
-
-  public void setServiceDisclaimers(String serviceDisclaimers) {
-    this.serviceDisclaimers = serviceDisclaimers;
-  }
-  
   // this generates a first-boot config with only the im project from the connected resources
   public static void main(String[] deus) {
 
@@ -249,9 +196,9 @@ public class ReasonerConfiguration {
     ret.getAuthorities().add(aut3);
     ret.setServiceId(UUID.randomUUID().toString());
 
-    Utils.YAML.save(
-        ret,
-        new File(
-            ServiceConfiguration.INSTANCE.getDataPath() + File.separator + "reasoner" + ".yaml"));
+//    Utils.YAML.save(
+//        ret,
+//        new File(
+//            KlabServiceConfiguration.INSTANCE.getDataPath() + File.separator + "reasoner" + ".yaml"));
   }
 }

@@ -2800,6 +2800,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
+  protected org.integratedmodelling.klab.services.configuration.ServiceConfiguration
+      getServiceConfiguration() {
+    return this.configuration;
+  }
+
+  @Override
   public List<ObservationStrategy> computeObservationStrategies(
       Observation observation, ContextScope scope) {
     return observationReasoner.computeMatchingStrategies(observation, scope);

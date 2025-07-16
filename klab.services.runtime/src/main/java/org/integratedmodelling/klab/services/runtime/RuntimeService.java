@@ -174,6 +174,12 @@ public class RuntimeService extends BaseService
   }
 
   @Override
+  protected org.integratedmodelling.klab.services.configuration.ServiceConfiguration
+      getServiceConfiguration() {
+    return this.configuration;
+  }
+
+  @Override
   public Capabilities capabilities(Scope scope) {
 
     var ret = new RuntimeCapabilitiesImpl();

@@ -2,15 +2,15 @@ package org.integratedmodelling.klab.services.configuration;
 
 import java.io.File;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import java.util.*;
 
-/** FIXME copied from ReasonerConfiguration */
-public class ResolverConfiguration {
+import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.data.Version;
+
+/** Configuration for resolver service */
+public class ResolverConfiguration extends ServiceConfiguration {
   public static class ProjectConfiguration {
 
     private String project;
@@ -132,14 +132,7 @@ public class ResolverConfiguration {
   private int refreshIntervalMinutes = 10;
   private List<String> allowedGroups = new ArrayList<>();
   private String url = null;
-  //    private List<ProjectConfiguration> worldview = new ArrayList<>();
   private List<ProjectConfiguration> authorities = new ArrayList<>();
-//  private URI brokerURI;
-  private String serviceId;
-  private String serviceName;
-  private String serviceOwner;
-  private String serviceDescription;
-  private String serviceDisclaimers;
 
   public int getRefreshIntervalMinutes() {
     return refreshIntervalMinutes;
@@ -165,13 +158,6 @@ public class ResolverConfiguration {
     this.url = url;
   }
 
-  //    public List<ProjectConfiguration> getWorldview() {
-  //        return worldview;
-  //    }
-  //    public void setWorldview(List<ProjectConfiguration> worldview) {
-  //        this.worldview = worldview;
-  //    }
-
   public Services getServices() {
     return services;
   }
@@ -187,53 +173,6 @@ public class ResolverConfiguration {
   public void setAuthorities(List<ProjectConfiguration> authorities) {
     this.authorities = authorities;
   }
-
-  public String getServiceId() {
-    return serviceId;
-  }
-
-  public void setServiceId(String serviceId) {
-    this.serviceId = serviceId;
-  }
-
-  public String getServiceName() {
-    return serviceName;
-  }
-
-  public void setServiceName(String serviceName) {
-    this.serviceName = serviceName;
-  }
-
-  public String getServiceOwner() {
-    return serviceOwner;
-  }
-
-  public void setServiceOwner(String serviceOwner) {
-    this.serviceOwner = serviceOwner;
-  }
-
-  public String getServiceDescription() {
-    return serviceDescription;
-  }
-
-  public void setServiceDescription(String serviceDescription) {
-    this.serviceDescription = serviceDescription;
-  }
-
-  public String getServiceDisclaimers() {
-    return serviceDisclaimers;
-  }
-
-  public void setServiceDisclaimers(String serviceDisclaimers) {
-    this.serviceDisclaimers = serviceDisclaimers;
-  }
-//  public URI getBrokerURI() {
-//    return brokerURI;
-//  }
-//
-//  public void setBrokerURI(URI brokerURI) {
-//    this.brokerURI = brokerURI;
-//  }
 
   // this generates a first-boot config with only the im project from the connected resources
   public static void main(String[] deus) {
@@ -263,9 +202,9 @@ public class ResolverConfiguration {
     ret.getAuthorities().add(aut3);
     ret.setServiceId(UUID.randomUUID().toString());
 
-    Utils.YAML.save(
-        ret,
-        new File(
-            ServiceConfiguration.INSTANCE.getDataPath() + File.separator + "reasoner" + ".yaml"));
+//    Utils.YAML.save(
+//        ret,
+//        new File(
+//            KlabServiceConfiguration.INSTANCE.getDataPath() + File.separator + "reasoner" + ".yaml"));
   }
 }

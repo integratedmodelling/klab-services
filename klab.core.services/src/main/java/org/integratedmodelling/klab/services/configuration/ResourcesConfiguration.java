@@ -3,11 +3,14 @@ package org.integratedmodelling.klab.services.configuration;
 import java.io.File;
 import java.io.Serial;
 import java.io.Serializable;
+import java.net.CacheRequest;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 
@@ -17,7 +20,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
  *
  * @author Ferd
  */
-public class ResourcesConfiguration implements Serializable {
+public class ResourcesConfiguration extends ServiceConfiguration implements Serializable {
 
   @Serial private static final long serialVersionUID = 8407649258899502009L;
 
@@ -216,25 +219,11 @@ public class ResourcesConfiguration implements Serializable {
   /** The service work directory path within the k.LAB work directory */
   private String servicePath = "resources";
 
-  //  /** all other paths are relative to the service path */
-  //  private String localResourcePath = "local";
-  //
-  //  private String publicResourcePath = "public";
-  //  private URI brokerURI = null;
-
   /**
    * Each workspace name is a subdirectory with a number of projects in them. All are relative to
    * the resource path. The order of declaration in config is the order of loading.
    */
   private Map<String, Set<String>> workspaces = new LinkedHashMap<>();
-
-  private String serviceOwner;
-  private String serviceDescription;
-  private String serviceDisclaimers;
-
-  private String serviceId;
-
-  private String serviceName;
 
   /** Each project managed by this service */
   private Map<String, ProjectConfiguration> projectConfiguration = new HashMap<>();
@@ -275,52 +264,12 @@ public class ResourcesConfiguration implements Serializable {
     this.projectConfiguration = projectConfiguration;
   }
 
-  public String getServiceId() {
-    return serviceId;
-  }
-
-  public void setServiceId(String serviceId) {
-    this.serviceId = serviceId;
-  }
-
   public Map<String, ResourceConfiguration> getResourceConfiguration() {
     return resourceConfiguration;
   }
 
   public void setResourceConfiguration(Map<String, ResourceConfiguration> resourceConfiguration) {
     this.resourceConfiguration = resourceConfiguration;
-  }
-
-  public String getServiceName() {
-    return serviceName;
-  }
-
-  public void setServiceName(String serviceName) {
-    this.serviceName = serviceName;
-  }
-
-  public String getServiceOwner() {
-    return serviceOwner;
-  }
-
-  public void setServiceOwner(String serviceOwner) {
-    this.serviceOwner = serviceOwner;
-  }
-
-  public String getServiceDescription() {
-    return serviceDescription;
-  }
-
-  public void setServiceDescription(String serviceDescription) {
-    this.serviceDescription = serviceDescription;
-  }
-
-  public String getServiceDisclaimers() {
-    return serviceDisclaimers;
-  }
-
-  public void setServiceDisclaimers(String serviceDisclaimers) {
-    this.serviceDisclaimers = serviceDisclaimers;
   }
 
   public Map<String, ComponentConfiguration> getComponentConfiguration() {
@@ -331,4 +280,5 @@ public class ResourcesConfiguration implements Serializable {
       Map<String, ComponentConfiguration> componentConfiguration) {
     this.componentConfiguration = componentConfiguration;
   }
+
 }
