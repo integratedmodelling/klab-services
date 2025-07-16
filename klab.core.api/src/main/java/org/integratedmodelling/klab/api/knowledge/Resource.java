@@ -208,11 +208,13 @@ public interface Resource extends Knowledge, Resolvable {
      *
      * @param path
      * @return the builder itself
+     * @deprecated check if this is still OK
      */
     Builder addLocalResourcePath(String path);
 
     /**
-     * Add an error notification to make the build produce a failed resource.
+     * Notification that must remain with the resource. Add an error notification to make the build
+     * produce a failed resource.
      *
      * @param notifications
      * @return the builder itself
@@ -264,13 +266,13 @@ public interface Resource extends Knowledge, Resolvable {
      */
     Builder withAdapterType(String string);
 
-    /**
-     * Set the local resource path.
-     *
-     * @param localPath the local resource path
-     * @return the builder itself
-     */
-    Builder withLocalPath(String localPath);
+    //    /**
+    //     * Set the local resource path.
+    //     *
+    //     * @param localPath the local resource path
+    //     * @return the builder itself
+    //     */
+    //    Builder withLocalPath(String localPath);
 
     /**
      * Set the local resource name - for file resources, this should be the name of the primary file
@@ -289,14 +291,14 @@ public interface Resource extends Knowledge, Resolvable {
      */
     Builder withParameters(Parameters<String> parameters);
 
-    /**
-     * Set the project name. Only for local resources. Project name enters the local URN but is not
-     * exposed by the IResource API. Stored to enable easier management and retrieval.
-     *
-     * @param name
-     * @return the builder itself
-     */
-    Builder withProjectName(String name);
+//    /**
+//     * Set the project name. Only for local resources. Project name enters the local URN but is not
+//     * exposed by the IResource API. Stored to enable easier management and retrieval.
+//     *
+//     * @param name
+//     * @return the builder itself
+//     */
+//    Builder withProjectName(String name);
 
     /**
      * Return all the files that compose this resource in their original locations.
@@ -322,6 +324,8 @@ public interface Resource extends Knowledge, Resolvable {
      * importer will change suitably) but unique IDs should be set when possible, as the unique-fied
      * built externally can be ugly.
      *
+     * <p>TODO check if this remains OK
+     *
      * @param identifier an identifier describing the resource, suitable for use as part of a URN
      *     (so no colons, punctuation, uppercase characters or anything but underscores as
      *     separators).
@@ -331,6 +335,8 @@ public interface Resource extends Knowledge, Resolvable {
     /**
      * Exclusively for use by importers that use physical files. All files set in here are copied to
      * the resource directory and exported when published.
+     *
+     * <p>TODO check if this remains OK
      *
      * @param file original, existing file (will be copied to final location by import handler)
      */
@@ -365,13 +371,14 @@ public interface Resource extends Knowledge, Resolvable {
      *
      * @param name
      * @param type
-     * @param key
      * @return
      */
     Builder withOutput(String name, Artifact.Type type);
 
     /**
-     * The builder knows in advance the URN for the prospective resource.
+     * The builder knows in advance a non-null URN for the prospective resource. If the URN is
+     * {@link Urn#UNDEFINED_URN}, the service <em>must</em> create a proper one. If the URN is set
+     * in advance, the service <em>may</em> create a different one.
      *
      * @return
      */
@@ -388,19 +395,21 @@ public interface Resource extends Knowledge, Resolvable {
   /**
    * Return all local resource file paths, as slash-separated strings starting at a point depending
    * on the resource type (e.g. in local resources it will start at the project name). May be empty,
-   * never null. All paths will start with the return value of {@link #getLocalPath()}.
+   * never null.
+   *
+   * TODO check if this remains OK
    *
    * @return all local resource file paths
    */
   List<String> getLocalPaths();
 
-  /**
-   * If the resource is local, a local path should be defined and will identify a directory where
-   * all the {@link #getLocalPaths() local file resources} are found.
-   *
-   * @return local path
-   */
-  String getLocalPath();
+//  /**
+//   * If the resource is local, a local path should be defined and will identify a directory where
+//   * all the {@link #getLocalPaths() local file resources} are found.
+//   *
+//   * @return local path
+//   */
+//  String getLocalPath();
 
   /**
    * In local resources, this is the short name that the resource can be referred to in k.IM

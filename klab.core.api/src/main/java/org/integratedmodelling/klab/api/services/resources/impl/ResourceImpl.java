@@ -21,10 +21,10 @@ public class ResourceImpl implements Resource {
     private String urn;
     private Version version;
     private String adapterType;
-    private String localPath;
+//    private String localPath;
     private Geometry geometry;
     // only set in local resources
-    private String projectName;
+//    private String projectName;
     // only in local resources, the short name for k.IM
     private String localName;
     private Artifact.Type type;
@@ -101,13 +101,13 @@ public class ResourceImpl implements Resource {
         this.adapterType = adapterType;
     }
 
-    public String getLocalPath() {
-        return localPath;
-    }
-
-    public void setLocalPath(String localPath) {
-        this.localPath = localPath;
-    }
+//    public String getLocalPath() {
+//        return localPath;
+//    }
+//
+//    public void setLocalPath(String localPath) {
+//        this.localPath = localPath;
+//    }
 
     public Geometry getGeometry() {
         return geometry;
@@ -173,15 +173,15 @@ public class ResourceImpl implements Resource {
         this.notifications = notifications;
     }
 
-    public String getProjectName() {
-        return projectName;
-    }
+  //    public String getProjectName() {
+  //        return projectName;
+  //    }
+  //
+  //    public void setProjectName(String projectName) {
+  //        this.projectName = projectName;
+  //    }
 
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
-
-    public String getLocalName() {
+  public String getLocalName() {
         return localName;
     }
 

@@ -32,6 +32,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -1609,12 +1610,24 @@ public class ResourcesProvider extends BaseService
 
   @Override
   public Future<ResourceSet> importResource(Resource resource, UserScope scope) {
+    return CompletableFuture.supplyAsync(() -> ingestResource(resource, scope));
+  }
+
+  /**
+   * The synchronous job started by {@link #importResource(Resource, UserScope)}.
+   *
+   * @param resource
+   * @param scope
+   * @return
+   */
+  public ResourceSet ingestResource(Resource resource, UserScope scope) {
     // establish rights
     // validate resource
     // check if we're updating and, if so, whether we have the right to modify
     // find adapter
     // have it validate the resource and, if any, the contents
     // if valid, do the import
-    return null;
+    // propagate any notifications in the resource to the top-level result
+    return ResourceSet.empty(Notification.error("Service resource ingestion: please implement me"));
   }
 }

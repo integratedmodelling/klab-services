@@ -2184,16 +2184,23 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       return map;
     }
 
-    public static void ensureContains(Map definition, Object... keys) {
-      if (definition != null) {
-        for (Object key : keys) {
-          if (!definition.containsKey(key)) {
-            throw new KlabIllegalArgumentException(
-                "Utils.Maps.ensureContains: missing key " + key + " in " + "definition");
-          }
+    /**
+     * Throw an exception if the map does not contain all the passed keys.
+     *
+     * @param map
+     * @param keys
+     * @throws KlabIllegalStateException if not compliant
+     */
+    public static void ensureContains(Map map, Object... keys) {
+      if (map == null) {
+        throw new KlabIllegalArgumentException("Utils.Maps.ensureContains: map cannot be null");
+      }
+      for (Object key : keys) {
+        if (!map.containsKey(key)) {
+          throw new KlabIllegalStateException(
+              "Utils.Maps.ensureContains: missing key " + key + " in " + "map");
         }
       }
-      throw new KlabIllegalArgumentException("Utils.Maps.ensureContains: map cannot be null");
     }
   }
 
