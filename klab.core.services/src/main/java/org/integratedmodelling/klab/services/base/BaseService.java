@@ -20,6 +20,7 @@ import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
@@ -455,6 +456,14 @@ public abstract class BaseService implements KlabService {
     }
 
     return ret;
+  }
+
+  protected boolean isAllowed(CRUDOperation operation, UserScope scope) {
+    var rights = getServiceConfiguration().getPermissions().get(operation);
+    if (rights == null) {
+      return Utils.URLs.isLocalHost(getUrl());
+    }
+    return rights.checkAuthorization(scope);
   }
 
   @Override
