@@ -54,6 +54,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -66,6 +67,7 @@ import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
 import org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox;
+import org.integratedmodelling.klab.services.resources.storage.ResourceManager;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
@@ -86,6 +88,7 @@ public class ResourcesProvider extends BaseService
   private final String hardwareSignature = Utils.Names.getHardwareId();
   private final WorkspaceManager workspaceManager;
   private final ResourcesKBox resourcesKbox;
+  private final ResourceManager resourceManager;
 
   /**
    * We keep a hash of all the resource URNs we serve for quick reference and search
@@ -188,7 +191,7 @@ public class ResourcesProvider extends BaseService
     this.resourcesKbox = new ResourcesKBox(scope, options, this);
     this.workspaceManager =
         new WorkspaceManager(scope, getStartupOptions(), this, this::resolveRemoteProject);
-
+    this.resourceManager = new ResourceManager(this.resourcesKbox, this);
     //    // FIXME remove along with MapDB and catalog, use Nitrite instead
     //    this.db =
     //        DBMaker.fileDB(
@@ -440,6 +443,17 @@ public class ResourcesProvider extends BaseService
   public Workspace retrieveWorkspace(String urn, Scope scope) {
     // TODO check permissions in scope, possibly filter the workspace's projects
     return this.workspaceManager.getWorkspace(urn);
+  }
+
+  @Override
+  public ResourceSet resolveResourceAdapter(String urn, Scope scope) {
+    var version = Version.splitVersion(urn);
+    var adapter = getComponentRegistry().getAdapter(urn, version.getSecond(), scope);
+    if (adapter == null) {
+      return ResourceSet.empty();
+    }
+    // TODO
+    return null;
   }
 
   @Override
@@ -1608,20 +1622,65 @@ public class ResourcesProvider extends BaseService
   }
 
   /**
-   * The synchronous job started by {@link #importResource(Resource, UserScope)}.
+   * The synchronous job started by {@link #importResource(Resource, UserScope)}. This may be
+   * long-running.
    *
    * @param resource
    * @param scope
    * @return
    */
   public ResourceSet ingestResource(Resource resource, UserScope scope) {
+
+    var operation = CRUDOperation.CREATE;
+
+    var existingSame = resourcesKbox.getResource(resource.getUrn(), resource.getVersion());
+    if (existingSame != null) {
+      return ResourceSet.empty(
+          Notification.error(
+              "Resource already exists in version " + resource.getVersion() + " or higher"));
+    }
+    var existingPrev = resourcesKbox.getResource(resource.getUrn(), Version.ANY_VERSION);
+    if (existingPrev != null) {
+      operation = CRUDOperation.UPDATE;
+    }
+
     // establish rights
-    // validate resource
+    if (!isAllowed(operation, scope)) {
+      return ResourceSet.empty(
+          Notification.error(
+              "User "
+                  + scope.getUser().getUsername()
+                  + " is not authorized to "
+                  + operation.name().toLowerCase()
+                  + " resources"));
+    }
     // check if we're updating and, if so, whether we have the right to modify
+
     // find adapter
-    // have it validate the resource and, if any, the contents
-    // if valid, do the import
-    // propagate any notifications in the resource to the top-level result
-    return ResourceSet.empty(Notification.error("Service resource ingestion: please implement me"));
+    var adapterResult = resolveResourceAdapter(resource.getAdapterType(), scope);
+    if (adapterResult.isEmpty()) {
+      // resolve using the remaining services in the scope
+      var otherServices =
+          scope.getServices(ResourcesService.class).stream()
+              .filter(s -> !serviceId().equals(s.serviceId()))
+              .toList();
+      if (!otherServices.isEmpty()) {
+        // Utils.Resources.queryResources(us)
+      }
+    }
+
+    if (adapterResult.isEmpty()) {
+      return ResourceSet.empty(
+          Notification.error(
+              "Cannot find or load adapter "
+                  + resource.getAdapterType()
+                  + " to handle resource "
+                  + resource.getUrn()));
+    }
+
+    Adapter adapter = null; // Load the adapter from the resourceSet
+    ResourcePrivileges rights = null; // TODO
+
+    return resourceManager.ingestResource(resource, adapter, rights);
   }
 }

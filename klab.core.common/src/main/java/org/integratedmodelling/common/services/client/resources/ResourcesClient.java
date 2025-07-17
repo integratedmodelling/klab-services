@@ -375,6 +375,13 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
+  public ResourceSet resolveResourceAdapter(String urn, Scope scope) {
+    return client
+        .withScope(scope)
+        .get(ServicesAPI.RESOURCES.RESOLVE_ADAPTER, ResourceSet.class, "urn", urn);
+  }
+
+  @Override
   public ResourceSet resolveServiceCall(String name, Version version, Scope scope) {
     return client
         .withScope(scope)

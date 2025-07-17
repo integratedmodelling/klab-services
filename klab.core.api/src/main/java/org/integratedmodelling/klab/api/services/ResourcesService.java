@@ -203,6 +203,16 @@ public interface ResourcesService extends KlabService {
   Workspace retrieveWorkspace(String urn, Scope scope);
 
   /**
+   * Resolve a given adapter ID (with possible @version suffix) to components known inside this
+   * service.
+   *
+   * @param urn
+   * @param scope
+   * @return
+   */
+  ResourceSet resolveResourceAdapter(String urn, Scope scope);
+
+  /**
    * Resolve a component (and possibly its dependencies) that provides the passed service call.
    *
    * @param name URN of the service call

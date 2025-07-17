@@ -407,6 +407,7 @@ public interface ServicesAPI {
     String RETRIEVE_NAMESPACE = "/retrieveNamespace/{urn}";
     String RETRIEVE_ONTOLOGY = "/retrieveOntology/{urn}";
     String RESOLVE_RESOURCE = "/resolveResource";
+    String RESOLVE_ADAPTER = "/resolveAdapter/{urn}";
     String RETRIEVE_OBSERVATION_STRATEGY_DOCUMENT = "/retrieveObservationStrategyDocument/{urn}";
     String LIST_WORKSPACES = "/listWorkspaces";
     String RETRIEVE_BEHAVIOR = "/retrieveBehavior/{urn}";
