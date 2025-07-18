@@ -300,6 +300,8 @@ public interface Resource extends Knowledge, Resolvable {
 //     */
 //    Builder withProjectName(String name);
 
+    Builder withServiceId(String serviceId);
+
     /**
      * Return all the files that compose this resource in their original locations.
      *

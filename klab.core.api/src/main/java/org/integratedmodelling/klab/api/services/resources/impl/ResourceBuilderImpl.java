@@ -20,7 +20,7 @@ public class ResourceBuilderImpl implements Resource.Builder {
   private Metadata metadata = Metadata.create();
   private Parameters<String> parameters = Parameters.create();
   private Geometry geometry;
-//  private String localPath;
+  //  private String localPath;
   private List<String> resourcePaths = new ArrayList<>();
   private List<Resource> history = new ArrayList<>();
   private List<Notification> notifications = new ArrayList<>();
@@ -29,7 +29,7 @@ public class ResourceBuilderImpl implements Resource.Builder {
   private List<Resource.Attribute> outputs = new ArrayList<>();
   private long resourceTimestamp = System.currentTimeMillis();
   private Version resourceVersion;
-//  private boolean errors = false;
+  //  private boolean errors = false;
   private String adapterType;
   private Artifact.Type type;
   //    private String projectName;
@@ -41,6 +41,7 @@ public class ResourceBuilderImpl implements Resource.Builder {
   private List<File> importedFiles = new ArrayList<>();
 
   private String urn;
+  private String serviceId;
 
   public ResourceBuilderImpl(String urn) {
     this.urn = urn;
@@ -62,7 +63,8 @@ public class ResourceBuilderImpl implements Resource.Builder {
     ret.setTimestamp(this.resourceTimestamp);
     ret.setVersion(this.resourceVersion);
     ret.setAdapterType(this.adapterType);
-//    ret.setLocalPath(this.localPath);
+    ret.setServiceId(this.serviceId);
+    //    ret.setLocalPath(this.localPath);
     //        		ret.localPaths.addAll(resourcePaths);
     ret.setType(type);
     //        		ret.projectName = this.projectName;
@@ -116,11 +118,11 @@ public class ResourceBuilderImpl implements Resource.Builder {
     return this;
   }
 
-//  @Override
-//  public Resource.Builder withLocalPath(String localPath) {
-//    this.localPath = localPath;
-//    return this;
-//  }
+  //  @Override
+  //  public Resource.Builder withLocalPath(String localPath) {
+  //    this.localPath = localPath;
+  //    return this;
+  //  }
 
   /** {@inheritDoc} */
   @Override
@@ -183,11 +185,17 @@ public class ResourceBuilderImpl implements Resource.Builder {
     return this;
   }
 
-//  @Override
-//  public Resource.Builder withProjectName(String name) {
-//    this.projectName = name;
-//    return this;
-//  }
+  @Override
+  public Resource.Builder withServiceId(String serviceId) {
+    this.serviceId = serviceId;
+    return this;
+  }
+
+  //  @Override
+  //  public Resource.Builder withProjectName(String name) {
+  //    this.projectName = name;
+  //    return this;
+  //  }
 
   @Override
   public Collection<File> getImportedFiles() {

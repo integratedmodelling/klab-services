@@ -94,8 +94,7 @@ public class ComponentIOLibrary {
                   + ":"
                   + properties.get("artifactId")
                   + ":"
-                  + properties.get("version"),
-              scope);
+                  + properties.get("version"));
 
       if (ret != null && service instanceof ResourcesService resourcesService) {
         Version version =

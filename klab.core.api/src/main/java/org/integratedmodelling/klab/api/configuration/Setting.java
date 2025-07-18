@@ -87,6 +87,16 @@ public enum Setting {
       "Maximum memory for the local resources service in MB",
       Integer.class,
       Product.ProductType.RESOURCES_SERVICE.defaultMaxMemoryLimitMB()),
+  MAVEN_SNAPSHOT_CHECK_INTERVAL(
+          Page.RESOURCES,
+          "Interval in seconds for checking for new Maven snapshot components (0 to disable)",
+          Integer.class,
+          0),
+  GIT_REPOSITORY_CHECK_INTERVAL(
+          Page.RESOURCES,
+          "Interval in seconds for checking for changes in configured Git repositories (0 to disable)",
+          Integer.class,
+          0),
   START_RESOURCES_SERVICE_IN_DEBUG_MODE(
       Page.DEBUGGING,
       "Start the local resources service in debug mode on port "

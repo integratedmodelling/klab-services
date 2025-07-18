@@ -135,10 +135,29 @@ public class ComponentRegistry {
 
   private synchronized void checkForUpdates() {
     for (var component : components.values()) {
-      if (component.mavenCoordinates() != null) {
-        System.out.println("TODO - check for updated Maven component");
+      if (component.mavenCoordinates() != null
+          && component.fileHash() != null
+          && !component.mavenCoordinates().contains("SNAPSHOT")) {
+        /** re-download in temporary area and compare hashes. */
+        var coords = component.mavenCoordinates().split(":");
+        if (coords.length == 3) {
+          var archive = Utils.Maven.synchronizeArtifact(coords[0], coords[1], coords[2], true);
+          if (archive != null) {
+            var hash = Utils.Files.hash(archive);
+            if (hash != null && !hash.equals(component.fileHash())) {
+              Thread.ofVirtual().start(() -> updateComponent(component, archive));
+            }
+          }
+        }
       }
     }
+  }
+
+  private synchronized void updateComponent(
+      Extensions.ComponentDescriptor component, File archive) {
+    Logging.INSTANCE.info(
+        "Updating modified component " + component.id() + " from " + component.mavenCoordinates());
+    installComponent(archive, component.mavenCoordinates());
   }
 
   private void readConfiguration(BaseService service, StartupOptions options) {
@@ -218,7 +237,7 @@ public class ComponentRegistry {
   }
 
   public Pair<Extensions.ComponentDescriptor, ResourceSet> installComponent(
-      File resourcePath, String mavenCoordinates, Scope scope) {
+      File resourcePath, String mavenCoordinates) {
 
     // TODO allow same path with different versions and replacing same version
     var pluginDestination =
@@ -231,7 +250,8 @@ public class ComponentRegistry {
         Files.copy(
             resourcePath.toPath(), pluginDestination.toPath(), StandardCopyOption.REPLACE_EXISTING);
       } catch (IOException e) {
-        scope.error(e);
+        Logging.INSTANCE.error(
+            "Unable to copy " + resourcePath.getAbsolutePath() + " to " + pluginDestination, e);
         return Pair.of(null, ResourceSet.empty(Notification.error(e)));
       }
     } else if (!pluginDestination.exists()) {
@@ -310,8 +330,8 @@ public class ComponentRegistry {
    * @param mavenCoordinates
    * @return the component URN or null
    */
-  public String registerComponent(File componentJar, String mavenCoordinates, Scope scope) {
-    var result = installComponent(componentJar, mavenCoordinates, scope);
+  public String registerComponent(File componentJar, String mavenCoordinates) {
+    var result = installComponent(componentJar, mavenCoordinates);
     if (result != null && !result.getSecond().isEmpty()) {
       return result.getFirst().id();
     }
@@ -847,7 +867,7 @@ public class ComponentRegistry {
           scope.error(e);
           return false;
         }
-        installComponent(plugin, null, scope);
+        installComponent(plugin, null);
       }
     }
 

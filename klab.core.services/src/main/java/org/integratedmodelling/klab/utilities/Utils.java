@@ -229,10 +229,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
     public static boolean needsUpdate(String mavenGroupId, String mavenArtifactId, String version) {
 
       if (version.contains("SNAPSHOT")) {
-        // TODO if version exists in repo, check local hash vs. remote; if different, return true.
-        // At the moment whatever is
-        //  in the local repo will do.
-        //                return true;
       }
       return getLocalJarArtifact(mavenGroupId, mavenArtifactId, version) == null;
     }

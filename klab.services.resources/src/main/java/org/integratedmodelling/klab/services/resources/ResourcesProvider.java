@@ -1134,7 +1134,7 @@ public class ResourcesProvider extends BaseService
     ResourceSet ret = null;
 
     if ("jar".equals(Utils.Files.getFileExtension(resourcePath))) {
-      var imported = getComponentRegistry().installComponent(resourcePath, null, scope);
+      var imported = getComponentRegistry().installComponent(resourcePath, null);
       knowledgeClass = KnowledgeClass.COMPONENT;
       sourceFile = imported.getFirst().sourceArchive();
       urn = imported.getFirst().id();

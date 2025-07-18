@@ -94,6 +94,7 @@ public class ResourcesLibrary {
     }
     var builder =
         Resource.builder(definition.get("urn").toString())
+            .withServiceId(service.serviceId())
             .withAdapterType(definition.get("adapterType").toString())
             .withType(Artifact.Type.valueOf(definition.get("type").toString()));
 
