@@ -1,11 +1,10 @@
 package org.integratedmodelling.klab.api.services.runtime.impl;
 
+import java.io.Serial;
+import java.io.Serializable;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UIView;
-
-import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * Trivial bean for notifications, so these can be sent outside the validator and processed in it.
@@ -26,6 +25,7 @@ public class NotificationImpl implements Notification, Serializable {
   private LexicalContext lexicalContext;
   private Mode mode;
   private UIView.Interactivity interactivity = UIView.Interactivity.BATCH;
+  private Outcome outcome;
 
   //    private Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
 
@@ -188,14 +188,14 @@ public class NotificationImpl implements Notification, Serializable {
     this.mode = mode;
   }
 
-  //    @Override
-  //    public Message.ForwardingPolicy getForwardingPolicy() {
-  //        return forwardingPolicy;
-  //    }
-  //
-  //    public void setForwardingPolicy(Message.ForwardingPolicy forwardingPolicy) {
-  //        this.forwardingPolicy = forwardingPolicy;
-  //    }
+  @Override
+  public Outcome getOutcome() {
+    return outcome;
+  }
+
+  public void setOutcome(Outcome outcome) {
+    this.outcome = outcome;
+  }
 
   @Override
   public UIView.Interactivity getInteractivity() {

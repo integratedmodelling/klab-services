@@ -19,6 +19,15 @@ public interface Notification extends Serializable {
     Verbose
   }
 
+  enum Outcome {
+    Success,
+    Failure,
+    Ignored,
+    Pending,
+    Cancelled,
+    Unknown;
+  }
+
   enum Level {
     Debug(0),
     Info(1),
@@ -73,6 +82,13 @@ public interface Notification extends Serializable {
   String getIdentity();
 
   /**
+   * Outcome is used to improve the information content of the notification, and it may be null.
+   *
+   * @return
+   */
+  Outcome getOutcome();
+
+  /**
    * This will be the string representation of the silly Java level, which was born before enums
    * existed.
    *
@@ -108,23 +124,23 @@ public interface Notification extends Serializable {
    */
   LexicalContext getLexicalContext();
 
-  public static NotificationImpl of(String message, Level level) {
+  static NotificationImpl of(String message, Level level) {
     return new NotificationImpl(message, level);
   }
 
-  public static NotificationImpl error(Object... objects) {
+  static NotificationImpl error(Object... objects) {
     return create(Utils.Collections.flatCollection(Level.Error, objects).toArray());
   }
 
-  public static NotificationImpl info(Object... objects) {
+  static NotificationImpl info(Object... objects) {
     return create(Utils.Collections.flatCollection(Level.Info, objects).toArray());
   }
 
-  public static NotificationImpl warning(Object... objects) {
+  static NotificationImpl warning(Object... objects) {
     return create(Utils.Collections.flatCollection(Level.Warning, objects).toArray());
   }
 
-  public static NotificationImpl debug(Object... objects) {
+  static NotificationImpl debug(Object... objects) {
     return create(Utils.Collections.flatCollection(Level.Debug, objects).toArray());
   }
 
@@ -142,7 +158,7 @@ public interface Notification extends Serializable {
     long timestamp = System.currentTimeMillis();
     Mode mode = Mode.Normal;
     UIView.Interactivity interactivity = UIView.Interactivity.BATCH;
-    //        Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
+    Outcome outcome = null;
 
     if (objects != null) {
       for (Object o : objects) {
@@ -161,6 +177,8 @@ public interface Notification extends Serializable {
           level = l;
         } else if (o instanceof LexicalContext lc) {
           lexicalContext = lc;
+        } else if (o instanceof Outcome outcome1) {
+          outcome = outcome1;
         } else if (o instanceof Mode mod) {
           mode = mod;
         } /*else if (o instanceof Message.ForwardingPolicy fwp) {
@@ -182,9 +200,8 @@ public interface Notification extends Serializable {
     ret.setLexicalContext(lexicalContext);
     ret.setTimestamp(timestamp);
     ret.setMode(mode);
+    ret.setOutcome(outcome);
     ret.setInteractivity(interactivity);
-    //        ret.setType(type);
-    //        ret.setForwardingPolicy(forwardingPolicy);
 
     return ret;
   }

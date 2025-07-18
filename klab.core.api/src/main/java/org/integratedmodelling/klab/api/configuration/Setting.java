@@ -25,6 +25,11 @@ public enum Setting {
       "Set the service polling interval for remote services in seconds",
       Integer.class,
       20),
+  NOTIFICATIONS_CACHED(
+          Page.APPEARANCE,
+          "Number of notifications to keep",
+          Integer.class,
+          100),
   WORK_DIRECTORY(
       Page.GENERAL,
       "The directory where all k.LAB files are stored",
