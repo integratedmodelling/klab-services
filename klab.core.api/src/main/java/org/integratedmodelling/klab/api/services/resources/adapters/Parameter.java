@@ -13,42 +13,47 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 @Target(ElementType.TYPE)
 public @interface Parameter {
 
-	/**
-	 * The parameter name. Must be a simple lowercase name. Dot-separated paths are
-	 * accepted and will be shown hierarchically in the resource editor; they won't
-	 * be admissible as URN parameters.
-	 * 
-	 * @return
-	 */
-	String name();
+  /**
+   * The parameter name. Must be a simple lowercase name. Dot-separated paths are accepted and will
+   * be shown hierarchically in the resource editor; they won't be admissible as URN parameters.
+   *
+   * @return
+   */
+  String name();
 
-	/**
-	 * Type(s) accepted for the parameter.
-	 * 
-	 * @return
-	 */
-	Artifact.Type[] type();
+  /**
+   * Type(s) accepted for the parameter.
+   *
+   * @return
+   */
+  Artifact.Type[] type();
 
-	/**
-	 * If optional, the adapter must be prepared to not have it.
-	 * 
-	 * @return
-	 */
-	boolean optional() default false;
+  /**
+   * No parameter should ever be lacking an accurate description
+   *
+   * @return
+   */
+  String description();
 
-	/**
-	 * If true, this parameter can be passed in the URN.
-	 * 
-	 * @return
-	 */
-	boolean urnParameter() default false;
+  /**
+   * If optional, the adapter must be prepared to not have it.
+   *
+   * @return
+   */
+  boolean optional() default false;
 
-	/**
-	 * If true, this parameter belongs in the resource configuration. If also
-	 * accepted in the URN, this will serve as default, overriddable through the
-	 * URN.
-	 * 
-	 * @return
-	 */
-	boolean configurationParameter() default true;
+  /**
+   * If true, this parameter can be passed in the URN.
+   *
+   * @return
+   */
+  boolean urnParameter() default false;
+
+  /**
+   * If true, this parameter belongs in the resource configuration. If also accepted in the URN,
+   * this will serve as default, overriddable through the URN.
+   *
+   * @return
+   */
+  boolean configurationParameter() default true;
 }

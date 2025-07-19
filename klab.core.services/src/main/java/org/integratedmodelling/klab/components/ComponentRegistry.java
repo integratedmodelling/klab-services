@@ -1213,7 +1213,7 @@ public class ComponentRegistry {
   public class AdapterImpl implements Adapter {
 
     private final String name;
-    private Artifact.Type resourceType;
+    private Set<Artifact.Type> resourceType = EnumSet.noneOf(Artifact.Type.class);
     private final Version version;
     boolean universal;
     boolean threadSafe;
@@ -1236,6 +1236,9 @@ public class ComponentRegistry {
       this.version = Version.create(annotation.version());
       this.universal = annotation.universal();
       this.threadSafe = annotation.threadSafe();
+      if (annotation.type() != null && annotation.type().length > 0) {
+        this.resourceType.addAll(Arrays.asList(annotation.type()));
+      }
       this.implementationClass = implementationClass;
       if (this.threadSafe) {
         try {
@@ -1258,7 +1261,7 @@ public class ComponentRegistry {
       if (typeAttributor != null) {
         // TODO
       }
-      return this.resourceType;
+      return this.resourceType.isEmpty() ? null : this.resourceType.iterator().next();
     }
 
     @Override
@@ -1501,7 +1504,7 @@ public class ComponentRegistry {
         throw new KlabIllegalStateException(
             "Cannot load adapter " + name + ": missing encoder method");
       }
-      if ((this.resourceType == null || this.resourceType == Artifact.Type.VOID)
+      if ((this.resourceType == null || this.resourceType.isEmpty())
           && typeAttributor == null) {
         throw new KlabIllegalStateException(
             "Cannot load adapter "

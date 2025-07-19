@@ -519,7 +519,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
       public static void main(String[] dio) {
         var pop =
-            new PollingFuture<Object>(null, Object.class, 0, 5, 500, 7, 1000, 5, 1800, -1, 3000);
+            new PollingFuture<Object>(null, Object.class, 0, 100, 500, 7, 1000, 5, 1800, -1, 3000);
         for (int i = 0; i < 100; i++) {
           System.out.println(pop.nextDelay());
         }
@@ -552,7 +552,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             stage++;
           }
         }
-        scheduler.schedule(this::poll, 0, TimeUnit.MILLISECONDS);
+        scheduler.schedule(this::poll, 300, TimeUnit.MILLISECONDS);
       }
 
       @Override
@@ -564,11 +564,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         // if not done, reschedule, else complete. If exception (remote or local), complete
         // exceptionally.
         var status = client.get(ServicesAPI.JOBS.STATUS, JobStatus.class, "id", id);
+        Logging.INSTANCE.info("Polling for job status: " + status);
         if (status == null) {
           if (noResponseCount == 3) {
             completeExceptionally(
                 new KlabServiceAccessException("Service unresponsive after 3 attempts"));
           } else {
+            // give it a bit more time
+            scheduler.schedule(this::poll, nextDelay() * 2L, TimeUnit.MILLISECONDS);
             noResponseCount++;
           }
         } else if (status.getStatus() == Scope.Status.FINISHED) {
@@ -968,7 +971,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             var body = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
             if (statusCode == 200 || statusCode == 202) {
               var id = Long.parseLong(body);
-              return new PollingFuture<>(this, resultClass, id, 5, 500, 7, 1000, 5, 1800, -1, 3000);
+              return new PollingFuture<>(this, resultClass, id, 100, 500, 7, 1000, 5, 1800, -1, 3000);
             } else {
               var log = parseResponse(body, Map.class);
               System.out.println(
@@ -1141,7 +1144,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
           if (response.statusCode() == 200 || response.statusCode() == 202) {
             var id = Long.parseLong(response.body());
-            return new PollingFuture<>(this, resultClass, id, 5, 500, 7, 1000, 5, 1800, -1, 3000);
+            return new PollingFuture<>(this, resultClass, id, 100, 500, 7, 1000, 5, 1800, -1, 3000);
           } else {
             var log = parseResponse(response.body(), Map.class);
             System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");

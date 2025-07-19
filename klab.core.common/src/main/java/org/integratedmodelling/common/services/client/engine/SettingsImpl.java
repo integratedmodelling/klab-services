@@ -11,10 +11,13 @@ import org.integratedmodelling.klab.api.engine.distribution.Release;
 import org.integratedmodelling.klab.api.services.KlabService;
 
 import java.io.File;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class SettingsImpl implements Settings {
 
   private final CommentedFileConfig config;
+  private Executor executor = Executors.newSingleThreadExecutor();
 
   public static Settings forProduct(Release release) {
     // TODO
@@ -59,7 +62,7 @@ public class SettingsImpl implements Settings {
     this.settingsFileName = settingsFileName;
     this.settingsFile = Configuration.INSTANCE.getFile(settingsFileName + ".toml");
     // Advanced builder, default resource, autosave and much more (-> cf the wiki)
-    this.config = CommentedFileConfig.builder(settingsFile).autosave().build();
+    this.config = CommentedFileConfig.builder(settingsFile).build();
     config.load(); // This actually reads the config
   }
 
@@ -73,7 +76,7 @@ public class SettingsImpl implements Settings {
   }
 
   @Override
-  public synchronized void set(Setting setting, Object value) {
+  public void set(Setting setting, Object value) {
     Logging.INSTANCE.info(
         "DIO CASTORO SETTING: "
             + setting.name()
@@ -83,7 +86,13 @@ public class SettingsImpl implements Settings {
             + value.getClass()
             + ") "
             + (value instanceof String ? "\"" + value + "\"" : ""));
-    config.set(setting2Property(setting), value);
+    executor.execute(
+        () -> {
+          // must do this or quick setting changes will mess up the file. Autosave is out for the
+          // same reason.
+          config.set(setting2Property(setting), value);
+          config.save();
+        });
   }
 
   private String setting2Property(Setting setting) {

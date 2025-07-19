@@ -1186,8 +1186,8 @@ public class ResourcesProvider extends BaseService
       status.setType(ResourceInfo.Type.AVAILABLE);
       status.setLegacy(false);
       status.setUrn(urn);
+      status.setServiceId(serviceId());
       resourcesKbox.putStatus(status);
-      //      db.commit();
       return status;
     }
 

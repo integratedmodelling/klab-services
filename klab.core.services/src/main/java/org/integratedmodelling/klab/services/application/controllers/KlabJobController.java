@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.services.runtime.objects.JobStatus;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,7 +22,7 @@ public class KlabJobController {
   public JobStatus jobStatus(@PathVariable(name = "id") long id, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var scope = authorization.getScope();
-      if (scope instanceof ServiceSessionScope serviceSessionScope) {
+      if (scope instanceof ServiceUserScope serviceSessionScope) {
         return serviceSessionScope.getJobManager().status(id);
       }
     }
@@ -32,7 +33,7 @@ public class KlabJobController {
   public boolean cancelJob(@PathVariable(name = "id") long id, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var scope = authorization.getScope();
-      if (scope instanceof ServiceSessionScope serviceSessionScope) {
+      if (scope instanceof ServiceUserScope serviceSessionScope) {
         return serviceSessionScope.getJobManager().cancel(id);
       }
     }
@@ -40,10 +41,11 @@ public class KlabJobController {
   }
 
   @GetMapping(ServicesAPI.JOBS.RETRIEVE)
-  public String retrieveJob(@PathVariable(name = "id") long id, Principal principal) throws Throwable {
+  public String retrieveJob(@PathVariable(name = "id") long id, Principal principal)
+      throws Throwable {
     if (principal instanceof EngineAuthorization authorization) {
       var scope = authorization.getScope();
-      if (scope instanceof ServiceSessionScope serviceSessionScope) {
+      if (scope instanceof ServiceUserScope serviceSessionScope) {
         return serviceSessionScope.getJobManager().getResult(id);
       }
     }

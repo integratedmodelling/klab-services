@@ -10,8 +10,10 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -34,13 +36,13 @@ public class ComponentIOLibrary {
       description = "Import a component by directly uploading a jar file",
       mediaType = "application/java-archive",
       fileExtensions = {"jar"})
-  public static String importComponentDirect(File file, BaseService service, Scope scope) {
+  public static ResourceSet importComponentDirect(File file, BaseService service, Scope scope) {
 
     if (file != null && file.exists()) {
       var componentRegistry = service.getComponentRegistry();
     }
 
-    return null;
+    return ResourceSet.empty(Notification.error("Jar import not yet implemented"));
   }
 
   /**
@@ -75,38 +77,57 @@ public class ComponentIOLibrary {
             description = "Non-standard Maven repository",
             optional = true)
       })
-  public static String importComponentMaven(
+  public static ResourceSet importComponentMaven(
       Parameters<String> properties, BaseService service, Scope scope) {
 
-    var file =
-        Utils.Maven.synchronizeArtifact(
-            properties.get("groupId", String.class),
-            properties.get("artifactId", String.class),
-            properties.get("version", String.class),
-            true);
+    try {
+      var file =
+          Utils.Maven.synchronizeArtifact(
+              properties.get("groupId", String.class),
+              properties.get("artifactId", String.class),
+              properties.get("version", String.class),
+              true);
 
-    if (file != null && file.exists()) {
-      var componentRegistry = service.getComponentRegistry();
-      var ret =
-          componentRegistry.registerComponent(
-              file,
-              properties.get("groupId")
-                  + ":"
-                  + properties.get("artifactId")
-                  + ":"
-                  + properties.get("version"));
+      if (file != null && file.exists()) {
+        var componentRegistry = service.getComponentRegistry();
+        var ret =
+            componentRegistry.registerComponent(
+                file,
+                properties.get("groupId")
+                    + ":"
+                    + properties.get("artifactId")
+                    + ":"
+                    + properties.get("version"));
 
-      if (ret != null && service instanceof ResourcesService resourcesService) {
-        Version version =
-            properties.containsKey("version")
-                ? Version.create(properties.get("version", String.class))
-                : Version.ANY_VERSION;
-        var component = componentRegistry.getComponent(ret, version);
-        // TODO if the component comes with explicit access rights, record them
-        resourcesService.registerResource(
-            component.id(), KlabAsset.KnowledgeClass.COMPONENT, component.sourceArchive(), scope);
-        return ret;
+        if (ret != null && service instanceof ResourcesService resourcesService) {
+          Version version =
+              properties.containsKey("version")
+                  ? Version.create(properties.get("version", String.class))
+                  : Version.ANY_VERSION;
+          var component = componentRegistry.getComponent(ret, version);
+          // TODO if the component comes with explicit access rights, record them
+          var info =
+              resourcesService.registerResource(
+                  component.id(),
+                  KlabAsset.KnowledgeClass.COMPONENT,
+                  component.sourceArchive(),
+                  scope);
+          var result =
+              ResourceSet.of(
+                  info, component.version() != null ? component.version() : Version.ANY_VERSION);
+          result
+              .getNotifications()
+              .add(
+                  Notification.info(
+                      "Import of component "
+                          + component.id()
+                          + " successful with version "
+                          + component.version()));
+          return result;
+        }
       }
+    } catch (Throwable t) {
+      return ResourceSet.empty(Notification.error("Component import failed: ", t.getMessage()));
     }
 
     return null;
