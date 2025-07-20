@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.runtime.knowledge;
 
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -7,11 +10,6 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 
 public class ProvenanceGraph implements Provenance {
 

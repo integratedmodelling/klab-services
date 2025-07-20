@@ -1,13 +1,10 @@
 package org.integratedmodelling.klab.runtime.kactors.actors.runtime;
 
-import org.integratedmodelling.klab.runtime.kactors.compiler.ActorBase;
-import org.integratedmodelling.klab.runtime.kactors.compiler.LexicalContext;
-import org.jetbrains.annotations.NotNull;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.Nullable;
+import org.integratedmodelling.klab.runtime.kactors.compiler.ActorBase;
+import org.integratedmodelling.klab.runtime.kactors.compiler.LexicalContext;
 
 // represents each action during execution, providing access to the k.Actors environment and hashes
 // for local variables

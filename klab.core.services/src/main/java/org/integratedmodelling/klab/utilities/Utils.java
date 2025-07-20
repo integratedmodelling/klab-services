@@ -393,6 +393,58 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       }
     }
 
+    public static class ArtifactInfo {
+      private String coordinates;
+      private String md5hash;
+      private String localtimeSignature;
+      private File cachedFile;
+
+      public String getCoordinates() {
+        return coordinates;
+      }
+
+      public void setCoordinates(String coordinates) {
+        this.coordinates = coordinates;
+      }
+
+      public String getMd5hash() {
+        return md5hash;
+      }
+
+      public void setMd5hash(String md5hash) {
+        this.md5hash = md5hash;
+      }
+
+      public String getLocaltimeSignature() {
+        return localtimeSignature;
+      }
+
+      public void setLocaltimeSignature(String localtimeSignature) {
+        this.localtimeSignature = localtimeSignature;
+      }
+
+      public File getCachedFile() {
+        return cachedFile;
+      }
+
+      public void setCachedFile(File cachedFile) {
+        this.cachedFile = cachedFile;
+      }
+    }
+
+    private static FileCatalog<ArtifactInfo> cacheCatalog_;
+
+    private static FileCatalog<ArtifactInfo> catalog() {
+      if (cacheCatalog_ == null) {
+        cacheCatalog_ =
+            new FileCatalog<>(
+                new File(componentCache + File.separator + "catalog.json"),
+                ArtifactInfo.class,
+                ArtifactInfo.class);
+      }
+      return cacheCatalog_;
+    }
+
     /** Maven coordinates holder class */
     public static class MavenCoordinates {
       private final String groupId;
