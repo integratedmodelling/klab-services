@@ -81,12 +81,28 @@ public class ComponentIOLibrary {
       Parameters<String> properties, BaseService service, Scope scope) {
 
     try {
-      var file =
-          Utils.Maven.synchronizeArtifact(
+
+      var status =
+          Utils.Maven.establishAvailability(
               properties.get("groupId", String.class),
               properties.get("artifactId", String.class),
               properties.get("version", String.class),
-              true);
+              "component",
+              "kar");
+
+      if (status.getStatus() == Utils.Maven.LocalStatus.Status.UNKNOWN) {
+        return ResourceSet.empty(
+            Notification.error(
+                "Maven artifact "
+                    + properties.get("groupId")
+                    + ":"
+                    + properties.get("artifactId")
+                    + ":"
+                    + properties.get("version")
+                    + " not found in configured repositories"));
+      }
+
+      var file = status.getLocalJarArtifact();
 
       if (file != null && file.exists()) {
         var componentRegistry = service.getComponentRegistry();

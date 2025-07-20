@@ -138,16 +138,19 @@ public class ComponentRegistry {
       if (component.mavenCoordinates() != null
           && component.fileHash() != null
           && !component.mavenCoordinates().contains("SNAPSHOT")) {
-        /** re-download in temporary area and compare hashes. */
+
         var coords = component.mavenCoordinates().split(":");
         if (coords.length == 3) {
-          var archive = Utils.Maven.synchronizeArtifact(coords[0], coords[1], coords[2], true);
-          if (archive != null) {
-            var hash = Utils.Files.hash(archive);
-            if (hash != null && !hash.equals(component.fileHash())) {
-              Thread.ofVirtual().start(() -> updateComponent(component, archive));
-            }
-          }
+
+
+
+//          var archive = Utils.Maven.synchronizeComponent(coords[0], coords[1], coords[2], true);
+//          if (archive != null) {
+//            var hash = Utils.Files.hash(archive);
+//            if (hash != null && !hash.equals(component.fileHash())) {
+//              Thread.ofVirtual().start(() -> updateComponent(component, archive));
+//            }
+//          }
         }
       }
     }
@@ -157,6 +160,7 @@ public class ComponentRegistry {
       Extensions.ComponentDescriptor component, File archive) {
     Logging.INSTANCE.info(
         "Updating modified component " + component.id() + " from " + component.mavenCoordinates());
+    // TODO must unload first. Whether this will free up the file in Win remains to be seen.
     installComponent(archive, component.mavenCoordinates());
   }
 
@@ -247,6 +251,7 @@ public class ComponentRegistry {
     if (resourcePath.getParent() == null
         || !resourcePath.toPath().getParent().equals(pluginPath.toPath())) {
       try {
+        // TODO must unload from componentManager - which may be problematic if anything is using the classes
         Files.copy(
             resourcePath.toPath(), pluginDestination.toPath(), StandardCopyOption.REPLACE_EXISTING);
       } catch (IOException e) {
