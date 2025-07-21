@@ -1032,6 +1032,18 @@ public enum ServiceConfiguration {
   }
 
   /**
+   * Return a new directory in the service data area.
+   *
+   * @param directoryPath
+   * @return
+   */
+  public File getDataDirectory(String directoryPath) {
+    File ret = new File(getDataPath() + File.separator + directoryPath);
+    ret.mkdirs();
+    return ret;
+  }
+
+  /**
    * Return a new directory in the temporary area. The directory is automatically removed when the
    * VM shuts down.
    *

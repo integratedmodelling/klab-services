@@ -69,6 +69,16 @@ public @interface ResourceAdapter {
   Artifact.Type[] type() default Artifact.Type.VOID;
 
   /**
+   * If this is true, the adapter can be embedded in a runtime for local use. If false, the adapter
+   * must be used exclusively through the providing {@link
+   * org.integratedmodelling.klab.api.services.ResourcesService} API. Normally this will be false
+   * for adapters that rely on server-side generated state to provide contextualized data.
+   *
+   * @return
+   */
+  boolean embeddable() default false;
+
+  /**
    * Mandatory version
    *
    * @return

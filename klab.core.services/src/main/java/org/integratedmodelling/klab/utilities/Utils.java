@@ -342,109 +342,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private static File componentCache = Configuration.INSTANCE.getDataPath("component-cache");
-
-    public static class LocalStatus {
-
-      public enum Status {
-        UP_TO_DATE,
-        NEEDS_UPDATE,
-        NEEDS_DOWNLOAD,
-        UNKNOWN
-      }
-
-      private Status status;
-      private File localFile;
-
-      public Status getStatus() {
-        return status;
-      }
-
-      /**
-       * Return a local file, either from the local repo directly or downloading from a cache if
-       * necessary
-       *
-       * @return
-       */
-      public File getLocalJarArtifact() {
-        return localFile;
-      }
-
-      public void setStatus(Status status) {
-        this.status = status;
-      }
-
-      public File getLocalFile() {
-        return localFile;
-      }
-
-      public void setLocalFile(File localFile) {
-        this.localFile = localFile;
-      }
-
-      /**
-       * If status is OBSOLETE, attempt updating, then return {@link #getLocalJarArtifact()},
-       * changing the status to
-       *
-       * @return
-       */
-      public File getUpToDateArtifact() {
-        return null;
-      }
-    }
-
-    public static class ArtifactInfo {
-      private String coordinates;
-      private String md5hash;
-      private String localtimeSignature;
-      private File cachedFile;
-
-      public String getCoordinates() {
-        return coordinates;
-      }
-
-      public void setCoordinates(String coordinates) {
-        this.coordinates = coordinates;
-      }
-
-      public String getMd5hash() {
-        return md5hash;
-      }
-
-      public void setMd5hash(String md5hash) {
-        this.md5hash = md5hash;
-      }
-
-      public String getLocaltimeSignature() {
-        return localtimeSignature;
-      }
-
-      public void setLocaltimeSignature(String localtimeSignature) {
-        this.localtimeSignature = localtimeSignature;
-      }
-
-      public File getCachedFile() {
-        return cachedFile;
-      }
-
-      public void setCachedFile(File cachedFile) {
-        this.cachedFile = cachedFile;
-      }
-    }
-
-    private static FileCatalog<ArtifactInfo> cacheCatalog_;
-
-    private static FileCatalog<ArtifactInfo> catalog() {
-      if (cacheCatalog_ == null) {
-        cacheCatalog_ =
-            new FileCatalog<>(
-                new File(componentCache + File.separator + "catalog.json"),
-                ArtifactInfo.class,
-                ArtifactInfo.class);
-      }
-      return cacheCatalog_;
-    }
-
     /** Maven coordinates holder class */
     public static class MavenCoordinates {
       private final String groupId;
@@ -508,45 +405,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             "Version: %s, Last Modified: %s",
             version, lastModified.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
       }
-    }
-
-    private boolean checkCacheUpdate(String localArtifact) {
-      return true;
-    }
-
-    /**
-     * Establish the availability of an artifact. If the artifact is available in the local .m2
-     * repository, look no further. Otherwise check its availability and status in the cache in
-     * Maven Central based on its SNAPSHOT status. If the artifact isn't found anywhere, status will
-     * be UNKNOWN. Otherwise the returned {@link LocalStatus} object can be used to retrieve the
-     * artifact in the local cache.
-     *
-     * @param groupId
-     * @param artifactId
-     * @param version
-     * @param classifier
-     * @param suffix
-     * @return
-     */
-    public static LocalStatus establishAvailability(
-        String groupId, String artifactId, String version, String classifier, String suffix) {
-
-      var ret = new LocalStatus();
-
-      // TODO
-      var local = findLocalArtifactFile(groupId, artifactId, version, classifier, suffix);
-      if (local != null) {
-        // compute hash and check cache for match
-
-      }
-
-      if (version.endsWith("-SNAPSHOT")) {
-
-      } else {
-
-      }
-
-      return new LocalStatus();
     }
 
     /**
@@ -695,7 +553,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
      * @throws IOException if there's an error communicating with Maven Central
      */
     public static SnapshotInfo getLatestSnapshotDate(
-        String groupId, String artifactId, String version) throws IOException {
+        String groupId, String artifactId, String version) {
       return getLatestSnapshotDate(new MavenCoordinates(groupId, artifactId, version));
     }
 
@@ -712,8 +570,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
      * @throws IOException If there's an error during download
      */
     public static File downloadArtifactFile(
-        MavenCoordinates coordinates, String classifier, String suffix, File targetDirectory)
-        throws IOException {
+        MavenCoordinates coordinates, String classifier, String suffix, File targetDirectory) {
       boolean isSnapshot = coordinates.getVersion().endsWith("-SNAPSHOT");
       String baseUrl;
       String artifactVersion = coordinates.getVersion();
@@ -732,7 +589,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           // Get the latest snapshot metadata
           SnapshotInfo snapshotInfo = getLatestSnapshotDate(coordinates);
           if (!snapshotInfo.isFound()) {
-            throw new IOException("Snapshot version not found in repository");
+            throw new KlabIOException("Snapshot version not found in repository");
           }
 
           // Parse maven-metadata.xml to get the exact timestamped version
@@ -774,9 +631,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             artifactVersion =
                 snapshotVersion.replace("-SNAPSHOT", "-" + timestamp + "-" + buildNumber);
           }
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
           Thread.currentThread().interrupt();
-          throw new IOException("Request was interrupted", e);
+          throw new KlabIOException("Request was interrupted");
         }
       } else {
         baseUrl = MAVEN_CENTRAL_RELEASES_URL;
@@ -797,7 +654,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       // Create target directory if it doesn't exist
       if (!targetDirectory.exists()) {
         if (!targetDirectory.mkdirs()) {
-          throw new IOException("Failed to create target directory: " + targetDirectory);
+          throw new KlabIOException("Failed to create target directory: " + targetDirectory);
         }
       }
 
@@ -816,21 +673,25 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
         if (response.statusCode() != 200) {
-          throw new IOException("Failed to download artifact: HTTP " + response.statusCode());
+          throw new KlabIOException("Failed to download artifact: HTTP " + response.statusCode());
         }
 
         // Save the file
         try (InputStream is = response.body()) {
           java.nio.file.Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+          throw new KlabIOException(e);
         }
 
         Logging.INSTANCE.info(
             "Successfully downloaded {} to {}", fileName, targetFile.getAbsolutePath());
         return targetFile;
 
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new IOException("Download was interrupted", e);
+      } catch (Exception e) {
+        if (e instanceof InterruptedException) {
+          Thread.currentThread().interrupt();
+        }
+        throw new KlabIOException(e);
       }
     }
 
@@ -852,46 +713,32 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         String version,
         String classifier,
         String suffix,
-        File targetDirectory)
-        throws IOException {
+        File targetDirectory) {
       return downloadArtifactFile(
           new MavenCoordinates(groupId, artifactId, version), classifier, suffix, targetDirectory);
     }
 
     /** Example usage method */
     public static void main(String[] args) {
-      try {
 
-        var status =
-            establishAvailability(
-                "org.integratedmodelling",
-                "klab.component.geospatial",
-                "1.0-SNAPSHOT",
-                "component",
-                "kar");
+      // Example usage
+      MavenCoordinates coords =
+          new MavenCoordinates(
+              "org.integratedmodelling", "klab.component.geospatial", "1.0-SNAPSHOT");
 
-        // Example usage
-        MavenCoordinates coords =
-            new MavenCoordinates(
-                "org.integratedmodelling", "klab.component.geospatial", "1.0-SNAPSHOT");
+      SnapshotInfo info = getLatestSnapshotDate(coords);
+      System.out.println("Snapshot info for " + coords + ": " + info);
 
-        SnapshotInfo info = getLatestSnapshotDate(coords);
-        System.out.println("Snapshot info for " + coords + ": " + info);
-
-        // Example download
-        File downloadedFile =
-            downloadArtifactFile(
-                "org.integratedmodelling",
-                "klab.component.geospatial",
-                "1.0-SNAPSHOT",
-                "component",
-                "kar",
-                new File("./downloads"));
-        System.out.println("Downloaded file: " + downloadedFile);
-
-      } catch (IOException e) {
-        Logging.INSTANCE.error("Error checking snapshot date or downloading artifact", e);
-      }
+      // Example download
+      File downloadedFile =
+          downloadArtifactFile(
+              "org.integratedmodelling",
+              "klab.component.geospatial",
+              "1.0-SNAPSHOT",
+              "component",
+              "kar",
+              new File("./downloads"));
+      System.out.println("Downloaded file: " + downloadedFile);
     }
 
     /**
@@ -1062,8 +909,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         String version,
         String classifier,
         String suffix,
-        File targetDirectory)
-        throws IOException {
+        File targetDirectory) {
 
       // First check if we can find the file in the local Maven repository
       File localFile = findLocalArtifactFile(groupId, artifactId, version, classifier, suffix);
@@ -1075,7 +921,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         // Create target directory if it doesn't exist
         if (!targetDirectory.exists()) {
           if (!targetDirectory.mkdirs()) {
-            throw new IOException("Failed to create target directory: " + targetDirectory);
+            throw new KlabIOException("Failed to create target directory: " + targetDirectory);
           }
         }
 
@@ -1092,9 +938,13 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         if (!targetFile.exists()
             || targetFile.lastModified() != localFile.lastModified()
             || targetFile.length() != localFile.length()) {
-          java.nio.file.Files.copy(
-              localFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-          Logging.INSTANCE.info("Copied local artifact to: {}", targetFile.getAbsolutePath());
+          try {
+            java.nio.file.Files.copy(
+                localFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Logging.INSTANCE.info("Copied local artifact to: {}", targetFile.getAbsolutePath());
+          } catch (IOException e) {
+            throw new KlabIOException(e);
+          }
         } else {
           Logging.INSTANCE.info(
               "Target file already exists and is identical: {}", targetFile.getAbsolutePath());

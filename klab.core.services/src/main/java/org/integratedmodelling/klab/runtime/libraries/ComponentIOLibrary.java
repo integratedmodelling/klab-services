@@ -1,14 +1,11 @@
 package org.integratedmodelling.klab.runtime.libraries;
 
-import org.apache.commons.codec.binary.Base16InputStream;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
@@ -16,8 +13,8 @@ import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
+import org.integratedmodelling.klab.extension.MavenComponentCache;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,11 +30,14 @@ public class ComponentIOLibrary {
   @Importer(
       schema = "jar.import",
       knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,
-      description = "Import a component by directly uploading a jar file",
+      description = "Import a component by directly uploading a kar file",
       mediaType = "application/java-archive",
-      fileExtensions = {"jar"})
+      fileExtensions = {"kar"})
   public static ResourceSet importComponentDirect(File file, BaseService service, Scope scope) {
 
+    // TODO this should load the plug-in, and if successful, copy the kar in the component registry,
+    //  without setting it into the Maven cache at all. This can only be updated by uploading a new
+    //  kar for the same component.
     if (file != null && file.exists()) {
       var componentRegistry = service.getComponentRegistry();
     }
@@ -82,27 +82,16 @@ public class ComponentIOLibrary {
 
     try {
 
-      var status =
-          Utils.Maven.establishAvailability(
-              properties.get("groupId", String.class),
-              properties.get("artifactId", String.class),
-              properties.get("version", String.class),
-              "component",
-              "kar");
-
-      if (status.getStatus() == Utils.Maven.LocalStatus.Status.UNKNOWN) {
-        return ResourceSet.empty(
-            Notification.error(
-                "Maven artifact "
-                    + properties.get("groupId")
-                    + ":"
-                    + properties.get("artifactId")
-                    + ":"
-                    + properties.get("version")
-                    + " not found in configured repositories"));
-      }
-
-      var file = status.getLocalJarArtifact();
+      File file =
+          service
+              .getComponentRegistry()
+              .getComponentCache()
+              .synchronizeArtifact(
+                  properties.get("groupId", String.class),
+                  properties.get("artifactId", String.class),
+                  properties.get("version", String.class),
+                  "component",
+                  "kar"); // TODO
 
       if (file != null && file.exists()) {
         var componentRegistry = service.getComponentRegistry();
@@ -141,6 +130,16 @@ public class ComponentIOLibrary {
                           + component.version()));
           return result;
         }
+      } else {
+        return ResourceSet.empty(
+            Notification.error(
+                "Maven artifact "
+                    + properties.get("groupId")
+                    + ":"
+                    + properties.get("artifactId")
+                    + ":"
+                    + properties.get("version")
+                    + " not found in configured repositories"));
       }
     } catch (Throwable t) {
       return ResourceSet.empty(Notification.error("Component import failed: ", t.getMessage()));

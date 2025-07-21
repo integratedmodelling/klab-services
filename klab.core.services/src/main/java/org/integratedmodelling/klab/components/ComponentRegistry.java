@@ -59,6 +59,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.*;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.extension.KlabComponent;
+import org.integratedmodelling.klab.extension.MavenComponentCache;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -70,6 +71,7 @@ public class ComponentRegistry {
   private final BaseService service;
   private PluginManager componentManager;
   private File pluginPath = null;
+  private MavenComponentCache cache;
 
   // we keep the local services and adapters in here
   // FIXME the permissions should come from the external permission system, not as the internal
@@ -133,6 +135,10 @@ public class ComponentRegistry {
     }
   }
 
+  public MavenComponentCache getComponentCache() {
+    return this.cache;
+  }
+
   private synchronized void checkForUpdates() {
     for (var component : components.values()) {
       if (component.mavenCoordinates() != null
@@ -142,15 +148,14 @@ public class ComponentRegistry {
         var coords = component.mavenCoordinates().split(":");
         if (coords.length == 3) {
 
-
-
-//          var archive = Utils.Maven.synchronizeComponent(coords[0], coords[1], coords[2], true);
-//          if (archive != null) {
-//            var hash = Utils.Files.hash(archive);
-//            if (hash != null && !hash.equals(component.fileHash())) {
-//              Thread.ofVirtual().start(() -> updateComponent(component, archive));
-//            }
-//          }
+          //          var archive = Utils.Maven.synchronizeComponent(coords[0], coords[1],
+          // coords[2], true);
+          //          if (archive != null) {
+          //            var hash = Utils.Files.hash(archive);
+          //            if (hash != null && !hash.equals(component.fileHash())) {
+          //              Thread.ofVirtual().start(() -> updateComponent(component, archive));
+          //            }
+          //          }
         }
       }
     }
@@ -170,6 +175,11 @@ public class ComponentRegistry {
         ServiceConfiguration.INSTANCE.getFileWithTemplate(
             "services/" + service.serviceType().name().toLowerCase() + "/components/catalog.json",
             "[]");
+
+    this.cache =
+        new MavenComponentCache(
+            ServiceConfiguration.INSTANCE.getDataDirectory(
+                "services/" + service.serviceType().name().toLowerCase() + "/components/cache/"));
 
     for (var descriptor :
         Utils.Json.load(this.catalogFile, Extensions.ComponentDescriptor[].class)) {
@@ -251,7 +261,8 @@ public class ComponentRegistry {
     if (resourcePath.getParent() == null
         || !resourcePath.toPath().getParent().equals(pluginPath.toPath())) {
       try {
-        // TODO must unload from componentManager - which may be problematic if anything is using the classes
+        // TODO must unload from componentManager - which may be problematic if anything is using
+        // the classes
         Files.copy(
             resourcePath.toPath(), pluginDestination.toPath(), StandardCopyOption.REPLACE_EXISTING);
       } catch (IOException e) {
@@ -1222,6 +1233,7 @@ public class ComponentRegistry {
     private final Version version;
     boolean universal;
     boolean threadSafe;
+    boolean embeddable;
     Class<?> implementationClass;
     Object implementation;
     Set<ResourceAdapter.Validator.LifecyclePhase> validationPhases =
@@ -1241,6 +1253,7 @@ public class ComponentRegistry {
       this.version = Version.create(annotation.version());
       this.universal = annotation.universal();
       this.threadSafe = annotation.threadSafe();
+      this.embeddable = annotation.embeddable();
       if (annotation.type() != null && annotation.type().length > 0) {
         this.resourceType.addAll(Arrays.asList(annotation.type()));
       }
@@ -1336,6 +1349,15 @@ public class ComponentRegistry {
         // an exception; 3) the method returns Boolean.FALSE
       }
       return true;
+    }
+
+    @Override
+    public boolean isEmbeddable() {
+      return embeddable;
+    }
+
+    public void setEmbeddable(boolean embeddable) {
+      this.embeddable = embeddable;
     }
 
     @Override
@@ -1509,8 +1531,7 @@ public class ComponentRegistry {
         throw new KlabIllegalStateException(
             "Cannot load adapter " + name + ": missing encoder method");
       }
-      if ((this.resourceType == null || this.resourceType.isEmpty())
-          && typeAttributor == null) {
+      if ((this.resourceType == null || this.resourceType.isEmpty()) && typeAttributor == null) {
         throw new KlabIllegalStateException(
             "Cannot load adapter "
                 + name

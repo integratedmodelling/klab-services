@@ -24,6 +24,15 @@ public interface Adapter {
   String getName();
 
   /**
+   * If true, the runtime will attempt to load the adapter so that its functions can be executed
+   * locally, saving data transfer. If false, the adapter must be used exclusively through the
+   * hosting service's API.
+   *
+   * @return
+   */
+  boolean isEmbeddable();
+
+  /**
    * Return the adapter's type for the specified URN. Some adapters return different types according
    * to the URN; in others, the type is preset and the URN is ignored.
    *
