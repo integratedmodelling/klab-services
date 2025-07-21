@@ -567,7 +567,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
      * @param suffix The file suffix (e.g., "jar", "pom", "xml")
      * @param targetDirectory The directory where the file should be downloaded to
      * @return The downloaded file, or null if download failed
-     * @throws IOException If there's an error during download
      */
     public static File downloadArtifactFile(
         MavenCoordinates coordinates, String classifier, String suffix, File targetDirectory) {
@@ -589,7 +588,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           // Get the latest snapshot metadata
           SnapshotInfo snapshotInfo = getLatestSnapshotDate(coordinates);
           if (!snapshotInfo.isFound()) {
-            throw new KlabIOException("Snapshot version not found in repository");
+            return null;
           }
 
           // Parse maven-metadata.xml to get the exact timestamped version
@@ -633,7 +632,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           }
         } catch (Exception e) {
           Thread.currentThread().interrupt();
-          throw new KlabIOException("Request was interrupted");
+          return null;
         }
       } else {
         baseUrl = MAVEN_CENTRAL_RELEASES_URL;
@@ -673,25 +672,24 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
         if (response.statusCode() != 200) {
-          throw new KlabIOException("Failed to download artifact: HTTP " + response.statusCode());
+          Logging.INSTANCE.error("Failed to download artifact: HTTP " + response.statusCode());
+          return null;
         }
 
         // Save the file
         try (InputStream is = response.body()) {
           java.nio.file.Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-          throw new KlabIOException(e);
-        }
+          Logging.INSTANCE.error(e);
+          return null;      }
 
         Logging.INSTANCE.info(
             "Successfully downloaded {} to {}", fileName, targetFile.getAbsolutePath());
         return targetFile;
 
       } catch (Exception e) {
-        if (e instanceof InterruptedException) {
-          Thread.currentThread().interrupt();
-        }
-        throw new KlabIOException(e);
+        Logging.INSTANCE.error(e);
+        return null;
       }
     }
 
@@ -705,7 +703,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
      * @param suffix The file suffix (e.g., "jar", "pom")
      * @param targetDirectory The directory where the file should be downloaded to
      * @return The downloaded file, or null if download failed
-     * @throws IOException If there's an error during download
      */
     public static File downloadArtifactFile(
         String groupId,
