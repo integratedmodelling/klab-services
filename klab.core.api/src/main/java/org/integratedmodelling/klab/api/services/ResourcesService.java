@@ -20,7 +20,8 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
-import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 
 import java.io.File;
 import java.net.URL;
@@ -238,7 +239,7 @@ public interface ResourcesService extends KlabService {
   /**
    * Return a version of the passed resource that is primed to be used in the passed geometry. Not
    * all adapters require this step before use; in this case the {@link
-   * Extensions.AdapterDescriptor#contextualizing()} relative to the adapter will return true.
+   * AdapterDescriptor#contextualizing()} relative to the adapter will return true.
    *
    * @param resource
    * @param geometry
@@ -333,6 +334,15 @@ public interface ResourcesService extends KlabService {
    * @return list of namespaces that depend on the specified namespace
    */
   List<KimNamespace> dependents(String namespaceId);
+
+  /**
+   * Retrieve all information about an adapter that is accessible to the passed scope.
+   *
+   * @param adapterType
+   * @param scope
+   * @return
+   */
+  AdapterDescriptor retrieveAdapterInfo(String adapterType, Scope scope);
 
   /**
    * Return all the namespaces that the passed namespace depends on. These must be available to the

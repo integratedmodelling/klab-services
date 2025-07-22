@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 
 /**
@@ -52,7 +53,7 @@ public interface Adapter {
    *
    * @return
    */
-  Extensions.AdapterDescriptor getAdapterInfo();
+  AdapterDescriptor getAdapterInfo();
 
   /**
    * If true, the adapter provides a resource contextualizer method that must be called through

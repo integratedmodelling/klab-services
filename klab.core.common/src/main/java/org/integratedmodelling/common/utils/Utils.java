@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
@@ -2984,6 +2985,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         objectMapper
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        objectMapper.registerModule(new JavaTimeModule());
 
         try {
           JavaType type =
@@ -3020,6 +3022,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper.registerModule(new JavaTimeModule());
 
         Map<String, T> data = new HashMap<>();
         data.putAll(this);

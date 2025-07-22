@@ -151,7 +151,7 @@ public class ComponentIOLibrary {
   @Exporter(
       schema = "jar.export",
       description = "Export a component as a jar archive",
-      mediaType = "application" + "/java-archive",
+      mediaType = "application/java-archive",
       knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT)
   public static InputStream exportComponentDirect(
       String componentId, BaseService service, Scope scope) {

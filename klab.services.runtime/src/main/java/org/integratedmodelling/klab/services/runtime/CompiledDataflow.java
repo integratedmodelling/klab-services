@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -159,7 +160,6 @@ public class CompiledDataflow {
         .values()
         .forEach(
             dependent -> {
-
               transaction.add(dependent);
 
               if (dependent.getId() > 0) {
@@ -226,7 +226,6 @@ public class CompiledDataflow {
                     }
                   }
                   case DEPENDENT -> {
-
                     if (dependent.getObservable().is(SemanticType.QUALITY)
                         && dependent instanceof ObservationImpl obs) {
                       obs.setSubstantialQuality(true);
@@ -371,13 +370,16 @@ public class CompiledDataflow {
 
               /*
               1. check if we have the adapter locally. If so we can use it directly.
+              This may return a non-embeddable adapter, because the component may have embeddable assets such
+              as contextualizers, so we check later.
                */
               var adapter =
                   componentRegistry.getAdapter(
                       resource.getAdapterType(), /* TODO adapter version! */
                       Version.ANY_VERSION,
                       scope);
-              if (adapter != null) {
+
+              if (adapter != null && adapter.isEmbeddable()) {
 
                 if (adapter.hasContextualizer()) {
                   // FIXME move this within the URN_RESOLVER. Also shouldn't happen unless the
@@ -411,13 +413,27 @@ public class CompiledDataflow {
                       "Illegal service ID in resource " + resource.getUrn());
                 }
 
+                // FIXME the adapter info must come from the resource service, given that it is
+                // embedded
                 var adapterInfo =
-                    componentRegistry.findAdapter(
-                        resource.getAdapterType(), /* TODO need the version in the resource */
-                        Version.ANY_VERSION);
+                    service.get().retrieveAdapterInfo(resource.getAdapterType(), scope);
+                //                    componentRegistry.findAdapter(
+                //                        resource.getAdapterType(), /* TODO need the version in the
+                // resource */
+                //                        Version.ANY_VERSION);
+
+                if (adapterInfo == null) {
+                  /*
+                  Shouldn't happen unless the service is misconfigured. TODO this should log a special
+                  event for admins to react to.
+                   */
+                  throw new KlabServiceAccessException(
+                      "Service providing the resource does not provide the adapter: "
+                          + resource.getUrn());
+                }
 
                 // TODO validate type chain
-                if (adapterInfo.contextualizing()) {
+                if (adapterInfo.isContextualizing()) {
                   resource =
                       service
                           .get()

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.resources.impl;
 
+import java.io.File;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,7 @@ public class ResourceImpl implements Resource {
   private long timestamp;
   private Metadata metadata = Metadata.create();
   private Parameters<String> parameters = Parameters.create();
-  private List<String> localPaths = new ArrayList<>();
+  private List<File> localFiles = new ArrayList<>();
   private List<Resource> history = new ArrayList<>();
   private List<Notification> notifications = new ArrayList<>();
   private List<Attribute> attributes = new ArrayList<>();
@@ -148,12 +149,13 @@ public class ResourceImpl implements Resource {
     this.parameters = parameters;
   }
 
-  public List<String> getLocalPaths() {
-    return localPaths;
+  @Override
+  public List<File> getLocalFiles() {
+    return localFiles;
   }
 
-  public void setLocalPaths(List<String> localPaths) {
-    this.localPaths = localPaths;
+  public void setLocalFiles(List<File> localFiles) {
+    this.localFiles = localFiles;
   }
 
   public List<Resource> getHistory() {
@@ -171,14 +173,6 @@ public class ResourceImpl implements Resource {
   public void setNotifications(List<Notification> notifications) {
     this.notifications = notifications;
   }
-
-  //    public String getProjectName() {
-  //        return projectName;
-  //    }
-  //
-  //    public void setProjectName(String projectName) {
-  //        this.projectName = projectName;
-  //    }
 
   public String getLocalName() {
     return localName;

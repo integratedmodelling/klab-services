@@ -7,139 +7,142 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Legacy adapter descriptor. DO NOT USE - to be removed when the legacy nodes are no longer sent on
+ * authentication.
+ */
 @Deprecated
 public class AdapterInfo {
 
-	public static class OperationReference {
-		private String name;
-		private String description;
-		private boolean requiresConfirmation;
+  public static class OperationReference {
+    private String name;
+    private String description;
+    private boolean requiresConfirmation;
 
-		public String getName() {
-			return name;
-		}
+    public String getName() {
+      return name;
+    }
 
-		public void setName(String name) {
-			this.name = name;
-		}
+    public void setName(String name) {
+      this.name = name;
+    }
 
-		public String getDescription() {
-			return description;
-		}
+    public String getDescription() {
+      return description;
+    }
 
-		public void setDescription(String description) {
-			this.description = description;
-		}
+    public void setDescription(String description) {
+      this.description = description;
+    }
 
-		public boolean isRequiresConfirmation() {
-			return requiresConfirmation;
-		}
+    public boolean isRequiresConfirmation() {
+      return requiresConfirmation;
+    }
 
-		public void setRequiresConfirmation(boolean requiresConfirmation) {
-			this.requiresConfirmation = requiresConfirmation;
-		}
+    public void setRequiresConfirmation(boolean requiresConfirmation) {
+      this.requiresConfirmation = requiresConfirmation;
+    }
+  }
 
-	}
+  private String name;
+  private String description;
+  private String label;
+  private ServiceInfo parameters;
+  private boolean universal;
+  private Map<String, String> exportCapabilities = new HashMap<>();
+  private boolean multipleResources;
+  private List<OperationReference> operations = new ArrayList<>();
+  private boolean acceptsDrops;
+  private boolean canCreateEmpty;
 
-	private String name;
-	private String description;
-	private String label;
-	private ServiceInfo parameters;
-	private boolean universal;
-	private Map<String, String> exportCapabilities = new HashMap<>();
-	private boolean multipleResources;
-	private List<OperationReference> operations = new ArrayList<>();
-	private boolean acceptsDrops;
-	private boolean canCreateEmpty;
-	
-	@Deprecated // unused - REMOVE when all nodes and engines are updated
-	private boolean fileBased;
-	
-	public ServiceInfo getParameters() {
-		return parameters;
-	}
+  @Deprecated // unused - REMOVE when all nodes and engines are updated
+  private boolean fileBased;
 
-	public void setParameters(ServiceInfo parameters) {
-		this.parameters = parameters;
-	}
+  public ServiceInfo getParameters() {
+    return parameters;
+  }
 
-	public String getName() {
-		return name;
-	}
+  public void setParameters(ServiceInfo parameters) {
+    this.parameters = parameters;
+  }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+  public String getName() {
+    return name;
+  }
 
-	public String getDescription() {
-		return description;
-	}
+  public void setName(String name) {
+    this.name = name;
+  }
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+  public String getDescription() {
+    return description;
+  }
 
-	public String getLabel() {
-		return label;
-	}
+  public void setDescription(String description) {
+    this.description = description;
+  }
 
-	public void setLabel(String label) {
-		this.label = label;
-	}
+  public String getLabel() {
+    return label;
+  }
 
-	public Map<String, String> getExportCapabilities() {
-		return exportCapabilities;
-	}
+  public void setLabel(String label) {
+    this.label = label;
+  }
 
-	public void setExportCapabilities(Map<String, String> exportCapabilities) {
-		this.exportCapabilities = exportCapabilities;
-	}
+  public Map<String, String> getExportCapabilities() {
+    return exportCapabilities;
+  }
 
-	public boolean isMultipleResources() {
-		return multipleResources;
-	}
+  public void setExportCapabilities(Map<String, String> exportCapabilities) {
+    this.exportCapabilities = exportCapabilities;
+  }
 
-	public void setMultipleResources(boolean multipleResources) {
-		this.multipleResources = multipleResources;
-	}
+  public boolean isMultipleResources() {
+    return multipleResources;
+  }
 
-	public boolean isUniversal() {
-		return universal;
-	}
+  public void setMultipleResources(boolean multipleResources) {
+    this.multipleResources = multipleResources;
+  }
 
-	public void setUniversal(boolean universal) {
-		this.universal = universal;
-	}
+  public boolean isUniversal() {
+    return universal;
+  }
 
-	public List<OperationReference> getOperations() {
-		return operations;
-	}
+  public void setUniversal(boolean universal) {
+    this.universal = universal;
+  }
 
-	public void setOperations(List<OperationReference> operations) {
-		this.operations = operations;
-	}
+  public List<OperationReference> getOperations() {
+    return operations;
+  }
 
-	public boolean isAcceptsDrops() {
-		return acceptsDrops;
-	}
+  public void setOperations(List<OperationReference> operations) {
+    this.operations = operations;
+  }
 
-	public void setAcceptsDrops(boolean acceptsDrops) {
-		this.acceptsDrops = acceptsDrops;
-	}
+  public boolean isAcceptsDrops() {
+    return acceptsDrops;
+  }
 
-	public boolean isCanCreateEmpty() {
-		return canCreateEmpty;
-	}
+  public void setAcceptsDrops(boolean acceptsDrops) {
+    this.acceptsDrops = acceptsDrops;
+  }
 
-	public void setCanCreateEmpty(boolean canCreateEmpty) {
-		this.canCreateEmpty = canCreateEmpty;
-	}
+  public boolean isCanCreateEmpty() {
+    return canCreateEmpty;
+  }
 
-	public boolean isFileBased() {
-		return fileBased;
-	}
+  public void setCanCreateEmpty(boolean canCreateEmpty) {
+    this.canCreateEmpty = canCreateEmpty;
+  }
 
-	public void setFileBased(boolean fileBased) {
-		this.fileBased = fileBased;
-	}
+  public boolean isFileBased() {
+    return fileBased;
+  }
+
+  public void setFileBased(boolean fileBased) {
+    this.fileBased = fileBased;
+  }
 }

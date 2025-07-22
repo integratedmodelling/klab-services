@@ -22,6 +22,10 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
+/**
+ * FIXME this uses Groovy 3.0 lexer - and the implementation uses 4.0. No conflict but it's not
+ *  nice.
+ */
 public class GroovyProcessor implements Language.LanguageProcessor {
 
   public static final String LOCATOR_REGEXP = "@[A-Z]\\(.*?\\)";

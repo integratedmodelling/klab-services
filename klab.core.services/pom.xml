@@ -101,18 +101,8 @@
         </pluginRepository>
     </pluginRepositories>
 
-    <!-- wanted by jgrasstools and osm4j. Would be lovely to avoid these. -->
+    <!-- wanted by jgrasstools and osm4j. Would be lovely to avoid these. TODO check if still needed -->
     <repositories>
-        <!--
-                <repository>
-                    <id>slimjars</id>
-                    <url>https://mvn.slimjars.com</url>
-                </repository>
-                <repository>
-                    <id>topobyte</id>
-                    <url>https://mvn.topobyte.de</url>
-                </repository>
-        -->
         <repository>
             <id>osgeo</id>
             <name>OSGeo Release Repository</name>
@@ -138,12 +128,6 @@
     </repositories>
 
     <dependencies>
-
-<!--        <dependency>-->
-<!--            <groupId>com.squareup.tools.build</groupId>-->
-<!--            <artifactId>maven-archeologist</artifactId>-->
-<!--            <version>0.0.10</version>-->
-<!--        </dependency>-->
 
         <!-- this is to build the Java actor code -->
         <dependency>
@@ -190,18 +174,6 @@
                     <version>4.9.0</version>
                 </dependency>
         -->
-
-<!--        <dependency>-->
-<!--            <groupId>io.github.luiinge</groupId>-->
-<!--            <artifactId>maven-fetcher</artifactId>-->
-<!--            <version>1.7.0</version>-->
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <groupId>commons-logging</groupId>-->
-<!--                    <artifactId>commons-logging</artifactId>-->
-<!--                </exclusion>-->
-<!--            </exclusions>-->
-<!--        </dependency>-->
 
         <!-- https://mvnrepository.com/artifact/org.apache.groovy/groovy-all -->
         <dependency>
@@ -289,6 +261,7 @@
             <version>6.7.0.202309050840-r</version>
         </dependency>
 
+        <!-- TODO FIXME this shouldn't be here but the lexer is different -->
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy</artifactId>

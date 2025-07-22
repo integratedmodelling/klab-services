@@ -291,14 +291,15 @@ public interface Resource extends Knowledge, Resolvable {
      */
     Builder withParameters(Parameters<String> parameters);
 
-//    /**
-//     * Set the project name. Only for local resources. Project name enters the local URN but is not
-//     * exposed by the IResource API. Stored to enable easier management and retrieval.
-//     *
-//     * @param name
-//     * @return the builder itself
-//     */
-//    Builder withProjectName(String name);
+    //    /**
+    //     * Set the project name. Only for local resources. Project name enters the local URN but
+    // is not
+    //     * exposed by the IResource API. Stored to enable easier management and retrieval.
+    //     *
+    //     * @param name
+    //     * @return the builder itself
+    //     */
+    //    Builder withProjectName(String name);
 
     Builder withServiceId(String serviceId);
 
@@ -395,23 +396,13 @@ public interface Resource extends Knowledge, Resolvable {
   long getTimestamp();
 
   /**
-   * Return all local resource file paths, as slash-separated strings starting at a point depending
-   * on the resource type (e.g. in local resources it will start at the project name). May be empty,
-   * never null.
-   *
-   * TODO check if this remains OK
+   * Return the full path of all local files in the resource's dataspace. This is obviously only
+   * relevant at service side; implementations may choose to remove the paths from the resource when
+   * transferring to clients.
    *
    * @return all local resource file paths
    */
-  List<String> getLocalPaths();
-
-//  /**
-//   * If the resource is local, a local path should be defined and will identify a directory where
-//   * all the {@link #getLocalPaths() local file resources} are found.
-//   *
-//   * @return local path
-//   */
-//  String getLocalPath();
+  List<File> getLocalFiles();
 
   /**
    * In local resources, this is the short name that the resource can be referred to in k.IM

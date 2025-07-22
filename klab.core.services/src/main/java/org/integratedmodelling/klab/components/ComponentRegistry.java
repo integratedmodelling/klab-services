@@ -84,6 +84,7 @@ public class ComponentRegistry {
           null,
           null,
           null,
+          ResourcePrivileges.PUBLIC,
           new ArrayList<>(),
           new ArrayList<>(),
           new HashMap<>(),
@@ -110,7 +111,7 @@ public class ComponentRegistry {
   /*
    * Adapter descriptors include those registered from other services.
    */
-  private MultiValuedMap<String, Extensions.AdapterDescriptor> adapterDescriptorFinder =
+  private MultiValuedMap<String, AdapterDescriptor> adapterDescriptorFinder =
       new HashSetValuedHashMap<>();
   private Map<Class<?>, Object> globalInstances = new HashMap<>();
   private File catalogFile;
@@ -130,7 +131,7 @@ public class ComponentRegistry {
   public void registerService(KlabService.ServiceCapabilities capabilities) {
     for (var component : capabilities.getComponents()) {
       for (var adapter : component.adapters()) {
-        this.adapterDescriptorFinder.put(adapter.name(), adapter);
+        this.adapterDescriptorFinder.put(adapter.getName(), adapter);
       }
     }
   }
@@ -147,26 +148,37 @@ public class ComponentRegistry {
 
         var coords = component.mavenCoordinates().split(":");
         if (coords.length == 3) {
-
-          //          var archive = Utils.Maven.synchronizeComponent(coords[0], coords[1],
-          // coords[2], true);
-          //          if (archive != null) {
-          //            var hash = Utils.Files.hash(archive);
-          //            if (hash != null && !hash.equals(component.fileHash())) {
-          //              Thread.ofVirtual().start(() -> updateComponent(component, archive));
-          //            }
-          //          }
+          var status = cache.getAvailability(coords[0], coords[1], coords[2], "component", "kar");
+          if (status == MavenComponentCache.Status.NEEDS_UPDATE) {
+            Thread.ofVirtual().start(() -> updateComponent(component));
+          }
         }
       }
     }
   }
 
-  private synchronized void updateComponent(
-      Extensions.ComponentDescriptor component, File archive) {
+  private synchronized void updateComponent(Extensions.ComponentDescriptor component) {
+
     Logging.INSTANCE.info(
-        "Updating modified component " + component.id() + " from " + component.mavenCoordinates());
+        "Attempting update of modified component "
+            + component.id()
+            + " from "
+            + component.mavenCoordinates());
     // TODO must unload first. Whether this will free up the file in Win remains to be seen.
-    installComponent(archive, component.mavenCoordinates());
+    var mavenCoordinates = component.mavenCoordinates().split(":");
+
+    try {
+      var file =
+          cache.synchronizeArtifact(
+              mavenCoordinates[0], mavenCoordinates[1], mavenCoordinates[2], "component", "kar");
+      if (file != null && file.exists()) {
+        unloadComponent(component.id(), component.version());
+        installComponent(file, component.mavenCoordinates());
+        Logging.INSTANCE.info("Update of component " + component.id() + " successful");
+      }
+    } catch (Exception e) {
+      Logging.INSTANCE.error("Unable to update outdated component " + component.id(), e);
+    }
   }
 
   private void readConfiguration(BaseService service, StartupOptions options) {
@@ -185,7 +197,7 @@ public class ComponentRegistry {
         Utils.Json.load(this.catalogFile, Extensions.ComponentDescriptor[].class)) {
 
       for (var adapter : descriptor.adapters()) {
-        adapterFinder.put(adapter.name(), descriptor);
+        adapterFinder.put(adapter.getName(), descriptor);
       }
       for (var serv : descriptor.services().keySet()) {
         serviceFinder.put(serv, descriptor);
@@ -372,7 +384,7 @@ public class ComponentRegistry {
     var componentVersion = component.getVersion();
     var libraries = new ArrayList<Extensions.LibraryDescriptor>();
     var actors = new ArrayList<Extensions.LibraryDescriptor>();
-    var adapters = new ArrayList<Extensions.AdapterDescriptor>();
+    var adapters = new ArrayList<AdapterDescriptor>();
     var license = component.getWrapper().getDescriptor().getLicense();
     var description = component.getWrapper().getDescriptor().getPluginDescription();
     var sourceArchive =
@@ -400,6 +412,7 @@ public class ComponentRegistry {
             sourceArchive,
             Utils.Files.hash(sourceArchive),
             mavenCoordinates,
+            permissions,
             libraries,
             adapters,
             new HashMap<>(),
@@ -644,7 +657,7 @@ public class ComponentRegistry {
    * passes the adapter ID from a resolved {@link Resource}, which guarantees that the adapter is
    * available on the same service the resource comes from.
    */
-  public Extensions.AdapterDescriptor findAdapter(String adapterId, Version version) {
+  public AdapterDescriptor findAdapter(String adapterId, Version version) {
     // TODO handle permissions
 
     return adapterDescriptorFinder.containsKey(adapterId)
@@ -781,7 +794,7 @@ public class ComponentRegistry {
   }
 
   private void registerAdapter(
-      ResourceAdapter annotation, Class<?> cls, List<Extensions.AdapterDescriptor> adapters) {
+      ResourceAdapter annotation, Class<?> cls, List<AdapterDescriptor> adapters) {
 
     try {
       var adapter = new AdapterImpl(cls, annotation);
@@ -818,6 +831,14 @@ public class ComponentRegistry {
       }
     }
     return ret;
+  }
+
+  public synchronized boolean unloadComponent(String urn, Version version) {
+    var component = getComponent(urn, version);
+    if (component != null) {
+      return componentManager.disablePlugin(component.id());
+    }
+    return false;
   }
 
   /**
@@ -1139,7 +1160,7 @@ public class ComponentRegistry {
   public void loadExtensions(String... packageName) {
 
     var libraries = new ArrayList<Extensions.LibraryDescriptor>();
-    var adapters = new ArrayList<Extensions.AdapterDescriptor>();
+    var adapters = new ArrayList<AdapterDescriptor>();
 
     scanPackage(
         packageName,
@@ -1246,7 +1267,7 @@ public class ComponentRegistry {
     private Extensions.FunctionDescriptor initializer;
     private Extensions.FunctionDescriptor sanitizer;
     private Extensions.FunctionDescriptor publisher;
-    private final Extensions.AdapterDescriptor adapterInfo;
+    private final AdapterDescriptor adapterInfo;
 
     public AdapterImpl(Class<?> implementationClass, ResourceAdapter annotation) {
       this.name = annotation.name();
@@ -1370,7 +1391,7 @@ public class ComponentRegistry {
     }
 
     @Override
-    public Extensions.AdapterDescriptor getAdapterInfo() {
+    public AdapterDescriptor getAdapterInfo() {
       return this.adapterInfo;
     }
 
@@ -1424,7 +1445,7 @@ public class ComponentRegistry {
       return false;
     }
 
-    private Extensions.AdapterDescriptor scanAdapterClass(Class<?> adapterClass) {
+    private AdapterDescriptor scanAdapterClass(Class<?> adapterClass) {
 
       var capabilities = service.capabilities(service.serviceScope());
 
@@ -1539,7 +1560,7 @@ public class ComponentRegistry {
                 + "methods");
       }
 
-      return new Extensions.AdapterDescriptor(
+      return new AdapterDescriptor(
           name,
           version,
           capabilities.getServiceId(),
@@ -1550,6 +1571,7 @@ public class ComponentRegistry {
           hasSanitizer(),
           hasInspector(),
           hasPublisher(),
+          isEmbeddable(),
           validations,
           importSchemata,
           exportSchemata);

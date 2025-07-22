@@ -41,6 +41,8 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -328,6 +330,28 @@ public class ResourcesProviderController {
     return resourcesServer
         .klabService()
         .retrieveWorkspace(
+            urn,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
+
+  @Operation(
+      summary = "Retrieve adapter information",
+      description = "Return the adapter information available to this scope")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Adapter retrieved successfully"),
+    @ApiResponse(responseCode = "404", description = "Adapter not found"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+    @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_ADAPTER_INFO)
+  public @ResponseBody AdapterDescriptor retrieveAdapterInfo(
+      @Parameter(description = "URN of the workspace to retrieve") @PathVariable("urn") String urn,
+      Principal principal) {
+    return resourcesServer
+        .klabService()
+        .retrieveAdapterInfo(
             urn,
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()

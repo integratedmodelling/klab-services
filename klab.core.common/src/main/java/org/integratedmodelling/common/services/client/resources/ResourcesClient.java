@@ -44,9 +44,11 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
@@ -500,6 +502,13 @@ public class ResourcesClient extends ServiceClient
   public List<KimNamespace> dependents(String namespaceId) {
     // TODO Auto-generated method stub
     return null;
+  }
+
+  @Override
+  public AdapterDescriptor retrieveAdapterInfo(String adapterType, Scope scope) {
+    return client
+        .withScope(scope)
+        .get(ServicesAPI.RESOURCES.RETRIEVE_ADAPTER_INFO, AdapterDescriptor.class);
   }
 
   @Override

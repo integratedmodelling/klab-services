@@ -29,6 +29,13 @@ public @interface Parameter {
   Artifact.Type[] type();
 
   /**
+   * These must be filled in only if the {@link #type()} is {@link Artifact.Type#ENUM}.
+   *
+   * @return
+   */
+  String[] enumValues() default {};
+
+  /**
    * No parameter should ever be lacking an accurate description
    *
    * @return

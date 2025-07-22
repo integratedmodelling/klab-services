@@ -58,6 +58,7 @@ import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
@@ -528,7 +529,7 @@ public class ResourcesProvider extends BaseService
       }
 
       var info = adapter.getAdapterInfo();
-      if (info.validatedPhases().contains(ResourceAdapter.Validator.LifecyclePhase.UrnSyntax)) {
+      if (info.getValidatedPhases().contains(ResourceAdapter.Validator.LifecyclePhase.UrnSyntax)) {
         // TODO validate the URN before returning
       }
 
@@ -599,6 +600,13 @@ public class ResourcesProvider extends BaseService
   @Override
   public List<KimNamespace> dependents(String namespaceId) {
     return null;
+  }
+
+  @Override
+  public AdapterDescriptor retrieveAdapterInfo(String adapterType, Scope scope) {
+    var adapter = Version.splitVersion(adapterType);
+    var ad = getComponentRegistry().getAdapter(adapter.getFirst(), adapter.getSecond(), scope);
+    return ad == null ? null : ad.getAdapterInfo();
   }
 
   @Override

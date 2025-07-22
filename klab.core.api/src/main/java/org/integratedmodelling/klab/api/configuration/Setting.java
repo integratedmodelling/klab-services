@@ -3,11 +3,16 @@ package org.integratedmodelling.klab.api.configuration;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * Settings for all products (engine, modeler, services, user etc.) that can be changed at runtime
  * through the CLI or the API. The {@link Settings} class implements the logic for storage and
  * retrieval.
+ *
+ * <p>By convention, any setting whose value class is {@link java.util.Map} works as an "action":
+ * when that is set, the accompanying data map are the parameters to be sent. If the map contains a
+ * "result" field, the type of the result sets the return value of the operation.
  */
 public enum Setting {
   POLLING(
@@ -25,11 +30,7 @@ public enum Setting {
       "Set the service polling interval for remote services in seconds",
       Integer.class,
       20),
-  NOTIFICATIONS_CACHED(
-          Page.APPEARANCE,
-          "Number of notifications to keep",
-          Integer.class,
-          100),
+  NOTIFICATIONS_CACHED(Page.APPEARANCE, "Number of notifications to keep", Integer.class, 100),
   WORK_DIRECTORY(
       Page.GENERAL,
       "The directory where all k.LAB files are stored",
@@ -88,15 +89,15 @@ public enum Setting {
       Integer.class,
       Product.ProductType.RESOURCES_SERVICE.defaultMaxMemoryLimitMB()),
   MAVEN_SNAPSHOT_CHECK_INTERVAL(
-          Page.RESOURCES,
-          "Interval in seconds for checking for new Maven snapshot components (0 to disable)",
-          Integer.class,
-          0),
+      Page.RESOURCES,
+      "Interval in seconds for checking for new Maven snapshot components (0 to disable)",
+      Integer.class,
+      0),
   GIT_REPOSITORY_CHECK_INTERVAL(
-          Page.RESOURCES,
-          "Interval in seconds for checking for changes in configured Git repositories (0 to disable)",
-          Integer.class,
-          0),
+      Page.RESOURCES,
+      "Interval in seconds for checking for changes in configured Git repositories (0 to disable)",
+      Integer.class,
+      0),
   START_RESOURCES_SERVICE_IN_DEBUG_MODE(
       Page.DEBUGGING,
       "Start the local resources service in debug mode on port "
@@ -120,7 +121,17 @@ public enum Setting {
       "Start the local runtime service in debug mode on port "
           + Product.ProductType.RUNTIME_SERVICE.getDebugPort(),
       Boolean.class,
-      false);
+      false),
+  CLEAR_WORKSPACE(
+      Page.RESOURCES,
+      "Execute to remove all workspaces from the service. This is a destructive operation.",
+      Map.class,
+      Map.of("result", Boolean.class)),
+  CLEAR_COMPONENTS(
+      Page.RESOURCES,
+      "Execute to remove one or more components from the service",
+      Map.class,
+      Map.of("component", String.class, "result", Boolean.class));
   ;
 
   //  private Setting<Double> minModelCoverage = new Setting<Double>();

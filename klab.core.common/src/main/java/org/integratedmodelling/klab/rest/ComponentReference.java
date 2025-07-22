@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.rest;
 
-
+/**
+ * DO NOT USE - remove when legacy services are not sent on authentication
+ */
 @Deprecated
 public class ComponentReference {
     

@@ -37,7 +37,8 @@ import org.integratedmodelling.klab.utilities.Utils;
 import java.util.List;
 
 /**
- * @deprecated these should be accessed through defines
+ * @deprecated these should be accessed through defines, there should be no need for functions that
+ *     create extents.
  */
 @Library(
     name = Library.CORE_LIBRARY,
