@@ -232,7 +232,7 @@ public abstract class ServiceInstance<T extends BaseService> {
                 new ReasonerClient(
                     s.getUrls().getFirst(),
                     new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()),
-                    null);
+                        SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
                 .add(reasoner);
@@ -242,7 +242,7 @@ public abstract class ServiceInstance<T extends BaseService> {
                 new RuntimeClient(
                     s.getUrls().getFirst(),
                     new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()),
-                    null);
+                        SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
                 .add(runtime);
@@ -252,7 +252,7 @@ public abstract class ServiceInstance<T extends BaseService> {
                 new ResourcesClient(
                     s.getUrls().getFirst(),
                     new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()),
-                    null);
+                        SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
                 .add(resources);
@@ -262,7 +262,7 @@ public abstract class ServiceInstance<T extends BaseService> {
                 new ResolverClient(
                     s.getUrls().getFirst(),
                     new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()),
-                    null);
+                        SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
                 .add(resolver);
