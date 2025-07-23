@@ -3443,6 +3443,27 @@ public class Utils {
      * @param s the s
      * @return s with no .xxx at end.
      */
+    public static File getFileBasePath(File s) {
+      return new File(getFileBasePath(s.toString()));
+    }
+
+    /**
+     * Return same file path with a different extension.
+     *
+     * @param s the s
+     * @return s with no .xxx at end.
+     */
+    public static File changeExtension(File s, String extension) {
+      return new File(
+          getFileBasePath(s.toString()) + (extension.startsWith(".") ? "" : ".") + extension);
+    }
+
+    /**
+     * Return file path without extension if any.
+     *
+     * @param s the s
+     * @return s with no .xxx at end.
+     */
     public static String getFileBasePath(String s) {
 
       String ret = s;

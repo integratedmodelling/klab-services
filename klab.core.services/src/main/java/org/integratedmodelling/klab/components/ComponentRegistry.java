@@ -262,6 +262,36 @@ public class ComponentRegistry {
     return serviceImplementations.get(descriptor.serviceInfo.getName());
   }
 
+  /**
+   * Use the Maven cache to install a component from the nearest updated repository.
+   *
+   * @param groupId
+   * @param artifactId
+   * @param version
+   * @return
+   */
+  public Pair<Extensions.ComponentDescriptor, ResourceSet> installMavenComponent(
+      String groupId, String artifactId, String version) {
+
+    var mavenCoordinates = groupId + ":" + artifactId + ":" + version;
+    File file = cache.synchronizeArtifact(groupId, artifactId, version, "component", "kar"); // TODO
+    if (file != null && file.exists()) {
+      file = cache.install(groupId, artifactId, version, pluginPath);
+      if (file != null && file.exists()) {
+        return installComponent(file, mavenCoordinates);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Pass a valid component file (renamed to jar) that must have been already set into the
+   * pluginPath to load it into the plugin manager and update all records.
+   *
+   * @param resourcePath
+   * @param mavenCoordinates
+   * @return
+   */
   public Pair<Extensions.ComponentDescriptor, ResourceSet> installComponent(
       File resourcePath, String mavenCoordinates) {
 
@@ -315,7 +345,7 @@ public class ComponentRegistry {
         Utils.Files.deleteQuietly(pluginDestination);
       }
     } catch (Throwable t) {
-      ret = ResourceSet.empty(Notification.create(t));
+      ret = ResourceSet.empty(Notification.error(t.getMessage()));
       Utils.Files.deleteQuietly(pluginDestination);
     }
 

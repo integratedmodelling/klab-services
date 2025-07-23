@@ -681,7 +681,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           java.nio.file.Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
           Logging.INSTANCE.error(e);
-          return null;      }
+          return null;
+        }
 
         Logging.INSTANCE.info(
             "Successfully downloaded {} to {}", fileName, targetFile.getAbsolutePath());
@@ -1208,6 +1209,16 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     public static boolean deleteQuietly(File pdir) {
       return FileUtils.deleteQuietly(pdir);
+    }
+
+    public static boolean copy(File source, File destination) {
+      try {
+        FileUtils.copyFile(source, destination);
+        return true;
+      } catch (IOException e) {
+        Logging.INSTANCE.error(e);
+      }
+      return false;
     }
 
     public static void copyDirectory(File directory, File backupDir) {

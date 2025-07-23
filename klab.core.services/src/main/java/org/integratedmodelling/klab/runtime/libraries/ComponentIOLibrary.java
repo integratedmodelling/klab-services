@@ -13,7 +13,6 @@ import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
-import org.integratedmodelling.klab.extension.MavenComponentCache;
 import org.integratedmodelling.klab.services.base.BaseService;
 
 import java.io.File;
@@ -81,56 +80,37 @@ public class ComponentIOLibrary {
       Parameters<String> properties, BaseService service, Scope scope) {
 
     try {
+      var componentRegistry = service.getComponentRegistry();
+      var ret =
+          componentRegistry.installMavenComponent(
+              properties.get("groupId", String.class),
+              properties.get("artifactId", String.class),
+              properties.get("version", String.class));
 
-      File file =
-          service
-              .getComponentRegistry()
-              .getComponentCache()
-              .synchronizeArtifact(
-                  properties.get("groupId", String.class),
-                  properties.get("artifactId", String.class),
-                  properties.get("version", String.class),
-                  "component",
-                  "kar"); // TODO
+      if (ret != null && service instanceof ResourcesService resourcesService) {
 
-      if (file != null && file.exists()) {
-        var componentRegistry = service.getComponentRegistry();
-        var ret =
-            componentRegistry.registerComponent(
-                file,
-                properties.get("groupId")
-                    + ":"
-                    + properties.get("artifactId")
-                    + ":"
-                    + properties.get("version"));
-
-        if (ret != null && service instanceof ResourcesService resourcesService) {
-          Version version =
-              properties.containsKey("version")
-                  ? Version.create(properties.get("version", String.class))
-                  : Version.ANY_VERSION;
-          var component = componentRegistry.getComponent(ret, version);
-          // TODO if the component comes with explicit access rights, record them
-          var info =
-              resourcesService.registerResource(
-                  component.id(),
-                  KlabAsset.KnowledgeClass.COMPONENT,
-                  component.sourceArchive(),
-                  scope);
-          var result =
-              ResourceSet.of(
-                  info, component.version() != null ? component.version() : Version.ANY_VERSION);
-          result
-              .getNotifications()
-              .add(
-                  Notification.info(
-                      "Import of component "
-                          + component.id()
-                          + " successful with version "
-                          + component.version()));
-          return result;
-        }
-      } else {
+        var component = ret.getFirst();
+        // TODO record the rights in the ResourcesKBox
+        var info =
+            resourcesService.registerResource(
+                component.id(),
+                KlabAsset.KnowledgeClass.COMPONENT,
+                component.sourceArchive(),
+                scope);
+        var result =
+            ResourceSet.of(
+                info, component.version() != null ? component.version() : Version.ANY_VERSION);
+        result
+            .getNotifications()
+            .add(
+                Notification.info(
+                    "Import of component "
+                        + component.id()
+                        + " successful with version "
+                        + component.version()));
+        return result;
+      }
+      if (ret == null) {
         return ResourceSet.empty(
             Notification.error(
                 "Maven artifact "
