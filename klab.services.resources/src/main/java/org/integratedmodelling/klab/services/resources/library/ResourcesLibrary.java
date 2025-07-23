@@ -31,59 +31,79 @@ import java.util.Map;
 public class ResourcesLibrary {
 
   @Importer(
-      schema = "legacy.json",
-      knowledgeClass = KlabAsset.KnowledgeClass.PROJECT,
-      description = "Register a new resource by importing a legacy json manifest",
-      mediaType = "application/json",
-      fileExtensions = {"json"})
-  public static ResourceSet importLegacyResourceJson(
-      File archive, ResourcesProvider service, UserScope scope) {
-    var definition = Utils.Json.load(archive, Map.class);
-    if (definition != null) {
-      return loadLegacyResource(definition, service, scope, null);
-    }
-    return ResourceSet.empty(
-        Notification.error("Legacy resource ingestion: submitted resource data cannot be parsed"));
-  }
-
-  @Importer(
-      schema = "legacy.zip",
-      knowledgeClass = KlabAsset.KnowledgeClass.PROJECT,
-      description = "Register a new resource by importing a zip file with legacy content",
-      mediaType = "application/zip",
-      fileExtensions = {"zip"})
-  public static ResourceSet importLegacyResourceZip(
-      File archive, ResourcesProvider service, UserScope scope) {
-    return ResourceSet.empty(Notification.error("Legacy resource ingestion: please implement me"));
-  }
-
-  @Importer(
-      schema = "json",
+      schema = "legacy.files",
       knowledgeClass = KlabAsset.KnowledgeClass.PROJECT,
       description =
-          "Register a new resource without content by importing a compliant json manifest",
+          "Register a new resource by importing a legacy json manifest, possibly within a zip file with additional content",
       mediaType = "application/json",
-      fileExtensions = {"json"})
-  public static ResourceSet importResourceJson(
+      fileExtensions = {"json", "zip"})
+  public static ResourceSet importLegacyResource(
       File archive, ResourcesProvider service, UserScope scope) {
-    return ResourceSet.empty(Notification.error("Resource ingestion: please implement me"));
+    //    var definition = Utils.Json.load(archive, Map.class);
+    //    if (definition != null) {
+    return loadLegacyResource(archive, service, scope, null);
+    //    }
+    //    return ResourceSet.empty(
+    //        Notification.error("Legacy resource ingestion: submitted resource data cannot be
+    // parsed"));
   }
 
-  @Importer(
-      schema = "zip",
-      knowledgeClass = KlabAsset.KnowledgeClass.PROJECT,
-      description =
-          "Register a new resource by importing a zip file with full content, including the json manifest",
-      mediaType = "application/zip",
-      fileExtensions = {"zip"})
-  public static ResourceSet importResourceZip(
-      File archive, ResourcesProvider service, UserScope scope) {
-    return ResourceSet.empty(Notification.error("Resource ingestion: please implement me"));
-  }
+  //  @Importer(
+  //      schema = "legacy.zip",
+  //      knowledgeClass = KlabAsset.KnowledgeClass.PROJECT,
+  //      description = "Register a new resource by importing a zip file with legacy content",
+  //      mediaType = "application/zip",
+  //      fileExtensions = {"zip"})
+  //  public static ResourceSet importLegacyResourceZip(
+  //      File archive, ResourcesProvider service, UserScope scope) {
+  //    return ResourceSet.empty(Notification.error("Legacy resource ingestion: please implement
+  // me"));
+  //  }
+  //
+  //  @Importer(
+  //      schema = "json",
+  //      knowledgeClass = KlabAsset.KnowledgeClass.PROJECT,
+  //      description =
+  //          "Register a new resource without content by importing a compliant json manifest",
+  //      mediaType = "application/json",
+  //      fileExtensions = {"json"})
+  //  public static ResourceSet importResourceJson(
+  //      File archive, ResourcesProvider service, UserScope scope) {
+  //    return ResourceSet.empty(Notification.error("Resource ingestion: please implement me"));
+  //  }
+  //
+  //  @Importer(
+  //      schema = "zip",
+  //      knowledgeClass = KlabAsset.KnowledgeClass.PROJECT,
+  //      description =
+  //          "Register a new resource by importing a zip file with full content, including the json
+  // manifest",
+  //      mediaType = "application/zip",
+  //      fileExtensions = {"zip"})
+  //  public static ResourceSet importResourceZip(
+  //      File archive, ResourcesProvider service, UserScope scope) {
+  //    return ResourceSet.empty(Notification.error("Resource ingestion: please implement me"));
+  //  }
 
   private static ResourceSet loadLegacyResource(
-      Map definition, ResourcesProvider service, UserScope scope, File dataContentDirectory) {
+      File contents, ResourcesProvider service, UserScope scope, File dataContentDirectory) {
 
+    /*
+    File may be a json file, in which case we read it directly, or a zip containing the manifest plus
+    additional content.
+     */
+    Map<String, Object> definition = null;
+    if (contents.getName().endsWith(".json")) {
+      definition = Utils.Json.load(contents, Map.class);
+    } else if (contents.getName().endsWith(".zip")) {
+      // TODO unpack in temporary dir, load catalog which must exist
+      return ResourceSet.empty(
+          Notification.error("Legacy resource ingestion: zip import unimplemented"));
+    } else {
+      return ResourceSet.empty(
+          Notification.error(
+              "Legacy resource ingestion: submitted resource data are not a supported file type (currently json or zip)"));
+    }
     try {
       Utils.Maps.ensureContains(definition, "urn", "type", "geometry", "adapterType", "version");
     } catch (KlabIllegalStateException e) {

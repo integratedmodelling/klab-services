@@ -1558,7 +1558,7 @@ public class ComponentRegistry {
           this.typeAttributor = funcData.getFirst();
 
         } else if (method.isAnnotationPresent(Importer.class)) {
-          var serviceInfo = createPrototype(name, method.getAnnotation(Importer.class));
+          var serviceInfo = createPrototype(name + ".", method.getAnnotation(Importer.class));
           var schema = ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
           schema.setAdapter(name);
           importSchemata.add(schema);
@@ -1567,7 +1567,7 @@ public class ComponentRegistry {
               createServiceImplementation(method, method.getAnnotation(Importer.class))
                   .getSecond());
         } else if (method.isAnnotationPresent(Exporter.class)) {
-          var serviceInfo = createPrototype(name, method.getAnnotation(Exporter.class));
+          var serviceInfo = createPrototype(name + ".", method.getAnnotation(Exporter.class));
           var schema = ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
           schema.setAdapter(name);
           exportSchemata.add(schema);
