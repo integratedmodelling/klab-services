@@ -124,32 +124,32 @@ public class KlabServiceController {
     }
   }
 
-//  @PostMapping(value = ServicesAPI.IMPORT, consumes = MediaType.APPLICATION_JSON_VALUE)
-//  public long importAsset(
-//      @PathVariable(name = "schema") String schema,
-//      @PathVariable(name = "urn") String urn,
-//      @RequestBody Parameters<String> data,
-//      Principal principal) {
-//
-//    if (principal instanceof EngineAuthorization authorization) {
-//
-//      var scope = authorization.getScope();
-//      // retrieve schema. TODO not handling authorization yet
-//      var s =
-//          ResourceTransport.INSTANCE.findSchema(
-//              schema, instance.klabService().capabilities(scope).getImportSchemata(), scope);
-//      if (s == null) {
-//        throw new KlabAuthorizationException(
-//            "No authorized import schema for property-based " + "submissions is available");
-//      }
-//      return ((ServiceUserScope) scope)
-//          .getJobManager()
-//          .submit(
-//              instance.klabService().importAsset(s, s.asset(data), urn, scope),
-//              "Import of asset using schema " + s.getSchemaId());
-//    }
-//    return -1;
-//  }
+  @PostMapping(value = ServicesAPI.IMPORT, consumes = MediaType.APPLICATION_JSON_VALUE)
+  public long importAsset(
+      @PathVariable(name = "schema") String schema,
+      @PathVariable(name = "urn") String urn,
+      @RequestBody Parameters<String> data,
+      Principal principal) {
+
+    if (principal instanceof EngineAuthorization authorization) {
+
+      var scope = authorization.getScope();
+      // retrieve schema. TODO not handling authorization yet
+      var s =
+          ResourceTransport.INSTANCE.findSchema(
+              schema, instance.klabService().capabilities(scope).getImportSchemata(), scope);
+      if (s == null) {
+        throw new KlabAuthorizationException(
+            "No authorized import schema for property-based " + "submissions is available");
+      }
+      return ((ServiceUserScope) scope)
+          .getJobManager()
+          .submit(
+              instance.klabService().importAsset(s, s.asset(data), urn, scope),
+              "Import of asset using schema " + s.getSchemaId());
+    }
+    return -1;
+  }
 
   @PostMapping(value = ServicesAPI.IMPORT, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public long uploadAsset(
