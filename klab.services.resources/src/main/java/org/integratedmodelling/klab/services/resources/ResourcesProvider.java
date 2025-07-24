@@ -451,7 +451,10 @@ public class ResourcesProvider extends BaseService
     var version = Version.splitVersion(urn);
     var adapter = getComponentRegistry().getAdapter(urn, version.getSecond(), scope);
     if (adapter == null) {
-      return ResourceSet.empty();
+      // TODO lookup component in the other services that the scope provides.
+    }
+    if (adapter == null) {
+      return ResourceSet.empty(Notification.error("No adapter available for " + urn));
     }
     // TODO
     return null;
@@ -1171,23 +1174,18 @@ public class ResourcesProvider extends BaseService
     return ret;
   }
 
-  //    @Override
-  //    public Resource createResource(String projectName, String urnId, String adapter,
-  //                                   Parameters<String> resourceData, UserScope scope) {
-  //        return null;
-  //    }
-
   @Override
   public ResourceInfo registerResource(
-      String urn, KnowledgeClass knowledgeClass, File fileLocation, Scope submittingScope) {
+      String urn,
+      KnowledgeClass knowledgeClass,
+      File fileLocation,
+      ResourcePrivileges rights,
+      Scope submittingScope) {
 
     if (urn != null) {
       // initial resource permissions
       var status = new ResourceInfo();
-      if (scope.getIdentity() instanceof UserIdentity user) {
-        status.getRights().getAllowedUsers().add(user.getUsername());
-        status.setOwner(user.getUsername());
-      }
+      status.setRights(rights);
       status.setFileLocation(fileLocation);
       status.setKnowledgeClass(knowledgeClass);
       status.setReviewStatus(0);

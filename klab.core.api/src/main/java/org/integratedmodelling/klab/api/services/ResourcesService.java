@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -449,7 +450,11 @@ public interface ResourcesService extends KlabService {
    * @return resource info for the registered resource
    */
   ResourceInfo registerResource(
-      String urn, KnowledgeClass knowledgeClass, File fileLocation, Scope submittingScope);
+      String urn,
+      KnowledgeClass knowledgeClass,
+      File fileLocation,
+      ResourcePrivileges rights,
+      Scope submittingScope);
 
   /**
    * Admin interface to submit/remove projects and configure the service.

@@ -96,6 +96,7 @@ public class ComponentIOLibrary {
                 component.id(),
                 KlabAsset.KnowledgeClass.COMPONENT,
                 component.sourceArchive(),
+                component.usageRights(),
                 scope);
         var result =
             ResourceSet.of(

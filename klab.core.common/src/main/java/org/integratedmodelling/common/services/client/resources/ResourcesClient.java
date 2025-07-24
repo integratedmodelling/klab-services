@@ -19,6 +19,7 @@ import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -671,7 +672,11 @@ public class ResourcesClient extends ServiceClient
 
   @Override
   public ResourceInfo registerResource(
-      String urn, KnowledgeClass knowledgeClass, File file, Scope submittingScope) {
+      String urn,
+      KnowledgeClass knowledgeClass,
+      File file,
+      ResourcePrivileges rights,
+      Scope submittingScope) {
     throw new KlabIllegalStateException(
         "resources service: registerResource() should not be called by clients");
   }
