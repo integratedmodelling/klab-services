@@ -1136,43 +1136,43 @@ public class ResourcesProvider extends BaseService
   //    }
 
   //    @Override
-  @Deprecated // remove when the import mechanism can do this
-  public ResourceSet createResource(File resourcePath, UserScope scope) {
-
-    KnowledgeClass knowledgeClass = null;
-    File sourceFile = null;
-    String urn = null;
-    ResourceSet ret = null;
-
-    if ("jar".equals(Utils.Files.getFileExtension(resourcePath))) {
-      var imported = getComponentRegistry().installComponent(resourcePath, null);
-      knowledgeClass = KnowledgeClass.COMPONENT;
-      sourceFile = imported.getFirst().sourceArchive();
-      urn = imported.getFirst().id();
-      ret = imported.getSecond();
-    } else {
-      // TODO resource, mirror archive
-    }
-
-    if (urn != null) {
-      // initial resource permissions
-      var status = new ResourceInfo();
-      if (scope.getIdentity() instanceof UserIdentity user) {
-        status.getRights().getAllowedUsers().add(user.getUsername());
-        status.setOwner(user.getUsername());
-      }
-      status.setFileLocation(sourceFile);
-      status.setKnowledgeClass(knowledgeClass);
-      status.setReviewStatus(0);
-      status.setType(ResourceInfo.Type.AVAILABLE);
-      status.setLegacy(false);
-      status.setUrn(urn);
-      resourcesKbox.putStatus(status);
-      //      db.commit();
-    }
-
-    return ret;
-  }
+  //  @Deprecated // remove when the import mechanism can do this
+  //  public ResourceSet createResource(File resourcePath, UserScope scope) {
+  //
+  //    KnowledgeClass knowledgeClass = null;
+  //    File sourceFile = null;
+  //    String urn = null;
+  //    ResourceSet ret = null;
+  //
+  //    if ("jar".equals(Utils.Files.getFileExtension(resourcePath))) {
+  //      var imported = getComponentRegistry().installComponent(resourcePath, null);
+  //      knowledgeClass = KnowledgeClass.COMPONENT;
+  //      sourceFile = imported.getFirst().sourceArchive();
+  //      urn = imported.getFirst().id();
+  //      ret = imported.getSecond();
+  //    } else {
+  //      // TODO resource, mirror archive
+  //    }
+  //
+  //    if (urn != null) {
+  //      // initial resource permissions
+  //      var status = new ResourceInfo();
+  //      if (scope.getIdentity() instanceof UserIdentity user) {
+  //        status.getRights().getAllowedUsers().add(user.getUsername());
+  //        status.setOwner(user.getUsername());
+  //      }
+  //      status.setFileLocation(sourceFile);
+  //      status.setKnowledgeClass(knowledgeClass);
+  //      status.setReviewStatus(0);
+  //      status.setType(ResourceInfo.Type.AVAILABLE);
+  //      status.setLegacy(false);
+  //      status.setUrn(urn);
+  //      resourcesKbox.putStatus(status);
+  //      //      db.commit();
+  //    }
+  //
+  //    return ret;
+  //  }
 
   @Override
   public ResourceInfo registerResource(
@@ -1663,30 +1663,40 @@ public class ResourcesProvider extends BaseService
     // check if we're updating and, if so, whether we have the right to modify
 
     // find adapter
-    var adapterResult = resolveResourceAdapter(resource.getAdapterType(), scope);
-    if (adapterResult.isEmpty()) {
-      // resolve using the remaining services in the scope
-      var otherServices =
-          scope.getServices(ResourcesService.class).stream()
-              .filter(s -> !serviceId().equals(s.serviceId()))
-              .toList();
-      if (!otherServices.isEmpty()) {
-        // Utils.Resources.queryResources(us)
+    var adapterType = Version.splitVersion(resource.getAdapterType());
+    var adapter =
+        getComponentRegistry().getAdapter(adapterType.getFirst(), adapterType.getSecond(), scope);
+    if (adapter == null) {
+
+      // TODO this must use the remaining services
+      var adapterResult = resolveResourceAdapter(resource.getAdapterType(), scope);
+      if (adapterResult.isEmpty()) {
+        // resolve using the remaining services in the scope
+        var otherServices =
+            scope.getServices(ResourcesService.class).stream()
+                .filter(s -> !serviceId().equals(s.serviceId()))
+                .toList();
+        if (!otherServices.isEmpty()) {
+          // Utils.Resources.queryResources(us)
+        }
       }
+
+      if (adapterResult.isEmpty()) {
+        return ResourceSet.empty(
+            Notification.error(
+                "Cannot find or load adapter "
+                    + resource.getAdapterType()
+                    + " to handle resource "
+                    + resource.getUrn()));
+      }
+
+      // TODO not empty: ingest the adapter from the merged resource set; if ingestion is not
+      //  successful, return crap, else load into adapter
     }
 
-    if (adapterResult.isEmpty()) {
-      return ResourceSet.empty(
-          Notification.error(
-              "Cannot find or load adapter "
-                  + resource.getAdapterType()
-                  + " to handle resource "
-                  + resource.getUrn()));
-    }
-
-    Adapter adapter = null; // Load the adapter from the resourceSet
     ResourcePrivileges rights = null; // TODO
 
+    // if ret == OK, call registerResource (which should probably be moved to the resource manager)
     return resourceManager.ingestResource(resource, adapter, rights);
   }
 }

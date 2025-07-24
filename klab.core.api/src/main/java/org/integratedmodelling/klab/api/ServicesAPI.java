@@ -37,16 +37,15 @@ public interface ServicesAPI {
   /**
    * Response header for the URN of a AMQP messaging service, returned along with the {@link
    * RUNTIME#CREATE_SESSION} response when messaging is available.
+   *
    * @deprecated federation data should come with groups that come with the JWT header
    */
-  @Deprecated
-  String MESSAGING_URL_HEADER = "messaging-urn";
+  @Deprecated String MESSAGING_URL_HEADER = "messaging-urn";
 
   /*
    * @deprecated federation data should come with groups that come with the JWT header
    */
-  @Deprecated
-  String FEDERATION_ID_HEADER = "federation-id";
+  @Deprecated String FEDERATION_ID_HEADER = "federation-id";
 
   /**
    * Header used to both request and confirm the set of messaging queues wanted or offered for
@@ -117,20 +116,13 @@ public interface ServicesAPI {
    */
   String EXPORT = "/export/{class}/{urn}";
 
-  /**
-   * TODO API endpoints to manage plug-in components. This will be extended by the admin interfaces
-   * of selected services.
-   *
-   * @author Ferd
-   */
-  public interface PluginAPI {}
-
   /** General administration endpoints common to all services */
   interface ADMIN {
 
     String SHUTDOWN = "/shutdown";
     String CHECK_CREDENTIALS = "/checkCredentials";
     String CREDENTIALS = "/credentials";
+    String SETTINGS = "/settings";
   }
 
   /**
@@ -335,7 +327,7 @@ public interface ServicesAPI {
      *
      * @author Ferd
      */
-    interface ADMIN extends PluginAPI {
+    interface ADMIN {
 
       String LOAD_KNOWLEDGE = "/loadKnowledge";
       String UPDATE_KNOWLEDGE = "/updateKnowledge";
@@ -343,7 +335,7 @@ public interface ServicesAPI {
     }
 
     /** Endpoints for authorities configuration, creation, discovery and use */
-    interface AUTHORITIES extends PluginAPI {}
+    interface AUTHORITIES {}
   }
 
   /**
@@ -357,7 +349,7 @@ public interface ServicesAPI {
      *
      * @author Ferd
      */
-    interface ADMIN extends PluginAPI {}
+    interface ADMIN {}
 
     String GET_SESSION_INFO = "/sessions";
 
@@ -439,7 +431,7 @@ public interface ServicesAPI {
      *
      * @author Ferd
      */
-    public interface ADMIN extends PluginAPI {
+    public interface ADMIN {
 
       /** create a new workspace, posting metadata */
       String CREATE_WORKSPACE = "/createWorkspace/{workspaceName}";
@@ -485,7 +477,7 @@ public interface ServicesAPI {
 
   interface RESOLVER {
 
-    interface ADMIN extends PluginAPI {}
+    interface ADMIN {}
 
     String RESOLVE_OBSERVATION = "/resolve";
   }
