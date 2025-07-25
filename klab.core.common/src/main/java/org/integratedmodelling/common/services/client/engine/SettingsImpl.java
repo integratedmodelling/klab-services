@@ -2,6 +2,7 @@ package org.integratedmodelling.common.services.client.engine;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.file.FileConfig;
+import com.electronwill.nightconfig.core.io.WritingMode;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
@@ -11,13 +12,15 @@ import org.integratedmodelling.klab.api.engine.distribution.Release;
 import org.integratedmodelling.klab.api.services.KlabService;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class SettingsImpl implements Settings {
 
   private final CommentedFileConfig config;
-  private Executor executor = Executors.newSingleThreadExecutor();
+  private final Executor executor = Executors.newSingleThreadExecutor();
 
   public static Settings forProduct(Release release) {
     // TODO
@@ -62,7 +65,8 @@ public class SettingsImpl implements Settings {
     this.settingsFileName = settingsFileName;
     this.settingsFile = Configuration.INSTANCE.getFile(settingsFileName + ".toml");
     // Advanced builder, default resource, autosave and much more (-> cf the wiki)
-    this.config = CommentedFileConfig.builder(settingsFile).build();
+    this.config =
+        CommentedFileConfig.builder(settingsFile).writingMode(WritingMode.REPLACE_ATOMIC).build();
     config.load(); // This actually reads the config
   }
 
@@ -90,8 +94,13 @@ public class SettingsImpl implements Settings {
         () -> {
           // must do this or quick setting changes will mess up the file. Autosave is out for the
           // same reason.
-          config.set(setting2Property(setting), value);
-          config.save();
+//          try {
+            //            Files.deleteIfExists(settingsFile.toPath());
+            config.set(setting2Property(setting), value);
+            config.save();
+//          } catch (IOException e) {
+//            Logging.INSTANCE.error("Error (re)writing settings file: " + e.getMessage(), e);
+//          }
         });
   }
 

@@ -441,12 +441,13 @@ public interface ResourcesService extends KlabService {
    * KlabService#importAsset(ResourceTransport.Schema, ResourceTransport.Schema.Asset, String,
    * Scope)} mechanism; the resources service adds management of distribution, ownership and review.
    *
+   * <p>TODO should be non-API, part of the import mechanism, but currently it needs to be exposed
+   *
    * @param urn the URN identifier for the resource
    * @param knowledgeClass the knowledge class of the resource
    * @param fileLocation local file if any, or null. Should also build hash and backup file for
    *     unburdened copying if the file is opened.
    * @param submittingScope the scope requesting the registration
-   * @deprecated should be non-API, part of the import mechanism
    * @return resource info for the registered resource
    */
   ResourceInfo registerResource(
