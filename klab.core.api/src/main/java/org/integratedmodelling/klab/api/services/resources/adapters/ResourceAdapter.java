@@ -89,6 +89,11 @@ public @interface ResourceAdapter {
    * The annotation enables specialized validations for all phases of the resource lifecycle. A
    * non-universal adapter must provide at least a validator for LocalImport.
    *
+   * <p>The annotated method should be allowed to be void (any exceptions thrown is intercepted as
+   * an error); boolean // (valid/not); notification (error, info, warning); or Resource, which at
+   * this point will substitute the passed one, and any notifications in it are used, with error
+   * notifications causing to abort the operation being validated.
+   *
    * @author Ferd
    */
   @Documented

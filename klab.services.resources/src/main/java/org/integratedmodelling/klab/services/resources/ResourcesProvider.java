@@ -1690,13 +1690,20 @@ public class ResourcesProvider extends BaseService
                     + resource.getUrn()));
       }
 
-      // TODO not empty: ingest the adapter from the merged resource set; if ingestion is not
-      //  successful, return crap, else load into adapter
+      ingestResources(adapterResult, scope);
+      adapter =
+          getComponentRegistry().getAdapter(adapterType.getFirst(), adapterType.getSecond(), scope);
+
+      if (adapter == null) {
+        return ResourceSet.empty(
+            Notification.error(
+                "Cannot find or load adapter "
+                    + resource.getAdapterType()
+                    + " to handle resource "
+                    + resource.getUrn()));
+      }
     }
 
-    ResourcePrivileges rights = null; // TODO
-
-    // if ret == OK, call registerResource (which should probably be moved to the resource manager)
-    return resourceManager.ingestResource(resource, adapter, rights);
+    return resourceManager.ingestResource(resource, adapter, scope);
   }
 }

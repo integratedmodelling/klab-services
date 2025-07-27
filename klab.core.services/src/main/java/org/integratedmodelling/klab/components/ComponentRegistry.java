@@ -1292,7 +1292,8 @@ public class ComponentRegistry {
     private Extensions.FunctionDescriptor typeAttributor;
     private Extensions.FunctionDescriptor encoder;
     private Extensions.FunctionDescriptor contextualizer;
-    private Extensions.FunctionDescriptor validator;
+    private Map<ResourceAdapter.Validator.LifecyclePhase, Extensions.FunctionDescriptor> validator =
+        new HashMap<>();
     private Extensions.FunctionDescriptor inspector;
     private Extensions.FunctionDescriptor initializer;
     private Extensions.FunctionDescriptor sanitizer;
@@ -1349,8 +1350,8 @@ public class ComponentRegistry {
     }
 
     @Override
-    public boolean hasValidator() {
-      return validator != null;
+    public boolean hasValidator(ResourceAdapter.Validator.LifecyclePhase phase) {
+      return validator.containsKey(phase);
     }
 
     @Override
@@ -1389,8 +1390,9 @@ public class ComponentRegistry {
     }
 
     @Override
-    public Extensions.FunctionDescriptor getValidator() {
-      return this.validator;
+    public Extensions.FunctionDescriptor getValidator(
+        ResourceAdapter.Validator.LifecyclePhase phase) {
+      return this.validator.get(phase);
     }
 
     public boolean initialize() {
@@ -1543,7 +1545,9 @@ public class ComponentRegistry {
                   method, method.getAnnotation(ResourceAdapter.Validator.class));
           serviceImplementations.put(
               funcData.getFirst().serviceInfo.getName(), funcData.getSecond());
-          this.validator = funcData.getFirst();
+          for (var phase : a.phase()) {
+            this.validator.put(phase, funcData.getFirst());
+          }
           validations.addAll(Arrays.asList(a.phase()));
         } else if (method.isAnnotationPresent(ResourceAdapter.Type.class)) {
 

@@ -468,7 +468,7 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public Data contextualize(
+  public /*CompletableFuture<*/Data/*>*/ contextualize(
       Resource contextualizedResource,
       Observation observation,
       Scheduler.Event event,
@@ -478,7 +478,7 @@ public class ResourcesClient extends ServiceClient
     DataRequest request =
         DataRequest.newBuilder()
             .setInputData(data instanceof BaseDataImpl data1 ? data1.asInstance() : null)
-            // .setObservable(observation.getObservable().getUrn())
+            .setObservable(observation.getObservable().getUrn())
             .setGeometry(observation.getGeometry().encode())
             .setResourceUrns(List.of(contextualizedResource.getUrn()))
             .setStartTime(event == null ? 0 : event.getTime().getStart().getMilliseconds())

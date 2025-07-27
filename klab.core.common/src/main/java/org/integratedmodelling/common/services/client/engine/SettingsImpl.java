@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class SettingsImpl implements Settings {
 
@@ -80,7 +81,7 @@ public class SettingsImpl implements Settings {
   }
 
   @Override
-  public void set(Setting setting, Object value) {
+  public <T> Future<T> set(Setting setting, T value) {
     Logging.INSTANCE.info(
         "DIO CASTORO SETTING: "
             + setting.name()
@@ -90,18 +91,18 @@ public class SettingsImpl implements Settings {
             + value.getClass()
             + ") "
             + (value instanceof String ? "\"" + value + "\"" : ""));
+
+    // TODO implement the Future<> with a completable future and a callback to call on setting,
+    //  including for Actions (whose class is Map)
+
     executor.execute(
         () -> {
-          // must do this or quick setting changes will mess up the file. Autosave is out for the
-          // same reason.
-//          try {
-            //            Files.deleteIfExists(settingsFile.toPath());
-            config.set(setting2Property(setting), value);
-            config.save();
-//          } catch (IOException e) {
-//            Logging.INSTANCE.error("Error (re)writing settings file: " + e.getMessage(), e);
-//          }
+          // CHECK the REPLACE_ATOMIC should be doing this, or maybe not - this seems to work so don't touch
+          // anything. Problem is duplicate entries (and refuse to read) when settings are changed quickly.
+          config.set(setting2Property(setting), value);
+          config.save();
         });
+    return null;
   }
 
   private String setting2Property(Setting setting) {

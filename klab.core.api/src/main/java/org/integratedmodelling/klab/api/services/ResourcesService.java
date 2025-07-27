@@ -238,9 +238,9 @@ public interface ResourcesService extends KlabService {
   ResourceSet resolveResource(List<String> urn, Scope scope);
 
   /**
-   * Return a version of the passed resource that is primed to be used in the passed geometry. Not
-   * all adapters require this step before use; in this case the {@link
-   * AdapterDescriptor#contextualizing()} relative to the adapter will return true.
+   * Return a version of the passed resource that is primed to be used in the given geometry. Not
+   * all adapters require this step before use; in this case the {@link Adapter#hasContextualizer()}
+   * relative to the adapter will return true.
    *
    * @param resource
    * @param geometry
@@ -297,9 +297,9 @@ public interface ResourcesService extends KlabService {
    * @param event the scheduler event that triggered this contextualization
    * @param input may be null, pass if the resource requires inputs
    * @param scope the scope under which contextualization happens
-   * @return the contextualized data object
+   * @return a future for the contextualized data object
    */
-  Data contextualize(
+  /*CompletableFuture<*/Data/*>*/ contextualize(
       Resource contextualizedResource,
       Observation observation,
       Scheduler.Event event,

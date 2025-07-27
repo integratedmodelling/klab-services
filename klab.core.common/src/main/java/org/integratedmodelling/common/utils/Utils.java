@@ -625,7 +625,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         this.headers.put(header, value);
       }
 
-      public org.integratedmodelling.klab.api.data.Data postData(DataRequest dataRequest) {
+      public /*CompletableFuture<*/org.integratedmodelling.klab.api.data.Data/*>*/ postData(DataRequest dataRequest) {
 
         var apiCall = substituteTemplateParameters(ServicesAPI.RESOURCES.CONTEXTUALIZE, Map.of());
         responseHeaders.clear();

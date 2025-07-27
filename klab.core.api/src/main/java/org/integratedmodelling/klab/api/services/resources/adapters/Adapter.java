@@ -78,9 +78,10 @@ public interface Adapter {
    * If true, the adapter provides a specific validator used upon initial submission and any
    * resource update.
    *
-   * @return
+   * @param phase the phase of resource lifecycle subjected to validation
+   * @return true if a validator is available for that phase
    */
-  boolean hasValidator();
+  boolean hasValidator(ResourceAdapter.Validator.LifecyclePhase phase);
 
   /**
    * If true, the adapter provides a sanitizer which may extract and externalize credentials or
@@ -142,9 +143,10 @@ public interface Adapter {
    * Return the encoder descriptor. If the adapter is operational, the component registry must have
    * the Java implementation ready.
    *
+   * @param phase the phase of resource lifecycle subjected to validation
    * @return
    */
-  Extensions.FunctionDescriptor getValidator();
+  Extensions.FunctionDescriptor getValidator(ResourceAdapter.Validator.LifecyclePhase phase);
 
   /**
    * Use the underlying implementation to contextualize the passed resource and obtain a copy
