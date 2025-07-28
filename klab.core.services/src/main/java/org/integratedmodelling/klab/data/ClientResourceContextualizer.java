@@ -22,7 +22,8 @@ public class ClientResourceContextualizer extends AbstractResourceContextualizer
   private final ResourcesService service;
 
   /**
-   * Pass a previously contextualized resource
+   * Pass a resource. If the adapter must adapt it to the context, this must happen before the call.
+   * TODO maybe we should internalize this, given that we now get the adapter.
    *
    * @param service
    * @param resource

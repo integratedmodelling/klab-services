@@ -15,6 +15,9 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
+import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+
 /**
  * Opaque interface for a referenced envelope.
  *
@@ -156,4 +159,13 @@ public interface Envelope extends Referenced {
      * @return
      */
     Envelope grow(double factor);
+
+    static Envelope of(double minX, double minY, double maxX, double maxY, Projection projection) {
+        Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+        if (configuration == null) {
+            throw new KlabIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
+        }
+        return configuration.getSpatialEnvelope(minX, minY, maxX, maxY, projection);
+    }
+
 }

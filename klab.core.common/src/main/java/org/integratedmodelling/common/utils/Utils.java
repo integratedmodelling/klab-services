@@ -2195,6 +2195,28 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
   public static class Maps {
 
     /**
+     * Return the object at the given path as the passed class. Each slash-separated path component,
+     * except the last, must point to another map.
+     *
+     * @param <T>
+     * @param path
+     * @param cls
+     * @return
+     */
+    public static <T> T get(Map<?, ?> map, String path, Class<T> cls) {
+      String[] paths = path.split("/");
+      Map<?, ?> o = map;
+      for (int i = 0; i < paths.length - 1; i++) {
+        Object to = o.get(paths[i]);
+        if (!(to instanceof Map)) {
+          return null;
+        }
+        o = (Map<?, ?>) to;
+      }
+      return o == null ? null : Data.asType(o.get(paths[paths.length - 1]), cls);
+    }
+
+    /**
      * @param originalMap
      * @param translationTable
      * @param <K>

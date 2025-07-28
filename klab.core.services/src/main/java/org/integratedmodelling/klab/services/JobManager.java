@@ -104,6 +104,7 @@ public class JobManager {
     throw new KlabResourceAccessException("results of job " + id + " are not available");
   }
 
+  // special case as this gets binary-encoded using Avro
   public Data getDataResult(long id) throws Throwable {
     var result = results.getIfPresent(id);
     if (result != null) {

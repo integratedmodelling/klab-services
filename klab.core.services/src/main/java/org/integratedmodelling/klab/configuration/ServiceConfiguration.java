@@ -47,6 +47,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelope;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.Quantity;
@@ -63,6 +64,7 @@ import org.integratedmodelling.klab.data.mediation.UnitServiceImpl;
 import org.integratedmodelling.klab.runtime.language.LanguageService;
 import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
 import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
+import org.integratedmodelling.klab.runtime.scale.space.EnvelopeImpl;
 import org.integratedmodelling.klab.runtime.scale.space.ProjectionImpl;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -337,6 +339,12 @@ public enum ServiceConfiguration {
                   throw new KlabUnimplementedException(
                       "ServiceConfiguration::getGeometryIterator(" + spaceFillingCurve + ")");
             };
+          }
+
+          @Override
+          public Envelope getSpatialEnvelope(
+              double minX, double minY, double maxX, double maxY, Projection projection) {
+            return EnvelopeImpl.create(minX, minY, maxX, maxY, projection);
           }
         });
   }
