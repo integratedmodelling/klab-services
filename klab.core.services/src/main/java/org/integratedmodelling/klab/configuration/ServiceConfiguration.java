@@ -77,13 +77,19 @@ import org.integratedmodelling.klab.services.base.BaseService;
  * @version $Id: $Id
  */
 public enum ServiceConfiguration {
-  INSTANCE;
+
+    INSTANCE;
 
   private Map<Class<?>, Map<Set<Object>, Service>> services = new HashMap<>();
   private Map<String, Authority> authorities = new HashMap<>();
   private KlabService mainService;
 
   static {
+    injectInstantiators();
+  }
+
+  /** Made public so that it can be called by test cases. */
+  public static void injectInstantiators() {
 
     /*
      * "injector" for the crucial k.LAB constructors
