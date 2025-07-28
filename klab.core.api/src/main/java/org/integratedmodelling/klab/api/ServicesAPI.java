@@ -131,8 +131,16 @@ public interface ServicesAPI {
    * manager.
    */
   interface JOBS {
+    /** Inquire about the status of a job */
     String STATUS = "/jobs/status/{id}";
+
+    /** Retrieve the JSON results of a finished job */
     String RETRIEVE = "/jobs/retrieve/{id}";
+
+    /** Retrieve the {@link org.integratedmodelling.klab.api.data.Data} result of a finished job */
+    String RETRIEVE_DATA = "/jobs/retrieveData/{id}";
+
+    /** Cancel a running job */
     String CANCEL = "/jobs/cancel/{id}";
   }
 

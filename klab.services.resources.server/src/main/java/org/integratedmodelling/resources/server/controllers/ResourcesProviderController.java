@@ -48,6 +48,7 @@ import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -490,58 +491,56 @@ public class ResourcesProviderController {
   @PostMapping(
       value = ServicesAPI.RESOURCES.CONTEXTUALIZE,
       consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-  public void contextualize(
-      InputStream requestStream, HttpServletResponse response, Principal principal) {
+  public @ResponseBody long contextualize(
+      InputStream requestStream, Principal principal) {
 
     if (principal instanceof EngineAuthorization authorization) {
 
-      try {
-        var decoder = DecoderFactory.get().binaryDecoder(requestStream, null);
-        var reader = new SpecificDatumReader<>(DataRequest.class);
-        var request = reader.read(null, decoder);
-        var scope = authorization.getScope();
-        var resource =
-            resourcesServer
-                .klabService()
-                .retrieveResource(
-                    request.getResourceUrns().stream().map(CharSequence::toString).toList(), scope);
-        var observable =
-            resourcesServer
-                .klabService()
-                .serviceScope()
-                .getService(Reasoner.class)
-                .resolveObservable(request.getObservable().toString());
-        var event = Scheduler.event(request.getStartTime(), request.getEndTime());
-        var geometry =
-            GeometryRepository.INSTANCE.get(request.getGeometry().toString(), Geometry.class);
+      var scope = authorization.getScope();
+      if (scope instanceof ServiceUserScope serviceUserScope) {
 
-        Data input = null;
-        if (request.getInputData() != null) {
-          input = BaseDataImpl.create(request.getInputData());
-        }
+        try {
+          var decoder = DecoderFactory.get().binaryDecoder(requestStream, null);
+          var reader = new SpecificDatumReader<>(DataRequest.class);
+          var request = reader.read(null, decoder);
 
-        Data data =
-            resourcesServer
-                .klabService()
-                .contextualize(
-                    resource,
-                    DigitalTwin.createObservation(scope, observable, geometry),
-                    event, // FIXME FIXME FIXME take the event from the request
-                    input,
-                    scope);
+          var resource =
+              resourcesServer
+                  .klabService()
+                  .retrieveResource(
+                      request.getResourceUrns().stream().map(CharSequence::toString).toList(),
+                      scope);
+          var observable =
+              resourcesServer
+                  .klabService()
+                  .serviceScope()
+                  .getService(Reasoner.class)
+                  .resolveObservable(request.getObservable().toString());
+          var event = Scheduler.event(request.getStartTime(), request.getEndTime());
+          var geometry =
+              GeometryRepository.INSTANCE.get(request.getGeometry().toString(), Geometry.class);
 
-        if (data instanceof BaseDataImpl dataImpl) {
-          try {
-            var output = response.getOutputStream();
-            dataImpl.copyTo(output);
-            output.flush();
-            return;
-          } catch (Throwable t) {
-            throw new KlabResourceAccessException(t);
+          Data input = null;
+          if (request.getInputData() != null) {
+            input = BaseDataImpl.create(request.getInputData());
           }
+
+          return serviceUserScope
+              .getJobManager()
+              .submit(
+                  resourcesServer
+                      .klabService()
+                      .contextualize(
+                          resource,
+                          DigitalTwin.createObservation(scope, observable, geometry),
+                          event, // FIXME FIXME FIXME take the event from the request
+                          input,
+                          scope),
+                  "Resolution of " + observable);
+
+        } catch (Throwable t) {
+          throw new KlabIOException(t);
         }
-      } catch (IOException e) {
-        throw new KlabIOException(e);
       }
     }
 
