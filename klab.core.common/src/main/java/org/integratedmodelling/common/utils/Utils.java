@@ -578,7 +578,11 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
         } else if (status.getStatus() == Scope.Status.FINISHED) {
           try {
-            var result = client.get(ServicesAPI.JOBS.RETRIEVE, resultClass, "id", id);
+            var isData = Data.class.isAssignableFrom(resultClass);
+            var result =
+                isData
+                    ? client.getData(ServicesAPI.JOBS.RETRIEVE_DATA, resultClass, "id", id)
+                    : client.get(ServicesAPI.JOBS.RETRIEVE, resultClass, "id", id);
             if (result != null) {
               complete(result);
             } else {
@@ -627,7 +631,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         this.headers.put(header, value);
       }
 
-      public /*CompletableFuture<*/org.integratedmodelling.klab.api.data.Data/*>*/ postData(DataRequest dataRequest) {
+      public CompletableFuture<org.integratedmodelling.klab.api.data.Data> postData(
+          DataRequest dataRequest) {
 
         var apiCall = substituteTemplateParameters(ServicesAPI.RESOURCES.CONTEXTUALIZE, Map.of());
         responseHeaders.clear();
@@ -672,10 +677,22 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           var response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
 
           if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
+          //          if (response.statusCode() == 200 || response.statusCode() == 202) {
+          //            var id = Long.parseLong(response.body());
+          //            return new PollingFuture<>(this, resultClass, id, 100, 500, 7, 1000, 5,
+          // 1800, -1, 3000);
+          //          } else {
+          //            var log = parseResponse(response.body(), Map.class);
+          //            System.out.println("============ POST " + apiCall + " EXCEPTION REPORT
+          // ==============");
+          //            MapUtils.debugPrint(System.out, "Server error", log);
+          //            System.out.println("============ END OF REPORT  ==============");
+          //            return CompletableFuture.failedFuture(new
+          // KlabServiceAccessException(response.body()));
+          //          }
+
+          if (response.statusCode() == 200) {
             parseHeaders(response);
-            var decoder = DecoderFactory.get().binaryDecoder(response.body(), null);
-            var reader = new SpecificDatumReader<>(Instance.class);
-            return BaseDataImpl.create(reader.read(null, decoder));
           }
 
         } catch (Throwable e) {
@@ -998,7 +1015,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             var body = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
             if (HttpStatus.valueOf(statusCode).is2xxSuccessful()) {
               var id = Long.parseLong(body);
-              return new PollingFuture<>(this, resultClass, id, 100, 500, 7, 1000, 5, 1800, -1, 3000);
+              return new PollingFuture<>(
+                  this, resultClass, id, 100, 500, 7, 1000, 5, 1800, -1, 3000);
             } else {
               var log = parseResponse(body, Map.class);
               System.out.println(
@@ -1384,6 +1402,68 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
               parseHeaders(response);
               return parseResponse(response.body(), resultClass);
+            }
+          } else {
+            client.send(
+                requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(),
+                HttpResponse.BodyHandlers.discarding());
+          }
+
+        } catch (Throwable e) {
+          if (scope != null) {
+            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else {
+            //                        e.printStackTrace();
+          }
+        }
+        return null;
+      }
+
+      /**
+       * GET helper that sets all headers and automatically handles JSON marshalling.
+       *
+       * @param apiRequest the request starting with "/" appended to the main service URL. Add any ?
+       *     parameters here.
+       * @param resultClass
+       * @param parameters paired key, value sequence for URL <em>path</em> template options.
+       *     Explicit ?... URL parameters should be added to the URL directly.
+       * @param <T>
+       * @return
+       */
+      public <T> T getData(String apiRequest, Class<T> resultClass, Object... parameters) {
+
+        var options = new Options();
+        var params = makeKeyMap(options, parameters);
+        var apiCall = substituteTemplateParameters(apiRequest, params);
+        responseHeaders.clear();
+
+        try {
+          var requestBuilder = HttpRequest.newBuilder().GET();
+          if (authorization != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+          }
+          for (String header : headers.keySet()) {
+            requestBuilder = requestBuilder.header(header, headers.get(header));
+          }
+
+          if (forcedAcceptHeader != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+          }
+
+          if (Void.class != resultClass) {
+            var response =
+                client.send(
+                    requestBuilder
+                        .uri(URI.create(uri + apiCall + encodeParameters(params)))
+                        .timeout(Duration.ofSeconds(timeoutSeconds))
+                        .build(),
+                    HttpResponse.BodyHandlers.ofInputStream());
+
+            if (response != null && response.statusCode() == 200) {
+              parseHeaders(response);
+              var decoder = DecoderFactory.get().binaryDecoder(response.body(), null);
+              var reader = new SpecificDatumReader<>(Instance.class);
+              return (T) BaseDataImpl.create(reader.read(null, decoder));
             }
           } else {
             client.send(
@@ -2140,6 +2220,28 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
   public static class Markdown {}
 
   public static class Maps {
+
+    /**
+     * Return the object at the given path as the passed class. Each slash-separated path component,
+     * except the last, must point to another map.
+     *
+     * @param <T>
+     * @param path
+     * @param cls
+     * @return
+     */
+    public static <T> T get(Map<?, ?> map, String path, Class<T> cls) {
+      String[] paths = path.split("/");
+      Map<?, ?> o = map;
+      for (int i = 0; i < paths.length - 1; i++) {
+        Object to = o.get(paths[i]);
+        if (!(to instanceof Map)) {
+          return null;
+        }
+        o = (Map<?, ?>) to;
+      }
+      return o == null ? null : Data.asType(o.get(paths[paths.length - 1]), cls);
+    }
 
     /**
      * @param originalMap

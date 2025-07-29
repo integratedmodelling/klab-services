@@ -1,8 +1,11 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
+import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.services.runtime.objects.JobStatus;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
@@ -50,5 +53,27 @@ public class KlabJobController {
       }
     }
     throw new KlabIllegalStateException("Unexpected runtime configuration");
+  }
+
+  @GetMapping(ServicesAPI.JOBS.RETRIEVE_DATA)
+  public void retrieveData(
+      @PathVariable(name = "id") long id, HttpServletResponse response, Principal principal) {
+
+    if (principal instanceof EngineAuthorization authorization) {
+      var scope = authorization.getScope();
+      if (scope instanceof ServiceUserScope serviceSessionScope) {
+        try {
+          var ret = serviceSessionScope.getJobManager().getDataResult(id);
+          if (ret instanceof BaseDataImpl dataImpl) {
+            var output = response.getOutputStream();
+            dataImpl.copyTo(output);
+            output.flush();
+          }
+        } catch (Throwable t) {
+          // fall through to the exception
+        }
+      }
+    }
+    throw new KlabResourceAccessException("Unauthorized access to job data");
   }
 }

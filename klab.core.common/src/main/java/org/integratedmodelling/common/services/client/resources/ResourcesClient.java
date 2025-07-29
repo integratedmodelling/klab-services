@@ -468,7 +468,7 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public /*CompletableFuture<*/Data/*>*/ contextualize(
+  public CompletableFuture<Data> contextualize(
       Resource contextualizedResource,
       Observation observation,
       Scheduler.Event event,
@@ -484,8 +484,7 @@ public class ResourcesClient extends ServiceClient
             .setStartTime(event == null ? 0 : event.getTime().getStart().getMilliseconds())
             .setEndTime(event == null ? 0 : event.getTime().getEnd().getMilliseconds())
             .build();
-
-    return client.postData(request);
+    return client.withScope(scope).postData(request);
   }
 
   @Override

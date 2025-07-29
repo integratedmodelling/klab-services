@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelope;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.Quantity;
@@ -164,6 +165,9 @@ public enum Klab {
      */
     Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction> getSpatialOffsetMapping(
         Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve);
+
+    Envelope getSpatialEnvelope(
+        double minX, double minY, double maxX, double maxY, Projection projection);
   }
 
   private Configuration configuration;
@@ -185,27 +189,27 @@ public enum Klab {
   public Federation getFederationData(UserIdentity identity) {
 
     var federations =
-            identity.getGroups().stream()
-                    .filter(
-                            g ->
-                                    g.getCustomProperties().stream()
-                                     .anyMatch(
-                                             customProperty ->
-                                                     ("federation.id".equals(customProperty.getKey()))
-                                                             && "true".equals(customProperty.getValue())))
-                    .toList();
+        identity.getGroups().stream()
+            .filter(
+                g ->
+                    g.getCustomProperties().stream()
+                        .anyMatch(
+                            customProperty ->
+                                ("federation.id".equals(customProperty.getKey()))
+                                    && "true".equals(customProperty.getValue())))
+            .toList();
 
     if (federations.size() > 1) {
       throw new KlabAuthorizationException(
-              "multiple federations found for user " + identity.getUsername());
+          "multiple federations found for user " + identity.getUsername());
     } else if (federations.size() == 1) {
       return new Federation(
-              federations.getFirst().getName(),
-              federations.getFirst().getCustomProperties().stream()
-                         .filter(cp -> "federation.broker.url".equals(cp.getKey()))
-                         .map(CustomProperty::getValue)
-                         .findFirst()
-                         .orElse(null));
+          federations.getFirst().getName(),
+          federations.getFirst().getCustomProperties().stream()
+              .filter(cp -> "federation.broker.url".equals(cp.getKey()))
+              .map(CustomProperty::getValue)
+              .findFirst()
+              .orElse(null));
     }
 
     return null;

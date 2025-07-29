@@ -292,14 +292,19 @@ public interface ResourcesService extends KlabService {
   KimConcept retrieveConcept(String definition);
 
   /**
+   * Extract data from the passed resource to contextualize the passed observation, whose semantics
+   * must be compatible with the type of data extracted.
+   *
    * @param contextualizedResource the resource that needs to be contextualized
-   * @param observation must have a geometry set
+   * @param observation provides semantics and geometry for the contextualization
    * @param event the scheduler event that triggered this contextualization
-   * @param input may be null, pass if the resource requires inputs
-   * @param scope the scope under which contextualization happens
-   * @return a future for the contextualized data object
+   * @param input data that contains the state relevant to the contextualization. This is null
+   *     unless the resource requires inputs.
+   * @param scope the scope under which contextualization happens. Normally a ContextScope but it
+   *     may be a UserScope in testing situations.
+   * @return a completable future for the contextualized data object
    */
-  /*CompletableFuture<*/Data/*>*/ contextualize(
+  CompletableFuture<Data> contextualize(
       Resource contextualizedResource,
       Observation observation,
       Scheduler.Event event,

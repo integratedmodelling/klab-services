@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -100,7 +101,21 @@ public class JobManager {
       }
       return Utils.Json.asString(result.getFirst());
     }
-    throw new KlabResourceAccessException("results of job " + id);
+    throw new KlabResourceAccessException("results of job " + id + " are not available");
+  }
+
+  // special case as this gets binary-encoded using Avro
+  public Data getDataResult(long id) throws Throwable {
+    var result = results.getIfPresent(id);
+    if (result != null) {
+      if (result.getSecond() != null) {
+        throw result.getSecond();
+      }
+      if (result.getFirst() instanceof Data) {
+        return (Data) result.getFirst();
+      }
+    }
+    throw new KlabResourceAccessException("results of job " + id + " are not a data object");
   }
 
   public boolean cancel(long id) {

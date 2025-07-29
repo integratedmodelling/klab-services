@@ -560,7 +560,17 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public Data contextualize(
+  public CompletableFuture<Data> contextualize(
+      Resource resource,
+      Observation observation,
+      Scheduler.Event event,
+      @Nullable Data input,
+      Scope scope) {
+    return CompletableFuture.supplyAsync(
+        () -> contextualizeSynchronous(resource, observation, event, input, scope));
+  }
+
+  public Data contextualizeSynchronous(
       Resource resource,
       Observation observation,
       Scheduler.Event event,
@@ -568,6 +578,7 @@ public class ResourcesProvider extends BaseService
       Scope scope) {
     var adapter =
         getComponentRegistry().getAdapter(resource.getAdapterType(), resource.getVersion(), scope);
+
     if (adapter == null) {
       return Data.empty(
           Notification.error("Adapter " + resource.getAdapterType() + " not available"));
@@ -578,7 +589,8 @@ public class ResourcesProvider extends BaseService
             : observation.getObservable().getStatedName();
     var builder = Data.builder(name, observation.getObservable(), observation.getGeometry());
     Urn urn = Urn.of(resource.getUrn());
-    if (!adapter.encode(
+
+    if (adapter.encode(
         resource,
         observation.getGeometry(),
         event,
@@ -589,9 +601,9 @@ public class ResourcesProvider extends BaseService
         Parameters.create(urn.getParameters()),
         input,
         scope)) {
-      return Data.empty(Notification.error("Resource encoding failed"));
+      return builder.build();
     }
-    return builder.build();
+    return Data.empty(Notification.error("Encoding failed"));
   }
 
   @Override
