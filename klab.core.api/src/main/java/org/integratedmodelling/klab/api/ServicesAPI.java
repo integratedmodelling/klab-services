@@ -171,6 +171,11 @@ public interface ServicesAPI {
      * Called by nodes on hubs when authenticating with them. Parameters like the engine version.
      */
     String AUTHENTICATE_SERVICE = SERVICE_BASE + AUTH_BASE;
+
+    /**
+     * Called from services to have information about the user
+     */
+    String USER_BASE_ID_SERVICES = API_BASE + "/users/services/{id}";
   }
 
   /**
