@@ -25,7 +25,8 @@ public class MavenComponentCache {
 
   public enum Status {
     UP_TO_DATE,
-    NEEDS_UPDATE,
+    NEEDS_UPDATE_FROM_LOCAL_REPOSITORY,
+    NEEDS_UPDATE_FROM_REMOTE_REPOSITORY,
     UNKNOWN
   }
 
@@ -80,9 +81,12 @@ public class MavenComponentCache {
 
   /**
    * If {@link #getAvailability(String, String, String, String, String)} has returned UP_TO_DATE or
-   * NEEDS_UPDATE, update if necessary and return the local file.
+   * NEEDS_UPDATE, update if necessary and return a locally cached file that contains the updated
+   * component, copying or downloading anything necessary. The returned file retains the extension
+   * passed in suffix but will be copied in the local cache unless it's available locally.
    *
-   * <p>This method updates the cache as needed if anything must be downloaded.
+   * <p>This method updates the cache as needed if anything must be downloaded. Cache maintenance
+   * may be performed as appropriate (at the moment not much is done).
    *
    * @param groupId
    * @param artifactId
@@ -121,7 +125,7 @@ public class MavenComponentCache {
     // must download the file and update the cache
 
     if (current != null && current.getCachedFile() != null) {
-      if (status == Status.NEEDS_UPDATE) {
+      if (status == Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY) {
         // update and save the new info in catalog, keep old if errors
         var download =
             Utils.Maven.downloadArtifactFile(
@@ -206,9 +210,17 @@ public class MavenComponentCache {
     // file isn't there. Must put it there.
     var local = Utils.Maven.findLocalArtifactFile(groupId, artifactId, version, classifier, suffix);
     if (local != null) {
-      // in local repo counts as up to date
+
+      var fileTime =
+          LocalDateTime.ofInstant(
+              java.time.Instant.ofEpochMilli(local.lastModified()),
+              java.time.ZoneId.systemDefault());
+      // in local repo counts as up to date unless our catalog doesn't have it or
       fileRef.set(local);
-      return Status.UP_TO_DATE;
+      return current == null || current.lastModified.isBefore(fileTime)
+          ? Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+          : Status.UP_TO_DATE;
+
     } else if (version.endsWith("-SNAPSHOT")) {
       // check out if available on remote repositories
       var latest = Utils.Maven.getLatestSnapshotDate(groupId, artifactId, version);
@@ -216,7 +228,7 @@ public class MavenComponentCache {
         if (current != null && !current.getLastModified().isBefore(latest.getLastModified())) {
           return Status.UP_TO_DATE;
         } else {
-          return Status.NEEDS_UPDATE;
+          return Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY;
         }
       }
     }
@@ -239,7 +251,7 @@ public class MavenComponentCache {
             return Status.UP_TO_DATE;
           }
         }
-        return Status.NEEDS_UPDATE;
+        return Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY;
       }
     }
     return Status.UNKNOWN;
