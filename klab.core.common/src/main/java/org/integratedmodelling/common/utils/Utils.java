@@ -690,8 +690,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           //            return CompletableFuture.failedFuture(new
           // KlabServiceAccessException(response.body()));
           //          }
-
-          if (response.statusCode() == 200) {
             parseHeaders(response);
           }
 
