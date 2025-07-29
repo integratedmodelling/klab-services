@@ -183,6 +183,8 @@ public class ComponentRegistry {
         // TODO the build number should be incremented if the component is local/snapshot. This will
         //  allow other services to know the update must be loaded.
         unloadComponent(component.id(), component.version());
+        // TODO remove the previous file if any, as a change from remote to local may leave two
+        //  versions in the plugin dir
         installComponent(file, component.mavenCoordinates());
         Logging.INSTANCE.info(
             "Component "
