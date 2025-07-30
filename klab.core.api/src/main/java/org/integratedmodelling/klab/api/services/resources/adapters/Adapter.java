@@ -14,6 +14,8 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 
+import java.util.List;
+
 /**
  * The descriptor for a resource adapter, built from the annotation in a class annotated with {@link
  * ResourceAdapter} and part of a resource service's capabilities.
@@ -21,6 +23,46 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
  * @author Ferd
  */
 public interface Adapter {
+
+  /** A parameter for the adapter. Resource parameters are validated against these on import. */
+  interface Parameter {
+
+    /**
+     * Parameter name, a simple identifier
+     *
+     * @return
+     */
+    String getName();
+
+    /**
+     * Parameter type. Must be a POD or ENUM
+     *
+     * @return
+     */
+    Artifact.Type getType();
+
+    /**
+     * If parameter type is ENUM, the list of admitted values
+     *
+     * @return
+     */
+    List<String> getEnumValues();
+
+    /**
+     * Description
+     *
+     * @return
+     */
+    String getDescription();
+
+    /**
+     * Determines whether the parameter is optional. An optional parameter indicates that the
+     * adapter or configuration can function correctly even if the parameter is not provided.
+     *
+     * @return true if the parameter is optional, false otherwise
+     */
+    boolean isOptional();
+  }
 
   String getName();
 
@@ -40,6 +82,13 @@ public interface Adapter {
    * @return
    */
   Artifact.Type resourceType(Urn urn);
+
+  /**
+   * Parameters as declared in the annotation.
+   *
+   * @return
+   */
+  List<Parameter> getParameters();
 
   /**
    * Version. Cannot be null. Multiple versions of the same adapter may coexist in a service.

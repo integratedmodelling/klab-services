@@ -15,6 +15,7 @@ import java.util.Set;
  * of the common service capabiities.
  */
 public class AdapterDescriptor {
+
   private String name;
   private Version version;
   private String serviceId;
@@ -26,6 +27,7 @@ public class AdapterDescriptor {
   private boolean inspecting;
   private boolean publishing;
   private boolean embeddable;
+  private List<Adapter.Parameter> parameters;
   private Set<ResourceAdapter.Validator.LifecyclePhase> validatedPhases;
   private List<ResourceTransport.Schema> importSchemata;
   private List<ResourceTransport.Schema> exportSchemata;
@@ -47,7 +49,8 @@ public class AdapterDescriptor {
       boolean embeddable,
       Set<ResourceAdapter.Validator.LifecyclePhase> validatedPhases,
       List<ResourceTransport.Schema> importSchemata,
-      List<ResourceTransport.Schema> exportSchemata) {
+      List<ResourceTransport.Schema> exportSchemata,
+      List<Adapter.Parameter> parameters) {
     this.name = name;
     this.version = version;
     this.serviceId = serviceId;
@@ -62,6 +65,7 @@ public class AdapterDescriptor {
     this.importSchemata = importSchemata;
     this.exportSchemata = exportSchemata;
     this.embeddable = embeddable;
+    this.parameters = parameters;
   }
 
   public String getName() {
@@ -166,6 +170,14 @@ public class AdapterDescriptor {
 
   public void setExportSchemata(List<ResourceTransport.Schema> exportSchemata) {
     this.exportSchemata = exportSchemata;
+  }
+
+  public List<Adapter.Parameter> getParameters() {
+    return parameters;
+  }
+
+  public void setParameters(List<Adapter.Parameter> parameters) {
+    this.parameters = parameters;
   }
 
   public boolean isEmbeddable() {

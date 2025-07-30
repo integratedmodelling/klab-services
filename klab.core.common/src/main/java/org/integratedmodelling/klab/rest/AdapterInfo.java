@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.rest;
 
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,22 +48,22 @@ public class AdapterInfo {
   private String name;
   private String description;
   private String label;
-  private ServiceInfo parameters;
   private boolean universal;
   private Map<String, String> exportCapabilities = new HashMap<>();
   private boolean multipleResources;
   private List<OperationReference> operations = new ArrayList<>();
   private boolean acceptsDrops;
   private boolean canCreateEmpty;
+  private List<Adapter.Parameter> parameters = new ArrayList<>();
 
   @Deprecated // unused - REMOVE when all nodes and engines are updated
   private boolean fileBased;
 
-  public ServiceInfo getParameters() {
+  public List<Adapter.Parameter> getParameters() {
     return parameters;
   }
 
-  public void setParameters(ServiceInfo parameters) {
+  public void setParameters(List<Adapter.Parameter> parameters) {
     this.parameters = parameters;
   }
 
