@@ -60,11 +60,6 @@ public class RunningInstanceImpl implements RunningInstance {
   }
 
   protected CommandLine getCommandLine(Scope scope) {
-    //            /*
-    //            create JavaOptions with StartupOptions, use it for createCommandLine in a new
-    //            RunningInstanceImpl
-    //             */
-    Settings settings = SettingsImpl.forProduct(build.getRelease());
 
     //    // load any customizations from the main k.LAB properties
     //    settings.initialize(

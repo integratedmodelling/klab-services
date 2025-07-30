@@ -120,7 +120,6 @@ public class ComponentRegistry {
   public ComponentRegistry(BaseService service, StartupOptions options) {
     readConfiguration(service, options);
     this.service = service;
-    scheduler.scheduleAtFixedRate(() -> checkForUpdates(), 0, 5, TimeUnit.MINUTES);
   }
 
   /**
@@ -144,37 +143,57 @@ public class ComponentRegistry {
     for (var component : components.values()) {
       if (component.mavenCoordinates() != null
           && component.fileHash() != null
-          && !component.mavenCoordinates().contains("SNAPSHOT")) {
-
+          && component.mavenCoordinates().contains("SNAPSHOT")) {
         var coords = component.mavenCoordinates().split(":");
         if (coords.length == 3) {
           var status = cache.getAvailability(coords[0], coords[1], coords[2], "component", "kar");
-          if (status == MavenComponentCache.Status.NEEDS_UPDATE) {
-            Thread.ofVirtual().start(() -> updateComponent(component));
+          if (status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+              || status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY) {
+            Thread.ofVirtual().start(() -> updateComponent(component, status));
           }
         }
       }
     }
   }
 
-  private synchronized void updateComponent(Extensions.ComponentDescriptor component) {
+  private synchronized void updateComponent(
+      Extensions.ComponentDescriptor component, MavenComponentCache.Status status) {
 
     Logging.INSTANCE.info(
         "Attempting update of modified component "
             + component.id()
             + " from "
             + component.mavenCoordinates());
+
     // TODO must unload first. Whether this will free up the file in Win remains to be seen.
     var mavenCoordinates = component.mavenCoordinates().split(":");
 
     try {
       var file =
-          cache.synchronizeArtifact(
-              mavenCoordinates[0], mavenCoordinates[1], mavenCoordinates[2], "component", "kar");
+          status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+              ? Utils.Maven.findLocalArtifactFile(
+                  mavenCoordinates[0], mavenCoordinates[1], mavenCoordinates[2], "component", "kar")
+              : cache.synchronizeArtifact(
+                  mavenCoordinates[0],
+                  mavenCoordinates[1],
+                  mavenCoordinates[2],
+                  "component",
+                  "kar");
       if (file != null && file.exists()) {
+        // TODO the build number should be incremented if the component is local/snapshot. This will
+        //  allow other services to know the update must be loaded.
         unloadComponent(component.id(), component.version());
+        // TODO remove the previous file if any, as a change from remote to local may leave two
+        //  versions in the plugin dir
         installComponent(file, component.mavenCoordinates());
-        Logging.INSTANCE.info("Update of component " + component.id() + " successful");
+        Logging.INSTANCE.info(
+            "Component "
+                + component.id()
+                + " updated successfully from "
+                + (status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+                    ? "local"
+                    : "remote")
+                + " repository");
       }
     } catch (Exception e) {
       Logging.INSTANCE.error("Unable to update outdated component " + component.id(), e);
@@ -297,7 +316,7 @@ public class ComponentRegistry {
 
     // TODO allow same path with different versions and replacing same version
     var pluginDestination =
-        new File(pluginPath + File.separator + Utils.Files.getFileName(resourcePath));
+        new File(pluginPath + File.separator + Utils.Files.getFileBaseName(resourcePath) + ".jar");
 
     // check if we're installing from a different location
     if (resourcePath.getParent() == null
@@ -866,7 +885,9 @@ public class ComponentRegistry {
   public synchronized boolean unloadComponent(String urn, Version version) {
     var component = getComponent(urn, version);
     if (component != null) {
-      return componentManager.disablePlugin(component.id());
+      if (componentManager.disablePlugin(component.id())) {
+        componentManager.unloadPlugin(component.id());
+      }
     }
     return false;
   }
@@ -1275,6 +1296,8 @@ public class ComponentRegistry {
             System.out.println("HOLA! Plugin state: " + event);
           }
         });
+
+    scheduler.scheduleAtFixedRate(() -> checkForUpdates(), 0, 5, TimeUnit.MINUTES);
   }
 
   public class AdapterImpl implements Adapter {
