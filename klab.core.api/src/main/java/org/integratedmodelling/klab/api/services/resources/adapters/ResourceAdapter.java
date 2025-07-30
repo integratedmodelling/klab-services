@@ -66,7 +66,7 @@ public @interface ResourceAdapter {
    *
    * @return
    */
-  Artifact.Type[] type() default Artifact.Type.VOID;
+  Artifact.Type type() default Artifact.Type.VOID;
 
   /**
    * If this is true, the adapter can be embedded in a runtime for local use. If false, the adapter

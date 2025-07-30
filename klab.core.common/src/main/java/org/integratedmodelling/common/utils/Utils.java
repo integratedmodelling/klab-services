@@ -49,6 +49,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -577,7 +578,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
         } else if (status.getStatus() == Scope.Status.FINISHED) {
           try {
-            var isData = Data.class.isAssignableFrom(resultClass);
+            var isData = org.integratedmodelling.klab.api.data.Data.class.isAssignableFrom(resultClass);
             var result =
                 isData
                     ? client.getData(ServicesAPI.JOBS.RETRIEVE_DATA, resultClass, "id", id)
@@ -640,10 +641,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           var requestBuilder =
               HttpRequest.newBuilder()
                   .version(HttpClient.Version.HTTP_1_1)
-                  // TODO configure the timeout. This is the largest request so give
-                  //  it 10
-                  //  minutes. Obviously we should explore asynchronous requests and
-                  //  streaming.
                   .timeout(Duration.ofMinutes(10))
                   .uri(URI.create(uri + apiCall))
                   .header(
@@ -672,24 +669,29 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                   .POST(HttpRequest.BodyPublishers.ofByteArray(dataStream.toByteArray()))
                   .build();
 
-          var response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+          var response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-          //          if (response.statusCode() == 200 || response.statusCode() == 202) {
-          //            var id = Long.parseLong(response.body());
-          //            return new PollingFuture<>(this, resultClass, id, 100, 500, 7, 1000, 5,
-          // 1800, -1, 3000);
-          //          } else {
-          //            var log = parseResponse(response.body(), Map.class);
-          //            System.out.println("============ POST " + apiCall + " EXCEPTION REPORT
-          // ==============");
-          //            MapUtils.debugPrint(System.out, "Server error", log);
-          //            System.out.println("============ END OF REPORT  ==============");
-          //            return CompletableFuture.failedFuture(new
-          // KlabServiceAccessException(response.body()));
-          //          }
-
-          if (response.statusCode() == 200) {
+          if (response.statusCode() == 200 || response.statusCode() == 202) {
             parseHeaders(response);
+            var id = Long.parseLong(response.body());
+            return new PollingFuture<>(
+                this,
+                org.integratedmodelling.klab.api.data.Data.class,
+                id,
+                100,
+                500,
+                7,
+                1000,
+                5,
+                1800,
+                -1,
+                3000);
+          } else {
+            var log = parseResponse(response.body(), Map.class);
+            System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
+            MapUtils.debugPrint(System.out, "Server error", log);
+            System.out.println("============ END OF REPORT  ==============");
+            return CompletableFuture.failedFuture(new KlabServiceAccessException(response.body()));
           }
 
         } catch (Throwable e) {

@@ -1378,8 +1378,8 @@ public class ComponentRegistry {
       this.universal = annotation.universal();
       this.threadSafe = annotation.threadSafe();
       this.embeddable = annotation.embeddable();
-      if (annotation.type() != null && annotation.type().length > 0) {
-        this.resourceType.addAll(Arrays.asList(annotation.type()));
+      if (annotation.type() != Artifact.Type.VOID) {
+        this.resourceType.add(annotation.type());
       }
       this.implementationClass = implementationClass;
       if (this.threadSafe) {
