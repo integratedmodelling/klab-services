@@ -57,13 +57,6 @@
             <version>2.37</version>
         </dependency>
 
-        <!-- for TOML settings (modeler and user-level applications) -->
-        <dependency>
-            <groupId>com.electronwill.night-config</groupId>
-            <artifactId>toml</artifactId>
-            <version>3.7.3</version>
-        </dependency>
-
         <!-- this is used for testing and debugging only -->
         <dependency>
             <groupId>com.github.vlsi.mxgraph</groupId>

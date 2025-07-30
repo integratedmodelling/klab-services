@@ -1,13 +1,13 @@
 /*
  * This file is part of k.LAB.
- * 
+ *
  * k.LAB is free software: you can redistribute it and/or modify it under the terms of the Affero
  * GNU General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
  *
  * A copy of the GNU Affero General Public License is distributed in the root directory of the k.LAB
  * distribution (LICENSE.txt). If this cannot be found see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned in author tags. All
  * rights reserved.
  */
@@ -24,8 +24,8 @@ import java.lang.annotation.Target;
  * methods of classes tagged with {@link Library}. In a call chain, the first argument is the
  * "receiver" from the previous call.
  *
- * Needs a Type that specified if this is a functional call, admitting asynchronous or synchronous
- * execution, or an emitter
+ * <p>Needs a Type that specified if this is a functional call, admitting asynchronous or
+ * synchronous execution, or an emitter
  *
  * @author ferdinando.villa
  * @version $Id: $Id
@@ -35,43 +35,54 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface Verb {
 
-    enum ExecutionType {
-        SYNC, ASYNC, EMITTER;
-    }
+  enum ExecutionType {
+    SYNCHRONOUS,
+    ASYNCHRONOUS,
+    EMITTER;
+  }
 
-    /**
-     * ID of the component. Must be unique, please use unambiguous paths like package or project
-     * names.
-     * 
-     * @return component id
-     */
-    String name() default "";
+  /**
+   * ID of the component. Must be unique, please use unambiguous paths like package or project
+   * names.
+   *
+   * @return component id
+   */
+  String name() default "";
 
-    /**
-     * List of other project or component IDs that this one depends on.
-     * 
-     * @return id of projects or components we need
-     */
-    String[] requires() default {};
+  /**
+   * List of other project or component IDs that this one depends on.
+   *
+   * @return id of projects or components we need
+   */
+  String[] requires() default {};
 
-    /**
-     * Descriptions should be given as they percolate to the k.Actors editor
-     * 
-     * @return
-     */
-    String description() default "";
+  /**
+   * Descriptions should be given as they percolate to the k.Actors editor
+   *
+   * @return
+   */
+  String description() default "";
 
-    /**
-     * Return type, if any. By default returns any object.
-     * 
-     * @return
-     */
-    Class<?> returns() default Object.class;
+  /**
+   * This (which can override the same field in @{@link Library} allows adapting a Java object of
+   * this class so that it is recognized as an agent. The method or class tagged must take that
+   * object as a first parameter (of the constructor if a class).
+   *
+   * @return
+   */
+  Class<?> receiver() default Void.class;
 
-    /**
-     * The execution mode of this verb.
-     *
-     * @return
-     */
-    ExecutionType executionType() default ExecutionType.SYNC;
+  /**
+   * Return type, if any. By default returns nothing or null.
+   *
+   * @return
+   */
+  Class<?> returns() default Void.class;
+
+  /**
+   * The execution mode of this verb.
+   *
+   * @return
+   */
+  ExecutionType executionType() default ExecutionType.SYNCHRONOUS;
 }

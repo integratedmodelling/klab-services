@@ -52,12 +52,6 @@ public class EngineImpl implements Engine, PropertyHolder {
       Consumer<Status> engineStatusMonitor,
       BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor) {
 
-    //    settings.put(Setting.POLLING, "on");
-    //    settings.put(Setting.POLLING_INTERVAL, 5);
-    //    settings.put(Setting.LOG_EVENTS, false);
-    //    settings.put(Setting.LAUNCH_PRODUCT, true);
-    //    settings.put(Setting.LOCAL_ONLY, false);
-
     if (DistributionImpl.isDevelopmentDistributionAvailable()) {
       this.developmentDistribution = new DevelopmentDistributionImpl();
     }

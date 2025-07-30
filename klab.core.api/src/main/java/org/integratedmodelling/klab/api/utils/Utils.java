@@ -41,6 +41,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.*;
 import java.util.Map.Entry;
@@ -129,6 +130,54 @@ public class Utils {
       }
 
       return "#" + total + "(" + nans + " NaN): min = " + min + ", max = " + max;
+    }
+  }
+
+  public static class Properties {
+
+    /**
+     * Load properties from file without ancient Java issues
+     *
+     * @param file
+     * @param properties
+     * @return true if successful
+     */
+    public static boolean load(File file, java.util.Properties properties) {
+
+      try (var input = new FileInputStream(file)) {
+        properties.load(input);
+      } catch (IOException e) {
+        return false;
+      }
+      return true;
+    }
+
+    /**
+     * Save properties to file without ancient Java issues
+     *
+     * @param file
+     * @param properties
+     * @return true if successful
+     */
+    public static boolean save(File file, java.util.Properties properties) {
+      try (var output = new FileOutputStream(file)) {
+        properties.store(output, "Saved by k.LAB on " + LocalDateTime.now());
+      } catch (IOException e) {
+        return false;
+      }
+      return true;
+    }
+
+    /**
+     * Dump to string
+     *
+     * @param prop
+     * @return
+     */
+    public static String toString(java.util.Properties prop) {
+      StringWriter writer = new StringWriter();
+      prop.list(new PrintWriter(writer));
+      return writer.getBuffer().toString();
     }
   }
 
@@ -2326,12 +2375,6 @@ public class Utils {
       }
 
       return ret;
-    }
-
-    public static String propertiesToString(Properties prop) {
-      StringWriter writer = new StringWriter();
-      prop.list(new PrintWriter(writer));
-      return writer.getBuffer().toString();
     }
 
     /**
