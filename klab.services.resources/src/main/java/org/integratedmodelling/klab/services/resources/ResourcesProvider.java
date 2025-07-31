@@ -1326,9 +1326,10 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public List<String> queryResources(String urnPattern, KnowledgeClass... resourceTypes) {
+  public List<ResourceInfo> queryResources(
+      String queryPattern, Scope scope, KnowledgeClass... resourceTypes) {
 
-    List<String> ret = new ArrayList<>();
+    List<ResourceInfo> ret = new ArrayList<>();
     Set<KnowledgeClass> wanted = EnumSet.noneOf(KnowledgeClass.class);
     if (resourceTypes != null && resourceTypes.length > 0) {
       wanted.addAll(Arrays.asList(resourceTypes));
@@ -1337,7 +1338,9 @@ public class ResourcesProvider extends BaseService
       wanted.addAll(Arrays.asList(KnowledgeClass.values()));
     }
 
-    if (wanted.contains(KnowledgeClass.RESOURCE)) {}
+    if (wanted.contains(KnowledgeClass.RESOURCE)) {
+      ret.addAll(getResourcesKbox().queryResources(queryPattern));
+    }
 
     if (wanted.contains(KnowledgeClass.MODEL)) {}
 
@@ -1352,10 +1355,6 @@ public class ResourcesProvider extends BaseService
     if (wanted.contains(KnowledgeClass.NAMESPACE)) {}
 
     if (wanted.contains(KnowledgeClass.PROJECT)) {}
-
-    //        if (wanted.contains(KnowledgeClass.INSTANCE)) {
-    //
-    //        }
 
     return ret;
   }

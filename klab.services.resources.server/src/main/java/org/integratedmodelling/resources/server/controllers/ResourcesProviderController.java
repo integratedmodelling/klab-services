@@ -491,8 +491,7 @@ public class ResourcesProviderController {
   @PostMapping(
       value = ServicesAPI.RESOURCES.CONTEXTUALIZE,
       consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-  public @ResponseBody long contextualize(
-      InputStream requestStream, Principal principal) {
+  public @ResponseBody long contextualize(InputStream requestStream, Principal principal) {
 
     if (principal instanceof EngineAuthorization authorization) {
 
@@ -593,10 +592,19 @@ public class ResourcesProviderController {
   }
 
   @GetMapping(ServicesAPI.RESOURCES.QUERY_RESOURCES)
-  public List<String> queryResources(
-      @RequestParam("urnPattern") String urnPattern,
+  public @ResponseBody List<ResourceInfo> queryResources(
+      @RequestParam("query") String query,
+      Principal principal,
       @RequestParam("resourceTypes") KlabAsset.KnowledgeClass... resourceTypes) {
-    return resourcesServer.klabService().queryResources(urnPattern, resourceTypes);
+
+    return resourcesServer
+        .klabService()
+        .queryResources(
+            query,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null,
+            resourceTypes);
   }
 
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_PROJECT)

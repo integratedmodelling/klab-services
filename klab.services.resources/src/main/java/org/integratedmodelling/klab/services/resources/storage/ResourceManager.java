@@ -1,17 +1,21 @@
 package org.integratedmodelling.klab.services.resources.storage;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.components.ComponentRegistry;
+import org.integratedmodelling.klab.indexing.ResourceIndexer;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.integratedmodelling.klab.services.resources.persistence.ResourcesKBox;
 
@@ -39,9 +43,16 @@ public class ResourceManager {
    */
   public ResourceSet ingestResource(Resource resource, Adapter adapter, UserScope scope) {
 
-    // TODO validate mandatory parameters for the adapter
-
     var ret = new ResourceSet();
+
+    // validate mandatory parameters for the adapter
+    var notifications =
+        Utils.Resources.validateParameters(adapter.getParameters(), resource.getParameters());
+    ret.getNotifications().addAll(notifications);
+
+    if (Utils.Notifications.hasErrors(notifications)) {
+      return ret;
+    }
 
     try {
 
@@ -144,6 +155,11 @@ public class ResourceManager {
                 "Failed to store resource " + sanitizedUrn, Notification.Outcome.Failure));
       }
 
+      // TODO add the ResourceInfo with the original rights and the rest. A decent short label should be
+      //  extracted for the UI if not present. One day maybe even a thumbnail and machine-learned added
+      //  info, computed in a slower thread.
+
+
       // Add success notification
       ret.getNotifications()
           .add(
@@ -175,5 +191,9 @@ public class ResourceManager {
     }
 
     return ret;
+  }
+
+  List<ResourceInfo> queryResources(String query) {
+    return resourcesKbox.queryResources(query);
   }
 }

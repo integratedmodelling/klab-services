@@ -5,6 +5,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import java.io.File;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -17,6 +18,7 @@ import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -340,6 +342,20 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
+  public List<ResourceInfo> queryResources(
+      String queryString, Scope scope, KnowledgeClass... resourceTypes) {
+    return client
+        .withScope(scope)
+        .getCollection(
+            ServicesAPI.RESOURCES.QUERY_RESOURCES,
+            ResourceInfo.class,
+            "query",
+            queryString,
+            "resourceTypes",
+            Utils.Strings.join(Arrays.asList(resourceTypes), ","));
+  }
+
+  @Override
   public KimObservationStrategyDocument retrieveObservationStrategyDocument(
       String urn, Scope scope) {
     return client
@@ -533,12 +549,6 @@ public class ResourcesClient extends ServiceClient
     return client
         .withScope(scope)
         .post(ServicesAPI.RESOURCES.RESOLVE_MODELS, request, ResourceSet.class);
-  }
-
-  @Override
-  public List<String> queryResources(String urnPattern, KnowledgeClass... resourceTypes) {
-    // TODO Auto-generated method stub
-    return null;
   }
 
   @Override

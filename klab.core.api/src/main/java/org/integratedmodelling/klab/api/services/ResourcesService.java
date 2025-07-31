@@ -362,15 +362,18 @@ public interface ResourcesService extends KlabService {
   List<KimNamespace> precursors(String namespaceId);
 
   /**
-   * Return the URNs of any locally hosted resources whose URN matches the passed pattern. If any
-   * resource types are passed, only return URNs for those. The pattern should allow simple
-   * wildcards like * and .
+   * Return the info associated withany locally hosted resources whose URN, metadata or other field
+   * matches the passed pattern. If any resource types are passed, only return results for those.
+   * The pattern should allow wildcards and be matched intelligently, with ways to specify exact
+   * matches as needed. The result should be sorted best match first. Under no circumstance there
+   * should be values that are unauthorized for the scope.
    *
-   * @param urnPattern the pattern to match resource URNs against
+   * @param queryString the pattern to match resource URNs against
    * @param resourceTypes optional types to filter the results by
    * @return list of matching resource URNs
    */
-  List<String> queryResources(String urnPattern, KlabAsset.KnowledgeClass... resourceTypes);
+  List<ResourceInfo> queryResources(
+      String queryString, Scope scope, KlabAsset.KnowledgeClass... resourceTypes);
 
   /**
    * Import a new resource, honoring any URN settings (and creating a suitable URN in case the

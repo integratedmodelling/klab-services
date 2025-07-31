@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.utils;
 
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classifier;
@@ -25,6 +26,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
 
@@ -673,6 +675,54 @@ public class Utils {
       }
 
       return false;
+    }
+
+    /**
+     * Validate a map of parameters against a list of prototypes. The result is a set of
+     * notifications, containing errors if anything is invalid, i.e. non-optional parameters are
+     * missing or types are wrong, and warnings for any parameter not in the prototypes
+     *
+     * <p>TODO should take options to validate non-nulls, roles and the like.
+     *
+     * @param prototypes
+     * @param parameters
+     * @return notifications for any issue encountered
+     */
+    public static List<Notification> validateParameters(
+        List<Adapter.Parameter> prototypes, Map<String, Object> parameters) {
+
+      List<Notification> ret = new ArrayList<>();
+      Set<String> knownPrototypes = new HashSet<>();
+
+      for (var prototype : prototypes) {
+        knownPrototypes.add(prototype.getName());
+        if (!prototype.isOptional() && parameters.get(prototype.getName()) == null) {
+          ret.add(Notification.error("Missing required parameter " + prototype.getName()));
+        }
+        var value = parameters.get(prototype.getName());
+        if (value != null) {
+          if (!prototype.getEnumValues().isEmpty()) {
+            if (!(value instanceof String string) || !prototype.getEnumValues().contains(string)) {
+              ret.add(
+                  Notification.error(
+                      "Invalid value for parameter "
+                          + prototype.getName()
+                          + " expected one of "
+                          + prototype.getEnumValues()));
+            }
+          } else if (!Utils.Data.validateAs(value, prototype.getType())) {
+            ret.add(Notification.error("Invalid type for parameter " + prototype.getName()));
+          }
+        }
+      }
+
+      for (var key : parameters.keySet()) {
+        if (!knownPrototypes.contains(key)) {
+          ret.add(Notification.warning("Unknown parameter " + key));
+        }
+      }
+
+      return ret;
     }
   }
 
@@ -4226,12 +4276,21 @@ public class Utils {
       if (type == tp) {
         return true;
       }
+      if (type == Type.URL && pod instanceof String string) {
+        try {
+          new URI(string).toURL();
+        } catch (Exception e) {
+          return false;
+        }
+        return true;
+      }
       if (tp == Type.TEXT) {
         Object converted = asPOD(pod.toString());
         if (converted != null) {
           return getArtifactType(converted.getClass()) == type;
         }
       }
+
       return false;
     }
 

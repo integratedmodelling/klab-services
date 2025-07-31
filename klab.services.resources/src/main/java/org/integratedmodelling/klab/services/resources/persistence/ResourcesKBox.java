@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.common.mapper.JacksonMapper;
@@ -17,12 +18,14 @@ import org.dizitart.no2.repository.ObjectRepository;
 import org.dizitart.no2.rocksdb.RocksDBModule;
 import org.dizitart.no2.spatial.SpatialModule;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.klab.indexing.ResourceIndexer;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 
@@ -33,9 +36,11 @@ import org.integratedmodelling.klab.services.resources.ResourcesProvider;
  */
 public class ResourcesKBox {
 
+  private final ResourcesProvider resourcesProvider;
+  private final ResourceIndexer index;
+
   private final Nitrite db;
   private final File databaseFile;
-  private final ResourcesProvider resourcesProvider;
   private ObjectRepository<ResourceInfo> resourceMetadata;
   private ObjectRepository<ResourceImpl> resources;
 
@@ -82,6 +87,10 @@ public class ResourcesKBox {
 
     this.resourceMetadata = db.getRepository(new ResourceMetadataDecorator());
     this.resources = db.getRepository(new ResourceDecorator());
+    this.index =
+        ResourceIndexer.create(
+            Configuration.INSTANCE.getDataPath(
+                "services/" + service.serviceType().name().toLowerCase() + "/index/resources"));
   }
 
   public void shutdown() {
@@ -113,9 +122,24 @@ public class ResourcesKBox {
   public boolean putResource(Resource resource) {
     if (resource instanceof ResourceImpl resource1) {
       var result = resources.update(resource1, true);
-      return result.getAffectedCount() == 1;
+      if (result.getAffectedCount() == 1) {
+        index.index(resource1);
+        index.commitChanges();
+        return true;
+      }
     }
     return false;
+  }
+
+  public List<ResourceInfo> queryResources(String query) {
+    var ret = new ArrayList<ResourceInfo>();
+    for (var document : index.query(query)) {
+      var info = getStatus(document.getId(), Version.ANY_VERSION);
+      if (info != null) {
+        ret.add(info);
+      }
+    }
+    return ret;
   }
 
   /**

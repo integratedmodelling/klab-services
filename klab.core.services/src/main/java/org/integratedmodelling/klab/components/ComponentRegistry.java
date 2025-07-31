@@ -55,6 +55,7 @@ import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
+import org.integratedmodelling.klab.api.services.resources.impl.ParameterImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.*;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -1323,54 +1324,6 @@ public class ComponentRegistry {
     private Extensions.FunctionDescriptor publisher;
     private List<Adapter.Parameter> parameters = new ArrayList<>();
     private final AdapterDescriptor adapterInfo;
-
-    public static class ParameterImpl implements Adapter.Parameter {
-      private final String name;
-      private final String description;
-      private final boolean optional;
-      private final Artifact.Type type;
-      private List<String> enumValues = new ArrayList<>();
-
-      public ParameterImpl(
-          String name,
-          String description,
-          boolean optional,
-          Artifact.Type type,
-          String[] enumValues) {
-        this.name = name;
-        this.description = description;
-        this.optional = optional;
-        this.type = type;
-        for (var v : enumValues) {
-          this.enumValues.add(v);
-        }
-      }
-
-      @Override
-      public String getName() {
-        return name;
-      }
-
-      @Override
-      public Artifact.Type getType() {
-        return type;
-      }
-
-      @Override
-      public List<String> getEnumValues() {
-        return enumValues;
-      }
-
-      @Override
-      public String getDescription() {
-        return description;
-      }
-
-      @Override
-      public boolean isOptional() {
-        return optional;
-      }
-    }
 
     public AdapterImpl(Class<?> implementationClass, ResourceAdapter annotation) {
       this.name = annotation.name();
