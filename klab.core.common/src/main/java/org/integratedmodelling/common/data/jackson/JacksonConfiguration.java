@@ -343,6 +343,7 @@ public class JacksonConfiguration {
           Parameters.class,
           Actuator.class,
           Adapter.class,
+          Adapter.Parameter.class,
           Notification.LexicalContext.class,
           ResolutionConstraint.class,
           KimObservationStrategy.Operation.class,
@@ -360,7 +361,6 @@ public class JacksonConfiguration {
         }) {
       module.addSerializer(cls, new PolymorphicSerializer<>());
       module.addDeserializer(cls, new PolymorphicDeserializer<>(cls));
-      
     }
 
     mapper.registerModule(module);

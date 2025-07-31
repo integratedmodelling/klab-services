@@ -59,6 +59,7 @@ public class ResourcesKBox {
         this.om.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
         this.om.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
         this.om.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        this.om.configure(JsonParser.Feature.IGNORE_UNDEFINED, true);
         this.om.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
       }
       return this.om;
@@ -176,7 +177,7 @@ public class ResourcesKBox {
 
     @Override
     public String getEntityName() {
-      return "resourceInfo";
+      return "resources";
     }
   }
 }

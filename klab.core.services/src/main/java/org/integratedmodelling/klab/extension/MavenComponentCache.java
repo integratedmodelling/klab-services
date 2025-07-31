@@ -125,10 +125,11 @@ public class MavenComponentCache {
     // must download the file and update the cache
 
     if (current != null && current.getCachedFile() != null) {
-      if (status == Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY) {
+      if (status == Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+          || status == Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY) {
         // update and save the new info in catalog, keep old if errors
         var download =
-            Utils.Maven.downloadArtifactFile(
+            Utils.Maven.findOrDownloadArtifactFile(
                 groupId, artifactId, version, classifier, suffix, componentCache);
         if (download != null && download.isFile()) {
           current.setLastModified(LocalDateTime.now());
@@ -141,7 +142,7 @@ public class MavenComponentCache {
     } else {
       current = new ArtifactInfo();
       var download =
-          Utils.Maven.downloadArtifactFile(
+          Utils.Maven.findOrDownloadArtifactFile(
               groupId, artifactId, version, classifier, suffix, componentCache);
       if (download != null && download.isFile()) {
         current.setLastModified(LocalDateTime.now());

@@ -70,7 +70,7 @@ public class ResourceManager {
                 scope);
 
         Notification adapterNotification = null;
-        boolean valid =
+        boolean invalid =
             switch (validationResult) {
               case Notification notification -> {
                 adapterNotification = notification;
@@ -88,7 +88,7 @@ public class ResourceManager {
               default -> false;
             };
 
-        if (!valid) {
+        if (invalid) {
           return ResourceSet.empty(
               adapterNotification == null
                   ? Notification.error(
