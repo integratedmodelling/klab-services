@@ -2,10 +2,9 @@ package org.integratedmodelling.klab.api.services.resources;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -90,9 +89,7 @@ public class ResourceInfo implements Serializable {
     /** For situations where records are kept for deleted assets. Should not be used by anyone. */
     DELETED(-1);
 
-    /**
-     * Positive status means usable; 0 means usable by submitter only; -1 means unusable
-     */
+    /** Positive status means usable; 0 means usable by submitter only; -1 means unusable */
     public final int status;
 
     private Stage(int status) {
@@ -114,6 +111,7 @@ public class ResourceInfo implements Serializable {
   private KnowledgeClass knowledgeClass;
   private Metadata metadata = Metadata.create();
   private String serviceId;
+  private Set<CRUDOperation> permissions = new HashSet<>();
 
   public List<String> getChildResourceUrns() {
     return childResourceUrns;
@@ -273,5 +271,20 @@ public class ResourceInfo implements Serializable {
 
   public void setUrn(String urn) {
     this.urn = urn;
+  }
+
+  /**
+   * These are NOT stored but added when sent as a response to a {@link
+   * ResourcesService#queryResources(String, Scope, KnowledgeClass...)} call, communicating what the
+   * requesting user can do with the resource.
+   *
+   * @return
+   */
+  public Set<CRUDOperation> getPermissions() {
+    return permissions;
+  }
+
+  public void setPermissions(Set<CRUDOperation> permissions) {
+    this.permissions = permissions;
   }
 }

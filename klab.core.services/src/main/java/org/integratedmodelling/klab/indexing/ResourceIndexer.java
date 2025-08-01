@@ -134,7 +134,13 @@ public class ResourceIndexer {
   }
 
   private Query buildQuery(String currentTerm) {QueryParser parser = new QueryParser("name", analyzer);
-    // parser.setAllowLeadingWildcard(true);
+
+    parser.setAllowLeadingWildcard(true);
+    parser.setEnableGraphQueries(true);
+    parser.setFuzzyMinSim(0.5f);
+    parser.setFuzzyPrefixLength(2);
+    parser.setAutoGenerateMultiTermSynonymsPhraseQuery(true);
+
     try {
       // hai voglia
       return parser.parse(currentTerm + "*");
