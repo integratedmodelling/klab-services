@@ -172,11 +172,11 @@ public class ResolverClient extends ServiceClient implements Resolver {
 
     var ret =
         client
-            .withHeader(
-                ServicesAPI.MESSAGING_URL_HEADER,
-                federation == null ? null : federation.getBroker())
-            .withHeader(
-                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
+//            .withHeader(
+//                ServicesAPI.MESSAGING_URL_HEADER,
+//                federation == null ? null : federation.getBroker())
+//            .withHeader(
+//                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
             .post(
                 ServicesAPI.CREATE_SESSION,
                 request,
@@ -263,11 +263,11 @@ public class ResolverClient extends ServiceClient implements Resolver {
         client
             .withScope(scope.getParentScope())
             .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
-            .withHeader(
-                ServicesAPI.MESSAGING_URL_HEADER,
-                federation == null ? null : federation.getBroker())
-            .withHeader(
-                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
+//            .withHeader(
+//                ServicesAPI.MESSAGING_URL_HEADER,
+//                federation == null ? null : federation.getBroker())
+//            .withHeader(
+//                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
             .post(
                 ServicesAPI.CREATE_CONTEXT,
                 request,

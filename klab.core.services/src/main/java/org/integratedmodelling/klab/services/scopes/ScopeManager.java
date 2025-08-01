@@ -169,6 +169,8 @@ public class ScopeManager {
       if (groups != null) {
         ret.getGroups().addAll(groups);
       }
+    } else {
+      ret.getGroups().addAll(engineAuthorization.getGroups());
     }
     return ret;
   }
@@ -193,25 +195,26 @@ public class ScopeManager {
     ret = login(createUserIdentity(authorization));
 
     ret.getRoles().addAll(authorization.getRoles());
-    Federation federation = null;
-    if (authorization.isLocal()) {
-      ret.setLocal(true);
-      // setup queues in scope if user is local and messaging is configured, Queue will be
-      // servicetype.username.queuetype
-      var brokerURI = authorization.getBrokerUrl();
+    //    var federation = Klab.INSTANCE.getFederationData(ret.getUser());
+    //
+    //    if (authorization.isLocal()) {
+    //      ret.setLocal(true);
+    //      // setup queues in scope if user is local and messaging is configured, Queue will be
+    //      // servicetype.username.queuetype
+    //      var brokerURI = authorization.getBrokerUrl();
+    //      if (brokerURI != null) {
+    //        federation = new Federation(authorization.getFederationId(), brokerURI);
+    //        ret.setupMessaging(federation, authorization.getFederationId(), ret.defaultQueues());
+    //      }
+    //    } else {
+    var federation = Klab.INSTANCE.getFederationData(ret.getUser());
+    if (federation != null) {
+      var brokerURI = federation.getBroker();
       if (brokerURI != null) {
-        federation = new Federation(authorization.getFederationId(), brokerURI);
-        ret.setupMessaging(federation, authorization.getFederationId(), ret.defaultQueues());
-      }
-    } else {
-      federation = Klab.INSTANCE.getFederationData(ret.getUser());
-      if (federation != null) {
-        var brokerURI = federation.getBroker();
-        if (brokerURI != null) {
-          ret.setupMessaging(federation, federation.getId(), ret.defaultQueues());
-        }
+        ret.setupMessaging(federation, federation.getId(), ret.defaultQueues());
       }
     }
+    //    }
     Logging.INSTANCE.info(
         "User "
             + ret.getUser().getUsername()
