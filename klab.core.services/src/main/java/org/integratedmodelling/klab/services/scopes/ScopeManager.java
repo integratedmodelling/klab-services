@@ -211,7 +211,7 @@ public class ScopeManager {
         }
       }
     }
-    Logging.INSTANCE.debug("User "+ ret.getUser().getUsername() +
+    Logging.INSTANCE.info("User "+ ret.getUser().getUsername() +
             (federation == null ? " is not part of any federation" : " part of federation " + federation.getId()));
     return ret;
   }
