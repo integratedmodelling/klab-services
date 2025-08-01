@@ -419,8 +419,7 @@ public class ResourcesProvider extends BaseService
       return createUniversalResource(urn, scope);
     }
 
-    // TODO use kbox
-    return null;
+    return resourcesKbox.getResource(urnId, urn.getVersion());
   }
 
   private Resource createUniversalResource(Urn urn, Scope scope) {

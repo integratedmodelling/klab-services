@@ -71,7 +71,7 @@ import java.util.concurrent.Future;
  *
  * <p>In addition, the resource manager exposes querying methods, either based on semantics and
  * context ({@link #resolveModels(Observable, ContextScope)}) or on textual search ({@link
- * #queryResources(String, KnowledgeClass...)}). The semantic query model uses the connected
+ * #queryResources(String, Scope, KnowledgeClass...)}). The semantic query model uses the connected
  * reasoner and will only return a ResourceSet listing {@link KimModel}s and their requirements,
  * leaving ranking and prioritization to the caller.
  *
