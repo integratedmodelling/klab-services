@@ -151,7 +151,7 @@ public class ScopeManager {
     ret.setId(engineAuthorization.getToken());
     ret.setAuthenticated(engineAuthorization.isAuthenticated());
     URL hub = null;
-    if (service.serviceScope() instanceof PartnerIdentity serviceIdentity) {
+    if (service.serviceScope().getIdentity() instanceof PartnerIdentity serviceIdentity) {
       Collection<GroupImpl> groups = null;
       try {
         hub = new URI(serviceIdentity.getAuthenticatingHub()).toURL();
