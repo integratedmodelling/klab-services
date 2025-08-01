@@ -151,19 +151,24 @@ public class ScopeManager {
     ret.setId(engineAuthorization.getToken());
     ret.setAuthenticated(engineAuthorization.isAuthenticated());
     URL hub = null;
-    PartnerIdentity serviceIdentity = ((PartnerIdentity)service.serviceScope().getIdentity());
-    Collection<GroupImpl> groups = null;
-    try {
-      hub = new URI(serviceIdentity.getAuthenticatingHub()).toURL();
-    } catch (MalformedURLException | URISyntaxException e) {
-      throw new KlabIllegalArgumentException(e);
-    }
-    String token = serviceIdentity.getToken();
-    Utils.Http.Client client = Utils.Http.getClient(hub, service.serviceScope());
-    groups = client.withAuthentication(token).getCollection(
-            ServicesAPI.HUB.USER_BASE_ID_SERVICES.replace("{id}",ret.getUsername()), GroupImpl.class);
-    if (groups != null) {
-      ret.getGroups().addAll(groups);
+    if (service.serviceScope() instanceof PartnerIdentity serviceIdentity) {
+      Collection<GroupImpl> groups = null;
+      try {
+        hub = new URI(serviceIdentity.getAuthenticatingHub()).toURL();
+      } catch (MalformedURLException | URISyntaxException e) {
+        throw new KlabIllegalArgumentException(e);
+      }
+      String token = serviceIdentity.getToken();
+      Utils.Http.Client client = Utils.Http.getClient(hub, service.serviceScope());
+      groups =
+          client
+              .withAuthentication(token)
+              .getCollection(
+                  ServicesAPI.HUB.USER_BASE_ID_SERVICES.replace("{id}", ret.getUsername()),
+                  GroupImpl.class);
+      if (groups != null) {
+        ret.getGroups().addAll(groups);
+      }
     }
     return ret;
   }
@@ -196,10 +201,7 @@ public class ScopeManager {
       var brokerURI = authorization.getBrokerUrl();
       if (brokerURI != null) {
         federation = new Federation(authorization.getFederationId(), brokerURI);
-        ret.setupMessaging(
-                federation,
-                authorization.getFederationId(),
-                ret.defaultQueues());
+        ret.setupMessaging(federation, authorization.getFederationId(), ret.defaultQueues());
       }
     } else {
       federation = Klab.INSTANCE.getFederationData(ret.getUser());
@@ -207,12 +209,15 @@ public class ScopeManager {
         var brokerURI = federation.getBroker();
         if (brokerURI != null) {
           ret.setupMessaging(federation, federation.getId(), ret.defaultQueues());
-
         }
       }
     }
-    Logging.INSTANCE.info("User "+ ret.getUser().getUsername() +
-            (federation == null ? " is not part of any federation" : " part of federation " + federation.getId()));
+    Logging.INSTANCE.debug(
+        "User "
+            + ret.getUser().getUsername()
+            + (federation == null
+                ? " is not part of any federation"
+                : " part of federation " + federation.getId()));
     return ret;
   }
 
