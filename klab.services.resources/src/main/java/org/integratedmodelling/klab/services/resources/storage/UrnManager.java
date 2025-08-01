@@ -1,10 +1,12 @@
 package org.integratedmodelling.klab.services.resources.storage;
 
-import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.Urn;
-
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
+import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 
 /**
  * A class that can take a Resource object and either create or sanitize its URN. The URN is a
@@ -23,18 +25,26 @@ public class UrnManager {
   /**
    * Creates or sanitizes a URN for the given resource.
    *
+   * <p>Legacy resources should be turned into new patterns for staging resources. "local" becomes
+   * the name of the submitter/certificate holder; the catalog should be "staging". The namespace
+   * and ID can remain the same.
+   *
    * @param resource The resource to create or sanitize a URN for
-   * @param serviceName The name of the service
+   * @param service The service that will host the resource
    * @param isUniqueChecker A function that checks if a URN is unique
    * @return A sanitized URN string
    */
   public String createOrSanitizeUrn(
-      Resource resource, String serviceName, Function<String, Boolean> isUniqueChecker) {
+      Resource resource,
+      ResourcesProvider service,
+      ResourceInfo.Stage stage,
+      UserScope scope,
+      Function<String, Boolean> isUniqueChecker) {
     String currentUrn = resource.getUrn();
 
     if (currentUrn == null || Urn.UNDEFINED_URN.equals(currentUrn)) {
       // Create a new URN from scratch
-      return createUrn(resource, serviceName, isUniqueChecker);
+      return createUrn(resource, service.getServiceName(), isUniqueChecker);
     } else {
       // Sanitize the existing URN
       return sanitizeUrn(resource, currentUrn, isUniqueChecker);

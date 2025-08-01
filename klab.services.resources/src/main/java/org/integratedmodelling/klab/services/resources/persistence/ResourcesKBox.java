@@ -8,8 +8,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import org.dizitart.no2.Nitrite;
+import org.dizitart.no2.collection.Document;
+import org.dizitart.no2.collection.NitriteId;
 import org.dizitart.no2.common.mapper.JacksonMapper;
 import org.dizitart.no2.common.module.NitriteModule;
+import org.dizitart.no2.common.tuples.Pair;
+import org.dizitart.no2.filters.Filter;
 import org.dizitart.no2.index.IndexType;
 import org.dizitart.no2.repository.EntityDecorator;
 import org.dizitart.no2.repository.EntityId;
@@ -129,6 +133,24 @@ public class ResourcesKBox {
       }
     }
     return false;
+  }
+
+  public boolean deleteResource(String urn) {
+    var resource = resources.getById(urn);
+    if (resource != null) {
+      return false;
+    }
+    resources.remove(resource);
+    return true;
+  }
+
+  public boolean deleteMetadata(String urn) {
+    var resource = resourceMetadata.getById(urn);
+    if (resource != null) {
+      return false;
+    }
+    resourceMetadata.remove(resource);
+    return true;
   }
 
   public List<ResourceInfo> queryResources(String query) {

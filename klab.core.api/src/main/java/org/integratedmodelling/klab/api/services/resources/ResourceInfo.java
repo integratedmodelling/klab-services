@@ -55,11 +55,57 @@ public class ResourceInfo implements Serializable {
     }
   }
 
+  public enum Stage {
+    /** Staging, not reviewed, findable by submitter and admins only. */
+    STAGING(0),
+    /**
+     * Staging, under review, findable by submitter, admins, reviewers, editors and whoever the
+     * original user granted special access to.
+     */
+    REVIEWING(0),
+    /** Level 1 of peer-review. Published and findable, priority 3 */
+    CONFIRMED(1),
+    /**
+     * Level 2 of peer-review. Published and findable, has a DOI and is in public catalogs; priority
+     * 2
+     */
+    REVIEWED(2),
+    /**
+     * Level 3 of peer-review. Published and findable, has DOI, institutional endorsement; priority
+     * 1
+     */
+    ENDORSED(3),
+    /**
+     * Level 4 of peer-review. All attributes of ENDORSED with special mention, priority 0, should
+     * be used sparingly or on group-restricted resources to force community use
+     */
+    EMPHASIZED(4),
+    /** For the records. Not findable except by original submitter and admins. */
+    REJECTED(-1),
+    /**
+     * For the records, with rationale for revocation. Not findable except by original submitter and
+     * admins who have opted for use of revoked assets, with warning upon use.
+     */
+    REVOKED(-1),
+    /** For situations where records are kept for deleted assets. Should not be used by anyone. */
+    DELETED(-1);
+
+    /**
+     * Positive status means usable; 0 means usable by submitter only; -1 means unusable
+     */
+    public final int status;
+
+    private Stage(int status) {
+      this.status = status;
+    }
+  }
+
   private String urn;
   private Type type;
   private int retryTimeSeconds;
   // Must be Impl to keep it serializable without issues.
   private List<NotificationImpl> notifications = new ArrayList<>();
+  private Stage stage = Stage.STAGING;
   private int reviewStatus;
   private ResourcePrivileges rights = ResourcePrivileges.empty();
   private String owner;
@@ -101,6 +147,14 @@ public class ResourceInfo implements Serializable {
     this.retryTimeSeconds = retryTimeSeconds;
   }
 
+  public Stage getStage() {
+    return stage;
+  }
+
+  public void setStage(Stage stage) {
+    this.stage = stage;
+  }
+
   public static ResourceInfo immediate() {
     ResourceInfo ret = new ResourceInfo();
     ret.setType(Type.AVAILABLE);
@@ -113,7 +167,7 @@ public class ResourceInfo implements Serializable {
     return ret;
   }
 
-  public static ResourceInfo offline(String urn ) {
+  public static ResourceInfo offline(String urn) {
     ResourceInfo ret = new ResourceInfo();
     ret.setType(Type.OFFLINE);
     ret.setUrn(urn);
@@ -130,11 +184,13 @@ public class ResourceInfo implements Serializable {
 
   /**
    * This ranges from 0 (unreviewed) through 1 (staging if local, in review if public) to 2
-   * (reviewed and accepted, with a DOI) and up. Resources at level higher than 2 may move down in
-   * level as well as up but not go below 2 unless retracted. Level -1 is rejected or retracted;
-   * lower negative rankings may indicate special infamy such as fake resources, at the discretion
-   * of the implementation. Resources with negative rankings should not be used in any circumstance,
-   * and all normal operation APIs should not return them.
+   * (reviewed and accepted, with a DOI) and up. One-to-one correspondence to review {@link Stage}
+   * at asset creation, but may go above 4 if needed for prioritization and change independently of
+   * {@link #getStage()} if needed. Resources at level higher than 2 may move down in level as well
+   * as up but not go below 2 unless retracted. Level -1 is rejected or retracted; lower negative
+   * rankings may indicate special infamy such as fake resources, at the discretion of the
+   * implementation. Resources with negative rankings should not be used in any circumstance, and
+   * all normal operation APIs should not return them.
    */
   public int getReviewStatus() {
     return reviewStatus;

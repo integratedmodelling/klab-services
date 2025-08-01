@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.indexing.ResourceIndexer;
@@ -128,7 +129,9 @@ public class ResourceManager {
       String sanitizedUrn =
           urnManager.createOrSanitizeUrn(
               resource,
-              service.serviceId(),
+              service,
+              ResourceInfo.Stage.STAGING,
+              scope,
               // Uniqueness checker callback
               urn -> resourcesKbox.getResource(urn, Version.ANY_VERSION) == null);
 
@@ -146,19 +149,27 @@ public class ResourceManager {
         }
       }
 
+      // add the ResourceInfo with the original rights and the rest.
+      var resourceInfo = createInitialMetadata(resource, scope);
+      if (resourceInfo != null) {
+        boolean storedInfo = resourcesKbox.putStatus(resourceInfo);
+        if (!storedInfo) {
+          return ResourceSet.empty(
+              Notification.error(
+                  "Failed to store metadata for resource " + sanitizedUrn,
+                  Notification.Outcome.Failure));
+        }
+      }
+
       // Store the resource
       boolean stored = resourcesKbox.putResource(resource);
 
       if (!stored) {
+        resourcesKbox.deleteMetadata(resourceInfo.getUrn());
         return ResourceSet.empty(
             Notification.error(
                 "Failed to store resource " + sanitizedUrn, Notification.Outcome.Failure));
       }
-
-      // TODO add the ResourceInfo with the original rights and the rest. A decent short label should be
-      //  extracted for the UI if not present. One day maybe even a thumbnail and machine-learned added
-      //  info, computed in a slower thread.
-
 
       // Add success notification
       ret.getNotifications()
@@ -190,6 +201,29 @@ public class ResourceManager {
               Notification.Outcome.Failure));
     }
 
+    return ret;
+  }
+
+  /**
+   * Create resource metadata with initial, scope-only rights. If we get here the resource has been
+   * deemed available.
+   *
+   * <p>TODO a decent short label should be extracted for the UI if not present. One day maybe even
+   * a thumbnail and whatever machine learning support we want, computed in a slower thread.
+   */
+  private ResourceInfo createInitialMetadata(Resource resource, UserScope scope) {
+    ResourceInfo ret = new ResourceInfo();
+    ret.setUrn(resource.getUrn());
+    ret.setType(ResourceInfo.Type.AVAILABLE);
+    ret.setRights(ResourcePrivileges.create(scope));
+    ret.getMetadata().putAll(resource.getMetadata());
+    ret.setKnowledgeClass(KlabAsset.KnowledgeClass.RESOURCE);
+    ret.setServiceId(service.serviceId());
+    ret.setOwner(scope.getUser().getUsername());
+    ret.setReviewStatus(0);
+    ret.getNotifications()
+        .addAll(resource.getNotifications().stream().map(n -> (NotificationImpl) n).toList());
+    ret.setRetryTimeSeconds(180); // TODO configure
     return ret;
   }
 

@@ -846,6 +846,10 @@ public class ComponentRegistry {
   private void registerAdapter(
       ResourceAdapter annotation, Class<?> cls, List<AdapterDescriptor> adapters) {
 
+    /** Do not load adapters that aren't embeddable unless we are a resources service. */
+    if (this.service.serviceType() != KlabService.Type.RESOURCES && !annotation.embeddable()) {
+      return;
+    }
     try {
       var adapter = new AdapterImpl(cls, annotation);
       if (adapter.initialize()) {

@@ -3,10 +3,12 @@ package org.integratedmodelling.klab.services.resources.library;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -32,7 +34,7 @@ public class ResourcesLibrary {
 
   @Importer(
       schema = "legacy.files",
-      knowledgeClass = KlabAsset.KnowledgeClass.PROJECT,
+      knowledgeClass = KlabAsset.KnowledgeClass.RESOURCE,
       description =
           "Register a new resource by importing a legacy json manifest, possibly within a zip file with additional content",
       mediaType = "application/json",
@@ -98,7 +100,8 @@ public class ResourcesLibrary {
     } else if (contents.getName().endsWith(".zip")) {
       // TODO unpack in temporary dir, load catalog which must exist
       return ResourceSet.empty(
-          Notification.error("Legacy resource ingestion: zip import unimplemented"));
+          Notification.error(
+              "Legacy resource ingestion: multi-file import is still unimplemented"));
     } else {
       return ResourceSet.empty(
           Notification.error(
@@ -115,6 +118,8 @@ public class ResourcesLibrary {
     var builder =
         Resource.builder(definition.get("urn").toString())
             .withServiceId(service.serviceId())
+            // the URN will likely change upon storage
+            .withMetadata(Metadata.IM_ORIGINAL_URN, definition.get("urn").toString())
             .withAdapterType(definition.get("adapterType").toString())
             .withType(Artifact.Type.valueOf(definition.get("type").toString()));
 
@@ -124,6 +129,16 @@ public class ResourcesLibrary {
     var geometry = Geometry.create(definition.get("geometry").toString());
     if (geometry != null) {
       builder.withGeometry(geometry);
+      var space = geometry.dimension(Geometry.Dimension.Type.SPACE);
+      if (space != null
+          && space.getParameters().containsKey(GeometryImpl.PARAMETER_SPACE_BOUNDINGBOX)) {
+        /** TODO add {@link Metadata#DC_COVERAGE_SPATIAL} */
+      }
+      var time = geometry.dimension(Geometry.Dimension.Type.TIME);
+      if (time != null && space.getParameters().containsKey(GeometryImpl.PARAMETER_TIME_START)) {
+        /** TODO add {@link Metadata#DC_COVERAGE_TEMPORAL} */
+      }
+
     } else {
       return ResourceSet.empty(
           Notification.error("Could not load geometry for resource " + definition.get("urn")));
