@@ -71,6 +71,7 @@ import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.Instance;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.util.UriUtils;
 
 public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
@@ -621,6 +622,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       private String forcedAcceptHeader = null;
       private String forcedContentHeader = null;
       private int timeoutSeconds = 10;
+      private String AUTHENTICATION_HEADER = "Authentication";
 
       public void setAuthorization(String token) {
         this.authorization = token;
@@ -729,6 +731,30 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       public Client withScope(String scopeId) {
         var ret = new Client(this);
         ret.headers.put(ServicesAPI.SCOPE_HEADER, scopeId);
+        return ret;
+      }
+
+      /**
+       * Localize the scope for communication when the scope itself is not available but its ID is.
+       *
+       * @param authorization
+       * @return
+       */
+      public Client withAutorization(String authorization) {
+        var ret = new Client(this);
+        ret.headers.put(HttpHeaders.AUTHORIZATION, authorization);
+        return ret;
+      }
+
+      /**
+       * Localize the scope for communication when the scope itself is not available but its ID is.
+       *
+       * @param authentication
+       * @return
+       */
+      public Client withAuthentication(String authentication) {
+        var ret = new Client(this);
+        ret.headers.put(AUTHENTICATION_HEADER, authentication);
         return ret;
       }
 
@@ -920,7 +946,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
             final int statusCode = response.getStatusLine().getStatusCode();
 
-            if (statusCode == 200) {
+            if (HttpStatus.valueOf(statusCode).is2xxSuccessful()) {
               return parseResponse(
                   IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8),
                   resultClass);
@@ -988,7 +1014,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             final int statusCode = response.getStatusLine().getStatusCode();
 
             var body = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            if (statusCode == 200 || statusCode == 202) {
+            if (HttpStatus.valueOf(statusCode).is2xxSuccessful()) {
               var id = Long.parseLong(body);
               return new PollingFuture<>(
                   this, resultClass, id, 100, 500, 7, 1000, 5, 1800, -1, 3000);
@@ -1076,7 +1102,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
           var response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-          if (response.statusCode() == 200) {
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             parseHeaders(response);
             return parseResponse(response.body(), resultClass);
           } else {
@@ -1162,7 +1188,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
           var response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-          if (response.statusCode() == 200 || response.statusCode() == 202) {
+          if (HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             var id = Long.parseLong(response.body());
             return new PollingFuture<>(this, resultClass, id, 100, 500, 7, 1000, 5, 1800, -1, 3000);
           } else {
@@ -1228,7 +1254,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
           var response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-          if (response.statusCode() == 200) {
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             parseHeaders(response);
             return parseResponseList(response.body(), resultClass);
           }
@@ -1374,7 +1400,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                         .build(),
                     HttpResponse.BodyHandlers.ofString());
 
-            if (response != null && response.statusCode() == 200) {
+            if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
               parseHeaders(response);
               return parseResponse(response.body(), resultClass);
             }
@@ -1485,7 +1511,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                       .build(),
                   HttpResponse.BodyHandlers.ofString());
 
-          if (response != null && response.statusCode() == 200) {
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             parseHeaders(response);
             return parseResponseList(response.body(), resultClass);
           }
@@ -1533,7 +1559,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                   requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(),
                   HttpResponse.BodyHandlers.discarding());
 
-          if (response != null && response.statusCode() == 200) {
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             parseHeaders(response);
             return true;
           }

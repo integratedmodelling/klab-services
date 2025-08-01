@@ -14,8 +14,9 @@ public class ServiceIdentityImpl extends IdentityImpl implements ServiceIdentity
     private Collection<String> urls = new ArrayList<String>();
     private boolean online = false;
     private String token;
+    private URL hubUrl;
 
-    public ServiceIdentityImpl(String id, String name, Date bootTime, List<URL> urls, String token) {
+    public ServiceIdentityImpl(String id, String name, Date bootTime, List<URL> urls, String token, URL hubUrl) {
         this.setId(id);
         this.name = name;
         this.bootTime = bootTime;
@@ -23,6 +24,7 @@ public class ServiceIdentityImpl extends IdentityImpl implements ServiceIdentity
             this.urls.add(u.toString());
         }
         this.token = token;
+        this.hubUrl = hubUrl;
     }
 
     @Override
@@ -49,6 +51,9 @@ public class ServiceIdentityImpl extends IdentityImpl implements ServiceIdentity
     public String getToken() {
         return token;
     }
+
+    @Override
+    public URL getHubUrl() { return hubUrl; }
 
     @Override
     public boolean stop() {

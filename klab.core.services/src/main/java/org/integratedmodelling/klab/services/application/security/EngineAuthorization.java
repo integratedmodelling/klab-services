@@ -100,7 +100,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken
       String brokerUrl,
       String federationId,
       String token,
-      Collection<String> groups,
+      Collection<Group> groups,
       Collection<Role> roles) {
     super(roles);
     this.partnerId = new Credentials(partnerId);
@@ -108,8 +108,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken
     this.tokenString = new Credentials(token);
     this.brokerUrl = brokerUrl;
     this.federationId = federationId;
-
-    //this.groups = groups;
+    this.groups = groups;
     expiration = Instant.now().plusSeconds(TOKEN_TTL_SECONDS);
 
     /*

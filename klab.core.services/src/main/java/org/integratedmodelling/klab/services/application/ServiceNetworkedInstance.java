@@ -194,7 +194,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
       String url;
       try {
         URL serviceHostUrl = (new URI(options.getServiceHostUrl())).toURL();
-        if (Utils.URLs.isLocalHost(serviceHostUrl)) {
+        if (Utils.URLs.isLocalHost(serviceHostUrl) && !serviceHostUrl.toString().contains(":")) {
           url = options.getServiceHostUrl() + ":" + options.getPort() + options.getContextPath();
         } else {
           url = serviceHostUrl.toString();
