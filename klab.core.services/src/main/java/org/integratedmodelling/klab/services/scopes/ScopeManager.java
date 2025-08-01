@@ -212,7 +212,7 @@ public class ScopeManager {
         }
       }
     }
-    Logging.INSTANCE.debug(
+    Logging.INSTANCE.info(
         "User "
             + ret.getUser().getUsername()
             + (federation == null
