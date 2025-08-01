@@ -673,7 +673,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
           var response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-          if (response.statusCode() == 200 || response.statusCode() == 202) {
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             parseHeaders(response);
             var id = Long.parseLong(response.body());
             return new PollingFuture<>(
@@ -1460,7 +1460,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                         .build(),
                     HttpResponse.BodyHandlers.ofInputStream());
 
-            if (response != null && response.statusCode() == 200) {
+            if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
               parseHeaders(response);
               var decoder = DecoderFactory.get().binaryDecoder(response.body(), null);
               var reader = new SpecificDatumReader<>(Instance.class);
