@@ -37,8 +37,6 @@ import org.integratedmodelling.klab.api.utils.Utils;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
 
-  //  private GraphQLClient graphClient;
-
   public static RuntimeClient create(URL url, Identity identity, Settings settings) {
     return new RuntimeClient(url, identity, settings);
   }

@@ -354,6 +354,28 @@ public class Utils {
     }
 
     /**
+     * Return the parameters from a resource after adding/overriding them with any parameters in the
+     * URN, ensuring that the types are compatible with any existing ones.
+     *
+     * @param resource
+     * @param urn
+     * @return
+     */
+    public static Parameters<String> overrideParameters(Resource resource, Urn urn) {
+      Parameters<String> ret = Parameters.create(resource.getParameters());
+      for (var entry : urn.getParameters().entrySet()) {
+        if (ret.containsKey(entry.getKey())) {
+          ret.computeIfPresent(
+              entry.getKey(), (k, existing) -> Data.asType(entry.getValue(), existing.getClass()));
+        } else {
+          ret.put(entry.getKey(), entry.getValue());
+        }
+      }
+      ret.putAll(urn.getParameters());
+      return ret;
+    }
+
+    /**
      * Create a resource set describing the passed resources and automatically adding the passed
      * service.
      *
@@ -2093,7 +2115,7 @@ public class Utils {
     }
 
     /**
-     * Base64-encoded Sha256 hash of the passed input
+     * Base64-encoded Sha256 hash of the passed input.
      *
      * @param input
      * @return the hashed string, or null if the input is null

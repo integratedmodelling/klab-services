@@ -273,7 +273,7 @@ public class GeometryImpl implements Geometry {
 
   private static String encodeDimension(Dimension dim, Encoder... encoders) {
 
-    Map<String, Encoder> encoderMap = new HashMap<>();
+    Map<String, Encoder> encoderMap = new LinkedHashMap<>();
     if (encoders != null) {
       for (var encoder : encoders) {
         if (encoder.dimension() == dim.getType()) {
@@ -511,21 +511,20 @@ public class GeometryImpl implements Geometry {
     List<Dimension> dims = new ArrayList<>(dimensions);
     dims.sort(
         new Comparator<Dimension>() {
-
           @Override
           public int compare(Dimension o1, Dimension o2) {
             return o1.getType() == Dimension.Type.TIME ? -1 : 0;
           }
         });
 
-    String ret = granularity == Granularity.MULTIPLE ? "#" : "";
+    StringBuilder ret = new StringBuilder(granularity == Granularity.MULTIPLE ? "#" : "");
     for (Dimension dim : dims) {
-      ret += encodeDimension(dim, encoders);
+      ret.append(encodeDimension(dim, encoders));
     }
     if (child != null) {
-      ret += "," + child.encode(encoders);
+      ret.append(",").append(child.encode(encoders));
     }
-    return ret;
+    return ret.toString();
   }
 
   private static boolean isUndefined(List<Long> shape) {

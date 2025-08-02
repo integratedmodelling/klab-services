@@ -187,6 +187,7 @@ public class ComponentRegistry {
         // TODO remove the previous file if any, as a change from remote to local may leave two
         //  versions in the plugin dir
         installComponent(file, component.mavenCoordinates());
+        componentManager.enablePlugin(component.id());
         Logging.INSTANCE.info(
             "Component "
                 + component.id()
@@ -890,8 +891,9 @@ public class ComponentRegistry {
   public synchronized boolean unloadComponent(String urn, Version version) {
     var component = getComponent(urn, version);
     if (component != null) {
-      if (componentManager.disablePlugin(component.id())) {
-        componentManager.unloadPlugin(component.id());
+      if (componentManager.getPlugin(component.id()) != null) {
+        componentManager.deletePlugin(component.id());
+        return true;
       }
     }
     return false;

@@ -77,7 +77,7 @@ import java.util.List;
  */
 public interface Geometry extends Serializable, Locator {
 
-  public enum Granularity {
+  enum Granularity {
     /** */
     SINGLE,
     /** */
@@ -117,18 +117,18 @@ public interface Geometry extends Serializable, Locator {
    * Constant for non-dimensional (referenced but not distributed) return value of {@link
    * Dimension#getDimensionality()}.
    */
-  public static final int NONDIMENSIONAL = -1;
+  int NONDIMENSIONAL = -1;
 
   /** Constant for undefined dimension size. */
-  public static final long UNDEFINED = -1L;
+  long UNDEFINED = -1L;
 
   /** Infinite size, only admitted for the time dimension. */
-  public static final long INFINITE_SIZE = Long.MAX_VALUE;
+  long INFINITE_SIZE = Long.MAX_VALUE;
 
   /**
    * @author Ferd
    */
-  public interface Dimension extends Serializable {
+  interface Dimension extends Serializable {
 
     /**
      * Types are ordered in the sequence of scanning in scales. Changing the order will destroy the

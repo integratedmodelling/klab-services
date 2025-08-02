@@ -2136,7 +2136,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     }
   }
 
-  public static class Strings extends org.integratedmodelling.klab.api.utils.Utils.Strings {}
+  public static class Strings extends org.integratedmodelling.klab.api.utils.Utils.Strings {
+  }
 
   public static class YAML {
 
