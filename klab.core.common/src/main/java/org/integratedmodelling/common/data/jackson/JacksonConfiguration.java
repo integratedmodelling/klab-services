@@ -333,6 +333,7 @@ public class JacksonConfiguration {
           KimConcept.class,
           KimObservable.class,
           Quantity.class,
+          Model.ResolutionInfo.class,
           Model.class,
           ServiceCall.class,
           Observation.class,

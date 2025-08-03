@@ -41,6 +41,7 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JEmbedded;
@@ -76,7 +77,15 @@ public class RuntimeService extends BaseService
   private void readConfiguration(ServiceStartupOptions options) {
     File config = BaseService.getFileInConfigurationDirectory(options, "runtime.yaml");
     if (config.exists() && config.length() > 0 && !options.isClean()) {
-      this.configuration = Utils.YAML.load(config, RuntimeConfiguration.class);
+      try {
+        this.configuration = Utils.YAML.load(config, RuntimeConfiguration.class);
+      } catch (Exception e) {
+        Logging.INSTANCE.warn("Configuration file is being reset after corruption was detected");
+        Utils.Files.deleteQuietly(config);
+        this.configuration = new RuntimeConfiguration();
+        this.configuration.setServiceId(UUID.randomUUID().toString());
+        Utils.YAML.save(this.configuration, config);
+      }
     } else {
       // make an empty config
       this.configuration = new RuntimeConfiguration();

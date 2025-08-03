@@ -331,7 +331,8 @@ public class ResolutionCompiler {
    */
   public List<Model> queryModels(Observable observable, ContextScope scope, Scale scale) {
 
-    var prioritizer = new PrioritizerImpl(scope, scale);
+    var prioritizer =
+        new PrioritizerImpl(scope, scale, resolver.getServiceConfiguration().getRankingStrategy());
 
     var resources = scope.getService(ResourcesService.class);
     ResourceSet models = resources.resolveModels(observable, scope);

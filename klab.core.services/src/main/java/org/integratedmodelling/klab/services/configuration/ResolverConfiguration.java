@@ -7,7 +7,10 @@ import java.util.*;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
+
+import static java.util.Map.entry;
 
 /** Configuration for resolver service */
 public class ResolverConfiguration extends ServiceConfiguration {
@@ -132,7 +135,28 @@ public class ResolverConfiguration extends ServiceConfiguration {
   private int refreshIntervalMinutes = 10;
   private List<String> allowedGroups = new ArrayList<>();
   private String url = null;
-  private List<ProjectConfiguration> authorities = new ArrayList<>();
+
+  /*
+   * The default ranking strategy in the form that can be overridden in configuration.
+   *
+   * missing: "im:scale-specificity 5 "
+   * missing: "im:scale-coverage 6 "
+   */
+  public Map<String, Integer> rankingStrategy =
+      Map.ofEntries(
+          entry("im:lexical-scope", 1),
+          entry("im:evidence", 4),
+          entry("im:semantic-concordance", 2),
+          entry("im:trait-concordance", 3),
+          entry("im:time-specificity", 5),
+          entry("im:time-coverage", 6),
+          entry("im:space-specificity", 7),
+          entry("im:space-coverage", 8),
+          entry("im:subjective-concordance", 9),
+          entry("im:inherency", 10),
+          entry("im:scale-coherency", 0),
+          entry("im:network-remoteness", 0),
+          entry("im:reliability", 100));
 
   public int getRefreshIntervalMinutes() {
     return refreshIntervalMinutes;
@@ -166,45 +190,11 @@ public class ResolverConfiguration extends ServiceConfiguration {
     this.services = services;
   }
 
-  public List<ProjectConfiguration> getAuthorities() {
-    return authorities;
+  public Map<String, Integer> getRankingStrategy() {
+    return rankingStrategy;
   }
 
-  public void setAuthorities(List<ProjectConfiguration> authorities) {
-    this.authorities = authorities;
-  }
-
-  // this generates a first-boot config with only the im project from the connected resources
-  public static void main(String[] deus) {
-
-    ResolverConfiguration ret = new ResolverConfiguration();
-    //        ProjectConfiguration prt = new ProjectConfiguration();
-    //        prt.setProject("im");
-    ProjectConfiguration aut1 = new ProjectConfiguration();
-    aut1.setProject("GBIF");
-    aut1.setServe(false);
-    aut1.setUrl(
-        "classpath:org.integratedmodelling.klab.services.reasoner.authorities.GBIFAuthority");
-    ProjectConfiguration aut2 = new ProjectConfiguration();
-    aut2.setProject("CALIPER");
-    aut2.setServe(false);
-    aut2.setUrl(
-        "classpath:org.integratedmodelling.klab.services.reasoner.authorities.CaliperAuthority");
-    ProjectConfiguration aut3 = new ProjectConfiguration();
-    aut3.setProject("IUPAC");
-    aut3.setServe(false);
-    aut3.setUrl(
-        "classpath:org.integratedmodelling.klab.services.reasoner.authorities.IUPACAuthority");
-
-    //        ret.getWorldview().add(prt);
-    ret.getAuthorities().add(aut1);
-    ret.getAuthorities().add(aut2);
-    ret.getAuthorities().add(aut3);
-    ret.setServiceId(UUID.randomUUID().toString());
-
-//    Utils.YAML.save(
-//        ret,
-//        new File(
-//            KlabServiceConfiguration.INSTANCE.getDataPath() + File.separator + "reasoner" + ".yaml"));
+  public void setRankingStrategy(Map<String, Integer> rankingStrategy) {
+    this.rankingStrategy = rankingStrategy;
   }
 }

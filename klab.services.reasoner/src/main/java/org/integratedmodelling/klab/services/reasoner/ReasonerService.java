@@ -61,6 +61,7 @@ import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration.ProjectConfiguration;
+import org.integratedmodelling.klab.services.configuration.ResolverConfiguration;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
@@ -267,8 +268,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private void readConfiguration(ServiceStartupOptions options) {
     File config = BaseService.getFileInConfigurationDirectory(options, "reasoner.yaml");
     if (config.exists() && config.length() > 0 && !options.isClean()) {
-      this.configuration =
-          org.integratedmodelling.common.utils.Utils.YAML.load(config, ReasonerConfiguration.class);
+      try {
+        this.configuration =
+            org.integratedmodelling.common.utils.Utils.YAML.load(
+                config, ReasonerConfiguration.class);
+      } catch (Exception e) {
+        Logging.INSTANCE.warn("Configuration file is being reset after corruption was detected");
+        Utils.Files.deleteQuietly(config);
+        this.configuration = new ReasonerConfiguration();
+        this.configuration.setServiceId(UUID.randomUUID().toString());
+        Utils.YAML.save(this.configuration, config);
+      }
     } else {
       // make an empty config
       this.configuration = new ReasonerConfiguration();

@@ -73,7 +73,7 @@ public class ResolverService extends BaseService implements Resolver {
             List<KlabAsset> mods = new ArrayList<>();
             kimNamespace.getStatements().stream()
                 .filter(statement -> statement instanceof KimModel kimModel)
-                .forEach(kimModel -> mods.add(loadModel((KimModel) kimModel, scope)));
+                .forEach(kimModel -> mods.add(loadModel((KimModel) kimModel, kimNamespace, scope)));
             return mods;
           }
           return List.of();
@@ -89,7 +89,15 @@ public class ResolverService extends BaseService implements Resolver {
   private void readConfiguration(ServiceStartupOptions options) {
     File config = BaseService.getFileInConfigurationDirectory(options, "resolver.yaml");
     if (config.exists() && config.length() > 0 && !options.isClean()) {
-      this.configuration = Utils.YAML.load(config, ResolverConfiguration.class);
+      try {
+        this.configuration = Utils.YAML.load(config, ResolverConfiguration.class);
+      } catch (Exception e) {
+        Logging.INSTANCE.warn("Configuration file is being reset after corruption was detected");
+        Utils.Files.deleteQuietly(config);
+        this.configuration = new ResolverConfiguration();
+        this.configuration.setServiceId(UUID.randomUUID().toString());
+        Utils.YAML.save(this.configuration, config);
+      }
     } else {
       // make an empty config
       this.configuration = new ResolverConfiguration();
@@ -120,7 +128,7 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   @Override
-  protected org.integratedmodelling.klab.services.configuration.ServiceConfiguration getServiceConfiguration() {
+  protected ResolverConfiguration getServiceConfiguration() {
     return this.configuration;
   }
 
@@ -171,11 +179,18 @@ public class ResolverService extends BaseService implements Resolver {
     return configuration.getServiceId();
   }
 
-  private Model loadModel(KimModel statement, Scope scope) {
+  private Model loadModel(KimModel statement, KimNamespace namespace, Scope scope) {
 
     var reasoner = scope.getService(Reasoner.class);
 
     ModelImpl model = new ModelImpl();
+    var resolutionInfo = new ModelImpl.ResolutionInfoImpl();
+
+    resolutionInfo.setScope(statement.getScope());
+    resolutionInfo.setInScenario(namespace.isScenario());
+    // TODO review how resolution criteria are handled
+    // TODO coverage!
+
     model.getAnnotations().addAll(statement.getAnnotations()); // FIXME process annotations
     for (KimObservable observable : statement.getObservables()) {
       model.getObservables().add(reasoner.resolveObservable(observable.getUrn()));
@@ -184,12 +199,15 @@ public class ResolverService extends BaseService implements Resolver {
       model.getDependencies().add(reasoner.resolveObservable(observable.getUrn()));
     }
 
+    model.setResolutionInfo(resolutionInfo);
+
     // TODO learners, geometry covered etc.
     model.setUrn(statement.getUrn());
     model.setMetadata(
         statement.getMetadata()); // FIXME add processed metadata with the existing symbol table
     model.setNamespace(statement.getNamespace());
     model.setProjectName(statement.getProjectName());
+
 
     // TODO any literal value must be added first
     // TODO use static builders for Contextualizable instead of polymorphic constructors

@@ -52,6 +52,7 @@ import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
@@ -762,9 +763,17 @@ public class WorkspaceManager {
 
     File config = BaseService.getFileInConfigurationDirectory(options, "resources.yaml");
     if (config.exists() && config.length() > 0 && !options.isClean()) {
-      this.configuration =
-          org.integratedmodelling.common.utils.Utils.YAML.load(
-              config, ResourcesConfiguration.class);
+      try {
+        this.configuration =
+            org.integratedmodelling.common.utils.Utils.YAML.load(
+                config, ResourcesConfiguration.class);
+      } catch (Exception e) {
+        Logging.INSTANCE.warn("Configuration file is being reset after corruption was detected");
+        Utils.Files.deleteQuietly(config);
+        this.configuration = new ResourcesConfiguration();
+        this.configuration.setServiceId(UUID.randomUUID().toString());
+        Utils.YAML.save(this.configuration, config);
+      }
     } else {
       // make an empty config
       this.configuration = new ResourcesConfiguration();

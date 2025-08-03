@@ -1,7 +1,10 @@
 package org.integratedmodelling.common.knowledge;
 
+import java.io.Serial;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
@@ -14,142 +17,189 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 
 public class ModelImpl implements Model {
 
-	private static final long serialVersionUID = -303420101007056751L;
-	private String urn;
-	private Metadata metadata = Metadata.create();
-	private List<Annotation> annotations = new ArrayList<>();
-	private String namespace;
-	private String projectName;
-	private Type type;
-	private List<Observable> observables = new ArrayList<>();
-	private List<Observable> dependencies = new ArrayList<>();
-	private Geometry coverage;
-	private List<Contextualizable> computation = new ArrayList<>();
-	private DescriptionType descriptionType;
-	private Concept observerType;
+  public static class ResolutionInfoImpl implements Model.ResolutionInfo {
 
-	@Override
-	public String getUrn() {
-		return this.urn;
-	}
+    private KlabStatement.Scope scope;
+    private boolean inScenario;
+    private Map<String, Integer> resolutionCriteria = new HashMap<>();
+    private Geometry coverage = Geometry.EMPTY;
 
-	@Override
-	public Metadata getMetadata() {
-		return this.metadata;
-	}
+    @Override
+    public KlabStatement.Scope getScope() {
+      return this.scope;
+    }
 
-	@Override
-	public List<Annotation> getAnnotations() {
-		return this.annotations;
-	}
+    @Override
+    public boolean isInScenario() {
+      return this.inScenario;
+    }
 
-	@Override
-	public String getNamespace() {
-		return this.namespace;
-	}
+    @Override
+    public Geometry getCoverage() {
+      return this.coverage;
+    }
 
-	@Override
-	public Type getType() {
-		return this.type;
-	}
+    @Override
+    public Map<String, Integer> getResolutionCriteria() {
+      return this.resolutionCriteria;
+    }
 
-	@Override
-	public List<Observable> getObservables() {
-		return this.observables;
-	}
+    public void setScope(KlabStatement.Scope scope) {
+      this.scope = scope;
+    }
 
-	@Override
-	public List<Observable> getDependencies() {
-		return this.dependencies;
-	}
+    public void setInScenario(boolean inScenario) {
+      this.inScenario = inScenario;
+    }
 
-	@Override
-	public Geometry getCoverage() {
-		return this.coverage;
-	}
+    public void setResolutionCriteria(Map<String, Integer> resolutionCriteria) {
+      this.resolutionCriteria = resolutionCriteria;
+    }
 
-	public void setUrn(String urn) {
-		this.urn = urn;
-	}
+    public void setCoverage(Geometry coverage) {
+      this.coverage = coverage;
+    }
+  }
 
-	public void setMetadata(Metadata metadata) {
-		this.metadata = metadata;
-	}
+  @Serial private static final long serialVersionUID = -303420101007056751L;
 
-	public void setAnnotations(List<Annotation> annotations) {
-		this.annotations = annotations;
-	}
+  private String urn;
+  private Metadata metadata = Metadata.create();
+  private List<Annotation> annotations = new ArrayList<>();
+  private String namespace;
+  private String projectName;
+  private Type type;
+  private List<Observable> observables = new ArrayList<>();
+  private List<Observable> dependencies = new ArrayList<>();
+  private Geometry coverage;
+  private List<Contextualizable> computation = new ArrayList<>();
+  private DescriptionType descriptionType;
+  private Concept observerType;
+  private ResolutionInfo resolutionInfo;
 
-	public void setNamespace(String namespace) {
-		this.namespace = namespace;
-	}
+  @Override
+  public String getUrn() {
+    return this.urn;
+  }
 
-	public void setType(Type type) {
-		this.type = type;
-	}
+  @Override
+  public Metadata getMetadata() {
+    return this.metadata;
+  }
 
-	public void setObservables(List<Observable> observables) {
-		this.observables = observables;
-	}
+  @Override
+  public List<Annotation> getAnnotations() {
+    return this.annotations;
+  }
 
-	public void setDependencies(List<Observable> dependencies) {
-		this.dependencies = dependencies;
-	}
+  @Override
+  public String getNamespace() {
+    return this.namespace;
+  }
 
-	public void setCoverage(Geometry coverage) {
-		this.coverage = coverage;
-	}
+  @Override
+  public Type getType() {
+    return this.type;
+  }
 
-	@Override
-	public List<Contextualizable> getComputation() {
-		return computation;
-	}
+  @Override
+  public List<Observable> getObservables() {
+    return this.observables;
+  }
 
-	@Override
-	public DescriptionType getDescriptionType() {
-		return this.descriptionType;
-	}
+  @Override
+  public List<Observable> getDependencies() {
+    return this.dependencies;
+  }
 
-	public void setComputation(List<Contextualizable> computation) {
-		this.computation = computation;
-	}
+  @Override
+  public Geometry getCoverage() {
+    return this.coverage;
+  }
 
-	public void setDescriptionType(DescriptionType descriptionType) {
-		this.descriptionType = descriptionType;
-	}
+  public void setUrn(String urn) {
+    this.urn = urn;
+  }
 
-	@Override
-	public String toString() {
-		return "(M) " + urn;
-	}
+  public void setMetadata(Metadata metadata) {
+    this.metadata = metadata;
+  }
 
-//	@Override
-//	public List<Action> getActions() {
-//		return actions;
-//	}
-//
-//	public void setActions(List<Action> actions) {
-//		this.actions = actions;
-//	}
+  public void setAnnotations(List<Annotation> annotations) {
+    this.annotations = annotations;
+  }
 
-	@Override
-	public Concept getObserverType() {
-		return observerType;
-	}
+  public void setNamespace(String namespace) {
+    this.namespace = namespace;
+  }
 
-	public void setObserverType(Concept observerType) {
-		this.observerType = observerType;
-	}
+  public void setType(Type type) {
+    this.type = type;
+  }
 
-	@Override
-	public String getProjectName() {
-		return projectName;
-	}
+  public void setObservables(List<Observable> observables) {
+    this.observables = observables;
+  }
 
-	public void setProjectName(String projectName) {
-		this.projectName = projectName;
-	}
+  public void setDependencies(List<Observable> dependencies) {
+    this.dependencies = dependencies;
+  }
+
+  public void setCoverage(Geometry coverage) {
+    this.coverage = coverage;
+  }
+
+  @Override
+  public List<Contextualizable> getComputation() {
+    return computation;
+  }
+
+  @Override
+  public DescriptionType getDescriptionType() {
+    return this.descriptionType;
+  }
+
+  public void setComputation(List<Contextualizable> computation) {
+    this.computation = computation;
+  }
+
+  public void setDescriptionType(DescriptionType descriptionType) {
+    this.descriptionType = descriptionType;
+  }
+
+  @Override
+  public String toString() {
+    return "(M) " + urn;
+  }
+
+  @Override
+  public ResolutionInfo getResolutionInfo() {
+    return resolutionInfo;
+  }
+
+  public void setResolutionInfo(ResolutionInfo resolutionInfo) {
+    this.resolutionInfo = resolutionInfo;
+  }
+
+  @Override
+  public Concept getObserverType() {
+    return observerType;
+  }
+
+  public void setObserverType(Concept observerType) {
+    this.observerType = observerType;
+  }
+
+  @Override
+  public String getProjectName() {
+    return projectName;
+  }
+
+  public void setProjectName(String projectName) {
+    this.projectName = projectName;
+  }
 }
