@@ -129,10 +129,14 @@ public class ComponentRegistry {
    * @param capabilities
    */
   public void registerService(KlabService.ServiceCapabilities capabilities) {
-    for (var component : capabilities.getComponents()) {
-      for (var adapter : component.adapters()) {
-        this.adapterDescriptorFinder.put(adapter.getName(), adapter);
+    if (capabilities != null) {
+      for (var component : capabilities.getComponents()) {
+        for (var adapter : component.adapters()) {
+          this.adapterDescriptorFinder.put(adapter.getName(), adapter);
+        }
       }
+    } else {
+      throw new KlabServiceAccessException("The service capabilities are not available. Is the service online?");
     }
   }
 
