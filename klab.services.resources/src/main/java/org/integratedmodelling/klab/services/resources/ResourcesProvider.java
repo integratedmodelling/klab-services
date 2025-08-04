@@ -495,7 +495,7 @@ public class ResourcesProvider extends BaseService
       return resolveResourceUrn(urnIds.getFirst(), scope);
     }
 
-    return ResourceSet.empty(Notification.error("UNIMPLEMENTED"));
+    return ResourceSet.empty(Notification.error("MULTIPLE RESOURCE RESOLUTION IS UNIMPLEMENTED"));
   }
 
   @Override
@@ -524,7 +524,7 @@ public class ResourcesProvider extends BaseService
     ResourceSet ret = new ResourceSet();
     if (urn.isUniversal()) {
 
-      var adapter = getComponentRegistry().getAdapter(urn.getCatalog(), Version.ANY_VERSION, scope);
+      var adapter = getComponentRegistry().getAdapter(urn.getCatalog(), urn.getVersion(), scope);
       if (adapter == null) {
         return ResourceSet.empty(
             Notification.error("No adapter available for " + urn.getCatalog()));
@@ -545,17 +545,43 @@ public class ResourcesProvider extends BaseService
                   KnowledgeClass.RESOURCE));
 
       return ret;
-
-    } else if (urn.isLocal()) {
-
-      // must have project and be same user. Staging area is accessible.
-
-    } else {
-
-      // use the resource
+    }
+    var resource = resourcesKbox.getResource(urnId, urn.getVersion());
+    if (resource == null) {
+      return ResourceSet.empty(Notification.error("No resource available for " + urnId));
     }
 
-    return ResourceSet.empty(Notification.error("UNIMPLEMENTED"));
+    var adapterData = Version.splitVersion(resource.getAdapterType());
+    var adapter =
+        getComponentRegistry().getAdapter(adapterData.getFirst(), adapterData.getSecond(), scope);
+
+    if (adapter == null) {
+      return ResourceSet.empty(
+          Notification.error(
+              "No adapter "
+                  + resource.getAdapterType()
+                  + "  available for existing resource "
+                  + urnId));
+    }
+
+    var info = adapter.getAdapterInfo();
+    if (info.getValidatedPhases().contains(ResourceAdapter.Validator.LifecyclePhase.UrnSyntax)) {
+      // TODO validate the URN before returning
+    }
+
+    // TODO figure out what kind of dependencies may be needed by a resource - possibly
+    //  other resources, e.g. for codelists
+
+    ret.getResults()
+        .add(
+            new ResourceSet.Resource(
+                this.serviceId(),
+                resource.getUrn(),
+                null,
+                resource.getVersion(),
+                KnowledgeClass.RESOURCE));
+
+    return ret;
   }
 
   @Override

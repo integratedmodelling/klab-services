@@ -35,9 +35,24 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface Verb {
 
-  enum ExecutionType {
-    SYNCHRONOUS,
-    ASYNCHRONOUS,
+  /** The behavior that the object pointed to by this annotation will have in k.Actors. */
+  enum Type {
+    /**
+     * A function is a verb that will produce a value synchronously when called. Executions that use
+     * its value will always wait for it before continuing.
+     */
+    FUNCTION,
+    /**
+     * A reactor will produce zero or a single value asynchronously, then its function will be over.
+     * Its scope determines the lifetime. Execution will wait ony when within a synchronous group of
+     * statements.
+     */
+    REACTOR,
+    /**
+     * An emitter will produce zero or more values at some point after the call. Its scope
+     * determines the lifetime of the emitter. Positioning the verb in a synchronous group makes no
+     * functional difference.
+     */
     EMITTER;
   }
 
@@ -84,5 +99,5 @@ public @interface Verb {
    *
    * @return
    */
-  ExecutionType executionType() default ExecutionType.SYNCHRONOUS;
+  Type executionType() default Type.FUNCTION;
 }

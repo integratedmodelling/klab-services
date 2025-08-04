@@ -241,7 +241,7 @@ public class ResolutionCompiler {
     /*
     resolve all dependencies
      */
-    boolean complete = model.getDependencies().isEmpty();
+//    boolean complete = model.getDependencies().isEmpty();
     List<Pair<ResolutionGraph, String>> modelGraphs = new ArrayList<>();
     for (var dependency : model.getDependencies()) {
 

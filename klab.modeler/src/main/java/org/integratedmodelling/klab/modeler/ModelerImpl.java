@@ -72,7 +72,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   EngineConfiguration workbench;
   File workbenchDefinition;
   private Map<String, URL> serviceUrls = new HashMap<>();
-  private Geometry focalGeometry = Geometry.EMPTY;
+  private Geometry focalGeometry = Geometry.UNIVERSAL;
   private int contextCount = 0;
   private int sessionCount = 0;
 

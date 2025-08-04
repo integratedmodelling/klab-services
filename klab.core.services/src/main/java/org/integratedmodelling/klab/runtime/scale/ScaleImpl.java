@@ -24,6 +24,7 @@ public class ScaleImpl implements Scale {
   Extent<?>[] extents;
   long size;
   String key;
+  private boolean universal;
 
   /**
    * Internal locator class f. Uses the enclosing scale in a lazy fashion for everything and just
@@ -173,19 +174,27 @@ public class ScaleImpl implements Scale {
   }
 
   public ScaleImpl(Geometry geometry, Scope scope) {
+
     this.key = geometry.key();
-    List<Extent<?>> extents = new ArrayList<>(3);
-    for (Geometry.Dimension dimension : geometry.getDimensions()) {
-      if (dimension.getType() == Type.SPACE) {
-        extents.add(SpaceImpl.create(dimension, scope));
-      } else if (dimension.getType() == Type.TIME) {
-        extents.add(TimeImpl.create(dimension, scope));
-      } else if (dimension.getType() == Type.NUMEROSITY) {
-        // TODO
-        throw new KlabUnimplementedException("numerosity extent");
+    this.universal = geometry.isUniversal();
+
+    if (!(this.universal = geometry.isUniversal())) {
+
+      List<Extent<?>> extents = new ArrayList<>(3);
+      for (Geometry.Dimension dimension : geometry.getDimensions()) {
+        if (dimension.getType() == Type.SPACE) {
+          extents.add(SpaceImpl.create(dimension, scope));
+        } else if (dimension.getType() == Type.TIME) {
+          extents.add(TimeImpl.create(dimension, scope));
+        } else if (dimension.getType() == Type.NUMEROSITY) {
+          // TODO
+          throw new KlabUnimplementedException("numerosity extent");
+        }
       }
+      define(extents);
+    } else {
+      this.extents = new Extent[0];
     }
-    define(extents);
   }
 
   public ScaleImpl(Geometry geometry) {
@@ -232,13 +241,15 @@ public class ScaleImpl implements Scale {
   @Override
   public <T extends Locator> T as(Class<T> cls) {
     /*if (DimensionScanner2D.class.isAssignableFrom(cls)) {
-      *//*
-      must have a single extent with size() > 1 and dimensionality = 2, or be a singleton
-       *//*
+     */
+    /*
+    must have a single extent with size() > 1 and dimensionality = 2, or be a singleton
+     */
+    /*
       return (T) new DimensionScanner2DImpl(this);
     } else if (DimensionScanner1D.class.isAssignableFrom(cls)) {
       return (T) new DimensionScanner1DImpl(this);
-    } else */if (Geometry.class.equals(cls)) {
+    } else */ if (Geometry.class.equals(cls)) {
       return (T) Geometry.create(encode());
     } else if (Coverage.class.equals(cls)) {
       return (T) new CoverageImpl(this, 1.0);
@@ -337,6 +348,10 @@ public class ScaleImpl implements Scale {
     return getTime() != null && getTime().distributed();
   }
 
+  protected void setUniversal(boolean b) {
+    this.universal = b;
+  }
+
   @Override
   public boolean isSpatiallyDistributed() {
     return getSpace() != null && getSpace().distributed();
@@ -354,7 +369,12 @@ public class ScaleImpl implements Scale {
 
   @Override
   public boolean isEmpty() {
-    return extents == null || extents.length == 0;
+    return !this.universal && (extents == null || extents.length == 0);
+  }
+
+  @Override
+  public boolean isUniversal() {
+    return this.universal;
   }
 
   //	@Override
@@ -640,6 +660,11 @@ public class ScaleImpl implements Scale {
     @Override
     public boolean isEmpty() {
       return ScaleImpl.this.isEmpty();
+    }
+
+    @Override
+    public boolean isUniversal() {
+      return ScaleImpl.this.isUniversal();
     }
 
     @Override

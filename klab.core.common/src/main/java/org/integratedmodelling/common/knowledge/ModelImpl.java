@@ -26,7 +26,7 @@ public class ModelImpl implements Model {
     private KlabStatement.Scope scope;
     private boolean inScenario;
     private Map<String, Integer> resolutionCriteria = new HashMap<>();
-    private Geometry coverage = Geometry.EMPTY;
+    private Geometry coverage = Geometry.UNIVERSAL;
 
     @Override
     public KlabStatement.Scope getScope() {

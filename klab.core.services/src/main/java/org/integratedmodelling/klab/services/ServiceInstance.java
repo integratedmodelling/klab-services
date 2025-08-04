@@ -211,6 +211,8 @@ public abstract class ServiceInstance<T extends BaseService> {
    */
   protected Pair<Identity, List<ServiceReference>> authenticateService() {
     return Authentication.INSTANCE.authenticate(SettingsImpl.forService(serviceType()));
+    // TODO if the service is authenticated through a user certificate, it must take the name of
+    //  the user!
   }
 
   /**

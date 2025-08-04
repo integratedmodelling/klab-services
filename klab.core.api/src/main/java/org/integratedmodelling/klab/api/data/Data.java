@@ -408,7 +408,7 @@ public interface Data {
 
       @Override
       public Geometry geometry() {
-        return Geometry.EMPTY;
+        return Geometry.UNIVERSAL;
       }
 
       @Override

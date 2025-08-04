@@ -267,6 +267,7 @@ public interface Geometry extends Serializable, Locator {
   }
 
   Geometry EMPTY = create("X");
+  Geometry UNIVERSAL = create("1");
 
   static Geometry create(String geometry) {
     return GeometryImpl.makeGeometry(geometry, 0);
@@ -342,6 +343,14 @@ public interface Geometry extends Serializable, Locator {
    * @return true for a geometry that was not specified.
    */
   boolean isEmpty();
+
+  /**
+   * A universal geometry will be extentually compatible with any other and won't alter the result
+   * when merged with another.
+   *
+   * @return
+   */
+  boolean isUniversal();
 
   /**
    * A trivial geometry describes scalar values with no structure.

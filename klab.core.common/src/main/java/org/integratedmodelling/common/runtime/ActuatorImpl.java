@@ -24,9 +24,9 @@ public class ActuatorImpl implements Actuator {
   private String strategyUrn;
   private List<Actuator> children = new ArrayList<>();
   private List<ServiceCall> computation = new ArrayList<>();
-  private Geometry coverage = Geometry.EMPTY;
+  private Geometry coverage = Geometry.UNIVERSAL;
   private Parameters<String> data = Parameters.create();
-  private Geometry resolvedGeometry = Geometry.EMPTY;
+  private Geometry resolvedGeometry = Geometry.UNIVERSAL;
   private Actuator.Type actuatorType;
   private long id;
   private double resolvedCoverage;

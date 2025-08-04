@@ -30,7 +30,7 @@ public interface Model extends Knowledge, Resolvable {
 
     /**
      * If this model or its namespace define a resolution geometry, return it here. Otherwise {@link
-     * Geometry#EMPTY} is returned.
+     * Geometry#UNIVERSAL} is returned.
      *
      * @return the coverage or an empty geometry.
      */

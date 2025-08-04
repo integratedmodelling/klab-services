@@ -470,6 +470,17 @@ public class GeometryImpl implements Geometry {
     return ret;
   }
 
+  /**
+   * The universal geometry.
+   *
+   * @return the scalar geometry
+   */
+  public static GeometryImpl universal() {
+    GeometryImpl ret = new GeometryImpl();
+    ret.universal = true;
+    return ret;
+  }
+
   public static GeometryImpl distributedIn(ExtentDimension key) {
     switch (key) {
       case AREAL:
@@ -505,6 +516,10 @@ public class GeometryImpl implements Geometry {
 
     if (isScalar()) {
       return "*";
+    }
+
+    if (isUniversal()) {
+      return "1";
     }
 
     // put time first
@@ -811,14 +826,17 @@ public class GeometryImpl implements Geometry {
   //    private double coverage = null;
 
   private boolean empty;
-
+  private boolean universal;
   private boolean generic;
 
-  // private MultidimensionalCursor cursor;
+  @Override
+  public boolean isUniversal() {
+    return universal;
+  }
 
-  //    public double getCoverage() {
-  //        return this.coverage;
-  //    }
+  public void setUniversal(boolean universal) {
+    this.universal = universal;
+  }
 
   //    @Override
   public Geometry getChild() {
@@ -1069,6 +1087,10 @@ public class GeometryImpl implements Geometry {
       return scalar();
     }
 
+    if (geometry.equals("1")) {
+      return universal();
+    }
+
     for (int idx = i; idx < geometry.length(); idx++) {
       char c = geometry.charAt(idx);
       if (c == '#') {
@@ -1194,7 +1216,6 @@ public class GeometryImpl implements Geometry {
   public static String decodeForSerialization(String val) {
     return val.replaceAll("&comma;", ",").replaceAll("&eq;", "=");
   }
-
 
   private static Class<?> getParameterPODType(String kvp) {
     switch (kvp) {

@@ -432,6 +432,8 @@ public class CompiledDataflow {
                           + resource.getUrn());
                 }
 
+                // TODO here: if embeddable, retrieve it and use that. Otherwise as below.
+
                 // TODO validate type chain
                 if (adapterInfo.isContextualizing()) {
                   resource =

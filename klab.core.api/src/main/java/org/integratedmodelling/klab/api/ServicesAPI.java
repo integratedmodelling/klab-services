@@ -427,7 +427,7 @@ public interface ServicesAPI {
     String CONTEXTUALIZE_RESOURCE = "/contextualizeResource";
     String RETRIEVE_DATAFLOW = "/retrieveDataflow/{urn}";
     String RETRIEVE_WORLDVIEW = "/getWorldview";
-    String RETRIEVE_ADAPTER_INFO = "/getAdapterInfo";
+    String RETRIEVE_ADAPTER_INFO = "/getAdapterInfo/{urn}";
     String DEPENDENTS = "/dependents/{namespaceId}";
     String RESOLVE_MODELS = "/resolveModels";
     String IMPORT_RESOURCE = "importResource";
