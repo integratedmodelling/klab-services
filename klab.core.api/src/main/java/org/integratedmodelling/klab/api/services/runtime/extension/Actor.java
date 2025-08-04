@@ -19,13 +19,24 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 public @interface Actor {
 
-  /**
-   * ID of the actor. Must be unique and include a path for any actor declared outside the core
-   * distribution. The name must be all lowercase for singletons and camelcase for objects.
-   */
-  String name();
+    /**
+     * Tags the constructor for the actor implementation. The class may be any, it will be expected as the
+     * first parameter in all verbs.
+     */
+    @Documented
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    @interface Constructor {
 
-  String description();
+    }
 
-  boolean singleton() default false;
+    /**
+     * ID of the actor. Must be unique and include a path for any actor declared outside the core
+     * distribution. The name must be all lowercase for singletons and camelcase for objects.
+     */
+    String name();
+
+    String description();
+
+    boolean singleton() default false;
 }
