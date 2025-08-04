@@ -193,17 +193,6 @@ public class ResourcesProvider extends BaseService
     this.workspaceManager =
         new WorkspaceManager(scope, getStartupOptions(), this, this::resolveRemoteProject);
     this.resourceManager = new ResourceManager(this.resourcesKbox, this);
-    //    // FIXME remove along with MapDB and catalog, use Nitrite instead
-    //    this.db =
-    //        DBMaker.fileDB(
-    //                getConfigurationSubdirectory(options, "catalog") + File.separator +
-    // "resources.db")
-    //            .transactionEnable()
-    //            .closeOnJvmShutdown()
-    //            .make();
-    //    this.catalog =
-    //        db.treeMap("resourcesCatalog", GroupSerializer.STRING,
-    // GroupSerializer.JAVA).createOrOpen();
 
     /*
     initialize the plugin system to handle components
@@ -475,7 +464,8 @@ public class ResourcesProvider extends BaseService
                     component.id(),
                     null,
                     component.version(),
-                    KnowledgeClass.COMPONENT));
+                    KnowledgeClass.COMPONENT,
+                    false));
       }
     }
 
@@ -535,6 +525,20 @@ public class ResourcesProvider extends BaseService
         // TODO validate the URN before returning
       }
 
+      if (adapter.isEmbeddable()) {
+        // runtime will decide what to do, but we can embed the adapter so we can add an optional
+        // dependency on the component that provides it.
+        ret.getResults()
+            .add(
+                new ResourceSet.Resource(
+                    this.serviceId(),
+                    adapter.getComponentUrn(),
+                    null,
+                    adapter.getComponentVersion(),
+                    KnowledgeClass.COMPONENT,
+                    true));
+      }
+
       ret.getResults()
           .add(
               new ResourceSet.Resource(
@@ -542,7 +546,8 @@ public class ResourcesProvider extends BaseService
                   urn.getUrn(),
                   null,
                   adapter.getVersion(),
-                  KnowledgeClass.RESOURCE));
+                  KnowledgeClass.RESOURCE,
+                  false));
 
       return ret;
     }
@@ -579,7 +584,8 @@ public class ResourcesProvider extends BaseService
                 resource.getUrn(),
                 null,
                 resource.getVersion(),
-                KnowledgeClass.RESOURCE));
+                KnowledgeClass.RESOURCE,
+                false));
 
     return ret;
   }
@@ -1144,7 +1150,8 @@ public class ResourcesProvider extends BaseService
                         project.getUrn(),
                         project.getUrn(),
                         project.getManifest().getVersion(),
-                        KnowledgeClass.PROJECT)));
+                        KnowledgeClass.PROJECT,
+                        false)));
 
     return ret;
   }
@@ -1269,7 +1276,8 @@ public class ResourcesProvider extends BaseService
                   model.getName(),
                   model.getProjectUrn(),
                   model.getVersion(),
-                  KnowledgeClass.MODEL));
+                  KnowledgeClass.MODEL,
+                  false));
     }
 
     addDependencies(results, scope);
@@ -1495,7 +1503,8 @@ public class ResourcesProvider extends BaseService
                       urn,
                       namespace.getProjectName(),
                       namespace.getVersion(),
-                      KnowledgeClass.NAMESPACE));
+                      KnowledgeClass.NAMESPACE,
+                      false));
 
         } else {
 
@@ -1518,7 +1527,8 @@ public class ResourcesProvider extends BaseService
                             urn,
                             namespace.getProjectName(),
                             namespace.getVersion(),
-                            KlabAsset.classify(statement)));
+                            KlabAsset.classify(statement),
+                            false));
                 break;
               }
             }
@@ -1531,7 +1541,7 @@ public class ResourcesProvider extends BaseService
           ret.getResults()
               .add(
                   new ResourceSet.Resource(
-                      serviceId(), urn, null, null, KnowledgeClass.OBSERVABLE));
+                      serviceId(), urn, null, null, KnowledgeClass.OBSERVABLE, false));
         }
       }
       case REMOTE_URL -> {

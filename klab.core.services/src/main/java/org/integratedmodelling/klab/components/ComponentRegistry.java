@@ -136,7 +136,8 @@ public class ComponentRegistry {
         }
       }
     } else {
-      throw new KlabServiceAccessException("The service capabilities are not available. Is the service online?");
+      throw new KlabServiceAccessException(
+          "The service capabilities are not available. Is the service online?");
     }
   }
 
@@ -352,7 +353,8 @@ public class ComponentRegistry {
               pluginId,
               null,
               Version.create(plugin.getDescriptor().getVersion()),
-              KlabAsset.KnowledgeClass.COMPONENT);
+              KlabAsset.KnowledgeClass.COMPONENT,
+              false);
 
       Plugin component = plugin.getPlugin();
       if (component instanceof KlabComponent comp) {
@@ -457,7 +459,9 @@ public class ComponentRegistry {
             Actor.class,
             (annotation, cls) -> registerActor((Actor) annotation, cls, actors),
             ResourceAdapter.class,
-            (annotation, cls) -> registerAdapter((ResourceAdapter) annotation, cls, adapters)));
+            (annotation, cls) ->
+                registerAdapter(
+                    (ResourceAdapter) annotation, cls, componentName, componentVersion, adapters)));
 
     var componentDescriptor =
         new Extensions.ComponentDescriptor(
@@ -849,14 +853,18 @@ public class ComponentRegistry {
   }
 
   private void registerAdapter(
-      ResourceAdapter annotation, Class<?> cls, List<AdapterDescriptor> adapters) {
+      ResourceAdapter annotation,
+      Class<?> cls,
+      String componentUrn,
+      Version componentVersion,
+      List<AdapterDescriptor> adapters) {
 
     /** Do not load adapters that aren't embeddable unless we are a resources service. */
     if (this.service.serviceType() != KlabService.Type.RESOURCES && !annotation.embeddable()) {
       return;
     }
     try {
-      var adapter = new AdapterImpl(cls, annotation);
+      var adapter = new AdapterImpl(cls, annotation, componentUrn, componentVersion);
       if (adapter.initialize()) {
         this.adapters.put(adapter.getName(), adapter);
         this.adapterDescriptorFinder.put(adapter.getName(), adapter.getAdapterInfo());
@@ -1230,7 +1238,13 @@ public class ComponentRegistry {
             Library.class,
             (annotation, cls) -> registerLibrary((Library) annotation, cls, libraries),
             ResourceAdapter.class,
-            (annotation, cls) -> registerAdapter((ResourceAdapter) annotation, cls, adapters)));
+            (annotation, cls) ->
+                registerAdapter(
+                    (ResourceAdapter) annotation,
+                    cls,
+                    LOCAL_SERVICE_COMPONENT,
+                    Version.CURRENT_VERSION,
+                    adapters)));
 
     localComponentDescriptor.libraries().addAll(libraries);
     localComponentDescriptor.adapters().addAll(adapters);
@@ -1334,13 +1348,23 @@ public class ComponentRegistry {
     private Extensions.FunctionDescriptor publisher;
     private List<Adapter.Parameter> parameters = new ArrayList<>();
     private final AdapterDescriptor adapterInfo;
+    private String componentUrn;
+    private Version componentVersion;
 
-    public AdapterImpl(Class<?> implementationClass, ResourceAdapter annotation) {
+    public AdapterImpl(
+        Class<?> implementationClass,
+        ResourceAdapter annotation,
+        String componentUrn,
+        Version componentVersion) {
+
       this.name = annotation.name();
       this.version = Version.create(annotation.version());
       this.universal = annotation.universal();
       this.threadSafe = annotation.threadSafe();
       this.embeddable = annotation.embeddable();
+      this.componentUrn = componentUrn;
+      this.componentVersion = componentVersion;
+
       if (annotation.type() != Artifact.Type.VOID) {
         this.resourceType.add(annotation.type());
       }
@@ -1381,6 +1405,11 @@ public class ComponentRegistry {
     @Override
     public Version getVersion() {
       return this.version;
+    }
+
+    @Override
+    public Version getComponentVersion() {
+      return this.componentVersion;
     }
 
     @Override
@@ -1442,6 +1471,11 @@ public class ComponentRegistry {
     @Override
     public List<Parameter> getParameters() {
       return this.parameters;
+    }
+
+    @Override
+    public String getComponentUrn() {
+      return this.componentUrn;
     }
 
     public boolean initialize() {

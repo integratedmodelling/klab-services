@@ -185,7 +185,8 @@ public class ResourceManager {
               sanitizedUrn,
               resource.getLocalProjectName(),
               resource.getVersion(),
-              KlabAsset.KnowledgeClass.RESOURCE);
+              KlabAsset.KnowledgeClass.RESOURCE,
+              false);
 
       ret.getResources().add(resourceSetResource);
 

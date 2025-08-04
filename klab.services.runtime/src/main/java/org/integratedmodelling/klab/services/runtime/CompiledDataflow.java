@@ -369,9 +369,10 @@ public class CompiledDataflow {
               final Resource finalResource = resource;
 
               /*
-              1. check if we have the adapter locally. If so we can use it directly.
-              This may return a non-embeddable adapter, because the component may have embeddable assets such
-              as contextualizers, so we check later.
+              1. check if we have the adapter locally. If so we can use it directly. If the adapter was
+              embeddable, the resolver will have called RuntimeService::resolveContextualizable with the
+              adapter's requirement, so if we don't have it by now, we should use the remote version
+              anyway.
                */
               var adapter =
                   componentRegistry.getAdapter(
@@ -431,8 +432,6 @@ public class CompiledDataflow {
                       "Service providing the resource does not provide the adapter: "
                           + resource.getUrn());
                 }
-
-                // TODO here: if embeddable, retrieve it and use that. Otherwise as below.
 
                 // TODO validate type chain
                 if (adapterInfo.isContextualizing()) {

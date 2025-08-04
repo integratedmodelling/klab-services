@@ -91,6 +91,22 @@ public interface Adapter {
   List<Parameter> getParameters();
 
   /**
+   * The URN of the component that provides the adapter. Should never be null, even for preloaded,
+   * hard-coded adapters.
+   *
+   * @return
+   */
+  String getComponentUrn();
+
+  /**
+   * The version of the component that provides the adapter. Never null; if hard-coded, must be
+   * {@link Version#CURRENT_VERSION}.
+   *
+   * @return
+   */
+  Version getComponentVersion();
+
+  /**
    * Version. Cannot be null. Multiple versions of the same adapter may coexist in a service.
    *
    * @return

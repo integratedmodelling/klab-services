@@ -73,6 +73,7 @@ public class ResourceSet implements Serializable {
     private String projectUrn;
     private RepositoryState repositoryState;
     private String accessKey;
+    private Boolean optional;
 
     public Resource() {}
 
@@ -81,13 +82,15 @@ public class ResourceSet implements Serializable {
         String resourceUrn,
         String projectUrn,
         Version resourceVersion,
-        KnowledgeClass knowledgeClass) {
+        KnowledgeClass knowledgeClass,
+        boolean optional) {
       super();
       this.serviceId = serviceId;
       this.resourceUrn = resourceUrn;
       this.resourceVersion = resourceVersion;
       this.knowledgeClass = knowledgeClass;
       this.projectUrn = projectUrn;
+      this.optional = optional;
     }
 
     /**
@@ -133,6 +136,14 @@ public class ResourceSet implements Serializable {
 
     public void setOperation(CRUDOperation operation) {
       this.operation = operation;
+    }
+
+    public Boolean getOptional() {
+      return optional;
+    }
+
+    public void setOptional(Boolean optional) {
+      this.optional = optional;
     }
 
     public Metadata getMetadata() {

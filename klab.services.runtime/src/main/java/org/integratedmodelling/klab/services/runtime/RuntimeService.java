@@ -609,6 +609,7 @@ public class RuntimeService extends BaseService
           return resolution;
         }
 
+
         if (!ingestResources(resolution, scope)) {
           return ResourceSet.empty(
               Notification.error(

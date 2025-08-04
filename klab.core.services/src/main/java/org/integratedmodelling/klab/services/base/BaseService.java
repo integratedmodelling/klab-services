@@ -436,6 +436,7 @@ public abstract class BaseService implements KlabService {
    */
   protected synchronized <T extends KlabAsset> List<T> ingestResources(
       ResourceSet resourceSet, Scope scope, Class<T> resultClass) {
+
     List<T> ret = new ArrayList<>();
     for (var doc : KnowledgeRepository.INSTANCE.ingest(resourceSet, scope, Knowledge.class)) {
       if (resultClass.isAssignableFrom(doc.getClass())) {
