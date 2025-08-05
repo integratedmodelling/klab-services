@@ -5,6 +5,7 @@ import java.util.regex.Pattern;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 
@@ -47,7 +48,7 @@ public class UrnManager {
       return createUrn(resource, service.getServiceName(), isUniqueChecker);
     } else {
       // Sanitize the existing URN
-      return sanitizeUrn(resource, currentUrn, isUniqueChecker);
+      return sanitizeUrn(resource, currentUrn, service, isUniqueChecker);
     }
   }
 
@@ -61,15 +62,12 @@ public class UrnManager {
    */
   private String createUrn(
       Resource resource, String serviceName, Function<String, Boolean> isUniqueChecker) {
+
     // Sanitize the service name
     String sanitizedServiceName = sanitizeComponent(serviceName);
 
-    // Use the resource's adapter type as the catalog, or "default" if not available
-    String catalog = resource.getAdapterType();
-    if (catalog == null || catalog.isEmpty()) {
-      catalog = "default";
-    }
-    String sanitizedCatalog = sanitizeComponent(catalog);
+    // A new resource's catalog is always "staging"
+    String catalog = "staging";
 
     // Use the resource's project name as the namespace, or "default" if not available
     String namespace = resource.getLocalProjectName();
@@ -89,7 +87,7 @@ public class UrnManager {
     String urn =
         String.format(
             "%s:%s:%s:%s",
-            sanitizedServiceName, sanitizedCatalog, sanitizedNamespace, sanitizedResourceName);
+            sanitizedServiceName, catalog, sanitizedNamespace, sanitizedResourceName);
 
     // Ensure the URN is unique
     return ensureUniqueUrn(urn, isUniqueChecker);
@@ -104,7 +102,10 @@ public class UrnManager {
    * @return A sanitized URN string
    */
   private String sanitizeUrn(
-      Resource resource, String currentUrn, Function<String, Boolean> isUniqueChecker) {
+      Resource resource,
+      String currentUrn,
+      KlabService service,
+      Function<String, Boolean> isUniqueChecker) {
     // Parse the current URN
     String[] components = currentUrn.split(":");
 
@@ -114,9 +115,13 @@ public class UrnManager {
       return createUrn(resource, "klab", isUniqueChecker);
     }
 
+    // this is for backwards compatibility
+    boolean isStaging = "local".equals(components[0]);
+
     // Sanitize each component
-    String sanitizedServiceName = sanitizeComponent(components[0]);
-    String sanitizedCatalog = sanitizeComponent(components[1]);
+    String sanitizedServiceName =
+        isStaging ? service.serviceName() : sanitizeComponent(components[0]);
+    String sanitizedCatalog = isStaging ? "staging" : sanitizeComponent(components[1]);
     String sanitizedNamespace = sanitizeComponent(components[2]);
     String sanitizedResourceName = sanitizeComponent(components[3]);
 
@@ -144,6 +149,7 @@ public class UrnManager {
    * @return A sanitized component
    */
   private String sanitizeComponent(String component) {
+
     if (component == null || component.isEmpty()) {
       return "default";
     }

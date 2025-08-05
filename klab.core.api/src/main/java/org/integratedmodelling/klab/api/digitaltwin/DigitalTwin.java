@@ -465,6 +465,18 @@ public interface DigitalTwin extends RuntimeAsset {
         if (spaceDefinition.containsKey("grid")) {
           spaceBuilder.resolution(spaceDefinition.get("grid").toString());
         }
+        if (spaceDefinition.containsKey("projection")) {
+          spaceBuilder.projection(spaceDefinition.get("projection").toString());
+        } else if (spaceDefinition.containsKey("crs")) {
+          spaceBuilder.projection(spaceDefinition.get("crs").toString());
+        } else if (spaceDefinition.containsKey("shape")
+            && spaceDefinition.get("shape").toString().contains(" ")) {
+          var split = spaceDefinition.get("shape").toString().split(" ");
+          spaceBuilder.projection(split[0]);
+        } else {
+          // TODO last resort; should warn or use configured value for default projection
+          spaceBuilder.projection("EPSG:4326");
+        }
         // TODO add bounding box etc
       }
       geometryBuilder = spaceBuilder.build();

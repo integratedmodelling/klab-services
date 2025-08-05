@@ -418,6 +418,8 @@ public interface Resource extends Knowledge, Resolvable {
    * resources it must be null.
    *
    * @return project name
+   * @deprecated resources are no longer hosted in projects. This can become a suggested catalog for
+   *     new submissions.
    */
   String getLocalProjectName();
 

@@ -618,6 +618,8 @@ public class ResourcesProvider extends BaseService
         observation.getObservable().getStatedName() == null
             ? observation.getObservable().getUrn()
             : observation.getObservable().getStatedName();
+
+    // FIXME must use a service-side builder that fills in an Instance without using the DT
     var builder = Data.builder(name, observation.getObservable(), observation.getGeometry());
     Urn urn = Urn.of(resource.getUrn());
 
