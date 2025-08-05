@@ -192,7 +192,7 @@ public class RuntimeService extends BaseService
   public Capabilities capabilities(Scope scope) {
 
     var ret = new RuntimeCapabilitiesImpl();
-    ret.setLocalName(localName);
+    ret.setServiceName(serviceName);
     ret.setType(Type.RUNTIME);
     ret.setUrl(getUrl());
     ret.setServerId(hardwareSignature == null ? null : ("RUNTIME_" + hardwareSignature));

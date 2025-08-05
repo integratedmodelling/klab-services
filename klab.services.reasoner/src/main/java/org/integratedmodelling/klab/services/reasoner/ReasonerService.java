@@ -1242,7 +1242,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var ret = new ReasonerCapabilitiesImpl();
 
     ret.setWorldviewId(worldview == null ? null : worldview.getWorldviewId());
-    ret.setLocalName(localName);
+    ret.setServiceName(serviceName);
     ret.setType(Type.REASONER);
     ret.setUrl(getUrl());
     ret.setServerId(hardwareSignature == null ? null : ("REASONER_" + hardwareSignature));
@@ -1568,10 +1568,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     return changes;
-  }
-
-  public void setLocalName(String localName) {
-    this.localName = localName;
   }
 
   @Override

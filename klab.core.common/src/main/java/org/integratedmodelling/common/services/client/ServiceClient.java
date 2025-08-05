@@ -346,8 +346,8 @@ public abstract class ServiceClient implements KlabService {
   }
 
   @Override
-  public final String getLocalName() {
-    return this.capabilities == null ? null : this.capabilities.getLocalName();
+  public final String serviceName() {
+    return this.capabilities == null ? null : this.capabilities.getServiceName();
   }
 
   @Override

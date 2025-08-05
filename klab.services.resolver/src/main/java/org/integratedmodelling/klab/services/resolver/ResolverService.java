@@ -136,7 +136,7 @@ public class ResolverService extends BaseService implements Resolver {
   public Capabilities capabilities(Scope scope) {
 
     var ret = new ResolverCapabilitiesImpl();
-    ret.setLocalName(localName);
+    ret.setServiceName(serviceName);
     ret.setType(Type.RESOLVER);
     ret.setUrl(getUrl());
     ret.setServerId(hardwareSignature == null ? null : ("RESOLVER_" + hardwareSignature));
@@ -207,7 +207,6 @@ public class ResolverService extends BaseService implements Resolver {
         statement.getMetadata()); // FIXME add processed metadata with the existing symbol table
     model.setNamespace(statement.getNamespace());
     model.setProjectName(statement.getProjectName());
-
 
     // TODO any literal value must be added first
     // TODO use static builders for Contextualizable instead of polymorphic constructors

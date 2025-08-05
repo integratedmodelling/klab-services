@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -210,9 +211,8 @@ public abstract class ServiceInstance<T extends BaseService> {
    * @return
    */
   protected Pair<Identity, List<ServiceReference>> authenticateService() {
-    return Authentication.INSTANCE.authenticate(SettingsImpl.forService(serviceType()));
-    // TODO if the service is authenticated through a user certificate, it must take the name of
-    //  the user!
+    var ret = Authentication.INSTANCE.authenticate(SettingsImpl.forService(serviceType()));
+    return ret;
   }
 
   /**
@@ -227,13 +227,13 @@ public abstract class ServiceInstance<T extends BaseService> {
     AtomicReference<String> token = new AtomicReference<>();
     URL hubUrl = null;
     if (identity.getFirst() instanceof PartnerIdentity) {
-      PartnerIdentity pi = (PartnerIdentity)identity.getFirst();
+      PartnerIdentity pi = (PartnerIdentity) identity.getFirst();
       token.set(pi.getToken());
-        try {
-            hubUrl = new URI(pi.getAuthenticatingHub()).toURL();
-        } catch (MalformedURLException | URISyntaxException e) {
-            throw new KlabIllegalArgumentException(e);
-        }
+      try {
+        hubUrl = new URI(pi.getAuthenticatingHub()).toURL();
+      } catch (MalformedURLException | URISyntaxException e) {
+        throw new KlabIllegalArgumentException(e);
+      }
     }
     // local services (user-level certificate) only see other local services
     boolean iAmLocal = !this.identity.getFirst().is(Identity.Type.SERVICE);
@@ -244,8 +244,9 @@ public abstract class ServiceInstance<T extends BaseService> {
             ReasonerClient reasoner =
                 new ReasonerClient(
                     s.getUrls().getFirst(),
-                    new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
-                        SettingsImpl.forService(serviceType()));
+                    new ServiceIdentityImpl(
+                        s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
+                    SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
                 .add(reasoner);
@@ -254,8 +255,9 @@ public abstract class ServiceInstance<T extends BaseService> {
             RuntimeClient runtime =
                 new RuntimeClient(
                     s.getUrls().getFirst(),
-                    new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
-                        SettingsImpl.forService(serviceType()));
+                    new ServiceIdentityImpl(
+                        s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
+                    SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
                 .add(runtime);
@@ -264,8 +266,9 @@ public abstract class ServiceInstance<T extends BaseService> {
             ResourcesClient resources =
                 new ResourcesClient(
                     s.getUrls().getFirst(),
-                    new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
-                        SettingsImpl.forService(serviceType()));
+                    new ServiceIdentityImpl(
+                        s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
+                    SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
                 .add(resources);
@@ -274,8 +277,9 @@ public abstract class ServiceInstance<T extends BaseService> {
             ResolverClient resolver =
                 new ResolverClient(
                     s.getUrls().getFirst(),
-                    new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
-                        SettingsImpl.forService(serviceType()));
+                    new ServiceIdentityImpl(
+                        s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
+                    SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
                 .add(resolver);
@@ -338,6 +342,7 @@ public abstract class ServiceInstance<T extends BaseService> {
     setEnvironment(options);
     this.serviceScope = createServiceScope();
     this.service = createPrimaryService(serviceScope, options);
+    this.service.setIdentity(identity.getFirst());
     this.currentServices
         .computeIfAbsent(KlabService.Type.classify(this.service), k -> new LinkedHashSet<>())
         .add(this.service);

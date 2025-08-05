@@ -915,6 +915,7 @@ public class ResourcesProvider extends BaseService
     ret.setWorldviewProvider(workspaceManager.isWorldviewProvider());
     ret.setAdoptedWorldview(workspaceManager.getAdoptedWorldview());
     ret.setWorkspaceNames(workspaceManager.getWorkspaceURNs());
+    ret.setServiceName(serviceName);
     ret.setType(Type.RESOURCES);
     ret.setUrl(getUrl());
     ret.setServiceName("Resources");

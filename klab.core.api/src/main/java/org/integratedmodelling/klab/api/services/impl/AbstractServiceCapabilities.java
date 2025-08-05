@@ -11,7 +11,6 @@ import java.util.*;
 
 public abstract class AbstractServiceCapabilities implements KlabService.ServiceCapabilities {
 
-  private String localName;
   private String serviceName;
   private String serviceId;
   private String serverId;
@@ -21,11 +20,6 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
   private Map<String, List<ResourceTransport.Schema>> importSchemata = new HashMap<>();
   private Map<String, List<ResourceTransport.Schema>> exportSchemata = new HashMap<>();
   private List<Extensions.ComponentDescriptor> components = new ArrayList<>();
-
-  @Override
-  public String getLocalName() {
-    return this.localName;
-  }
 
   @Override
   public String getServiceName() {
@@ -45,10 +39,6 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
   @Override
   public URL getUrl() {
     return this.url;
-  }
-
-  public void setLocalName(String localName) {
-    this.localName = localName;
   }
 
   public void setServiceName(String serviceName) {

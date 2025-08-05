@@ -448,7 +448,7 @@ public abstract class ObservableKbox extends H2Kbox {
 
   public ObservableKbox(ResourcesService service) {
 
-    super(service.getLocalName());
+    super(service.serviceName());
 
     this.scope = service.serviceScope();
     //        this.reasoner = scope.getService(Reasoner.class);

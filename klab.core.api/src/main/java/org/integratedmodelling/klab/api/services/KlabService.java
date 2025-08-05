@@ -223,8 +223,6 @@ public interface KlabService extends Service {
 
     Type getType();
 
-    String getLocalName();
-
     String getServiceName();
 
     /**
@@ -287,14 +285,14 @@ public interface KlabService extends Service {
   URL getUrl();
 
   /**
-   * Local name should be unique among services even of the same type. It should reflect the local
-   * node and always appear in REST calls as the requesting entity, so that federated calls coming
-   * from the same service in a ping-pong chain of calls can be filtered out and avoid infinite call
-   * chains.
+   * Service name should be unique within a cluster, with the pattern <code><partnerId.serviceName
+   * </code> for public services, and with the username of the running user for local ones.
+   * Uniqueness is important and should be enforced, but for critical operations the {@link
+   * #serviceId()} must always be used.
    *
    * @return
    */
-  String getLocalName();
+  String serviceName();
 
   /**
    * The service ID is an ugly, unique string that uniquely identifies a server instance. Any

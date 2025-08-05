@@ -33,6 +33,9 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.PartnerIdentity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -66,7 +69,7 @@ public abstract class BaseService implements KlabService {
   protected AtomicBoolean available = new AtomicBoolean(false);
   private final List<Notification> serviceNotifications = new ArrayList<>();
   protected AbstractServiceDelegatingScope scope;
-  protected String localName = "Embedded";
+  protected String serviceName = "Unassigned";
   protected final ServiceStartupOptions startupOptions;
   private ScopeManager _scopeManager;
   private boolean initialized;
@@ -79,6 +82,7 @@ public abstract class BaseService implements KlabService {
   protected Settings settings;
   protected Settings settingsForSlaveServices;
   private StampedLock lockFile;
+  private Identity identity;
 
   protected BaseService(
       AbstractServiceDelegatingScope scope,
@@ -276,9 +280,9 @@ public abstract class BaseService implements KlabService {
     return this.serviceNotifications;
   }
 
-  public String getLocalName() {
+  public String serviceName() {
     // TODO Auto-generated method stub
-    return localName;
+    return serviceName;
   }
 
   @Override
@@ -510,5 +514,19 @@ public abstract class BaseService implements KlabService {
     var file = getFileInConfigurationDirectory(startupOptions(), serviceId + ".lock");
     Utils.Files.touch(file);
     file.deleteOnExit();
+  }
+
+  public void setServiceName(String username) {
+    this.serviceName = username;
+  }
+
+  public void setIdentity(Identity identity) {
+    this.identity = identity;
+    this.serviceName =
+        switch (identity) {
+          case UserIdentity user -> user.getUsername();
+          case PartnerIdentity partner -> partner.getId();
+          default -> throw new KlabIllegalStateException("Unknown identity type: " + identity);
+        };
   }
 }

@@ -38,8 +38,7 @@ public class KlabAdminController {
    */
   @PutMapping(ServicesAPI.ADMIN.SHUTDOWN)
   public boolean shutdown() {
-    Logging.INSTANCE.info(
-        "Shutting down service instance " + instance.klabService().getLocalName());
+    Logging.INSTANCE.info("Shutting down service instance " + instance.klabService().serviceName());
     instance.shutdown();
     return true;
   }
@@ -129,5 +128,4 @@ public class KlabAdminController {
   public @ResponseBody Map<String, Object> getSettings(Principal principal) {
     return Map.of();
   }
-
 }
