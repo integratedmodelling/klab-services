@@ -390,7 +390,8 @@ public class CompiledDataflow {
 
                 // enqueue data extraction from adapter method
                 final var contextualizer =
-                    new ServiceResourceContextualizer(adapter, resource, observation);
+                    new ServiceResourceContextualizer(
+                        adapter, resource, observation, scope.getDigitalTwin());
                 executors.add(
                     (geometry, event, scope) ->
                         contextualizer.contextualize(

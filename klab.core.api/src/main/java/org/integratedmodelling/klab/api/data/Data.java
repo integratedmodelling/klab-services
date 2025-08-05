@@ -227,49 +227,21 @@ public interface Data {
     Builder object(String name, Observable observable, Geometry geometry);
 
     /**
-     * Shorthand for buffers(.., storage.getFillingCurve()).getFirst() when the fill curve
-     * doesnt'matter and there is only one buffer because it's been forced to.
-     *
-     * @param fillerClass the class of buffer to create
-     * @return a single buffer of the specified type
-     * @param <T> the type of buffer
-     */
-    <T extends Storage.Buffer> T buffer(Class<T> fillerClass);
-
-    /**
-     * Shorthand for buffers(..).getFirst() when we know that there will be only one buffer due to
-     * contextualizer configuration (split=1).
+     * Create a buffer of the specified type using the specified space filling curve. Must be called
+     * on the result of state() or an exception will be thrown. When constructing a state, only one
+     * buffer is requested for the full observation; if the data are produced in parallel, the
+     * buffer implementation must allow concurrent setting. At the resource side, the parallelism is
+     * usually handled by making multiple requests in parallel rather than splitting one into
+     * multiple buffers.
      *
      * @param fillerClass the class of buffer to create
      * @param spaceFillingCurve the space filling curve to use
      * @return a single buffer of the specified type using the specified space filling curve
      * @param <T> the type of buffer
+     * @throws KlabIllegalStateException if called on an object builder or if the filling curve
+     *     cannot be matched to the geometry.
      */
     <T extends Storage.Buffer> T buffer(Class<T> fillerClass, SpaceFillingCurve spaceFillingCurve);
-
-    /**
-     * Shorthand for getting a set of parallel buffers with the filling curve mandated by the
-     * modeler, configuration or implementation.
-     *
-     * @param fillerClass the class of buffer to create
-     * @return a list of buffers of the specified type
-     * @param <T> the type of buffer
-     */
-    <T extends Storage.Buffer> List<T> buffers(Class<T> fillerClass);
-
-    /**
-     * Return buffers for the quality data object being built, in number depending on settings on
-     * models, observables or contextualizer. Will throw an exception if the observable is not a
-     * quality and the class is not compatible with the observable's {@link
-     * org.integratedmodelling.klab.api.knowledge.DescriptionType}.
-     *
-     * @param fillerClass the class of buffer to create
-     * @param spaceFillingCurve the space filling curve to use
-     * @return a list of buffers of the specified type using the specified space filling curve
-     * @param <T> the type of buffer
-     */
-    <T extends Storage.Buffer> List<T> buffers(
-        Class<T> fillerClass, SpaceFillingCurve spaceFillingCurve);
 
     /**
      * Must be called on any secondary builders. Should NOT be called on the root builder, passed to

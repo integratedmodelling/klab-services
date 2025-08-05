@@ -78,28 +78,28 @@ public class DataBuilderImpl implements Data.Builder {
     return new DataBuilderImpl(name, observable, geometry, this.builder);
   }
 
-  @Override
-  public <T extends Storage.Buffer> T buffer(Class<T> fillerClass) {
-    // TODO
-    return null;
-  }
+  //  @Override
+  //  public <T extends Storage.Buffer> T buffer(Class<T> fillerClass) {
+  //    // TODO
+  //    return null;
+  //  }
 
   @Override
   public <T extends Storage.Buffer> T buffer(
       Class<T> fillerClass, Data.SpaceFillingCurve spaceFillingCurve) {
-    return buffers(fillerClass, spaceFillingCurve).getFirst();
+    return null;
   }
 
-  @Override
-  public <T extends Storage.Buffer> List<T> buffers(Class<T> fillerClass) {
-    return List.of();
-  }
-
-  @Override
-  public <T extends Storage.Buffer> List<T> buffers(
-      Class<T> fillerClass, Data.SpaceFillingCurve spaceFillingCurve) {
-    return List.of();
-  }
+  //  @Override
+  //  public <T extends Storage.Buffer> List<T> buffers(Class<T> fillerClass) {
+  //    return List.of();
+  //  }
+  //
+  //  @Override
+  //  public <T extends Storage.Buffer> List<T> buffers(
+  //      Class<T> fillerClass, Data.SpaceFillingCurve spaceFillingCurve) {
+  //    return List.of();
+  //  }
 
   //  @Override
   //  public <T extends Data.Filler> T filler(Class<T> fillerClass, Data.SpaceFillingCurve curve) {
