@@ -918,7 +918,6 @@ public class ResourcesProvider extends BaseService
     ret.setServiceName(serviceName);
     ret.setType(Type.RESOURCES);
     ret.setUrl(getUrl());
-    ret.setServiceName("Resources");
     ret.setServerId(hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature));
     ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
     ret.getServiceNotifications().addAll(serviceNotifications());

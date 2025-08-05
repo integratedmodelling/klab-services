@@ -1247,24 +1247,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ret.setUrl(getUrl());
     ret.setServerId(hardwareSignature == null ? null : ("REASONER_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
-    ret.setServiceName("Reasoner");
-    //    ret.setBrokerURI(
-    //        (embeddedBroker != null && embeddedBroker.isOnline())
-    //            ? embeddedBroker.getURI()
-    //            : configuration.getBrokerURI());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
     ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
     ret.setConsistent(this.consistent.get());
-
-    //    ret.setAvailableMessagingQueues(
-    //        Utils.URLs.isLocalHost(getUrl())
-    //            ? EnumSet.of(
-    //                Message.Queue.Info,
-    //                Message.Queue.Errors,
-    //                Message.Queue.Warnings,
-    //                Message.Queue.Events)
-    //            : EnumSet.noneOf(Message.Queue.class));
     return ret;
   }
 

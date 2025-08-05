@@ -141,19 +141,9 @@ public class ResolverService extends BaseService implements Resolver {
     ret.setUrl(getUrl());
     ret.setServerId(hardwareSignature == null ? null : ("RESOLVER_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
-    ret.setServiceName("Resolver");
-    //    ret.setBrokerURI(
-    //        (embeddedBroker != null && embeddedBroker.isOnline())
-    //            ? embeddedBroker.getURI()
-    //            : configuration.getBrokerURI());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
     ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
-
-    //    ret.setAvailableMessagingQueues(
-    //        Utils.URLs.isLocalHost(getUrl())
-    //            ? EnumSet.of(Message.Queue.Info, Message.Queue.Errors, Message.Queue.Warnings)
-    //            : EnumSet.noneOf(Message.Queue.class));
     return ret;
   }
 

@@ -197,7 +197,6 @@ public class RuntimeService extends BaseService
     ret.setUrl(getUrl());
     ret.setServerId(hardwareSignature == null ? null : ("RUNTIME_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
-    ret.setServiceName("Runtime");
 
     // TODO this enables creating DTs from the passed scope
     ret.getPermissions()
@@ -608,7 +607,6 @@ public class RuntimeService extends BaseService
         if (resolution.isEmpty()) {
           return resolution;
         }
-
 
         if (!ingestResources(resolution, scope)) {
           return ResourceSet.empty(
