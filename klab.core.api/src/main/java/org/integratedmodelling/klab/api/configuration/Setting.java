@@ -83,6 +83,16 @@ public enum Setting {
       "Maximum memory for the local runtime in MB",
       Integer.class,
       Product.ProductType.RUNTIME_SERVICE.defaultMaxMemoryLimitMB()),
+  REINITIALIZE_DATABASE(
+      Page.RUNTIME,
+      "Remove all digital twins and re-initialize the knowledge graph",
+      Map.class,
+      Map.of("result", Boolean.class)),
+  CLEAR_RUNTIME_COMPONENTS(
+      Page.RUNTIME,
+      "Execute to remove one or more components from the service",
+      Map.class,
+      Map.of("component", String.class, "result", Boolean.class)),
   MAX_RESOURCES_SERVICE_MEMORY(
       Page.RESOURCES,
       "Maximum memory for the local resources service in MB",
