@@ -485,7 +485,6 @@ public class ResourcesProviderController {
    * field.
    *
    * @param requestStream
-   * @param response
    * @param principal
    */
   @PostMapping(

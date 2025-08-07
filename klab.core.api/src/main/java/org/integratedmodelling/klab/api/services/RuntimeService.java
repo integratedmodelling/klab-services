@@ -106,9 +106,9 @@ public interface RuntimeService extends KlabService {
     }
   }
 
-  default String getServiceName() {
-    return "klab.runtime.service";
-  }
+  //  default String getServiceName() {
+  //    return "klab.runtime.service";
+  //  }
 
   /**
    * Submit an unresolved observation to the digital twin for inclusion in the knowledge graph in

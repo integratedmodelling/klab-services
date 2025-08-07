@@ -579,7 +579,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
         } else if (status.getStatus() == Scope.Status.FINISHED) {
           try {
-            var isData = org.integratedmodelling.klab.api.data.Data.class.isAssignableFrom(resultClass);
+            var isData =
+                org.integratedmodelling.klab.api.data.Data.class.isAssignableFrom(resultClass);
             var result =
                 isData
                     ? client.getData(ServicesAPI.JOBS.RETRIEVE_DATA, resultClass, "id", id)
@@ -698,7 +699,15 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         } catch (Throwable e) {
           if (scope != null) {
+            System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
+            System.out.println(
+                "Server error: response is not parseable as error: "
+                    + apiCall
+                    + ": "
+                    + e.getMessage());
+            System.out.println("============ END OF REPORT  ==============");
             scope.error(e);
+            return CompletableFuture.failedFuture(new KlabServiceAccessException(e));
           }
         }
 
@@ -2136,8 +2145,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     }
   }
 
-  public static class Strings extends org.integratedmodelling.klab.api.utils.Utils.Strings {
-  }
+  public static class Strings extends org.integratedmodelling.klab.api.utils.Utils.Strings {}
 
   public static class YAML {
 

@@ -137,8 +137,8 @@ public enum Klab {
 
     Model.Builder getModelLearner(String outputResourceUrn);
 
-    Data.Builder getDataBuilder(String name, Observable observable, Geometry geometry);
-
+//    Data.Builder getDataBuilder(String name, Observable observable, Geometry geometry);
+//
     //        Data.Builder getDataBuilderObsolete();
     //
     //        Data.Builder getDataBuilderObsolete(String name, Geometry geometry);

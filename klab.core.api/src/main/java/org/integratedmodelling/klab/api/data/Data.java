@@ -356,14 +356,14 @@ public interface Data {
    */
   boolean hasStates();
 
-  static Data.Builder builder(String name, Observable observable, Geometry geometry) {
-    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
-    if (configuration == null) {
-      throw new KlabIllegalStateException(
-          "k.LAB environment not configured to create a data builder");
-    }
-    return configuration.getDataBuilder(name, observable, geometry);
-  }
+//  static Data.Builder builder(String name, Observable observable, Geometry geometry) {
+//    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+//    if (configuration == null) {
+//      throw new KlabIllegalStateException(
+//          "k.LAB environment not configured to create a data builder");
+//    }
+//    return configuration.getDataBuilder(name, observable, geometry);
+//  }
 
   static Data empty(Notification notification) {
 

@@ -258,7 +258,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
   }
 
   public void shutdown() {
-    Logging.INSTANCE.info(klabService().getServiceName() + " shutting down in 5 seconds...");
+    Logging.INSTANCE.info(klabService().serviceName() + " shutting down in 5 seconds...");
     try (var executor = Executors.newScheduledThreadPool(1)) {
       executor.schedule(
           () -> {

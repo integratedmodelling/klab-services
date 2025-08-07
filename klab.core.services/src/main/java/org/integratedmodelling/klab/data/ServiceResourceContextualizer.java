@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 public class ServiceResourceContextualizer extends AbstractResourceContextualizer {
 
   private final Adapter adapter;
+  private final DigitalTwin digitalTwin;
 
   /**
    * Pass a previously contextualized resource
@@ -29,6 +30,7 @@ public class ServiceResourceContextualizer extends AbstractResourceContextualize
       Adapter adapter, Resource resource, Observation observation, DigitalTwin digitalTwin) {
     super(resource, observation);
     this.adapter = adapter;
+    this.digitalTwin = digitalTwin;
   }
 
   @Override
@@ -40,8 +42,7 @@ public class ServiceResourceContextualizer extends AbstractResourceContextualize
             : observation.getObservable().getStatedName();
 
     // FIXME needs a server-side builder that uses the DT's buffers
-    Data.Builder builder =
-        Data.builder(name, observation.getObservable(), observation.getGeometry());
+    Data.Builder builder = new ContextualizingDataBuilder(name, observation, digitalTwin);
 
     // TODO add observation, observable, urn, input data if the resource requires them, observation
     //  storage and anything the adapter may want.

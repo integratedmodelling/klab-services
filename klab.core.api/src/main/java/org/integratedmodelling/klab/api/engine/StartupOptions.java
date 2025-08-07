@@ -82,7 +82,7 @@ public interface StartupOptions {
    */
   boolean isCloudConfig();
 
-  String getServiceName();
+//  String getServiceName();
 
   /**
    * Return all arguments that weren't parsed as predefined options.

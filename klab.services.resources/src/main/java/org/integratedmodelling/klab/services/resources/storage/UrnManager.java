@@ -45,7 +45,7 @@ public class UrnManager {
 
     if (currentUrn == null || Urn.UNDEFINED_URN.equals(currentUrn)) {
       // Create a new URN from scratch
-      return createUrn(resource, service.getServiceName(), isUniqueChecker);
+      return createUrn(resource, service.serviceName(), isUniqueChecker);
     } else {
       // Sanitize the existing URN
       return sanitizeUrn(resource, currentUrn, service, isUniqueChecker);

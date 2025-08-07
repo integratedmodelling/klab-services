@@ -25,7 +25,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-import org.integratedmodelling.common.data.DataBuilderImpl;
+
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.knowledge.ModelBuilderImpl;
@@ -35,7 +35,6 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
@@ -196,11 +195,11 @@ public enum ServiceConfiguration {
             return new ModelBuilderImpl(outputResourceUrn);
           }
 
-          @Override
-          public Data.Builder getDataBuilder(
-              String name, Observable observable, Geometry geometry) {
-            return new DataBuilderImpl(name, observable, geometry);
-          }
+//          @Override
+//          public Data.Builder getDataBuilder(
+//              String name, Observable observable, Geometry geometry) {
+//            return new DataBuilderImpl(name, observable, geometry);
+//          }
 
           @Override
           public Quantity parseQuantity(String quantityDescription) {

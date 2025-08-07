@@ -104,7 +104,7 @@ public class ServiceAuthorizationManager {
     this.nodeName =
         certificate.getProperty(KlabCertificate.KEY_NODENAME) != null
             ? certificate.getProperty(KlabCertificate.KEY_NODENAME)
-            : options.getServiceName();
+            : /*options.getServiceName()*/ null;
     this.type =
         KlabService.Type.valueOf(certificate.getProperty(KlabCertificate.KEY_CERTIFICATE_TYPE));
     ServiceAuthenticationRequest request = new ServiceAuthenticationRequest(type);

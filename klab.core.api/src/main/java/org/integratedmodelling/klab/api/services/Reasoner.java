@@ -20,9 +20,9 @@ import java.util.Map;
 /** The reasoner service collects all functionalities that use semantics in k.LAB. */
 public interface Reasoner extends KlabService {
 
-  default String getServiceName() {
-    return "klab.reasoner.service";
-  }
+//  default String getServiceName() {
+//    return "klab.reasoner.service";
+//  }
 
   /**
    * All services publish capabilities and have a call to obtain them. Capabilities may depend on

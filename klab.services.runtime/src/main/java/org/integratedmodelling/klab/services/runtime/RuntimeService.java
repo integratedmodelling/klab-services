@@ -611,7 +611,7 @@ public class RuntimeService extends BaseService
         if (!ingestResources(resolution, scope)) {
           return ResourceSet.empty(
               Notification.error(
-                  "Cannot receive resources from " + resourcesService.getServiceName()));
+                  "Cannot receive resources from service " + resourcesService.serviceName()));
         }
         ret = Utils.Resources.merge(ret, resolution);
       }

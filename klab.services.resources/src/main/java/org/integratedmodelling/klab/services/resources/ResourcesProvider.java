@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.data.SerializingDataBuilder;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
@@ -619,8 +620,8 @@ public class ResourcesProvider extends BaseService
             ? observation.getObservable().getUrn()
             : observation.getObservable().getStatedName();
 
-    // FIXME must use a service-side builder that fills in an Instance without using the DT
-    var builder = Data.builder(name, observation.getObservable(), observation.getGeometry());
+    var builder =
+        new SerializingDataBuilder(name, observation.getObservable(), observation.getGeometry());
     Urn urn = Urn.of(resource.getUrn());
 
     if (adapter.encode(
