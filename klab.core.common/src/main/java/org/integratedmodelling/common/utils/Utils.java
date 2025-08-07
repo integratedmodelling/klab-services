@@ -690,11 +690,15 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 -1,
                 3000);
           } else {
-            var log = parseResponse(response.body(), Map.class);
             System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
-            MapUtils.debugPrint(System.out, "Server error", log);
+            //            var log = parseResponse(response.body(), Map.class);
+            //            MapUtils.debugPrint(System.out, "Server error", log);
+            System.out.println(
+                "Server responded " + response.statusCode() + ": " + response.body());
             System.out.println("============ END OF REPORT  ==============");
-            return CompletableFuture.failedFuture(new KlabServiceAccessException(response.body()));
+            return CompletableFuture.failedFuture(
+                new KlabServiceAccessException(
+                    "Error in contextualization: response is " + response.body()));
           }
 
         } catch (Throwable e) {

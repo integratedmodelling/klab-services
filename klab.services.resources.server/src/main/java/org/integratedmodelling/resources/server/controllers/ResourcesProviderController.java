@@ -523,7 +523,7 @@ public class ResourcesProviderController {
             input = BaseDataImpl.create(request.getInputData());
           }
 
-          return serviceUserScope
+          var ret = serviceUserScope
               .getJobManager()
               .submit(
                   resourcesServer
@@ -535,6 +535,8 @@ public class ResourcesProviderController {
                           input,
                           scope),
                   "Resolution of " + observable);
+
+          return ret;
 
         } catch (Throwable t) {
           throw new KlabIOException(t);
