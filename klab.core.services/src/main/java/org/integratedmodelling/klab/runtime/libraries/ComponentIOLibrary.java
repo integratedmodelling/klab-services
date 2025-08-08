@@ -14,11 +14,15 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.utilities.Utils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.file.FileSystems;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Scanner;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 @Library(
     name = "component",
@@ -43,6 +47,74 @@ public class ComponentIOLibrary {
 
     return ResourceSet.empty(Notification.error("Jar import not yet implemented"));
   }
+
+  @Importer(
+          schema = "kar.import",
+          knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,
+          description = "Import a component by directly uploading a kar file",
+          mediaType = "application/java-archive",
+          fileExtensions = {"kar"},
+          properties = {
+          @KlabFunction.Argument(
+            name = "groupId",
+            type = Artifact.Type.TEXT,
+            optional = true,
+            description = "Maven group ID"),
+          @KlabFunction.Argument(
+            name = "artifact",
+            type = Artifact.Type.TEXT,
+            optional = true,
+            description = "Maven artifact ID"),
+          })
+  public static ResourceSet importComponentDirectKar(Parameters<String> properties, File file, BaseService service, Scope scope) {
+
+    // TODO this should load the plug-in, and if successful, copy the kar in the component registry,
+    //  without setting it into the Maven cache at all. This can only be updated by uploading a new
+    //  kar for the same component.
+    if (file == null || !file.exists()) {
+      return ResourceSet.empty(Notification.error("Non existing .kar file."));
+    }
+
+    String artifactId = properties.contains("artifactId") ?
+            properties.get("artifactId", String.class) :
+            file.getName().substring(0, file.getName().indexOf('-'));
+
+    String groupId = "org.integratedmodelling";
+    var componentRegistry = service.getComponentRegistry();
+    if (properties.contains("groupId")) {
+      groupId = properties.get("groupId", String.class);
+    }
+
+    // The path of the file you are looking for
+    String targetFilePath = "META-INF/maven/" + groupId + "/" + artifactId;
+
+    try {
+      ZipFile zipFile = new ZipFile(file.getAbsolutePath());
+      ZipEntry entry = zipFile.getEntry(targetFilePath);
+
+      if (entry == null) {
+        System.err.println("Entry not found: " + targetFilePath);
+        return ResourceSet.empty(Notification.error("Cannot find definition of .kar file."));
+      }
+
+      InputStream inputStream = zipFile.getInputStream(entry);
+      BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+      String line;
+
+      while ((line = reader.readLine()) != null) {
+        System.out.println(line);
+      }
+
+      reader.close();
+      zipFile.close();
+
+    } catch (IOException e) {
+      System.err.println("Exception while reading kar file: " + e.getMessage());
+    }
+
+    return ResourceSet.empty(Notification.error("Kar import not yet implemented"));
+  }
+
 
   /**
    * Maven import also registers the component's rights if the service it's registered with is a
