@@ -112,9 +112,14 @@ public class ComponentIOLibrary {
 
       reader.close();
       zipFile.close();
-
     } catch (IOException e) {
       System.err.println("Exception while reading kar file: " + e.getMessage());
+    }
+
+    var mavenCoordinates = groupId + ":" + artifactId + ":" + version;
+    var result = componentRegistry.installComponent(file, mavenCoordinates);
+    if (result != null) {
+      return result.getSecond();
     }
 
     return ResourceSet.empty(Notification.error("Kar import not yet implemented"));
