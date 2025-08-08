@@ -965,7 +965,7 @@ public class ComponentRegistry {
         File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
         try (var input =
                 service.exportAsset(
-                    result.getResourceUrn(), schemata.getFirst(), mediaType, scope);
+                    result.getResourceUrn(), KlabAsset.KnowledgeClass.COMPONENT, mediaType, scope);
             var output = new FileOutputStream(plugin)) {
           IOUtils.copy(input, output);
           // give the OS time to react - found that often the file is truncated

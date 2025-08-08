@@ -31,6 +31,7 @@ import org.integratedmodelling.common.services.client.engine.ServiceMonitor;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -473,7 +474,23 @@ public abstract class BaseService implements KlabService {
 
   @Override
   public InputStream exportAsset(
-      String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope) {
+      String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope) {
+
+    var schemata =
+        ResourceTransport.INSTANCE.findExportSchemata(
+            knowledgeClass, mediaType, capabilities(scope), scope);
+
+    if (schemata.isEmpty()) {
+      throw new KlabAuthorizationException(
+          "No authorized export schema with media type " + mediaType + " is available");
+    } else if (schemata.size() > 1) {
+      scope.warn(
+          "Ambiguous request: more than one export schema with "
+              + "media type "
+              + mediaType
+              + " is available");
+    }
+    var exportSchema = schemata.getFirst();
     ServiceCall serviceCall =
         ServiceCallImpl.create(exportSchema.getSchemaId(), "MEDIA_TYPE", mediaType);
     serviceCall.getParameters().putUnnamed(urn);

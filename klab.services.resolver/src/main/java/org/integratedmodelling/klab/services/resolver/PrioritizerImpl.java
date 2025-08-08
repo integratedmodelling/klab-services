@@ -6,14 +6,23 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections.BidiMap;
 import org.apache.commons.collections.bidimap.DualHashBidiMap;
 import org.apache.commons.collections4.comparators.ComparatorChain;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.mediation.NumericRange;
+import org.integratedmodelling.klab.api.data.mediation.Unit;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.api.services.resolver.Prioritizer;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
-import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.integratedmodelling.klab.utilities.Utils;
 
 public class PrioritizerImpl implements Prioritizer<Model> {
 
@@ -198,41 +207,42 @@ public class PrioritizerImpl implements Prioritizer<Model> {
       //      case SCALE_COVERAGE -> computeLexicalScope(model);
       //      case SCALE_SPECIFICITY -> computeLexicalScope(model);
       //      case SCALE_COHERENCY -> computeLexicalScope(model);
-      //      case SPACE_COVERAGE -> computeLexicalScope(model);
-      //      case SPACE_SPECIFICITY -> computeLexicalScope(model);
-      //      case SPACE_COHERENCY -> computeLexicalScope(model);
-      //      case TIME_COVERAGE -> computeLexicalScope(model);
-      //      case TIME_SPECIFICITY -> computeLexicalScope(model);
-      //      case TIME_COHERENCY -> computeLexicalScope(model);
+      case SPACE_COVERAGE -> computeSpaceCoverage(model);
+      case SPACE_SPECIFICITY -> computeSpaceSpecificity(model);
+      case SPACE_COHERENCY -> computeSpaceCoherency(model);
+      case TIME_COVERAGE -> computeTimeCoverage(model);
+      case TIME_SPECIFICITY -> computeTimeSpecificity(model);
+      case TIME_COHERENCY -> computeTimeCoherency(model);
       //      case RELIABILITY -> computeLexicalScope(model);
       default -> 0;
     };
   }
 
   //
-  //  private double computeTimeSpecificity(ModelReference model, ResolutionScope context) {
-  //    return computeTemporalCriteria(model, context)[1];
-  //  }
-  //
-  //  private double computeTimeCoverage(ModelReference model, ResolutionScope context) {
-  //    return computeTemporalCriteria(model, context)[0];
-  //  }
-  //
-  //  private double computeTimeCoherency(ModelReference model, ResolutionScope context) {
-  //    return computeTemporalCriteria(model, context)[2];
-  //  }
-  //
-  //  private double computeSpaceSpecificity(ModelReference model, ResolutionScope context) {
-  //    return computeSpatialCriteria(model, context)[1];
-  //  }
-  //
-  //  private double computeSpaceCoverage(ModelReference model, ResolutionScope context) {
-  //    return computeSpatialCriteria(model, context)[0];
-  //  }
-  //
-  //  private double computeSpaceCoherency(ModelReference model, ResolutionScope context) {
-  //    return computeSpatialCriteria(model, context)[2];
-  //  }
+  private double computeTimeSpecificity(Model model) {
+    return computeTemporalCriteria(model)[1];
+  }
+
+  private double computeTimeCoverage(Model model) {
+    return computeTemporalCriteria(model)[0];
+  }
+
+  private double computeTimeCoherency(Model model) {
+    return computeTemporalCriteria(model)[2];
+  }
+
+  private double computeSpaceSpecificity(Model model) {
+    return computeSpatialCriteria(model)[1];
+  }
+
+  private double computeSpaceCoverage(Model model) {
+    return computeSpatialCriteria(model)[0];
+  }
+
+  private double computeSpaceCoherency(Model model) {
+    return computeSpatialCriteria(model)[2];
+  }
+
   //
   //
   //  /*
@@ -355,6 +365,7 @@ public class PrioritizerImpl implements Prioritizer<Model> {
     //
     return ret;
   }
+
   //
   //  /*
   //   * semantic distance. This makes sure that e.g. a matching abstract model is
@@ -487,170 +498,180 @@ public class PrioritizerImpl implements Prioritizer<Model> {
   //    return asText();
   //  }
   //
-  //  private double[] computeSpatialCriteria(ModelReference model, ResolutionScope context) {
-  //    double[] ret = new double[] { -1, -1, -1 };
-  //    if (model.getShape() != null) {
-  //      /*
-  //       * compute intersection if we're spatial
-  //       */
-  //      ISpace space = context.getCoverage().getSpace();
-  //      if (space != null) {
-  //        Geometry cspace = ((Shape) space.getShape()).getStandardizedGeometry();
-  //        try {
-  //          Geometry intersection = cspace.intersection(((Shape)
-  // model.getShape()).getStandardizedGeometry());
-  //          ret[1] = 100.0
-  //                  * (intersection.getArea() / ((Shape)
-  // model.getShape()).getStandardizedGeometry().getArea());
-  //          ret[0] = 100.0 * (intersection.getArea() / cspace.getArea());
-  //        } catch (Throwable t) {
-  //          ret[1] = 10;
-  //          context.getMonitor()
-  //                  .warn("topology error in computing intersections: probable degenerate spatial
-  // extent: "
-  //                          + t.getMessage());
-  //        }
-  //      }
-  //    }
-  //    return ret;
-  //  }
-  //
-  //  /**
-  //   * Temporal criteria are 0: coverage; 1: specificity; 2: coherency. The latter
-  //   * is not active at this time (will be -1).
-  //   * <p>
-  //   * Made static and public so that contextualizers can use it.
-  //   *
-  //   * @param modelStart
-  //   * @param modelEnd
-  //   * @param time
-  //   * @return
-  //   */
-  //  public static double[] computeTemporalCriteria(long modelStart, long modelEnd, ITime time) {
-  //
-  //    double[] ret = new double[] { -1, -1, -1 };
-  //
-  //    if (time == null) {
-  //      return ret;
-  //    }
-  //
-  //    Range mrange = Range.create(modelStart == -1 ? null : modelStart, modelEnd == -1 ? null :
-  // modelEnd);
-  //    Range crange = Range.create(time.getStart(), time.getEnd());
-  //
-  //    /*
-  //     * coverage: if non-grid, 100 for covered, 75 - [0-25] for partially covered, 50
-  //     * - [0-25] distance if covered in infinite tail from or to a single-point
-  //     * beginning or end. If grid, covered.
-  //     */
-  //    // if (time.size() > 1) {
-  //    //
-  //    // } else {
-  //
-  //    boolean compare = true;
-  //    if (!mrange.contains(crange)) {
-  //
-  //      ret[0] = 25;
-  //      if (mrange.isBounded() && crange.isBounded()) {
-  //
-  //        // this subtracts from 25 if the model is in the future, but that shouldn't even
-  //        // get
-  //        // here.
-  //        double gap = crange.getLowerBound() - mrange.getUpperBound();
-  //        double error = (crange.getWidth() - gap) / crange.getWidth();
-  //        if (error > 1) {
-  //          error = 1;
-  //        }
-  //        ret[0] += error * 25.0;
-  //
-  //      }
-  //
-  //      compare = false;
-  //
-  //    } else {
-  //
-  //      double d = mrange.exclusionOf(crange);
-  //
-  //      if (d == 1) {
-  //        ret[0] = 1; // very least but we don't reject
-  //      } else if (d == 0) {
-  //        ret[0] = 100;
-  //      } else if (mrange.isBounded()) {
-  //        ret[0] = 75 - (d * 25);
-  //      } else {
-  //        ret[0] = 50 - (d * 49);
-  //      }
-  //
-  //    }
-  //
-  //    /*
-  //     * specificity differs by resolution type (even if generic) and is corrected by
-  //     * the order of magnitude of the nearest multiplier. If the context is
-  //     * universal, return 50.
-  //     */
-  //
-  ////		System.out.println("MRANGE is " + new TimeInstant((long) mrange.getLowerBound()) + " to "
-  ////				+ new TimeInstant((long) mrange.getUpperBound()));
-  ////		System.out.println("CRANGE is " + new TimeInstant((long) crange.getLowerBound()) + " to "
-  ////				+ new TimeInstant((long) crange.getUpperBound()));
-  //
-  //    if (mrange.contains(crange)) {
-  //
-  //      /*
-  //       * TODO must compare model time resolution! We don't even have the info right
-  //       * now.
-  //       */
-  //      ret[1] = 100;
-  //
-  //    } else if (compare && crange.isBounded()) {
-  //
-  //      double focalPointModel = mrange.isLeftBounded() ? mrange.getLowerBound() :
-  // mrange.getFocalPoint();
-  //      double focalPointContext = crange.getLowerBound();
-  //
-  //      if (time.size() > 1) {
-  //
-  //        if (Double.isNaN(focalPointModel)) {
-  //          ret[1] = 0;
-  //        } else {
-  //          ret[1] = 100 * (mrange.getWidth() / crange.getWidth());
-  //          if (ret[1] > 100) {
-  //            ret[1] = 100;
-  //          }
-  //        }
-  //
-  //      } else if (Double.isNaN(focalPointModel)) {
-  //        ret[1] = 25;
-  //      } else {
-  //
-  //        double distanceFactor = Math.abs(focalPointModel - focalPointContext);
-  //        distanceFactor /= (time.getResolution().getType().getMilliseconds()
-  //                * time.getResolution().getMultiplier());
-  //
-  //        if (distanceFactor > 50) {
-  //          distanceFactor = 50;
-  //        }
-  //
-  //        ret[1] = 100 - 50 * (distanceFactor / 50);
-  //      }
-  //
-  //    } else {
-  //      ret[1] = 50;
-  //    }
-  //
-  //    /*
-  //     * resolution: if non-grid, 100 for identical, 75 - ([0-25] distance factor) for
-  //     * overlapping. Else it's like space. Zero if grid goes with non-grid or the
-  //     * other way around.
-  //     */
-  //
-  //    return ret;
-  //  }
-  //
-  //  private double[] computeTemporalCriteria(ModelReference model, ResolutionScope scope) {
-  //    return computeTemporalCriteria(model.getTimeStart(), model.getTimeEnd(),
-  // scope.getCoverage().getTime());
-  //  }
+  private double[] computeSpatialCriteria(Model model) {
+
+    double[] ret = new double[] {-1, -1, -1};
+    var shape =
+        model.getCoverage() == null || model.getCoverage().isUniversal()
+            ? null
+            : model.getCoverage().as(Scale.class).getSpace().getGeometricShape();
+
+    var sqm = ServiceConfiguration.INSTANCE.getService(UnitService.class).squareMeters();
+
+    if (shape != null) {
+      /*
+       * compute intersection if we're spatial
+       */
+      var space = this.scale.getSpace().getGeometricShape();
+      if (space != null) {
+        try {
+          var intersection = space.intersection(shape);
+          ret[1] = 100.0 * (intersection.getArea(sqm) / shape.getArea(sqm));
+          ret[0] = 100.0 * (intersection.getArea(sqm) / space.getArea(sqm));
+        } catch (Throwable t) {
+          ret[1] = 10;
+          Logging.INSTANCE.warn(
+              "topology error in computing intersections: probable degenerate spatial extent: "
+                  + t.getMessage());
+        }
+      }
+    }
+    return ret;
+  }
+
+  /**
+   * Temporal criteria are 0: coverage; 1: specificity; 2: coherency. The latter is not active at
+   * this time (will be -1).
+   *
+   * <p>Made static and public so that contextualizers can use it.
+   *
+   * @param modelStart
+   * @param modelEnd
+   * @param time
+   * @return
+   */
+  public static double[] computeTemporalCriteria(long modelStart, long modelEnd, Time time) {
+
+    double[] ret = new double[] {-1, -1, -1};
+
+    if (time == null) {
+      return ret;
+    }
+
+    var mrange =
+        NumericRange.create(modelStart == -1 ? 0 : modelStart, modelEnd == -1 ? 0 : modelEnd);
+    var crange =
+        NumericRange.create(time.getStart().getMilliseconds(), time.getEnd().getMilliseconds());
+
+    /*
+     * coverage: if non-grid, 100 for covered, 75 - [0-25] for partially covered, 50
+     * - [0-25] distance if covered in infinite tail from or to a single-point
+     * beginning or end. If grid, covered.
+     */
+    // if (time.size() > 1) {
+    //
+    // } else {
+
+    boolean compare = true;
+    if (!mrange.contains(crange)) {
+
+      ret[0] = 25;
+      if (mrange.isBounded() && crange.isBounded()) {
+
+        // this subtracts from 25 if the model is in the future, but that shouldn't even
+        // get
+        // here.
+        double gap = crange.getLowerBound() - mrange.getUpperBound();
+        double error = (crange.getWidth() - gap) / crange.getWidth();
+        if (error > 1) {
+          error = 1;
+        }
+        ret[0] += error * 25.0;
+      }
+
+      compare = false;
+
+    } else {
+
+      double d = mrange.exclusionOf(crange);
+
+      if (d == 1) {
+        ret[0] = 1; // very least but we don't reject
+      } else if (d == 0) {
+        ret[0] = 100;
+      } else if (mrange.isBounded()) {
+        ret[0] = 75 - (d * 25);
+      } else {
+        ret[0] = 50 - (d * 49);
+      }
+    }
+
+    /*
+     * specificity differs by resolution type (even if generic) and is corrected by
+     * the order of magnitude of the nearest multiplier. If the context is
+     * universal, return 50.
+     */
+
+    //		System.out.println("MRANGE is " + new TimeInstant((long) mrange.getLowerBound()) + " to "
+    //				+ new TimeInstant((long) mrange.getUpperBound()));
+    //		System.out.println("CRANGE is " + new TimeInstant((long) crange.getLowerBound()) + " to "
+    //				+ new TimeInstant((long) crange.getUpperBound()));
+
+    if (mrange.contains(crange)) {
+
+      /*
+       * TODO must compare model time resolution! We don't even have the info right
+       * now.
+       */
+      ret[1] = 100;
+
+    } else if (compare && crange.isBounded()) {
+
+      double focalPointModel =
+          mrange.isLeftBounded() ? mrange.getLowerBound() : mrange.getFocalPoint();
+      double focalPointContext = crange.getLowerBound();
+
+      if (time.size() > 1) {
+
+        if (Double.isNaN(focalPointModel)) {
+          ret[1] = 0;
+        } else {
+          ret[1] = 100 * (mrange.getWidth() / crange.getWidth());
+          if (ret[1] > 100) {
+            ret[1] = 100;
+          }
+        }
+
+      } else if (Double.isNaN(focalPointModel)) {
+        ret[1] = 25;
+      } else {
+
+        double distanceFactor = Math.abs(focalPointModel - focalPointContext);
+        distanceFactor /=
+            (time.getResolution().getType().getMilliseconds()
+                * time.getResolution().getMultiplier());
+
+        if (distanceFactor > 50) {
+          distanceFactor = 50;
+        }
+
+        ret[1] = 100 - 50 * (distanceFactor / 50);
+      }
+
+    } else {
+      ret[1] = 50;
+    }
+
+    /*
+     * resolution: if non-grid, 100 for identical, 75 - ([0-25] distance factor) for
+     * overlapping. Else it's like space. Zero if grid goes with non-grid or the
+     * other way around.
+     */
+
+    return ret;
+  }
+
+  private double[] computeTemporalCriteria(Model model) {
+    var time =
+        model.getCoverage() == null || model.getCoverage().isUniversal()
+            ? null
+            : model.getCoverage().as(Scale.class).getTime();
+
+    return computeTemporalCriteria(
+        time == null ? -1 : time.getStart().getMilliseconds(),
+        time == null ? -1 : time.getEnd().getMilliseconds(),
+        scale.getTime());
+  }
   //
   //  private double getMin(double a, double b) {
   //    if (a < 0 && b < 0)

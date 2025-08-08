@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
@@ -401,11 +402,9 @@ public interface KlabService extends Service {
    * @return
    */
   InputStream exportAsset(
-      String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope);
+      String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope);
 
   /**
-   * FIXME this must return a Future<String> and use the JobManager internally
-   *
    * @param schema a valid schema that comes from those admitted in the service
    * @param assetCoordinates the submission, either a file or URL that specifies a byte stream or a
    *     set of properties.
