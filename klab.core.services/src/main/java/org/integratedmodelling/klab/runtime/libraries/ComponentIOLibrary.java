@@ -75,6 +75,8 @@ public class ComponentIOLibrary {
       return ResourceSet.empty(Notification.error("Non existing .kar file."));
     }
 
+    Version version = new Version();
+
     String artifactId = properties.contains("artifactId") ?
             properties.get("artifactId", String.class) :
             file.getName().substring(0, file.getName().indexOf('-'));
@@ -86,7 +88,7 @@ public class ComponentIOLibrary {
     }
 
     // The path of the file you are looking for
-    String targetFilePath = "META-INF/maven/" + groupId + "/" + artifactId;
+    String targetFilePath = "META-INF/maven/" + groupId + "/" + artifactId + "/pom.properties";
 
     try {
       ZipFile zipFile = new ZipFile(file.getAbsolutePath());
@@ -103,6 +105,9 @@ public class ComponentIOLibrary {
 
       while ((line = reader.readLine()) != null) {
         System.out.println(line);
+        if (line.startsWith("version=")) {
+          version = Version.create(line.substring(line.indexOf("=") + 1, line.length()));
+        }
       }
 
       reader.close();
