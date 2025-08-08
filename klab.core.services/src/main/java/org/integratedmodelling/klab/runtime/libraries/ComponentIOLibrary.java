@@ -104,9 +104,9 @@ public class ComponentIOLibrary {
       String line;
 
       while ((line = reader.readLine()) != null) {
-        System.out.println(line);
         if (line.startsWith("version=")) {
           version = Version.create(line.substring(line.indexOf("=") + 1, line.length()));
+          break;
         }
       }
 
