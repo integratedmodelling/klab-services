@@ -480,6 +480,8 @@ public abstract class BaseService implements KlabService {
         ResourceTransport.INSTANCE.findExportSchemata(
             knowledgeClass, mediaType, capabilities(scope), scope);
 
+    // NO - retrieve the assed, then if the metadata contain an adapter, use that to prioritize
+    // before warning.
     if (schemata.isEmpty()) {
       throw new KlabAuthorizationException(
           "No authorized export schema with media type " + mediaType + " is available");

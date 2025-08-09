@@ -18,7 +18,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   private final Data.SpaceFillingCurve spaceFillingCurve;
   private final Persistence persistence;
   private final Storage.Type dataType;
-  private final long offset;
+  protected final long offset;
   private long id; // for reference in the knowledge graoh
   private final String urn; // for persistent reference in storage manager
   private final StorageImpl storage;
@@ -31,7 +31,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
    * @param stateStorage
    * @param size
    * @param spaceFillingCurve
-   * @param offsets extent-based offsets with the start offset in the
+   * @param offset extent-based offsets with the start offset in the storage
    */
   protected BufferImpl(
       Geometry geometry,
@@ -39,7 +39,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
       StorageImpl stateStorage,
       long size,
       Data.SpaceFillingCurve spaceFillingCurve,
-      long offsets,
+      long offset,
       long timestamp) {
     super(geometry, spaceFillingCurve);
     this.storage = stateStorage;
@@ -47,7 +47,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
     this.dataType = stateStorage.getType();
     this.urn = observation.getUrn() + "#" + stateStorage.stateStorage.nextBufferId();
     this.persistence = Persistence.SERVICE_SHUTDOWN;
-    this.offset = offsets;
+    this.offset = offset;
     this.spaceFillingCurve = spaceFillingCurve;
     if (stateStorage.stateStorage.isRecordHistogram()) {
       this.histogram =

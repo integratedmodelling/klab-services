@@ -19,10 +19,10 @@ public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer
       StorageImpl doubleStorage,
       long size,
       Data.SpaceFillingCurve spaceFillingCurve,
-      long offsets,
+      long offset,
       long timestamp) {
-    super(geometry, observation, doubleStorage, size, spaceFillingCurve, offsets, timestamp);
-    this.data = doubleStorage.stateStorage.getDoubleBuffer(doubleStorage.geometry.size());
+    super(geometry, observation, doubleStorage, size, spaceFillingCurve, offset, timestamp);
+    this.data = doubleStorage.stateStorage.getDoubleBuffer(size);
   }
 
   public BufferArray data() {
@@ -38,7 +38,8 @@ public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer
   public DoubleScanner scan() {
     return new DoubleScanner() {
 
-      long next = 0L;
+      long next = offset;
+      long index = 0;
 
       @Override
       public double get() {
@@ -60,12 +61,13 @@ public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer
 
       @Override
       public long nextLong() {
+        index++;
         return next++;
       }
 
       @Override
       public boolean hasNext() {
-        return next < multiplicity;
+        return index < multiplicity;
       }
     };
   }

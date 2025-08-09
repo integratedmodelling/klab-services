@@ -118,6 +118,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       return switch (object) {
         case KlabAsset asset -> {
           var ret = asset.getAnnotations();
+          if (ret == null) {
+            ret = new ArrayList<>();
+          }
           if (addInherited) {
             Object parent =
                 switch (object) {
@@ -134,7 +137,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           yield ret;
         }
         case ServiceInfo info -> info.getAnnotations();
-        default -> List.of();
+        default -> new ArrayList<>();
       };
     }
 
@@ -649,9 +652,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                   .header(
                       HttpHeaders.CONTENT_TYPE,
                       org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                  .header(
-                      HttpHeaders.ACCEPT,
-                      org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE);
+              /*                  .header(
+              HttpHeaders.ACCEPT,
+              org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE)*/ ;
 
           if (authorization != null) {
             requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
@@ -698,7 +701,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             System.out.println("============ END OF REPORT  ==============");
             return CompletableFuture.failedFuture(
                 new KlabServiceAccessException(
-                    "Error in contextualization: response is " + response.body()));
+                    response.statusCode()
+                        + " error in contextualization: response is "
+                        + response.body()));
           }
 
         } catch (Throwable e) {

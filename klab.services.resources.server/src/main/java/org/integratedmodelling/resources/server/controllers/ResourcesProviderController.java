@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,6 +44,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -484,21 +486,23 @@ public class ResourcesProviderController {
    * request may include input data in an {@link org.integratedmodelling.klab.common.data.Instance}
    * field.
    *
-   * @param requestStream
+   * @param requestBody
    * @param principal
    */
   @PostMapping(
       value = ServicesAPI.RESOURCES.CONTEXTUALIZE,
       consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-  public @ResponseBody long contextualize(InputStream requestStream, Principal principal) {
+  public long contextualize(HttpServletRequest requestBody, Principal principal) {
 
     if (principal instanceof EngineAuthorization authorization) {
+
+      Utils.DebugFile.println("DIO TARALLO MI HA CHIAMATO");
 
       var scope = authorization.getScope();
       if (scope instanceof ServiceUserScope serviceUserScope) {
 
         try {
-          var decoder = DecoderFactory.get().binaryDecoder(requestStream, null);
+          var decoder = DecoderFactory.get().binaryDecoder(requestBody.getInputStream(), null);
           var reader = new SpecificDatumReader<>(DataRequest.class);
           var request = reader.read(null, decoder);
 
@@ -509,9 +513,7 @@ public class ResourcesProviderController {
                       request.getResourceUrns().stream().map(CharSequence::toString).toList(),
                       scope);
           var observable =
-              resourcesServer
-                  .klabService()
-                  .serviceScope()
+              serviceUserScope
                   .getService(Reasoner.class)
                   .resolveObservable(request.getObservable().toString());
           var event = Scheduler.event(request.getStartTime(), request.getEndTime());
@@ -523,18 +525,23 @@ public class ResourcesProviderController {
             input = BaseDataImpl.create(request.getInputData());
           }
 
-          var ret = serviceUserScope
-              .getJobManager()
-              .submit(
-                  resourcesServer
-                      .klabService()
-                      .contextualize(
-                          resource,
-                          DigitalTwin.createObservation(scope, observable, geometry),
-                          event, // FIXME FIXME FIXME take the event from the request
-                          input,
-                          scope),
-                  "Resolution of " + observable);
+          Utils.DebugFile.println("CANAGLIA DIO MAKING REQUEST");
+
+          var ret =
+              serviceUserScope
+                  .getJobManager()
+                  .submit(
+                      resourcesServer
+                          .klabService()
+                          .contextualize(
+                              resource,
+                              DigitalTwin.createObservation(scope, observable, geometry),
+                              event,
+                              input,
+                              scope),
+                      "Resolution of " + observable);
+
+          Utils.DebugFile.println("CANAGLIA TROJA RETURNING TASK " + ret);
 
           return ret;
 

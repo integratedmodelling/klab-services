@@ -234,6 +234,10 @@ public interface Data {
      * usually handled by making multiple requests in parallel rather than splitting one into
      * multiple buffers.
      *
+     * <p>TODO restore a buffers() with a size or split parameter to produce multiple parallel
+     * buffers. Those need to be known at the consumer side, so they would complicate the Avro
+     * schema.
+     *
      * @param fillerClass the class of buffer to create
      * @param spaceFillingCurve the space filling curve to use
      * @return a single buffer of the specified type using the specified space filling curve
@@ -356,14 +360,14 @@ public interface Data {
    */
   boolean hasStates();
 
-//  static Data.Builder builder(String name, Observable observable, Geometry geometry) {
-//    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
-//    if (configuration == null) {
-//      throw new KlabIllegalStateException(
-//          "k.LAB environment not configured to create a data builder");
-//    }
-//    return configuration.getDataBuilder(name, observable, geometry);
-//  }
+  //  static Data.Builder builder(String name, Observable observable, Geometry geometry) {
+  //    Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+  //    if (configuration == null) {
+  //      throw new KlabIllegalStateException(
+  //          "k.LAB environment not configured to create a data builder");
+  //    }
+  //    return configuration.getDataBuilder(name, observable, geometry);
+  //  }
 
   static Data empty(Notification notification) {
 

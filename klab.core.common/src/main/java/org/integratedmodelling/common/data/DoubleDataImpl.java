@@ -9,20 +9,22 @@ import java.util.PrimitiveIterator;
 
 public class DoubleDataImpl extends BaseDataImpl implements PrimitiveIterator.OfDouble {
 
-  private /*final*/ OfLong iterator;
+  //  private OfLong iterator;
+  private long offset;
+  private long index = 0;
+  private final long size;
 
-  public DoubleDataImpl(Instance instance) {
+  public DoubleDataImpl(Instance instance, long size, long offset) {
     super(instance);
-//    this.iterator =
-//        fillCurve()
-//            .cursor(
-//                GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class));
+    this.offset = offset;
+    this.size = size;
   }
 
-  public DoubleDataImpl(Observable observable, Geometry geometry, String name, Instance instance) {
-    super(observable, geometry, name, instance);
-//    this.iterator = fillCurve().cursor(geometry);
-  }
+  //  public DoubleDataImpl(Observable observable, Geometry geometry, String name, Instance
+  // instance) {
+  //    super(observable, geometry, name, instance);
+  //    //    this.iterator = fillCurve().cursor(geometry);
+  //  }
 
   @Override
   public boolean hasStates() {
@@ -31,11 +33,12 @@ public class DoubleDataImpl extends BaseDataImpl implements PrimitiveIterator.Of
 
   @Override
   public double nextDouble() {
-    return instance.getDoubleData().get((int) iterator.nextLong());
+    index++;
+    return instance.getDoubleData().get((int) offset++);
   }
 
   @Override
   public boolean hasNext() {
-    return iterator.hasNext();
+    return index < size;
   }
 }
