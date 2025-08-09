@@ -368,9 +368,7 @@ public class RuntimeServerController {
       Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
-      var ret =
-          runtimeService.klabService().resolveContextualizables(contextualizables, contextScope);
-      return ret;
+      return runtimeService.klabService().resolveContextualizables(contextualizables, contextScope);
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }

@@ -919,63 +919,59 @@ public class ComponentRegistry {
    */
   public synchronized boolean loadComponents(ResourceSet resourceSet, Scope scope) {
 
-    Set<String> available = new HashSet<>();
-    for (var result : resourceSet.getResults()) {
-      if (result.getKnowledgeClass() == KlabAsset.KnowledgeClass.COMPONENT) {
-        for (var existing : components.get(result.getResourceUrn())) {
-          if (result.getResourceVersion() == null
-              || existing.version().compatible(result.getResourceVersion())) {
-            available.add(result.getResourceUrn());
-          }
-        }
+    var missingComponents =
+        resourceSet.getResults().stream()
+            .filter(resource -> resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.COMPONENT)
+            .filter(
+                resource -> {
+                  var split = Version.splitVersion(resource.getResourceUrn());
+                  var components = this.components.get(split.getFirst());
+                  if (components == null) {
+                    return true;
+                  }
+                  return components.stream()
+                      .noneMatch(component -> component.version().compatible(split.getSecond()));
+                })
+            .toList();
+
+    for (var result : missingComponents) {
+
+      // load from service
+      var service =
+          scope.getService(
+              ResourcesService.class, s -> s.serviceId().equals(result.getServiceId()));
+      if (service == null) {
+        return false;
       }
-    }
 
-    // if we get here, we need to retrieve and load the component
-    if (available.size() == resourceSet.getResults().size()) {
-      return true;
-    }
-
-    for (var result : resourceSet.getResults()) {
-
-      if (!available.contains(result.getResourceUrn())) {
-        // load from service
-        var service =
-            scope.getService(
-                ResourcesService.class, s -> s.serviceId().equals(result.getServiceId()));
-        if (service == null) {
-          return false;
-        }
-
-        final String mediaType = "application/java-archive";
-        var schemata =
-            ResourceTransport.INSTANCE.findExportSchemata(
-                KlabAsset.KnowledgeClass.COMPONENT, mediaType, service.capabilities(scope), scope);
-        if (schemata.isEmpty()) {
-          throw new KlabAuthorizationException(
-              "No authorized export schema with media type " + mediaType + " is available");
-        } else if (schemata.size() > 1) {
-          scope.warn(
-              "Ambiguous request: more than one export schema with "
-                  + "media type "
-                  + mediaType
-                  + " is available");
-        }
-
-        File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
-        try (var input =
-                service.exportAsset(
-                    result.getResourceUrn(), KlabAsset.KnowledgeClass.COMPONENT, mediaType, scope);
-            var output = new FileOutputStream(plugin)) {
-          IOUtils.copy(input, output);
-          // give the OS time to react - found that often the file is truncated
-          TimeUnit.SECONDS.sleep(2);
-        } catch (Exception e) {
-          scope.error(e);
-          return false;
-        }
-        installComponent(plugin, null);
+      final String mediaType = "application/java-archive";
+      var schemata =
+          ResourceTransport.INSTANCE.findExportSchemata(
+              KlabAsset.KnowledgeClass.COMPONENT, mediaType, service.capabilities(scope), scope);
+      if (schemata.isEmpty()) {
+        throw new KlabAuthorizationException(
+            "No authorized export schema with media type " + mediaType + " is available");
+      } else if (schemata.size() > 1) {
+        scope.warn(
+            "Ambiguous request: more than one export schema with "
+                + "media type "
+                + mediaType
+                + " is available");
       }
+
+      File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
+      try (var input =
+              service.exportAsset(
+                  result.getResourceUrn(), KlabAsset.KnowledgeClass.COMPONENT, mediaType, scope);
+          var output = new FileOutputStream(plugin)) {
+        IOUtils.copy(input, output);
+        // give the OS time to react - found that often the file is truncated
+        TimeUnit.SECONDS.sleep(2);
+      } catch (Exception e) {
+        scope.error(e);
+        return false;
+      }
+      installComponent(plugin, null);
     }
 
     // hopefully this is OK with plugins that have started already

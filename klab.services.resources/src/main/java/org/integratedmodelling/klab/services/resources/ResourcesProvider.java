@@ -513,33 +513,46 @@ public class ResourcesProvider extends BaseService
 
     var urn = Urn.of(urnId);
     ResourceSet ret = new ResourceSet();
+    Resource resource = null;
+    var adapterId = urn.getCatalog();
+    var adapterVersion = urn.getVersion();
+    if (!urn.isUniversal()) {
+      resource = resourcesKbox.getResource(urnId, urn.getVersion());
+      if (resource == null) {
+        return ResourceSet.empty(Notification.error("No resource found for URN " + urnId));
+      }
+      var split = Version.splitVersion(resource.getAdapterType());
+      adapterId = split.getFirst();
+      adapterVersion = split.getSecond();
+    }
+
+    var adapter = getComponentRegistry().getAdapter(adapterId, adapterVersion, scope);
+    if (adapter == null) {
+      return ResourceSet.empty(
+          Notification.error(
+              "Adapter " + adapterId + "  is unavailable to this scope for resource " + urnId));
+    }
+
+    var info = adapter.getAdapterInfo();
+    if (info.getValidatedPhases().contains(ResourceAdapter.Validator.LifecyclePhase.UrnSyntax)) {
+      // TODO validate the URN before returning
+    }
+
+    if (adapter.isEmbeddable()) {
+      // runtime will decide what to do, but we can embed the adapter so we can add an optional
+      // dependency on the component that provides it.
+      ret.getResults()
+          .add(
+              new ResourceSet.Resource(
+                  this.serviceId(),
+                  adapter.getComponentUrn(),
+                  null,
+                  adapter.getComponentVersion(),
+                  KnowledgeClass.COMPONENT,
+                  true));
+    }
+
     if (urn.isUniversal()) {
-
-      var adapter = getComponentRegistry().getAdapter(urn.getCatalog(), urn.getVersion(), scope);
-      if (adapter == null) {
-        return ResourceSet.empty(
-            Notification.error("No adapter available for " + urn.getCatalog()));
-      }
-
-      var info = adapter.getAdapterInfo();
-      if (info.getValidatedPhases().contains(ResourceAdapter.Validator.LifecyclePhase.UrnSyntax)) {
-        // TODO validate the URN before returning
-      }
-
-      if (adapter.isEmbeddable()) {
-        // runtime will decide what to do, but we can embed the adapter so we can add an optional
-        // dependency on the component that provides it.
-        ret.getResults()
-            .add(
-                new ResourceSet.Resource(
-                    this.serviceId(),
-                    adapter.getComponentUrn(),
-                    null,
-                    adapter.getComponentVersion(),
-                    KnowledgeClass.COMPONENT,
-                    true));
-      }
-
       ret.getResults()
           .add(
               new ResourceSet.Resource(
@@ -551,28 +564,6 @@ public class ResourcesProvider extends BaseService
                   false));
 
       return ret;
-    }
-    var resource = resourcesKbox.getResource(urnId, urn.getVersion());
-    if (resource == null) {
-      return ResourceSet.empty(Notification.error("No resource available for " + urnId));
-    }
-
-    var adapterData = Version.splitVersion(resource.getAdapterType());
-    var adapter =
-        getComponentRegistry().getAdapter(adapterData.getFirst(), adapterData.getSecond(), scope);
-
-    if (adapter == null) {
-      return ResourceSet.empty(
-          Notification.error(
-              "No adapter "
-                  + resource.getAdapterType()
-                  + "  available for existing resource "
-                  + urnId));
-    }
-
-    var info = adapter.getAdapterInfo();
-    if (info.getValidatedPhases().contains(ResourceAdapter.Validator.LifecyclePhase.UrnSyntax)) {
-      // TODO validate the URN before returning
     }
 
     // TODO figure out what kind of dependencies may be needed by a resource - possibly

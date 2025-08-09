@@ -626,6 +626,11 @@ public class RuntimeService extends BaseService
         }
         ret = Utils.Resources.merge(ret, resolution);
       }
+
+      // if any embeddable component was returned, attempt to load it
+      if (!getComponentRegistry().loadComponents(ret, scope)) {
+        Logging.INSTANCE.warn("Could not load components suggested after ingestion of resource");
+      }
     }
 
     return ret;
