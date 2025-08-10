@@ -1324,6 +1324,9 @@ public class ComponentRegistry {
   public class AdapterImpl implements Adapter {
 
     private final String name;
+    private final int splits;
+    private final Data.SpaceFillingCurve fillCurve;
+    private final long minSplitSize;
     private Set<Artifact.Type> resourceType = EnumSet.noneOf(Artifact.Type.class);
     private final Version version;
     boolean universal;
@@ -1360,6 +1363,9 @@ public class ComponentRegistry {
       this.embeddable = annotation.embeddable();
       this.componentUrn = componentUrn;
       this.componentVersion = componentVersion;
+      this.splits = annotation.splits();
+      this.fillCurve = annotation.fillCurve();
+      this.minSplitSize = annotation.minSizeForSplitting();
 
       if (annotation.type() != Artifact.Type.VOID) {
         this.resourceType.add(annotation.type());
@@ -1685,6 +1691,9 @@ public class ComponentRegistry {
           hasInspector(),
           hasPublisher(),
           isEmbeddable(),
+          fillCurve,
+          splits,
+          minSplitSize,
           validations,
           importSchemata,
           exportSchemata,

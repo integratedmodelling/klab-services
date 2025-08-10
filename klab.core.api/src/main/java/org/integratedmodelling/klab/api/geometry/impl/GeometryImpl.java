@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.geometry.impl;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -1410,8 +1411,198 @@ public class GeometryImpl implements Geometry {
   }
 
   @Override
-  public List<Geometry> split() {
-    throw new KlabUnimplementedException("Geometry::split");
+  public List<Geometry> split(Data.SpaceFillingCurve fillCurve, int suggestedSplits) {
+    // Minimal implementation: split only the SPACE dimension of regular, defined shapes.
+    // Other dimensions remain unchanged. Tiles are adjacent and cover the whole bbox (if 2D bbox
+    // exists).
+    if (suggestedSplits <= 1) {
+      return List.of(this);
+    }
+
+    Dimension spaceDim = dimension(Dimension.Type.SPACE);
+    if (spaceDim == null) {
+      return List.of(this);
+    }
+
+    // Determine effective curve
+    Data.SpaceFillingCurve curve =
+        (fillCurve == null || fillCurve == Data.SpaceFillingCurve.UNSPECIFIED)
+            ? Data.SpaceFillingCurve.defaultCurve(this)
+            : fillCurve;
+
+    // Validate dimensionality
+    int nDim = spaceDim.getDimensionality();
+    if (nDim <= 0) {
+      return List.of(this);
+    }
+    if (curve != Data.SpaceFillingCurve.UNSPECIFIED && curve.dimensions != nDim) {
+      // For minimal change, if dimensions mismatch we do not attempt reshaping here.
+      return List.of(this);
+    }
+
+    List<Long> shape = spaceDim.getShape();
+    if (shape == null || shape.isEmpty()) {
+      return List.of(this);
+    }
+    for (Long s : shape) {
+      if (s == null || s <= 0 || s == INFINITE_SIZE || s == UNDEFINED) {
+        return List.of(this);
+      }
+    }
+
+    // If the total cells are fewer than suggested splits, nothing to do
+    long totalCells = 1L;
+    for (Long s : shape) totalCells *= s;
+    if (totalCells <= suggestedSplits) {
+      return List.of(this);
+    }
+
+    // Compute per-axis partition counts using a greedy approach to reach ~suggestedSplits
+    int[] partCounts = new int[nDim];
+    Arrays.fill(partCounts, 1);
+
+    long targetTiles = Math.max(1, suggestedSplits);
+    long currentTiles = 1;
+    // Greedily increase the partition count on the axis that currently has the largest cell span
+    // while we haven't reached the target number of tiles and we can still split.
+    while (currentTiles < targetTiles) {
+      int bestAxis = -1;
+      double bestSpan = -1.0;
+      for (int d = 0; d < nDim; d++) {
+        long sizeD = shape.get(d);
+        if (partCounts[d] < sizeD) {
+          // Effective span per tile along this axis if split one more time
+          double span = (double) sizeD / (partCounts[d] + 1);
+          if (span > bestSpan) {
+            bestSpan = span;
+            bestAxis = d;
+          }
+        }
+      }
+      if (bestAxis < 0) {
+        break; // cannot split further
+      }
+      partCounts[bestAxis]++;
+      currentTiles = 1;
+      for (int d = 0; d < nDim; d++) currentTiles *= partCounts[d];
+      // Guard against overflow or runaway
+      if (currentTiles <= 0 || currentTiles > totalCells) {
+        break;
+      }
+    }
+
+    // Build chunk sizes per axis ensuring coverage of all cells
+    long[][] chunks = new long[nDim][];
+    for (int d = 0; d < nDim; d++) {
+      int p = partCounts[d];
+      long sizeD = shape.get(d);
+      chunks[d] = new long[p];
+      long base = sizeD / p;
+      long rem = sizeD % p;
+      for (int i = 0; i < p; i++) {
+        chunks[d][i] = base + (i < rem ? 1 : 0);
+      }
+    }
+
+    // Prepare bbox values if available and nDim == 2
+    Object bboxObj = spaceDim.getParameters().get(PARAMETER_SPACE_BOUNDINGBOX);
+    Double minX = null, maxX = null, minY = null, maxY = null;
+    boolean hasBbox = false;
+    if (bboxObj != null && nDim == 2) {
+      if (bboxObj instanceof List<?> list && list.size() >= 4) {
+        try {
+          minX = ((Number) list.get(0)).doubleValue();
+          maxX = ((Number) list.get(1)).doubleValue();
+          minY = ((Number) list.get(2)).doubleValue();
+          maxY = ((Number) list.get(3)).doubleValue();
+          hasBbox = true;
+        } catch (ClassCastException ignore) {
+          hasBbox = false;
+        }
+      } else if (bboxObj instanceof String string) {
+        try {
+          List<Double> corners = Utils.Data.parseList(string, Double.class);
+          if (corners != null && corners.size() >= 4) {
+            minX = corners.get(0);
+            maxX = corners.get(1);
+            minY = corners.get(2);
+            maxY = corners.get(3);
+            hasBbox = true;
+          }
+        } catch (Exception ignore) {
+          hasBbox = false;
+        }
+      }
+    }
+
+    // Enumerate all tiles and build geometries
+    List<Geometry> result = new ArrayList<>();
+
+    // To enumerate multidimensional indices, we maintain counters for each axis
+    int[] idx = new int[nDim];
+    Arrays.fill(idx, 0);
+    boolean done = false;
+    while (!done) {
+      // Compute start offsets per axis
+      long[] start = new long[nDim];
+      for (int d = 0; d < nDim; d++) {
+        long sum = 0;
+        for (int i = 0; i < idx[d]; i++) sum += chunks[d][i];
+        start[d] = sum;
+      }
+
+      // Compute tile shape for this index
+      List<Long> tileShape = new ArrayList<>(nDim);
+      for (int d = 0; d < nDim; d++) {
+        tileShape.add(chunks[d][idx[d]]);
+      }
+
+      // FIXME this does not do the right thing, at least not always. BB must split according to
+      //  first and last point w.r.t. fill curve.
+      // TODO check that this works well at least with XY
+      // Create a new geometry copying all dimensions, adjusting SPACE
+      List<Dimension> newDims = new ArrayList<>();
+      for (Dimension d : getDimensions()) {
+        DimensionImpl copy = ((DimensionImpl) d).copy();
+        if (d.getType() == Dimension.Type.SPACE) {
+          copy.shape = new ArrayList<>(tileShape);
+          // Adjust bbox for 2D grids if present
+          if (hasBbox && nDim == 2) {
+            double dx = (maxX - minX) / shape.get(0);
+            double dy = (maxY - minY) / shape.get(1);
+            long startX = start[0];
+            long startY = start[1];
+            long w = tileShape.get(0);
+            long h = tileShape.get(1);
+            double tMinX = minX + startX * dx;
+            double tMaxX = minX + (startX + w) * dx;
+            double tMinY = minY + startY * dy;
+            double tMaxY = minY + (startY + h) * dy;
+            copy.parameters.put(
+                PARAMETER_SPACE_BOUNDINGBOX,
+                GeometryImpl.encodeVal(new double[] {tMinX, tMaxX, tMinY, tMaxY}));
+          }
+        }
+        newDims.add(copy);
+      }
+
+      result.add(create(newDims));
+
+      // Increment multidimensional index
+      for (int d = nDim - 1; d >= 0; d--) {
+        idx[d]++;
+        if (idx[d] < partCounts[d]) {
+          break;
+        } else {
+          idx[d] = 0;
+          if (d == 0) {
+            done = true;
+          }
+        }
+      }
+    }
+
+    return result;
   }
 
   /**

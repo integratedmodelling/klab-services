@@ -63,7 +63,7 @@ public class ResolverService extends BaseService implements Resolver {
 
   @Override
   protected <T extends KlabAsset> List<T> ingestResources(
-      ResourceSet resourceSet, Scope scope, Class<T> resultClass) {
+      ResourceSet resourceSet, Scope scope, Class<T> resultClass, boolean loadComponents) {
 
     List<T> ret = new ArrayList<>();
 

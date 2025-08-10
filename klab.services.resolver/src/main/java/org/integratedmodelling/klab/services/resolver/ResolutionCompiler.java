@@ -336,7 +336,7 @@ public class ResolutionCompiler {
 
     var resources = scope.getService(ResourcesService.class);
     ResourceSet models = resources.resolveModels(observable, scope);
-    var ret = new ArrayList<Model>(resolver.ingestResources(models, scope, Model.class));
+    var ret = new ArrayList<Model>(resolver.ingestResources(models, scope, Model.class, true));
     ret.sort(prioritizer);
     return ret;
   }

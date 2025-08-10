@@ -153,6 +153,314 @@ public interface Data {
       this.dimensions = dimensions;
     }
 
+
+
+    /**
+     * Map a number of steps along this space-filling curve to the linear offset in a row-major
+     * linear array representing an n-dimensional matrix with the provided sizes.
+     *
+     * <p>Sizes length must match this curve's dimensionality, except for UNSPECIFIED which is
+     * treated as a generic row-major traversal of any dimensionality (offset == normalized steps).
+     *
+     * @param steps number of steps along the curve (can be negative or exceed total cells)
+     * @param sizes sizes of each dimension; length must equal dimensions (unless UNSPECIFIED)
+     * @return the linear offset in row-major order corresponding to walking {@code steps} along the
+     *     specified curve starting from 0
+     */
+    public long offset(long steps, long[] sizes) {
+      if (sizes == null || sizes.length == 0) {
+        throw new IllegalArgumentException("sizes must be a non-empty array");
+      }
+      if (this != UNSPECIFIED && sizes.length != this.dimensions) {
+        throw new IllegalArgumentException(
+            "sizes length (" + sizes.length + ") must equal curve dimensions (" + this.dimensions + ")");
+      }
+      for (long s : sizes) {
+        if (s <= 0) {
+          throw new IllegalArgumentException("all sizes must be > 0");
+        }
+      }
+
+      long total = product(sizes);
+      if (total == 0) {
+        return 0L;
+      }
+      long nsteps = positiveMod(steps, total);
+
+      switch (this) {
+        case UNSPECIFIED:
+        case D1_LINEAR:
+        case D2_XY:
+        case D3_XYZ:
+          // Row-major traversal: last index fastest; offset equals normalized steps
+          return nsteps;
+
+        case D2_YX: {
+          // Scan order: Y slowest, X fastest
+          int[] order = new int[] {1, 0};
+          long[] coords = coordsFromStepByOrder(nsteps, sizes, order);
+          return flattenRowMajor(coords, sizes);
+        }
+        case D2_XInvY: {
+          // Row-major scanning but Y inverted within each X block
+          long[] coords = coordsFromStepByOrder(nsteps, sizes, new int[] {0, 1});
+          coords[1] = sizes[1] - 1 - coords[1];
+          return flattenRowMajor(coords, sizes);
+        }
+        case D3_ZYX: {
+          // Scan order: Z slowest, then Y, X fastest
+          int[] order = new int[] {2, 1, 0};
+          long[] coords = coordsFromStepByOrder(nsteps, sizes, order);
+          return flattenRowMajor(coords, sizes);
+        }
+        case D2_HILBERT:
+        case D3_HILBERT:
+          throw new UnsupportedOperationException(
+              "Hilbert curve offset mapping not implemented in this method");
+        default:
+          // Should not happen
+          return nsteps;
+      }
+    }
+
+    /**
+     * Complement to {@link #offset(long, long[])}: returns the per-dimension coordinates reached
+     * after walking the given number of steps along this curve. Coordinates are in the same order
+     * as sizes: index 0 refers to the first dimension, etc. Steps are normalized to [0, total).
+     *
+     * <p>For UNSPECIFIED, behaves as a generic row-major traversal for the provided dimensionality.
+     *
+     * @param steps number of steps along the curve (can be negative or exceed total cells)
+     * @param sizes sizes of each dimension; length must equal dimensions (unless UNSPECIFIED)
+     * @return array of length sizes.length containing coordinates in each dimension
+     */
+    public long[] offsets(long steps, long[] sizes) {
+      if (sizes == null || sizes.length == 0) {
+        throw new IllegalArgumentException("sizes must be a non-empty array");
+      }
+      if (this != UNSPECIFIED && sizes.length != this.dimensions) {
+        throw new IllegalArgumentException(
+            "sizes length (" + sizes.length + ") must equal curve dimensions (" + this.dimensions + ")");
+      }
+      for (long s : sizes) {
+        if (s <= 0) {
+          throw new IllegalArgumentException("all sizes must be > 0");
+        }
+      }
+
+      long total = product(sizes);
+      if (total == 0) {
+        return new long[sizes.length];
+      }
+      long nsteps = positiveMod(steps, total);
+
+      switch (this) {
+        case UNSPECIFIED:
+        case D1_LINEAR:
+        case D2_XY:
+        case D3_XYZ: {
+          int n = sizes.length;
+          int[] order = new int[n];
+          for (int i = 0; i < n; i++) order[i] = i; // row-major (0 slowest -> last fastest)
+          return coordsFromStepByOrder(nsteps, sizes, order);
+        }
+        case D2_YX: {
+          return coordsFromStepByOrder(nsteps, sizes, new int[] {1, 0});
+        }
+        case D2_XInvY: {
+          long[] coords = coordsFromStepByOrder(nsteps, sizes, new int[] {0, 1});
+          coords[1] = sizes[1] - 1 - coords[1];
+          return coords;
+        }
+        case D3_ZYX: {
+          return coordsFromStepByOrder(nsteps, sizes, new int[] {2, 1, 0});
+        }
+        case D2_HILBERT:
+        case D3_HILBERT:
+          throw new UnsupportedOperationException("Hilbert curve offsets not implemented");
+        default: {
+          int n = sizes.length;
+          int[] order = new int[n];
+          for (int i = 0; i < n; i++) order[i] = i;
+          return coordsFromStepByOrder(nsteps, sizes, order);
+        }
+      }
+    }
+
+    private static long positiveMod(long a, long m) {
+      long r = a % m;
+      return r < 0 ? r + m : r;
+    }
+
+    private static long product(long[] sizes) {
+      long p = 1L;
+      for (long s : sizes) {
+        p *= s;
+      }
+      return p;
+    }
+
+    /**
+     * Given a step count and a scan order (slowest to fastest), compute coordinates.
+     */
+    private static long[] coordsFromStepByOrder(long step, long[] sizes, int[] orderSlowToFast) {
+      int n = sizes.length;
+      if (orderSlowToFast.length != n) {
+        throw new IllegalArgumentException("order length must match sizes length");
+      }
+      long[] coords = new long[n];
+      long t = step;
+      for (int i = orderSlowToFast.length - 1; i >= 0; i--) {
+        int d = orderSlowToFast[i];
+        long size = sizes[d];
+        coords[d] = t % size;
+        t /= size;
+      }
+      return coords;
+    }
+
+    /**
+     * Flatten coordinates to a row-major linear offset (last dimension fastest).
+     */
+    private static long flattenRowMajor(long[] coords, long[] sizes) {
+      long offset = 0L;
+      long stride = 1L;
+      for (int i = sizes.length - 1; i >= 0; i--) {
+        offset += coords[i] * stride;
+        stride *= sizes[i];
+      }
+      return offset;
+    }
+
+    /**
+     * Compute the step index along a scan order (slowest to fastest) given coordinates.
+     */
+    private static long stepFromCoordsByOrder(long[] coords, long[] sizes, int[] orderSlowToFast) {
+      if (coords.length != sizes.length || orderSlowToFast.length != sizes.length) {
+        throw new IllegalArgumentException("dimensions mismatch in stepFromCoordsByOrder");
+      }
+      long t = 0L;
+      for (int i = 0; i < orderSlowToFast.length; i++) {
+        int d = orderSlowToFast[i];
+        long size = sizes[d];
+        long c = coords[d];
+        if (c < 0 || c >= size) {
+          throw new IllegalArgumentException("coordinate out of bounds for dimension " + d);
+        }
+        t = t * size + c;
+      }
+      return t;
+    }
+
+    /**
+     * Remap an offset (step index) taken along this curve into the corresponding step index along
+     * the destination curve, preserving the same n-dimensional coordinates.
+     */
+    public long map(int offset, long[] originalSizes, SpaceFillingCurve destination) {
+      if (originalSizes == null || originalSizes.length == 0) {
+        throw new IllegalArgumentException("sizes must be a non-empty array");
+      }
+      if (this != UNSPECIFIED && originalSizes.length != this.dimensions) {
+        throw new IllegalArgumentException(
+            "sizes length (" + originalSizes.length + ") must equal source curve dimensions (" + this.dimensions + ")");
+      }
+      if (destination == null) {
+        throw new IllegalArgumentException("destination curve must not be null");
+      }
+      if (destination != UNSPECIFIED && originalSizes.length != destination.dimensions) {
+        throw new IllegalArgumentException(
+            "sizes length (" + originalSizes.length + ") must equal destination curve dimensions (" + destination.dimensions + ")");
+      }
+      for (long s : originalSizes) {
+        if (s <= 0) {
+          throw new IllegalArgumentException("all sizes must be > 0");
+        }
+      }
+
+      long total = product(originalSizes);
+      if (total == 0) {
+        return 0L;
+      }
+      long nsteps = positiveMod(offset, total);
+
+      // Compute coordinates from this curve
+      long[] coords;
+      switch (this) {
+        case UNSPECIFIED:
+        case D1_LINEAR:
+        case D2_XY:
+        case D3_XYZ: {
+          int n = originalSizes.length;
+          int[] order = new int[n];
+          for (int i = 0; i < n; i++) order[i] = i; // row-major order
+          coords = coordsFromStepByOrder(nsteps, originalSizes, order);
+          break;
+        }
+        case D2_YX: {
+          coords = coordsFromStepByOrder(nsteps, originalSizes, new int[] {1, 0});
+          break;
+        }
+        case D2_XInvY: {
+          coords = coordsFromStepByOrder(nsteps, originalSizes, new int[] {0, 1});
+          coords[1] = originalSizes[1] - 1 - coords[1];
+          break;
+        }
+        case D3_ZYX: {
+          coords = coordsFromStepByOrder(nsteps, originalSizes, new int[] {2, 1, 0});
+          break;
+        }
+        case D2_HILBERT:
+        case D3_HILBERT:
+          throw new UnsupportedOperationException("Hilbert curve mapping not implemented");
+        default:
+          int n = originalSizes.length;
+          int[] order = new int[n];
+          for (int i = 0; i < n; i++) order[i] = i;
+          coords = coordsFromStepByOrder(nsteps, originalSizes, order);
+      }
+
+      // Compute destination step from coordinates
+      long destStep;
+      switch (destination) {
+        case UNSPECIFIED:
+        case D1_LINEAR:
+        case D2_XY:
+        case D3_XYZ: {
+          int n = originalSizes.length;
+          int[] order = new int[n];
+          for (int i = 0; i < n; i++) order[i] = i; // row-major
+          destStep = stepFromCoordsByOrder(coords, originalSizes, order);
+          break;
+        }
+        case D2_YX: {
+          destStep = stepFromCoordsByOrder(coords, originalSizes, new int[] {1, 0});
+          break;
+        }
+        case D2_XInvY: {
+          long[] c2 = coords.clone();
+          c2[1] = originalSizes[1] - 1 - c2[1];
+          destStep = stepFromCoordsByOrder(c2, originalSizes, new int[] {0, 1});
+          break;
+        }
+        case D3_ZYX: {
+          destStep = stepFromCoordsByOrder(coords, originalSizes, new int[] {2, 1, 0});
+          break;
+        }
+        case D2_HILBERT:
+        case D3_HILBERT:
+          throw new UnsupportedOperationException("Hilbert curve mapping not implemented");
+        default: {
+          int n = originalSizes.length;
+          int[] order = new int[n];
+          for (int i = 0; i < n; i++) order[i] = i;
+          destStep = stepFromCoordsByOrder(coords, originalSizes, order);
+        }
+      }
+
+      // Normalize to total just in case and return
+      return positiveMod(destStep, total);
+    }
+
     public static SpaceFillingCurve defaultCurve(Geometry geometry) {
       var space =
           geometry.getDimensions().stream()

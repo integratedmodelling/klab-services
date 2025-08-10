@@ -6,6 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -24,6 +25,8 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface ResourceAdapter {
+
+  int UNLIMITED_SPLITS = -1;
 
   /**
    * Name of the resource adapter. Lowercase and [a-z] characters only, can be a dot-separated path.
@@ -84,6 +87,33 @@ public @interface ResourceAdapter {
    * @return
    */
   String version();
+
+  /**
+   * If the adapter needs to work according to a specific fill curve, report it here. This may cause
+   * the buffers created at the runtime side to inherit the fill curve, or remapping may take place
+   * when the data are received.
+   *
+   * @return
+   */
+  Data.SpaceFillingCurve fillCurve() default Data.SpaceFillingCurve.UNSPECIFIED;
+
+  /**
+   * Report the number of splits that the adapter allows. The adapter will always serve an entire
+   * request, but if this parameter is higher than 1, multiple requests may be made with split
+   * geometries, using the fill curve specified. If the data can be arbitrarily split, set this to
+   * UNLIMITED_SPLITS.
+   *
+   * @return
+   */
+  int splits() default 1;
+
+  /**
+   * If splits > 1, the adapter may suggest a geometry size that it can handle in one request. The
+   * runtime may or may not honor it.
+   *
+   * @return
+   */
+  long minSizeForSplitting() default 0;
 
   /**
    * The annotation enables specialized validations for all phases of the resource lifecycle. A

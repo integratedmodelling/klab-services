@@ -1730,7 +1730,7 @@ public class ResourcesProvider extends BaseService
                     + resource.getUrn()));
       }
 
-      ingestResources(adapterResult, scope);
+      ingestResources(adapterResult, scope, true);
       adapter =
           getComponentRegistry().getAdapter(adapterType.getFirst(), adapterType.getSecond(), scope);
 

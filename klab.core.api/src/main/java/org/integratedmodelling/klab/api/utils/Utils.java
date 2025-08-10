@@ -2105,6 +2105,23 @@ public class Utils {
   public static class Strings {
 
     /**
+     * Remove the same number of characters from the start and end of a string.
+     *
+     * @param s
+     * @param n
+     * @return
+     */
+    public static String chopSymmetrically(String s, int n) {
+      var ret = s;
+      for (int i = 0; i < n; i++) {
+        if (ret.length() >= 2) {
+          ret = ret.substring(1, s.length() - 1);
+        }
+      }
+      return ret;
+    }
+
+    /**
      * Produce a label from an identifier: zio_polpettone -> "Zio polpettone"
      *
      * @param string
@@ -4491,6 +4508,20 @@ public class Utils {
     public static <T> List<T> parseList(String s, Class<T> resultClass) {
       var ret = new ArrayList<T>();
       for (String token : s.split(",")) {
+        ret.add(parseAsType(token.trim(), resultClass));
+      }
+      return ret;
+    }
+
+    /**
+     * Split into tokens according to the passed separator for split() and parse each as a double
+     *
+     * @param s
+     * @return
+     */
+    public static <T> List<T> parseList(String s, Class<T> resultClass, String separatorRegex) {
+      var ret = new ArrayList<T>();
+      for (String token : s.split(separatorRegex)) {
         ret.add(parseAsType(token.trim(), resultClass));
       }
       return ret;

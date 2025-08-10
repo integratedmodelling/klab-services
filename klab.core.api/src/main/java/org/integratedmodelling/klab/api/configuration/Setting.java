@@ -93,6 +93,11 @@ public enum Setting {
       "Execute to remove one or more components from the service",
       Map.class,
       Map.of("component", String.class, "result", Boolean.class)),
+  LOAD_REMOTE_RUNTIME_COMPONENTS(
+      Page.RUNTIME,
+      "If false, no remote components will be loaded when requested, relying only on those explicitly installed",
+      Boolean.class,
+      false /* TODO should be TRUE by default */),
   MAX_RESOURCES_SERVICE_MEMORY(
       Page.RESOURCES,
       "Maximum memory for the local resources service in MB",

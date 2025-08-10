@@ -368,6 +368,9 @@ public class CompiledDataflow {
               resource = scope.getService(ResourcesService.class).retrieveResource(urns, scope);
               final Resource finalResource = resource;
 
+              // FIXME THIS MUST CREATE AS MANY BUFFERS AS THE ADAPTER REQUESTS, USING SPLIT GEOMETRIES AND
+              //  MULTIPLE PARALLEL CALLS
+
               /*
               1. check if we have the adapter locally. If so we can use it directly. If the adapter was
               embeddable, the resolver will have called RuntimeService::resolveContextualizable with the

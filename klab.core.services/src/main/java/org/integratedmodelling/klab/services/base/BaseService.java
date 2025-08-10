@@ -415,18 +415,18 @@ public abstract class BaseService implements KlabService {
   }
 
   /**
-   * Calls {@link #ingestResources(ResourceSet, Scope, Class)} ignoring the class and only returning
-   * true or false if the resource set has errors.
+   * Calls {@link #ingestResources(ResourceSet, Scope, boolean)} ignoring the class and only
+   * returning true or false if the resource set has errors.
    *
    * @param resourceSet
    * @param scope
    * @return
    */
-  protected boolean ingestResources(ResourceSet resourceSet, Scope scope) {
+  protected boolean ingestResources(ResourceSet resourceSet, Scope scope, boolean loadComponents) {
     if (Utils.Notifications.hasErrors(resourceSet.getNotifications())) {
       return false;
     }
-    ingestResources(resourceSet, scope, KlabAsset.class);
+    ingestResources(resourceSet, scope, KlabAsset.class, loadComponents);
     return true;
   }
 
@@ -440,7 +440,7 @@ public abstract class BaseService implements KlabService {
    * @return
    */
   protected synchronized <T extends KlabAsset> List<T> ingestResources(
-      ResourceSet resourceSet, Scope scope, Class<T> resultClass) {
+      ResourceSet resourceSet, Scope scope, Class<T> resultClass, boolean loadComponents) {
 
     List<T> ret = new ArrayList<>();
     for (var doc : KnowledgeRepository.INSTANCE.ingest(resourceSet, scope, Knowledge.class)) {
@@ -457,7 +457,7 @@ public abstract class BaseService implements KlabService {
       }
     }
 
-    if (hasComponents) {
+    if (hasComponents && loadComponents) {
       getComponentRegistry().loadComponents(resourceSet, scope);
     }
 

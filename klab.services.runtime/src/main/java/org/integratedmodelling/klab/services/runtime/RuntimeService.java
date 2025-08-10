@@ -12,6 +12,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -608,7 +609,10 @@ public class RuntimeService extends BaseService
           return resolution;
         }
 
-        if (!ingestResources(resolution, scope)) {
+        if (!ingestResources(
+            resolution,
+            scope,
+            settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class))) {
           return ResourceSet.empty(
               Notification.error(
                   "Cannot receive resources from service " + resourcesService.serviceName()));

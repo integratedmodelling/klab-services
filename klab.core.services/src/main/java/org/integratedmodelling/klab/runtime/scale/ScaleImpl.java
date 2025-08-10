@@ -4,6 +4,7 @@ import com.google.common.primitives.Longs;
 import java.io.Serial;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.*;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type;
@@ -523,8 +524,8 @@ public class ScaleImpl implements Scale {
   }
 
   @Override
-  public List<Geometry> split() {
-    return as(Geometry.class).split();
+  public List<Geometry> split(Data.SpaceFillingCurve fillCurve, int suggestedSplits) {
+    return as(Geometry.class).split(fillCurve, suggestedSplits);
   }
 
   @Override
@@ -698,8 +699,8 @@ public class ScaleImpl implements Scale {
     }
 
     @Override
-    public List<Geometry> split() {
-      return ScaleImpl.this.split();
+    public List<Geometry> split(Data.SpaceFillingCurve fillCurve, int suggestedSplits) {
+      return ScaleImpl.this.split(fillCurve, suggestedSplits);
     }
 
     @Override

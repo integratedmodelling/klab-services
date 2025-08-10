@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.geometry;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
@@ -417,19 +418,12 @@ public interface Geometry extends Serializable, Locator {
   long[] getExtentOffsets();
 
   /**
-   * TODO unimplemented. Must define the constraint API and the offset retrieval operation.
-   *
-   * <p>Split a geometry in a list of geometries whose extent and/or resolution match the specified
-   * constraints (TO BE DEFINED). The resulting geometries will have their {@link
-   * #getExtentOffsets()} return the offset per each dimension within the original geometry so that
-   * the corresponding original offsets can be reconstructed.
-   *
-   * <p>This can be used to parallelize a large geometry so that it can be processed in parallel
-   * chunks.
+   * TODO needed for resource access when multiple buffers are requested and accepted by the
+   *  adapter or contextualizer.
    *
    * @return
    */
-  List<Geometry> split();
+  List<Geometry> split(Data.SpaceFillingCurve fillCurve, int suggestedSplits);
 
   /**
    * If this is true, the reported size will not include the time, and the time dimension will have

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.runtime.extension;
 
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
@@ -31,6 +32,9 @@ public class AdapterDescriptor {
   private Set<ResourceAdapter.Validator.LifecyclePhase> validatedPhases;
   private List<ResourceTransport.Schema> importSchemata;
   private List<ResourceTransport.Schema> exportSchemata;
+  private int splits;
+  private Data.SpaceFillingCurve fillCurve;
+  private long minSplitSize;
 
   // do not remove - for the deserializer
   public AdapterDescriptor() {}
@@ -47,6 +51,9 @@ public class AdapterDescriptor {
       boolean inspecting,
       boolean publishing,
       boolean embeddable,
+      Data.SpaceFillingCurve fillCurve,
+      int splits,
+      long minSplitSize,
       Set<ResourceAdapter.Validator.LifecyclePhase> validatedPhases,
       List<ResourceTransport.Schema> importSchemata,
       List<ResourceTransport.Schema> exportSchemata,
@@ -66,6 +73,9 @@ public class AdapterDescriptor {
     this.exportSchemata = exportSchemata;
     this.embeddable = embeddable;
     this.parameters = parameters;
+    this.splits = splits;
+    this.fillCurve = fillCurve;
+    this.minSplitSize = minSplitSize;
   }
 
   public String getName() {
@@ -186,5 +196,29 @@ public class AdapterDescriptor {
 
   public void setEmbeddable(boolean embeddable) {
     this.embeddable = embeddable;
+  }
+
+  public int getSplits() {
+    return splits;
+  }
+
+  public void setSplits(int splits) {
+    this.splits = splits;
+  }
+
+  public Data.SpaceFillingCurve getFillCurve() {
+    return fillCurve;
+  }
+
+  public void setFillCurve(Data.SpaceFillingCurve fillCurve) {
+    this.fillCurve = fillCurve;
+  }
+
+  public long getMinSplitSize() {
+    return minSplitSize;
+  }
+
+  public void setMinSplitSize(long minSplitSize) {
+    this.minSplitSize = minSplitSize;
   }
 }
