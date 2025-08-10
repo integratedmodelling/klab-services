@@ -93,6 +93,10 @@ public @interface ResourceAdapter {
    * the buffers created at the runtime side to inherit the fill curve, or remapping may take place
    * when the data are received.
    *
+   * <p>If the fill curve is unspecified and the adapter handles spatial data, a @FillCurve-tagged
+   * method must be present in the adapter class that returns a {@link Data.SpaceFillingCurve}
+   * (TBD).
+   *
    * @return
    */
   Data.SpaceFillingCurve fillCurve() default Data.SpaceFillingCurve.UNSPECIFIED;
@@ -103,6 +107,9 @@ public @interface ResourceAdapter {
    * geometries, using the fill curve specified. If the data can be arbitrarily split, set this to
    * UNLIMITED_SPLITS.
    *
+   * <p>If splits matter and cannot be known in advance, provide an adapter method that returns them
+   * using the @Splits annotation. (TBD)
+   *
    * @return
    */
   int splits() default 1;
@@ -110,6 +117,9 @@ public @interface ResourceAdapter {
   /**
    * If splits > 1, the adapter may suggest a geometry size that it can handle in one request. The
    * runtime may or may not honor it.
+   *
+   * <p>If the size matters and cannot be known in advance, provide an adapter method that returns
+   * it using the @SplitSize annotation. (TBD)
    *
    * @return
    */

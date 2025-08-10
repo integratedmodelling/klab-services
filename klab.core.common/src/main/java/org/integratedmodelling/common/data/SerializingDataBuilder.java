@@ -83,6 +83,7 @@ public class SerializingDataBuilder implements Data.Builder {
     return new SerializingDataBuilder(name, observable, geometry, this.builder);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T extends Storage.Buffer> T buffer(
       Class<T> fillerClass, Data.SpaceFillingCurve spaceFillingCurve) {
