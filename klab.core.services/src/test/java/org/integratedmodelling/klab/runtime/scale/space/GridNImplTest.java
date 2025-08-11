@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.scale.space;
 
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.geometry.impl.GridNImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.GridN;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.junit.jupiter.api.Disabled;

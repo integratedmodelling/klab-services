@@ -141,13 +141,13 @@ public interface Data {
 
     public final int dimensions;
 
-    public Pair<LongToLongArrayFunction, LongArrayToLongFunction> offsetMappers(Geometry geometry) {
-      Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
-      if (configuration == null) {
-        throw new KlabIllegalStateException("k.LAB environment not configured");
-      }
-      return configuration.getSpatialOffsetMapping(geometry, this);
-    }
+//    public Pair<LongToLongArrayFunction, LongArrayToLongFunction> offsetMappers(Geometry geometry) {
+//      Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+//      if (configuration == null) {
+//        throw new KlabIllegalStateException("k.LAB environment not configured");
+//      }
+//      return configuration.getSpatialOffsetMapping(geometry, this);
+//    }
 
     SpaceFillingCurve(int dimensions) {
       this.dimensions = dimensions;
@@ -553,6 +553,9 @@ public interface Data {
      * <p>TODO restore a buffers() with a size or split parameter to produce multiple parallel
      * buffers. Those need to be known at the consumer side, so they would complicate the Avro
      * schema.
+     *
+     * FIXME this should return a filler, not a Buffer. The buffer exists outside of the builder. This one just
+     *  forces the call to scan() which adds nothing to the semantics.
      *
      * @param fillerClass the class of buffer to create
      * @param spaceFillingCurve the space filling curve to use

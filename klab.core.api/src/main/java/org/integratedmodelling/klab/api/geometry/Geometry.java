@@ -418,12 +418,64 @@ public interface Geometry extends Serializable, Locator {
   long[] getExtentOffsets();
 
   /**
-   * TODO needed for resource access when multiple buffers are requested and accepted by the
-   *  adapter or contextualizer.
+   * TODO needed for resource access when multiple buffers are requested and accepted by the adapter
+   * or contextualizer.
    *
+   * <p>REVISE AS FOLLOWS:
+   *
+   * <p>1. Splits can only happen on regular spatial grids. Temporal is also meaningful, but not
+   * needed here as the splits are meant for parallelization, so no temporal splits are supported.
+   *
+   * <p>2. Splits that should not be requested simply produce a list of 1 geometry == self.
+   *
+   * <p>3. Splits around splittable spatial grids will use GridN to track the geometries.
+   *
+   * <p>4. The resulting geometries will maintain their identity but can be merged into a non-split
+   * other.
+   *
+   * <p>5. The resulting geometries will be iterable according to a specific fill curve and will
+   * remap the indices keeping in mind the fill curve and all grid remapping.
+   *
+   * @deprecated the logic should not need a fill curve. Logical constraints to splitting make it
+   *     meaningless here.
    * @return
    */
-  List<Geometry> split(Data.SpaceFillingCurve fillCurve, int suggestedSplits);
+  List<Geometry> split(
+      /* NO - the fill curve is relevant to the iteration, as all splits must be consistent with grids */ Data
+              .SpaceFillingCurve
+          fillCurve,
+      int suggestedSplits);
+
+
+
+  /**
+   * Split the geometry into the given number of splits, or whatever is practical to approximate it.
+   * In some cases the split won't happen and a list containing this will be returned.
+   *
+   * @param suggestedSplits
+   * @return
+   */
+  List<Geometry> split(int suggestedSplits);
+
+  /**
+   * Merge back the geometries into one that will maintain the merged geometries and can remap
+   * iterated offsets to the original, using any requested fill curve.
+   *
+   * @param splitGeometries
+   * @return
+   */
+  static Geometry merge(List<Geometry> splitGeometries) {
+      if (splitGeometries.isEmpty()) {
+          return EMPTY;
+      }
+      if (splitGeometries.size() == 1) {
+          return splitGeometries.getFirst();
+      }
+      // TODO
+      return null;
+  }
+
+
 
   /**
    * If this is true, the reported size will not include the time, and the time dimension will have

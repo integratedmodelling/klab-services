@@ -155,16 +155,16 @@ public enum Klab {
 
     Concept getNonSemanticConcept(SemanticType semanticType);
 
-    /**
-     * Return offset mappers (direct and inverse) for the passed space filling curve in the passed
-     * geometry.
-     *
-     * @param geometry
-     * @param spaceFillingCurve
-     * @return
-     */
-    Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction> getSpatialOffsetMapping(
-        Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve);
+//    /**
+//     * Return offset mappers (direct and inverse) for the passed space filling curve in the passed
+//     * geometry.
+//     *
+//     * @param geometry
+//     * @param spaceFillingCurve
+//     * @return
+//     */
+//    Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction> getSpatialOffsetMapping(
+//        Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve);
 
     Envelope getSpatialEnvelope(
         double minX, double minY, double maxX, double maxY, Projection projection);

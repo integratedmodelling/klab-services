@@ -1605,7 +1605,13 @@ public class GeometryImpl implements Geometry {
     return result;
   }
 
-  /**
+    @Override
+    public List<Geometry> split(int suggestedSplits) {
+        return List.of(this);
+    }
+
+
+    /**
    * Return the located offsets corresponding to the passed locator. TODO turn this into a
    * subsetting operation so that the locator may select multiple offsets in one or more dimensions
    *

@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.scale.space;
+package org.integratedmodelling.klab.api.geometry.impl;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.GridN;

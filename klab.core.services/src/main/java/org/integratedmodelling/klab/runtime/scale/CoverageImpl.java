@@ -450,6 +450,13 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
   }
 
   @Override
+  public List<Geometry> split(int suggestedSplits) {
+    return as(Geometry.class).split(suggestedSplits).stream()
+        .map(geometry -> (Geometry) new CoverageImpl(new ScaleImpl(geometry), this.coverage))
+        .toList();
+  }
+
+  @Override
   public boolean isComplete() {
     return coverage >= minRequiredCoverage;
   }

@@ -529,6 +529,13 @@ public class ScaleImpl implements Scale {
   }
 
   @Override
+  public List<Geometry> split(int suggestedSplits) {
+    return as(Geometry.class).split(suggestedSplits).stream()
+        .map(g -> (Geometry) Scale.create(g))
+        .toList();
+  }
+
+  @Override
   public Scale collapse(Type... dimensions) {
     // TODO Auto-generated method stub
     return null;
@@ -701,6 +708,11 @@ public class ScaleImpl implements Scale {
     @Override
     public List<Geometry> split(Data.SpaceFillingCurve fillCurve, int suggestedSplits) {
       return ScaleImpl.this.split(fillCurve, suggestedSplits);
+    }
+
+    @Override
+    public List<Geometry> split(int suggestedSplits) {
+      return ScaleImpl.this.split(suggestedSplits);
     }
 
     @Override

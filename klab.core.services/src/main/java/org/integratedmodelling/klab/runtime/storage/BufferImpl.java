@@ -41,7 +41,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
       Data.SpaceFillingCurve spaceFillingCurve,
       long offset,
       long timestamp) {
-    super(geometry, spaceFillingCurve);
+//    super(geometry, spaceFillingCurve);
     this.storage = stateStorage;
     this.timestamp = timestamp;
     this.dataType = stateStorage.getType();
