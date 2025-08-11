@@ -126,6 +126,14 @@ public @interface ResourceAdapter {
   long minSizeForSplitting() default 0;
 
   /**
+   * If the adapter has a limitation in the size of the geometry it can handle, report it here. The
+   * resolver will skip resources using an adapter that does not meet this requirement.
+   *
+   * @return
+   */
+  long maxSize() default 0;
+
+  /**
    * The annotation enables specialized validations for all phases of the resource lifecycle. A
    * non-universal adapter must provide at least a validator for LocalImport.
    *

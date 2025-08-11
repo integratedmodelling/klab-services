@@ -230,4 +230,23 @@ public @interface KlabFunction {
    * @return
    */
   Data.SpaceFillingCurve fillingCurve() default Data.SpaceFillingCurve.UNSPECIFIED;
+
+  /**
+   * If splits > 1, the function may suggest a geometry size that it can handle in one request. The
+   * runtime may or may not honor it.
+   *
+   * <p>If the size matters and cannot be known in advance, provide an adapter method that returns
+   * it using the @SplitSize annotation. (TBD)
+   *
+   * @return
+   */
+  long minSizeForSplitting() default 0;
+
+  /**
+   * If the adapter has a limitation in the size of the geometry it can handle, report it here. The resolver will
+   * skip functions that do not meet this requirement.
+   *
+   * @return
+   */
+  long maxSize() default 0;
 }
