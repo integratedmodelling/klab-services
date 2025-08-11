@@ -208,10 +208,8 @@ public interface Data {
           return flattenRowMajor(coords, sizes);
         }
         case D3_ZYX: {
-          // Scan order: Z slowest, then Y, X fastest
-          int[] order = new int[] {2, 1, 0};
-          long[] coords = coordsFromStepByOrder(nsteps, sizes, order);
-          return flattenRowMajor(coords, sizes);
+          // For offset(), 3D variants fall back to row-major: return normalized steps
+          return nsteps;
         }
         case D2_HILBERT:
         case D3_HILBERT:
@@ -273,7 +271,11 @@ public interface Data {
           return coords;
         }
         case D3_ZYX: {
-          return coordsFromStepByOrder(nsteps, sizes, new int[] {2, 1, 0});
+          // For offsets(), 3D variants fall back to row-major coordinates as well
+          int n = sizes.length;
+          int[] order = new int[n];
+          for (int i = 0; i < n; i++) order[i] = i;
+          return coordsFromStepByOrder(nsteps, sizes, order);
         }
         case D2_HILBERT:
         case D3_HILBERT:
@@ -406,7 +408,10 @@ public interface Data {
           break;
         }
         case D3_ZYX: {
-          coords = coordsFromStepByOrder(nsteps, originalSizes, new int[] {2, 1, 0});
+          int n = originalSizes.length;
+          int[] order = new int[n];
+          for (int i = 0; i < n; i++) order[i] = i; // treat as row-major for mapping as well
+          coords = coordsFromStepByOrder(nsteps, originalSizes, order);
           break;
         }
         case D2_HILBERT:
@@ -443,7 +448,10 @@ public interface Data {
           break;
         }
         case D3_ZYX: {
-          destStep = stepFromCoordsByOrder(coords, originalSizes, new int[] {2, 1, 0});
+          int n = originalSizes.length;
+          int[] order = new int[n];
+          for (int i = 0; i < n; i++) order[i] = i; // row-major destination for ZYX variant
+          destStep = stepFromCoordsByOrder(coords, originalSizes, order);
           break;
         }
         case D2_HILBERT:

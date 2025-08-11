@@ -632,7 +632,8 @@ public class RuntimeService extends BaseService
       }
 
       // if any embeddable component was returned, attempt to load it
-      if (!getComponentRegistry().loadComponents(ret, scope)) {
+      if (settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class)
+          && !getComponentRegistry().loadComponents(ret, scope)) {
         Logging.INSTANCE.warn("Could not load components suggested after ingestion of resource");
       }
     }
