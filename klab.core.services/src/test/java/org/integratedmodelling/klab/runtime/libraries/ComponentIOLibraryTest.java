@@ -37,7 +37,7 @@ class ComponentIOLibraryTest {
         Parameters params = Parameters.create();
         File karFile = new File("src/test/resources/klab.component.geospatial-1.0-SNAPSHOT-component.kar");
 
-        var result = ComponentIOLibrary.importComponentDirectKar(params, karFile, service, null);
+        var result = ComponentIOLibrary.importComponentDirect(params, karFile, service, null);
 
         Assertions.assertFalse(result.isEmpty());
     }

@@ -26,30 +26,12 @@ import java.util.zip.ZipFile;
 public class ComponentIOLibrary {
 
   @Importer(
-      schema = "jar.import",
-      knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,
-      description = "Import a component by directly uploading a kar file",
-      mediaType = "application/java-archive",
-      fileExtensions = {"kar"})
-  public static ResourceSet importComponentDirect(File file, BaseService service, Scope scope) {
-
-    // TODO this should load the plug-in, and if successful, copy the kar in the component registry,
-    //  without setting it into the Maven cache at all. This can only be updated by uploading a new
-    //  kar for the same component.
-    if (file != null && file.exists()) {
-      var componentRegistry = service.getComponentRegistry();
-    }
-
-    return ResourceSet.empty(Notification.error("Jar import not yet implemented"));
-  }
-
-  @Importer(
           schema = "kar.import",
           knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,
           description = "Import a component by directly uploading a kar file",
           mediaType = "application/java-archive",
           fileExtensions = {"kar"})
-  public static ResourceSet importComponentDirectKar(Parameters<String> properties, File file, BaseService service, Scope scope) {
+  public static ResourceSet importComponentDirect(Parameters<String> properties, File file, BaseService service, Scope scope) {
 
     // TODO this should load the plug-in, and if successful, copy the kar in the component registry,
     //  without setting it into the Maven cache at all. This can only be updated by uploading a new
