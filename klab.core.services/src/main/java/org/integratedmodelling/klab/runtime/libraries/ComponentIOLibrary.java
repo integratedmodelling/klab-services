@@ -14,13 +14,8 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.*;
-import java.nio.file.FileSystems;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -53,19 +48,7 @@ public class ComponentIOLibrary {
           knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,
           description = "Import a component by directly uploading a kar file",
           mediaType = "application/java-archive",
-          fileExtensions = {"kar"},
-          properties = {
-          @KlabFunction.Argument(
-            name = "groupId",
-            type = Artifact.Type.TEXT,
-            optional = true,
-            description = "Maven group ID"),
-          @KlabFunction.Argument(
-            name = "artifact",
-            type = Artifact.Type.TEXT,
-            optional = true,
-            description = "Maven artifact ID"),
-          })
+          fileExtensions = {"kar"})
   public static ResourceSet importComponentDirectKar(Parameters<String> properties, File file, BaseService service, Scope scope) {
 
     // TODO this should load the plug-in, and if successful, copy the kar in the component registry,
@@ -75,27 +58,19 @@ public class ComponentIOLibrary {
       return ResourceSet.empty(Notification.error("Non existing .kar file."));
     }
 
-    Version version = new Version();
-
-    String artifactId = properties.contains("artifactId") ?
-            properties.get("artifactId", String.class) :
-            file.getName().substring(0, file.getName().indexOf('-'));
-
     String groupId = "org.integratedmodelling";
-    var componentRegistry = service.getComponentRegistry();
-    if (properties.contains("groupId")) {
-      groupId = properties.get("groupId", String.class);
-    }
+    String artifactId = "";
+    String version = Version.EMPTY_VERSION.toString();
 
-    // The path of the file you are looking for
-    String targetFilePath = "META-INF/maven/" + groupId + "/" + artifactId + "/pom.properties";
+    String manifestPath = "META-INF/MANIFEST.MF";
+
 
     try {
       ZipFile zipFile = new ZipFile(file.getAbsolutePath());
-      ZipEntry entry = zipFile.getEntry(targetFilePath);
+      ZipEntry entry = zipFile.getEntry(manifestPath);
 
       if (entry == null) {
-        System.err.println("Entry not found: " + targetFilePath);
+        System.err.println("Entry not found: " + manifestPath);
         return ResourceSet.empty(Notification.error("Cannot find definition of .kar file."));
       }
 
@@ -104,9 +79,16 @@ public class ComponentIOLibrary {
       String line;
 
       while ((line = reader.readLine()) != null) {
-        if (line.startsWith("version=")) {
-          version = Version.create(line.substring(line.indexOf("=") + 1, line.length()));
-          break;
+        if (line.startsWith("Plugin-Id:")) {
+          artifactId = line.substring(line.indexOf(":") + 1).trim();
+          continue;
+        }
+        if (line.startsWith("Plugin-Vendor-Id:")) {
+          groupId = line.substring(line.indexOf(":") + 1).trim();
+          continue;
+        }
+        if (line.startsWith("Plugin-Version:")) {
+          version = line.substring(line.indexOf(":") + 1).trim();
         }
       }
 
@@ -117,6 +99,7 @@ public class ComponentIOLibrary {
     }
 
     var mavenCoordinates = groupId + ":" + artifactId + ":" + version;
+    var componentRegistry = service.getComponentRegistry();
     var result = componentRegistry.installComponent(file, mavenCoordinates);
     if (result != null) {
       return result.getSecond();
