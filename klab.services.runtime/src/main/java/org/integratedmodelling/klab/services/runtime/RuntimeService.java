@@ -309,7 +309,8 @@ public class RuntimeService extends BaseService
                   () -> {
                     for (var service : serviceContextScope.getServices(serviceClass)) {
                       // if things are OK, the service repeats the ID back
-                      if (!serviceContextScope
+                      if (service.status().isAvailable() &&
+                              !serviceContextScope
                           .getId()
                           .equals(service.registerNewContext(serviceContextScope, userScope))) {
                         fail.set(true);
