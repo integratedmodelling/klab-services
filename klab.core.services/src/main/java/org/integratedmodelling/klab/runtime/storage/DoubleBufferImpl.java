@@ -18,10 +18,10 @@ public class DoubleBufferImpl extends BufferImpl implements Storage.DoubleBuffer
       Observation observation,
       StorageImpl doubleStorage,
       long size,
-      Data.SpaceFillingCurve spaceFillingCurve,
+      Data.FillCurve fillCurve,
       long offset,
       long timestamp) {
-    super(geometry, observation, doubleStorage, size, spaceFillingCurve, offset, timestamp);
+    super(geometry, observation, doubleStorage, size, fillCurve, offset, timestamp);
     this.data = doubleStorage.stateStorage.getDoubleBuffer(size);
   }
 

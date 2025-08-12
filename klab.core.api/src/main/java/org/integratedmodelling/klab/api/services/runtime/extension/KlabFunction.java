@@ -7,7 +7,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 
 /**
@@ -229,7 +228,7 @@ public @interface KlabFunction {
    *
    * @return
    */
-  Data.SpaceFillingCurve fillingCurve() default Data.SpaceFillingCurve.UNSPECIFIED;
+  Data.FillCurve fillingCurve() default Data.FillCurve.UNSPECIFIED;
 
   /**
    * If splits > 1, the function may suggest a geometry size that it can handle in one request. The

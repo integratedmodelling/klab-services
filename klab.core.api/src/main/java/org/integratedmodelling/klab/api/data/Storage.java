@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api.data;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.PrimitiveIterator;
 
@@ -182,7 +181,7 @@ public interface Storage extends RuntimeAsset {
   Type getType();
 
   /**
-   * The {@link Data.SpaceFillingCurve} for the spatial arrangement in the buffers. The fill curve
+   * The {@link Data.FillCurve} for the spatial arrangement in the buffers. The fill curve
    * is established based on the geometry unless a <code>@fillcurve
    * </code> annotation is present on the model. The fill curve is irrelevant if there is only one
    * spatial state or no spatial extent at all. In such cases it's best to avoid initializing a moot
@@ -192,7 +191,7 @@ public interface Storage extends RuntimeAsset {
    *
    * @return the spatial fill curve for the spatial extent.
    */
-  Data.SpaceFillingCurve spaceFillCurve();
+  Data.FillCurve spaceFillCurve();
 
   /**
    * Return the buffers that cover the passed geometry at the passed time. The time in the geometry

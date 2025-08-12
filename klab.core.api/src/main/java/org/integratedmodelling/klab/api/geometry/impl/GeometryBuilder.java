@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.geometry.impl;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.Klab;
@@ -153,7 +154,6 @@ public class GeometryBuilder {
       return this;
     }
 
-
     public SpaceBuilder space() {
       return new SpaceBuilder();
     }
@@ -196,7 +196,13 @@ public class GeometryBuilder {
 
     public SpaceBuilder size(long n) {
       space.setShape(List.of(n));
-      space.setRegular(false);
+      //      space.setRegular(false);
+      return this;
+    }
+
+    public SpaceBuilder size(List<Long> n) {
+      space.setShape(n);
+      //      space.setRegular(false);
       return this;
     }
 
@@ -210,13 +216,24 @@ public class GeometryBuilder {
       return this;
     }
 
+    public SpaceBuilder boundingBox(double[] bbox) {
+      space
+          .getParameters()
+          .put(GeometryImpl.PARAMETER_SPACE_BOUNDINGBOX, GeometryImpl.encodeVal(bbox));
+      return this;
+    }
+
     public SpaceBuilder shape(String wktb) {
       space.getParameters().put(GeometryImpl.PARAMETER_SPACE_SHAPE, wktb);
       return this;
     }
 
     public SpaceBuilder projection(String projection) {
-      space.getParameters().put(GeometryImpl.PARAMETER_SPACE_PROJECTION, projection);
+      if (projection != null) {
+        space.getParameters().put(GeometryImpl.PARAMETER_SPACE_PROJECTION, projection);
+      } else {
+        space.getParameters().remove(GeometryImpl.PARAMETER_SPACE_PROJECTION);
+      }
       return this;
     }
 

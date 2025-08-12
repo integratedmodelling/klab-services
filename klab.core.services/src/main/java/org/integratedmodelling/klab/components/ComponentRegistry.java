@@ -1325,7 +1325,7 @@ public class ComponentRegistry {
 
     private final String name;
     private final int splits;
-    private final Data.SpaceFillingCurve fillCurve;
+    private final Data.FillCurve fillCurve;
     private final long minSplitSize;
     private Set<Artifact.Type> resourceType = EnumSet.noneOf(Artifact.Type.class);
     private final Version version;

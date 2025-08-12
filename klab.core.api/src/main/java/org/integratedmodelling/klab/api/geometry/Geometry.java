@@ -441,8 +441,7 @@ public interface Geometry extends Serializable, Locator {
    * @return
    */
   List<Geometry> split(
-      /* NO - the fill curve is relevant to the iteration, as all splits must be consistent with grids */ Data
-              .SpaceFillingCurve
+      /* NO - the fill curve is relevant to the iteration, as all splits must be consistent with grids */ Data.FillCurve
           fillCurve,
       int suggestedSplits);
 

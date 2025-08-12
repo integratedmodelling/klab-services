@@ -15,10 +15,15 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
+import org.integratedmodelling.klab.api.geometry.impl.GridNImpl;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.ServiceConfigurationError;
 
 /**
  * GridN is a generalization of {@link Grid} to an arbitrary number of dimensions (N ≥ 1). It
@@ -213,4 +218,31 @@ public interface GridN extends Serializable {
    * @throws IllegalArgumentException if offsets are null, wrong length, or out of range
    */
   Pair<GridN, long[]> mapToSubgrid(long[] globalOffsets);
+
+  Geometry.Dimension asDimension();
+
+  /**
+   * Return the grid corresponding to the passed space.
+   *
+   * @param dimension
+   * @return
+   */
+  static GridN of(Geometry.Dimension dimension) {
+
+    // TODO
+    var projection =
+        dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_PROJECTION, String.class);
+    //      var proj = projection == null ? null : Projection.of(projection);
+    var bbox = dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_BOUNDINGBOX, List.class);
+    //      var ret = new GridNImpl(dimension.getDimensionality(), )
+    var bounds = new double[dimension.getDimensionality()][2];
+    var cellSizes = new double[dimension.getDimensionality()];
+    int b = 0;
+    for (int i = 0; i < dimension.getDimensionality(); i++) {
+      bounds[i][0] = ((Number) bbox.get(b++)).doubleValue();
+      bounds[i][1] = ((Number) bbox.get(b++)).doubleValue();
+      cellSizes[i] = (bounds[i][1] - bounds[i][0]) / dimension.getShape().get(i);
+    }
+    return new GridNImpl(dimension.getDimensionality(), cellSizes, bounds, null, true, null);
+  }
 }

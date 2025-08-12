@@ -18,7 +18,7 @@ class GeometryAndCurvesTest {
 
     // D2_XY behaves as row-major: offset == step (mod total)
     for (int s = -2; s < 8; s++) {
-      long off = Data.SpaceFillingCurve.D2_XY.offset(s, sizes12);
+      long off = Data.FillCurve.D2_XY.offset(s, sizes12);
       long total = 3L * 2L;
       long expected = ((s % total) + total) % total;
       assertEquals(expected, off, "D2_XY should be row-major normalized to [0,total)");
@@ -27,7 +27,7 @@ class GeometryAndCurvesTest {
     // D2_YX example mapping for sizes [3,2]: expected sequence [0,2,4,1,3,5]
     long[] expectedYX = new long[] {0, 2, 4, 1, 3, 5};
     for (int s = 0; s < expectedYX.length; s++) {
-      long off = Data.SpaceFillingCurve.D2_YX.offset(s, sizes12);
+      long off = Data.FillCurve.D2_YX.offset(s, sizes12);
       assertEquals(expectedYX[s], off, "D2_YX incorrect at step " + s);
     }
 
@@ -35,15 +35,15 @@ class GeometryAndCurvesTest {
     long[] sizes23 = new long[] {2, 3};
     long[] expectedXInvY = new long[] {2, 1, 0, 5, 4, 3};
     for (int s = 0; s < expectedXInvY.length; s++) {
-      long off = Data.SpaceFillingCurve.D2_XInvY.offset(s, sizes23);
+      long off = Data.FillCurve.D2_XInvY.offset(s, sizes23);
       assertEquals(expectedXInvY[s], off, "D2_XInvY incorrect at step " + s);
     }
 
     // 3D variants fall back to row-major in offset()
     long[] sizes3d = new long[] {2, 2, 2};
     for (int s = 0; s < 8; s++) {
-      long offXYZ = Data.SpaceFillingCurve.D3_XYZ.offset(s, sizes3d);
-      long offZYX = Data.SpaceFillingCurve.D3_ZYX.offset(s, sizes3d);
+      long offXYZ = Data.FillCurve.D3_XYZ.offset(s, sizes3d);
+      long offZYX = Data.FillCurve.D3_ZYX.offset(s, sizes3d);
       assertEquals(s, offXYZ, "D3_XYZ offset should equal step in row-major");
       // ZYX computes coords differently but flatten to same row-major offset
       assertEquals(offXYZ, offZYX, "D3_ZYX should flatten to same row-major offset");
@@ -54,16 +54,16 @@ class GeometryAndCurvesTest {
   void spaceFillingCurve_map_preservesRowMajorOffset() {
     long[] sizes = new long[] {3, 2};
     for (int s = 0; s < 6; s++) {
-      long destStep = Data.SpaceFillingCurve.D2_XY.map(s, sizes, Data.SpaceFillingCurve.D2_YX);
-      long srcOffset = Data.SpaceFillingCurve.D2_XY.offset(s, sizes);
-      long destOffset = Data.SpaceFillingCurve.D2_YX.offset((int) destStep, sizes);
+      long destStep = Data.FillCurve.D2_XY.map(s, sizes, Data.FillCurve.D2_YX);
+      long srcOffset = Data.FillCurve.D2_XY.offset(s, sizes);
+      long destOffset = Data.FillCurve.D2_YX.offset((int) destStep, sizes);
       assertEquals(srcOffset, destOffset, "Mapping XY->YX must preserve row-major offset");
     }
 
     for (int s = 0; s < 6; s++) {
-      long destStep = Data.SpaceFillingCurve.D2_YX.map(s, sizes, Data.SpaceFillingCurve.D2_XInvY);
-      long srcOffset = Data.SpaceFillingCurve.D2_YX.offset(s, sizes);
-      long destOffset = Data.SpaceFillingCurve.D2_XInvY.offset((int) destStep, sizes);
+      long destStep = Data.FillCurve.D2_YX.map(s, sizes, Data.FillCurve.D2_XInvY);
+      long srcOffset = Data.FillCurve.D2_YX.offset(s, sizes);
+      long destOffset = Data.FillCurve.D2_XInvY.offset((int) destStep, sizes);
       assertEquals(srcOffset, destOffset, "Mapping YX->XInvY must preserve row-major offset");
     }
   }
@@ -75,17 +75,17 @@ class GeometryAndCurvesTest {
     Geometry g3 = Geometry.create("S3(3,4,5)");
     Geometry gNoSpace = Geometry.create("T1(5)");
 
-    assertEquals(Data.SpaceFillingCurve.D1_LINEAR, Data.SpaceFillingCurve.defaultCurve(g1));
-    assertEquals(Data.SpaceFillingCurve.D2_XY, Data.SpaceFillingCurve.defaultCurve(g2));
-    assertEquals(Data.SpaceFillingCurve.D3_XYZ, Data.SpaceFillingCurve.defaultCurve(g3));
+    assertEquals(Data.FillCurve.D1_LINEAR, Data.FillCurve.defaultCurve(g1));
+    assertEquals(Data.FillCurve.D2_XY, Data.FillCurve.defaultCurve(g2));
+    assertEquals(Data.FillCurve.D3_XYZ, Data.FillCurve.defaultCurve(g3));
     // If no space, spec says default to D1_LINEAR
-    assertEquals(Data.SpaceFillingCurve.D1_LINEAR, Data.SpaceFillingCurve.defaultCurve(gNoSpace));
+    assertEquals(Data.FillCurve.D1_LINEAR, Data.FillCurve.defaultCurve(gNoSpace));
   }
 
   @Test
   void geometry_split_2D_evenSplit_withBbox() {
     Geometry g = Geometry.create("S2(8,6){bbox=[0 8 0 6]}");
-    List<Geometry> tiles = g.split(Data.SpaceFillingCurve.D2_XY, 4);
+    List<Geometry> tiles = g.split(Data.FillCurve.D2_XY, 4);
 
     assertEquals(4, tiles.size(), "Expected 2x2 tiling for 8x6 with suggested 4");
 
@@ -126,15 +126,15 @@ class GeometryAndCurvesTest {
   void geometry_split_respectsEdgeCases() {
     // suggestedSplits <= 1 => singleton
     Geometry g = Geometry.create("S2(4,4){bbox=[0 4 0 4]}");
-    List<Geometry> tiles1 = g.split(Data.SpaceFillingCurve.D2_XY, 1);
+    List<Geometry> tiles1 = g.split(Data.FillCurve.D2_XY, 1);
     assertEquals(1, tiles1.size());
 
     // totalCells <= suggestedSplits => singleton
-    List<Geometry> tiles2 = g.split(Data.SpaceFillingCurve.D2_XY, 64);
+    List<Geometry> tiles2 = g.split(Data.FillCurve.D2_XY, 64);
     assertEquals(1, tiles2.size());
 
     // Mismatched curve dimensions => singleton
-    List<Geometry> tiles3 = g.split(Data.SpaceFillingCurve.D3_XYZ, 4);
+    List<Geometry> tiles3 = g.split(Data.FillCurve.D3_XYZ, 4);
     assertEquals(1, tiles3.size());
   }
 
@@ -142,7 +142,7 @@ class GeometryAndCurvesTest {
   @Disabled("Fails consistently")
   void geometry_split_approximateCount_whenPrimeLike() {
     Geometry g = Geometry.create("S2(7,5){bbox=[0 7 0 5]}");
-    List<Geometry> tiles = g.split(Data.SpaceFillingCurve.D2_XY, 5);
+    List<Geometry> tiles = g.split(Data.FillCurve.D2_XY, 5);
 
     // We cannot always get exactly 5 tiles with rectilinear grid; expect >= suggested
     assertTrue(tiles.size() >= 5 && tiles.size() <= 7 * 5);

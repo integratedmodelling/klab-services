@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.GridN;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution;
 import org.integratedmodelling.klab.api.lang.kim.KimQuantity;
@@ -858,6 +859,13 @@ public class GeometryImpl implements Geometry {
     dimensions.add(dimension);
   }
 
+  public Geometry substituteDimension(Dimension dimension) {
+    return new GeometryImpl(
+        dimensions.stream()
+            .map(d -> d.getType() == dimension.getType() ? (DimensionImpl) dimension : d)
+            .toList());
+  }
+
   @Override
   public Granularity getGranularity() {
     return granularity;
@@ -1054,6 +1062,12 @@ public class GeometryImpl implements Geometry {
     }
     hash.put(dimension.type, dimension);
     this.dimensions.addAll(hash.values());
+    finishDefinition();
+  }
+
+  private GeometryImpl(List<DimensionImpl> dimensions) {
+    this.scalar = false;
+    this.dimensions = dimensions;
     finishDefinition();
   }
 
@@ -1411,7 +1425,7 @@ public class GeometryImpl implements Geometry {
   }
 
   @Override
-  public List<Geometry> split(Data.SpaceFillingCurve fillCurve, int suggestedSplits) {
+  public List<Geometry> split(Data.FillCurve fillCurve, int suggestedSplits) {
     // Minimal implementation: split only the SPACE dimension of regular, defined shapes.
     // Other dimensions remain unchanged. Tiles are adjacent and cover the whole bbox (if 2D bbox
     // exists).
@@ -1425,9 +1439,9 @@ public class GeometryImpl implements Geometry {
     }
 
     // Determine effective curve
-    Data.SpaceFillingCurve curve =
-        (fillCurve == null || fillCurve == Data.SpaceFillingCurve.UNSPECIFIED)
-            ? Data.SpaceFillingCurve.defaultCurve(this)
+    Data.FillCurve curve =
+        (fillCurve == null || fillCurve == Data.FillCurve.UNSPECIFIED)
+            ? Data.FillCurve.defaultCurve(this)
             : fillCurve;
 
     // Validate dimensionality
@@ -1435,7 +1449,7 @@ public class GeometryImpl implements Geometry {
     if (nDim <= 0) {
       return List.of(this);
     }
-    if (curve != Data.SpaceFillingCurve.UNSPECIFIED && curve.dimensions != nDim) {
+    if (curve != Data.FillCurve.UNSPECIFIED && curve.dimensions != nDim) {
       // For minimal change, if dimensions mismatch we do not attempt reshaping here.
       return List.of(this);
     }
@@ -1605,13 +1619,31 @@ public class GeometryImpl implements Geometry {
     return result;
   }
 
-    @Override
-    public List<Geometry> split(int suggestedSplits) {
-        return List.of(this);
+  @Override
+  public List<Geometry> split(int suggestedSplits) {
+
+    if (suggestedSplits < 1) {
+      throw new KlabIllegalArgumentException(
+          "cannot split a geometry into " + suggestedSplits + " tiles");
+    } else if (suggestedSplits > 1) {
+
+      // determine which dimensions of the geometry are available for splitting. At the moment we
+      // handle a regular spatial grid only, but we could also support a simple linear approach.
+      var space = dimension(Geometry.Dimension.Type.SPACE);
+      if (space != null && space.isRegular()) {
+        var ret = new ArrayList<Geometry>();
+        var grid = GridN.of(space);
+        for (var subgrid : grid.split(suggestedSplits)) {
+          ret.add(this.substituteDimension(subgrid.asDimension()));
+        }
+        return ret;
+      }
     }
 
+    return List.of(this);
+  }
 
-    /**
+  /**
    * Return the located offsets corresponding to the passed locator. TODO turn this into a
    * subsetting operation so that the locator may select multiple offsets in one or more dimensions
    *

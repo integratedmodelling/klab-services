@@ -8,7 +8,6 @@ import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -33,7 +32,7 @@ public class AdapterDescriptor {
   private List<ResourceTransport.Schema> importSchemata;
   private List<ResourceTransport.Schema> exportSchemata;
   private int splits;
-  private Data.SpaceFillingCurve fillCurve;
+  private Data.FillCurve fillCurve;
   private long minSplitSize;
 
   // do not remove - for the deserializer
@@ -51,7 +50,7 @@ public class AdapterDescriptor {
       boolean inspecting,
       boolean publishing,
       boolean embeddable,
-      Data.SpaceFillingCurve fillCurve,
+      Data.FillCurve fillCurve,
       int splits,
       long minSplitSize,
       Set<ResourceAdapter.Validator.LifecyclePhase> validatedPhases,
@@ -206,11 +205,11 @@ public class AdapterDescriptor {
     this.splits = splits;
   }
 
-  public Data.SpaceFillingCurve getFillCurve() {
+  public Data.FillCurve getFillCurve() {
     return fillCurve;
   }
 
-  public void setFillCurve(Data.SpaceFillingCurve fillCurve) {
+  public void setFillCurve(Data.FillCurve fillCurve) {
     this.fillCurve = fillCurve;
   }
 

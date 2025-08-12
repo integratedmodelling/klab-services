@@ -22,7 +22,7 @@ public class SerializingDataBuilder implements Data.Builder {
   private final Instance.Builder builder;
   private Instance.Builder parentBuilder;
   private final Geometry geometry;
-  private Data.SpaceFillingCurve spaceFillingCurve;
+  private Data.FillCurve fillCurve;
   private Map<Object, Integer> objectKey;
   private int objectCounter = 1;
   private String adapter;
@@ -86,9 +86,9 @@ public class SerializingDataBuilder implements Data.Builder {
   @SuppressWarnings("unchecked")
   @Override
   public <T extends Storage.Buffer> T buffer(
-      Class<T> fillerClass, Data.SpaceFillingCurve spaceFillingCurve) {
+      Class<T> fillerClass, Data.FillCurve fillCurve) {
     if (fillerClass == Storage.DoubleBuffer.class) {
-      return (T) new DoubleBufferFiller(spaceFillingCurve);
+      return (T) new DoubleBufferFiller(fillCurve);
     }
     throw new KlabUnimplementedException(
         "Buffer request for " + fillerClass.getSimpleName() + " illegal or unimplemented");
@@ -114,8 +114,8 @@ public class SerializingDataBuilder implements Data.Builder {
 
   private class DoubleBufferFiller extends MockBuffer implements Storage.DoubleBuffer {
 
-    DoubleBufferFiller(Data.SpaceFillingCurve spaceFillingCurve) {
-      builder.setFillingCurve(spaceFillingCurve.name());
+    DoubleBufferFiller(Data.FillCurve fillCurve) {
+      builder.setFillingCurve(fillCurve.name());
       builder.setDoubleData(
           new ArrayList<>(
               /* TODO more proper pre-allocation, or use temp memory-mapped space with a List interface */ ));

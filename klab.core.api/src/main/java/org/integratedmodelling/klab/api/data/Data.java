@@ -4,8 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
-import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.collections.Pair;
+
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -109,7 +108,7 @@ public interface Data {
    * <p>Extents other than space can be assumed to always use D1_LINEAR whenever they are
    * distributed. At some point we may generalize further.
    */
-  enum SpaceFillingCurve {
+  enum FillCurve {
 
     /** Unfortunately needed because of Java not accepting null in defaults for annotations */
     UNSPECIFIED(0),
@@ -149,7 +148,7 @@ public interface Data {
 //      return configuration.getSpatialOffsetMapping(geometry, this);
 //    }
 
-    SpaceFillingCurve(int dimensions) {
+    FillCurve(int dimensions) {
       this.dimensions = dimensions;
     }
 
@@ -358,7 +357,7 @@ public interface Data {
      * Remap an offset (step index) taken along this curve into the corresponding step index along
      * the destination curve, preserving the same n-dimensional coordinates.
      */
-    public long map(int offset, long[] originalSizes, SpaceFillingCurve destination) {
+    public long map(int offset, long[] originalSizes, FillCurve destination) {
       if (originalSizes == null || originalSizes.length == 0) {
         throw new IllegalArgumentException("sizes must be a non-empty array");
       }
@@ -469,7 +468,7 @@ public interface Data {
       return positiveMod(destStep, total);
     }
 
-    public static SpaceFillingCurve defaultCurve(Geometry geometry) {
+    public static FillCurve defaultCurve(Geometry geometry) {
       var space =
           geometry.getDimensions().stream()
               .filter(d -> d.getType() == Geometry.Dimension.Type.SPACE)
@@ -479,11 +478,11 @@ public interface Data {
           .map(
               dimension ->
                   switch (dimension.getDimensionality()) {
-                    case 2 -> SpaceFillingCurve.D2_XY;
-                    case 3 -> SpaceFillingCurve.D3_XYZ;
-                    default -> SpaceFillingCurve.D1_LINEAR;
+                    case 2 -> FillCurve.D2_XY;
+                    case 3 -> FillCurve.D3_XYZ;
+                    default -> FillCurve.D1_LINEAR;
                   })
-          .orElse(SpaceFillingCurve.D1_LINEAR);
+          .orElse(FillCurve.D1_LINEAR);
     }
   }
 
@@ -558,13 +557,13 @@ public interface Data {
      *  forces the call to scan() which adds nothing to the semantics.
      *
      * @param fillerClass the class of buffer to create
-     * @param spaceFillingCurve the space filling curve to use
+     * @param fillCurve the space filling curve to use
      * @return a single buffer of the specified type using the specified space filling curve
      * @param <T> the type of buffer
      * @throws KlabIllegalStateException if called on an object builder or if the filling curve
      *     cannot be matched to the geometry.
      */
-    <T extends Storage.Buffer> T buffer(Class<T> fillerClass, SpaceFillingCurve spaceFillingCurve);
+    <T extends Storage.Buffer> T buffer(Class<T> fillerClass, FillCurve fillCurve);
 
     /**
      * Must be called on any secondary builders. Should NOT be called on the root builder, passed to

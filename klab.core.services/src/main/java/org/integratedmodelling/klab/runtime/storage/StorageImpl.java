@@ -6,11 +6,9 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -29,7 +27,7 @@ public class StorageImpl implements Storage {
   protected final Geometry geometry;
   protected final ServiceContextScope contextScope;
   protected Persistence persistence;
-  protected Data.SpaceFillingCurve spaceFillingCurve;
+  protected Data.FillCurve fillCurve;
   protected int splits;
   private long transientId = Klab.getNextId();
 
@@ -47,7 +45,7 @@ public class StorageImpl implements Storage {
   protected StorageImpl(
       Observation observation,
       Type type,
-      Data.SpaceFillingCurve fillingCurve,
+      Data.FillCurve fillingCurve,
       int splits,
       StorageManagerImpl stateStorage,
       ServiceContextScope contextScope) {
@@ -56,7 +54,7 @@ public class StorageImpl implements Storage {
     this.observation = observation;
     this.geometry = observation.getGeometry();
     this.contextScope = contextScope;
-    this.spaceFillingCurve = fillingCurve;
+    this.fillCurve = fillingCurve;
     this.splits = contextScope.getSplits(splits);
   }
 
@@ -67,7 +65,7 @@ public class StorageImpl implements Storage {
    * @return
    */
   public List<Buffer> buffers(Geometry geometry, Time eventTime) {
-    return buffersCovering(geometry, eventTime, this.spaceFillingCurve, this.type);
+    return buffersCovering(geometry, eventTime, this.fillCurve, this.type);
   }
 
   @Override
@@ -86,15 +84,15 @@ public class StorageImpl implements Storage {
           "Cannot create or retrieve buffers for more than one varying geometry extent at a time");
     }
 
-    return (List<T>) buffersCovering(geometry, eventTime, this.spaceFillingCurve, this.type);
+    return (List<T>) buffersCovering(geometry, eventTime, this.fillCurve, this.type);
   }
 
   /*
   The storage doesn't have a fill curve until the first buffer request.
    */
   @Override
-  public Data.SpaceFillingCurve spaceFillCurve() {
-    return spaceFillingCurve;
+  public Data.FillCurve spaceFillCurve() {
+    return fillCurve;
   }
 
   /**
@@ -128,7 +126,7 @@ public class StorageImpl implements Storage {
   }
 
   protected List<Buffer> buffersCovering(
-      Geometry geometry, Time eventTime, Data.SpaceFillingCurve fillingCurve, Type dataType) {
+          Geometry geometry, Time eventTime, Data.FillCurve fillingCurve, Type dataType) {
 
     var scale = GeometryRepository.INSTANCE.scale(geometry);
     var time = eventTime == null ? scale.getTime() : eventTime;
@@ -163,7 +161,7 @@ public class StorageImpl implements Storage {
             case BOXING -> null;
             case DOUBLE ->
                 new DoubleBufferImpl(
-                    geometry, observation, this, bs, spaceFillingCurve, offset, timestamp);
+                        geometry, observation, this, bs, fillCurve, offset, timestamp);
             case FLOAT -> null;
             case INTEGER -> null;
             case LONG -> null;
@@ -186,7 +184,7 @@ public class StorageImpl implements Storage {
     this.transientId = transientId;
   }
 
-  private Buffer adaptBuffer(BufferImpl b, Data.SpaceFillingCurve fillingCurve) {
+  private Buffer adaptBuffer(BufferImpl b, Data.FillCurve fillingCurve) {
     // TODO !
     if (b.getFillingCurve() != fillingCurve) {
       // TODO
@@ -221,7 +219,7 @@ public class StorageImpl implements Storage {
     return 0;
   }
 
-  public Data.SpaceFillingCurve getFillCurve() {
-    return spaceFillingCurve;
+  public Data.FillCurve getFillCurve() {
+    return fillCurve;
   }
 }

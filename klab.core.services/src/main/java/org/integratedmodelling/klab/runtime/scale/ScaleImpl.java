@@ -524,7 +524,7 @@ public class ScaleImpl implements Scale {
   }
 
   @Override
-  public List<Geometry> split(Data.SpaceFillingCurve fillCurve, int suggestedSplits) {
+  public List<Geometry> split(Data.FillCurve fillCurve, int suggestedSplits) {
     return as(Geometry.class).split(fillCurve, suggestedSplits);
   }
 
@@ -706,7 +706,7 @@ public class ScaleImpl implements Scale {
     }
 
     @Override
-    public List<Geometry> split(Data.SpaceFillingCurve fillCurve, int suggestedSplits) {
+    public List<Geometry> split(Data.FillCurve fillCurve, int suggestedSplits) {
       return ScaleImpl.this.split(fillCurve, suggestedSplits);
     }
 

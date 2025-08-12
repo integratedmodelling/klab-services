@@ -94,12 +94,12 @@ public @interface ResourceAdapter {
    * when the data are received.
    *
    * <p>If the fill curve is unspecified and the adapter handles spatial data, a @FillCurve-tagged
-   * method must be present in the adapter class that returns a {@link Data.SpaceFillingCurve}
+   * method must be present in the adapter class that returns a {@link Data.FillCurve}
    * (TBD).
    *
    * @return
    */
-  Data.SpaceFillingCurve fillCurve() default Data.SpaceFillingCurve.UNSPECIFIED;
+  Data.FillCurve fillCurve() default Data.FillCurve.UNSPECIFIED;
 
   /**
    * Report the number of splits that the adapter allows. The adapter will always serve an entire

@@ -6,7 +6,6 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -196,11 +195,11 @@ public class StorageManagerImpl implements StorageManager {
         observation, Utils.Annotations.findAnnotation("storage", observation.getAnnotations()));
   }
 
-  public static Triple<Integer, Data.SpaceFillingCurve, Storage.Type> getOptions(
+  public static Triple<Integer, Data.FillCurve, Storage.Type> getOptions(
       ServiceContextScope contextScope, Annotation storageAnnotation, Observation observation) {
     // defaults
     var splits = contextScope.getParallelism().getAsInt();
-    var fillingCurve = Data.SpaceFillingCurve.defaultCurve(observation.getGeometry());
+    var fillingCurve = Data.FillCurve.defaultCurve(observation.getGeometry());
     var storageType =
         contextScope
             .getService(RuntimeService.class)
@@ -214,7 +213,7 @@ public class StorageManagerImpl implements StorageManager {
       if (storageAnnotation.containsKey("fillcurve")) {
         try {
           fillingCurve =
-              Data.SpaceFillingCurve.valueOf(
+              Data.FillCurve.valueOf(
                   storageAnnotation.get("fillcurve").toString().toUpperCase());
         } catch (Throwable t) {
           contextScope.error(
