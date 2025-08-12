@@ -408,20 +408,21 @@ public abstract class ServiceInstance<T extends BaseService> {
       boolean okOperationals = true;
 
       for (var serviceType : allServices) {
-        var service =
-            currentServices
-                .computeIfAbsent(serviceType, type -> new LinkedHashSet<>())
-                .iterator()
-                .next();
-        if (essentials.contains(serviceType)) {
-          if (service == null || !service.status().isAvailable()) {
-            okEssentials = false;
-          }
+        var services = currentServices.computeIfAbsent(serviceType, t -> new LinkedHashSet<>());
+
+        boolean anyAvailable = !services.isEmpty() &&
+                services.stream().anyMatch(s -> s.status().isAvailable());
+
+        if (essentials.contains(serviceType) && !anyAvailable) {
+          okEssentials = false;
         }
-        if (operational.contains(serviceType)) {
-          if (service == null || !service.status().isAvailable()) {
-            okOperationals = false;
-          }
+        if (operational.contains(serviceType) && !anyAvailable) {
+          okOperationals = false;
+        }
+
+        // Small optimization: if both are already false, we can stop early
+        if (!okEssentials && !okOperationals) {
+          break;
         }
       }
 
