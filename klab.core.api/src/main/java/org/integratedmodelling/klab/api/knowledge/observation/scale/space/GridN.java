@@ -219,6 +219,8 @@ public interface GridN extends Serializable {
    */
   Pair<GridN, long[]> mapToSubgrid(long[] globalOffsets);
 
+
+
   Geometry.Dimension asDimension();
 
   /**
