@@ -21,7 +21,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   protected final long offset;
   private long id; // for reference in the knowledge graoh
   private final String urn; // for persistent reference in storage manager
-  private final StoragePera storage;
+  private final StorageImplObsolete storage;
   private final long timestamp;
   protected com.dynatrace.dynahist.Histogram histogram;
   private long transientId = Klab.getNextId();
@@ -36,7 +36,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   protected BufferImpl(
       Geometry geometry,
       Observation observation,
-      StoragePera stateStorage,
+      StorageImplObsolete stateStorage,
       long size,
       Data.FillCurve fillCurve,
       long offset,

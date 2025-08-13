@@ -3,12 +3,8 @@ package org.integratedmodelling.klab.api.data;
 import java.io.Serializable;
 import java.util.List;
 import java.util.PrimitiveIterator;
-
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
-import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.scope.Persistence;
 
 /**
  * Base storage providing only general methods. There is one Storage object per observation, managed
@@ -137,6 +133,16 @@ public interface Storage {
   }
 
   /**
+   * Return the native buffers for the observation we represent correspondent to the scheduler event
+   * that determined their computation. This is called by the scheduler to update the knowledge
+   * graph within the transaction that executed a successful contextualization.
+   *
+   * @param event
+   * @return a list of buffers, possibly empty.
+   */
+  List<Buffer> getNativeBuffers(Scheduler.Event event);
+
+  /**
    * Create or retrieve buffers for the observation we represent, honoring any requests in terms of
    * splits and fill curve. If the buffers do not exist natively for the observation, they will be
    * created and stored in the knowledge graph transaction as the "native" buffers for the locating
@@ -147,22 +153,12 @@ public interface Storage {
    * <p>The overall constraint is the original observation geometry, which all buffers must
    * ultimately cover exactly, and its dimensionality, which must be preserved at all times.
    *
-   * @param locator the geometry that sets the boundaries for the buffers. There must be only one
-   *     varying dimension, normally space.
-   * @param fillCurve
-   * @param splits
-   * @param minSize
-   * @param maxSize
-   * @param transaction must be non-null only when buffers are created.
-   * @return
+   * @param locator the event that sets the boundaries for the buffer computation within the
+   *     observation geometry. It must result in at most one varying dimension, normally space.
+   * @param request the specifications for the buffer geometry, fill curve and split logic.`
+   * @return a list of new or existing buffers, possibly wrapped in mediating buffers.
    */
-  List<Buffer> getOrCreateBuffers(
-      Geometry locator,
-      Data.FillCurve fillCurve,
-      int splits,
-      long minSize,
-      long maxSize,
-      DigitalTwin.Transaction transaction);
+  List<Buffer> getOrCreateBuffers(Scheduler.Event locator, Data.Access request);
 
   /**
    * This will be known after the first buffer is created.

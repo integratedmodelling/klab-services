@@ -5,7 +5,6 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -248,7 +247,7 @@ public class StorageManagerImpl implements StorageManager {
   public Storage getStorage(Observation observation, /* FIXME these come at buffer request */ Annotation storageAnnotation) {
     final var options = getOptions(contextScope, storageAnnotation, observation);
     return this.storage.computeIfAbsent(
-        observation.getUrn(), urn -> new StorageHelper(observation, contextScope));
+        observation.getUrn(), urn -> new StorageImpl(observation, contextScope));
   }
 
   //  @SuppressWarnings("unchecked")

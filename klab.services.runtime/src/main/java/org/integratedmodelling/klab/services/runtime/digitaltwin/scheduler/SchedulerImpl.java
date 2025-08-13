@@ -275,7 +275,7 @@ public class SchedulerImpl implements Scheduler {
       if (observation.getObservable().is(SemanticType.QUALITY)) {
         var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
         if (storage != null) {
-          for (var buffer : storage.buffers(geometry, event.getTime())) {
+          for (var buffer : storage.getNativeBuffers(event)) {
             transaction.link(observation, buffer, GraphModel.Relationship.HAS_DATA);
           }
         }

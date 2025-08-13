@@ -29,8 +29,15 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public interface Data {
 
   /**
-   * All the information related to how the data should be either stored in memory or remapped for
-   * access by specific contextualizers or adapters.
+   * This collects the information related to how the data should be either stored in memory or
+   * remapped for access by specific contextualizers or adapters, enabling the creation of
+   * independent buffers for parallelization based on the type of contextualization. It is created
+   * by collecting the info from the computation (adapter or contextualizer) and compounding it with
+   * any overrides from model/observable annotations and/or runtime configuration.
+   *
+   * <p>TODO we should also enable a split based on a collective concept used as spatial/temporal
+   *  context for individual computations. This would need to trigger resolution at the resolver
+   *  side.
    *
    * @param curve the fill curve providing meaning for the sequence of data in storage
    * @param suggestedSplits the number of splits suggested for data parallelization, with -1 for
