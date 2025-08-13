@@ -231,7 +231,6 @@ public interface GridN extends Serializable {
    */
   static GridN of(Geometry.Dimension dimension) {
 
-    // TODO
     var projection =
         dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_PROJECTION, String.class);
     //      var proj = projection == null ? null : Projection.of(projection);

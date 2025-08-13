@@ -7,6 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -48,16 +49,28 @@ public @interface ResourceAdapter {
 
   /**
    * A thread-safe adapter will be instantiated once and reused to serve all requests, including
-   * concurrent ones. A non-thread-safe adapter will be instantiated at each request.
+   * concurrent ones. Thread-safe adapters can keep state and caches. A non-thread-safe adapter will
+   * be instantiated at each request and will need to use the Component object to store data across
+   * requests.
    *
    * @return
    */
   boolean threadSafe() default true;
 
   /**
-   * If true, this serves universal URNs with the <code>klab:adapter:....:....</code> pattern. It is
-   * legal to have two adapter implementations to support both universal and non-universal use of
-   * the same adapter.
+   * The geometry that this adapter can handle. The input and output will be adapted to the geometry
+   * declared. Default is the universal geometry, meaning that the adapter can handle any geometry
+   * and the encoder should bind it as a parameter.
+   *
+   * @return
+   */
+  String geometry() default "1";
+
+  /**
+   * If true, this serves universal URNs with the reserved <code>klab:adapter:....:....</code>
+   * pattern and carrying no configuration or data content besides the URN itself. It is legal to
+   * have two adapter implementations to support both universal and non-universal use of the same
+   * adapter.
    *
    * @return
    */
@@ -93,9 +106,9 @@ public @interface ResourceAdapter {
    * the buffers created at the runtime side to inherit the fill curve, or remapping may take place
    * when the data are received.
    *
-   * <p>If the fill curve is unspecified and the adapter handles spatial data, a @FillCurve-tagged
-   * method must be present in the adapter class that returns a {@link Data.FillCurve}
-   * (TBD).
+   * <p>If the fill curve is unspecified, a @FillCurve-tagged method may be present in the adapter
+   * class that returns a {@link Data.FillCurve} to establish it based on resource configuration or
+   * URN (TBD).
    *
    * @return
    */
@@ -195,7 +208,8 @@ public @interface ResourceAdapter {
     LifecyclePhase[] phase();
 
     /**
-     * Metadata conventions to validate against, if any.
+     * Metadata conventions to validate against, if any. These should point to a resource URN that
+     * contains the metadata conventions.
      *
      * @return
      */

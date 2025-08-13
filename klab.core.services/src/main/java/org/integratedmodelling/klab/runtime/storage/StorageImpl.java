@@ -21,14 +21,15 @@ import org.integratedmodelling.klab.utilities.Utils;
  */
 public class StorageImpl implements Storage {
 
+  @Deprecated protected final Geometry geometry;
+  @Deprecated protected Data.FillCurve fillCurve;
+  @Deprecated protected int splits;
+
   protected final Type type;
   protected final StorageManagerImpl stateStorage;
   protected final Observation observation;
-  protected final Geometry geometry;
   protected final ServiceContextScope contextScope;
   protected Persistence persistence;
-  protected Data.FillCurve fillCurve;
-  protected int splits;
   private long transientId = Klab.getNextId();
 
   /*
@@ -68,11 +69,11 @@ public class StorageImpl implements Storage {
     return buffersCovering(geometry, eventTime, this.fillCurve, this.type);
   }
 
-  @Override
-  public List<? extends Buffer> buffers(
-      Geometry geometry, Time eventTime, Annotation storageAnnotation) {
-    return List.of();
-  }
+//  @Override
+//  public List<? extends Buffer> buffers(
+//      Geometry geometry, Time eventTime, Annotation storageAnnotation) {
+//    return List.of();
+//  }
 
   @Override
   public <T extends Buffer> List<T> buffers(
@@ -126,7 +127,7 @@ public class StorageImpl implements Storage {
   }
 
   protected List<Buffer> buffersCovering(
-          Geometry geometry, Time eventTime, Data.FillCurve fillingCurve, Type dataType) {
+      Geometry geometry, Time eventTime, Data.FillCurve fillingCurve, Type dataType) {
 
     var scale = GeometryRepository.INSTANCE.scale(geometry);
     var time = eventTime == null ? scale.getTime() : eventTime;
@@ -160,8 +161,7 @@ public class StorageImpl implements Storage {
           switch (type) {
             case BOXING -> null;
             case DOUBLE ->
-                new DoubleBufferImpl(
-                        geometry, observation, this, bs, fillCurve, offset, timestamp);
+                new DoubleBufferImpl(geometry, observation, this, bs, fillCurve, offset, timestamp);
             case FLOAT -> null;
             case INTEGER -> null;
             case LONG -> null;

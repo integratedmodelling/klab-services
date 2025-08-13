@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.geometry;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
@@ -354,6 +355,14 @@ public interface Geometry extends Serializable, Locator {
   boolean isUniversal();
 
   /**
+   * Metadata are normally empty. They are provided for special purposes, such as tracking
+   * provenance after splitting and merging.
+   *
+   * @return
+   */
+  Metadata getMetadata();
+
+  /**
    * A trivial geometry describes scalar values with no structure.
    *
    * @return true if scalar
@@ -418,38 +427,19 @@ public interface Geometry extends Serializable, Locator {
   long[] getExtentOffsets();
 
   /**
-   * TODO needed for resource access when multiple buffers are requested and accepted by the adapter
-   * or contextualizer.
-   *
-   * <p>REVISE AS FOLLOWS:
-   *
-   * <p>1. Splits can only happen on regular spatial grids. Temporal is also meaningful, but not
-   * needed here as the splits are meant for parallelization, so no temporal splits are supported.
-   *
-   * <p>2. Splits that should not be requested simply produce a list of 1 geometry == self.
-   *
-   * <p>3. Splits around splittable spatial grids will use GridN to track the geometries.
-   *
-   * <p>4. The resulting geometries will maintain their identity but can be merged into a non-split
-   * other.
-   *
-   * <p>5. The resulting geometries will be iterable according to a specific fill curve and will
-   * remap the indices keeping in mind the fill curve and all grid remapping.
-   *
-   * @deprecated the logic should not need a fill curve. Logical constraints to splitting make it
-   *     meaningless here.
-   * @return
-   */
-  List<Geometry> split(
-      /* NO - the fill curve is relevant to the iteration, as all splits must be consistent with grids */ Data.FillCurve
-          fillCurve,
-      int suggestedSplits);
-
-
-
-  /**
    * Split the geometry into the given number of splits, or whatever is practical to approximate it.
-   * In some cases the split won't happen and a list containing this will be returned.
+   * In some cases the split won't happen and a list containing this same geometry will be returned.
+   *
+   * <p>Split at the moment only happens on regular spatial grids. Temporal is also meaningful and
+   * can be easily added, but as the splits are meant for parallelization, supporting it would
+   * confuse the API usage.
+   *
+   * <p>Note that:
+   *
+   * <p>Any shape in the original geometry is not inherited by the split geometries.
+   *
+   * <p>The original geometry isn't referenced in the split geometries, so it must be kept, if
+   * remapping is needed, in an external data structure.
    *
    * @param suggestedSplits
    * @return
@@ -464,17 +454,15 @@ public interface Geometry extends Serializable, Locator {
    * @return
    */
   static Geometry merge(List<Geometry> splitGeometries) {
-      if (splitGeometries.isEmpty()) {
-          return EMPTY;
-      }
-      if (splitGeometries.size() == 1) {
-          return splitGeometries.getFirst();
-      }
-      // TODO
-      return null;
+    if (splitGeometries.isEmpty()) {
+      return EMPTY;
+    }
+    if (splitGeometries.size() == 1) {
+      return splitGeometries.getFirst();
+    }
+    // TODO
+    return null;
   }
-
-
 
   /**
    * If this is true, the reported size will not include the time, and the time dimension will have

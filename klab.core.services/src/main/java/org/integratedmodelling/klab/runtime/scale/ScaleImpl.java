@@ -5,6 +5,7 @@ import java.io.Serial;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.*;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type;
@@ -26,6 +27,7 @@ public class ScaleImpl implements Scale {
   long size;
   String key;
   private boolean universal;
+  private Metadata metadata = Metadata.create();
 
   /**
    * Internal locator class f. Uses the enclosing scale in a lazy fashion for everything and just
@@ -524,11 +526,6 @@ public class ScaleImpl implements Scale {
   }
 
   @Override
-  public List<Geometry> split(Data.FillCurve fillCurve, int suggestedSplits) {
-    return as(Geometry.class).split(fillCurve, suggestedSplits);
-  }
-
-  @Override
   public List<Geometry> split(int suggestedSplits) {
     return as(Geometry.class).split(suggestedSplits).stream()
         .map(g -> (Geometry) Scale.create(g))
@@ -676,6 +673,11 @@ public class ScaleImpl implements Scale {
     }
 
     @Override
+    public Metadata getMetadata() {
+      return ScaleImpl.this.getMetadata();
+    }
+
+    @Override
     public Geometry merge(Scale other, LogicalConnector how) {
       return ScaleImpl.this.merge(other, how);
     }
@@ -703,11 +705,6 @@ public class ScaleImpl implements Scale {
     @Override
     public long[] getExtentOffsets() {
       return ScaleImpl.this.getExtentOffsets();
-    }
-
-    @Override
-    public List<Geometry> split(Data.FillCurve fillCurve, int suggestedSplits) {
-      return ScaleImpl.this.split(fillCurve, suggestedSplits);
     }
 
     @Override
@@ -743,9 +740,18 @@ public class ScaleImpl implements Scale {
     return null;
   }
 
-  public NDCursor cursor() {
-    var ret = new NDCursor();
-    ret.defineDimensions(Arrays.stream(extents).map(e -> e.size()).toList());
-    return ret;
+  @Override
+  public Metadata getMetadata() {
+    return metadata;
   }
+
+  public void setMetadata(Metadata metadata) {
+    this.metadata = metadata;
+  }
+
+//  public NDCursor cursor() {
+//    var ret = new NDCursor();
+//    ret.defineDimensions(Arrays.stream(extents).map(e -> e.size()).toList());
+//    return ret;
+//  }
 }

@@ -140,19 +140,9 @@ public interface Data {
 
     public final int dimensions;
 
-//    public Pair<LongToLongArrayFunction, LongArrayToLongFunction> offsetMappers(Geometry geometry) {
-//      Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
-//      if (configuration == null) {
-//        throw new KlabIllegalStateException("k.LAB environment not configured");
-//      }
-//      return configuration.getSpatialOffsetMapping(geometry, this);
-//    }
-
     FillCurve(int dimensions) {
       this.dimensions = dimensions;
     }
-
-
 
     /**
      * Map a number of steps along this space-filling curve to the linear offset in a row-major
@@ -172,7 +162,11 @@ public interface Data {
       }
       if (this != UNSPECIFIED && sizes.length != this.dimensions) {
         throw new IllegalArgumentException(
-            "sizes length (" + sizes.length + ") must equal curve dimensions (" + this.dimensions + ")");
+            "sizes length ("
+                + sizes.length
+                + ") must equal curve dimensions ("
+                + this.dimensions
+                + ")");
       }
       for (long s : sizes) {
         if (s <= 0) {
@@ -194,22 +188,25 @@ public interface Data {
           // Row-major traversal: last index fastest; offset equals normalized steps
           return nsteps;
 
-        case D2_YX: {
-          // Scan order: Y slowest, X fastest
-          int[] order = new int[] {1, 0};
-          long[] coords = coordsFromStepByOrder(nsteps, sizes, order);
-          return flattenRowMajor(coords, sizes);
-        }
-        case D2_XInvY: {
-          // Row-major scanning but Y inverted within each X block
-          long[] coords = coordsFromStepByOrder(nsteps, sizes, new int[] {0, 1});
-          coords[1] = sizes[1] - 1 - coords[1];
-          return flattenRowMajor(coords, sizes);
-        }
-        case D3_ZYX: {
-          // For offset(), 3D variants fall back to row-major: return normalized steps
-          return nsteps;
-        }
+        case D2_YX:
+          {
+            // Scan order: Y slowest, X fastest
+            int[] order = new int[] {1, 0};
+            long[] coords = coordsFromStepByOrder(nsteps, sizes, order);
+            return flattenRowMajor(coords, sizes);
+          }
+        case D2_XInvY:
+          {
+            // Row-major scanning but Y inverted within each X block
+            long[] coords = coordsFromStepByOrder(nsteps, sizes, new int[] {0, 1});
+            coords[1] = sizes[1] - 1 - coords[1];
+            return flattenRowMajor(coords, sizes);
+          }
+        case D3_ZYX:
+          {
+            // For offset(), 3D variants fall back to row-major: return normalized steps
+            return nsteps;
+          }
         case D2_HILBERT:
         case D3_HILBERT:
           throw new UnsupportedOperationException(
@@ -237,7 +234,11 @@ public interface Data {
       }
       if (this != UNSPECIFIED && sizes.length != this.dimensions) {
         throw new IllegalArgumentException(
-            "sizes length (" + sizes.length + ") must equal curve dimensions (" + this.dimensions + ")");
+            "sizes length ("
+                + sizes.length
+                + ") must equal curve dimensions ("
+                + this.dimensions
+                + ")");
       }
       for (long s : sizes) {
         if (s <= 0) {
@@ -255,36 +256,41 @@ public interface Data {
         case UNSPECIFIED:
         case D1_LINEAR:
         case D2_XY:
-        case D3_XYZ: {
-          int n = sizes.length;
-          int[] order = new int[n];
-          for (int i = 0; i < n; i++) order[i] = i; // row-major (0 slowest -> last fastest)
-          return coordsFromStepByOrder(nsteps, sizes, order);
-        }
-        case D2_YX: {
-          return coordsFromStepByOrder(nsteps, sizes, new int[] {1, 0});
-        }
-        case D2_XInvY: {
-          long[] coords = coordsFromStepByOrder(nsteps, sizes, new int[] {0, 1});
-          coords[1] = sizes[1] - 1 - coords[1];
-          return coords;
-        }
-        case D3_ZYX: {
-          // For offsets(), 3D variants fall back to row-major coordinates as well
-          int n = sizes.length;
-          int[] order = new int[n];
-          for (int i = 0; i < n; i++) order[i] = i;
-          return coordsFromStepByOrder(nsteps, sizes, order);
-        }
+        case D3_XYZ:
+          {
+            int n = sizes.length;
+            int[] order = new int[n];
+            for (int i = 0; i < n; i++) order[i] = i; // row-major (0 slowest -> last fastest)
+            return coordsFromStepByOrder(nsteps, sizes, order);
+          }
+        case D2_YX:
+          {
+            return coordsFromStepByOrder(nsteps, sizes, new int[] {1, 0});
+          }
+        case D2_XInvY:
+          {
+            long[] coords = coordsFromStepByOrder(nsteps, sizes, new int[] {0, 1});
+            coords[1] = sizes[1] - 1 - coords[1];
+            return coords;
+          }
+        case D3_ZYX:
+          {
+            // For offsets(), 3D variants fall back to row-major coordinates as well
+            int n = sizes.length;
+            int[] order = new int[n];
+            for (int i = 0; i < n; i++) order[i] = i;
+            return coordsFromStepByOrder(nsteps, sizes, order);
+          }
         case D2_HILBERT:
         case D3_HILBERT:
           throw new UnsupportedOperationException("Hilbert curve offsets not implemented");
-        default: {
-          int n = sizes.length;
-          int[] order = new int[n];
-          for (int i = 0; i < n; i++) order[i] = i;
-          return coordsFromStepByOrder(nsteps, sizes, order);
-        }
+        default:
+          {
+            int n = sizes.length;
+            int[] order = new int[n];
+            for (int i = 0; i < n; i++) order[i] = i;
+            return coordsFromStepByOrder(nsteps, sizes, order);
+          }
       }
     }
 
@@ -301,9 +307,7 @@ public interface Data {
       return p;
     }
 
-    /**
-     * Given a step count and a scan order (slowest to fastest), compute coordinates.
-     */
+    /** Given a step count and a scan order (slowest to fastest), compute coordinates. */
     private static long[] coordsFromStepByOrder(long step, long[] sizes, int[] orderSlowToFast) {
       int n = sizes.length;
       if (orderSlowToFast.length != n) {
@@ -320,9 +324,7 @@ public interface Data {
       return coords;
     }
 
-    /**
-     * Flatten coordinates to a row-major linear offset (last dimension fastest).
-     */
+    /** Flatten coordinates to a row-major linear offset (last dimension fastest). */
     private static long flattenRowMajor(long[] coords, long[] sizes) {
       long offset = 0L;
       long stride = 1L;
@@ -333,9 +335,7 @@ public interface Data {
       return offset;
     }
 
-    /**
-     * Compute the step index along a scan order (slowest to fastest) given coordinates.
-     */
+    /** Compute the step index along a scan order (slowest to fastest) given coordinates. */
     private static long stepFromCoordsByOrder(long[] coords, long[] sizes, int[] orderSlowToFast) {
       if (coords.length != sizes.length || orderSlowToFast.length != sizes.length) {
         throw new IllegalArgumentException("dimensions mismatch in stepFromCoordsByOrder");
@@ -363,14 +363,22 @@ public interface Data {
       }
       if (this != UNSPECIFIED && originalSizes.length != this.dimensions) {
         throw new IllegalArgumentException(
-            "sizes length (" + originalSizes.length + ") must equal source curve dimensions (" + this.dimensions + ")");
+            "sizes length ("
+                + originalSizes.length
+                + ") must equal source curve dimensions ("
+                + this.dimensions
+                + ")");
       }
       if (destination == null) {
         throw new IllegalArgumentException("destination curve must not be null");
       }
       if (destination != UNSPECIFIED && originalSizes.length != destination.dimensions) {
         throw new IllegalArgumentException(
-            "sizes length (" + originalSizes.length + ") must equal destination curve dimensions (" + destination.dimensions + ")");
+            "sizes length ("
+                + originalSizes.length
+                + ") must equal destination curve dimensions ("
+                + destination.dimensions
+                + ")");
       }
       for (long s : originalSizes) {
         if (s <= 0) {
@@ -390,29 +398,33 @@ public interface Data {
         case UNSPECIFIED:
         case D1_LINEAR:
         case D2_XY:
-        case D3_XYZ: {
-          int n = originalSizes.length;
-          int[] order = new int[n];
-          for (int i = 0; i < n; i++) order[i] = i; // row-major order
-          coords = coordsFromStepByOrder(nsteps, originalSizes, order);
-          break;
-        }
-        case D2_YX: {
-          coords = coordsFromStepByOrder(nsteps, originalSizes, new int[] {1, 0});
-          break;
-        }
-        case D2_XInvY: {
-          coords = coordsFromStepByOrder(nsteps, originalSizes, new int[] {0, 1});
-          coords[1] = originalSizes[1] - 1 - coords[1];
-          break;
-        }
-        case D3_ZYX: {
-          int n = originalSizes.length;
-          int[] order = new int[n];
-          for (int i = 0; i < n; i++) order[i] = i; // treat as row-major for mapping as well
-          coords = coordsFromStepByOrder(nsteps, originalSizes, order);
-          break;
-        }
+        case D3_XYZ:
+          {
+            int n = originalSizes.length;
+            int[] order = new int[n];
+            for (int i = 0; i < n; i++) order[i] = i; // row-major order
+            coords = coordsFromStepByOrder(nsteps, originalSizes, order);
+            break;
+          }
+        case D2_YX:
+          {
+            coords = coordsFromStepByOrder(nsteps, originalSizes, new int[] {1, 0});
+            break;
+          }
+        case D2_XInvY:
+          {
+            coords = coordsFromStepByOrder(nsteps, originalSizes, new int[] {0, 1});
+            coords[1] = originalSizes[1] - 1 - coords[1];
+            break;
+          }
+        case D3_ZYX:
+          {
+            int n = originalSizes.length;
+            int[] order = new int[n];
+            for (int i = 0; i < n; i++) order[i] = i; // treat as row-major for mapping as well
+            coords = coordsFromStepByOrder(nsteps, originalSizes, order);
+            break;
+          }
         case D2_HILBERT:
         case D3_HILBERT:
           throw new UnsupportedOperationException("Hilbert curve mapping not implemented");
@@ -429,39 +441,44 @@ public interface Data {
         case UNSPECIFIED:
         case D1_LINEAR:
         case D2_XY:
-        case D3_XYZ: {
-          int n = originalSizes.length;
-          int[] order = new int[n];
-          for (int i = 0; i < n; i++) order[i] = i; // row-major
-          destStep = stepFromCoordsByOrder(coords, originalSizes, order);
-          break;
-        }
-        case D2_YX: {
-          destStep = stepFromCoordsByOrder(coords, originalSizes, new int[] {1, 0});
-          break;
-        }
-        case D2_XInvY: {
-          long[] c2 = coords.clone();
-          c2[1] = originalSizes[1] - 1 - c2[1];
-          destStep = stepFromCoordsByOrder(c2, originalSizes, new int[] {0, 1});
-          break;
-        }
-        case D3_ZYX: {
-          int n = originalSizes.length;
-          int[] order = new int[n];
-          for (int i = 0; i < n; i++) order[i] = i; // row-major destination for ZYX variant
-          destStep = stepFromCoordsByOrder(coords, originalSizes, order);
-          break;
-        }
+        case D3_XYZ:
+          {
+            int n = originalSizes.length;
+            int[] order = new int[n];
+            for (int i = 0; i < n; i++) order[i] = i; // row-major
+            destStep = stepFromCoordsByOrder(coords, originalSizes, order);
+            break;
+          }
+        case D2_YX:
+          {
+            destStep = stepFromCoordsByOrder(coords, originalSizes, new int[] {1, 0});
+            break;
+          }
+        case D2_XInvY:
+          {
+            long[] c2 = coords.clone();
+            c2[1] = originalSizes[1] - 1 - c2[1];
+            destStep = stepFromCoordsByOrder(c2, originalSizes, new int[] {0, 1});
+            break;
+          }
+        case D3_ZYX:
+          {
+            int n = originalSizes.length;
+            int[] order = new int[n];
+            for (int i = 0; i < n; i++) order[i] = i; // row-major destination for ZYX variant
+            destStep = stepFromCoordsByOrder(coords, originalSizes, order);
+            break;
+          }
         case D2_HILBERT:
         case D3_HILBERT:
           throw new UnsupportedOperationException("Hilbert curve mapping not implemented");
-        default: {
-          int n = originalSizes.length;
-          int[] order = new int[n];
-          for (int i = 0; i < n; i++) order[i] = i;
-          destStep = stepFromCoordsByOrder(coords, originalSizes, order);
-        }
+        default:
+          {
+            int n = originalSizes.length;
+            int[] order = new int[n];
+            for (int i = 0; i < n; i++) order[i] = i;
+            destStep = stepFromCoordsByOrder(coords, originalSizes, order);
+          }
       }
 
       // Normalize to total just in case and return
@@ -553,8 +570,8 @@ public interface Data {
      * buffers. Those need to be known at the consumer side, so they would complicate the Avro
      * schema.
      *
-     * FIXME this should return a filler, not a Buffer. The buffer exists outside of the builder. This one just
-     *  forces the call to scan() which adds nothing to the semantics.
+     * <p>FIXME this should return a filler, not a Buffer. The buffer exists outside of the builder.
+     * This one just forces the call to scan() which adds nothing to the semantics.
      *
      * @param fillerClass the class of buffer to create
      * @param fillCurve the space filling curve to use

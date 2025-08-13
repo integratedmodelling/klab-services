@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.scope.Persistence;
 public interface Storage extends RuntimeAsset {
 
   enum Type {
+    @Deprecated
     BOXING,
     DOUBLE,
     FLOAT,
@@ -43,6 +44,7 @@ public interface Storage extends RuntimeAsset {
    * by the {@link org.integratedmodelling.klab.api.digitaltwin.DigitalTwin}.
    *
    * <p>Specific buffer types should also implement a mapping function for map/reduce operations.
+   * @deprecated see new implementation in StorageHelper
    */
   interface Buffer extends Data.Cursor, RuntimeAsset {
 
@@ -181,8 +183,8 @@ public interface Storage extends RuntimeAsset {
   Type getType();
 
   /**
-   * The {@link Data.FillCurve} for the spatial arrangement in the buffers. The fill curve
-   * is established based on the geometry unless a <code>@fillcurve
+   * The {@link Data.FillCurve} for the spatial arrangement in the buffers. The fill curve is
+   * established based on the geometry unless a <code>@fillcurve
    * </code> annotation is present on the model. The fill curve is irrelevant if there is only one
    * spatial state or no spatial extent at all. In such cases it's best to avoid initializing a moot
    * Hilbert curve which has more overhead than the others.
@@ -210,23 +212,23 @@ public interface Storage extends RuntimeAsset {
    */
   List<? extends Storage.Buffer> buffers(Geometry geometry, Time transition);
 
-  /**
-   * Return the buffers that cover the passed geometry at the passed time. The time in the geometry
-   * * is considered only if the specific time transition is null. Like {@link #buffers(Geometry,
-   * Time)} but enables some degree of recontextualization so that contextualizers can establish the
-   * fill curve they expect to use. The returned buffers must be capable of adapting to the
-   * requested parameters, which would normally come as <code>@storage</code> annotations built from
-   * the contextualizer's declaration.
-   *
-   * @param geometry
-   * @param transition the time from the event being contextualized.
-   * @param storageAnnotation
-   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
-   *     parameters cause non-resolvable conflicts with the underlying implementation.
-   * @return
-   */
-  List<? extends Storage.Buffer> buffers(
-      Geometry geometry, Time transition, Annotation storageAnnotation);
+//  /**
+//   * Return the buffers that cover the passed geometry at the passed time. The time in the geometry
+//   * * is considered only if the specific time transition is null. Like {@link #buffers(Geometry,
+//   * Time)} but enables some degree of recontextualization so that contextualizers can establish the
+//   * fill curve they expect to use. The returned buffers must be capable of adapting to the
+//   * requested parameters, which would normally come as <code>@storage</code> annotations built from
+//   * the contextualizer's declaration.
+//   *
+//   * @param geometry
+//   * @param transition the time from the event being contextualized.
+//   * @param storageAnnotation
+//   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
+//   *     parameters cause non-resolvable conflicts with the underlying implementation.
+//   * @return
+//   */
+//  List<? extends Storage.Buffer> buffers(
+//      Geometry geometry, Time transition, Annotation storageAnnotation);
 
   /**
    * Retrieve all buffers that cover the passed geometry at the passed time. The time in the
