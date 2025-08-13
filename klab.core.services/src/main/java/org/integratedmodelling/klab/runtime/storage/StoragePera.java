@@ -5,7 +5,9 @@ import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -18,8 +20,9 @@ import org.integratedmodelling.klab.utilities.Utils;
 
 /**
  * Abstract storage class providing geometry and buffer indexing, histograms, merging and splitting.
+ * TODO remove after finishing the other implementation.
  */
-public class StorageImpl implements Storage {
+public class StoragePera implements Storage {
 
   @Deprecated protected final Geometry geometry;
   @Deprecated protected Data.FillCurve fillCurve;
@@ -43,7 +46,7 @@ public class StorageImpl implements Storage {
    */
   private NavigableMap<Long, List<BufferImpl>> buffers = new TreeMap<>();
 
-  protected StorageImpl(
+  protected StoragePera(
       Observation observation,
       Type type,
       Data.FillCurve fillingCurve,
@@ -75,7 +78,7 @@ public class StorageImpl implements Storage {
 //    return List.of();
 //  }
 
-  @Override
+//  @Override
   public <T extends Buffer> List<T> buffers(
       Geometry geometry, Time eventTime, Class<T> bufferClass) {
 
@@ -91,7 +94,7 @@ public class StorageImpl implements Storage {
   /*
   The storage doesn't have a fill curve until the first buffer request.
    */
-  @Override
+//  @Override
   public Data.FillCurve spaceFillCurve() {
     return fillCurve;
   }
@@ -121,7 +124,7 @@ public class StorageImpl implements Storage {
     return null;
   }
 
-  @Override
+//  @Override
   public Persistence persistence() {
     return persistence;
   }
@@ -159,9 +162,9 @@ public class StorageImpl implements Storage {
     for (long bs : splitSizes) {
       ret.add(
           switch (type) {
-            case BOXING -> null;
-            case DOUBLE ->
-                new DoubleBufferImpl(geometry, observation, this, bs, fillCurve, offset, timestamp);
+//            case BOXING -> null;
+            case DOUBLE -> null;
+//                new DoubleBufferImpl(geometry, observation, this, bs, fillCurve, offset, timestamp);
             case FLOAT -> null;
             case INTEGER -> null;
             case LONG -> null;
@@ -174,12 +177,17 @@ public class StorageImpl implements Storage {
     return ret;
   }
 
-  @Override
+//  @Override
   public long getTransientId() {
     return transientId;
   }
 
-  /** DO NOT CALL - reserved for serialization purposes */
+//    @Override
+    public RuntimeAsset.Type classify() {
+        return null;
+    }
+
+    /** DO NOT CALL - reserved for serialization purposes */
   public void setTransientId(long transientId) {
     this.transientId = transientId;
   }
@@ -192,29 +200,35 @@ public class StorageImpl implements Storage {
     return b;
   }
 
-  @Override
+//  @Override
   public List<Buffer> allBuffers() {
     var ret = new ArrayList<Buffer>();
     buffers.values().forEach(ret::addAll);
     return ret;
   }
 
-  @Override
-  public Type getType() {
+//  @Override
+  public Type getNativeType() {
     return this.type;
   }
 
-  @Override
+//  @Override
   public Geometry getGeometry() {
     return this.geometry;
   }
 
-  @Override
+    @Override
+    public List<Buffer> getOrCreateBuffers(Geometry locator, Data.FillCurve fillCurve, int splits,
+                                           long minSize, long maxSize, DigitalTwin.Transaction transaction) {
+        return List.of();
+    }
+
+    @Override
   public Histogram getHistogram() {
     return Utils.Data.adaptHistogram(histogram());
   }
 
-  @Override
+//  @Override
   public long getId() {
     return 0;
   }

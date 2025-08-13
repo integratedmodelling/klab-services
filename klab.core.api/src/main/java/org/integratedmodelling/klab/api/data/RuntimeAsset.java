@@ -46,7 +46,7 @@ public interface RuntimeAsset {
     ACTIVITY(Activity.class),
     PLAN(Plan.class),
     AGENT(Agent.class),
-    ARTIFACT(Storage.class),
+//    ARTIFACT(Storage.class),
     DATA(Storage.Buffer.class),
     LINK(KnowledgeGraph.Link.class);
 
@@ -81,11 +81,11 @@ public interface RuntimeAsset {
       if (KnowledgeGraph.Link.class.isAssignableFrom(assetClass)) {
         return LINK;
       }
-      if (Artifact.class.isAssignableFrom(assetClass)
-          || Storage.class.isAssignableFrom(assetClass)) {
-        return ARTIFACT;
-      }
-      throw new KlabIllegalArgumentException("No runtime asset class for " + assetClass);
+//      if (Artifact.class.isAssignableFrom(assetClass)
+//          || Storage.class.isAssignableFrom(assetClass)) {
+//        return ARTIFACT;
+//      }
+     throw new KlabIllegalArgumentException("No runtime asset class for " + assetClass);
     }
   }
 

@@ -87,9 +87,9 @@ public class SerializingDataBuilder implements Data.Builder {
   @Override
   public <T extends Storage.Buffer> T buffer(
       Class<T> fillerClass, Data.FillCurve fillCurve) {
-    if (fillerClass == Storage.DoubleBuffer.class) {
-      return (T) new DoubleBufferFiller(fillCurve);
-    }
+//    if (fillerClass == Storage.DoubleBuffer.class) {
+//      return (T) new DoubleBufferFiller(fillCurve);
+//    }
     throw new KlabUnimplementedException(
         "Buffer request for " + fillerClass.getSimpleName() + " illegal or unimplemented");
   }
@@ -112,39 +112,39 @@ public class SerializingDataBuilder implements Data.Builder {
     return BaseDataImpl.create(instance);
   }
 
-  private class DoubleBufferFiller extends MockBuffer implements Storage.DoubleBuffer {
-
-    DoubleBufferFiller(Data.FillCurve fillCurve) {
-      builder.setFillingCurve(fillCurve.name());
-      builder.setDoubleData(
-          new ArrayList<>(
-              /* TODO more proper pre-allocation, or use temp memory-mapped space with a List interface */ ));
-    }
-
-    @Override
-    public DoubleScanner scan() {
-      throw new KlabIllegalStateException(
-          "This buffer is intended for use in a builder and only supports input methods");
-    }
-
-    @Override
-    public double get(long offset) {
-      return builder.getDoubleData().get((int) offset);
+//  private class DoubleBufferFiller extends MockBuffer implements Storage.DoubleBuffer {
+//
+//    DoubleBufferFiller(Data.FillCurve fillCurve) {
+//      builder.setFillingCurve(fillCurve.name());
+//      builder.setDoubleData(
+//          new ArrayList<>(
+//              /* TODO more proper pre-allocation, or use temp memory-mapped space with a List interface */ ));
+//    }
+//
+//    @Override
+//    public DoubleScanner scan() {
 //      throw new KlabIllegalStateException(
 //          "This buffer is intended for use in a builder and only supports input methods");
-    }
-
-    @Override
-    public void set(double value, long offset) {
-      builder.getDoubleData().add(value);
-    }
-
-    @Override
-    public void fill(double value) {
-      // TODO set a singleDoubleValue
-      //      builder.getDoubleData().add(value);
-    }
-  }
+//    }
+//
+//    @Override
+//    public double get(long offset) {
+//      return builder.getDoubleData().get((int) offset);
+////      throw new KlabIllegalStateException(
+////          "This buffer is intended for use in a builder and only supports input methods");
+//    }
+//
+//    @Override
+//    public void set(double value, long offset) {
+//      builder.getDoubleData().add(value);
+//    }
+//
+//    @Override
+//    public void fill(double value) {
+//      // TODO set a singleDoubleValue
+//      //      builder.getDoubleData().add(value);
+//    }
+//  }
 
   /* private class DoubleInstanceFiller implements Data.DoubleFiller {
 
@@ -212,46 +212,46 @@ public class SerializingDataBuilder implements Data.Builder {
     }
   }*/
 
-  private abstract static class MockBuffer implements Storage.Buffer {
-
-    @Override
-    public long offset(Data.Cursor other, long... dimensionOffsets) {
-      throw new KlabIllegalStateException(
-          "This buffer is intended for use in a builder and only supports input methods");
-    }
-
-    @Override
-    public long size() {
-      return 0;
-    }
-
-    @Override
-    public long offset() {
-      throw new KlabIllegalStateException(
-          "This buffer is intended for use in a builder and only supports input methods");
-    }
-
-    @Override
-    public String getUrn() {
-      return "";
-    }
-
-    @Override
-    public long getTimestamp() {
-      throw new KlabIllegalStateException(
-          "This buffer is intended for use in a builder and only supports input methods");
-    }
-
-    @Override
-    public long getId() {
-      throw new KlabIllegalStateException(
-          "This buffer is intended for use in a builder and only supports input methods");
-    }
-
-    @Override
-    public long getTransientId() {
-      throw new KlabIllegalStateException(
-          "This buffer is intended for use in a builder and only supports input methods");
-    }
-  }
+//  private abstract static class MockBuffer implements Storage.Buffer {
+//
+//    @Override
+//    public long offset(Data.Cursor other, long... dimensionOffsets) {
+//      throw new KlabIllegalStateException(
+//          "This buffer is intended for use in a builder and only supports input methods");
+//    }
+//
+//    @Override
+//    public long size() {
+//      return 0;
+//    }
+//
+//    @Override
+//    public long offset() {
+//      throw new KlabIllegalStateException(
+//          "This buffer is intended for use in a builder and only supports input methods");
+//    }
+//
+//    @Override
+//    public String getUrn() {
+//      return "";
+//    }
+//
+//    @Override
+//    public long getTimestamp() {
+//      throw new KlabIllegalStateException(
+//          "This buffer is intended for use in a builder and only supports input methods");
+//    }
+//
+//    @Override
+//    public long getId() {
+//      throw new KlabIllegalStateException(
+//          "This buffer is intended for use in a builder and only supports input methods");
+//    }
+//
+//    @Override
+//    public long getTransientId() {
+//      throw new KlabIllegalStateException(
+//          "This buffer is intended for use in a builder and only supports input methods");
+//    }
+//  }
 }

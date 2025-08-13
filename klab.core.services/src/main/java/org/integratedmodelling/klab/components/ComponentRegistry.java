@@ -1844,25 +1844,9 @@ public class ComponentRegistry {
         } else if (Parameters.class.isAssignableFrom(argument)) {
           runArguments.add(urnParameters);
         } else if (Storage.Buffer.class.isAssignableFrom(argument)) {
-          storage =
-              digitalTwin == null
-                  ? null
-                  : digitalTwin.getStorageManager().getStorage(observation, storageAnnotation);
-          if (storage != null) {
-            var buffers =
-                storage.buffers(
-                    geometry,
-                    schedulerEvent == null ? null : schedulerEvent.getTime(),
-                    argument.asSubclass(Storage.Buffer.class));
-            if (buffers.size() != 1) {
-              throw new KlabInternalErrorException(
-                  "Wrong buffer numerosity for single-buffer parameter: review configuration");
-            }
-            runArguments.add(buffers.getFirst());
-          } else {
-            runArguments.add(null);
-          }
-
+            // TODO! Buffers/scanners must already be split as needed
+        } else if (Storage.Scanner.class.isAssignableFrom(argument)) {
+            // TODO! Buffers/scanners must already be split as needed
         } else if (Storage.class.isAssignableFrom(argument)) {
           storage =
               digitalTwin == null

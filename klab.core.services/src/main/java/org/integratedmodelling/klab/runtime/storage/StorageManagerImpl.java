@@ -158,13 +158,13 @@ public class StorageManagerImpl implements StorageManager {
    * @param buffer
    * @return
    */
-  public static Class<? extends Storage.Buffer> bufferClass(Storage.Buffer buffer) {
-    return switch (buffer) {
-      case DoubleBufferImpl ignored -> Storage.DoubleBuffer.class;
-      // TODO the rest!
-      default -> throw new KlabIllegalArgumentException("not a recognized buffer type");
-    };
-  }
+  //  public static Class<? extends Storage.Buffer> bufferClass(Storage.Buffer buffer) {
+  //    return switch (buffer) {
+  //      case DoubleBufferImpl ignored -> Storage.DoubleBuffer.class;
+  //      // TODO the rest!
+  //      default -> throw new KlabIllegalArgumentException("not a recognized buffer type");
+  //    };
+  //  }
 
   public BufferArray getIntBuffer(long sliceSize) {
     return getIntFactory().make(sliceSize);
@@ -213,8 +213,7 @@ public class StorageManagerImpl implements StorageManager {
       if (storageAnnotation.containsKey("fillcurve")) {
         try {
           fillingCurve =
-              Data.FillCurve.valueOf(
-                  storageAnnotation.get("fillcurve").toString().toUpperCase());
+              Data.FillCurve.valueOf(storageAnnotation.get("fillcurve").toString().toUpperCase());
         } catch (Throwable t) {
           contextScope.error(
               "Wrong fill curve specification: "
@@ -246,18 +245,10 @@ public class StorageManagerImpl implements StorageManager {
   }
 
   @Override
-  public Storage getStorage(Observation observation, Annotation storageAnnotation) {
+  public Storage getStorage(Observation observation, /* FIXME these come at buffer request */ Annotation storageAnnotation) {
     final var options = getOptions(contextScope, storageAnnotation, observation);
     return this.storage.computeIfAbsent(
-        observation.getUrn(),
-        urn ->
-            new StorageImpl(
-                observation,
-                options.getThird(),
-                options.getSecond(),
-                options.getFirst(),
-                this,
-                contextScope));
+        observation.getUrn(), urn -> new StorageHelper(observation, contextScope));
   }
 
   //  @SuppressWarnings("unchecked")

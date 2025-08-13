@@ -29,6 +29,25 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public interface Data {
 
   /**
+   * All the information related to how the data should be either stored in memory or remapped for
+   * access by specific contextualizers or adapters.
+   *
+   * @param curve the fill curve providing meaning for the sequence of data in storage
+   * @param suggestedSplits the number of splits suggested for data parallelization, with -1 for
+   *     arbitrary and 1 for no splits.
+   * @param minSplitSize minimum geometry size for a buffer when splits are requested
+   * @param maxBufferSize maximum size for the overall data operation to apply. If the geometry is
+   *     larger than this, the adapter or contextualizer will be rejected by the resolver.
+   * @param dataType the requested or native data type for the operation.
+   */
+  record Access(
+      FillCurve curve,
+      int suggestedSplits,
+      long minSplitSize,
+      long maxBufferSize,
+      Storage.Type dataType) {}
+
+  /**
    * TODO merge Cursor and Filler (call it Cursor). Enable 6 unboxing methods for data access in
    * each subclass:
    *
@@ -47,6 +66,8 @@ public interface Data {
    * A Cursor iterates one or more geometry dimensions using a long offset. If the geometry it
    * refers to results from splitting an original larger geometry, it can also locate the current
    * offset in it.
+   *
+   * @deprecated use the updated fillcurve/split/type etc. data
    */
   interface Cursor {
 

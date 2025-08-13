@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.runtime.storage;
 
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Geometries;
+import org.integratedmodelling.klab.api.data.Histogram;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -13,69 +15,27 @@ import java.util.PrimitiveIterator;
 import java.util.TreeMap;
 
 // TODO this will become the next Storage implementation
-public class StorageHelper {
+public class StorageHelper implements Storage {
 
   private final Observation observation;
   private final ContextScope scope;
+  private Type nativeType;
+
   /*
-   * Buffer storage along slowest-varying dimensions. All dimensions except the
-   * last (space) have linear indexing along a "start" number. The final version of this
-   * should have a Pair<NavigableMap, List<AbstractBuffer>> argument, which makes it compatible
-   * with multiple non-spatial dimensions. But that's unlikely to be useful soon and makes the code
-   * very complex, so we just assume start time as the first index and let the implementation provide
-   * as many buffers as needed for the second, which is assumed to be space.
+   * Buffer storage along slowest-varying dimensions. All dimensions except one (space) must have linear indexing along a "start" number
    *
    */
-  private NavigableMap<Long, List<Buffer>> buffers = new TreeMap<>();
+  private NavigableMap<List<Long>, List<Buffer>> buffers = new TreeMap<>();
 
   public StorageHelper(Observation observation, ContextScope contextScope) {
     this.observation = observation;
     this.scope = contextScope;
+    // TODO establish the default native type? This may be used before
   }
 
-  /**
-   * The filler is used to fill the buffer with values. The core interface extends a primitive long
-   * iterator (of which only hasNext() may be used) and does not expose the three most important
-   * functions: get() for read scanners, add() for write scanners, and peek() to check the current
-   * value. It must be used sequentially as an iterator, and only the peek() function can be called
-   * without advancing the iteration.
-   *
-   * <p>Iteration proceeds along the geometry and the fill curve of the originating Buffer, which
-   * can be retrieved in a read-only wrapper if needed.
-   */
-  public interface Scanner extends PrimitiveIterator.OfLong {
-
-    /**
-     * Read-only view of the buffer, used if the geometry or the fill curve need to be accessed.
-     *
-     * @return
-     */
-    Buffer buffer();
-
-    long size();
-  }
-
-  /** New buffer API to substitute Storage.Buffer. */
-  public interface Buffer {
-
-    Geometry getGeometry();
-
-    /**
-     * The original fill curve for the stored data, or a remapped one that reinterprets it.
-     *
-     * @return
-     */
-    Data.FillCurve getFillCurve();
-
-    /**
-     * The filler must be used sequentially and will take care of remapping if it's wrapping a
-     * differently scaled buffer or sets thereof.
-     *
-     * @param fillerClass
-     * @return
-     * @param <T>
-     */
-    <T extends Scanner> T scanner(Class<T> fillerClass);
+  @Override
+  public Type getNativeType() {
+    return nativeType;
   }
 
   /**
@@ -134,6 +94,11 @@ public class StorageHelper {
       long maxSize,
       DigitalTwin.Transaction transaction) {
     return List.of();
+  }
+
+  @Override
+  public Histogram getHistogram() {
+    return null;
   }
 
   /**

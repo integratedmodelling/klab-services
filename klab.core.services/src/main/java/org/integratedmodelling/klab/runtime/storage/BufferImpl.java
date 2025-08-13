@@ -21,7 +21,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   protected final long offset;
   private long id; // for reference in the knowledge graoh
   private final String urn; // for persistent reference in storage manager
-  private final StorageImpl storage;
+  private final StoragePera storage;
   private final long timestamp;
   protected com.dynatrace.dynahist.Histogram histogram;
   private long transientId = Klab.getNextId();
@@ -36,7 +36,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   protected BufferImpl(
       Geometry geometry,
       Observation observation,
-      StorageImpl stateStorage,
+      StoragePera stateStorage,
       long size,
       Data.FillCurve fillCurve,
       long offset,
@@ -44,7 +44,8 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
 //    super(geometry, spaceFillingCurve);
     this.storage = stateStorage;
     this.timestamp = timestamp;
-    this.dataType = stateStorage.getType();
+    // NAAAH
+    this.dataType = stateStorage.getNativeType();
     this.urn = observation.getUrn() + "#" + stateStorage.stateStorage.nextBufferId();
     this.persistence = Persistence.SERVICE_SHUTDOWN;
     this.offset = offset;
@@ -67,12 +68,12 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
     this.id = id;
   }
 
-  @Override
+//  @Override
   public long size() {
     return multiplicity;
   }
 
-  @Override
+//  @Override
   public long offset() {
     return offset;
   }
@@ -98,12 +99,12 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
     return persistence;
   }
 
-  @Override
+//  @Override
   public String getUrn() {
     return urn;
   }
 
-  @Override
+//  @Override
   public long getTimestamp() {
     return timestamp;
   }
