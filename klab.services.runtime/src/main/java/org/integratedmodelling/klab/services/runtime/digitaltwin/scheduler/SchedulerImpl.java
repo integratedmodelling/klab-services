@@ -14,7 +14,6 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -275,7 +274,7 @@ public class SchedulerImpl implements Scheduler {
       if (observation.getObservable().is(SemanticType.QUALITY)) {
         var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
         if (storage != null) {
-          for (var buffer : storage.getNativeBuffers(event)) {
+          for (var buffer : storage.getNativeShards(event)) {
             transaction.link(observation, buffer, GraphModel.Relationship.HAS_DATA);
           }
         }

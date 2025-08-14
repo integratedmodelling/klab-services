@@ -179,7 +179,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       // TODO/CHECK the logics here may require some attention
       boolean trivial =
           contextualizers.isEmpty()
-              && graph.vertexSet().stream().noneMatch(a -> a instanceof Storage.Buffer);
+              && graph.vertexSet().stream().noneMatch(a -> a instanceof Storage.Shard);
 
       /*
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
@@ -282,7 +282,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         case Observation observation -> observation.getId() < 0;
         case Actuator actuator -> !trivial;
         case Activity activity -> activity.getId() < 0 && !trivial;
-        case Storage.Buffer ignored -> true;
+        case Storage.Shard ignored -> true;
         default -> false;
       };
     }
@@ -412,7 +412,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       if (data instanceof DoubleDataImpl doubleData) {
 
-        var buffers = storage.getOrCreateBuffers(event, target.getDistributionStrategy());
+        var buffers = storage.getOrCreateShards(event, target.getDistributionStrategy());
 
         /* all buffers run in parallel */
         return Utils.Java.distributeComputation(

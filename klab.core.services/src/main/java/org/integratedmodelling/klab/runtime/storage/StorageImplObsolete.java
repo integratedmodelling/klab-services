@@ -43,7 +43,7 @@ public class StorageImplObsolete implements Storage {
    * as many buffers as needed for the second, which is assumed to be space.
    *
    */
-  private NavigableMap<Long, List<BufferImpl>> buffers = new TreeMap<>();
+  private NavigableMap<Long, List<ShardImpl>> buffers = new TreeMap<>();
 
   protected StorageImplObsolete(
       Observation observation,
@@ -67,7 +67,7 @@ public class StorageImplObsolete implements Storage {
    * @param geometry
    * @return
    */
-  public List<Buffer> buffers(Geometry geometry, Time eventTime) {
+  public List<Shard> buffers(Geometry geometry, Time eventTime) {
     return buffersCovering(geometry, eventTime, this.fillCurve, this.type);
   }
 
@@ -78,7 +78,7 @@ public class StorageImplObsolete implements Storage {
   //  }
 
   //  @Override
-  public <T extends Buffer> List<T> buffers(
+  public <T extends Shard> List<T> buffers(
       Geometry geometry, Time eventTime, Class<T> bufferClass) {
 
     var nVaryingDimensions = geometry.getDimensions().stream().filter(d -> d.size() > 1).count();
@@ -107,15 +107,15 @@ public class StorageImplObsolete implements Storage {
 
     var allBuffers = allBuffers();
     if (allBuffers.size() == 1) {
-      return ((BufferImpl) allBuffers.getFirst()).histogram;
+      return ((ShardImpl) allBuffers.getFirst()).histogram;
     } else if (allBuffers.size() > 1) {
       com.dynatrace.dynahist.Histogram ret = null;
-      var first = ((BufferImpl) allBuffers.getFirst()).histogram;
+      var first = ((ShardImpl) allBuffers.getFirst()).histogram;
       if (first != null) {
         ret = com.dynatrace.dynahist.Histogram.createDynamic(first.getLayout());
         for (var buffer : allBuffers) {
-          if (((BufferImpl) buffer).histogram != null) {
-            ret.addHistogram(((BufferImpl) buffer).histogram);
+          if (((ShardImpl) buffer).histogram != null) {
+            ret.addHistogram(((ShardImpl) buffer).histogram);
           }
         }
       }
@@ -128,7 +128,7 @@ public class StorageImplObsolete implements Storage {
     return persistence;
   }
 
-  protected List<Buffer> buffersCovering(
+  protected List<Shard> buffersCovering(
       Geometry geometry, Time eventTime, Data.FillCurve fillingCurve, Type dataType) {
 
     var scale = GeometryRepository.INSTANCE.scale(geometry);
@@ -147,10 +147,10 @@ public class StorageImplObsolete implements Storage {
         .toList();
   }
 
-  private List<BufferImpl> createBuffers(
+  private List<ShardImpl> createBuffers(
       Geometry geometry, Observation observation, long timestamp) {
 
-    var ret = new ArrayList<BufferImpl>();
+    var ret = new ArrayList<ShardImpl>();
     long[] splitSizes = new long[splits];
     long size = geometry.size() / splits;
     long remd = geometry.size() % splits;
@@ -192,7 +192,7 @@ public class StorageImplObsolete implements Storage {
     this.transientId = transientId;
   }
 
-  private Buffer adaptBuffer(BufferImpl b, Data.FillCurve fillingCurve) {
+  private Shard adaptBuffer(ShardImpl b, Data.FillCurve fillingCurve) {
     // TODO !
     if (b.getFillingCurve() != fillingCurve) {
       // TODO
@@ -201,8 +201,8 @@ public class StorageImplObsolete implements Storage {
   }
 
   //  @Override
-  public List<Buffer> allBuffers() {
-    var ret = new ArrayList<Buffer>();
+  public List<Shard> allBuffers() {
+    var ret = new ArrayList<Shard>();
     buffers.values().forEach(ret::addAll);
     return ret;
   }
@@ -218,12 +218,12 @@ public class StorageImplObsolete implements Storage {
   }
 
   @Override
-  public List<Buffer> getNativeBuffers(Scheduler.Event event) {
+  public List<Shard> getNativeShards(Scheduler.Event event) {
     return List.of();
   }
 
   @Override
-  public List<Buffer> getOrCreateBuffers(Scheduler.Event locator, Data.DistributionStrategy specs) {
+  public List<Shard> getOrCreateShards(Scheduler.Event locator, Data.DistributionStrategy specs) {
     return List.of();
   }
 

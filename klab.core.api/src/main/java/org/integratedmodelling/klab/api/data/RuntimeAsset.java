@@ -1,9 +1,7 @@
 package org.integratedmodelling.klab.api.data;
 
-import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
@@ -47,7 +45,7 @@ public interface RuntimeAsset {
     PLAN(Plan.class),
     AGENT(Agent.class),
 //    ARTIFACT(Storage.class),
-    DATA(Storage.Buffer.class),
+    DATA(Storage.Shard.class),
     LINK(KnowledgeGraph.Link.class);
 
     public final Class<? extends RuntimeAsset> assetClass;

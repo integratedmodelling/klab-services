@@ -477,6 +477,8 @@ public class CompiledDataflow {
           return false;
         }
 
+        // TODO HERE ADD SHARDING PARAMETERS FROM DESCRIPTOR AND MERGE WITH ANY IN THE ACTUATOR
+
         if (scalarBuilder != null) {
           var scalarMapper = scalarBuilder.build();
           executors.add(scalarMapper::execute);

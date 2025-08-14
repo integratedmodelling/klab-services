@@ -28,7 +28,7 @@ public class StorageImpl implements Storage {
    * Buffer storage along slowest-varying dimensions. All dimensions except one (space) must have linear indexing along a "start" number
    *
    */
-  private NavigableMap<List<Long>, List<Buffer>> buffers = new TreeMap<>();
+  private NavigableMap<List<Long>, List<Shard>> buffers = new TreeMap<>();
 
   /**
    * Create the storage for the observation. Settings will determine the specific native type for
@@ -100,12 +100,12 @@ public class StorageImpl implements Storage {
   }
 
   @Override
-  public List<Buffer> getNativeBuffers(Scheduler.Event event) {
+  public List<Shard> getNativeShards(Scheduler.Event event) {
     return List.of();
   }
 
   @Override
-  public List<Buffer> getOrCreateBuffers(Scheduler.Event locator, Data.DistributionStrategy specs) {
+  public List<Shard> getOrCreateShards(Scheduler.Event locator, Data.DistributionStrategy specs) {
     return List.of();
   }
 
@@ -118,7 +118,7 @@ public class StorageImpl implements Storage {
    * Wrap the buffers into a set of remapping buffers, built to match the passed geometry and other
    * parameters.
    *
-   * @param buffers
+   * @param shards
    * @param geometry
    * @param splits
    * @param minSize
@@ -126,8 +126,8 @@ public class StorageImpl implements Storage {
    * @param fillCurve
    * @return
    */
-  public List<Buffer> remap(
-      List<Buffer> buffers,
+  public List<Shard> remap(
+      List<Shard> shards,
       Geometry geometry,
       int splits,
       long minSize,
@@ -135,7 +135,7 @@ public class StorageImpl implements Storage {
       Data.FillCurve fillCurve) {
 
     // TODO qui ti voglio
-    return buffers;
+    return shards;
   }
 
   public static void main(String[] args) {

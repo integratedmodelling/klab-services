@@ -39,7 +39,7 @@ public class ContextualizingDataBuilder implements Data.Builder {
   }
 
   @Override
-  public <T extends Storage.Buffer> T buffer(
+  public <T extends Storage.Shard> T buffer(
       Class<T> fillerClass, Data.FillCurve fillCurve) {
     return null;
   }

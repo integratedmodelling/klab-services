@@ -32,7 +32,7 @@ class ${codeInfo.getClassName()} extends ExpressionBase {
 @Override
 boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
-  <%-- body initialization. Must include all buffer creation + the bufferSets as a transposed list of buffers, \
+  <%-- body initialization. Must include all buffer creation + the bufferSets as a transposed list of shards, \
        ensuring that each thread has the same topology--%>
   @for(var param : codeInfo.getBodyInitializationStatements())
     ${param}
@@ -43,12 +43,12 @@ boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
     { bufferArray ->
         var scannerArray = bufferArray.stream().map({b -> b.scan()}).toArray();
         while (scannerArray[0].hasNext()) { // template ends here
-        <%--extract all needed scalar dependencies as non-boxing scalars from buffers --%>
+        <%--extract all needed scalar dependencies as non-boxing scalars from shards --%>
         <%--e.g. double elevation = bufferArray[1].get() --%>
         @for(var localVar : codeInfo.getLocalVariableDeclarations())
             ${localVar}
         @endfor
-        <%--set the buffers based on target, chaining as needed--%>
+        <%--set the shards based on target, chaining as needed--%>
         <%--e.g. double self = elevation/slope --%>
         @for(var codeBlock : codeInfo.getMainCodeBlocks())
             ${codeBlock}

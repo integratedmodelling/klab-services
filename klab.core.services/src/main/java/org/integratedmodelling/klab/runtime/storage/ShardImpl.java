@@ -13,7 +13,7 @@ import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.utilities.Utils;
 
 /** Base buffer provides the histogram and the geometry indexing/merging */
-public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
+public abstract class ShardImpl extends CursorImpl implements Storage.Shard {
 
   private final Data.FillCurve fillCurve;
   private final Persistence persistence;
@@ -33,7 +33,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
    * @param fillCurve
    * @param offset extent-based offsets with the start offset in the storage
    */
-  protected BufferImpl(
+  protected ShardImpl(
       Geometry geometry,
       Observation observation,
       StorageImplObsolete stateStorage,

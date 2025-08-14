@@ -3962,7 +3962,7 @@ public class Utils {
               case Concept ignored -> Concept.class;
               case Storage ignored -> Storage.class;
               // TODO specialized buffers first
-              case Storage.Buffer ignored -> Storage.Buffer.class;
+              case Storage.Shard ignored -> Storage.Shard.class;
               default -> Object.class;
             };
       }

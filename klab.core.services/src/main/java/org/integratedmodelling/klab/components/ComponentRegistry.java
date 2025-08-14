@@ -1843,7 +1843,7 @@ public class ComponentRegistry {
           runArguments.add(serviceCall);
         } else if (Parameters.class.isAssignableFrom(argument)) {
           runArguments.add(urnParameters);
-        } else if (Storage.Buffer.class.isAssignableFrom(argument)) {
+        } else if (Storage.Shard.class.isAssignableFrom(argument)) {
             // TODO! Buffers/scanners must already be split as needed
         } else if (Storage.Scanner.class.isAssignableFrom(argument)) {
             // TODO! Buffers/scanners must already be split as needed

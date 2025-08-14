@@ -657,7 +657,7 @@ public interface Data {
      * @throws KlabIllegalStateException if called on an object builder or if the filling curve
      *     cannot be matched to the geometry.
      */
-    <T extends Storage.Buffer> T buffer(Class<T> fillerClass, FillCurve fillCurve);
+    <T extends Storage.Shard> T buffer(Class<T> fillerClass, FillCurve fillCurve);
 
     /**
      * Must be called on any secondary builders. Should NOT be called on the root builder, passed to

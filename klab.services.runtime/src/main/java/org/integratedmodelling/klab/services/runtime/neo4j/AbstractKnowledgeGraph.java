@@ -13,7 +13,7 @@ import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Language;
-import org.integratedmodelling.klab.runtime.storage.BufferImpl;
+import org.integratedmodelling.klab.runtime.storage.ShardImpl;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.util.HashMap;
@@ -134,7 +134,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put("outcome", activity.getOutcome() == null ? null : activity.getOutcome().name());
           ret.put("stackTrace", activity.getStackTrace());
         }
-        case BufferImpl buffer -> {
+        case ShardImpl buffer -> {
           ret.put("id", buffer.getId());
           ret.put("persistence", buffer.getPersistence().name());
           ret.put("type", buffer.getDataType().name());

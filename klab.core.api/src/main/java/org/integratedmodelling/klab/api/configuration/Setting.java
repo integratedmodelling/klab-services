@@ -107,7 +107,7 @@ public enum Setting {
       Page.RUNTIME,
       "If false, no remote components will be loaded when requested, relying only on those explicitly installed",
       Boolean.class,
-      false /* TODO should be TRUE by default */),
+      true),
   MAX_RESOURCES_SERVICE_MEMORY(
       Page.RESOURCES,
       "Maximum memory for the local resources service in MB",

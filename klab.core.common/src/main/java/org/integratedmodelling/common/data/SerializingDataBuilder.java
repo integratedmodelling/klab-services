@@ -5,7 +5,6 @@ import java.util.stream.Collectors;
 
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -85,7 +84,7 @@ public class SerializingDataBuilder implements Data.Builder {
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T extends Storage.Buffer> T buffer(
+  public <T extends Storage.Shard> T buffer(
       Class<T> fillerClass, Data.FillCurve fillCurve) {
 //    if (fillerClass == Storage.DoubleBuffer.class) {
 //      return (T) new DoubleBufferFiller(fillCurve);

@@ -13,7 +13,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
  *
  * <p>The interface is implemented by classes specialized for a particular type of data, enabling
  * faster, non-boxing native operation. For this reason there are no set/get methods in the base
- * {@link Buffer} interface used for I/O. The runtime makes the choice based on the API of the
+ * {@link Shard} interface used for I/O. The runtime makes the choice based on the API of the
  * contextualizers or annotations added to models or concepts.
  *
  * @author Ferd
@@ -50,7 +50,7 @@ public interface Storage {
      *
      * @return
      */
-    Buffer buffer();
+    Shard buffer();
 
     /**
      * Total size of the buffer we represent.
@@ -109,7 +109,7 @@ public interface Storage {
   }
 
   /** New buffer API to substitute Storage.Buffer. */
-  interface Buffer extends RuntimeAsset {
+  interface Shard extends RuntimeAsset {
 
     Geometry getGeometry();
 
@@ -140,7 +140,7 @@ public interface Storage {
    * @param event
    * @return a list of buffers, possibly empty.
    */
-  List<Buffer> getNativeBuffers(Scheduler.Event event);
+  List<Shard> getNativeShards(Scheduler.Event event);
 
   /**
    * Create or retrieve buffers for the observation we represent, honoring any requests in terms of
@@ -158,7 +158,7 @@ public interface Storage {
    * @param request the specifications for the buffer geometry, fill curve and split logic.`
    * @return a list of new or existing buffers, possibly wrapped in mediating buffers.
    */
-  List<Buffer> getOrCreateBuffers(Scheduler.Event locator, Data.DistributionStrategy request);
+  List<Shard> getOrCreateShards(Scheduler.Event locator, Data.DistributionStrategy request);
 
   /**
    * This will be known after the first buffer is created.

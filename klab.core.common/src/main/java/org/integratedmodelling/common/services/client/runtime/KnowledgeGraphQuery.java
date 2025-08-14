@@ -83,7 +83,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
         case Concept ignored -> AssetType.SEMANTICS;
         case KimConcept ignored -> AssetType.SEMANTICS;
         case KnowledgeGraph.Link ignored -> AssetType.LINK;
-        case Storage.Buffer ignored -> AssetType.DATA;
+        case Storage.Shard ignored -> AssetType.DATA;
         default ->
             throw new KlabIllegalArgumentException(
                 "Can't make a query with a " + asset + " target");
@@ -118,7 +118,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
       if (KnowledgeGraph.Link.class.isAssignableFrom(asset)) {
         return AssetType.LINK;
       }
-      if (Storage.Buffer.class.isAssignableFrom(asset)) {
+      if (Storage.Shard.class.isAssignableFrom(asset)) {
         return AssetType.DATA;
       }
       throw new KlabIllegalArgumentException("Can't make a query with a " + asset + " target");
@@ -134,7 +134,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
         case OBSERVATION -> Observation.class;
         case SEMANTICS -> Concept.class;
         case OBSERVABLE -> Observable.class;
-        case DATA -> Storage.Buffer.class;
+        case DATA -> Storage.Shard.class;
         case LINK -> KnowledgeGraph.Link.class;
       };
     }
@@ -223,7 +223,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
                 ignored.getContextObservation() == null
                     ? ignored.getId()
                     : ignored.getContextObservation().getUrn();
-            case Storage.Buffer ignored -> ignored.getId() + "";
+            case Storage.Shard ignored -> ignored.getId() + "";
             default -> null;
           };
       if (ret.urn == null) {
