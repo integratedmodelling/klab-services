@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
 import org.integratedmodelling.klab.api.identities.ServiceIdentity;
@@ -490,6 +491,10 @@ public abstract class ServiceClient implements KlabService {
   public void setProperties(ServiceReference serviceReference) {
     // TODO set owner, local/remote names etc. We already have the identity set up in the
     // constructor.
+  }
+
+  public Settings settings() {
+    throw new KlabUnimplementedException("Settings in clients are not supported yet.");
   }
 
   public boolean tryConnection(int i, TimeUnit timeUnit) {

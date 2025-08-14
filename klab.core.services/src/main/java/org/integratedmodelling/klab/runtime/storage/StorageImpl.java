@@ -1,10 +1,13 @@
 package org.integratedmodelling.klab.runtime.storage;
 
+import org.integratedmodelling.klab.api.configuration.Setting;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Geometries;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -18,6 +21,7 @@ public class StorageImpl implements Storage {
 
   private final Observation observation;
   private final ContextScope scope;
+  private final boolean doNotParallelize;
   private Type nativeType;
 
   /*
@@ -26,10 +30,40 @@ public class StorageImpl implements Storage {
    */
   private NavigableMap<List<Long>, List<Buffer>> buffers = new TreeMap<>();
 
-  public StorageImpl(Observation observation, ContextScope contextScope) {
+  /**
+   * Create the storage for the observation. Settings will determine the specific native type for
+   * numeric observations, and potentially other options related to storage and distribution.
+   *
+   * @param observation
+   * @param contextScope
+   * @param runtimeSettings
+   */
+  public StorageImpl(Observation observation, ContextScope contextScope, Settings runtimeSettings) {
     this.observation = observation;
     this.scope = contextScope;
-    // TODO establish the default native type? This may be used before
+    this.doNotParallelize =
+        runtimeSettings.get(Setting.DO_NOT_PARALLELIZE_OBSERVATIONS, Boolean.class);
+    // establish the default native type. Buffer request may override.
+    this.nativeType =
+        switch (observation.getObservable().getDescriptionType()) {
+          case VOID,
+              CHARACTERIZATION,
+              ACKNOWLEDGEMENT,
+              CONNECTION,
+              CLASSIFICATION,
+              INSTANTIATION,
+              DETECTION,
+              SIMULATION ->
+              throw new KlabIllegalStateException(
+                  "Cannot create storage for " + observation.getObservable());
+          case QUANTIFICATION ->
+              // TODO this should also consider any constraints in the observation distribution data
+              runtimeSettings.get(Setting.USE_SHORT_FLOAT_REPRESENTATION, Boolean.class)
+                  ? Type.FLOAT
+                  : Type.DOUBLE;
+          case CATEGORIZATION -> Type.KEYED;
+          case VERIFICATION -> Type.BOOLEAN;
+        };
   }
 
   @Override
@@ -71,7 +105,7 @@ public class StorageImpl implements Storage {
   }
 
   @Override
-  public List<Buffer> getOrCreateBuffers(Scheduler.Event locator, Data.Access specs) {
+  public List<Buffer> getOrCreateBuffers(Scheduler.Event locator, Data.DistributionStrategy specs) {
     return List.of();
   }
 
@@ -100,13 +134,13 @@ public class StorageImpl implements Storage {
       long maxSize,
       Data.FillCurve fillCurve) {
 
-    // TODO aha
+    // TODO qui ti voglio
     return buffers;
   }
 
   public static void main(String[] args) {
 
-    var s = new StorageImpl(null, null);
+    var s = new StorageImpl(null, null, null);
 
     var original = Geometry.create(Geometries.CENTRAL_COLOMBIA);
     for (var g : s.getGeometries(original, -1, 65600, Long.MAX_VALUE)) {

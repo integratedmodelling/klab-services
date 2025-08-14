@@ -32,42 +32,89 @@ public interface Data {
    * This collects the information related to how the data should be either stored in memory or
    * remapped for access by specific contextualizers or adapters, enabling the creation of
    * independent buffers for parallelization based on the type of contextualization. It is created
-   * by collecting the info from the computation (adapter or contextualizer) and compounding it with
-   * any overrides from model/observable annotations and/or runtime configuration.
+   * by the resolver after collecting the info from the computation (adapter or contextualizer) and
+   * compounding it with any overrides from model/observable annotations and/or runtime
+   * configuration. The finalized distribution strategy is included in the {@link
+   * org.integratedmodelling.klab.api.services.runtime.Actuator}s produced by the resolver for any
+   * quality observations.
    *
    * <p>TODO we should also enable a split based on a collective concept used as spatial/temporal
-   *  context for individual computations. This would need to trigger resolution at the resolver
-   *  side.
+   * context for individual computations. This would trigger resolution at the resolver side. It
+   * would be specified in a model using an annotation like <code>
+   * @split({{each hydrology:RiverBasin}})</code> on a model.
    *
-   * @param curve the fill curve providing meaning for the sequence of data in storage
-   * @param suggestedSplits the number of splits suggested for data parallelization, with -1 for
+   * - curve the fill curve providing meaning for the sequence of data in storage
+   * - suggestedSplits the number of splits suggested for data parallelization, with -1 for
    *     arbitrary and 1 for no splits.
-   * @param minSplitSize minimum geometry size for a buffer when splits are requested
-   * @param maxBufferSize maximum size for the overall data operation to apply. If the geometry is
+   * - minSplitSize minimum geometry size for a buffer when splits are requested
+   * - maxBufferSize maximum size for the overall data operation to apply. If the geometry is
    *     larger than this, the adapter or contextualizer will be rejected by the resolver.
-   * @param dataType the requested or native data type for the operation.
+   * - dataType the requested or native data type for the operation.
    */
-  record Access(
-      FillCurve curve,
-      int suggestedSplits,
-      long minSplitSize,
-      long maxBufferSize,
-      Storage.Type dataType) {}
+  class DistributionStrategy {
 
-  /**
-   * TODO merge Cursor and Filler (call it Cursor). Enable 6 unboxing methods for data access in
-   * each subclass:
-   *
-   * <p>add(value) -> standard add using buffer's curve add(value, FillCurve) -> add translating
-   * offsets from another curve set to the same geometry value get() -> retrieve using buffer value
-   * get(FillCurve) -> retrieve at current position translating curve value get(long) -> random
-   * access get() set(value, long) -> random access set()
-   *
-   * <p>TODO OR: avoid the ones with FillCurve and just ask for a specific curve when creating the
-   * cursor. So just add(value), get(), set(value, long) and get(long). Class without checking: a
-   * different class for the two cases. The method should be available as FC translation from
-   * (maybe) the geometry?
-   */
+    private FillCurve curve;
+    private int suggestedSplits;
+    private long minSplitSize;
+    private long maxBufferSize;
+    private Storage.Type dataType;
+
+    public DistributionStrategy() {}
+
+    public DistributionStrategy(
+        FillCurve curve,
+        int suggestedSplits,
+        long minSplitSize,
+        long maxBufferSize,
+        Storage.Type dataType) {
+      this.curve = curve;
+      this.suggestedSplits = suggestedSplits;
+      this.minSplitSize = minSplitSize;
+      this.maxBufferSize = maxBufferSize;
+      this.dataType = dataType;
+    }
+
+    public FillCurve getCurve() {
+      return curve;
+    }
+
+    public void setCurve(FillCurve curve) {
+      this.curve = curve;
+    }
+
+    public int getSuggestedSplits() {
+      return suggestedSplits;
+    }
+
+    public void setSuggestedSplits(int suggestedSplits) {
+      this.suggestedSplits = suggestedSplits;
+    }
+
+    public long getMinSplitSize() {
+      return minSplitSize;
+    }
+
+    public void setMinSplitSize(long minSplitSize) {
+      this.minSplitSize = minSplitSize;
+    }
+
+    public long getMaxBufferSize() {
+      return maxBufferSize;
+    }
+
+    public void setMaxBufferSize(long maxBufferSize) {
+      this.maxBufferSize = maxBufferSize;
+    }
+
+    public Storage.Type getDataType() {
+      return dataType;
+    }
+
+    public void setDataType(Storage.Type dataType) {
+      this.dataType = dataType;
+    }
+  }
+
 
   /**
    * A Cursor iterates one or more geometry dimensions using a long offset. If the geometry it
@@ -103,7 +150,8 @@ public interface Data {
 
   /** Non-boxing mapper for extent offsets to n-dimensional coordinates. */
   @FunctionalInterface
-  public interface LongToLongArrayFunction {
+  @Deprecated
+  interface LongToLongArrayFunction {
 
     /**
      * Applies this function to the given argument.
@@ -116,7 +164,8 @@ public interface Data {
 
   /** Non-boxing mapper for extent n-dimensional coordinates to linear offsets. */
   @FunctionalInterface
-  public interface LongArrayToLongFunction {
+  @Deprecated
+  interface LongArrayToLongFunction {
 
     /**
      * Applies this function to the given argument.

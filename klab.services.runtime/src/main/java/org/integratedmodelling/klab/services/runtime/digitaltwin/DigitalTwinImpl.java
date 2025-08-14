@@ -330,7 +330,11 @@ public class DigitalTwinImpl implements DigitalTwin {
       UserScope userScope,
       KnowledgeGraphNeo4j database) {
     this.rootScope = scope;
-    var configuration = DigitalTwin.Configuration.builder(scope.getConfiguration()).id(scopeId).serviceId(service.serviceId()).build();
+    var configuration =
+        DigitalTwin.Configuration.builder(scope.getConfiguration())
+            .id(scopeId)
+            .serviceId(service.serviceId())
+            .build();
     this.knowledgeGraph = (KnowledgeGraphNeo4j) database.contextualize(configuration, userScope);
     this.storageManager = new StorageManagerImpl(service, scope);
     this.scheduler = new SchedulerImpl(scope, this);
@@ -408,17 +412,13 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       if (data instanceof DoubleDataImpl doubleData) {
 
-        var buffers =
-            storage.buffers(
-                data.geometry(),
-                event == null ? null : event.getTime(),
-                Storage.DoubleBuffer.class);
+        var buffers = storage.getOrCreateBuffers(event, target.getDistributionStrategy());
 
         /* all buffers run in parallel */
         return Utils.Java.distributeComputation(
             buffers,
             buffer -> {
-              var scanner = buffer.scan();
+              var scanner = buffer.getScanner(Storage.DoubleScanner.class);
               while (doubleData.hasNext()) {
                 scanner.add(doubleData.nextDouble());
               }

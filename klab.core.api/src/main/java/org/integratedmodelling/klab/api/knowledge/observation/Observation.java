@@ -15,6 +15,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation;
 
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -136,6 +137,16 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
    * @return
    */
   List<Long> getEventTimestamps();
+
+  /**
+   * Once contextualized, quality observations will have a distribution strategy that details the
+   * native representation in the storage. That will describe the architecture of the buffers stored
+   * in the knowledge graph and covering the geometry of the observation.
+   *
+   * @return a non-null distribution strategy for contextualized quality observations; null
+   *     otherwise.
+   */
+  Data.DistributionStrategy getDistributionStrategy();
 
   /**
    * After resolution, this will report the 0-1 coverage resolved. Before resolution this will be 0.

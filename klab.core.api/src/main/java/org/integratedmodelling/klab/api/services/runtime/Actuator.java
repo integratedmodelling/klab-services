@@ -18,6 +18,7 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -79,14 +80,6 @@ public interface Actuator extends Serializable, RuntimeAsset {
     return RuntimeAsset.Type.ACTUATOR;
   }
 
-  //  /**
-  //   * Name of the service call that encodes deferred resolution when that must be included in the
-  //   * computation. This will appear as a service call whose only parameter will be the
-  // contextualized
-  //   * observation strategy.
-  //   */
-  //  String DEFERRED_STRATEGY_CALL = "klab.internal.deferred";
-
   /**
    * The ID of the actuator must be the same as that of the observation it handles. It is specific
    * to the DT and shouldn't be propagated to the serialized form.
@@ -124,15 +117,6 @@ public interface Actuator extends Serializable, RuntimeAsset {
    */
   Parameters<String> getData();
 
-  //    /**
-  //     * The local name and "user-level" name for the actuator, correspondent to the simple name
-  // associated with
-  //     * the semantics or to its renaming through 'named' when used as a dependency.
-  //     *
-  //     * @return the alias or null
-  //     */
-  //    String getAlias();
-
   /**
    * Each actuator reports the artifact type of the observation it produces. Pure resolvers (e.g.
    * the resolver for an object) are de facto void, but report the special RESOLVE type; VOID
@@ -162,7 +146,7 @@ public interface Actuator extends Serializable, RuntimeAsset {
    *
    * @return all the internal actuators in order of declaration.
    */
-  public List<Actuator> getChildren();
+  List<Actuator> getChildren();
 
   /**
    * Return the list of all computations in this actuator, or an empty list. If the actuator is a
@@ -172,24 +156,6 @@ public interface Actuator extends Serializable, RuntimeAsset {
    * @return all computations. Never null, possibly empty.
    */
   List<ServiceCall> getComputation();
-
-  //    /**
-  //     * If true, this actuator represents a named input that will need to be connected to an
-  // artifact from the
-  //     * computation context.
-  //     *
-  //     * @return
-  //     */
-  //    boolean isInput();
-  //
-  //    /**
-  //     * If true, this actuator represents an exported output that will need to be connected to an
-  // artifact from
-  //     * the computation context.
-  //     *
-  //     * @return
-  //     */
-  //    boolean isOutput();
 
   /**
    * The URN of the observation strategy that produced this actuator, if any. Only used for
@@ -208,6 +174,18 @@ public interface Actuator extends Serializable, RuntimeAsset {
    * @return the merged coverage of all models in or below this actuator.
    */
   Geometry getCoverage();
+
+  /**
+   * For non-quality actuators, this will normally be null (that may change in the future). For
+   * quality observation, this <em>may</em> be non-null if the resolved model or any of its
+   * antecedents have annotations that mandate a specific distribution strategy. Those will need to
+   * be negotiated in the runtime with the needs of any adapters and/or contextualizers involved,
+   * ideally overriding them if possible, and causing a warning at model validation or dataflow
+   * compilation if not.
+   *
+   * @return the distribution strategy from the resolved model, or null if none is specified.
+   */
+  Data.DistributionStrategy getDistributionStrategy();
 
   /**
    * The set of annotations is harvested from the language specifications starting at the

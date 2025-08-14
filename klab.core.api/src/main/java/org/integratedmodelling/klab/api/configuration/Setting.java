@@ -83,6 +83,16 @@ public enum Setting {
       "Maximum memory for the local runtime in MB",
       Integer.class,
       Product.ProductType.RUNTIME_SERVICE.defaultMaxMemoryLimitMB()),
+  USE_SHORT_FLOAT_REPRESENTATION(
+      Page.RUNTIME,
+      "If set, use short floats to save space instead of doubles, at the expense of precision",
+      Boolean.class,
+      Boolean.FALSE),
+  DO_NOT_PARALLELIZE_OBSERVATIONS(
+      Page.RUNTIME,
+      "If set, use a single data buffer for all observations, disregarding all settings",
+      Boolean.class,
+      Boolean.FALSE),
   REINITIALIZE_DATABASE(
       Page.RUNTIME,
       "Remove all digital twins and re-initialize the knowledge graph",

@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -304,6 +305,14 @@ public interface KlabService extends Service {
    * @return the service ID. Never null.
    */
   String serviceId();
+
+  /**
+   * The service should expose its configurable settings so that its users can check for them. In
+   * services, these are managed through the settings admin API.
+   *
+   * @return settings, possibly empty
+   */
+  Settings settings();
 
   /**
    * Each service operates under a root scope that is used to report issues, talk to clients and

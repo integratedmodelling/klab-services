@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge.observation.impl;
 
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -42,6 +43,7 @@ public class ObservationImpl implements Observation {
   private boolean substantialQuality;
   private long transientId = Klab.getNextId();
   private List<Notification> notifications = new ArrayList<>();
+  private Data.DistributionStrategy distributionStrategy;
 
   public ObservationImpl() {}
 
@@ -266,5 +268,14 @@ public class ObservationImpl implements Observation {
 
   public void setSubstantialQuality(boolean substantialQuality) {
     this.substantialQuality = substantialQuality;
+  }
+
+  @Override
+  public Data.DistributionStrategy getDistributionStrategy() {
+    return distributionStrategy;
+  }
+
+  public void setDistributionStrategy(Data.DistributionStrategy distributionStrategy) {
+    this.distributionStrategy = distributionStrategy;
   }
 }

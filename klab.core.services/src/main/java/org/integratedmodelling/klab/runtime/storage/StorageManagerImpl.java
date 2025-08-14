@@ -35,6 +35,7 @@ public class StorageManagerImpl implements StorageManager {
 
   private final ServiceContextScope contextScope;
   private final File propertyFile;
+  private final RuntimeService service;
   private File workspace;
   private File floatBackupFile;
   private File doubleBackupFile;
@@ -53,8 +54,9 @@ public class StorageManagerImpl implements StorageManager {
 
   private Parallelism parallelism = Parallelism.ONE;
 
-  public StorageManagerImpl(KlabService service, ServiceContextScope scope) {
+  public StorageManagerImpl(RuntimeService service, ServiceContextScope scope) {
     // choose the mm files, parallelism level and the floating point representation
+    this.service = service;
     this.workspace = ServiceConfiguration.INSTANCE.getScratchDataDirectory("ktmp");
     this.floatBackupFile = new File(this.workspace + File.separator + "fstorage.bin");
     this.doubleBackupFile = new File(this.workspace + File.separator + "dstorage.bin");
@@ -151,12 +153,12 @@ public class StorageManagerImpl implements StorageManager {
     }
   }
 
-  /**
-   * Find out the representative interface of the passed buffer.
-   *
-   * @param buffer
-   * @return
-   */
+  //  /**
+  //   * Find out the representative interface of the passed buffer.
+  //   *
+  //   * @param buffer
+  //   * @return
+  //   */
   //  public static Class<? extends Storage.Buffer> bufferClass(Storage.Buffer buffer) {
   //    return switch (buffer) {
   //      case DoubleBufferImpl ignored -> Storage.DoubleBuffer.class;
@@ -244,10 +246,12 @@ public class StorageManagerImpl implements StorageManager {
   }
 
   @Override
-  public Storage getStorage(Observation observation, /* FIXME these come at buffer request */ Annotation storageAnnotation) {
+  public Storage getStorage(
+      Observation observation, /* FIXME these come at buffer request */
+      Annotation storageAnnotation) {
     final var options = getOptions(contextScope, storageAnnotation, observation);
     return this.storage.computeIfAbsent(
-        observation.getUrn(), urn -> new StorageImpl(observation, contextScope));
+        observation.getUrn(), urn -> new StorageImpl(observation, contextScope, service.settings()));
   }
 
   //  @SuppressWarnings("unchecked")

@@ -223,7 +223,7 @@ public class StorageImplObsolete implements Storage {
   }
 
   @Override
-  public List<Buffer> getOrCreateBuffers(Scheduler.Event locator, Data.Access specs) {
+  public List<Buffer> getOrCreateBuffers(Scheduler.Event locator, Data.DistributionStrategy specs) {
     return List.of();
   }
 
