@@ -158,7 +158,7 @@ public interface Storage {
    * @param request the specifications for the buffer geometry, fill curve and split logic.`
    * @return a list of new or existing buffers, possibly wrapped in mediating buffers.
    */
-  List<Shard> getOrCreateShards(Scheduler.Event locator, Data.DistributionStrategy request);
+  List<Shard> getOrCreateShards(Scheduler.Event locator, Data.ShardingStrategy request);
 
   /**
    * This will be known after the first buffer is created.

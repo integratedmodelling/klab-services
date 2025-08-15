@@ -191,67 +191,61 @@ public class StorageManagerImpl implements StorageManager {
     return histogramBinSize;
   }
 
-  public Storage getStorage(Observation observation) {
-    return getStorage(
-        observation, Utils.Annotations.findAnnotation("storage", observation.getAnnotations()));
-  }
-
-  public static Triple<Integer, Data.FillCurve, Storage.Type> getOptions(
-      ServiceContextScope contextScope, Annotation storageAnnotation, Observation observation) {
-    // defaults
-    var splits = contextScope.getParallelism().getAsInt();
-    var fillingCurve = Data.FillCurve.defaultCurve(observation.getGeometry());
-    var storageType =
-        contextScope
-            .getService(RuntimeService.class)
-            .capabilities(contextScope)
-            .getDefaultStorageType();
-
-    /*
-     * Find specs if any. May not be honored.
-     */
-    if (storageAnnotation != null) {
-      if (storageAnnotation.containsKey("fillcurve")) {
-        try {
-          fillingCurve =
-              Data.FillCurve.valueOf(storageAnnotation.get("fillcurve").toString().toUpperCase());
-        } catch (Throwable t) {
-          contextScope.error(
-              "Wrong fill curve specification: "
-                  + storageAnnotation.get("fillcurve")
-                  + " in "
-                  + observation);
-        }
-      }
-
-      if (storageAnnotation.containsKey("type")) {
-        try {
-          storageType =
-              Storage.Type.valueOf(storageAnnotation.get("type").toString().toUpperCase());
-        } catch (Throwable t) {
-          contextScope.error(
-              "Wrong storage type specification: "
-                  + storageAnnotation.get("type")
-                  + " in "
-                  + observation);
-        }
-      }
-
-      if (storageAnnotation.containsKey("splits")) {
-        splits = contextScope.getSplits(storageAnnotation.get("splits", Integer.class));
-      }
-    }
-
-    return Triple.of(splits, fillingCurve, storageType);
-  }
+  //  public static Triple<Integer, Data.FillCurve, Storage.Type> getOptions(
+  //      ServiceContextScope contextScope, Annotation storageAnnotation, Observation observation) {
+  //    // defaults
+  //    var splits = contextScope.getParallelism().getAsInt();
+  //    var fillingCurve = Data.FillCurve.defaultCurve(observation.getGeometry());
+  //    var storageType =
+  //        contextScope
+  //            .getService(RuntimeService.class)
+  //            .capabilities(contextScope)
+  //            .getDefaultStorageType();
+  //
+  //    /*
+  //     * Find specs if any. May not be honored.
+  //     */
+  //    if (storageAnnotation != null) {
+  //      if (storageAnnotation.containsKey("fillcurve")) {
+  //        try {
+  //          fillingCurve =
+  //
+  // Data.FillCurve.valueOf(storageAnnotation.get("fillcurve").toString().toUpperCase());
+  //        } catch (Throwable t) {
+  //          contextScope.error(
+  //              "Wrong fill curve specification: "
+  //                  + storageAnnotation.get("fillcurve")
+  //                  + " in "
+  //                  + observation);
+  //        }
+  //      }
+  //
+  //      if (storageAnnotation.containsKey("type")) {
+  //        try {
+  //          storageType =
+  //              Storage.Type.valueOf(storageAnnotation.get("type").toString().toUpperCase());
+  //        } catch (Throwable t) {
+  //          contextScope.error(
+  //              "Wrong storage type specification: "
+  //                  + storageAnnotation.get("type")
+  //                  + " in "
+  //                  + observation);
+  //        }
+  //      }
+  //
+  //      if (storageAnnotation.containsKey("splits")) {
+  //        splits = contextScope.getSplits(storageAnnotation.get("splits", Integer.class));
+  //      }
+  //    }
+  //
+  //    return Triple.of(splits, fillingCurve, storageType);
+  //  }
 
   @Override
-  public Storage getStorage(
-      Observation observation, /* FIXME these come at buffer request */
-      Annotation storageAnnotation) {
-    final var options = getOptions(contextScope, storageAnnotation, observation);
+  public Storage getStorage(Observation observation) {
     return this.storage.computeIfAbsent(
-        observation.getUrn(), urn -> new StorageImpl(observation, contextScope, service.settings()));
+        observation.getUrn(),
+        urn -> new StorageImpl(observation, contextScope, service.settings()));
   }
 
   //  @SuppressWarnings("unchecked")

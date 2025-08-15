@@ -6,13 +6,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.server.SystemLauncher;
-import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.configuration.Setting;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -42,7 +43,6 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JEmbedded;
@@ -309,10 +309,10 @@ public class RuntimeService extends BaseService
                   () -> {
                     for (var service : serviceContextScope.getServices(serviceClass)) {
                       // if things are OK, the service repeats the ID back
-                      if (service.status().isAvailable() &&
-                              !serviceContextScope
-                          .getId()
-                          .equals(service.registerNewContext(serviceContextScope, userScope))) {
+                      if (service.status().isAvailable()
+                          && !serviceContextScope
+                              .getId()
+                              .equals(service.registerNewContext(serviceContextScope, userScope))) {
                         fail.set(true);
                       }
                     }
@@ -691,6 +691,32 @@ public class RuntimeService extends BaseService
       // shut up
     }
     return false;
+  }
+
+  /**
+   * Establish the sharding strategy for the observable in the lexical and runtime context. The
+   * runtime configuration (from the adapter or contextualizer) should be the starting point; the
+   * lexical configuration (from models or observables) may override it within "legal" limits; the
+   * scope may further override it. Runtime settings may then force some of the configuration
+   *
+   * @param observable
+   * @param lexicalConfiguration
+   * @param runtimeConfiguration
+   * @param contextScope
+   * @return the final sharding strategy for the passed observable, to be included in its
+   *     observation. Never null unless the observable is not a quality.
+   */
+  public Data.ShardingStrategy establishShardingStrategy(
+      Observable observable,
+      Data.ShardingStrategy lexicalConfiguration,
+      Data.ShardingStrategy runtimeConfiguration,
+      ContextScope contextScope) {
+
+    if (!observable.is(SemanticType.QUALITY)) {
+      return null;
+    }
+
+    return null;
   }
 
   @Override

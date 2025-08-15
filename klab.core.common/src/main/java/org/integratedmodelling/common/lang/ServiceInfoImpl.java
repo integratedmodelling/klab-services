@@ -6,7 +6,6 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
-import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -213,8 +212,8 @@ public class ServiceInfoImpl implements ServiceInfo {
   private FunctionType functionType;
   private Set<KnowledgeClass> targets = EnumSet.noneOf(KnowledgeClass.class);
   private Set<String> mediaTypes = new HashSet<>();
-  private List<Annotation> annotations = new ArrayList<>();
-  private Data.DistributionStrategy distributionStrategy;
+  //  private List<Annotation> annotations = new ArrayList<>();
+  private Data.ShardingStrategy shardingStrategy;
 
   public String getLabel() {
     return label;
@@ -704,25 +703,17 @@ public class ServiceInfoImpl implements ServiceInfo {
   }
 
   @Override
-  public List<Annotation> getAnnotations() {
-    return annotations;
-  }
-
-  public void setAnnotations(List<Annotation> annotations) {
-    this.annotations = annotations;
-  }
-
-  @Override
   public Collection<KnowledgeClass> getTargets() {
     return this.targets;
   }
 
-  public Data.DistributionStrategy getDistributionStrategy() {
-    return distributionStrategy;
+  @Override
+  public Data.ShardingStrategy getShardingStrategy() {
+    return shardingStrategy;
   }
 
-  public void setDistributionStrategy(Data.DistributionStrategy distributionStrategy) {
-    this.distributionStrategy = distributionStrategy;
+  public void setShardingStrategy(Data.ShardingStrategy shardingStrategy) {
+    this.shardingStrategy = shardingStrategy;
   }
 
   private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Argument argument) {

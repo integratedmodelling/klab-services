@@ -42,7 +42,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
-import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -1053,12 +1052,12 @@ public class ComponentRegistry {
     //      var arg = createArgument(argument);
     //      ret.getArguments().put(arg.getName(), arg);
     //    }
-
-    AnnotationImpl storageAnnotation = null;
-
-    if (storageAnnotation != null) {
-      ret.getAnnotations().add(storageAnnotation);
-    }
+    //
+    //    AnnotationImpl storageAnnotation = null;
+    //
+    //    if (storageAnnotation != null) {
+    //      ret.getAnnotations().add(storageAnnotation);
+    //    }
 
     return ret;
   }
@@ -1077,6 +1076,13 @@ public class ComponentRegistry {
     ret.setReentrant(annotation.reentrant());
     ret.setFunctionType(ServiceInfo.FunctionType.FUNCTION);
 
+    var distribution = new Data.ShardingStrategy();
+    distribution.setCurve(annotation.fillCurve());
+    distribution.setMaxBufferSize(annotation.maxSize());
+    distribution.setMinSplitSize(annotation.minSizeForSplitting());
+    distribution.setSuggestedSplits(annotation.split());
+    ret.setShardingStrategy(distribution);
+
     for (Artifact.Type a : annotation.type()) {
       ret.getType().add(a);
     }
@@ -1094,23 +1100,23 @@ public class ComponentRegistry {
       ret.getExports().add(arg);
     }
 
-    AnnotationImpl storageAnnotation = null;
-
-    if (annotation.fillingCurve() != null) {
-      storageAnnotation =
-          org.integratedmodelling.klab.api.lang.Annotation.of(
-              "storage", "fillcurve", annotation.fillingCurve().name());
-    }
-    if (annotation.split() > 0) {
-      if (storageAnnotation == null) {
-        storageAnnotation = org.integratedmodelling.klab.api.lang.Annotation.of("storage");
-      }
-      storageAnnotation.put("splits", annotation.split());
-    }
-
-    if (storageAnnotation != null) {
-      ret.getAnnotations().add(storageAnnotation);
-    }
+    //    AnnotationImpl storageAnnotation = null;
+    //
+    //    if (annotation.fillCurve() != null) {
+    //      storageAnnotation =
+    //          org.integratedmodelling.klab.api.lang.Annotation.of(
+    //              "storage", "fillcurve", annotation.fillCurve().name());
+    //    }
+    //    if (annotation.split() > 0) {
+    //      if (storageAnnotation == null) {
+    //        storageAnnotation = org.integratedmodelling.klab.api.lang.Annotation.of("storage");
+    //      }
+    //      storageAnnotation.put("splits", annotation.split());
+    //    }
+    //
+    //    if (storageAnnotation != null) {
+    //      ret.getAnnotations().add(storageAnnotation);
+    //    }
 
     return ret;
   }
@@ -1749,7 +1755,7 @@ public class ComponentRegistry {
       Expression expression,
       LookupTable lookupTable,
       Data inputData,
-      org.integratedmodelling.klab.api.lang.Annotation storageAnnotation,
+      Data.ShardingStrategy shardingStrategy,
       Scheduler.Event schedulerEvent,
       Scope scope) {
 
@@ -1768,7 +1774,6 @@ public class ComponentRegistry {
             expression,
             lookupTable,
             inputData,
-            storageAnnotation,
             schedulerEvent,
             scope);
     if (arguments == null) {
@@ -1816,7 +1821,6 @@ public class ComponentRegistry {
       Expression expression,
       LookupTable lookupTable,
       Data inputData,
-      org.integratedmodelling.klab.api.lang.Annotation storageAnnotation,
       Scheduler.Event schedulerEvent,
       Scope scope) {
     List<Object> runArguments = new ArrayList<>();
@@ -1844,14 +1848,14 @@ public class ComponentRegistry {
         } else if (Parameters.class.isAssignableFrom(argument)) {
           runArguments.add(urnParameters);
         } else if (Storage.Shard.class.isAssignableFrom(argument)) {
-            // TODO! Buffers/scanners must already be split as needed
+          // TODO! Buffers/scanners must already be split as needed
         } else if (Storage.Scanner.class.isAssignableFrom(argument)) {
-            // TODO! Buffers/scanners must already be split as needed
+          // TODO! Buffers/scanners must already be split as needed
         } else if (Storage.class.isAssignableFrom(argument)) {
           storage =
               digitalTwin == null
                   ? null
-                  : digitalTwin.getStorageManager().getStorage(observation, storageAnnotation);
+                  : digitalTwin.getStorageManager().getStorage(observation);
           runArguments.add(storage);
         } /*else if (LongStorage.class.isAssignableFrom(argument)) {
             storage =

@@ -229,7 +229,7 @@ public @interface KlabFunction {
    *
    * @return
    */
-  Data.FillCurve fillingCurve() default Data.FillCurve.UNSPECIFIED;
+  Data.FillCurve fillCurve() default Data.FillCurve.UNSPECIFIED;
 
   /**
    * If splits > 1, the function may suggest a geometry size that it can handle in one request. The

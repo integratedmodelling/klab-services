@@ -31,13 +31,13 @@ public class BaseDataImpl implements Data {
   private boolean empty = false;
   private Map<Integer, String> dataKey;
   private Metadata metadata = Metadata.create();
-  private Collection<Annotation> annotations = new ArrayList<>();
+//  private Collection<Annotation> annotations = new ArrayList<>();
 
   public BaseDataImpl(Instance instance) {
     this.instance = instance;
-    this.annotations =
-        Utils.Annotations.findAnnotations(
-            Set.of("fillcurve", "split", "storage"), instance, instance.getObservable());
+//    this.annotations =
+//        Utils.Annotations.findAnnotations(
+//            Set.of("fillcurve", "split", "storage"), instance, instance.getObservable());
     this.semantics = instance.getObservable().toString();
     this.geometry =
         GeometryRepository.INSTANCE.get(instance.getGeometry().toString(), Geometry.class);
@@ -49,8 +49,8 @@ public class BaseDataImpl implements Data {
     this.geometry = geometry;
     this.name = name;
     this.instance = instance;
-    Utils.Annotations.findAnnotations(
-        Set.of("fillcurve", "split", "storage"), observable, instance);
+//    Utils.Annotations.findAnnotations(
+//        Set.of("fillcurve", "split", "storage"), observable, instance);
   }
 
   @Override
@@ -78,13 +78,13 @@ public class BaseDataImpl implements Data {
     return empty;
   }
 
-  public Collection<Annotation> annotations() {
-    return annotations;
-  }
-
-  public void setAnnotations(Collection<Annotation> annotations) {
-    this.annotations = annotations;
-  }
+//  public Collection<Annotation> annotations() {
+//    return annotations;
+//  }
+//
+//  public void setAnnotations(Collection<Annotation> annotations) {
+//    this.annotations = annotations;
+//  }
 
   @Override
   public List<Notification> notifications() {

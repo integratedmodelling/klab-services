@@ -400,19 +400,11 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     if (data.hasStates()) {
 
-      // TODO the observation should have collected @split and @fillcurve annotations from models
-      // and observables,
-      //  along with colormap from concepts and all that.
-      var storage =
-          scope
-              .getDigitalTwin()
-              .getStorageManager()
-              .getStorage(
-                  target, Utils.Annotations.mergeAnnotations("storage", data, target, scope));
+      var storage = scope.getDigitalTwin().getStorageManager().getStorage(target);
 
       if (data instanceof DoubleDataImpl doubleData) {
 
-        var buffers = storage.getOrCreateShards(event, target.getDistributionStrategy());
+        var buffers = storage.getOrCreateShards(event, target.getShardingStrategy());
 
         /* all buffers run in parallel */
         return Utils.Java.distributeComputation(

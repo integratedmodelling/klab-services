@@ -136,7 +136,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
           yield ret;
         }
-        case ServiceInfo info -> info.getAnnotations();
+//        case ServiceInfo info -> info.getAnnotations();
         default -> new ArrayList<>();
       };
     }

@@ -93,8 +93,8 @@ public interface Extensions {
               + services().size()
               + "services, "
               + adapters.size()
-              //              + " adapters, "
-              //              + annotations.size()
+              + " adapters, "
+              + annotations.size()
               + " adapters");
     }
   }

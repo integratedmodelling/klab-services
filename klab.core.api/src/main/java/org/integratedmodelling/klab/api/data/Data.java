@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api.data;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
@@ -8,7 +7,6 @@ import java.util.PrimitiveIterator;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
@@ -51,7 +49,7 @@ public interface Data {
    *     larger than this, the adapter or contextualizer will be rejected by the resolver.
    * - dataType the requested or native data type for the operation.
    */
-  class DistributionStrategy {
+  class ShardingStrategy {
 
     private FillCurve curve;
     private int suggestedSplits;
@@ -59,9 +57,9 @@ public interface Data {
     private long maxBufferSize;
     private Storage.Type dataType;
 
-    public DistributionStrategy() {}
+    public ShardingStrategy() {}
 
-    public DistributionStrategy(
+    public ShardingStrategy(
         FillCurve curve,
         int suggestedSplits,
         long minSplitSize,
@@ -732,17 +730,17 @@ public interface Data {
    */
   List<Data> children();
 
-  /**
-   * Annotations are important because they contain indications re: fill curve, splits and any
-   * runtime configuration. The key annotations for qualities are <code>fillcurve</code> and <code>
-   * split</code>.
-   *
-   * <p>TODO expose annotation names and methods so they are recognized and validated at the API
-   * level
-   *
-   * @return a collection of annotations associated with this data object
-   */
-  Collection<Annotation> annotations();
+//  /**
+//   * Annotations are important because they contain indications re: fill curve, splits and any
+//   * runtime configuration. The key annotations for qualities are <code>fillcurve</code> and <code>
+//   * split</code>.
+//   *
+//   * <p>TODO expose annotation names and methods so they are recognized and validated at the API
+//   * level
+//   *
+//   * @return a collection of annotations associated with this data object
+//   */
+//  Collection<Annotation> annotations();
 
   /**
    * This is not null only when the observable is a categorical quality, i.e its {@link
@@ -819,10 +817,10 @@ public interface Data {
         return List.of();
       }
 
-      @Override
-      public Collection<Annotation> annotations() {
-        return List.of();
-      }
+//      @Override
+//      public Collection<Annotation> annotations() {
+//        return List.of();
+//      }
 
       @Override
       public Map<Integer, String> dataKey() {

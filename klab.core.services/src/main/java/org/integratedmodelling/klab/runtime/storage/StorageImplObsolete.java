@@ -223,7 +223,7 @@ public class StorageImplObsolete implements Storage {
   }
 
   @Override
-  public List<Shard> getOrCreateShards(Scheduler.Event locator, Data.DistributionStrategy specs) {
+  public List<Shard> getOrCreateShards(Scheduler.Event locator, Data.ShardingStrategy specs) {
     return List.of();
   }
 

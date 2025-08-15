@@ -3,13 +3,11 @@ package org.integratedmodelling.common.runtime;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 
 import java.io.Serial;
@@ -33,7 +31,7 @@ public class ActuatorImpl implements Actuator {
   private double resolvedCoverage;
   private List<Annotation> annotations = new ArrayList<>();
   private long transientId = Klab.getNextId();
-  private Data.DistributionStrategy distributionStrategy;
+  private Data.ShardingStrategy shardingStrategy;
 
   @Override
   public String getName() {
@@ -151,12 +149,12 @@ public class ActuatorImpl implements Actuator {
   }
 
   @Override
-  public Data.DistributionStrategy getDistributionStrategy() {
-    return distributionStrategy;
+  public Data.ShardingStrategy getShardingStrategy() {
+    return shardingStrategy;
   }
 
-  public void setDistributionStrategy(Data.DistributionStrategy distributionStrategy) {
-    this.distributionStrategy = distributionStrategy;
+  public void setDistributionStrategy(Data.ShardingStrategy shardingStrategy) {
+    this.shardingStrategy = shardingStrategy;
   }
 
   @Override

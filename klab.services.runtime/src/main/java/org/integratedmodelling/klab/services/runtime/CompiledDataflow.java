@@ -32,7 +32,6 @@ import org.integratedmodelling.klab.data.ClientResourceContextualizer;
 import org.integratedmodelling.klab.data.ServiceResourceContextualizer;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-import org.integratedmodelling.klab.utilities.Utils;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -343,6 +342,9 @@ public class CompiledDataflow {
 
       // each service call may produce one or more function descriptors
       // separate scalar calls into groups and compile them into one assembled functor
+      // FIXME each sharding strategy added may override the previous in the observation when we
+      //  have >1 computations. That's OK but the strategy in the observation may not reflect
+      //  the shards in the knowledge graph.
       for (var call : actuator.getComputation()) {
 
         Extensions.FunctionDescriptor currentDescriptor = null;
@@ -368,9 +370,6 @@ public class CompiledDataflow {
               resource = scope.getService(ResourcesService.class).retrieveResource(urns, scope);
               final Resource finalResource = resource;
 
-              // FIXME THIS MUST CREATE AS MANY BUFFERS AS THE ADAPTER REQUESTS, USING SPLIT GEOMETRIES AND
-              //  MULTIPLE PARALLEL CALLS
-
               /*
               1. check if we have the adapter locally. If so we can use it directly. If the adapter was
               embeddable, the resolver will have called RuntimeService::resolveContextualizable with the
@@ -390,6 +389,17 @@ public class CompiledDataflow {
                   // adapter is local.
                   resource = adapter.contextualize(resource, observation.getGeometry(), scope);
                 }
+
+                /*
+                Finalize the sharding strategy w.r.t all the possible configurations
+                 */
+                ((ObservationImpl) observation)
+                    .setShardingStrategy(
+                        runtimeService.establishShardingStrategy(
+                            observation.getObservable(),
+                            actuator.getShardingStrategy(),
+                            adapter.getAdapterInfo().shardingStrategy(),
+                            scope));
 
                 // enqueue data extraction from adapter method
                 final var contextualizer =
@@ -437,6 +447,17 @@ public class CompiledDataflow {
                           + resource.getUrn());
                 }
 
+                /*
+                Finalize the sharding strategy w.r.t all the possible configurations
+                 */
+                ((ObservationImpl) observation)
+                    .setShardingStrategy(
+                        runtimeService.establishShardingStrategy(
+                            observation.getObservable(),
+                            actuator.getShardingStrategy(),
+                            adapterInfo.shardingStrategy(),
+                            scope));
+
                 // TODO validate type chain
                 if (adapterInfo.isContextualizing()) {
                   resource =
@@ -455,6 +476,16 @@ public class CompiledDataflow {
               }
             }
             case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
+
+              /*  We don't have a specific contextualizer */
+              ((ObservationImpl) observation)
+                  .setShardingStrategy(
+                      runtimeService.establishShardingStrategy(
+                          observation.getObservable(),
+                          actuator.getShardingStrategy(),
+                          null,
+                          scope));
+
               (scalarBuilder == null
                       ? (scalarBuilder =
                           runtimeService.getComputationBuilder(observation, scope, actuator))
@@ -477,21 +508,31 @@ public class CompiledDataflow {
           return false;
         }
 
-        // TODO HERE ADD SHARDING PARAMETERS FROM DESCRIPTOR AND MERGE WITH ANY IN THE ACTUATOR
+        /*
+        Finalize the sharding strategy w.r.t all the possible configurations
+         */
+        ((ObservationImpl) observation)
+            .setShardingStrategy(
+                runtimeService.establishShardingStrategy(
+                    observation.getObservable(),
+                    actuator.getShardingStrategy(),
+                    currentDescriptor.serviceInfo.getShardingStrategy(),
+                    scope));
 
         if (scalarBuilder != null) {
           var scalarMapper = scalarBuilder.build();
           executors.add(scalarMapper::execute);
         }
 
-        var storageAnnotation =
-            Utils.Annotations.mergeAnnotations(
-                "storage", currentDescriptor.serviceInfo, actuator, observation.getObservable());
+        //        var storageAnnotation =
+        //            Utils.Annotations.mergeAnnotations(
+        //                "storage", currentDescriptor.serviceInfo, actuator,
+        // observation.getObservable());
 
         // if we're a quality, we need storage at the discretion of the StorageManager.
         Storage storage =
             observation.getObservable().is(SemanticType.QUALITY)
-                ? digitalTwin.getStorageManager().getStorage(observation, storageAnnotation)
+                ? digitalTwin.getStorageManager().getStorage(observation)
                 : null;
         /*
          * Create a runnable with matched parameters and have it set the context observation
@@ -535,7 +576,6 @@ public class CompiledDataflow {
                             expression,
                             lookupTable,
                             null,
-                            storageAnnotation,
                             event,
                             scope);
 
@@ -579,7 +619,6 @@ public class CompiledDataflow {
                             expression,
                             lookupTable,
                             null,
-                            storageAnnotation,
                             event,
                             scope);
 
@@ -663,10 +702,6 @@ public class CompiledDataflow {
       return operational;
     }
   }
-
-  //  private void setExecutionContext(Object returnedValue) {
-  //    this.currentExecutionContext = returnedValue;
-  //  }
 
   public String statusLine() {
     return "Execution terminated";

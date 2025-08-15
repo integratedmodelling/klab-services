@@ -4,10 +4,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 
-import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -23,9 +20,6 @@ import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
  * annotation, which applies to different types of objects and will create services, functions or
  * commands according to the object it applies to. They can also be extracted from KDL dataflow
  * declarations in the classpath.
- *
- * <p>More parameters about the service, including splits, filling curve and interactive parameters,
- * may be specified through annotations.
  *
  * @author Ferd
  */
@@ -178,7 +172,7 @@ public interface ServiceInfo extends Serializable {
    */
   String getLabel();
 
-  List<Annotation> getAnnotations();
+  //  List<Annotation> getAnnotations();
 
   /**
    * The types of knowledge this prototype applies to. Only used for annotations at the moment. If
@@ -343,4 +337,6 @@ public interface ServiceInfo extends Serializable {
    * @return
    */
   FunctionType getFunctionType();
+
+  Data.ShardingStrategy getShardingStrategy();
 }

@@ -185,7 +185,7 @@ public interface Actuator extends Serializable, RuntimeAsset {
    *
    * @return the distribution strategy from the resolved model, or null if none is specified.
    */
-  Data.DistributionStrategy getDistributionStrategy();
+  Data.ShardingStrategy getShardingStrategy();
 
   /**
    * The set of annotations is harvested from the language specifications starting at the
