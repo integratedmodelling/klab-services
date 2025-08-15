@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
@@ -712,11 +713,44 @@ public class RuntimeService extends BaseService
       Data.ShardingStrategy runtimeConfiguration,
       ContextScope contextScope) {
 
+    // start with the default settings
+    int splits = 0;
+    long minSize = 0;
+    long maxSize = 0;
+    Data.FillCurve fillCurve = Data.FillCurve.UNSPECIFIED;
+    Storage.Type dataType =
+        switch (observable.getDescriptionType()) {
+          case VOID,
+              CHARACTERIZATION,
+              ACKNOWLEDGEMENT,
+              CONNECTION,
+              CLASSIFICATION,
+              INSTANTIATION,
+              DETECTION,
+              SIMULATION ->
+              throw new KlabIllegalStateException("Cannot create storage for " + observable);
+          case QUANTIFICATION ->
+              // TODO this should also consider any constraints in the observation distribution data
+              settings.get(Setting.USE_SHORT_FLOAT_REPRESENTATION, Boolean.class)
+                  ? Storage.Type.FLOAT
+                  : Storage.Type.DOUBLE;
+          case CATEGORIZATION -> Storage.Type.KEYED;
+          case VERIFICATION -> Storage.Type.BOOLEAN;
+        };
+
     if (!observable.is(SemanticType.QUALITY)) {
       return null;
     }
 
-    return null;
+    var ret = new Data.ShardingStrategy();
+
+    ret.setCurve(fillCurve);
+    ret.setMaxBufferSize(maxSize);
+    ret.setMinSplitSize(minSize);
+    ret.setSuggestedSplits(splits);
+    ret.setDataType(dataType);
+
+    return ret;
   }
 
   @Override

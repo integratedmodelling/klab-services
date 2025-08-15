@@ -138,6 +138,14 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     Configuration validate(Scope scope) throws KlabValidationException;
 
+    /**
+     * A specific sharding strategy may be requested to override what's feasible inthe
+     * contextualizations.
+     *
+     * @return
+     */
+    Data.ShardingStrategy getShardingStrategy();
+
     static Configuration create(URL url, UserScope scope) {
       return new ConfigurationBuilder(url, scope).build();
     }

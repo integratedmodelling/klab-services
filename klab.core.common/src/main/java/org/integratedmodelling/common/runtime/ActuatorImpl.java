@@ -153,7 +153,7 @@ public class ActuatorImpl implements Actuator {
     return shardingStrategy;
   }
 
-  public void setDistributionStrategy(Data.ShardingStrategy shardingStrategy) {
+  public void setShardingStrategy(Data.ShardingStrategy shardingStrategy) {
     this.shardingStrategy = shardingStrategy;
   }
 

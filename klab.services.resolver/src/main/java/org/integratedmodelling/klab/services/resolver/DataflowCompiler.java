@@ -6,6 +6,8 @@ import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.common.runtime.DataflowImpl;
 import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Model;
@@ -13,6 +15,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -65,7 +68,7 @@ public class DataflowCompiler {
 
     Map<Observable, String> catalog = new HashMap<>();
     var ret = new DataflowImpl();
-//    ret.setTarget(observation);
+    //    ret.setTarget(observation);
     ret.setResolvedCoverage(resolutionGraph.getResolvedCoverage());
     for (var node : resolutionGraph.rootNodes()) {
       /*
@@ -75,7 +78,9 @@ public class DataflowCompiler {
         throw new KlabIllegalStateException("Resolution root is not an observation");
       }
       ret.getComputation()
-          .addAll(compileObservation(observation, GeometryRepository.INSTANCE.scale(observation.getGeometry()), null));
+          .addAll(
+              compileObservation(
+                  observation, GeometryRepository.INSTANCE.scale(observation.getGeometry()), null));
     }
 
     // TODO remove
@@ -190,6 +195,38 @@ public class DataflowCompiler {
     for (var contextualizer : model.getComputation()) {
       observationActuator.getComputation().add(adaptContextualizer(contextualizer));
     }
+    var shardingStrategy = new Data.ShardingStrategy();
+    Utils.Annotations.getAnnotations(model, true)
+        .forEach(
+            annotation -> {
+              switch (annotation.getName()) {
+                case "type" ->
+                    shardingStrategy.setDataType(
+                        Storage.Type.valueOf(
+                            annotation
+                                .get(Annotation.VALUE_PARAMETER_KEY)
+                                .toString()
+                                .toUpperCase()));
+                case "split" ->
+                    shardingStrategy.setSuggestedSplits(
+                        Integer.parseInt(
+                            annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
+                case "maxSize" ->
+                    shardingStrategy.setMaxBufferSize(
+                        Long.parseLong(annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
+                case "minSplitSize" ->
+                    shardingStrategy.setMinSplitSize(
+                        Long.parseLong(annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
+                case "fillCurve" ->
+                    shardingStrategy.setCurve(
+                        Data.FillCurve.valueOf(
+                            annotation
+                                .get(Annotation.VALUE_PARAMETER_KEY)
+                                .toString()
+                                .toUpperCase()));
+              }
+            });
+    ((ActuatorImpl) observationActuator).setShardingStrategy(shardingStrategy);
   }
 
   private Actuator compileReference(Observable observable, Coverage coverage, long observationId) {

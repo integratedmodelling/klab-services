@@ -51,10 +51,10 @@ public interface Data {
    */
   class ShardingStrategy {
 
-    private FillCurve curve;
-    private int suggestedSplits;
-    private long minSplitSize;
-    private long maxBufferSize;
+    private FillCurve curve = FillCurve.UNSPECIFIED;
+    private int suggestedSplits = -1;
+    private long minSplitSize = 0;
+    private long maxBufferSize = 0;
     private Storage.Type dataType;
 
     public ShardingStrategy() {}
@@ -112,7 +112,6 @@ public interface Data {
       this.dataType = dataType;
     }
   }
-
 
   /**
    * A Cursor iterates one or more geometry dimensions using a long offset. If the geometry it
@@ -730,17 +729,18 @@ public interface Data {
    */
   List<Data> children();
 
-//  /**
-//   * Annotations are important because they contain indications re: fill curve, splits and any
-//   * runtime configuration. The key annotations for qualities are <code>fillcurve</code> and <code>
-//   * split</code>.
-//   *
-//   * <p>TODO expose annotation names and methods so they are recognized and validated at the API
-//   * level
-//   *
-//   * @return a collection of annotations associated with this data object
-//   */
-//  Collection<Annotation> annotations();
+  //  /**
+  //   * Annotations are important because they contain indications re: fill curve, splits and any
+  //   * runtime configuration. The key annotations for qualities are <code>fillcurve</code> and
+  // <code>
+  //   * split</code>.
+  //   *
+  //   * <p>TODO expose annotation names and methods so they are recognized and validated at the API
+  //   * level
+  //   *
+  //   * @return a collection of annotations associated with this data object
+  //   */
+  //  Collection<Annotation> annotations();
 
   /**
    * This is not null only when the observable is a categorical quality, i.e its {@link
@@ -817,10 +817,10 @@ public interface Data {
         return List.of();
       }
 
-//      @Override
-//      public Collection<Annotation> annotations() {
-//        return List.of();
-//      }
+      //      @Override
+      //      public Collection<Annotation> annotations() {
+      //        return List.of();
+      //      }
 
       @Override
       public Map<Integer, String> dataKey() {
