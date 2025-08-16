@@ -326,9 +326,19 @@ public interface DigitalTwin extends RuntimeAsset {
    *
    * @param data
    * @param target
+   * @param event
+   * @param shardingStrategy the sharding strategy adopted for the resource contextualization, which
+   *     may differ from the native strategy in the observation. Null may be passed, which must be
+   *     substituted by the original observations's native strategy.
+   * @param scope
    * @return true if ingestion was successful
    */
-  boolean ingest(Data data, Observation target, Scheduler.Event event, ContextScope scope);
+  boolean ingest(
+      Data data,
+      Observation target,
+      Scheduler.Event event,
+      Data.ShardingStrategy shardingStrategy,
+      ContextScope scope);
 
   /**
    * Dispose of all storage and data, either in memory only or also on any attached storage. Whether

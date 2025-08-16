@@ -80,7 +80,8 @@ public class CompiledDataflow {
   }
 
   /**
-   * Build the ordered dependency graph, the executors and the observations
+   * Build the ordered dependency graph, the executors and the observations, using the sharding
+   * strategies computed for each actuator, merged and mapped to the observation's native sharding.
    *
    * @param rootActuator
    * @return
@@ -344,7 +345,20 @@ public class CompiledDataflow {
       // separate scalar calls into groups and compile them into one assembled functor
       // FIXME each sharding strategy added may override the previous in the observation when we
       //  have >1 computations. That's OK but the strategy in the observation may not reflect
-      //  the shards in the knowledge graph.
+      //  the shards in the knowledge graph. SEE BELOW - first establish the best native shards,
+      //  then compile mediators in.
+
+      /**
+       * IF the observation has no sharding strategy (i.e. no buffers in the knowledge graph): We
+       * need two cycles: the first computes the "best compromise" sharding strategy based on the
+       * observation and the actuators. Then we submit the strategy to the storage and store it in
+       * the observation.
+       *
+       * <p>Otherwise the beginning strategy is taken from the observation.
+       *
+       * <p>Then: actually compile each computation, adapting the sharding strategy to whatever the
+       * specific computation requires.
+       */
       for (var call : actuator.getComputation()) {
 
         Extensions.FunctionDescriptor currentDescriptor = null;
@@ -391,7 +405,7 @@ public class CompiledDataflow {
                 }
 
                 /*
-                Finalize the sharding strategy w.r.t all the possible configurations
+                Finalize the sharding strategy w.r.t all the possible configurations FIXME no
                  */
                 ((ObservationImpl) observation)
                     .setShardingStrategy(
@@ -477,7 +491,7 @@ public class CompiledDataflow {
             }
             case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
 
-              /*  We don't have a specific contextualizer */
+              /*  We don't have a specific contextualizer, shards follow the observation  FIXME not needed */
               ((ObservationImpl) observation)
                   .setShardingStrategy(
                       runtimeService.establishShardingStrategy(

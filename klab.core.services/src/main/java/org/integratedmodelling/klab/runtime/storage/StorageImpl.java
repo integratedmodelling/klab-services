@@ -22,17 +22,18 @@ public class StorageImpl implements Storage {
   private final Observation observation;
   private final ContextScope scope;
   private final boolean doNotParallelize;
-  private Type nativeType;
 
   /*
-   * Buffer storage along slowest-varying dimensions. All dimensions except one (space) must have linear indexing along a "start" number
-   *
+   * Buffer storage along slowest-varying dimensions. All dimensions except one (space) must have
+   * linear indexing and come from the scheduler event that serves as an index.
    */
   private NavigableMap<List<Long>, List<Shard>> buffers = new TreeMap<>();
 
   /**
-   * Create the storage for the observation. Settings will determine the specific native type for
-   * numeric observations, and potentially other options related to storage and distribution.
+   * Create the storage container for the observation according to the observation's own sharding
+   * strategy, which determines the specific native type for numeric observations, and all options
+   * related to storage and distribution. Shards are created upon first access and reinterpreted
+   * according to the requesting sharding strategy.
    *
    * @param observation
    * @param contextScope
@@ -43,32 +44,12 @@ public class StorageImpl implements Storage {
     this.scope = contextScope;
     this.doNotParallelize =
         runtimeSettings.get(Setting.DO_NOT_PARALLELIZE_OBSERVATIONS, Boolean.class);
-    // establish the default native type. Buffer request may override.
-    this.nativeType =
-        switch (observation.getObservable().getDescriptionType()) {
-          case VOID,
-              CHARACTERIZATION,
-              ACKNOWLEDGEMENT,
-              CONNECTION,
-              CLASSIFICATION,
-              INSTANTIATION,
-              DETECTION,
-              SIMULATION ->
-              throw new KlabIllegalStateException(
-                  "Cannot create storage for " + observation.getObservable());
-          case QUANTIFICATION ->
-              // TODO this should also consider any constraints in the observation distribution data
-              runtimeSettings.get(Setting.USE_SHORT_FLOAT_REPRESENTATION, Boolean.class)
-                  ? Type.FLOAT
-                  : Type.DOUBLE;
-          case CATEGORIZATION -> Type.KEYED;
-          case VERIFICATION -> Type.BOOLEAN;
-        };
+    // TODO read the existing shard configuration from the knowledge graph!
   }
 
   @Override
   public Type getNativeType() {
-    return nativeType;
+    return observation.getShardingStrategy().getDataType();
   }
 
   /**
@@ -105,8 +86,45 @@ public class StorageImpl implements Storage {
   }
 
   @Override
-  public List<Shard> getOrCreateShards(Scheduler.Event locator, Data.ShardingStrategy specs) {
+  public <T extends Scanner> List<T> scan(
+      Scheduler.Event locator, Data.ShardingStrategy request, Class<T> scannerClass, boolean readOnly) {
+    var shards = getNativeShards(locator);
+    var nativeScanners = shards.stream().map(this::getNativeScanner).toList();
+    return remapScanners(nativeScanners, request, scannerClass);
+  }
+
+  /**
+   * Remap a list of scanners to those representing the requested sharding strategy. This may entail
+   * creating temporary geometries and merging or splitting scanners to reflect them. Data types may
+   * need to be cast to remap to a different compatible type.
+   *
+   * @param nativeScanners
+   * @param request
+   * @param scannerClass
+   * @return
+   * @param <T>
+   */
+  private <T extends Scanner> List<T> remapScanners(
+      List<Scanner> nativeScanners, Data.ShardingStrategy request, Class<T> scannerClass) {
     return List.of();
+  }
+
+  /**
+   * Get the native scanner for the passed shard.
+   *
+   * @param shard
+   * @return a scanner over the data in the shard.
+   */
+  private Scanner getNativeScanner(Shard shard) {
+    return null;
+  }
+
+  private <T extends Scanner> T mapShardToScanner(
+      Shard shard, Data.ShardingStrategy request, Class<T> scannerClass) {
+    // GAAAGH
+    // get native scanner
+    // map as needed
+    return null;
   }
 
   @Override

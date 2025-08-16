@@ -37,6 +37,7 @@ public abstract class AbstractResourceContextualizer {
   public boolean contextualize(Observation observation, Scheduler.Event event, ContextScope scope) {
 
     try {
+      // FIXME this must be done once per shard using the shard's geometry
       var data = getData(observation.getGeometry(), event, scope);
       if (data == null || data.empty()) {
         return false;
@@ -48,7 +49,10 @@ public abstract class AbstractResourceContextualizer {
               : (adapters + "," + resource.getAdapterType());
       observation.getMetadata().put(Metadata.KLAB_ADAPTER_URNS, adapters);
 
-      return scope.getDigitalTwin().ingest(data, observation, event, scope);
+      // FIXME this must be outside, after 1+ contextualizations have been done per shard
+      return scope
+          .getDigitalTwin()
+          .ingest(data, observation, event, /* FIXME DIO CAN */ null, scope);
     } catch (Exception e) {
       scope.error(e);
       return false;

@@ -361,7 +361,17 @@ public class DigitalTwinImpl implements DigitalTwin {
   }
 
   @Override
-  public boolean ingest(Data data, Observation target, Scheduler.Event event, ContextScope scope) {
+  public boolean ingest(
+      Data data,
+      Observation target,
+      Scheduler.Event event,
+      Data.ShardingStrategy shardingStrategy,
+      ContextScope scope) {
+
+      // passing null is equivalent to "use the native strategy"
+      if (shardingStrategy != null) {
+          shardingStrategy = target.getShardingStrategy();
+      }
 
     if (target.getObservable().is(SemanticType.COUNTABLE)) {
       // scope contextualized to the collective observation
@@ -370,7 +380,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       for (var instance : data.children()) {
         var observation = DigitalTwin.createObservation(observationScope, instance);
         if (observation != null) {
-          // TODO ingest the observation. Must have an operation in the scope.
+          // ingest the observation according to the native shards
           tasks.add(
               Executors.callable(
                   () -> {
@@ -381,7 +391,13 @@ public class DigitalTwinImpl implements DigitalTwin {
                                 (obs -> {
                                   // resolve any child observations, states or instances
                                   if (instance.hasStates() || instance.size() > 0) {
-                                    ingest(instance, observation, event, observationScope);
+                                    ingest(
+                                        instance,
+                                        observation,
+                                        event,
+                                        // FIXME not sure - child observations should have their own strategy, so null?
+                                        null,
+                                        observationScope);
                                   }
                                 }));
                   },
@@ -404,13 +420,18 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       if (data instanceof DoubleDataImpl doubleData) {
 
-        var buffers = storage.getOrCreateShards(event, target.getShardingStrategy());
+        var buffers =
+            storage.scan(
+                event,
+                /* FIXME the sharding strategy is the one for the adapter, should come with the data */
+                target.getShardingStrategy(),
+                Storage.DoubleScanner.class,
+                false);
 
         /* all buffers run in parallel */
         return Utils.Java.distributeComputation(
             buffers,
-            buffer -> {
-              var scanner = buffer.getScanner(Storage.DoubleScanner.class);
+            scanner -> {
               while (doubleData.hasNext()) {
                 scanner.add(doubleData.nextDouble());
               }

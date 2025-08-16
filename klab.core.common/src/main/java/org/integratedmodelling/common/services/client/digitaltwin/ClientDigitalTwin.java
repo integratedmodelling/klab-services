@@ -131,7 +131,12 @@ public class ClientDigitalTwin implements DigitalTwin {
   }
 
   @Override
-  public boolean ingest(Data data, Observation target, Scheduler.Event event, ContextScope scope) {
+  public boolean ingest(
+      Data data,
+      Observation target,
+      Scheduler.Event event,
+      Data.ShardingStrategy shardingStrategy,
+      ContextScope scope) {
     // should never be called on the client, at least with the current logic. Technically it is
     // possible for this to operate in client mode.
     throw new KlabIllegalStateException("ingest() called on a client-side digital twin");
