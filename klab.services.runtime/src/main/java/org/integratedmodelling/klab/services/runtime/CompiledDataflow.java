@@ -6,6 +6,7 @@ import java.util.*;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
@@ -341,22 +342,38 @@ public class CompiledDataflow {
 
       ScalarComputation.Builder scalarBuilder = null;
 
-      // each service call may produce one or more function descriptors
-      // separate scalar calls into groups and compile them into one assembled functor
-      // FIXME each sharding strategy added may override the previous in the observation when we
-      //  have >1 computations. That's OK but the strategy in the observation may not reflect
-      //  the shards in the knowledge graph. SEE BELOW - first establish the best native shards,
-      //  then compile mediators in.
+      /*
+      establish the sharding strategy for the observation, if it is not yet set.
+       */
+      var shardingStrategy = observation.getShardingStrategy();
+      if (observation.getObservable().is(SemanticType.QUALITY)) {
+        var observationIsNew = shardingStrategy == null;
+        if (observationIsNew) {
+
+          for (var call : actuator.getComputation()) {
+
+            // set to the strategy for the computation adjusted by the actuator's
+            var computationStrategy = getShardingStrategy(call);
+            // TODO submit the strategy required by each computation and adjust the strategy
+            //  use strategy.adjust(strategy.... in order of overriddance) returning another (or the
+            // same) strategy.
+            shardingStrategy =
+                shardingStrategy == null
+                    ? computationStrategy
+                    : shardingStrategy.adjust(
+                        runtimeService.settings(),
+                        computationStrategy,
+                        actuator.getShardingStrategy(),
+                        scope.getShardingStrategy());
+          }
+
+          // submit the adjusted native strategy for storage and create the shards
+          ((ObservationImpl) observation).setShardingStrategy(shardingStrategy);
+        }
+      }
 
       /**
-       * IF the observation has no sharding strategy (i.e. no buffers in the knowledge graph): We
-       * need two cycles: the first computes the "best compromise" sharding strategy based on the
-       * observation and the actuators. Then we submit the strategy to the storage and store it in
-       * the observation.
-       *
-       * <p>Otherwise the beginning strategy is taken from the observation.
-       *
-       * <p>Then: actually compile each computation, adapting the sharding strategy to whatever the
+       * Now actually compile each computation, adapting the sharding strategy to whatever the
        * specific computation requires.
        */
       for (var call : actuator.getComputation()) {
@@ -375,7 +392,9 @@ public class CompiledDataflow {
         if (preset != null) {
 
           /* Turn the call into the appropriate function descriptor for the actual call, provided by
-          the adapter or by the runtime. */
+          the adapter or by the runtime. Sharding must be established for each call and only ONE shard
+          must be handled by each execution, using distribution either inside or outside the compiled
+          strategy. */
 
           switch (preset) {
             case URN_RESOLVER -> {
@@ -550,9 +569,7 @@ public class CompiledDataflow {
                 : null;
         /*
          * Create a runnable with matched parameters and have it set the context observation
-         * TODO allow multiple methods with same annotation, taking different storage
-         *  implementations, enabling the storage manager to be configured for the wanted precision
-         *
+         * TODO each should adapt the scanners to its own sharding strategy at execution
          * Should match arguments, check if they all match, and if not move to the next until
          * no available implementations remain.
          */
@@ -673,6 +690,31 @@ public class CompiledDataflow {
       }
 
       return true;
+    }
+
+    private Data.ShardingStrategy getShardingStrategy(ServiceCall call) {
+
+      // TODO!
+
+      var preset = RuntimeService.CoreFunctor.classify(call);
+      if (preset != null) {
+
+        /* Turn the call into the appropriate function descriptor for the actual call, provided by
+        the adapter or by the runtime. Sharding must be established for each call and only ONE shard
+        must be handled by each execution, using distribution either inside or outside the compiled
+        strategy. */
+
+        switch (preset) {
+          case URN_RESOLVER -> {}
+          case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
+            // scalar
+          }
+          default -> {}
+        }
+      } else {
+        //
+      }
+      return null;
     }
 
     @Override

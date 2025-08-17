@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
 
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -110,6 +111,19 @@ public interface Data {
 
     public void setDataType(Storage.Type dataType) {
       this.dataType = dataType;
+    }
+
+    /**
+     * Adjust the strategy to reflect the passed others, which may override the current values. The
+     * passed others are in order of precedence: the one after the first overrides the previous.
+     * Overriding may only happen if compatible (e.g. the data type).
+     *
+     * @param others
+     * @return
+     */
+    public ShardingStrategy adjust(Settings settings, ShardingStrategy... others) {
+      // TODO
+      return this;
     }
   }
 
