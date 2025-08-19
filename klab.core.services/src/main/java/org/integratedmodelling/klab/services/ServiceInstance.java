@@ -452,22 +452,26 @@ public abstract class ServiceInstance<T extends BaseService> {
         operationalized.set(true);
         klabService().setOperational(klabService().operationalizeService());
 
-        // register remote components and adapters with our component registry
+        // register remote components and adapters with our component registry avoiding clients
         for (var service : klabService().serviceScope().getServices(ResourcesService.class)) {
-          System.out.println("type to register service "+service.serviceName());
-          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          if (!(service instanceof ResourcesClient)) {
+            klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          }
         }
         for (var service : klabService().serviceScope().getServices(Reasoner.class)) {
-          System.out.println("type to register service "+service.serviceName());
-          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          if (!(service instanceof ReasonerClient)) {
+            klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          }
         }
         for (var service : klabService().serviceScope().getServices(Resolver.class)) {
-          System.out.println("type to register service "+service.serviceName());
-          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          if (!(service instanceof ResolverClient)) {
+            klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          }
         }
         for (var service : klabService().serviceScope().getServices(RuntimeService.class)) {
-          System.out.println("type to register service "+service.serviceName());
-          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          if (!(service instanceof RuntimeClient)) {
+            klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          }
         }
         setBusy(false);
       }
