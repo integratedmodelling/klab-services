@@ -46,11 +46,13 @@ public interface Storage {
   interface Scanner extends PrimitiveIterator.OfLong {
 
     /**
-     * Read-only view of the buffer, used if the geometry or the fill curve need to be accessed.
+     * Read-only view of the shard, used if the geometry or histogram needs to be accessed. These
+     * can also be bound to contextualizer arguments for the observation being contextualized (but
+     * not necessarily for any input observations).
      *
      * @return
      */
-    Shard buffer();
+    Shard shard();
 
     /**
      * Total size of the buffer we represent.
@@ -108,9 +110,23 @@ public interface Storage {
     void add(T value);
   }
 
-  /** New buffer API to substitute Storage.Buffer. */
+  /**
+   * New shard API to substitute Storage.Buffer. Shards are just storage and may be implemented in
+   * different ways by the adopted {@link
+   * org.integratedmodelling.klab.api.digitaltwin.StorageManager}. They are not normally used
+   * directly at the API level; interaction happens through scanners retrieved from Storage#scan(),
+   * which can adapt the shards to any compatible choice of parallelism and fill curve. The scanners
+   * are bound to contextualizer parameters to enable data access.
+   */
   interface Shard extends RuntimeAsset {
 
+    /**
+     * Some "tile"of the observation geometry. No shard can ever overlap another's geometry, and the
+     * shard union is the observation's geometry. Shape constraints are not passed down to grid
+     * shards.
+     *
+     * @return
+     */
     Geometry getGeometry();
 
     /**
@@ -121,15 +137,13 @@ public interface Storage {
     Data.FillCurve getFillCurve();
 
     /**
-     * Return a scanner of the requested type for this buffer. The scanner must be used sequentially
-     * in agreement with the buffer geometry and will automatically take care of remapping if it's
-     * from a buffer using different type, fill curve, or buffer geometry from the native buffers.
+     * Each shard should have a histogram built upon filling or upon demand, whichever is faster.
+     * Histogram implementation must allow merging so that the contextualizers can access aggregated
+     * observation information quickly by binding the histogram to the contextualizing functions.
      *
-     * @param fillerClass
      * @return
-     * @param <T>
      */
-    <T extends Scanner> T getScanner(Class<T> fillerClass);
+    Histogram getHistogram();
   }
 
   /**
@@ -175,7 +189,7 @@ public interface Storage {
   Type getNativeType();
 
   /**
-   * The merged histogram built on demand by merging that of all existing buffers.
+   * The merged histogram built on demand by merging that of all existing shards.
    *
    * @return
    */

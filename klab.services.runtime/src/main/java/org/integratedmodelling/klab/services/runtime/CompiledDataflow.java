@@ -368,6 +368,7 @@ public class CompiledDataflow {
           }
 
           // submit the adjusted native strategy for storage and create the shards
+          // TODO check maybe this should be submitted to the digital twin instead
           ((ObservationImpl) observation).setShardingStrategy(shardingStrategy);
         }
       }
@@ -556,11 +557,6 @@ public class CompiledDataflow {
           var scalarMapper = scalarBuilder.build();
           executors.add(scalarMapper::execute);
         }
-
-        //        var storageAnnotation =
-        //            Utils.Annotations.mergeAnnotations(
-        //                "storage", currentDescriptor.serviceInfo, actuator,
-        // observation.getObservable());
 
         // if we're a quality, we need storage at the discretion of the StorageManager.
         Storage storage =

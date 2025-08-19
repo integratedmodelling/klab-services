@@ -44,7 +44,14 @@ public class StorageImpl implements Storage {
     this.scope = contextScope;
     this.doNotParallelize =
         runtimeSettings.get(Setting.DO_NOT_PARALLELIZE_OBSERVATIONS, Boolean.class);
-    // TODO read the existing shard configuration from the knowledge graph!
+    // TODO prepare shard descriptors from any existing shards in the knowledge graph!
+  }
+
+  // used only for testing, won't work for anything else
+  private StorageImpl() {
+    observation = null;
+    scope = null;
+    doNotParallelize = false;
   }
 
   @Override
@@ -87,7 +94,10 @@ public class StorageImpl implements Storage {
 
   @Override
   public <T extends Scanner> List<T> scan(
-      Scheduler.Event locator, Data.ShardingStrategy request, Class<T> scannerClass, boolean readOnly) {
+      Scheduler.Event locator,
+      Data.ShardingStrategy request,
+      Class<T> scannerClass,
+      boolean readOnly) {
     var shards = getNativeShards(locator);
     var nativeScanners = shards.stream().map(this::getNativeScanner).toList();
     return remapScanners(nativeScanners, request, scannerClass);
@@ -132,33 +142,9 @@ public class StorageImpl implements Storage {
     return null;
   }
 
-  /**
-   * Wrap the buffers into a set of remapping buffers, built to match the passed geometry and other
-   * parameters.
-   *
-   * @param shards
-   * @param geometry
-   * @param splits
-   * @param minSize
-   * @param maxSize
-   * @param fillCurve
-   * @return
-   */
-  public List<Shard> remap(
-      List<Shard> shards,
-      Geometry geometry,
-      int splits,
-      long minSize,
-      long maxSize,
-      Data.FillCurve fillCurve) {
-
-    // TODO qui ti voglio
-    return shards;
-  }
-
   public static void main(String[] args) {
 
-    var s = new StorageImpl(null, null, null);
+    var s = new StorageImpl();
 
     var original = Geometry.create(Geometries.CENTRAL_COLOMBIA);
     for (var g : s.getGeometries(original, -1, 65600, Long.MAX_VALUE)) {

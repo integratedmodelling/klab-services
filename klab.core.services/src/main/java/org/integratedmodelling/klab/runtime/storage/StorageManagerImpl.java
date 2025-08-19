@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -243,6 +244,12 @@ public class StorageManagerImpl implements StorageManager {
 
   @Override
   public Storage getStorage(Observation observation) {
+    // this should only be called when the sharding strategy is established, after compiling the
+    // contextualization dataflow.
+    if (observation.getShardingStrategy() == null) {
+      throw new KlabIllegalStateException(
+          "cannot create storage: no sharding strategy established for observation " + observation);
+    }
     return this.storage.computeIfAbsent(
         observation.getUrn(),
         urn -> new StorageImpl(observation, contextScope, service.settings()));
