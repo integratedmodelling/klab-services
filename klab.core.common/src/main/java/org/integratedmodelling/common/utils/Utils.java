@@ -1124,6 +1124,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             parseHeaders(response);
             return parseResponse(response.body(), resultClass);
           } else {
+            System.out.println("========== POST " + apiCall + " return " + response.statusCode());
             var log = parseResponse(response.body(), Map.class);
             System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
             MapUtils.debugPrint(System.out, "Server error", log);
