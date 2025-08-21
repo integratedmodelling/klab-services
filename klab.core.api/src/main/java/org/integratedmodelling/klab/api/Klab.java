@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.api;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.integratedmodelling.klab.api.authentication.CustomProperty;
+import org.integratedmodelling.klab.api.authentication.CustomPropertyRest;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
@@ -190,9 +190,9 @@ public enum Klab {
                             g ->
                                     g.getCustomProperties().stream()
                                      .anyMatch(
-                                             customProperty ->
-                                                     ("federation.id".equals(customProperty.getKey()))
-                                                             && "true".equals(customProperty.getValue())))
+                                             customPropertyRest ->
+                                                     ("federation.id".equals(customPropertyRest.getKey()))
+                                                             && "true".equals(customPropertyRest.getValue())))
                     .toList();
 
     if (federations.size() > 1) {
@@ -203,7 +203,7 @@ public enum Klab {
               federations.getFirst().getName(),
               federations.getFirst().getCustomProperties().stream()
                          .filter(cp -> "federation.broker.url".equals(cp.getKey()))
-                         .map(CustomProperty::getValue)
+                         .map(CustomPropertyRest::getValue)
                          .findFirst()
                          .orElse(null));
     }

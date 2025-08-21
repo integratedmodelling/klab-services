@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.services.runtime.server.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.integratedmodelling.klab.services.application.security.Role;
+import org.integratedmodelling.common.authentication.Role;
 import org.integratedmodelling.klab.services.runtime.server.RuntimeServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;

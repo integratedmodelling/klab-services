@@ -46,7 +46,7 @@ import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescri
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
-import org.integratedmodelling.klab.services.application.security.Role;
+import org.integratedmodelling.common.authentication.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.beans.factory.annotation.Autowired;

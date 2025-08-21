@@ -22,6 +22,8 @@ package org.integratedmodelling.klab.services.application.security;
 
 import java.time.Instant;
 import java.util.*;
+
+import org.integratedmodelling.common.authentication.Role;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.scope.Scope;

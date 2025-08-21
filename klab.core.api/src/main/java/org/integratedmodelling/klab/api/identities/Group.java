@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.identities;
 
-import org.integratedmodelling.klab.api.authentication.CustomProperty;
+import org.integratedmodelling.klab.api.authentication.CustomPropertyRest;
 
 import java.util.List;
 import java.util.Set;
@@ -22,7 +22,7 @@ public interface Group {
 
   long getMaxUpload();
 
-  List<CustomProperty> getCustomProperties();
+  Set<CustomPropertyRest> getCustomProperties();
 
   long getDefaultExpirationTime();
 

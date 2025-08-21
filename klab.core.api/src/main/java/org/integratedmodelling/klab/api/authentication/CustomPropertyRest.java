@@ -1,17 +1,23 @@
 package org.integratedmodelling.klab.api.authentication;
 
-import java.util.Objects;
-
 /**
  * Custom properties with visibility field
  *
  * @author Enrico Girotto
  */
-public class CustomProperty {
+public class CustomPropertyRest {
 
   private String key;
   private String value;
   private boolean onlyAdmin;
+
+  public CustomPropertyRest() {}
+
+  public CustomPropertyRest(String key, String value, boolean onlyAdmin) {
+    this.key = key;
+    this.value = value;
+    this.onlyAdmin = onlyAdmin;
+  }
 
   public String getKey() {
     return key;

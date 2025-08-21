@@ -1,9 +1,5 @@
 package org.integratedmodelling.klab.services.application.security;
 
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
@@ -11,10 +7,10 @@ import java.time.Instant;
 import java.util.*;
 import java.util.function.Supplier;
 
-import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.PartnerIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.common.authentication.Role;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;

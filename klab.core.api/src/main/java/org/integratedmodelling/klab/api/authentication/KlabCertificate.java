@@ -120,6 +120,7 @@ public interface KlabCertificate {
     public static final String KEY_CERTIFICATE = "klab.certificate";
     public static final String KEY_CERTIFICATE_TYPE = "klab.certificate.type";
     public static final String KEY_CERTIFICATE_LEVEL = "klab.certificate.level";
+    public static final String KEY_EXPIRATION = "klab.validuntil";
 
     /**
      * @return the name of the worldview associated with the engine. Can only be null in hub certificates.

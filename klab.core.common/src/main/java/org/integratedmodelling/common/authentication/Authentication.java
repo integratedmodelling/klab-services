@@ -63,6 +63,12 @@ public enum Authentication {
   /** any external credentials taken from the .klab/credentials.json file if any. */
   private Utils.FileCatalog<ExternalAuthenticationCredentials> externalCredentials;
 
+  /**
+   * All identities available for inspection (sessions, users). The network session is a singleton
+   * (or a zeroton) so it's not included as its ID conflicts with the user holding it.
+   */
+  Map<String, Identity> identities = Collections.synchronizedMap(new HashMap<>());
+
   Authentication() {
     this.externalCredentials =
         new Utils.FileCatalog<>(
@@ -423,5 +429,15 @@ public enum Authentication {
   public boolean removeCredentials(String id) {
     // TODO
     return false;
+  }
+//TODO review to DELETE or MAINTAIN
+  @SuppressWarnings("unchecked")
+  public <T extends Identity> T getAuthenticatedIdentity(Class<T> type) {
+    for(Identity id : identities.values()) {
+      if (type.isAssignableFrom(id.getClass())) {
+        return (T) id;
+      }
+    }
+    return null;
   }
 }

@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.application.security;
+package org.integratedmodelling.common.authentication;
 
 import org.springframework.security.core.GrantedAuthority;
 
@@ -32,7 +32,7 @@ public enum Role implements GrantedAuthority {
     
     public static final String HUB = "ROLE_HUB";
     
-    public static final String LEVER = "ROLE_LEVER";
+    public static final String SERVICE = "ROLE_SERVICE";
 
     // no privileges - only used for fake/temporary auth during LDAP operations
     public static final String TEMPORARY = "ROLE_TEMPORARY";

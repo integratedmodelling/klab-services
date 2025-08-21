@@ -17,7 +17,7 @@ import java.util.*;
 public class KlabCertificateImpl implements KlabCertificate {
 
     // just for info
-    public static final String KEY_EXPIRATION = "klab.validuntil";
+    public static final String KEY_EXPIRATION = "klab.validuntil";//move to KlabCertificate needed in hub
 
     // TODO just store a URL and handle uniformly
     private File file = null;

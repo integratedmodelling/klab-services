@@ -1,13 +1,9 @@
 package org.integratedmodelling.klab.rest;
 
-import org.integratedmodelling.klab.api.authentication.CustomProperty;
+import org.integratedmodelling.klab.api.authentication.CustomPropertyRest;
 import org.integratedmodelling.klab.api.identities.Group;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public class GroupImpl implements Group {
 
@@ -23,7 +19,7 @@ public class GroupImpl implements Group {
   private long maxUpload;
   private List<String> projectUrls = new ArrayList<String>();
   private List<ObservableReference> observables = new ArrayList<>();
-  private List<CustomProperty> customProperties = new ArrayList<>();
+  private Set<CustomPropertyRest> customProperties = new HashSet<>();
   private List<String> dependsOn = new ArrayList<String>();
 
   public GroupImpl() {}
@@ -152,11 +148,11 @@ public class GroupImpl implements Group {
    * @return
    */
   @Override
-  public List<CustomProperty> getCustomProperties() {
+  public Set<CustomPropertyRest> getCustomProperties() {
     return customProperties;
   }
 
-  public void setCustomProperties(List<CustomProperty> customProperties) {
+  public void setCustomProperties(Set<CustomPropertyRest> customProperties) {
     this.customProperties = customProperties;
   }
 
