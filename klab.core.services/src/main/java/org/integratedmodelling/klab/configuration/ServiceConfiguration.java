@@ -25,7 +25,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-import org.integratedmodelling.common.data.DataBuilderImpl;
+
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.knowledge.ModelBuilderImpl;
@@ -35,7 +35,6 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
@@ -47,6 +46,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelope;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.Quantity;
@@ -63,6 +63,7 @@ import org.integratedmodelling.klab.data.mediation.UnitServiceImpl;
 import org.integratedmodelling.klab.runtime.language.LanguageService;
 import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
 import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
+import org.integratedmodelling.klab.runtime.scale.space.EnvelopeImpl;
 import org.integratedmodelling.klab.runtime.scale.space.ProjectionImpl;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -75,13 +76,19 @@ import org.integratedmodelling.klab.services.base.BaseService;
  * @version $Id: $Id
  */
 public enum ServiceConfiguration {
-  INSTANCE;
+
+    INSTANCE;
 
   private Map<Class<?>, Map<Set<Object>, Service>> services = new HashMap<>();
   private Map<String, Authority> authorities = new HashMap<>();
   private KlabService mainService;
 
   static {
+    injectInstantiators();
+  }
+
+  /** Made public so that it can be called by test cases. */
+  public static void injectInstantiators() {
 
     /*
      * "injector" for the crucial k.LAB constructors
@@ -188,11 +195,11 @@ public enum ServiceConfiguration {
             return new ModelBuilderImpl(outputResourceUrn);
           }
 
-          @Override
-          public Data.Builder getDataBuilder(
-              String name, Observable observable, Geometry geometry) {
-            return new DataBuilderImpl(name, observable, geometry);
-          }
+//          @Override
+//          public Data.Builder getDataBuilder(
+//              String name, Observable observable, Geometry geometry) {
+//            return new DataBuilderImpl(name, observable, geometry);
+//          }
 
           @Override
           public Quantity parseQuantity(String quantityDescription) {
@@ -281,62 +288,68 @@ public enum ServiceConfiguration {
             return ret;
           }
 
+//          @Override
+//          public Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>
+//              getSpatialOffsetMapping(Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve) {
+//            return switch (spaceFillingCurve) {
+//              case D1_LINEAR ->
+//                  new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
+//
+//                    final long[] l = new long[1];
+//
+//                    @Override
+//                    public Data.LongToLongArrayFunction getFirst() {
+//                      return n -> {
+//                        l[0] = n;
+//                        return l;
+//                      };
+//                    }
+//
+//                    @Override
+//                    public Data.LongArrayToLongFunction getSecond() {
+//                      return n -> n[0];
+//                    }
+//                  };
+//              case D2_XY -> {
+//                final var shape = geometry.dimension(Geometry.Dimension.Type.SPACE).getShape();
+//                final var x = shape.get(0);
+//                final var y = shape.get(1);
+//
+//                yield new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
+//
+//                  final long[] l = new long[2];
+//
+//                  @Override
+//                  public Data.LongToLongArrayFunction getFirst() {
+//                    return n -> {
+//                      l[0] = n / x;
+//                      l[1] = n % x;
+//                      return l;
+//                    };
+//                  }
+//
+//                  @Override
+//                  public Data.LongArrayToLongFunction getSecond() {
+//                    return n -> n[1] * x + n[0];
+//                  }
+//                };
+//              }
+//              //                case D2_YX -> null;
+//              //                case D2_XInvY -> null;
+//              //                case D3_XYZ -> null;
+//              //                case D3_ZYX -> null;
+//              //                case D2_HILBERT -> null;
+//              //                case D3_HILBERT -> null;
+//              default ->
+//                  throw new KlabUnimplementedException(
+//                      "ServiceConfiguration::getGeometryIterator(" + spaceFillingCurve + ")");
+//            };
+//          }
+
           @Override
-          public Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>
-              getSpatialOffsetMapping(Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve) {
-            return switch (spaceFillingCurve) {
-              case D1_LINEAR ->
-                  new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
-
-                    final long[] l = new long[1];
-
-                    @Override
-                    public Data.LongToLongArrayFunction getFirst() {
-                      return n -> {
-                        l[0] = n;
-                        return l;
-                      };
-                    }
-
-                    @Override
-                    public Data.LongArrayToLongFunction getSecond() {
-                      return n -> n[0];
-                    }
-                  };
-              case D2_XY -> {
-                final var shape = geometry.dimension(Geometry.Dimension.Type.SPACE).getShape();
-                final var x = shape.get(0);
-                final var y = shape.get(1);
-
-                yield new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
-
-                  final long[] l = new long[2];
-
-                  @Override
-                  public Data.LongToLongArrayFunction getFirst() {
-                    return n -> {
-                      l[0] = n / x;
-                      l[1] = n % x;
-                      return l;
-                    };
-                  }
-
-                  @Override
-                  public Data.LongArrayToLongFunction getSecond() {
-                    return n -> n[1] * x + n[0];
-                  }
-                };
-              }
-              //                case D2_YX -> null;
-              //                case D2_XInvY -> null;
-              //                case D3_XYZ -> null;
-              //                case D3_ZYX -> null;
-              //                case D2_HILBERT -> null;
-              //                case D3_HILBERT -> null;
-              default ->
-                  throw new KlabUnimplementedException(
-                      "ServiceConfiguration::getGeometryIterator(" + spaceFillingCurve + ")");
-            };
+          public Envelope getSpatialEnvelope(
+              double minX, double minY, double maxX, double maxY, Projection projection) {
+            return EnvelopeImpl.create(minX, minY, maxX, maxY, projection);
           }
         });
   }

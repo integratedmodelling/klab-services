@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.configuration;
 
+import java.util.concurrent.Future;
+
 /**
  * Holder and manager for Engine.Setting. Existing settings must be loaded on construction; only
  * explicitly set values should be stored, and it must be possible to know if a setting was ever
@@ -32,7 +34,7 @@ public interface Settings {
    * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the value
    *     class is not right for the setting.
    */
-  void set(Setting setting, Object value);
+  <T> Future<T> set(Setting setting, T value);
 
   /**
    * Like {@link #set(Setting, Object)} but only acting if a default has not already been

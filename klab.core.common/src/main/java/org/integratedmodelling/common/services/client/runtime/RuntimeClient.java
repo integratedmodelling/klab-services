@@ -8,6 +8,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientContextScope;
@@ -35,8 +36,6 @@ import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
-
-  //  private GraphQLClient graphClient;
 
   public static RuntimeClient create(URL url, Identity identity, Settings settings) {
     return new RuntimeClient(url, identity, settings);
@@ -119,19 +118,29 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
       // TODO setup desired request. This will send no header and use the defaults.
       // Resolver should probably only catch events and errors.
     }
-    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
     var ret =
         client
-            .withHeader(
-                ServicesAPI.MESSAGING_URL_HEADER,
-                federation == null ? null : federation.getBroker())
-            .withHeader(
-                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
+            //            .withHeader(
+            //                ServicesAPI.MESSAGING_URL_HEADER,
+            //                federation == null ? null : federation.getBroker())
+            //            .withHeader(
+            //                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null :
+            // federation.getId())
             .post(ServicesAPI.CREATE_SESSION, request, String.class);
 
+    if (ret == null) {
+      // TODO error recovery
+      Logging.INSTANCE.error("Runtime has not returned a valid session ID: ");
+    }
+
+    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
     if (federation != null && scope instanceof MessagingChannelImpl messagingChannel) {
       var queues =
           getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+      if (queues == null) {
+        // TODO error recovery
+        Logging.INSTANCE.error("no queues found in messaging header");
+      }
       messagingChannel.setupMessaging(federation, ret, queues);
     }
 
@@ -182,11 +191,12 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         client
             .withScope(scope.getParentScope())
             .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
-            .withHeader(
-                ServicesAPI.MESSAGING_URL_HEADER,
-                federation == null ? null : federation.getBroker())
-            .withHeader(
-                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
+            //            .withHeader(
+            //                ServicesAPI.MESSAGING_URL_HEADER,
+            //                federation == null ? null : federation.getBroker())
+            //            .withHeader(
+            //                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null :
+            // federation.getId())
             .post(
                 ServicesAPI.CREATE_CONTEXT,
                 request,

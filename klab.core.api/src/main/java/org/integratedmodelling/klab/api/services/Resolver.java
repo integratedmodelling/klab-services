@@ -10,9 +10,9 @@ import java.util.concurrent.CompletableFuture;
 
 public interface Resolver extends KlabService {
 
-  default String getServiceName() {
-    return "klab.resolver.service";
-  }
+//  default String getServiceName() {
+//    return "klab.resolver.service";
+//  }
 
   /**
    * All services publish capabilities and have a call to obtain them.

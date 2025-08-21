@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.extension.Actor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 
-@Actor(name="context")
+@Actor(name="context", description = "The context actor")
 public class ContextActor extends SessionActor {
 
     public ContextActor(SessionScope sessionScope) {

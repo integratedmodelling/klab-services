@@ -31,11 +31,6 @@ public interface KimNamespace extends KlabDocument<KlabStatement> {
      */
     Geometry getCoverage();
 
-//    /**
-//     * @return
-//     */
-//    Parameters<String> getDefines();
-
     /**
      * True if declared as a scenario.
      *

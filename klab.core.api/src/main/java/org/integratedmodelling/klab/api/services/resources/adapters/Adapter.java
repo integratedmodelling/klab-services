@@ -14,6 +14,8 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 
+import java.util.List;
+
 /**
  * The descriptor for a resource adapter, built from the annotation in a class annotated with {@link
  * ResourceAdapter} and part of a resource service's capabilities.
@@ -21,6 +23,46 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
  * @author Ferd
  */
 public interface Adapter {
+
+  /** A parameter for the adapter. Resource parameters are validated against these on import. */
+  interface Parameter {
+
+    /**
+     * Parameter name, a simple identifier
+     *
+     * @return
+     */
+    String getName();
+
+    /**
+     * Parameter type. Must be a POD or ENUM
+     *
+     * @return
+     */
+    Artifact.Type getType();
+
+    /**
+     * If parameter type is ENUM, the list of admitted values
+     *
+     * @return
+     */
+    List<String> getEnumValues();
+
+    /**
+     * Description
+     *
+     * @return
+     */
+    String getDescription();
+
+    /**
+     * Determines whether the parameter is optional. An optional parameter indicates that the
+     * adapter or configuration can function correctly even if the parameter is not provided.
+     *
+     * @return true if the parameter is optional, false otherwise
+     */
+    boolean isOptional();
+  }
 
   String getName();
 
@@ -40,6 +82,29 @@ public interface Adapter {
    * @return
    */
   Artifact.Type resourceType(Urn urn);
+
+  /**
+   * Parameters as declared in the annotation.
+   *
+   * @return
+   */
+  List<Parameter> getParameters();
+
+  /**
+   * The URN of the component that provides the adapter. Should never be null, even for preloaded,
+   * hard-coded adapters.
+   *
+   * @return
+   */
+  String getComponentUrn();
+
+  /**
+   * The version of the component that provides the adapter. Never null; if hard-coded, must be
+   * {@link Version#CURRENT_VERSION}.
+   *
+   * @return
+   */
+  Version getComponentVersion();
 
   /**
    * Version. Cannot be null. Multiple versions of the same adapter may coexist in a service.
@@ -78,9 +143,10 @@ public interface Adapter {
    * If true, the adapter provides a specific validator used upon initial submission and any
    * resource update.
    *
-   * @return
+   * @param phase the phase of resource lifecycle subjected to validation
+   * @return true if a validator is available for that phase
    */
-  boolean hasValidator();
+  boolean hasValidator(ResourceAdapter.Validator.LifecyclePhase phase);
 
   /**
    * If true, the adapter provides a sanitizer which may extract and externalize credentials or
@@ -142,9 +208,10 @@ public interface Adapter {
    * Return the encoder descriptor. If the adapter is operational, the component registry must have
    * the Java implementation ready.
    *
+   * @param phase the phase of resource lifecycle subjected to validation
    * @return
    */
-  Extensions.FunctionDescriptor getValidator();
+  Extensions.FunctionDescriptor getValidator(ResourceAdapter.Validator.LifecyclePhase phase);
 
   /**
    * Use the underlying implementation to contextualize the passed resource and obtain a copy

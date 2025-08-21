@@ -157,7 +157,9 @@ public class BaseDataImpl implements Data {
   public static Data create(Instance instance) {
 
     if (instance.getDoubleData() != null) {
-      return new DoubleDataImpl(instance);
+      // TODO we only use one buffer at this point, the fill strategy may be different. Need a
+      // parameter in the data builder
+      return new DoubleDataImpl(instance, instance.getDoubleData().size(), 0);
     } else if (instance.getFloatData() != null) {
       throw new KlabUnimplementedException("GAAAH");
       //      return new FloatDataImpl(instance);

@@ -22,7 +22,9 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.List;
 
@@ -83,6 +85,18 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
    * @return the observation's observable
    */
   Observable getObservable();
+
+  /**
+   * In situations where messaging is unavailable or the scope aren't receiving messages, the
+   * observation returning from a {@link
+   * org.integratedmodelling.klab.api.services.RuntimeService#submit(Observation, ContextScope)}
+   * will contain notifications to inform of whatever exception or warning happened during its
+   * resolution or contextualization. If the returning observation is empty, there should be an
+   * error notification explaining why.
+   *
+   * @return
+   */
+  List<Notification> getNotifications();
 
   /**
    * Return a view of this observation restricted to the passed locator, which is applied to the

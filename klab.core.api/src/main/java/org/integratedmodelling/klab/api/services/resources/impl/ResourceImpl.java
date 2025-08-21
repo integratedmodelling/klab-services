@@ -21,11 +21,7 @@ public class ResourceImpl implements Resource {
   private String urn;
   private Version version;
   private String adapterType;
-  //    private String localPath;
   private Geometry geometry;
-  // only set in local resources
-  //    private String projectName;
-  // only in local resources, the short name for k.IM
   private String localName;
   private Artifact.Type type;
   private long timestamp;
@@ -54,29 +50,6 @@ public class ResourceImpl implements Resource {
 
   public ResourceImpl() {}
 
-  //    public ResourceImpl(ResourceImpl other) {
-  //        this.urn = other.urn;
-  //        this.version = other.version;
-  //        this.adapterType = other.adapterType;
-  //        this.localPath = other.localPath;
-  //        this.geometry = other.geometry;
-  //        this.projectName = other.projectName;
-  //        this.localName = other.localName;
-  //        this.type = other.type;
-  //        this.timestamp = other.timestamp;
-  //        this.metadata.putAll(other.metadata);
-  //        this.parameters.putAll(other.parameters);
-  //        this.localPaths.addAll(other.localPaths);
-  //        this.history.addAll(other.history);
-  //        this.notifications.addAll(other.notifications);
-  //        this.attributes.addAll(other.attributes);
-  //        this.inputs = other.inputs == null ? null : new ArrayList<>(other.inputs);
-  //        this.outputs = other.outputs == null ? null : new ArrayList<>(other.outputs);
-  //        this.categorizables.addAll(other.categorizables);
-  //        this.codelists.addAll(other.codelists);
-  //        this.localProjectName = other.localProjectName;
-  //    }
-
   public String getUrn() {
     return urn;
   }
@@ -100,14 +73,6 @@ public class ResourceImpl implements Resource {
   public void setAdapterType(String adapterType) {
     this.adapterType = adapterType;
   }
-
-  //    public String getLocalPath() {
-  //        return localPath;
-  //    }
-  //
-  //    public void setLocalPath(String localPath) {
-  //        this.localPath = localPath;
-  //    }
 
   public Geometry getGeometry() {
     return geometry;
@@ -244,4 +209,6 @@ public class ResourceImpl implements Resource {
   public String toString() {
     return "(R) " + urn;
   }
+
+
 }

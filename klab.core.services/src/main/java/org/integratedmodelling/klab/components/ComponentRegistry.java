@@ -55,6 +55,7 @@ import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
 import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
+import org.integratedmodelling.klab.api.services.resources.impl.ParameterImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.*;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -120,7 +121,6 @@ public class ComponentRegistry {
   public ComponentRegistry(BaseService service, StartupOptions options) {
     readConfiguration(service, options);
     this.service = service;
-    scheduler.scheduleAtFixedRate(() -> checkForUpdates(), 0, 5, TimeUnit.MINUTES);
   }
 
   /**
@@ -129,10 +129,15 @@ public class ComponentRegistry {
    * @param capabilities
    */
   public void registerService(KlabService.ServiceCapabilities capabilities) {
-    for (var component : capabilities.getComponents()) {
-      for (var adapter : component.adapters()) {
-        this.adapterDescriptorFinder.put(adapter.getName(), adapter);
+    if (capabilities != null) {
+      for (var component : capabilities.getComponents()) {
+        for (var adapter : component.adapters()) {
+          this.adapterDescriptorFinder.put(adapter.getName(), adapter);
+        }
       }
+    } else {
+      throw new KlabServiceAccessException(
+          "The service capabilities are not available. Is the service online?");
     }
   }
 
@@ -144,37 +149,58 @@ public class ComponentRegistry {
     for (var component : components.values()) {
       if (component.mavenCoordinates() != null
           && component.fileHash() != null
-          && !component.mavenCoordinates().contains("SNAPSHOT")) {
-
+          && component.mavenCoordinates().contains("SNAPSHOT")) {
         var coords = component.mavenCoordinates().split(":");
         if (coords.length == 3) {
           var status = cache.getAvailability(coords[0], coords[1], coords[2], "component", "kar");
-          if (status == MavenComponentCache.Status.NEEDS_UPDATE) {
-            Thread.ofVirtual().start(() -> updateComponent(component));
+          if (status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+              || status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY) {
+            Thread.ofVirtual().start(() -> updateComponent(component, status));
           }
         }
       }
     }
   }
 
-  private synchronized void updateComponent(Extensions.ComponentDescriptor component) {
+  private synchronized void updateComponent(
+      Extensions.ComponentDescriptor component, MavenComponentCache.Status status) {
 
     Logging.INSTANCE.info(
         "Attempting update of modified component "
             + component.id()
             + " from "
             + component.mavenCoordinates());
+
     // TODO must unload first. Whether this will free up the file in Win remains to be seen.
     var mavenCoordinates = component.mavenCoordinates().split(":");
 
     try {
       var file =
-          cache.synchronizeArtifact(
-              mavenCoordinates[0], mavenCoordinates[1], mavenCoordinates[2], "component", "kar");
+          status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+              ? Utils.Maven.findLocalArtifactFile(
+                  mavenCoordinates[0], mavenCoordinates[1], mavenCoordinates[2], "component", "kar")
+              : cache.synchronizeArtifact(
+                  mavenCoordinates[0],
+                  mavenCoordinates[1],
+                  mavenCoordinates[2],
+                  "component",
+                  "kar");
       if (file != null && file.exists()) {
+        // TODO the build number should be incremented if the component is local/snapshot. This will
+        //  allow other services to know the update must be loaded.
         unloadComponent(component.id(), component.version());
+        // TODO remove the previous file if any, as a change from remote to local may leave two
+        //  versions in the plugin dir
         installComponent(file, component.mavenCoordinates());
-        Logging.INSTANCE.info("Update of component " + component.id() + " successful");
+        componentManager.enablePlugin(component.id());
+        Logging.INSTANCE.info(
+            "Component "
+                + component.id()
+                + " updated successfully from "
+                + (status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+                    ? "local"
+                    : "remote")
+                + " repository");
       }
     } catch (Exception e) {
       Logging.INSTANCE.error("Unable to update outdated component " + component.id(), e);
@@ -262,12 +288,42 @@ public class ComponentRegistry {
     return serviceImplementations.get(descriptor.serviceInfo.getName());
   }
 
+  /**
+   * Use the Maven cache to install a component from the nearest updated repository.
+   *
+   * @param groupId
+   * @param artifactId
+   * @param version
+   * @return
+   */
+  public Pair<Extensions.ComponentDescriptor, ResourceSet> installMavenComponent(
+      String groupId, String artifactId, String version) {
+
+    var mavenCoordinates = groupId + ":" + artifactId + ":" + version;
+    File file = cache.synchronizeArtifact(groupId, artifactId, version, "component", "kar"); // TODO
+    if (file != null && file.exists()) {
+      file = cache.install(groupId, artifactId, version, pluginPath);
+      if (file != null && file.exists()) {
+        return installComponent(file, mavenCoordinates);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Pass a valid component file (renamed to jar) that must have been already set into the
+   * pluginPath to load it into the plugin manager and update all records.
+   *
+   * @param resourcePath
+   * @param mavenCoordinates
+   * @return
+   */
   public Pair<Extensions.ComponentDescriptor, ResourceSet> installComponent(
       File resourcePath, String mavenCoordinates) {
 
     // TODO allow same path with different versions and replacing same version
     var pluginDestination =
-        new File(pluginPath + File.separator + Utils.Files.getFileName(resourcePath));
+        new File(pluginPath + File.separator + Utils.Files.getFileBaseName(resourcePath) + ".jar");
 
     // check if we're installing from a different location
     if (resourcePath.getParent() == null
@@ -297,7 +353,8 @@ public class ComponentRegistry {
               pluginId,
               null,
               Version.create(plugin.getDescriptor().getVersion()),
-              KlabAsset.KnowledgeClass.COMPONENT);
+              KlabAsset.KnowledgeClass.COMPONENT,
+              false);
 
       Plugin component = plugin.getPlugin();
       if (component instanceof KlabComponent comp) {
@@ -315,7 +372,7 @@ public class ComponentRegistry {
         Utils.Files.deleteQuietly(pluginDestination);
       }
     } catch (Throwable t) {
-      ret = ResourceSet.empty(Notification.create(t));
+      ret = ResourceSet.empty(Notification.error(t.getMessage()));
       Utils.Files.deleteQuietly(pluginDestination);
     }
 
@@ -402,7 +459,9 @@ public class ComponentRegistry {
             Actor.class,
             (annotation, cls) -> registerActor((Actor) annotation, cls, actors),
             ResourceAdapter.class,
-            (annotation, cls) -> registerAdapter((ResourceAdapter) annotation, cls, adapters)));
+            (annotation, cls) ->
+                registerAdapter(
+                    (ResourceAdapter) annotation, cls, componentName, componentVersion, adapters)));
 
     var componentDescriptor =
         new Extensions.ComponentDescriptor(
@@ -794,10 +853,18 @@ public class ComponentRegistry {
   }
 
   private void registerAdapter(
-      ResourceAdapter annotation, Class<?> cls, List<AdapterDescriptor> adapters) {
+      ResourceAdapter annotation,
+      Class<?> cls,
+      String componentUrn,
+      Version componentVersion,
+      List<AdapterDescriptor> adapters) {
 
+    /** Do not load adapters that aren't embeddable unless we are a resources service. */
+    if (this.service.serviceType() != KlabService.Type.RESOURCES && !annotation.embeddable()) {
+      return;
+    }
     try {
-      var adapter = new AdapterImpl(cls, annotation);
+      var adapter = new AdapterImpl(cls, annotation, componentUrn, componentVersion);
       if (adapter.initialize()) {
         this.adapters.put(adapter.getName(), adapter);
         this.adapterDescriptorFinder.put(adapter.getName(), adapter.getAdapterInfo());
@@ -836,7 +903,10 @@ public class ComponentRegistry {
   public synchronized boolean unloadComponent(String urn, Version version) {
     var component = getComponent(urn, version);
     if (component != null) {
-      return componentManager.disablePlugin(component.id());
+      if (componentManager.getPlugin(component.id()) != null) {
+        componentManager.deletePlugin(component.id());
+        return true;
+      }
     }
     return false;
   }
@@ -849,63 +919,59 @@ public class ComponentRegistry {
    */
   public synchronized boolean loadComponents(ResourceSet resourceSet, Scope scope) {
 
-    Set<String> available = new HashSet<>();
-    for (var result : resourceSet.getResults()) {
-      if (result.getKnowledgeClass() == KlabAsset.KnowledgeClass.COMPONENT) {
-        for (var existing : components.get(result.getResourceUrn())) {
-          if (result.getResourceVersion() == null
-              || existing.version().compatible(result.getResourceVersion())) {
-            available.add(result.getResourceUrn());
-          }
-        }
+    var missingComponents =
+        resourceSet.getResults().stream()
+            .filter(resource -> resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.COMPONENT)
+            .filter(
+                resource -> {
+                  var split = Version.splitVersion(resource.getResourceUrn());
+                  var components = this.components.get(split.getFirst());
+                  if (components == null) {
+                    return true;
+                  }
+                  return components.stream()
+                      .noneMatch(component -> component.version().compatible(split.getSecond()));
+                })
+            .toList();
+
+    for (var result : missingComponents) {
+
+      // load from service
+      var service =
+          scope.getService(
+              ResourcesService.class, s -> s.serviceId().equals(result.getServiceId()));
+      if (service == null) {
+        return false;
       }
-    }
 
-    // if we get here, we need to retrieve and load the component
-    if (available.size() == resourceSet.getResults().size()) {
-      return true;
-    }
-
-    for (var result : resourceSet.getResults()) {
-
-      if (!available.contains(result.getResourceUrn())) {
-        // load from service
-        var service =
-            scope.getService(
-                ResourcesService.class, s -> s.serviceId().equals(result.getServiceId()));
-        if (service == null) {
-          return false;
-        }
-
-        final String mediaType = "application/java-archive";
-        var schemata =
-            ResourceTransport.INSTANCE.findExportSchemata(
-                KlabAsset.KnowledgeClass.COMPONENT, mediaType, service.capabilities(scope), scope);
-        if (schemata.isEmpty()) {
-          throw new KlabAuthorizationException(
-              "No authorized export schema with media type " + mediaType + " is available");
-        } else if (schemata.size() > 1) {
-          scope.warn(
-              "Ambiguous request: more than one export schema with "
-                  + "media type "
-                  + mediaType
-                  + " is available");
-        }
-
-        File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
-        try (var input =
-                service.exportAsset(
-                    result.getResourceUrn(), schemata.getFirst(), mediaType, scope);
-            var output = new FileOutputStream(plugin)) {
-          IOUtils.copy(input, output);
-          // give the OS time to react - found that often the file is truncated
-          TimeUnit.SECONDS.sleep(2);
-        } catch (Exception e) {
-          scope.error(e);
-          return false;
-        }
-        installComponent(plugin, null);
+      final String mediaType = "application/java-archive";
+      var schemata =
+          ResourceTransport.INSTANCE.findExportSchemata(
+              KlabAsset.KnowledgeClass.COMPONENT, mediaType, service.capabilities(scope), scope);
+      if (schemata.isEmpty()) {
+        throw new KlabAuthorizationException(
+            "No authorized export schema with media type " + mediaType + " is available");
+      } else if (schemata.size() > 1) {
+        scope.warn(
+            "Ambiguous request: more than one export schema with "
+                + "media type "
+                + mediaType
+                + " is available");
       }
+
+      File plugin = new File(pluginPath + File.separator + result.getResourceUrn() + ".jar");
+      try (var input =
+              service.exportAsset(
+                  result.getResourceUrn(), KlabAsset.KnowledgeClass.COMPONENT, mediaType, scope);
+          var output = new FileOutputStream(plugin)) {
+        IOUtils.copy(input, output);
+        // give the OS time to react - found that often the file is truncated
+        TimeUnit.SECONDS.sleep(2);
+      } catch (Exception e) {
+        scope.error(e);
+        return false;
+      }
+      installComponent(plugin, null);
     }
 
     // hopefully this is OK with plugins that have started already
@@ -1168,7 +1234,13 @@ public class ComponentRegistry {
             Library.class,
             (annotation, cls) -> registerLibrary((Library) annotation, cls, libraries),
             ResourceAdapter.class,
-            (annotation, cls) -> registerAdapter((ResourceAdapter) annotation, cls, adapters)));
+            (annotation, cls) ->
+                registerAdapter(
+                    (ResourceAdapter) annotation,
+                    cls,
+                    LOCAL_SERVICE_COMPONENT,
+                    Version.CURRENT_VERSION,
+                    adapters)));
 
     localComponentDescriptor.libraries().addAll(libraries);
     localComponentDescriptor.adapters().addAll(adapters);
@@ -1245,11 +1317,16 @@ public class ComponentRegistry {
             System.out.println("HOLA! Plugin state: " + event);
           }
         });
+
+    scheduler.scheduleAtFixedRate(() -> checkForUpdates(), 0, 5, TimeUnit.MINUTES);
   }
 
   public class AdapterImpl implements Adapter {
 
     private final String name;
+    private final int splits;
+    private final Data.FillCurve fillCurve;
+    private final long minSplitSize;
     private Set<Artifact.Type> resourceType = EnumSet.noneOf(Artifact.Type.class);
     private final Version version;
     boolean universal;
@@ -1262,21 +1339,36 @@ public class ComponentRegistry {
     private Extensions.FunctionDescriptor typeAttributor;
     private Extensions.FunctionDescriptor encoder;
     private Extensions.FunctionDescriptor contextualizer;
-    private Extensions.FunctionDescriptor validator;
+    private Map<ResourceAdapter.Validator.LifecyclePhase, Extensions.FunctionDescriptor> validator =
+        new HashMap<>();
     private Extensions.FunctionDescriptor inspector;
     private Extensions.FunctionDescriptor initializer;
     private Extensions.FunctionDescriptor sanitizer;
     private Extensions.FunctionDescriptor publisher;
+    private List<Adapter.Parameter> parameters = new ArrayList<>();
     private final AdapterDescriptor adapterInfo;
+    private String componentUrn;
+    private Version componentVersion;
 
-    public AdapterImpl(Class<?> implementationClass, ResourceAdapter annotation) {
+    public AdapterImpl(
+        Class<?> implementationClass,
+        ResourceAdapter annotation,
+        String componentUrn,
+        Version componentVersion) {
+
       this.name = annotation.name();
       this.version = Version.create(annotation.version());
       this.universal = annotation.universal();
       this.threadSafe = annotation.threadSafe();
       this.embeddable = annotation.embeddable();
-      if (annotation.type() != null && annotation.type().length > 0) {
-        this.resourceType.addAll(Arrays.asList(annotation.type()));
+      this.componentUrn = componentUrn;
+      this.componentVersion = componentVersion;
+      this.splits = annotation.splits();
+      this.fillCurve = annotation.fillCurve();
+      this.minSplitSize = annotation.minSizeForSplitting();
+
+      if (annotation.type() != Artifact.Type.VOID) {
+        this.resourceType.add(annotation.type());
       }
       this.implementationClass = implementationClass;
       if (this.threadSafe) {
@@ -1288,6 +1380,15 @@ public class ComponentRegistry {
         }
       }
       this.adapterInfo = scanAdapterClass(implementationClass);
+      for (var parameter : annotation.parameters()) {
+        this.parameters.add(
+            new ParameterImpl(
+                parameter.name(),
+                parameter.description(),
+                parameter.optional(),
+                parameter.type(),
+                parameter.enumValues()));
+      }
     }
 
     @Override
@@ -1309,6 +1410,11 @@ public class ComponentRegistry {
     }
 
     @Override
+    public Version getComponentVersion() {
+      return this.componentVersion;
+    }
+
+    @Override
     public boolean hasContextualizer() {
       return contextualizer != null;
     }
@@ -1319,8 +1425,8 @@ public class ComponentRegistry {
     }
 
     @Override
-    public boolean hasValidator() {
-      return validator != null;
+    public boolean hasValidator(ResourceAdapter.Validator.LifecyclePhase phase) {
+      return validator.containsKey(phase);
     }
 
     @Override
@@ -1359,8 +1465,19 @@ public class ComponentRegistry {
     }
 
     @Override
-    public Extensions.FunctionDescriptor getValidator() {
-      return this.validator;
+    public Extensions.FunctionDescriptor getValidator(
+        ResourceAdapter.Validator.LifecyclePhase phase) {
+      return this.validator.get(phase);
+    }
+
+    @Override
+    public List<Parameter> getParameters() {
+      return this.parameters;
+    }
+
+    @Override
+    public String getComponentUrn() {
+      return this.componentUrn;
     }
 
     public boolean initialize() {
@@ -1513,7 +1630,9 @@ public class ComponentRegistry {
                   method, method.getAnnotation(ResourceAdapter.Validator.class));
           serviceImplementations.put(
               funcData.getFirst().serviceInfo.getName(), funcData.getSecond());
-          this.validator = funcData.getFirst();
+          for (var phase : a.phase()) {
+            this.validator.put(phase, funcData.getFirst());
+          }
           validations.addAll(Arrays.asList(a.phase()));
         } else if (method.isAnnotationPresent(ResourceAdapter.Type.class)) {
 
@@ -1528,7 +1647,7 @@ public class ComponentRegistry {
           this.typeAttributor = funcData.getFirst();
 
         } else if (method.isAnnotationPresent(Importer.class)) {
-          var serviceInfo = createPrototype(name, method.getAnnotation(Importer.class));
+          var serviceInfo = createPrototype(name + ".", method.getAnnotation(Importer.class));
           var schema = ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
           schema.setAdapter(name);
           importSchemata.add(schema);
@@ -1537,7 +1656,7 @@ public class ComponentRegistry {
               createServiceImplementation(method, method.getAnnotation(Importer.class))
                   .getSecond());
         } else if (method.isAnnotationPresent(Exporter.class)) {
-          var serviceInfo = createPrototype(name, method.getAnnotation(Exporter.class));
+          var serviceInfo = createPrototype(name + ".", method.getAnnotation(Exporter.class));
           var schema = ResourceTransport.INSTANCE.registerExportSchema(serviceInfo);
           schema.setAdapter(name);
           exportSchemata.add(schema);
@@ -1572,9 +1691,13 @@ public class ComponentRegistry {
           hasInspector(),
           hasPublisher(),
           isEmbeddable(),
+          fillCurve,
+          splits,
+          minSplitSize,
           validations,
           importSchemata,
-          exportSchemata);
+          exportSchemata,
+          this.parameters);
     }
 
     private Pair<Extensions.FunctionDescriptor, ServiceImplementation> createServiceImplementation(

@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.Serial;
 import java.util.*;
@@ -40,6 +41,7 @@ public class ObservationImpl implements Observation {
   private List<Long> eventTimestamps = new ArrayList<>();
   private boolean substantialQuality;
   private long transientId = Klab.getNextId();
+  private List<Notification> notifications = new ArrayList<>();
 
   public ObservationImpl() {}
 
@@ -240,6 +242,15 @@ public class ObservationImpl implements Observation {
         + "#"
         + (geometry == null ? "0" : geometry.size())
         + "]";
+  }
+
+  @Override
+  public List<Notification> getNotifications() {
+    return notifications;
+  }
+
+  public void setNotifications(List<Notification> notifications) {
+    this.notifications = notifications;
   }
 
   /**

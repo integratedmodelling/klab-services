@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.runtime.extension;
 
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
@@ -7,7 +8,6 @@ import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -15,6 +15,7 @@ import java.util.Set;
  * of the common service capabiities.
  */
 public class AdapterDescriptor {
+
   private String name;
   private Version version;
   private String serviceId;
@@ -26,9 +27,13 @@ public class AdapterDescriptor {
   private boolean inspecting;
   private boolean publishing;
   private boolean embeddable;
+  private List<Adapter.Parameter> parameters;
   private Set<ResourceAdapter.Validator.LifecyclePhase> validatedPhases;
   private List<ResourceTransport.Schema> importSchemata;
   private List<ResourceTransport.Schema> exportSchemata;
+  private int splits;
+  private Data.FillCurve fillCurve;
+  private long minSplitSize;
 
   // do not remove - for the deserializer
   public AdapterDescriptor() {}
@@ -45,9 +50,13 @@ public class AdapterDescriptor {
       boolean inspecting,
       boolean publishing,
       boolean embeddable,
+      Data.FillCurve fillCurve,
+      int splits,
+      long minSplitSize,
       Set<ResourceAdapter.Validator.LifecyclePhase> validatedPhases,
       List<ResourceTransport.Schema> importSchemata,
-      List<ResourceTransport.Schema> exportSchemata) {
+      List<ResourceTransport.Schema> exportSchemata,
+      List<Adapter.Parameter> parameters) {
     this.name = name;
     this.version = version;
     this.serviceId = serviceId;
@@ -62,6 +71,10 @@ public class AdapterDescriptor {
     this.importSchemata = importSchemata;
     this.exportSchemata = exportSchemata;
     this.embeddable = embeddable;
+    this.parameters = parameters;
+    this.splits = splits;
+    this.fillCurve = fillCurve;
+    this.minSplitSize = minSplitSize;
   }
 
   public String getName() {
@@ -168,11 +181,43 @@ public class AdapterDescriptor {
     this.exportSchemata = exportSchemata;
   }
 
+  public List<Adapter.Parameter> getParameters() {
+    return parameters;
+  }
+
+  public void setParameters(List<Adapter.Parameter> parameters) {
+    this.parameters = parameters;
+  }
+
   public boolean isEmbeddable() {
     return embeddable;
   }
 
   public void setEmbeddable(boolean embeddable) {
     this.embeddable = embeddable;
+  }
+
+  public int getSplits() {
+    return splits;
+  }
+
+  public void setSplits(int splits) {
+    this.splits = splits;
+  }
+
+  public Data.FillCurve getFillCurve() {
+    return fillCurve;
+  }
+
+  public void setFillCurve(Data.FillCurve fillCurve) {
+    this.fillCurve = fillCurve;
+  }
+
+  public long getMinSplitSize() {
+    return minSplitSize;
+  }
+
+  public void setMinSplitSize(long minSplitSize) {
+    this.minSplitSize = minSplitSize;
   }
 }

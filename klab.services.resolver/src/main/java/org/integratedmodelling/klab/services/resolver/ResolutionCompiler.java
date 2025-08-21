@@ -217,6 +217,17 @@ public class ResolutionCompiler {
     return ret;
   }
 
+  /**
+   * TODO the resolution must also check any geometry constraints that come with the
+   *  contextualizables, taken from function and adapter specs. These probably should
+   *  come along with the ResourceSet results.
+   *
+   * @param model
+   * @param scaleToCover
+   * @param graph
+   * @param scope
+   * @return
+   */
   private ResolutionGraph resolve(
       Model model, Scale scaleToCover, ResolutionGraph graph, ContextScope scope) {
 
@@ -233,6 +244,8 @@ public class ResolutionCompiler {
     var runtime = scope.getService(RuntimeService.class);
     ResourceSet requirements = runtime.resolveContextualizables(model.getComputation(), scope);
 
+    // TODO filter the results to accommodate constraints w.r.t. the geometry and (possibly) the semantics.
+
     if (requirements.isEmpty()) {
       return ResolutionGraph.empty();
     }
@@ -241,7 +254,7 @@ public class ResolutionCompiler {
     /*
     resolve all dependencies
      */
-    boolean complete = model.getDependencies().isEmpty();
+    //    boolean complete = model.getDependencies().isEmpty();
     List<Pair<ResolutionGraph, String>> modelGraphs = new ArrayList<>();
     for (var dependency : model.getDependencies()) {
 
@@ -331,11 +344,12 @@ public class ResolutionCompiler {
    */
   public List<Model> queryModels(Observable observable, ContextScope scope, Scale scale) {
 
-    var prioritizer = new PrioritizerImpl(scope, scale);
+    var prioritizer =
+        new PrioritizerImpl(scope, scale, resolver.getServiceConfiguration().getRankingStrategy());
 
     var resources = scope.getService(ResourcesService.class);
     ResourceSet models = resources.resolveModels(observable, scope);
-    var ret = new ArrayList<Model>(resolver.ingestResources(models, scope, Model.class));
+    var ret = new ArrayList<Model>(resolver.ingestResources(models, scope, Model.class, true));
     ret.sort(prioritizer);
     return ret;
   }

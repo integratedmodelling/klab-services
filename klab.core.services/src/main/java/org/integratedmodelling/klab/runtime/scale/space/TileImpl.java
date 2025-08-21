@@ -95,6 +95,8 @@ public class TileImpl extends ShapeImpl implements Tile {
         + getEnvelope().encode()
         + ",shape="
         + promote(this).asWKB()
+        + ",proj="
+        + this.getProjection().getCode()
         + "}";
   }
 }

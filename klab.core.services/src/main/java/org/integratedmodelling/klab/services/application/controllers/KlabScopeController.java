@@ -6,6 +6,8 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
@@ -59,10 +61,10 @@ public class KlabScopeController {
       Principal principal,
       HttpServletResponse response,
       @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required = false)
-          Collection<Message.Queue> queuesHeader,
+          Collection<Message.Queue> queuesHeader /*,
       @RequestHeader(value = ServicesAPI.MESSAGING_URL_HEADER, required = false) String brokerUrl,
       @RequestHeader(value = ServicesAPI.FEDERATION_ID_HEADER, required = false)
-          String federationId) {
+          String federationId*/) {
 
     if (principal instanceof EngineAuthorization authorization) {
 
@@ -174,17 +176,15 @@ public class KlabScopeController {
         // TODO check presence and availability of all services and fail if no response
 
         ((ServiceSessionScope) ret).setServices(resources, resolvers, reasoners, runtimes);
-
+        var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
         var id = instance.klabService().registerNewSession(ret, userScope, behavior);
-        if (brokerUrl != null && ret instanceof ServiceSessionScope serviceSessionScope) {
-
+        if (federation != null) {
+          ServiceSessionScope serviceSessionScope = (ServiceSessionScope) ret;
           if (queuesHeader == null) {
             queuesHeader = serviceSessionScope.defaultQueues();
           }
 
-          var implementedQueues =
-              serviceSessionScope.setupMessaging(
-                  Klab.INSTANCE.getFederationData(userScope.getUser()), id, queuesHeader);
+          var implementedQueues = serviceSessionScope.setupMessaging(federation, id, queuesHeader);
 
           Logging.INSTANCE.info(
               "Queues set up for session " + id + ": " + implementedQueues + " on session scope");
@@ -229,9 +229,9 @@ public class KlabScopeController {
           Collection<Message.Queue> queuesHeader,
       @RequestHeader(value = ServicesAPI.SERVICE_ID_HEADER, required = false)
           String serviceIdHeader,
-      @RequestHeader(value = ServicesAPI.FEDERATION_ID_HEADER, required = false)
+      /* @RequestHeader(value = ServicesAPI.FEDERATION_ID_HEADER, required = false)
           String federationId,
-      @RequestHeader(value = ServicesAPI.MESSAGING_URL_HEADER, required = false) String brokerUrl,
+      @RequestHeader(value = ServicesAPI.MESSAGING_URL_HEADER, required = false) String brokerUrl,*/
       HttpServletResponse response) {
 
     if (principal instanceof EngineAuthorization authorization) {
@@ -242,10 +242,11 @@ public class KlabScopeController {
 
         var userScope = sessionScope.getParentScope(Scope.Type.USER, UserScope.class);
         var identity = sessionScope.getIdentity();
-        Federation federation = null;
-        if (federationId != null) {
-          federation = new Federation(federationId, brokerUrl);
-        }
+        var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
+
+        //        if (federationId != null) {
+        //          federation = new Federation(federationId, brokerUrl);
+        //        }
 
         if (federation != null
             && !identity.getData().containsKey(UserIdentity.FEDERATION_DATA_PROPERTY)) {

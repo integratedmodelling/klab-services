@@ -1,32 +1,26 @@
 package org.integratedmodelling.common.services.client.engine;
 
-import com.electronwill.nightconfig.core.file.CommentedFileConfig;
-import com.electronwill.nightconfig.core.file.FileConfig;
+import java.io.File;
+import java.util.Properties;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
-import org.integratedmodelling.klab.api.engine.distribution.Release;
 import org.integratedmodelling.klab.api.services.KlabService;
-
-import java.io.File;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 public class SettingsImpl implements Settings {
 
-  private final CommentedFileConfig config;
-  private Executor executor = Executors.newSingleThreadExecutor();
-
-  public static Settings forProduct(Release release) {
-    // TODO
-    return new SettingsImpl(release.getProduct().getProductType().getName());
-  }
+  // back to stupid properties because none of the TOML implementations work
+  private final Properties properties = new Properties();
+  private final Executor executor = Executors.newSingleThreadExecutor();
 
   public static Settings forService(KlabService.Type type) {
     // TODO
-    return new SettingsImpl(type.name().toLowerCase());
+    return new SettingsImpl(type);
   }
 
   public static Settings forEngine() {
@@ -34,14 +28,8 @@ public class SettingsImpl implements Settings {
     return new SettingsImpl("engine");
   }
 
-  public static Settings forClient() {
-    // TODO
-    return new SettingsImpl("client");
-  }
-
   // the file name determines which kind of setting we are using. They are all in the same directory
   // with different names.
-  private String settingsFileName;
   private File settingsFile;
 
   /**
@@ -57,42 +45,52 @@ public class SettingsImpl implements Settings {
     return settings;
   }
 
+  private SettingsImpl(KlabService.Type serviceType) {
+    this.settingsFile =
+        Configuration.INSTANCE.getFileWithTemplate(
+            "services/" + serviceType.name().toLowerCase() + "/settings.properties", "");
+    if (!Utils.Properties.load(this.settingsFile, properties)) {
+      Logging.INSTANCE.error("Error reading settings file: " + this.settingsFile);
+    }
+  }
+
   private SettingsImpl(String settingsFileName) {
 
-    this.settingsFileName = settingsFileName;
-    this.settingsFile = Configuration.INSTANCE.getFile(settingsFileName + ".toml");
-    // Advanced builder, default resource, autosave and much more (-> cf the wiki)
-    this.config = CommentedFileConfig.builder(settingsFile).build();
-    config.load(); // This actually reads the config
+    this.settingsFile =
+        Configuration.INSTANCE.getFileWithTemplate(settingsFileName + ".properties", "");
+    if (!Utils.Properties.load(this.settingsFile, properties)) {
+      Logging.INSTANCE.error("Error loading settings file: " + this.settingsFile);
+    }
   }
 
   @Override
   public <T> T get(Setting setting, Class<T> valueType) {
     var property = setting2Property(setting);
-    if (config.contains(property)) {
-      return Utils.Data.asType(config.get(property), setting.valueClass);
+    if (properties.containsKey(property)) {
+      return Utils.Data.asType(properties.getProperty(property), setting.valueClass);
     }
     return (T) setting.defaultValue;
   }
 
   @Override
-  public void set(Setting setting, Object value) {
-    Logging.INSTANCE.info(
-        "DIO CASTORO SETTING: "
-            + setting.name()
-            + " = "
-            + value
-            + " ("
-            + value.getClass()
-            + ") "
-            + (value instanceof String ? "\"" + value + "\"" : ""));
+  public <T> Future<T> set(Setting setting, T value) {
     executor.execute(
         () -> {
-          // must do this or quick setting changes will mess up the file. Autosave is out for the
-          // same reason.
-          config.set(setting2Property(setting), value);
-          config.save();
+          try {
+            var property = setting2Property(setting);
+            if (value == null) {
+              properties.remove(property);
+            } else {
+              properties.setProperty(property, Utils.Data.asString(value));
+            }
+            if (!Utils.Properties.save(settingsFile, properties)) {
+              Logging.INSTANCE.error("Error writing settings file " + settingsFile);
+            }
+          } catch (Exception e) {
+            Logging.INSTANCE.error("Error setting property: " + e.getMessage(), e);
+          }
         });
+    return null;
   }
 
   private String setting2Property(Setting setting) {

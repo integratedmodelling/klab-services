@@ -63,7 +63,7 @@ public class ResolverService extends BaseService implements Resolver {
 
   @Override
   protected <T extends KlabAsset> List<T> ingestResources(
-      ResourceSet resourceSet, Scope scope, Class<T> resultClass) {
+      ResourceSet resourceSet, Scope scope, Class<T> resultClass, boolean loadComponents) {
 
     List<T> ret = new ArrayList<>();
 
@@ -73,7 +73,7 @@ public class ResolverService extends BaseService implements Resolver {
             List<KlabAsset> mods = new ArrayList<>();
             kimNamespace.getStatements().stream()
                 .filter(statement -> statement instanceof KimModel kimModel)
-                .forEach(kimModel -> mods.add(loadModel((KimModel) kimModel, scope)));
+                .forEach(kimModel -> mods.add(loadModel((KimModel) kimModel, kimNamespace, scope)));
             return mods;
           }
           return List.of();
@@ -89,7 +89,15 @@ public class ResolverService extends BaseService implements Resolver {
   private void readConfiguration(ServiceStartupOptions options) {
     File config = BaseService.getFileInConfigurationDirectory(options, "resolver.yaml");
     if (config.exists() && config.length() > 0 && !options.isClean()) {
-      this.configuration = Utils.YAML.load(config, ResolverConfiguration.class);
+      try {
+        this.configuration = Utils.YAML.load(config, ResolverConfiguration.class);
+      } catch (Exception e) {
+        Logging.INSTANCE.warn("Configuration file is being reset after corruption was detected");
+        Utils.Files.deleteQuietly(config);
+        this.configuration = new ResolverConfiguration();
+        this.configuration.setServiceId(UUID.randomUUID().toString());
+        Utils.YAML.save(this.configuration, config);
+      }
     } else {
       // make an empty config
       this.configuration = new ResolverConfiguration();
@@ -120,7 +128,7 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   @Override
-  protected org.integratedmodelling.klab.services.configuration.ServiceConfiguration getServiceConfiguration() {
+  protected ResolverConfiguration getServiceConfiguration() {
     return this.configuration;
   }
 
@@ -128,24 +136,14 @@ public class ResolverService extends BaseService implements Resolver {
   public Capabilities capabilities(Scope scope) {
 
     var ret = new ResolverCapabilitiesImpl();
-    ret.setLocalName(localName);
+    ret.setServiceName(serviceName);
     ret.setType(Type.RESOLVER);
     ret.setUrl(getUrl());
     ret.setServerId(hardwareSignature == null ? null : ("RESOLVER_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
-    ret.setServiceName("Resolver");
-    //    ret.setBrokerURI(
-    //        (embeddedBroker != null && embeddedBroker.isOnline())
-    //            ? embeddedBroker.getURI()
-    //            : configuration.getBrokerURI());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
     ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
-
-    //    ret.setAvailableMessagingQueues(
-    //        Utils.URLs.isLocalHost(getUrl())
-    //            ? EnumSet.of(Message.Queue.Info, Message.Queue.Errors, Message.Queue.Warnings)
-    //            : EnumSet.noneOf(Message.Queue.class));
     return ret;
   }
 
@@ -171,11 +169,18 @@ public class ResolverService extends BaseService implements Resolver {
     return configuration.getServiceId();
   }
 
-  private Model loadModel(KimModel statement, Scope scope) {
+  private Model loadModel(KimModel statement, KimNamespace namespace, Scope scope) {
 
     var reasoner = scope.getService(Reasoner.class);
 
     ModelImpl model = new ModelImpl();
+    var resolutionInfo = new ModelImpl.ResolutionInfoImpl();
+
+    resolutionInfo.setScope(statement.getScope());
+    resolutionInfo.setInScenario(namespace.isScenario());
+    // TODO review how resolution criteria are handled
+    // TODO coverage!
+
     model.getAnnotations().addAll(statement.getAnnotations()); // FIXME process annotations
     for (KimObservable observable : statement.getObservables()) {
       model.getObservables().add(reasoner.resolveObservable(observable.getUrn()));
@@ -183,6 +188,8 @@ public class ResolverService extends BaseService implements Resolver {
     for (KimObservable observable : statement.getDependencies()) {
       model.getDependencies().add(reasoner.resolveObservable(observable.getUrn()));
     }
+
+    model.setResolutionInfo(resolutionInfo);
 
     // TODO learners, geometry covered etc.
     model.setUrn(statement.getUrn());

@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api.data;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.PrimitiveIterator;
 
@@ -10,14 +9,21 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.Persistence;
 
 /**
- * Base storage providing only general methods. Children enable either boxed I/O or faster native
- * operation (recommended). The runtime makes the choice based on the API of the contextualizers.
+ * Base storage providing only general methods. There is one Storage object per observation, managed
+ * by one {@link org.integratedmodelling.klab.api.digitaltwin.StorageManager} per {@link
+ * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin}
+ *
+ * <p>The interface is implemented by classes specialized for a particular type of data, enabling
+ * faster, non-boxing native operation. For this reason there are no set/get methods in the base
+ * {@link Buffer} interface used for I/O. The runtime makes the choice based on the API of the
+ * contextualizers or annotations added to models or concepts.
  *
  * @author Ferd
  */
 public interface Storage extends RuntimeAsset {
 
   enum Type {
+    @Deprecated
     BOXING,
     DOUBLE,
     FLOAT,
@@ -28,20 +34,17 @@ public interface Storage extends RuntimeAsset {
   }
 
   /**
-   * Tag interface for a buffer that can produce a filler using a particular filling curve for a
-   * geometry. The latter can be the full storage geometry or a sub-geometry for parallel,
-   * distributed implementations. Temporal events may produce modified buffers that share the same
-   * geometry except for the temporal location. The Buffer subclass obtained with Buffer is a value
-   * iterator using a specified fill curve and geometry.
-   *
-   * <p>Buffers have a unique ID and a geometry, plus a persistence status so that the {@link
-   * org.integratedmodelling.klab.api.digitaltwin.DigitalTwin} can set up copies, backups or other
-   * operations to be done to guarantee persistence across invocations.
+   * Tag interface for a buffer that can be filled according to a geometry and a filling curve.
+   * Offset and size may cover the full storage geometry or a sub-geometry for parallel, distributed
+   * implementations. Temporal events will produce modified buffers that share the same geometry
+   * except for the temporal extension. The Buffer subclass obtained with Buffer is a value iterator
+   * of the necessary type, with preference for non-boxing iterators.
    *
    * <p>Buffers are {@link RuntimeAsset}s because they end up in the {@link KnowledgeGraph} exposed
    * by the {@link org.integratedmodelling.klab.api.digitaltwin.DigitalTwin}.
    *
    * <p>Specific buffer types should also implement a mapping function for map/reduce operations.
+   * @deprecated see new implementation in StorageHelper
    */
   interface Buffer extends Data.Cursor, RuntimeAsset {
 
@@ -180,8 +183,8 @@ public interface Storage extends RuntimeAsset {
   Type getType();
 
   /**
-   * The {@link Data.SpaceFillingCurve} for the spatial arrangement in the buffers. The fill curve
-   * is established based on the geometry unless a <code>@fillcurve
+   * The {@link Data.FillCurve} for the spatial arrangement in the buffers. The fill curve is
+   * established based on the geometry unless a <code>@fillcurve
    * </code> annotation is present on the model. The fill curve is irrelevant if there is only one
    * spatial state or no spatial extent at all. In such cases it's best to avoid initializing a moot
    * Hilbert curve which has more overhead than the others.
@@ -190,7 +193,7 @@ public interface Storage extends RuntimeAsset {
    *
    * @return the spatial fill curve for the spatial extent.
    */
-  Data.SpaceFillingCurve spaceFillCurve();
+  Data.FillCurve spaceFillCurve();
 
   /**
    * Return the buffers that cover the passed geometry at the passed time. The time in the geometry
@@ -209,23 +212,23 @@ public interface Storage extends RuntimeAsset {
    */
   List<? extends Storage.Buffer> buffers(Geometry geometry, Time transition);
 
-  /**
-   * Return the buffers that cover the passed geometry at the passed time. The time in the geometry
-   * * is considered only if the specific time transition is null. Like {@link #buffers(Geometry,
-   * Time)} but enables some degree of recontextualization so that contextualizers can establish the
-   * fill curve they expect to use. The returned buffers must be capable of adapting to the
-   * requested parameters, which would normally come as <code>@storage</code> annotations built from
-   * the contextualizer's declaration.
-   *
-   * @param geometry
-   * @param transition the time from the event being contextualized.
-   * @param storageAnnotation
-   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
-   *     parameters cause non-resolvable conflicts with the underlying implementation.
-   * @return
-   */
-  List<? extends Storage.Buffer> buffers(
-      Geometry geometry, Time transition, Annotation storageAnnotation);
+//  /**
+//   * Return the buffers that cover the passed geometry at the passed time. The time in the geometry
+//   * * is considered only if the specific time transition is null. Like {@link #buffers(Geometry,
+//   * Time)} but enables some degree of recontextualization so that contextualizers can establish the
+//   * fill curve they expect to use. The returned buffers must be capable of adapting to the
+//   * requested parameters, which would normally come as <code>@storage</code> annotations built from
+//   * the contextualizer's declaration.
+//   *
+//   * @param geometry
+//   * @param transition the time from the event being contextualized.
+//   * @param storageAnnotation
+//   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
+//   *     parameters cause non-resolvable conflicts with the underlying implementation.
+//   * @return
+//   */
+//  List<? extends Storage.Buffer> buffers(
+//      Geometry geometry, Time transition, Annotation storageAnnotation);
 
   /**
    * Retrieve all buffers that cover the passed geometry at the passed time. The time in the

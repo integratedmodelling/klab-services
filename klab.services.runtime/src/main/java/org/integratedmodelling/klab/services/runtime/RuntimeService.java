@@ -12,6 +12,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -41,6 +42,7 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JEmbedded;
@@ -76,7 +78,15 @@ public class RuntimeService extends BaseService
   private void readConfiguration(ServiceStartupOptions options) {
     File config = BaseService.getFileInConfigurationDirectory(options, "runtime.yaml");
     if (config.exists() && config.length() > 0 && !options.isClean()) {
-      this.configuration = Utils.YAML.load(config, RuntimeConfiguration.class);
+      try {
+        this.configuration = Utils.YAML.load(config, RuntimeConfiguration.class);
+      } catch (Exception e) {
+        Logging.INSTANCE.warn("Configuration file is being reset after corruption was detected");
+        Utils.Files.deleteQuietly(config);
+        this.configuration = new RuntimeConfiguration();
+        this.configuration.setServiceId(UUID.randomUUID().toString());
+        Utils.YAML.save(this.configuration, config);
+      }
     } else {
       // make an empty config
       this.configuration = new RuntimeConfiguration();
@@ -183,12 +193,11 @@ public class RuntimeService extends BaseService
   public Capabilities capabilities(Scope scope) {
 
     var ret = new RuntimeCapabilitiesImpl();
-    ret.setLocalName(localName);
+    ret.setServiceName(serviceName);
     ret.setType(Type.RUNTIME);
     ret.setUrl(getUrl());
     ret.setServerId(hardwareSignature == null ? null : ("RUNTIME_" + hardwareSignature));
     ret.setServiceId(configuration.getServiceId());
-    ret.setServiceName("Runtime");
 
     // TODO this enables creating DTs from the passed scope
     ret.getPermissions()
@@ -300,7 +309,8 @@ public class RuntimeService extends BaseService
                   () -> {
                     for (var service : serviceContextScope.getServices(serviceClass)) {
                       // if things are OK, the service repeats the ID back
-                      if (!serviceContextScope
+                      if (service.status().isAvailable() &&
+                              !serviceContextScope
                           .getId()
                           .equals(service.registerNewContext(serviceContextScope, userScope))) {
                         fail.set(true);
@@ -600,10 +610,13 @@ public class RuntimeService extends BaseService
           return resolution;
         }
 
-        if (!ingestResources(resolution, scope)) {
+        if (!ingestResources(
+            resolution,
+            scope,
+            settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class))) {
           return ResourceSet.empty(
               Notification.error(
-                  "Cannot receive resources from " + resourcesService.getServiceName()));
+                  "Cannot receive resources from service " + resourcesService.serviceName()));
         }
         ret = Utils.Resources.merge(ret, resolution);
       }
@@ -617,6 +630,12 @@ public class RuntimeService extends BaseService
           return resolution;
         }
         ret = Utils.Resources.merge(ret, resolution);
+      }
+
+      // if any embeddable component was returned, attempt to load it
+      if (settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class)
+          && !getComponentRegistry().loadComponents(ret, scope)) {
+        Logging.INSTANCE.warn("Could not load components suggested after ingestion of resource");
       }
     }
 

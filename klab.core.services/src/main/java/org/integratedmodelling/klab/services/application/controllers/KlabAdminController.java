@@ -6,10 +6,12 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
-import org.integratedmodelling.common.authentication.Role;
+import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 
 /** Administration endpoints common to all k.LAB services. Accessible only to administrators. */
 @RestController
@@ -107,5 +110,23 @@ public class KlabAdminController {
             principal instanceof EngineAuthorization authorization
                 ? authorization.getScope()
                 : null);
+  }
+
+  /**
+   * Post the given setting to the service and return -1 if unsuccessful, 0 if successful, or a
+   * taskId > 1L if the change has triggered an operation. The posted {@link Parameters} value
+   * should, in most situations, contain the new setting value in its "value" field, but may contain
+   * more data in case the setting triggers a parameterizable operation.
+   *
+   * @return
+   */
+  @PostMapping(ServicesAPI.ADMIN.SETTINGS)
+  public @ResponseBody long postSetting(@RequestBody Parameters<String> data, Principal principal) {
+    return -1;
+  }
+
+  @GetMapping(ServicesAPI.ADMIN.SETTINGS)
+  public @ResponseBody Map<String, Object> getSettings(Principal principal) {
+    return Map.of();
   }
 }

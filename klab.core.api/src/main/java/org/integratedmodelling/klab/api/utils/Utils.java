@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.utils;
 
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classifier;
@@ -25,6 +26,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
 
@@ -41,6 +43,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.*;
 import java.util.Map.Entry;
@@ -129,6 +132,54 @@ public class Utils {
       }
 
       return "#" + total + "(" + nans + " NaN): min = " + min + ", max = " + max;
+    }
+  }
+
+  public static class Properties {
+
+    /**
+     * Load properties from file without ancient Java issues
+     *
+     * @param file
+     * @param properties
+     * @return true if successful
+     */
+    public static boolean load(File file, java.util.Properties properties) {
+
+      try (var input = new FileInputStream(file)) {
+        properties.load(input);
+      } catch (IOException e) {
+        return false;
+      }
+      return true;
+    }
+
+    /**
+     * Save properties to file without ancient Java issues
+     *
+     * @param file
+     * @param properties
+     * @return true if successful
+     */
+    public static boolean save(File file, java.util.Properties properties) {
+      try (var output = new FileOutputStream(file)) {
+        properties.store(output, "Saved by k.LAB on " + LocalDateTime.now());
+      } catch (IOException e) {
+        return false;
+      }
+      return true;
+    }
+
+    /**
+     * Dump to string
+     *
+     * @param prop
+     * @return
+     */
+    public static String toString(java.util.Properties prop) {
+      StringWriter writer = new StringWriter();
+      prop.list(new PrintWriter(writer));
+      return writer.getBuffer().toString();
     }
   }
 
@@ -299,6 +350,28 @@ public class Utils {
       ResourceSet ret = new ResourceSet();
       ret.setEmpty(true);
       ret.getNotifications().add(notification);
+      return ret;
+    }
+
+    /**
+     * Return the parameters from a resource after adding/overriding them with any parameters in the
+     * URN, ensuring that the types are compatible with any existing ones.
+     *
+     * @param resource
+     * @param urn
+     * @return
+     */
+    public static Parameters<String> overrideParameters(Resource resource, Urn urn) {
+      Parameters<String> ret = Parameters.create(resource.getParameters());
+      for (var entry : urn.getParameters().entrySet()) {
+        if (ret.containsKey(entry.getKey())) {
+          ret.computeIfPresent(
+              entry.getKey(), (k, existing) -> Data.asType(entry.getValue(), existing.getClass()));
+        } else {
+          ret.put(entry.getKey(), entry.getValue());
+        }
+      }
+      ret.putAll(urn.getParameters());
       return ret;
     }
 
@@ -624,6 +697,54 @@ public class Utils {
       }
 
       return false;
+    }
+
+    /**
+     * Validate a map of parameters against a list of prototypes. The result is a set of
+     * notifications, containing errors if anything is invalid, i.e. non-optional parameters are
+     * missing or types are wrong, and warnings for any parameter not in the prototypes
+     *
+     * <p>TODO should take options to validate non-nulls, roles and the like.
+     *
+     * @param prototypes
+     * @param parameters
+     * @return notifications for any issue encountered
+     */
+    public static List<Notification> validateParameters(
+        List<Adapter.Parameter> prototypes, Map<String, Object> parameters) {
+
+      List<Notification> ret = new ArrayList<>();
+      Set<String> knownPrototypes = new HashSet<>();
+
+      for (var prototype : prototypes) {
+        knownPrototypes.add(prototype.getName());
+        if (!prototype.isOptional() && parameters.get(prototype.getName()) == null) {
+          ret.add(Notification.error("Missing required parameter " + prototype.getName()));
+        }
+        var value = parameters.get(prototype.getName());
+        if (value != null) {
+          if (!prototype.getEnumValues().isEmpty()) {
+            if (!(value instanceof String string) || !prototype.getEnumValues().contains(string)) {
+              ret.add(
+                  Notification.error(
+                      "Invalid value for parameter "
+                          + prototype.getName()
+                          + " expected one of "
+                          + prototype.getEnumValues()));
+            }
+          } else if (!Utils.Data.validateAs(value, prototype.getType())) {
+            ret.add(Notification.error("Invalid type for parameter " + prototype.getName()));
+          }
+        }
+      }
+
+      for (var key : parameters.keySet()) {
+        if (!knownPrototypes.contains(key)) {
+          ret.add(Notification.warning("Unknown parameter " + key));
+        }
+      }
+
+      return ret;
     }
   }
 
@@ -1984,6 +2105,23 @@ public class Utils {
   public static class Strings {
 
     /**
+     * Remove the same number of characters from the start and end of a string.
+     *
+     * @param s
+     * @param n
+     * @return
+     */
+    public static String chopSymmetrically(String s, int n) {
+      var ret = s;
+      for (int i = 0; i < n; i++) {
+        if (ret.length() >= 2) {
+          ret = ret.substring(1, s.length() - 1);
+        }
+      }
+      return ret;
+    }
+
+    /**
      * Produce a label from an identifier: zio_polpettone -> "Zio polpettone"
      *
      * @param string
@@ -1994,7 +2132,7 @@ public class Utils {
     }
 
     /**
-     * Base64-encoded Sha256 hash of the passed input
+     * Base64-encoded Sha256 hash of the passed input.
      *
      * @param input
      * @return the hashed string, or null if the input is null
@@ -2326,12 +2464,6 @@ public class Utils {
       }
 
       return ret;
-    }
-
-    public static String propertiesToString(Properties prop) {
-      StringWriter writer = new StringWriter();
-      prop.list(new PrintWriter(writer));
-      return writer.getBuffer().toString();
     }
 
     /**
@@ -3443,6 +3575,27 @@ public class Utils {
      * @param s the s
      * @return s with no .xxx at end.
      */
+    public static File getFileBasePath(File s) {
+      return new File(getFileBasePath(s.toString()));
+    }
+
+    /**
+     * Return same file path with a different extension.
+     *
+     * @param s the s
+     * @return s with no .xxx at end.
+     */
+    public static File changeExtension(File s, String extension) {
+      return new File(
+          getFileBasePath(s.toString()) + (extension.startsWith(".") ? "" : ".") + extension);
+    }
+
+    /**
+     * Return file path without extension if any.
+     *
+     * @param s the s
+     * @return s with no .xxx at end.
+     */
     public static String getFileBasePath(String s) {
 
       String ret = s;
@@ -4162,12 +4315,21 @@ public class Utils {
       if (type == tp) {
         return true;
       }
+      if (type == Type.URL && pod instanceof String string) {
+        try {
+          new URI(string).toURL();
+        } catch (Exception e) {
+          return false;
+        }
+        return true;
+      }
       if (tp == Type.TEXT) {
         Object converted = asPOD(pod.toString());
         if (converted != null) {
           return getArtifactType(converted.getClass()) == type;
         }
       }
+
       return false;
     }
 
@@ -4346,6 +4508,20 @@ public class Utils {
     public static <T> List<T> parseList(String s, Class<T> resultClass) {
       var ret = new ArrayList<T>();
       for (String token : s.split(",")) {
+        ret.add(parseAsType(token.trim(), resultClass));
+      }
+      return ret;
+    }
+
+    /**
+     * Split into tokens according to the passed separator for split() and parse each as a double
+     *
+     * @param s
+     * @return
+     */
+    public static <T> List<T> parseList(String s, Class<T> resultClass, String separatorRegex) {
+      var ret = new ArrayList<T>();
+      for (String token : s.split(separatorRegex)) {
         ret.add(parseAsType(token.trim(), resultClass));
       }
       return ret;

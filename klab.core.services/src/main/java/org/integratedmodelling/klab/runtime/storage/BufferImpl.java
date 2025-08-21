@@ -15,10 +15,10 @@ import org.integratedmodelling.klab.utilities.Utils;
 /** Base buffer provides the histogram and the geometry indexing/merging */
 public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
 
-  private final Data.SpaceFillingCurve spaceFillingCurve;
+  private final Data.FillCurve fillCurve;
   private final Persistence persistence;
   private final Storage.Type dataType;
-  private final long offset;
+  protected final long offset;
   private long id; // for reference in the knowledge graoh
   private final String urn; // for persistent reference in storage manager
   private final StorageImpl storage;
@@ -30,25 +30,25 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
    * @param geometry The <em>overall</em> geometry for the buffer
    * @param stateStorage
    * @param size
-   * @param spaceFillingCurve
-   * @param offsets extent-based offsets with the start offset in the
+   * @param fillCurve
+   * @param offset extent-based offsets with the start offset in the storage
    */
   protected BufferImpl(
       Geometry geometry,
       Observation observation,
       StorageImpl stateStorage,
       long size,
-      Data.SpaceFillingCurve spaceFillingCurve,
-      long offsets,
+      Data.FillCurve fillCurve,
+      long offset,
       long timestamp) {
-    super(geometry, spaceFillingCurve);
+//    super(geometry, spaceFillingCurve);
     this.storage = stateStorage;
     this.timestamp = timestamp;
     this.dataType = stateStorage.getType();
     this.urn = observation.getUrn() + "#" + stateStorage.stateStorage.nextBufferId();
     this.persistence = Persistence.SERVICE_SHUTDOWN;
-    this.offset = offsets;
-    this.spaceFillingCurve = spaceFillingCurve;
+    this.offset = offset;
+    this.fillCurve = fillCurve;
     if (stateStorage.stateStorage.isRecordHistogram()) {
       this.histogram =
           com.dynatrace.dynahist.Histogram.createDynamic(
@@ -90,8 +90,8 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
     this.transientId = transientId;
   }
 
-  public Data.SpaceFillingCurve getFillingCurve() {
-    return spaceFillingCurve;
+  public Data.FillCurve getFillingCurve() {
+    return fillCurve;
   }
 
   public Persistence getPersistence() {
@@ -124,7 +124,7 @@ public abstract class BufferImpl extends CursorImpl implements Storage.Buffer {
   public String toString() {
     return "Buffer{"
         + "fillCurve="
-        + spaceFillingCurve
+        + fillCurve
         + ", size="
         + multiplicity
         + ", offset="

@@ -1,7 +1,9 @@
 package org.integratedmodelling.klab.data;
 
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -12,6 +14,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+
+import java.util.ArrayList;
 
 public abstract class AbstractResourceContextualizer {
 
@@ -31,11 +35,24 @@ public abstract class AbstractResourceContextualizer {
   }
 
   public boolean contextualize(Observation observation, Scheduler.Event event, ContextScope scope) {
-    var data = getData(observation.getGeometry(), event, scope);
-    if (data == null || data.empty()) {
+
+    try {
+      var data = getData(observation.getGeometry(), event, scope);
+      if (data == null || data.empty()) {
+        return false;
+      }
+      var adapters = observation.getMetadata().get(Metadata.KLAB_ADAPTER_URNS, String.class);
+      adapters =
+          adapters == null || adapters.isEmpty()
+              ? resource.getAdapterType()
+              : (adapters + "," + resource.getAdapterType());
+      observation.getMetadata().put(Metadata.KLAB_ADAPTER_URNS, adapters);
+
+      return scope.getDigitalTwin().ingest(data, observation, event, scope);
+    } catch (Exception e) {
+      scope.error(e);
       return false;
     }
-    return scope.getDigitalTwin().ingest(data,observation, event, scope);
   }
 
   /**

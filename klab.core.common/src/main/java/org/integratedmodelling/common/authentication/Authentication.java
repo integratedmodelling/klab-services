@@ -252,7 +252,7 @@ public enum Authentication {
         /* validate federation data */
         var federationData = Klab.INSTANCE.getFederationData(ret);
         if (federationData != null) {
-          Logging.INSTANCE.info("User " + ret.getUsername() + " is part of the " + federationData);
+          Logging.INSTANCE.info("User " + ret.getUsername() + " is part of the " + federationData.toString());
           ret.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federationData);
         }
 

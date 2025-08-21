@@ -2,11 +2,15 @@ package org.integratedmodelling.klab.services.scopes;
 
 // import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 // import io.reacted.core.reactorsystem.ReActorSystem;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.common.authentication.UserIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.identities.PartnerIdentity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -15,12 +19,17 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.integratedmodelling.klab.rest.GroupImpl;
 import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.base.BaseService;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -138,9 +147,31 @@ public class ScopeManager {
 
     UserIdentityImpl ret = new UserIdentityImpl();
     ret.setUsername(engineAuthorization.getUsername());
+    ret.setEmailAddress(engineAuthorization.getEmailAddress());
     ret.setId(engineAuthorization.getToken());
     ret.setAuthenticated(engineAuthorization.isAuthenticated());
-    ret.getGroups().addAll(engineAuthorization.getGroups());
+    URL hub = null;
+    if (service.serviceScope().getIdentity() instanceof PartnerIdentity serviceIdentity) {
+      Collection<GroupImpl> groups = null;
+      try {
+        hub = new URI(serviceIdentity.getAuthenticatingHub()).toURL();
+      } catch (MalformedURLException | URISyntaxException e) {
+        throw new KlabIllegalArgumentException(e);
+      }
+      String token = serviceIdentity.getToken();
+      Utils.Http.Client client = Utils.Http.getClient(hub, service.serviceScope());
+      groups =
+          client
+              .withAuthentication(token)
+              .getCollection(
+                  ServicesAPI.HUB.USER_BASE_ID_SERVICES.replace("{id}", ret.getUsername()),
+                  GroupImpl.class);
+      if (groups != null) {
+        ret.getGroups().addAll(groups);
+      }
+    } else {
+      ret.getGroups().addAll(engineAuthorization.getGroups());
+    }
     return ret;
   }
 
@@ -164,20 +195,32 @@ public class ScopeManager {
     ret = login(createUserIdentity(authorization));
 
     ret.getRoles().addAll(authorization.getRoles());
-
-    if (authorization.isLocal()) {
-      ret.setLocal(true);
-      // setup queues in scope if user is local and messaging is configured, Queue will be
-      // servicetype.username.queuetype
-      var brokerURI = authorization.getBrokerUrl();
+    //    var federation = Klab.INSTANCE.getFederationData(ret.getUser());
+    //
+    //    if (authorization.isLocal()) {
+    //      ret.setLocal(true);
+    //      // setup queues in scope if user is local and messaging is configured, Queue will be
+    //      // servicetype.username.queuetype
+    //      var brokerURI = authorization.getBrokerUrl();
+    //      if (brokerURI != null) {
+    //        federation = new Federation(authorization.getFederationId(), brokerURI);
+    //        ret.setupMessaging(federation, authorization.getFederationId(), ret.defaultQueues());
+    //      }
+    //    } else {
+    var federation = Klab.INSTANCE.getFederationData(ret.getUser());
+    if (federation != null) {
+      var brokerURI = federation.getBroker();
       if (brokerURI != null) {
-        ret.setupMessaging(
-            new Federation(authorization.getFederationId(), brokerURI),
-            authorization.getFederationId(),
-            ret.defaultQueues());
+        ret.setupMessaging(federation, federation.getId(), ret.defaultQueues());
       }
     }
-
+    //    }
+    Logging.INSTANCE.info(
+        "User "
+            + ret.getUser().getUsername()
+            + (federation == null
+                ? " is not part of any federation"
+                : " part of federation " + federation.getId()));
     return ret;
   }
 

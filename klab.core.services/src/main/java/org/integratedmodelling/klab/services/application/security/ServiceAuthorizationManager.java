@@ -93,14 +93,14 @@ public class ServiceAuthorizationManager {
 
     if (serverHub == null) {
       throw new KlabAuthorizationException(
-          "a node cannot be started without a valid authenticating " + "hub");
+          "a service cannot be started without a valid authenticating hub");
     }
 
     this.authenticatingHub = serverHub;
     this.nodeName =
         certificate.getProperty(KlabCertificate.KEY_NODENAME) != null
             ? certificate.getProperty(KlabCertificate.KEY_NODENAME)
-            : options.getServiceName();
+            : /*options.getServiceName()*/ null;
     this.type =
         KlabService.Type.valueOf(certificate.getProperty(KlabCertificate.KEY_CERTIFICATE_TYPE));
     ServiceAuthenticationRequest request = new ServiceAuthenticationRequest(type);
@@ -122,10 +122,10 @@ public class ServiceAuthorizationManager {
     ServiceAuthenticationResponse response;
     try (var client = Utils.Http.getClient(this.authenticatingHub, null)) {
       Logging.INSTANCE.info(
-              "authenticating "
-                      + certificate.getProperty(KlabCertificate.KEY_NODENAME)
-                      + " with hub "
-                      + authenticatingHub);
+          "authenticating "
+              + certificate.getProperty(KlabCertificate.KEY_NODENAME)
+              + " with hub "
+              + authenticatingHub);
       response =
           client.post(
               ServicesAPI.HUB.AUTHENTICATE_SERVICE, request, ServiceAuthenticationResponse.class);
@@ -198,7 +198,8 @@ public class ServiceAuthorizationManager {
     ret.setToken((response.getUserData().getToken()));
     ret.setUrl(certificate.getProperty(KlabCertificate.KEY_URL));
     ret.setIdentityType(Identity.Type.SERVICE);
-    ((ServiceStartupOptions)options).updateOptionsFromCertificate(certificate);
+    ret.setAuthenticatingHub(certificate.getProperty(KlabCertificate.KEY_PARTNER_HUB));
+    ((ServiceStartupOptions) options).updateOptionsFromCertificate(certificate);
     return Pair.of(ret, response.getServices());
   }
 
@@ -233,12 +234,16 @@ public class ServiceAuthorizationManager {
    * and roles as expected.
    */
   public EngineAuthorization validateToken(
-      String token, String serverKey, String scopeHeader, String brokerUrl, String federationId) {
+      String token,
+      String serverKey,
+      String scopeHeader /*, String brokerUrl, String federationId*/) {
 
     EngineAuthorization ret = null;
 
     var privilegedLocalService =
-        serverKey != null && serverKey.equals(klabService.get().klabService().getServiceSecret());
+        serverKey != null
+            && serverKey.equals(klabService.get().klabService().getServiceSecret())
+            && Utils.URLs.isLocalHost(klabService.get().klabService().getUrl());
 
     /*
     we move on to JWT parsing only if the service is authenticated with the hub and the user is not
@@ -274,10 +279,10 @@ public class ServiceAuthorizationManager {
               new EngineAuthorization(
                   hubId,
                   username,
-                  brokerUrl,
-                  federationId,
+                  //                  brokerUrl,
+                  //                  federationId,
                   token,
-                  groupStrings,
+                  List.of(),
                   Collections.unmodifiableList(filterRoles(roleStrings)));
 
           /*
@@ -328,7 +333,7 @@ public class ServiceAuthorizationManager {
       /*
       anonymous user case also intercepts JWT token failure
        */
-      ret = new EngineAuthorization("nohub", "anonymous", null, null, null, List.of(), null);
+      ret = new EngineAuthorization("nohub", "anonymous", null, List.of(), List.of());
       ret.setTokenString(ServicesAPI.ANONYMOUS_TOKEN);
     }
 
@@ -348,12 +353,10 @@ public class ServiceAuthorizationManager {
         ret.setGroups(user.getGroups());
         ret.setEmailAddress(user.getEmailAddress());
       }
-
     }
 
     /** User scope is created anyway. */
     Scope scope = klabService.get().klabService().getScopeManager().getOrCreateUserScope(ret);
-
     if (scope == null) {
       System.out.println("DIO DIO");
     }

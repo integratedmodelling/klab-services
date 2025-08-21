@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.utilities;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -15,9 +17,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.CheckoutConflictException;
@@ -31,26 +30,78 @@ import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UIView;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
+import org.locationtech.jts.geom.prep.PreparedGeometry;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 public class Utils extends org.integratedmodelling.common.utils.Utils {
+
+  /** Utils to simplify accessing the JTS objects behind a scale or geometry */
+  public static class Space {
+
+    /**
+     * If the passed geometry/scale has a shape, return the prepared geometry corresponding to it.
+     * The prepared geometry is cached along with the scale.
+     *
+     * @param geometry
+     * @return a prepared geometry or null
+     */
+    public static PreparedGeometry getPreparedJTSShape(Geometry geometry) {
+      var scale = GeometryRepository.INSTANCE.scale(geometry);
+      var space = scale.getSpace();
+      if (space != null && space.getGeometricShape() instanceof ShapeImpl shape) {
+        return shape.getPreparedGeometry();
+      }
+      return null;
+    }
+
+    /**
+     * If the passed geometry/scale has a shape, return the JTS geometry corresponding to it.
+     *
+     * @param geometry
+     * @return a JTS geometry or null
+     */
+    public static org.locationtech.jts.geom.Geometry getJTSShape(Geometry geometry) {
+      var scale = GeometryRepository.INSTANCE.scale(geometry);
+      var space = scale.getSpace();
+      if (space != null && space.getGeometricShape() instanceof ShapeImpl shape) {
+        return shape.getJTSGeometry();
+      }
+      return null;
+    }
+
+    /**
+     * If the passed geometry/scale has a shape, return the JTS geometry corresponding to it,
+     * ensuring it is in EPSG:4326 projection.
+     *
+     * @param geometry
+     * @return a JTS geometry or null
+     */
+    public static org.locationtech.jts.geom.Geometry getStandardizedJTSShape(Geometry geometry) {
+      var scale = GeometryRepository.INSTANCE.scale(geometry);
+      var space = scale.getSpace();
+      if (space != null && space.getGeometricShape() instanceof ShapeImpl shape) {
+        return shape.getStandardizedGeometry();
+      }
+      return null;
+    }
+  }
 
   public static class Templates extends org.integratedmodelling.klab.api.utils.Utils.Templates {
 
@@ -681,7 +732,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           java.nio.file.Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
           Logging.INSTANCE.error(e);
-          return null;      }
+          return null;
+        }
 
         Logging.INSTANCE.info(
             "Successfully downloaded {} to {}", fileName, targetFile.getAbsolutePath());
@@ -1208,6 +1260,16 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     public static boolean deleteQuietly(File pdir) {
       return FileUtils.deleteQuietly(pdir);
+    }
+
+    public static boolean copy(File source, File destination) {
+      try {
+        FileUtils.copyFile(source, destination);
+        return true;
+      } catch (IOException e) {
+        Logging.INSTANCE.error(e);
+      }
+      return false;
     }
 
     public static void copyDirectory(File directory, File backupDir) {

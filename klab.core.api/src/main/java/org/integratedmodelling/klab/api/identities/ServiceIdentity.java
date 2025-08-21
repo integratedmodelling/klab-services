@@ -15,6 +15,7 @@
  */
 package org.integratedmodelling.klab.api.identities;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.Date;
 
@@ -64,4 +65,10 @@ public abstract interface ServiceIdentity extends RuntimeIdentity {
 	 * @return
 	 */
 	String getToken();
+
+	/**
+	 * The URL of authenticating hub for this service
+	 * @return
+	 */
+	URL getHubUrl();
 }

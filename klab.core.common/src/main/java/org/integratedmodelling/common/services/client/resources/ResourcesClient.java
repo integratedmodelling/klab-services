@@ -5,24 +5,26 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import java.io.File;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import javax.annotation.Nullable;
-
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -42,9 +44,8 @@ import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
-import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -196,11 +197,11 @@ public class ResourcesClient extends ServiceClient
 
     var ret =
         client
-            .withHeader(
-                ServicesAPI.MESSAGING_URL_HEADER,
-                federation == null ? null : federation.getBroker())
-            .withHeader(
-                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
+//            .withHeader(
+//                ServicesAPI.MESSAGING_URL_HEADER,
+//                federation == null ? null : federation.getBroker())
+//            .withHeader(
+//                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
             .post(
                 ServicesAPI.CREATE_SESSION,
                 request,
@@ -286,11 +287,11 @@ public class ResourcesClient extends ServiceClient
         client
             .withScope(scope.getParentScope())
             .withHeader(ServicesAPI.SERVICE_ID_HEADER, scope.getHostServiceId())
-            .withHeader(
-                ServicesAPI.MESSAGING_URL_HEADER,
-                federation == null ? null : federation.getBroker())
-            .withHeader(
-                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
+//            .withHeader(
+//                ServicesAPI.MESSAGING_URL_HEADER,
+//                federation == null ? null : federation.getBroker())
+//            .withHeader(
+//                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
             .post(
                 ServicesAPI.CREATE_CONTEXT,
                 request,
@@ -336,6 +337,20 @@ public class ResourcesClient extends ServiceClient
     return client
         .withScope(scope)
         .get(ServicesAPI.RESOURCES.RETRIEVE_ONTOLOGY, KimOntology.class, "urn", urn);
+  }
+
+  @Override
+  public List<ResourceInfo> queryResources(
+      String queryString, Scope scope, KnowledgeClass... resourceTypes) {
+    return client
+        .withScope(scope)
+        .getCollection(
+            ServicesAPI.RESOURCES.QUERY_RESOURCES,
+            ResourceInfo.class,
+            "query",
+            queryString,
+            "resourceTypes",
+            Utils.Strings.join(Arrays.asList(resourceTypes), ","));
   }
 
   @Override
@@ -467,7 +482,7 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
-  public Data contextualize(
+  public CompletableFuture<Data> contextualize(
       Resource contextualizedResource,
       Observation observation,
       Scheduler.Event event,
@@ -477,14 +492,14 @@ public class ResourcesClient extends ServiceClient
     DataRequest request =
         DataRequest.newBuilder()
             .setInputData(data instanceof BaseDataImpl data1 ? data1.asInstance() : null)
-            // .setObservable(observation.getObservable().getUrn())
+            .setObservable(observation.getObservable().getUrn())
             .setGeometry(observation.getGeometry().encode())
             .setResourceUrns(List.of(contextualizedResource.getUrn()))
             .setStartTime(event == null ? 0 : event.getTime().getStart().getMilliseconds())
             .setEndTime(event == null ? 0 : event.getTime().getEnd().getMilliseconds())
             .build();
 
-    return client.postData(request);
+    return client.withScope(scope).postData(request);
   }
 
   @Override
@@ -508,7 +523,7 @@ public class ResourcesClient extends ServiceClient
   public AdapterDescriptor retrieveAdapterInfo(String adapterType, Scope scope) {
     return client
         .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RETRIEVE_ADAPTER_INFO, AdapterDescriptor.class);
+        .get(ServicesAPI.RESOURCES.RETRIEVE_ADAPTER_INFO, AdapterDescriptor.class, "urn", adapterType);
   }
 
   @Override
@@ -533,12 +548,6 @@ public class ResourcesClient extends ServiceClient
     return client
         .withScope(scope)
         .post(ServicesAPI.RESOURCES.RESOLVE_MODELS, request, ResourceSet.class);
-  }
-
-  @Override
-  public List<String> queryResources(String urnPattern, KnowledgeClass... resourceTypes) {
-    // TODO Auto-generated method stub
-    return null;
   }
 
   @Override
@@ -671,7 +680,11 @@ public class ResourcesClient extends ServiceClient
 
   @Override
   public ResourceInfo registerResource(
-      String urn, KnowledgeClass knowledgeClass, File file, Scope submittingScope) {
+      String urn,
+      KnowledgeClass knowledgeClass,
+      File file,
+      ResourcePrivileges rights,
+      Scope submittingScope) {
     throw new KlabIllegalStateException(
         "resources service: registerResource() should not be called by clients");
   }

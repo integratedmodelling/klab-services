@@ -4,9 +4,8 @@ import org.integratedmodelling.klab.api.services.CurrencyService;
 
 public class CurrencyServiceImpl implements CurrencyService {
 
-	@Override
-	public String getServiceName() {
-		return "currency";
-	}
-
+  @Override
+  public String serviceName() {
+    return "k.LAB Currency Service";
+  }
 }

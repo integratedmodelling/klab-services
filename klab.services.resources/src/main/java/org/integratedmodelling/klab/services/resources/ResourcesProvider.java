@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.data.SerializingDataBuilder;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
@@ -193,17 +194,6 @@ public class ResourcesProvider extends BaseService
     this.workspaceManager =
         new WorkspaceManager(scope, getStartupOptions(), this, this::resolveRemoteProject);
     this.resourceManager = new ResourceManager(this.resourcesKbox, this);
-    //    // FIXME remove along with MapDB and catalog, use Nitrite instead
-    //    this.db =
-    //        DBMaker.fileDB(
-    //                getConfigurationSubdirectory(options, "catalog") + File.separator +
-    // "resources.db")
-    //            .transactionEnable()
-    //            .closeOnJvmShutdown()
-    //            .make();
-    //    this.catalog =
-    //        db.treeMap("resourcesCatalog", GroupSerializer.STRING,
-    // GroupSerializer.JAVA).createOrOpen();
 
     /*
     initialize the plugin system to handle components
@@ -419,8 +409,7 @@ public class ResourcesProvider extends BaseService
       return createUniversalResource(urn, scope);
     }
 
-    // TODO use kbox
-    return null;
+    return resourcesKbox.getResource(urnId, urn.getVersion());
   }
 
   private Resource createUniversalResource(Urn urn, Scope scope) {
@@ -451,7 +440,10 @@ public class ResourcesProvider extends BaseService
     var version = Version.splitVersion(urn);
     var adapter = getComponentRegistry().getAdapter(urn, version.getSecond(), scope);
     if (adapter == null) {
-      return ResourceSet.empty();
+      // TODO lookup component in the other services that the scope provides.
+    }
+    if (adapter == null) {
+      return ResourceSet.empty(Notification.error("No adapter available for " + urn));
     }
     // TODO
     return null;
@@ -473,7 +465,8 @@ public class ResourcesProvider extends BaseService
                     component.id(),
                     null,
                     component.version(),
-                    KnowledgeClass.COMPONENT));
+                    KnowledgeClass.COMPONENT,
+                    false));
       }
     }
 
@@ -493,7 +486,7 @@ public class ResourcesProvider extends BaseService
       return resolveResourceUrn(urnIds.getFirst(), scope);
     }
 
-    return ResourceSet.empty(Notification.error("UNIMPLEMENTED"));
+    return ResourceSet.empty(Notification.error("MULTIPLE RESOURCE RESOLUTION IS UNIMPLEMENTED"));
   }
 
   @Override
@@ -520,19 +513,46 @@ public class ResourcesProvider extends BaseService
 
     var urn = Urn.of(urnId);
     ResourceSet ret = new ResourceSet();
+    Resource resource = null;
+    var adapterId = urn.getCatalog();
+    var adapterVersion = urn.getVersion();
+    if (!urn.isUniversal()) {
+      resource = resourcesKbox.getResource(urnId, urn.getVersion());
+      if (resource == null) {
+        return ResourceSet.empty(Notification.error("No resource found for URN " + urnId));
+      }
+      var split = Version.splitVersion(resource.getAdapterType());
+      adapterId = split.getFirst();
+      adapterVersion = split.getSecond();
+    }
+
+    var adapter = getComponentRegistry().getAdapter(adapterId, adapterVersion, scope);
+    if (adapter == null) {
+      return ResourceSet.empty(
+          Notification.error(
+              "Adapter " + adapterId + "  is unavailable to this scope for resource " + urnId));
+    }
+
+    var info = adapter.getAdapterInfo();
+    if (info.getValidatedPhases().contains(ResourceAdapter.Validator.LifecyclePhase.UrnSyntax)) {
+      // TODO validate the URN before returning
+    }
+
+    if (adapter.isEmbeddable()) {
+      // runtime will decide what to do, but we can embed the adapter so we can add an optional
+      // dependency on the component that provides it.
+      ret.getResults()
+          .add(
+              new ResourceSet.Resource(
+                  this.serviceId(),
+                  adapter.getComponentUrn(),
+                  null,
+                  adapter.getComponentVersion(),
+                  KnowledgeClass.COMPONENT,
+                  true));
+    }
+
     if (urn.isUniversal()) {
-
-      var adapter = getComponentRegistry().getAdapter(urn.getCatalog(), Version.ANY_VERSION, scope);
-      if (adapter == null) {
-        return ResourceSet.empty(
-            Notification.error("No adapter available for " + urn.getCatalog()));
-      }
-
-      var info = adapter.getAdapterInfo();
-      if (info.getValidatedPhases().contains(ResourceAdapter.Validator.LifecyclePhase.UrnSyntax)) {
-        // TODO validate the URN before returning
-      }
-
       ret.getResults()
           .add(
               new ResourceSet.Resource(
@@ -540,24 +560,40 @@ public class ResourcesProvider extends BaseService
                   urn.getUrn(),
                   null,
                   adapter.getVersion(),
-                  KnowledgeClass.RESOURCE));
+                  KnowledgeClass.RESOURCE,
+                  false));
 
       return ret;
-
-    } else if (urn.isLocal()) {
-
-      // must have project and be same user. Staging area is accessible.
-
-    } else {
-
-      // use the resource
     }
 
-    return ResourceSet.empty(Notification.error("UNIMPLEMENTED"));
+    // TODO figure out what kind of dependencies may be needed by a resource - possibly
+    //  other resources, e.g. for codelists
+
+    ret.getResults()
+        .add(
+            new ResourceSet.Resource(
+                this.serviceId(),
+                resource.getUrn(),
+                null,
+                resource.getVersion(),
+                KnowledgeClass.RESOURCE,
+                false));
+
+    return ret;
   }
 
   @Override
-  public Data contextualize(
+  public CompletableFuture<Data> contextualize(
+      Resource resource,
+      Observation observation,
+      Scheduler.Event event,
+      @Nullable Data input,
+      Scope scope) {
+    return CompletableFuture.supplyAsync(
+        () -> contextualizeSynchronous(resource, observation, event, input, scope));
+  }
+
+  public Data contextualizeSynchronous(
       Resource resource,
       Observation observation,
       Scheduler.Event event,
@@ -565,6 +601,7 @@ public class ResourcesProvider extends BaseService
       Scope scope) {
     var adapter =
         getComponentRegistry().getAdapter(resource.getAdapterType(), resource.getVersion(), scope);
+
     if (adapter == null) {
       return Data.empty(
           Notification.error("Adapter " + resource.getAdapterType() + " not available"));
@@ -573,9 +610,12 @@ public class ResourcesProvider extends BaseService
         observation.getObservable().getStatedName() == null
             ? observation.getObservable().getUrn()
             : observation.getObservable().getStatedName();
-    var builder = Data.builder(name, observation.getObservable(), observation.getGeometry());
+
+    var builder =
+        new SerializingDataBuilder(name, observation.getObservable(), observation.getGeometry());
     Urn urn = Urn.of(resource.getUrn());
-    if (!adapter.encode(
+
+    if (adapter.encode(
         resource,
         observation.getGeometry(),
         event,
@@ -586,9 +626,9 @@ public class ResourcesProvider extends BaseService
         Parameters.create(urn.getParameters()),
         input,
         scope)) {
-      return Data.empty(Notification.error("Resource encoding failed"));
+      return builder.build();
     }
-    return builder.build();
+    return Data.empty(Notification.error("Encoding failed"));
   }
 
   @Override
@@ -869,9 +909,9 @@ public class ResourcesProvider extends BaseService
     ret.setWorldviewProvider(workspaceManager.isWorldviewProvider());
     ret.setAdoptedWorldview(workspaceManager.getAdoptedWorldview());
     ret.setWorkspaceNames(workspaceManager.getWorkspaceURNs());
+    ret.setServiceName(serviceName);
     ret.setType(Type.RESOURCES);
     ret.setUrl(getUrl());
-    ret.setServiceName("Resources");
     ret.setServerId(hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature));
     ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
     ret.getServiceNotifications().addAll(serviceNotifications());
@@ -1104,7 +1144,8 @@ public class ResourcesProvider extends BaseService
                         project.getUrn(),
                         project.getUrn(),
                         project.getManifest().getVersion(),
-                        KnowledgeClass.PROJECT)));
+                        KnowledgeClass.PROJECT,
+                        false)));
 
     return ret;
   }
@@ -1133,61 +1174,56 @@ public class ResourcesProvider extends BaseService
   //    }
 
   //    @Override
-  @Deprecated // remove when the import mechanism can do this
-  public ResourceSet createResource(File resourcePath, UserScope scope) {
-
-    KnowledgeClass knowledgeClass = null;
-    File sourceFile = null;
-    String urn = null;
-    ResourceSet ret = null;
-
-    if ("jar".equals(Utils.Files.getFileExtension(resourcePath))) {
-      var imported = getComponentRegistry().installComponent(resourcePath, null);
-      knowledgeClass = KnowledgeClass.COMPONENT;
-      sourceFile = imported.getFirst().sourceArchive();
-      urn = imported.getFirst().id();
-      ret = imported.getSecond();
-    } else {
-      // TODO resource, mirror archive
-    }
-
-    if (urn != null) {
-      // initial resource permissions
-      var status = new ResourceInfo();
-      if (scope.getIdentity() instanceof UserIdentity user) {
-        status.getRights().getAllowedUsers().add(user.getUsername());
-        status.setOwner(user.getUsername());
-      }
-      status.setFileLocation(sourceFile);
-      status.setKnowledgeClass(knowledgeClass);
-      status.setReviewStatus(0);
-      status.setType(ResourceInfo.Type.AVAILABLE);
-      status.setLegacy(false);
-      status.setUrn(urn);
-      resourcesKbox.putStatus(status);
-      //      db.commit();
-    }
-
-    return ret;
-  }
-
-  //    @Override
-  //    public Resource createResource(String projectName, String urnId, String adapter,
-  //                                   Parameters<String> resourceData, UserScope scope) {
-  //        return null;
+  //  @Deprecated // remove when the import mechanism can do this
+  //  public ResourceSet createResource(File resourcePath, UserScope scope) {
+  //
+  //    KnowledgeClass knowledgeClass = null;
+  //    File sourceFile = null;
+  //    String urn = null;
+  //    ResourceSet ret = null;
+  //
+  //    if ("jar".equals(Utils.Files.getFileExtension(resourcePath))) {
+  //      var imported = getComponentRegistry().installComponent(resourcePath, null);
+  //      knowledgeClass = KnowledgeClass.COMPONENT;
+  //      sourceFile = imported.getFirst().sourceArchive();
+  //      urn = imported.getFirst().id();
+  //      ret = imported.getSecond();
+  //    } else {
+  //      // TODO resource, mirror archive
   //    }
+  //
+  //    if (urn != null) {
+  //      // initial resource permissions
+  //      var status = new ResourceInfo();
+  //      if (scope.getIdentity() instanceof UserIdentity user) {
+  //        status.getRights().getAllowedUsers().add(user.getUsername());
+  //        status.setOwner(user.getUsername());
+  //      }
+  //      status.setFileLocation(sourceFile);
+  //      status.setKnowledgeClass(knowledgeClass);
+  //      status.setReviewStatus(0);
+  //      status.setType(ResourceInfo.Type.AVAILABLE);
+  //      status.setLegacy(false);
+  //      status.setUrn(urn);
+  //      resourcesKbox.putStatus(status);
+  //      //      db.commit();
+  //    }
+  //
+  //    return ret;
+  //  }
 
   @Override
   public ResourceInfo registerResource(
-      String urn, KnowledgeClass knowledgeClass, File fileLocation, Scope submittingScope) {
+      String urn,
+      KnowledgeClass knowledgeClass,
+      File fileLocation,
+      ResourcePrivileges rights,
+      Scope submittingScope) {
 
     if (urn != null) {
       // initial resource permissions
       var status = new ResourceInfo();
-      if (scope.getIdentity() instanceof UserIdentity user) {
-        status.getRights().getAllowedUsers().add(user.getUsername());
-        status.setOwner(user.getUsername());
-      }
+      status.setRights(rights);
       status.setFileLocation(fileLocation);
       status.setKnowledgeClass(knowledgeClass);
       status.setReviewStatus(0);
@@ -1234,7 +1270,8 @@ public class ResourcesProvider extends BaseService
                   model.getName(),
                   model.getProjectUrn(),
                   model.getVersion(),
-                  KnowledgeClass.MODEL));
+                  KnowledgeClass.MODEL,
+                  false));
     }
 
     addDependencies(results, scope);
@@ -1316,9 +1353,10 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public List<String> queryResources(String urnPattern, KnowledgeClass... resourceTypes) {
+  public List<ResourceInfo> queryResources(
+      String queryPattern, Scope scope, KnowledgeClass... resourceTypes) {
 
-    List<String> ret = new ArrayList<>();
+    List<ResourceInfo> ret = new ArrayList<>();
     Set<KnowledgeClass> wanted = EnumSet.noneOf(KnowledgeClass.class);
     if (resourceTypes != null && resourceTypes.length > 0) {
       wanted.addAll(Arrays.asList(resourceTypes));
@@ -1327,7 +1365,9 @@ public class ResourcesProvider extends BaseService
       wanted.addAll(Arrays.asList(KnowledgeClass.values()));
     }
 
-    if (wanted.contains(KnowledgeClass.RESOURCE)) {}
+    if (wanted.contains(KnowledgeClass.RESOURCE)) {
+      ret.addAll(getResourcesKbox().queryResources(queryPattern));
+    }
 
     if (wanted.contains(KnowledgeClass.MODEL)) {}
 
@@ -1342,10 +1382,6 @@ public class ResourcesProvider extends BaseService
     if (wanted.contains(KnowledgeClass.NAMESPACE)) {}
 
     if (wanted.contains(KnowledgeClass.PROJECT)) {}
-
-    //        if (wanted.contains(KnowledgeClass.INSTANCE)) {
-    //
-    //        }
 
     return ret;
   }
@@ -1461,7 +1497,8 @@ public class ResourcesProvider extends BaseService
                       urn,
                       namespace.getProjectName(),
                       namespace.getVersion(),
-                      KnowledgeClass.NAMESPACE));
+                      KnowledgeClass.NAMESPACE,
+                      false));
 
         } else {
 
@@ -1484,7 +1521,8 @@ public class ResourcesProvider extends BaseService
                             urn,
                             namespace.getProjectName(),
                             namespace.getVersion(),
-                            KlabAsset.classify(statement)));
+                            KlabAsset.classify(statement),
+                            false));
                 break;
               }
             }
@@ -1497,7 +1535,7 @@ public class ResourcesProvider extends BaseService
           ret.getResults()
               .add(
                   new ResourceSet.Resource(
-                      serviceId(), urn, null, null, KnowledgeClass.OBSERVABLE));
+                      serviceId(), urn, null, null, KnowledgeClass.OBSERVABLE, false));
         }
       }
       case REMOTE_URL -> {
@@ -1665,30 +1703,47 @@ public class ResourcesProvider extends BaseService
     // check if we're updating and, if so, whether we have the right to modify
 
     // find adapter
-    var adapterResult = resolveResourceAdapter(resource.getAdapterType(), scope);
-    if (adapterResult.isEmpty()) {
-      // resolve using the remaining services in the scope
-      var otherServices =
-          scope.getServices(ResourcesService.class).stream()
-              .filter(s -> !serviceId().equals(s.serviceId()))
-              .toList();
-      if (!otherServices.isEmpty()) {
-        // Utils.Resources.queryResources(us)
+    var adapterType = Version.splitVersion(resource.getAdapterType());
+    var adapter =
+        getComponentRegistry().getAdapter(adapterType.getFirst(), adapterType.getSecond(), scope);
+    if (adapter == null) {
+
+      // TODO this must use the remaining services
+      var adapterResult = resolveResourceAdapter(resource.getAdapterType(), scope);
+      if (adapterResult.isEmpty()) {
+        // resolve using the remaining services in the scope
+        var otherServices =
+            scope.getServices(ResourcesService.class).stream()
+                .filter(s -> !serviceId().equals(s.serviceId()))
+                .toList();
+        if (!otherServices.isEmpty()) {
+          // Utils.Resources.queryResources(us)
+        }
+      }
+
+      if (adapterResult.isEmpty()) {
+        return ResourceSet.empty(
+            Notification.error(
+                "Cannot find or load adapter "
+                    + resource.getAdapterType()
+                    + " to handle resource "
+                    + resource.getUrn()));
+      }
+
+      ingestResources(adapterResult, scope, true);
+      adapter =
+          getComponentRegistry().getAdapter(adapterType.getFirst(), adapterType.getSecond(), scope);
+
+      if (adapter == null) {
+        return ResourceSet.empty(
+            Notification.error(
+                "Cannot find or load adapter "
+                    + resource.getAdapterType()
+                    + " to handle resource "
+                    + resource.getUrn()));
       }
     }
 
-    if (adapterResult.isEmpty()) {
-      return ResourceSet.empty(
-          Notification.error(
-              "Cannot find or load adapter "
-                  + resource.getAdapterType()
-                  + " to handle resource "
-                  + resource.getUrn()));
-    }
-
-    Adapter adapter = null; // Load the adapter from the resourceSet
-    ResourcePrivileges rights = null; // TODO
-
-    return resourceManager.ingestResource(resource, adapter, rights);
+    return resourceManager.ingestResource(resource, adapter, scope);
   }
 }

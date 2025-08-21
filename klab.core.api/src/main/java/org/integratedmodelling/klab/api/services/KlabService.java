@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
@@ -223,8 +224,6 @@ public interface KlabService extends Service {
 
     Type getType();
 
-    String getLocalName();
-
     String getServiceName();
 
     /**
@@ -287,14 +286,14 @@ public interface KlabService extends Service {
   URL getUrl();
 
   /**
-   * Local name should be unique among services even of the same type. It should reflect the local
-   * node and always appear in REST calls as the requesting entity, so that federated calls coming
-   * from the same service in a ping-pong chain of calls can be filtered out and avoid infinite call
-   * chains.
+   * Service name should be unique within a cluster, with the pattern <code><partnerId.serviceName
+   * </code> for public services, and with the username of the running user for local ones.
+   * Uniqueness is important and should be enforced, but for critical operations the {@link
+   * #serviceId()} must always be used.
    *
    * @return
    */
-  String getLocalName();
+  String serviceName();
 
   /**
    * The service ID is an ugly, unique string that uniquely identifies a server instance. Any
@@ -403,11 +402,9 @@ public interface KlabService extends Service {
    * @return
    */
   InputStream exportAsset(
-      String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope);
+      String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope);
 
   /**
-   * FIXME this must return a Future<String> and use the JobManager internally
-   *
    * @param schema a valid schema that comes from those admitted in the service
    * @param assetCoordinates the submission, either a file or URL that specifies a byte stream or a
    *     set of properties.

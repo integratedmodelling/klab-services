@@ -15,7 +15,6 @@ R * This file is part of k.LAB.
  */
 package org.integratedmodelling.klab.api.exceptions;
 
-// TODO: Auto-generated Javadoc
 /**
  * An unchecked exception reserved for situations that should never happen in a
  * production environment. To be used in k.LAB code instead of Java's
@@ -33,26 +32,36 @@ public class KlabIllegalArgumentException extends KlabException {
 	 */
 	public KlabIllegalArgumentException() {
 		super();
-		// TODO Auto-generated constructor stub
 	}
 
 	/**
 	 * Instantiates a new klab illegal status exception.
 	 *
-	 * @param arg0 the arg 0
+	 * @param message the detail message
 	 */
-	public KlabIllegalArgumentException(String arg0) {
-		super(arg0);
-		// TODO Auto-generated constructor stub
+	public KlabIllegalArgumentException(String message) {
+		super(message);
 	}
 
 	/**
 	 * Instantiates a new klab illegal status exception.
 	 *
-	 * @param e the e
+	 * @param cause the cause
 	 */
-	public KlabIllegalArgumentException(Throwable e) {
-		super(e);
+	public KlabIllegalArgumentException(Throwable cause) {
+		super(cause);
 	}
+
+	/**
+	 * Instantiates a new klab illegal status exception.
+	 *
+	 * @param message Error message
+	 * @param cause the cause
+	 *
+	 */
+	public KlabIllegalArgumentException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
 
 }

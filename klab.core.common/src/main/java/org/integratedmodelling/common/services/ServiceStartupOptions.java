@@ -141,10 +141,10 @@ public class ServiceStartupOptions implements StartupOptions {
     initialize(args);
   }
 
-  @Override
-  public String getServiceName() {
-    return nodeName;
-  }
+//  @Override
+//  public String getServiceName() {
+//    return nodeName;
+//  }
 
   @Override
   public String[] getArguments(String... additionalArguments) {

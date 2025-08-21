@@ -13,13 +13,11 @@ import org.integratedmodelling.klab.api.services.resources.adapters.Importer;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
-import org.integratedmodelling.klab.extension.MavenComponentCache;
 import org.integratedmodelling.klab.services.base.BaseService;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.io.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 @Library(
     name = "component",
@@ -28,22 +26,70 @@ import java.io.InputStream;
 public class ComponentIOLibrary {
 
   @Importer(
-      schema = "jar.import",
-      knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,
-      description = "Import a component by directly uploading a kar file",
-      mediaType = "application/java-archive",
-      fileExtensions = {"kar"})
-  public static ResourceSet importComponentDirect(File file, BaseService service, Scope scope) {
+          schema = "kar.import",
+          knowledgeClass = KlabAsset.KnowledgeClass.COMPONENT,
+          description = "Import a component by directly uploading a kar file",
+          mediaType = "application/java-archive",
+          fileExtensions = {"kar"})
+  public static ResourceSet importComponentDirect(Parameters<String> properties, File file, BaseService service, Scope scope) {
 
     // TODO this should load the plug-in, and if successful, copy the kar in the component registry,
     //  without setting it into the Maven cache at all. This can only be updated by uploading a new
     //  kar for the same component.
-    if (file != null && file.exists()) {
-      var componentRegistry = service.getComponentRegistry();
+    if (file == null || !file.exists()) {
+      return ResourceSet.empty(Notification.error("Non existing .kar file."));
     }
 
-    return ResourceSet.empty(Notification.error("Jar import not yet implemented"));
+    String groupId = "org.integratedmodelling";
+    String artifactId = "";
+    String version = Version.EMPTY_VERSION.toString();
+
+    String manifestPath = "META-INF/MANIFEST.MF";
+
+
+    try {
+      ZipFile zipFile = new ZipFile(file.getAbsolutePath());
+      ZipEntry entry = zipFile.getEntry(manifestPath);
+
+      if (entry == null) {
+        System.err.println("Entry not found: " + manifestPath);
+        return ResourceSet.empty(Notification.error("Cannot find definition of .kar file."));
+      }
+
+      InputStream inputStream = zipFile.getInputStream(entry);
+      BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+      String line;
+
+      while ((line = reader.readLine()) != null) {
+        if (line.startsWith("Plugin-Id:")) {
+          artifactId = line.substring(line.indexOf(":") + 1).trim();
+          continue;
+        }
+        if (line.startsWith("Plugin-Vendor-Id:")) {
+          groupId = line.substring(line.indexOf(":") + 1).trim();
+          continue;
+        }
+        if (line.startsWith("Plugin-Version:")) {
+          version = line.substring(line.indexOf(":") + 1).trim();
+        }
+      }
+
+      reader.close();
+      zipFile.close();
+    } catch (IOException e) {
+      System.err.println("Exception while reading kar file: " + e.getMessage());
+    }
+
+    var mavenCoordinates = groupId + ":" + artifactId + ":" + version;
+    var componentRegistry = service.getComponentRegistry();
+    var result = componentRegistry.installComponent(file, mavenCoordinates);
+    if (result != null) {
+      return result.getSecond();
+    }
+
+    return ResourceSet.empty(Notification.error("Kar import not yet implemented"));
   }
+
 
   /**
    * Maven import also registers the component's rights if the service it's registered with is a
@@ -81,56 +127,38 @@ public class ComponentIOLibrary {
       Parameters<String> properties, BaseService service, Scope scope) {
 
     try {
+      var componentRegistry = service.getComponentRegistry();
+      var ret =
+          componentRegistry.installMavenComponent(
+              properties.get("groupId", String.class),
+              properties.get("artifactId", String.class),
+              properties.get("version", String.class));
 
-      File file =
-          service
-              .getComponentRegistry()
-              .getComponentCache()
-              .synchronizeArtifact(
-                  properties.get("groupId", String.class),
-                  properties.get("artifactId", String.class),
-                  properties.get("version", String.class),
-                  "component",
-                  "kar"); // TODO
+      if (ret != null && service instanceof ResourcesService resourcesService) {
 
-      if (file != null && file.exists()) {
-        var componentRegistry = service.getComponentRegistry();
-        var ret =
-            componentRegistry.registerComponent(
-                file,
-                properties.get("groupId")
-                    + ":"
-                    + properties.get("artifactId")
-                    + ":"
-                    + properties.get("version"));
-
-        if (ret != null && service instanceof ResourcesService resourcesService) {
-          Version version =
-              properties.containsKey("version")
-                  ? Version.create(properties.get("version", String.class))
-                  : Version.ANY_VERSION;
-          var component = componentRegistry.getComponent(ret, version);
-          // TODO if the component comes with explicit access rights, record them
-          var info =
-              resourcesService.registerResource(
-                  component.id(),
-                  KlabAsset.KnowledgeClass.COMPONENT,
-                  component.sourceArchive(),
-                  scope);
-          var result =
-              ResourceSet.of(
-                  info, component.version() != null ? component.version() : Version.ANY_VERSION);
-          result
-              .getNotifications()
-              .add(
-                  Notification.info(
-                      "Import of component "
-                          + component.id()
-                          + " successful with version "
-                          + component.version()));
-          return result;
-        }
-      } else {
+        var component = ret.getFirst();
+        // TODO record the rights in the ResourcesKBox
+        var info =
+            resourcesService.registerResource(
+                component.id(),
+                KlabAsset.KnowledgeClass.COMPONENT,
+                component.sourceArchive(),
+                component.usageRights(),
+                scope);
+        var result =
+            ResourceSet.of(
+                info, component.version() != null ? component.version() : Version.ANY_VERSION);
+        result
+            .getNotifications()
+            .add(
+                Notification.info(
+                    "Import of component "
+                        + component.id()
+                        + " successful with version "
+                        + component.version()));
+        return result;
+      }
+      if (ret == null) {
         return ResourceSet.empty(
             Notification.error(
                 "Maven artifact "

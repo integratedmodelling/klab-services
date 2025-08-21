@@ -1,247 +1,306 @@
 package org.integratedmodelling.klab.extension;
 
-import org.codehaus.janino.Java;
-import org.integratedmodelling.klab.api.configuration.Configuration;
-import org.integratedmodelling.klab.utilities.Utils;
-
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.commons.io.FileUtils;
+import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.utilities.Utils;
+import org.pf4j.DefaultPluginManager;
+
 public class MavenComponentCache {
 
-    private final File componentCache;
-    private final Utils.FileCatalog<ArtifactInfo> cacheCatalog;
+  private final File componentCache;
+  private final Utils.FileCatalog<ArtifactInfo> cacheCatalog;
 
-    public MavenComponentCache(File dataDirectory) {
-        this.componentCache = dataDirectory;
-        this.cacheCatalog =
-                new Utils.FileCatalog<>(
-                        new File(componentCache + File.separator + "catalog.json"),
-                        ArtifactInfo.class,
-                        ArtifactInfo.class);
+  public MavenComponentCache(File dataDirectory) {
+    this.componentCache = dataDirectory;
+    this.cacheCatalog =
+        new Utils.FileCatalog<>(
+            new File(componentCache + File.separator + "catalog.json"),
+            ArtifactInfo.class,
+            ArtifactInfo.class);
+  }
+
+  public enum Status {
+    UP_TO_DATE,
+    NEEDS_UPDATE_FROM_LOCAL_REPOSITORY,
+    NEEDS_UPDATE_FROM_REMOTE_REPOSITORY,
+    UNKNOWN
+  }
+
+  // descriptor saved in the catalog
+  public static class ArtifactInfo {
+    private String coordinates;
+    private String md5hash;
+    private String localtimeSignature;
+    private File cachedFile;
+    private LocalDateTime lastModified;
+
+    public String getCoordinates() {
+      return coordinates;
     }
 
-    public enum Status {
-        UP_TO_DATE,
-        NEEDS_UPDATE,
-        UNKNOWN
+    public void setCoordinates(String coordinates) {
+      this.coordinates = coordinates;
     }
 
-    // descriptor saved in the catalog
-    public static class ArtifactInfo {
-        private String coordinates;
-        private String md5hash;
-        private String localtimeSignature;
-        private File cachedFile;
-        private LocalDateTime lastModified;
-
-        public String getCoordinates() {
-            return coordinates;
-        }
-
-        public void setCoordinates(String coordinates) {
-            this.coordinates = coordinates;
-        }
-
-        public String getMd5hash() {
-            return md5hash;
-        }
-
-        public void setMd5hash(String md5hash) {
-            this.md5hash = md5hash;
-        }
-
-        public String getLocaltimeSignature() {
-            return localtimeSignature;
-        }
-
-        public void setLocaltimeSignature(String localtimeSignature) {
-            this.localtimeSignature = localtimeSignature;
-        }
-
-        public File getCachedFile() {
-            return cachedFile;
-        }
-
-        public void setCachedFile(File cachedFile) {
-            this.cachedFile = cachedFile;
-        }
-
-        public LocalDateTime getLastModified() {
-            return lastModified;
-        }
-
-        public void setLastModified(LocalDateTime lastModified) {
-            this.lastModified = lastModified;
-        }
+    public String getMd5hash() {
+      return md5hash;
     }
 
-    /**
-     * If {@link #getAvailability(String, String, String, String, String)} has returned UP_TO_DATE or
-     * NEEDS_UPDATE, update if necessary and return the local file.
-     *
-     * <p>This method updates the cache as needed if anything must be downloaded.
-     *
-     * @param groupId
-     * @param artifactId
-     * @param version
-     * @param classifier
-     * @param suffix
-     * @return the local updated file, or null if nothing can be found.
-     */
-    public File synchronizeArtifact(
-            String groupId, String artifactId, String version, String classifier, String suffix) {
+    public void setMd5hash(String md5hash) {
+      this.md5hash = md5hash;
+    }
 
-        AtomicReference<String> artifactIdRef = new AtomicReference<>();
-        AtomicReference<File> fileRef = new AtomicReference<>();
-        var status =
-                getAvailability(groupId, artifactId, version, classifier, suffix, artifactIdRef, fileRef);
-        if (status == Status.UNKNOWN) {
-            return null;
+    public String getLocaltimeSignature() {
+      return localtimeSignature;
+    }
+
+    public void setLocaltimeSignature(String localtimeSignature) {
+      this.localtimeSignature = localtimeSignature;
+    }
+
+    public File getCachedFile() {
+      return cachedFile;
+    }
+
+    public void setCachedFile(File cachedFile) {
+      this.cachedFile = cachedFile;
+    }
+
+    public LocalDateTime getLastModified() {
+      return lastModified;
+    }
+
+    public void setLastModified(LocalDateTime lastModified) {
+      this.lastModified = lastModified;
+    }
+  }
+
+  /**
+   * If {@link #getAvailability(String, String, String, String, String)} has returned UP_TO_DATE or
+   * NEEDS_UPDATE, update if necessary and return a locally cached file that contains the updated
+   * component, copying or downloading anything necessary. The returned file retains the extension
+   * passed in suffix but will be copied in the local cache unless it's available locally.
+   *
+   * <p>This method updates the cache as needed if anything must be downloaded. Cache maintenance
+   * may be performed as appropriate (at the moment not much is done).
+   *
+   * @param groupId
+   * @param artifactId
+   * @param version
+   * @param classifier
+   * @param suffix
+   * @return the local updated file, or null if nothing can be found.
+   */
+  public File synchronizeArtifact(
+      String groupId, String artifactId, String version, String classifier, String suffix) {
+
+    AtomicReference<String> artifactIdRef = new AtomicReference<>();
+    AtomicReference<File> fileRef = new AtomicReference<>();
+    var status =
+        getAvailability(groupId, artifactId, version, classifier, suffix, artifactIdRef, fileRef);
+    if (status == Status.UNKNOWN) {
+      return null;
+    }
+
+    var signature = groupId + ":" + artifactId + ":" + version + ":" + suffix;
+    var current = cacheCatalog.get(signature);
+
+    if (status == Status.UP_TO_DATE && fileRef.get() != null) {
+      if (current == null) {
+        current = new ArtifactInfo();
+        current.setCoordinates(artifactIdRef.get());
+        current.setMd5hash(artifactIdRef.get());
+        current.setCachedFile(fileRef.get());
+        current.setLastModified(LocalDateTime.now());
+        cacheCatalog.put(signature, current);
+        cacheCatalog.write();
+      }
+      return fileRef.get();
+    }
+
+    // must download the file and update the cache
+
+    if (current != null && current.getCachedFile() != null) {
+      if (status == Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+          || status == Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY) {
+        // update and save the new info in catalog, keep old if errors
+        var download =
+            Utils.Maven.findOrDownloadArtifactFile(
+                groupId, artifactId, version, classifier, suffix, componentCache);
+        if (download != null && download.isFile()) {
+          current.setLastModified(LocalDateTime.now());
+          current.setCachedFile(download);
+          cacheCatalog.put(signature, current);
+          cacheCatalog.write();
         }
-
-        if (status == Status.UP_TO_DATE && fileRef.get() != null) {
-            return fileRef.get();
+      }
+      return current.getCachedFile();
+    } else {
+      current = new ArtifactInfo();
+      var download =
+          Utils.Maven.findOrDownloadArtifactFile(
+              groupId, artifactId, version, classifier, suffix, componentCache);
+      if (download != null && download.isFile()) {
+        current.setLastModified(LocalDateTime.now());
+        current.setCachedFile(download);
+        if (!version.endsWith("-SNAPSHOT")) {
+          current.setMd5hash(artifactIdRef.get());
         }
+        cacheCatalog.put(signature, current);
+        cacheCatalog.write();
+      }
+    }
+    return current.cachedFile;
+  }
 
-        // must download the file and update the cache
+  /**
+   * Establish the availability of an artifact. If the artifact is available in the local .m2
+   * repository, look no further. Otherwise check its availability w.r.t. any cached files and
+   * configured remote Maven repos. No files are downloaded (except for possibly the MD5 hash).
+   *
+   * @param groupId
+   * @param artifactId
+   * @param version
+   * @param classifier
+   * @param suffix
+   * @returns UP_TO_DATE if the file is available locally in the latest version, NEEDS_UPDATE if
+   *     it's not available or not updated but it's been found on remote or is available in an older
+   *     version, and UNKNOWN if nothing can be established.
+   */
+  public Status getAvailability(
+      String groupId, String artifactId, String version, String classifier, String suffix) {
+    return getAvailability(
+        groupId,
+        artifactId,
+        version,
+        classifier,
+        suffix,
+        new AtomicReference<>(),
+        new AtomicReference<>());
+  }
 
-        var signature = groupId + ":" + artifactId + ":" + version + ":" + suffix;
-        var current = cacheCatalog.get(artifactIdRef.get());
+  /**
+   * Internal version that recovers the MD5 hash if it's downloaded, so we don't have to get it
+   * again.
+   *
+   * @param groupId
+   * @param artifactId
+   * @param version
+   * @param classifier
+   * @param suffix
+   * @param artifactIdRef set to the MD5 if it must be downloaded
+   * @param fileRef set if the file is available locally without having to be registered in cache
+   * @return
+   */
+  private Status getAvailability(
+      String groupId,
+      String artifactId,
+      String version,
+      String classifier,
+      String suffix,
+      AtomicReference<String> artifactIdRef,
+      AtomicReference<File> fileRef) {
 
-        if (current != null && current.getCachedFile() != null) {
-            if (status == Status.NEEDS_UPDATE) {
-                // update and save the new info in catalog, keep old if errors
-                var download = Utils.Maven.downloadArtifactFile(groupId, artifactId, version, classifier, suffix, componentCache);
-                if (download != null && download.isFile()) {
-                    current.setLastModified(LocalDateTime.now());
-                    current.setCachedFile(download);
-                    cacheCatalog.put(signature, current);
-                    cacheCatalog.write();
-                }
-            }
-            return current.getCachedFile();
+    var signature = groupId + ":" + artifactId + ":" + version + ":" + suffix;
+    var current = cacheCatalog.get(signature);
+
+    // file isn't there. Must put it there.
+    var local = Utils.Maven.findLocalArtifactFile(groupId, artifactId, version, classifier, suffix);
+    if (local != null) {
+
+      var fileTime =
+          LocalDateTime.ofInstant(
+              java.time.Instant.ofEpochMilli(local.lastModified()),
+              java.time.ZoneId.systemDefault());
+      // in local repo counts as up to date unless our catalog doesn't have it or
+      fileRef.set(local);
+      return current == null || current.lastModified.isBefore(fileTime)
+          ? Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+          : Status.UP_TO_DATE;
+
+    } else if (version.endsWith("-SNAPSHOT")) {
+      // check out if available on remote repositories
+      var latest = Utils.Maven.getLatestSnapshotDate(groupId, artifactId, version);
+      if (latest != null) {
+        if (current != null && !current.getLastModified().isBefore(latest.getLastModified())) {
+          return Status.UP_TO_DATE;
         } else {
-            current = new ArtifactInfo();
-            var download = Utils.Maven.downloadArtifactFile(groupId, artifactId, version, classifier, suffix, componentCache);
-            if (download != null && download.isFile()) {
-                current.setLastModified(LocalDateTime.now());
-                current.setCachedFile(download);
-                if (!version.endsWith("-SNAPSHOT")) {
-                    current.setMd5hash(artifactIdRef.get());
-                }
-                cacheCatalog.put(signature, current);
-                cacheCatalog.write();
-            }
+          return Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY;
         }
-        return current.cachedFile;
+      }
     }
 
-    /**
-     * Establish the availability of an artifact. If the artifact is available in the local .m2
-     * repository, look no further. Otherwise check its availability w.r.t. any cached files and
-     * configured remote Maven repos. No files are downloaded (except for possibly the MD5 hash).
-     *
-     * @param groupId
-     * @param artifactId
-     * @param version
-     * @param classifier
-     * @param suffix
-     * @returns UP_TO_DATE if the file is available locally in the latest version, NEEDS_UPDATE if
-     * it's not available or not updated but it's been found on remote or is available in an older
-     * version, and UNKNOWN if nothing can be established.
-     */
-    public Status getAvailability(
-            String groupId, String artifactId, String version, String classifier, String suffix) {
-        return getAvailability(
-                groupId,
-                artifactId,
-                version,
-                classifier,
-                suffix,
-                new AtomicReference<>(),
-                new AtomicReference<>());
-    }
-
-    /**
-     * Internal version that recovers the MD5 hash if it's downloaded, so we don't have to get it
-     * again.
-     *
-     * @param groupId
-     * @param artifactId
-     * @param version
-     * @param classifier
-     * @param suffix
-     * @param artifactIdRef set to the MD5 if it must be downloaded
-     * @param fileRef       set if the file is available locally without having to be registered in cache
-     * @return
-     */
-    private Status getAvailability(
-            String groupId,
-            String artifactId,
-            String version,
-            String classifier,
-            String suffix,
-            AtomicReference<String> artifactIdRef,
-            AtomicReference<File> fileRef) {
-
-        var signature = groupId + ":" + artifactId + ":" + version + ":" + suffix;
-        var current = cacheCatalog.get(signature);
-
-        // file isn't there. Must put it there.
-        var local = Utils.Maven.findLocalArtifactFile(groupId, artifactId, version, classifier, suffix);
-        if (local != null) {
-            // in local repo counts as up to date
-            fileRef.set(local);
-            return Status.UP_TO_DATE;
-        } else if (version.endsWith("-SNAPSHOT")) {
-            // check out if available on remote repositories
-            var latest = Utils.Maven.getLatestSnapshotDate(groupId, artifactId, version);
-            if (latest != null) {
-                if (current != null && !current.getLastModified().isBefore(latest.getLastModified())) {
-                    return Status.UP_TO_DATE;
-                } else {
-                    return Status.NEEDS_UPDATE;
-                }
-            }
-        }
-
-        // if we get here, we don't have it in the cache or in the local repo, and it's not a SNAPSHOT
+    // if we get here, we don't have it in the cache or in the local repo, and it's not a SNAPSHOT
+    if (current != null) {
+      // download the MD5; its existence will tell us if the file is available
+      var md5file =
+          Utils.Maven.findOrDownloadArtifactFile(
+              groupId,
+              artifactId,
+              null,
+              null,
+              "md5",
+              Configuration.INSTANCE.getTemporaryDataPath());
+      if (md5file != null && md5file.isFile()) {
+        var hash = Utils.Files.readFileIntoString(md5file);
         if (current != null) {
-            // download the MD5; its existence will tell us if the file is available
-            var md5file =
-                    Utils.Maven.findOrDownloadArtifactFile(
-                            groupId,
-                            artifactId,
-                            null,
-                            null,
-                            "md5",
-                            Configuration.INSTANCE.getTemporaryDataPath());
-            if (md5file != null && md5file.isFile()) {
-                var hash = Utils.Files.readFileIntoString(md5file);
-                if (current != null) {
-                    if (hash.equals(current.getMd5hash())) {
-                        return Status.UP_TO_DATE;
-                    }
-                }
-                return Status.NEEDS_UPDATE;
-            }
+          if (hash.equals(current.getMd5hash())) {
+            return Status.UP_TO_DATE;
+          }
         }
-        return Status.UNKNOWN;
+        return Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY;
+      }
     }
+    return Status.UNKNOWN;
+  }
 
-    public static void main(String[] args) {
-
-        var cache = new MavenComponentCache(Configuration.INSTANCE.getDataPath("test-component-cache"));
-        var result =
-                cache.synchronizeArtifact(
-                        "org.integratedmodelling",
-                        "klab.component.geospatial",
-                        "1.0-SNAPSHOT",
-                        "component",
-                        "kar");
-
-        System.out.println("File is: " + result);
+  /**
+   * Copy the <code>kar</code> component plugin referenced (which must exist) to the passed plugin
+   * directory, changing the extension to <code>jar</code>>
+   *
+   * @param pluginDirectory
+   */
+  public File install(String groupId, String artifactId, String version, File pluginDirectory) {
+    var signature = groupId + ":" + artifactId + ":" + version + ":kar";
+    var artifact = cacheCatalog.get(signature);
+    if (artifact != null && artifact.getCachedFile().exists()) {
+      var ret =
+          new File(
+              pluginDirectory
+                  + File.separator
+                  + Utils.Files.getFileBaseName(artifact.getCachedFile())
+                  + ".jar");
+      if (Utils.Files.copy(artifact.getCachedFile(), ret)) {
+        return ret;
+      }
     }
+    return null;
+  }
+
+  public static void main(String[] args) {
+
+    var directory = Configuration.INSTANCE.getDataPath("test-component-cache");
+    var fakePluginPath = Configuration.INSTANCE.getDataPath("test-component-repository");
+
+    var cache = new MavenComponentCache(directory);
+    var result =
+        cache.synchronizeArtifact(
+            "org.integratedmodelling",
+            "klab.component.geospatial",
+            "1.0-SNAPSHOT",
+            "component",
+            "kar");
+
+    System.out.println("File is: " + result);
+    if (result.exists()) {
+      cache.install(
+          "org.integratedmodelling", "klab.component.geospatial", "1.0-SNAPSHOT", fakePluginPath);
+      var pluginManager = new DefaultPluginManager(fakePluginPath.toPath());
+      pluginManager.loadPlugins();
+    }
+  }
 }

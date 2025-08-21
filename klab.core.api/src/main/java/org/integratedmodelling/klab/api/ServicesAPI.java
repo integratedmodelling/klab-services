@@ -34,19 +34,18 @@ public interface ServicesAPI {
    */
   String SERVER_KEY_HEADER = "server-key";
 
-  /**
-   * Response header for the URN of a AMQP messaging service, returned along with the {@link
-   * RUNTIME#CREATE_SESSION} response when messaging is available.
-   * @deprecated federation data should come with groups that come with the JWT header
-   */
-  @Deprecated
-  String MESSAGING_URL_HEADER = "messaging-urn";
-
-  /*
-   * @deprecated federation data should come with groups that come with the JWT header
-   */
-  @Deprecated
-  String FEDERATION_ID_HEADER = "federation-id";
+//  /**
+//   * Response header for the URN of a AMQP messaging service, returned along with the {@link
+//   * RUNTIME#CREATE_SESSION} response when messaging is available.
+//   *
+//   * @deprecated federation data should come with groups that come with the JWT header
+//   */
+//  @Deprecated String MESSAGING_URL_HEADER = "messaging-urn";
+//
+//  /*
+//   * @deprecated federation data should come with groups that come with the JWT header
+//   */
+//  @Deprecated String FEDERATION_ID_HEADER = "federation-id";
 
   /**
    * Header used to both request and confirm the set of messaging queues wanted or offered for
@@ -117,20 +116,13 @@ public interface ServicesAPI {
    */
   String EXPORT = "/export/{class}/{urn}";
 
-  /**
-   * TODO API endpoints to manage plug-in components. This will be extended by the admin interfaces
-   * of selected services.
-   *
-   * @author Ferd
-   */
-  public interface PluginAPI {}
-
   /** General administration endpoints common to all services */
   interface ADMIN {
 
     String SHUTDOWN = "/shutdown";
     String CHECK_CREDENTIALS = "/checkCredentials";
     String CREDENTIALS = "/credentials";
+    String SETTINGS = "/settings";
   }
 
   /**
@@ -139,8 +131,16 @@ public interface ServicesAPI {
    * manager.
    */
   interface JOBS {
+    /** Inquire about the status of a job */
     String STATUS = "/jobs/status/{id}";
+
+    /** Retrieve the JSON results of a finished job */
     String RETRIEVE = "/jobs/retrieve/{id}";
+
+    /** Retrieve the {@link org.integratedmodelling.klab.api.data.Data} result of a finished job */
+    String RETRIEVE_DATA = "/jobs/retrieveData/{id}";
+
+    /** Cancel a running job */
     String CANCEL = "/jobs/cancel/{id}";
   }
 
@@ -179,6 +179,11 @@ public interface ServicesAPI {
      * Called by nodes on hubs when authenticating with them. Parameters like the engine version.
      */
     String AUTHENTICATE_SERVICE = SERVICE_BASE + AUTH_BASE;
+
+    /**
+     * Called from services to have information about the user
+     */
+    String USER_BASE_ID_SERVICES = API_BASE + "/users/services/{id}";
   }
 
   /**
@@ -335,7 +340,7 @@ public interface ServicesAPI {
      *
      * @author Ferd
      */
-    interface ADMIN extends PluginAPI {
+    interface ADMIN {
 
       String LOAD_KNOWLEDGE = "/loadKnowledge";
       String UPDATE_KNOWLEDGE = "/updateKnowledge";
@@ -343,7 +348,7 @@ public interface ServicesAPI {
     }
 
     /** Endpoints for authorities configuration, creation, discovery and use */
-    interface AUTHORITIES extends PluginAPI {}
+    interface AUTHORITIES {}
   }
 
   /**
@@ -357,7 +362,7 @@ public interface ServicesAPI {
      *
      * @author Ferd
      */
-    interface ADMIN extends PluginAPI {}
+    interface ADMIN {}
 
     String GET_SESSION_INFO = "/sessions";
 
@@ -422,7 +427,7 @@ public interface ServicesAPI {
     String CONTEXTUALIZE_RESOURCE = "/contextualizeResource";
     String RETRIEVE_DATAFLOW = "/retrieveDataflow/{urn}";
     String RETRIEVE_WORLDVIEW = "/getWorldview";
-    String RETRIEVE_ADAPTER_INFO = "/getAdapterInfo";
+    String RETRIEVE_ADAPTER_INFO = "/getAdapterInfo/{urn}";
     String DEPENDENTS = "/dependents/{namespaceId}";
     String RESOLVE_MODELS = "/resolveModels";
     String IMPORT_RESOURCE = "importResource";
@@ -439,7 +444,7 @@ public interface ServicesAPI {
      *
      * @author Ferd
      */
-    public interface ADMIN extends PluginAPI {
+    public interface ADMIN {
 
       /** create a new workspace, posting metadata */
       String CREATE_WORKSPACE = "/createWorkspace/{workspaceName}";
@@ -485,7 +490,7 @@ public interface ServicesAPI {
 
   interface RESOLVER {
 
-    interface ADMIN extends PluginAPI {}
+    interface ADMIN {}
 
     String RESOLVE_OBSERVATION = "/resolve";
   }

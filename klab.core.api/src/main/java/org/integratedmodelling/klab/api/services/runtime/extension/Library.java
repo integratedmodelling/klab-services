@@ -64,6 +64,15 @@ public @interface Library {
   KActorsBehavior.Type[] defaultFor() default {};
 
   /**
+   * This (which can be overriden the same field in @{@link Verb} allows adapting a Java object of
+   * this class so that it is recognized as an agent. The receiver applies by default to all {@link
+   * Verb}s declared in the library.
+   *
+   * @return
+   */
+  Class<?> receiver() default Void.class;
+
+  /**
    * List of other project or component IDs that this one depends on.
    *
    * @return id of projects or components we need

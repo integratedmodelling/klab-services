@@ -635,39 +635,14 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
   @Override
   public String encode() {
-    return "s2(1,1){shape=" + promote(this).asWKB() + "}";
+    return "s2(1,1){shape=" + promote(this).asWKB() + ",proj=" + projection.getCode() + "}";
   }
-
-  // @Override
-  // public IScaleMediator getMediator(IExtent extent) {
-  // Space other = (ISpace) extent;
-  // if (other instanceof Space && ((Space) other).getGrid() != null) {
-  // return new GridToShape(this, (Grid) ((Space) other).getGrid());
-  // } else if (other instanceof Space && ((Space) other).getTessellation() != null) {
-  // return new FeaturesToShape(this, ((Space) other).getTessellation());
-  // } else {
-  // return new ShapeToShape((Shape) other.getShape(), this);
-  // }
-  // }
-
-  // @Override
-  // public Extent mergeCoverage(IExtent other, LogicalConnector connector) {
-  // return merge(other, connector);
-  // }
 
   @Override
   public ShapeImpl copy() {
     // the geometry is immutable, so a shallow copy is OK
     return create((Geometry) geometry, projection);
   }
-
-  // @Override
-  // public IServiceCall getKimSpecification() {
-  // List<Object> args = new ArrayList<>(2);
-  // args.add("shape");
-  // args.add(toString());
-  // return new KimServiceCall("space", args.toArray());
-  // }
 
   @Override
   public Shape getBoundingExtent() {

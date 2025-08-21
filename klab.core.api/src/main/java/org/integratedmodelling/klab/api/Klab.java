@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelope;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.Quantity;
@@ -136,8 +137,8 @@ public enum Klab {
 
     Model.Builder getModelLearner(String outputResourceUrn);
 
-    Data.Builder getDataBuilder(String name, Observable observable, Geometry geometry);
-
+//    Data.Builder getDataBuilder(String name, Observable observable, Geometry geometry);
+//
     //        Data.Builder getDataBuilderObsolete();
     //
     //        Data.Builder getDataBuilderObsolete(String name, Geometry geometry);
@@ -154,16 +155,19 @@ public enum Klab {
 
     Concept getNonSemanticConcept(SemanticType semanticType);
 
-    /**
-     * Return offset mappers (direct and inverse) for the passed space filling curve in the passed
-     * geometry.
-     *
-     * @param geometry
-     * @param spaceFillingCurve
-     * @return
-     */
-    Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction> getSpatialOffsetMapping(
-        Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve);
+//    /**
+//     * Return offset mappers (direct and inverse) for the passed space filling curve in the passed
+//     * geometry.
+//     *
+//     * @param geometry
+//     * @param spaceFillingCurve
+//     * @return
+//     */
+//    Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction> getSpatialOffsetMapping(
+//        Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve);
+
+    Envelope getSpatialEnvelope(
+        double minX, double minY, double maxX, double maxY, Projection projection);
   }
 
   private Configuration configuration;

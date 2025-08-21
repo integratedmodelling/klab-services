@@ -14,10 +14,12 @@ import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -27,6 +29,9 @@ import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.base.BaseService;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -206,7 +211,8 @@ public abstract class ServiceInstance<T extends BaseService> {
    * @return
    */
   protected Pair<Identity, List<ServiceReference>> authenticateService() {
-    return Authentication.INSTANCE.authenticate(SettingsImpl.forService(serviceType()));
+    var ret = Authentication.INSTANCE.authenticate(SettingsImpl.forService(serviceType()));
+    return ret;
   }
 
   /**
@@ -219,8 +225,15 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     this.identity = authenticateService();
     AtomicReference<String> token = new AtomicReference<>();
+    URL hubUrl = null;
     if (identity.getFirst() instanceof PartnerIdentity) {
-      token.set(((PartnerIdentity) identity.getFirst()).getToken());
+      PartnerIdentity pi = (PartnerIdentity) identity.getFirst();
+      token.set(pi.getToken());
+      try {
+        hubUrl = new URI(pi.getAuthenticatingHub()).toURL();
+      } catch (MalformedURLException | URISyntaxException e) {
+        throw new KlabIllegalArgumentException(e);
+      }
     }
     // local services (user-level certificate) only see other local services
     boolean iAmLocal = !this.identity.getFirst().is(Identity.Type.SERVICE);
@@ -231,8 +244,9 @@ public abstract class ServiceInstance<T extends BaseService> {
             ReasonerClient reasoner =
                 new ReasonerClient(
                     s.getUrls().getFirst(),
-                    new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()),
-                    null);
+                    new ServiceIdentityImpl(
+                        s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
+                    SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
                 .add(reasoner);
@@ -241,8 +255,9 @@ public abstract class ServiceInstance<T extends BaseService> {
             RuntimeClient runtime =
                 new RuntimeClient(
                     s.getUrls().getFirst(),
-                    new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()),
-                    null);
+                    new ServiceIdentityImpl(
+                        s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
+                    SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
                 .add(runtime);
@@ -251,8 +266,9 @@ public abstract class ServiceInstance<T extends BaseService> {
             ResourcesClient resources =
                 new ResourcesClient(
                     s.getUrls().getFirst(),
-                    new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()),
-                    null);
+                    new ServiceIdentityImpl(
+                        s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
+                    SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
                 .add(resources);
@@ -261,8 +277,9 @@ public abstract class ServiceInstance<T extends BaseService> {
             ResolverClient resolver =
                 new ResolverClient(
                     s.getUrls().getFirst(),
-                    new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get()),
-                    null);
+                    new ServiceIdentityImpl(
+                        s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
+                    SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
                 .add(resolver);
@@ -325,6 +342,7 @@ public abstract class ServiceInstance<T extends BaseService> {
     setEnvironment(options);
     this.serviceScope = createServiceScope();
     this.service = createPrimaryService(serviceScope, options);
+    this.service.setIdentity(identity.getFirst());
     this.currentServices
         .computeIfAbsent(KlabService.Type.classify(this.service), k -> new LinkedHashSet<>())
         .add(this.service);
@@ -390,20 +408,21 @@ public abstract class ServiceInstance<T extends BaseService> {
       boolean okOperationals = true;
 
       for (var serviceType : allServices) {
-        var service =
-            currentServices
-                .computeIfAbsent(serviceType, type -> new LinkedHashSet<>())
-                .iterator()
-                .next();
-        if (essentials.contains(serviceType)) {
-          if (service == null || !service.status().isAvailable()) {
-            okEssentials = false;
-          }
+        var services = currentServices.computeIfAbsent(serviceType, t -> new LinkedHashSet<>());
+
+        boolean anyAvailable = !services.isEmpty() &&
+                services.stream().anyMatch(s -> s.status().isAvailable());
+
+        if (essentials.contains(serviceType) && !anyAvailable) {
+          okEssentials = false;
         }
-        if (operational.contains(serviceType)) {
-          if (service == null || !service.status().isAvailable()) {
-            okOperationals = false;
-          }
+        if (operational.contains(serviceType) && !anyAvailable) {
+          okOperationals = false;
+        }
+
+        // Small optimization: if both are already false, we can stop early
+        if (!okEssentials && !okOperationals) {
+          break;
         }
       }
 
@@ -433,18 +452,26 @@ public abstract class ServiceInstance<T extends BaseService> {
         operationalized.set(true);
         klabService().setOperational(klabService().operationalizeService());
 
-        // register remote components and adapters with our component registry
+        // register remote components and adapters with our component registry avoiding clients
         for (var service : klabService().serviceScope().getServices(ResourcesService.class)) {
-          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          if (!(service instanceof ResourcesClient)) {
+            klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          }
         }
         for (var service : klabService().serviceScope().getServices(Reasoner.class)) {
-          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          if (!(service instanceof ReasonerClient)) {
+            klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          }
         }
         for (var service : klabService().serviceScope().getServices(Resolver.class)) {
-          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          if (!(service instanceof ResolverClient)) {
+            klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          }
         }
         for (var service : klabService().serviceScope().getServices(RuntimeService.class)) {
-          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          if (!(service instanceof RuntimeClient)) {
+            klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+          }
         }
         setBusy(false);
       }

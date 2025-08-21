@@ -49,6 +49,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resolver.DataflowEncoder;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -70,6 +71,7 @@ import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.Instance;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.util.UriUtils;
 
 public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
@@ -116,6 +118,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       return switch (object) {
         case KlabAsset asset -> {
           var ret = asset.getAnnotations();
+          if (ret == null) {
+            ret = new ArrayList<>();
+          }
           if (addInherited) {
             Object parent =
                 switch (object) {
@@ -132,7 +137,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           yield ret;
         }
         case ServiceInfo info -> info.getAnnotations();
-        default -> List.of();
+        default -> new ArrayList<>();
       };
     }
 
@@ -577,7 +582,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
         } else if (status.getStatus() == Scope.Status.FINISHED) {
           try {
-            var result = client.get(ServicesAPI.JOBS.RETRIEVE, resultClass, "id", id);
+            var isData =
+                org.integratedmodelling.klab.api.data.Data.class.isAssignableFrom(resultClass);
+            var result =
+                isData
+                    ? client.getData(ServicesAPI.JOBS.RETRIEVE_DATA, resultClass, "id", id)
+                    : client.get(ServicesAPI.JOBS.RETRIEVE, resultClass, "id", id);
             if (result != null) {
               complete(result);
             } else {
@@ -616,6 +626,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       private String forcedAcceptHeader = null;
       private String forcedContentHeader = null;
       private int timeoutSeconds = 10;
+      private String AUTHENTICATION_HEADER = "Authentication";
 
       public void setAuthorization(String token) {
         this.authorization = token;
@@ -625,7 +636,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         this.headers.put(header, value);
       }
 
-      public org.integratedmodelling.klab.api.data.Data postData(DataRequest dataRequest) {
+      public CompletableFuture<org.integratedmodelling.klab.api.data.Data> postData(
+          DataRequest dataRequest) {
 
         var apiCall = substituteTemplateParameters(ServicesAPI.RESOURCES.CONTEXTUALIZE, Map.of());
         responseHeaders.clear();
@@ -635,18 +647,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           var requestBuilder =
               HttpRequest.newBuilder()
                   .version(HttpClient.Version.HTTP_1_1)
-                  // TODO configure the timeout. This is the largest request so give
-                  //  it 10
-                  //  minutes. Obviously we should explore asynchronous requests and
-                  //  streaming.
                   .timeout(Duration.ofMinutes(10))
                   .uri(URI.create(uri + apiCall))
                   .header(
                       HttpHeaders.CONTENT_TYPE,
                       org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                  .header(
-                      HttpHeaders.ACCEPT,
-                      org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE);
+              /*                  .header(
+              HttpHeaders.ACCEPT,
+              org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE)*/ ;
 
           if (authorization != null) {
             requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
@@ -667,18 +675,48 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                   .POST(HttpRequest.BodyPublishers.ofByteArray(dataStream.toByteArray()))
                   .build();
 
-          var response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+          var response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-          if (response.statusCode() == 200) {
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             parseHeaders(response);
-            var decoder = DecoderFactory.get().binaryDecoder(response.body(), null);
-            var reader = new SpecificDatumReader<>(Instance.class);
-            return BaseDataImpl.create(reader.read(null, decoder));
+            var id = Long.parseLong(response.body());
+            return new PollingFuture<>(
+                this,
+                org.integratedmodelling.klab.api.data.Data.class,
+                id,
+                100,
+                500,
+                7,
+                1000,
+                5,
+                1800,
+                -1,
+                3000);
+          } else {
+            System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
+            //            var log = parseResponse(response.body(), Map.class);
+            //            MapUtils.debugPrint(System.out, "Server error", log);
+            System.out.println(
+                "Server responded " + response.statusCode() + ": " + response.body());
+            System.out.println("============ END OF REPORT  ==============");
+            return CompletableFuture.failedFuture(
+                new KlabServiceAccessException(
+                    response.statusCode()
+                        + " error in contextualization: response is "
+                        + response.body()));
           }
 
         } catch (Throwable e) {
           if (scope != null) {
+            System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
+            System.out.println(
+                "Server error: response is not parseable as error: "
+                    + apiCall
+                    + ": "
+                    + e.getMessage());
+            System.out.println("============ END OF REPORT  ==============");
             scope.error(e);
+            return CompletableFuture.failedFuture(new KlabServiceAccessException(e));
           }
         }
 
@@ -711,6 +749,30 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       public Client withScope(String scopeId) {
         var ret = new Client(this);
         ret.headers.put(ServicesAPI.SCOPE_HEADER, scopeId);
+        return ret;
+      }
+
+      /**
+       * Localize the scope for communication when the scope itself is not available but its ID is.
+       *
+       * @param authorization
+       * @return
+       */
+      public Client withAutorization(String authorization) {
+        var ret = new Client(this);
+        ret.headers.put(HttpHeaders.AUTHORIZATION, authorization);
+        return ret;
+      }
+
+      /**
+       * Localize the scope for communication when the scope itself is not available but its ID is.
+       *
+       * @param authentication
+       * @return
+       */
+      public Client withAuthentication(String authentication) {
+        var ret = new Client(this);
+        ret.headers.put(AUTHENTICATION_HEADER, authentication);
         return ret;
       }
 
@@ -902,7 +964,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
             final int statusCode = response.getStatusLine().getStatusCode();
 
-            if (statusCode == 200) {
+            if (HttpStatus.valueOf(statusCode).is2xxSuccessful()) {
               return parseResponse(
                   IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8),
                   resultClass);
@@ -970,9 +1032,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             final int statusCode = response.getStatusLine().getStatusCode();
 
             var body = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            if (statusCode == 200 || statusCode == 202) {
+            if (HttpStatus.valueOf(statusCode).is2xxSuccessful()) {
               var id = Long.parseLong(body);
-              return new PollingFuture<>(this, resultClass, id, 100, 500, 7, 1000, 5, 1800, -1, 3000);
+              return new PollingFuture<>(
+                  this, resultClass, id, 100, 500, 7, 1000, 5, 1800, -1, 3000);
             } else {
               var log = parseResponse(body, Map.class);
               System.out.println(
@@ -1057,10 +1120,11 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
           var response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-          if (response.statusCode() == 200) {
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             parseHeaders(response);
             return parseResponse(response.body(), resultClass);
           } else {
+            System.out.println("========== POST " + apiCall + " return " + response.statusCode());
             var log = parseResponse(response.body(), Map.class);
             System.out.println("============ POST " + apiCall + " EXCEPTION REPORT ==============");
             MapUtils.debugPrint(System.out, "Server error", log);
@@ -1143,7 +1207,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
           var response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-          if (response.statusCode() == 200 || response.statusCode() == 202) {
+          if (HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             var id = Long.parseLong(response.body());
             return new PollingFuture<>(this, resultClass, id, 100, 500, 7, 1000, 5, 1800, -1, 3000);
           } else {
@@ -1209,7 +1273,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
           var response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-          if (response.statusCode() == 200) {
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             parseHeaders(response);
             return parseResponseList(response.body(), resultClass);
           }
@@ -1355,9 +1419,71 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                         .build(),
                     HttpResponse.BodyHandlers.ofString());
 
-            if (response != null && response.statusCode() == 200) {
+            if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
               parseHeaders(response);
               return parseResponse(response.body(), resultClass);
+            }
+          } else {
+            client.send(
+                requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(),
+                HttpResponse.BodyHandlers.discarding());
+          }
+
+        } catch (Throwable e) {
+          if (scope != null) {
+            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else {
+            //                        e.printStackTrace();
+          }
+        }
+        return null;
+      }
+
+      /**
+       * GET helper that sets all headers and automatically handles JSON marshalling.
+       *
+       * @param apiRequest the request starting with "/" appended to the main service URL. Add any ?
+       *     parameters here.
+       * @param resultClass
+       * @param parameters paired key, value sequence for URL <em>path</em> template options.
+       *     Explicit ?... URL parameters should be added to the URL directly.
+       * @param <T>
+       * @return
+       */
+      public <T> T getData(String apiRequest, Class<T> resultClass, Object... parameters) {
+
+        var options = new Options();
+        var params = makeKeyMap(options, parameters);
+        var apiCall = substituteTemplateParameters(apiRequest, params);
+        responseHeaders.clear();
+
+        try {
+          var requestBuilder = HttpRequest.newBuilder().GET();
+          if (authorization != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+          }
+          for (String header : headers.keySet()) {
+            requestBuilder = requestBuilder.header(header, headers.get(header));
+          }
+
+          if (forcedAcceptHeader != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+          }
+
+          if (Void.class != resultClass) {
+            var response =
+                client.send(
+                    requestBuilder
+                        .uri(URI.create(uri + apiCall + encodeParameters(params)))
+                        .timeout(Duration.ofSeconds(timeoutSeconds))
+                        .build(),
+                    HttpResponse.BodyHandlers.ofInputStream());
+
+            if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
+              parseHeaders(response);
+              var decoder = DecoderFactory.get().binaryDecoder(response.body(), null);
+              var reader = new SpecificDatumReader<>(Instance.class);
+              return (T) BaseDataImpl.create(reader.read(null, decoder));
             }
           } else {
             client.send(
@@ -1404,7 +1530,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                       .build(),
                   HttpResponse.BodyHandlers.ofString());
 
-          if (response != null && response.statusCode() == 200) {
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             parseHeaders(response);
             return parseResponseList(response.body(), resultClass);
           }
@@ -1452,7 +1578,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                   requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(),
                   HttpResponse.BodyHandlers.discarding());
 
-          if (response != null && response.statusCode() == 200) {
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
             parseHeaders(response);
             return true;
           }
@@ -2114,6 +2240,28 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
   public static class Markdown {}
 
   public static class Maps {
+
+    /**
+     * Return the object at the given path as the passed class. Each slash-separated path component,
+     * except the last, must point to another map.
+     *
+     * @param <T>
+     * @param path
+     * @param cls
+     * @return
+     */
+    public static <T> T get(Map<?, ?> map, String path, Class<T> cls) {
+      String[] paths = path.split("/");
+      Map<?, ?> o = map;
+      for (int i = 0; i < paths.length - 1; i++) {
+        Object to = o.get(paths[i]);
+        if (!(to instanceof Map)) {
+          return null;
+        }
+        o = (Map<?, ?>) to;
+      }
+      return o == null ? null : Data.asType(o.get(paths[paths.length - 1]), cls);
+    }
 
     /**
      * @param originalMap

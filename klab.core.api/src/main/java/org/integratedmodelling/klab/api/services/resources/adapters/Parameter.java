@@ -22,11 +22,11 @@ public @interface Parameter {
   String name();
 
   /**
-   * Type(s) accepted for the parameter.
+   * Type accepted for the parameter.
    *
    * @return
    */
-  Artifact.Type[] type();
+  Artifact.Type type();
 
   /**
    * These must be filled in only if the {@link #type()} is {@link Artifact.Type#ENUM}.

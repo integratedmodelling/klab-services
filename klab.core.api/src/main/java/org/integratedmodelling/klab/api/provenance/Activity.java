@@ -178,7 +178,7 @@ public interface Activity extends Provenance.Node {
         ret.setOutcome(Outcome.FAILURE);
       } else if (o instanceof KlabService service) {
         ret.setServiceId(service.serviceId());
-        ret.setServiceName(service.getServiceName());
+        ret.setServiceName(service.serviceName());
         ret.setServiceType(KlabService.Type.classify(service));
       } else if (o instanceof Activity activity) {
         ret.setTriggeringActivityUrn(activity.getUrn());

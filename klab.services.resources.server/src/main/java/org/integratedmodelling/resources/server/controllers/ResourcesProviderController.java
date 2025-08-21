@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,11 +44,13 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.common.authentication.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -483,65 +486,68 @@ public class ResourcesProviderController {
    * request may include input data in an {@link org.integratedmodelling.klab.common.data.Instance}
    * field.
    *
-   * @param requestStream
-   * @param response
+   * @param requestBody
    * @param principal
    */
   @PostMapping(
       value = ServicesAPI.RESOURCES.CONTEXTUALIZE,
       consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-  public void contextualize(
-      InputStream requestStream, HttpServletResponse response, Principal principal) {
+  public long contextualize(HttpServletRequest requestBody, Principal principal) {
 
     if (principal instanceof EngineAuthorization authorization) {
 
-      try {
-        var decoder = DecoderFactory.get().binaryDecoder(requestStream, null);
-        var reader = new SpecificDatumReader<>(DataRequest.class);
-        var request = reader.read(null, decoder);
-        var scope = authorization.getScope();
-        var resource =
-            resourcesServer
-                .klabService()
-                .retrieveResource(
-                    request.getResourceUrns().stream().map(CharSequence::toString).toList(), scope);
-        var observable =
-            resourcesServer
-                .klabService()
-                .serviceScope()
-                .getService(Reasoner.class)
-                .resolveObservable(request.getObservable().toString());
-        var event = Scheduler.event(request.getStartTime(), request.getEndTime());
-        var geometry =
-            GeometryRepository.INSTANCE.get(request.getGeometry().toString(), Geometry.class);
+      Utils.DebugFile.println("DIO TARALLO MI HA CHIAMATO");
 
-        Data input = null;
-        if (request.getInputData() != null) {
-          input = BaseDataImpl.create(request.getInputData());
-        }
+      var scope = authorization.getScope();
+      if (scope instanceof ServiceUserScope serviceUserScope) {
 
-        Data data =
-            resourcesServer
-                .klabService()
-                .contextualize(
-                    resource,
-                    DigitalTwin.createObservation(scope, observable, geometry),
-                    event, // FIXME FIXME FIXME take the event from the request
-                    input,
-                    scope);
+        try {
+          var decoder = DecoderFactory.get().binaryDecoder(requestBody.getInputStream(), null);
+          var reader = new SpecificDatumReader<>(DataRequest.class);
+          var request = reader.read(null, decoder);
 
-        if (data instanceof BaseDataImpl dataImpl) {
-          try {
-            var output = response.getOutputStream();
-            dataImpl.copyTo(output);
-            output.flush();
-            return;
-          } catch (Throwable t) {
-            throw new KlabResourceAccessException(t);
+          var resource =
+              resourcesServer
+                  .klabService()
+                  .retrieveResource(
+                      request.getResourceUrns().stream().map(CharSequence::toString).toList(),
+                      scope);
+          var observable =
+              serviceUserScope
+                  .getService(Reasoner.class)
+                  .resolveObservable(request.getObservable().toString());
+          var event = Scheduler.event(request.getStartTime(), request.getEndTime());
+          var geometry =
+              GeometryRepository.INSTANCE.get(request.getGeometry().toString(), Geometry.class);
+
+          Data input = null;
+          if (request.getInputData() != null) {
+            input = BaseDataImpl.create(request.getInputData());
           }
+
+          Utils.DebugFile.println("CANAGLIA DIO MAKING REQUEST");
+
+          var ret =
+              serviceUserScope
+                  .getJobManager()
+                  .submit(
+                      resourcesServer
+                          .klabService()
+                          .contextualize(
+                              resource,
+                              DigitalTwin.createObservation(scope, observable, geometry),
+                              event,
+                              input,
+                              scope),
+                      "Resolution of " + observable);
+
+          Utils.DebugFile.println("CANAGLIA TROJA RETURNING TASK " + ret);
+
+          return ret;
+
+        } catch (Throwable t) {
+          throw new KlabIOException(t);
         }
-      } catch (IOException e) {
-        throw new KlabIOException(e);
       }
     }
 
@@ -594,10 +600,19 @@ public class ResourcesProviderController {
   }
 
   @GetMapping(ServicesAPI.RESOURCES.QUERY_RESOURCES)
-  public List<String> queryResources(
-      @RequestParam("urnPattern") String urnPattern,
+  public @ResponseBody List<ResourceInfo> queryResources(
+      @RequestParam("query") String query,
+      Principal principal,
       @RequestParam("resourceTypes") KlabAsset.KnowledgeClass... resourceTypes) {
-    return resourcesServer.klabService().queryResources(urnPattern, resourceTypes);
+
+    return resourcesServer
+        .klabService()
+        .queryResources(
+            query,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null,
+            resourceTypes);
   }
 
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_PROJECT)

@@ -223,7 +223,12 @@ public class LanguageService implements Language {
     this.componentRegistry = componentRegistry;
   }
 
-  //    public void declare(ServiceInfo serviceInfo) {
+  @Override
+  public String serviceName() {
+    return "k.LAB Language Service";
+  }
+
+    //    public void declare(ServiceInfo serviceInfo) {
   //        FunctionDescriptor descriptor = createFunctionDescriptor(serviceInfo);
   //        switch (serviceInfo.getFunctionType()) {
   //            case ANNOTATION:

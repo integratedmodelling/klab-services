@@ -131,7 +131,7 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
               (isDefault ? "* " : "  ")
                   + Utils.Paths.getLast(service.getClass().getName(), '.')
                   + ": "
-                  + service.getServiceName()
+                  + service.serviceName()
                   + " "
                   + " ["
                   + (service.status().isAvailable() ? "available" : "not available")

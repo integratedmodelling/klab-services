@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.indexing;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,6 +25,7 @@ import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.MMapDirectory;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
@@ -34,147 +36,167 @@ import org.integratedmodelling.common.logging.Logging;
 
 public class ResourceIndexer {
 
-	private Directory index;
-	private IndexWriter writer;
-	private StandardAnalyzer analyzer;
-	private ReferenceManager<IndexSearcher> searcherManager;
-	private ControlledRealTimeReopenThread<IndexSearcher> nrtReopenThread;
-	
-	public static final int MAX_RESULT_COUNT = 9;
+  private Directory index;
+  private IndexWriter writer;
+  private StandardAnalyzer analyzer;
+  private ReferenceManager<IndexSearcher> searcherManager;
+  private ControlledRealTimeReopenThread<IndexSearcher> nrtReopenThread;
 
-	private ResourceIndexer() {
-		try {
-			this.index = new ByteBuffersDirectory(); // new
-												// MMapDirectory(Configuration.INSTANCE.getDataPath("index").toPath());
-			this.analyzer = new StandardAnalyzer();
-			IndexWriterConfig config = new IndexWriterConfig(this.analyzer);
-			this.writer = new IndexWriter(index, config);
+  public static final int MAX_RESULT_COUNT = 9;
 
-			this.searcherManager = new SearcherManager(writer, true, true, null);
-			/**
-			 * Thread supporting near-realtime index background refresh
-			 */
-			nrtReopenThread = new ControlledRealTimeReopenThread<IndexSearcher>(writer, searcherManager, 1.0, 0.1);
-			nrtReopenThread.setName("NRT Reopen Thread");
-			nrtReopenThread.setPriority(Math.min(Thread.currentThread().getPriority() + 2, Thread.MAX_PRIORITY));
-			nrtReopenThread.setDaemon(true);
-			nrtReopenThread.start();
+  public static ResourceIndexer create() {
+    return new ResourceIndexer(null);
+  }
+  ;
 
-		} catch (IOException e) {
-			throw new KlabIOException(e);
-		}
-	}
+  public static ResourceIndexer create(File indexDirectory) {
+    return new ResourceIndexer(indexDirectory);
+  }
 
-	public void index(Resource resource) {
+  private ResourceIndexer(File indexDirectory) {
+    try {
+      this.index =
+          indexDirectory == null
+              ? new ByteBuffersDirectory()
+              : new MMapDirectory(indexDirectory.toPath());
 
-		try {
+      this.analyzer = new StandardAnalyzer();
+      IndexWriterConfig config = new IndexWriterConfig(this.analyzer);
+      this.writer = new IndexWriter(index, config);
 
-			Document document = new Document();
+      this.searcherManager = new SearcherManager(writer, true, true, null);
+      /** Thread supporting near-realtime index background refresh */
+      nrtReopenThread =
+          new ControlledRealTimeReopenThread<IndexSearcher>(writer, searcherManager, 1.0, 0.1);
+      nrtReopenThread.setName("NRT Reopen Thread");
+      nrtReopenThread.setPriority(
+          Math.min(Thread.currentThread().getPriority() + 2, Thread.MAX_PRIORITY));
+      nrtReopenThread.setDaemon(true);
+      nrtReopenThread.start();
 
-			Urn urn = Urn.of(resource.getUrn());
+    } catch (IOException e) {
+      throw new KlabIOException(e);
+    }
+  }
 
-			document.add(new StringField("id", urn.getUrn(), Store.YES));
-			document.add(new StringField("namespace", urn.getNamespace(), Store.YES));
-			document.add(new StringField("catalog", urn.getCatalog(), Store.YES));
-			document.add(new TextField("name", urn.getUrn(), Store.YES));
-			for (String key : resource.getMetadata().keySet()) {
-				if (Metadata.DC_DESCRIPTION.equals(key)) {
-					document.add(new TextField("description", resource.getMetadata().get(key).toString(), Store.YES));
-				} else {
-					document.add(new TextField(key, resource.getMetadata().get(key).toString(), Store.YES));
-				}
-			}
+  public void index(Resource resource) {
 
-			this.writer.addDocument(document);
-		} catch (IOException e) {
-			throw new KlabIOException(e);
-		}
-	}
+    try {
 
-	public void commitChanges() {
-		try {
-			this.writer.commit();
-		} catch (IOException e) {
-			throw new KlabIOException(e);
-		}
-	}
+      Document document = new Document();
 
-	public boolean ensureClosed() {
-		nrtReopenThread.close();
-		if (this.writer.isOpen()) {
-			try {
-				this.writer.close();
-			} catch (IOException e) {
-				Logging.INSTANCE.error(e);
-				return false;
-			}
-		}
-		return true;
-	}
+      Urn urn = Urn.of(resource.getUrn());
 
-	public List<SemanticMatch> query(String query) {
-		return query(query, MAX_RESULT_COUNT);
-	}
+      document.add(new StringField("id", urn.getUrn(), Store.YES));
+      document.add(new StringField("namespace", urn.getNamespace(), Store.YES));
+      document.add(new StringField("catalog", urn.getCatalog(), Store.YES));
+      document.add(new TextField("name", urn.getUrn(), Store.YES));
+      for (String key : resource.getMetadata().keySet()) {
+        if (Metadata.DC_DESCRIPTION.equals(key)) {
+          document.add(
+              new TextField("description", resource.getMetadata().get(key).toString(), Store.YES));
+        } else {
+          document.add(new TextField(key, resource.getMetadata().get(key).toString(), Store.YES));
+        }
+      }
 
-	private Query buildQuery(String currentTerm) {
-		QueryParser parser = new QueryParser("name", analyzer);
-		// parser.setAllowLeadingWildcard(true);
-		try {
-			// hai voglia
-			return parser.parse(currentTerm + "*");
-		} catch (ParseException e) {
-			throw new KlabValidationException(e);
-		}
-	}
+      this.writer.addDocument(document);
+    } catch (IOException e) {
+      throw new KlabIOException(e);
+    }
+  }
 
-	public List<SemanticMatch> query(String query, int maxResults) {
+  public void commitChanges() {
+    try {
+      this.writer.commit();
+    } catch (IOException e) {
+      throw new KlabIOException(e);
+    }
+  }
 
-		List<SemanticMatch> ret = new ArrayList<>();
+  public boolean ensureClosed() {
+    nrtReopenThread.close();
+    if (this.writer.isOpen()) {
+        try {
+            // Ensure all changes are committed before closing
+            this.writer.commit();
+            this.writer.close();
+        } catch (IOException e) {
+            Logging.INSTANCE.error(e);
+            return false;
+        }
+    }
+    return true;
+  }
 
-		Set<String> ids = new HashSet<>();
+  public List<SemanticMatch> query(String query) {
+    return query(query, MAX_RESULT_COUNT);
+  }
 
-		IndexSearcher searcher;
-		try {
-			searcher = searcherManager.acquire();
-		} catch (IOException e) {
-			// adorable exception management
-			throw new KlabIOException(e);
-		}
+  private Query buildQuery(String currentTerm) {QueryParser parser = new QueryParser("name", analyzer);
 
-		try {
-			TopDocs docs = searcher.search(buildQuery(query), maxResults);
-			ScoreDoc[] hits = docs.scoreDocs;
+    parser.setAllowLeadingWildcard(true);
+    parser.setEnableGraphQueries(true);
+    parser.setFuzzyMinSim(0.5f);
+    parser.setFuzzyPrefixLength(2);
+    parser.setAutoGenerateMultiTermSynonymsPhraseQuery(true);
 
-			for (ScoreDoc hit : hits) {
+    try {
+      // hai voglia
+      return parser.parse(currentTerm + "*");
+    } catch (ParseException e) {
+      throw new KlabValidationException(e);
+    }
+  }
 
-				Document document = searcher.storedFields().document(hit.doc);
+  public List<SemanticMatch> query(String query, int maxResults) {
 
-				if (!ids.contains(document.get("id"))) {
+    List<SemanticMatch> ret = new ArrayList<>();
 
-					SemanticMatch match = new SemanticMatch();
-					match.setId(document.get("id"));
-					match.setName(document.get("name"));
-					match.setDescription(document.get("description"));
-					match.setScore(hit.score);
-					match.setMatchType(SemanticMatch.Type.RESOURCE);
+    Set<String> ids = new HashSet<>();
 
-					ret.add(match);
-					ids.add(document.get("id"));
-				}
-			}
+    IndexSearcher searcher;
+    try {
+      searcher = searcherManager.acquire();
+    } catch (IOException e) {
+      // adorable exception management
+      throw new KlabIOException(e);
+    }
 
-		} catch (Exception e) {
-			throw new KlabIOException(e);
-		} finally {
-			try {
-				searcherManager.release(searcher);
-			} catch (IOException e) {
-				// unbelievable, they want it in finally and make it throw a checked
-				// exception
-				throw new KlabIOException(e);
-			}
-		}
+    try {
+      TopDocs docs = searcher.search(buildQuery(query), maxResults);
+      ScoreDoc[] hits = docs.scoreDocs;
 
-		return ret;
-	}
+      for (ScoreDoc hit : hits) {
+
+        Document document = searcher.storedFields().document(hit.doc);
+
+        if (!ids.contains(document.get("id"))) {
+
+          SemanticMatch match = new SemanticMatch();
+          match.setId(document.get("id"));
+          match.setName(document.get("name"));
+          match.setDescription(document.get("description"));
+          match.setScore(hit.score);
+          match.setMatchType(SemanticMatch.Type.RESOURCE);
+
+          ret.add(match);
+          ids.add(document.get("id"));
+        }
+      }
+
+    } catch (Exception e) {
+      throw new KlabIOException(e);
+    } finally {
+      try {
+        searcherManager.release(searcher);
+      } catch (IOException e) {
+        // unbelievable, they want it in finally and make it throw a checked
+        // exception
+        throw new KlabIOException(e);
+      }
+    }
+
+    return ret;
+  }
 }

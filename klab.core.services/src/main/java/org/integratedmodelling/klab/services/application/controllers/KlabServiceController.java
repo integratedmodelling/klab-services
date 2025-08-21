@@ -93,22 +93,8 @@ public class KlabServiceController {
 
       var scope = authorization.getScope();
       // retrieve schema. TODO not handling authorization yet
-      var schemata =
-          ResourceTransport.INSTANCE.findExportSchemata(
-              knowledgeClass, mediaType, instance.klabService().capabilities(scope), scope);
 
-      if (schemata.isEmpty()) {
-        throw new KlabAuthorizationException(
-            "No authorized export schema with media type " + mediaType + " is available");
-      } else if (schemata.size() > 1) {
-        scope.warn(
-            "Ambiguous request: more than one export schema with "
-                + "media type "
-                + mediaType
-                + " is available");
-      }
-
-      var stream = instance.klabService().exportAsset(urn, schemata.getFirst(), mediaType, scope);
+      var stream = instance.klabService().exportAsset(urn, knowledgeClass, mediaType, scope);
       if (stream == null) {
         throw new KlabResourceAccessException(
             "Service cannot stream the asset identified by " + urn);

@@ -31,8 +31,12 @@ import org.integratedmodelling.common.services.client.engine.ServiceMonitor;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.PartnerIdentity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -66,7 +70,7 @@ public abstract class BaseService implements KlabService {
   protected AtomicBoolean available = new AtomicBoolean(false);
   private final List<Notification> serviceNotifications = new ArrayList<>();
   protected AbstractServiceDelegatingScope scope;
-  protected String localName = "Embedded";
+  protected String serviceName = "Unassigned";
   protected final ServiceStartupOptions startupOptions;
   private ScopeManager _scopeManager;
   private boolean initialized;
@@ -79,6 +83,7 @@ public abstract class BaseService implements KlabService {
   protected Settings settings;
   protected Settings settingsForSlaveServices;
   private StampedLock lockFile;
+  private Identity identity;
 
   protected BaseService(
       AbstractServiceDelegatingScope scope,
@@ -276,9 +281,9 @@ public abstract class BaseService implements KlabService {
     return this.serviceNotifications;
   }
 
-  public String getLocalName() {
+  public String serviceName() {
     // TODO Auto-generated method stub
-    return localName;
+    return serviceName;
   }
 
   @Override
@@ -410,18 +415,18 @@ public abstract class BaseService implements KlabService {
   }
 
   /**
-   * Calls {@link #ingestResources(ResourceSet, Scope, Class)} ignoring the class and only returning
-   * true or false if the resource set has errors.
+   * Calls {@link #ingestResources(ResourceSet, Scope, boolean)} ignoring the class and only
+   * returning true or false if the resource set has errors.
    *
    * @param resourceSet
    * @param scope
    * @return
    */
-  protected boolean ingestResources(ResourceSet resourceSet, Scope scope) {
+  protected boolean ingestResources(ResourceSet resourceSet, Scope scope, boolean loadComponents) {
     if (Utils.Notifications.hasErrors(resourceSet.getNotifications())) {
       return false;
     }
-    ingestResources(resourceSet, scope, KlabAsset.class);
+    ingestResources(resourceSet, scope, KlabAsset.class, loadComponents);
     return true;
   }
 
@@ -435,7 +440,8 @@ public abstract class BaseService implements KlabService {
    * @return
    */
   protected synchronized <T extends KlabAsset> List<T> ingestResources(
-      ResourceSet resourceSet, Scope scope, Class<T> resultClass) {
+      ResourceSet resourceSet, Scope scope, Class<T> resultClass, boolean loadComponents) {
+
     List<T> ret = new ArrayList<>();
     for (var doc : KnowledgeRepository.INSTANCE.ingest(resourceSet, scope, Knowledge.class)) {
       if (resultClass.isAssignableFrom(doc.getClass())) {
@@ -451,7 +457,7 @@ public abstract class BaseService implements KlabService {
       }
     }
 
-    if (hasComponents) {
+    if (hasComponents && loadComponents) {
       getComponentRegistry().loadComponents(resourceSet, scope);
     }
 
@@ -468,7 +474,25 @@ public abstract class BaseService implements KlabService {
 
   @Override
   public InputStream exportAsset(
-      String urn, ResourceTransport.Schema exportSchema, String mediaType, Scope scope) {
+      String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope) {
+
+    var schemata =
+        ResourceTransport.INSTANCE.findExportSchemata(
+            knowledgeClass, mediaType, capabilities(scope), scope);
+
+    // NO - retrieve the assed, then if the metadata contain an adapter, use that to prioritize
+    // before warning.
+    if (schemata.isEmpty()) {
+      throw new KlabAuthorizationException(
+          "No authorized export schema with media type " + mediaType + " is available");
+    } else if (schemata.size() > 1) {
+      scope.warn(
+          "Ambiguous request: more than one export schema with "
+              + "media type "
+              + mediaType
+              + " is available");
+    }
+    var exportSchema = schemata.getFirst();
     ServiceCall serviceCall =
         ServiceCallImpl.create(exportSchema.getSchemaId(), "MEDIA_TYPE", mediaType);
     serviceCall.getParameters().putUnnamed(urn);
@@ -509,5 +533,19 @@ public abstract class BaseService implements KlabService {
     var file = getFileInConfigurationDirectory(startupOptions(), serviceId + ".lock");
     Utils.Files.touch(file);
     file.deleteOnExit();
+  }
+
+  public void setServiceName(String username) {
+    this.serviceName = username;
+  }
+
+  public void setIdentity(Identity identity) {
+    this.identity = identity;
+    this.serviceName =
+        switch (identity) {
+          case UserIdentity user -> user.getUsername();
+          case PartnerIdentity partner -> partner.getId();
+          default -> throw new KlabIllegalStateException("Unknown identity type: " + identity);
+        };
   }
 }

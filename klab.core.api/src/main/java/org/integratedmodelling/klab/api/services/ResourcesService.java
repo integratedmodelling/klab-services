@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -70,7 +71,7 @@ import java.util.concurrent.Future;
  *
  * <p>In addition, the resource manager exposes querying methods, either based on semantics and
  * context ({@link #resolveModels(Observable, ContextScope)}) or on textual search ({@link
- * #queryResources(String, KnowledgeClass...)}). The semantic query model uses the connected
+ * #queryResources(String, Scope, KnowledgeClass...)}). The semantic query model uses the connected
  * reasoner and will only return a ResourceSet listing {@link KimModel}s and their requirements,
  * leaving ranking and prioritization to the caller.
  *
@@ -116,10 +117,10 @@ public interface ResourcesService extends KlabService {
     Set<CRUDOperation> getPermissions();
   }
 
-  default String getServiceName() {
-    return "klab.resources.service";
-  }
-
+//  default String getServiceName() {
+//    return "klab.resources.service";
+//  }
+//
   /**
    * Scope CAN be null for generic public capabilities.
    *
@@ -237,9 +238,9 @@ public interface ResourcesService extends KlabService {
   ResourceSet resolveResource(List<String> urn, Scope scope);
 
   /**
-   * Return a version of the passed resource that is primed to be used in the passed geometry. Not
-   * all adapters require this step before use; in this case the {@link
-   * AdapterDescriptor#contextualizing()} relative to the adapter will return true.
+   * Return a version of the passed resource that is primed to be used in the given geometry. Not
+   * all adapters require this step before use; in this case the {@link Adapter#hasContextualizer()}
+   * relative to the adapter will return true.
    *
    * @param resource
    * @param geometry
@@ -291,14 +292,19 @@ public interface ResourcesService extends KlabService {
   KimConcept retrieveConcept(String definition);
 
   /**
+   * Extract data from the passed resource to contextualize the passed observation, whose semantics
+   * must be compatible with the type of data extracted.
+   *
    * @param contextualizedResource the resource that needs to be contextualized
-   * @param observation must have a geometry set
+   * @param observation provides semantics and geometry for the contextualization
    * @param event the scheduler event that triggered this contextualization
-   * @param input may be null, pass if the resource requires inputs
-   * @param scope the scope under which contextualization happens
-   * @return the contextualized data object
+   * @param input data that contains the state relevant to the contextualization. This is null
+   *     unless the resource requires inputs.
+   * @param scope the scope under which contextualization happens. Normally a ContextScope but it
+   *     may be a UserScope in testing situations.
+   * @return a completable future for the contextualized data object
    */
-  Data contextualize(
+  CompletableFuture<Data> contextualize(
       Resource contextualizedResource,
       Observation observation,
       Scheduler.Event event,
@@ -356,15 +362,18 @@ public interface ResourcesService extends KlabService {
   List<KimNamespace> precursors(String namespaceId);
 
   /**
-   * Return the URNs of any locally hosted resources whose URN matches the passed pattern. If any
-   * resource types are passed, only return URNs for those. The pattern should allow simple
-   * wildcards like * and .
+   * Return the info associated withany locally hosted resources whose URN, metadata or other field
+   * matches the passed pattern. If any resource types are passed, only return results for those.
+   * The pattern should allow wildcards and be matched intelligently, with ways to specify exact
+   * matches as needed. The result should be sorted best match first. Under no circumstance there
+   * should be values that are unauthorized for the scope.
    *
-   * @param urnPattern the pattern to match resource URNs against
+   * @param queryString the pattern to match resource URNs against
    * @param resourceTypes optional types to filter the results by
    * @return list of matching resource URNs
    */
-  List<String> queryResources(String urnPattern, KlabAsset.KnowledgeClass... resourceTypes);
+  List<ResourceInfo> queryResources(
+      String queryString, Scope scope, KlabAsset.KnowledgeClass... resourceTypes);
 
   /**
    * Import a new resource, honoring any URN settings (and creating a suitable URN in case the
@@ -440,16 +449,21 @@ public interface ResourcesService extends KlabService {
    * KlabService#importAsset(ResourceTransport.Schema, ResourceTransport.Schema.Asset, String,
    * Scope)} mechanism; the resources service adds management of distribution, ownership and review.
    *
+   * <p>TODO should be non-API, part of the import mechanism, but currently it needs to be exposed
+   *
    * @param urn the URN identifier for the resource
    * @param knowledgeClass the knowledge class of the resource
    * @param fileLocation local file if any, or null. Should also build hash and backup file for
    *     unburdened copying if the file is opened.
    * @param submittingScope the scope requesting the registration
-   * @deprecated should be non-API, part of the import mechanism
    * @return resource info for the registered resource
    */
   ResourceInfo registerResource(
-      String urn, KnowledgeClass knowledgeClass, File fileLocation, Scope submittingScope);
+      String urn,
+      KnowledgeClass knowledgeClass,
+      File fileLocation,
+      ResourcePrivileges rights,
+      Scope submittingScope);
 
   /**
    * Admin interface to submit/remove projects and configure the service.

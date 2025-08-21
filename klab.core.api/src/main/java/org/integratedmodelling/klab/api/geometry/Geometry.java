@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.api.geometry;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
@@ -77,7 +79,7 @@ import java.util.List;
  */
 public interface Geometry extends Serializable, Locator {
 
-  public enum Granularity {
+  enum Granularity {
     /** */
     SINGLE,
     /** */
@@ -117,18 +119,18 @@ public interface Geometry extends Serializable, Locator {
    * Constant for non-dimensional (referenced but not distributed) return value of {@link
    * Dimension#getDimensionality()}.
    */
-  public static final int NONDIMENSIONAL = -1;
+  int NONDIMENSIONAL = -1;
 
   /** Constant for undefined dimension size. */
-  public static final long UNDEFINED = -1L;
+  long UNDEFINED = -1L;
 
   /** Infinite size, only admitted for the time dimension. */
-  public static final long INFINITE_SIZE = Long.MAX_VALUE;
+  long INFINITE_SIZE = Long.MAX_VALUE;
 
   /**
    * @author Ferd
    */
-  public interface Dimension extends Serializable {
+  interface Dimension extends Serializable {
 
     /**
      * Types are ordered in the sequence of scanning in scales. Changing the order will destroy the
@@ -267,6 +269,7 @@ public interface Geometry extends Serializable, Locator {
   }
 
   Geometry EMPTY = create("X");
+  Geometry UNIVERSAL = create("1");
 
   static Geometry create(String geometry) {
     return GeometryImpl.makeGeometry(geometry, 0);
@@ -344,6 +347,22 @@ public interface Geometry extends Serializable, Locator {
   boolean isEmpty();
 
   /**
+   * A universal geometry will be extentually compatible with any other and won't alter the result
+   * when merged with another.
+   *
+   * @return
+   */
+  boolean isUniversal();
+
+  /**
+   * Metadata are normally empty. They are provided for special purposes, such as tracking
+   * provenance after splitting and merging.
+   *
+   * @return
+   */
+  Metadata getMetadata();
+
+  /**
    * A trivial geometry describes scalar values with no structure.
    *
    * @return true if scalar
@@ -408,19 +427,42 @@ public interface Geometry extends Serializable, Locator {
   long[] getExtentOffsets();
 
   /**
-   * TODO unimplemented. Must define the constraint API and the offset retrieval operation.
+   * Split the geometry into the given number of splits, or whatever is practical to approximate it.
+   * In some cases the split won't happen and a list containing this same geometry will be returned.
    *
-   * <p>Split a geometry in a list of geometries whose extent and/or resolution match the specified
-   * constraints (TO BE DEFINED). The resulting geometries will have their {@link
-   * #getExtentOffsets()} return the offset per each dimension within the original geometry so that
-   * the corresponding original offsets can be reconstructed.
+   * <p>Split at the moment only happens on regular spatial grids. Temporal is also meaningful and
+   * can be easily added, but as the splits are meant for parallelization, supporting it would
+   * confuse the API usage.
    *
-   * <p>This can be used to parallelize a large geometry so that it can be processed in parallel
-   * chunks.
+   * <p>Note that:
    *
+   * <p>Any shape in the original geometry is not inherited by the split geometries.
+   *
+   * <p>The original geometry isn't referenced in the split geometries, so it must be kept, if
+   * remapping is needed, in an external data structure.
+   *
+   * @param suggestedSplits
    * @return
    */
-  List<Geometry> split();
+  List<Geometry> split(int suggestedSplits);
+
+  /**
+   * Merge back the geometries into one that will maintain the merged geometries and can remap
+   * iterated offsets to the original, using any requested fill curve.
+   *
+   * @param splitGeometries
+   * @return
+   */
+  static Geometry merge(List<Geometry> splitGeometries) {
+    if (splitGeometries.isEmpty()) {
+      return EMPTY;
+    }
+    if (splitGeometries.size() == 1) {
+      return splitGeometries.getFirst();
+    }
+    // TODO
+    return null;
+  }
 
   /**
    * If this is true, the reported size will not include the time, and the time dimension will have

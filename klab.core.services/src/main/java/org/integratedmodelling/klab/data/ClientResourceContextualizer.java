@@ -2,11 +2,15 @@ package org.integratedmodelling.klab.data;
 
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.exceptions.KlabContextualizationException;
+import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+
+import java.util.concurrent.ExecutionException;
 
 /**
  * One of these is created per resource contextualization operation. Drives the functions in the
@@ -18,18 +22,25 @@ public class ClientResourceContextualizer extends AbstractResourceContextualizer
   private final ResourcesService service;
 
   /**
-   * Pass a previously contextualized resource
+   * Pass a resource. If the adapter must adapt it to the context, this must happen before the call.
+   * TODO maybe we should internalize this, given that we now get the adapter.
    *
    * @param service
    * @param resource
    */
-  public ClientResourceContextualizer(ResourcesService service, Resource resource, Observation observation) {
+  public ClientResourceContextualizer(
+      ResourcesService service, Resource resource, Observation observation) {
     super(resource, observation);
     this.service = service;
   }
 
   @Override
   protected Data getData(Geometry geometry, Scheduler.Event event, ContextScope scope) {
-    return service.contextualize(resource, observation, event, getInputData(scope), scope);
+    try {
+      // this one is synchronous, called within a CompletableFuture anyway
+      return service.contextualize(resource, observation, event, getInputData(scope), scope).get();
+    } catch (Exception e) {
+      throw new KlabResourceAccessException(e);
+    }
   }
 }

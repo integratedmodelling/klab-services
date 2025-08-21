@@ -194,7 +194,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
       String url;
       try {
         URL serviceHostUrl = (new URI(options.getServiceHostUrl())).toURL();
-        if (Utils.URLs.isLocalHost(serviceHostUrl)) {
+        if (Utils.URLs.isLocalHost(serviceHostUrl) && !serviceHostUrl.toString().contains(":")) {
           url = options.getServiceHostUrl() + ":" + options.getPort() + options.getContextPath();
         } else {
           url = serviceHostUrl.toString();
@@ -258,7 +258,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
   }
 
   public void shutdown() {
-    Logging.INSTANCE.info(klabService().getServiceName() + " shutting down in 5 seconds...");
+    Logging.INSTANCE.info(klabService().serviceName() + " shutting down in 5 seconds...");
     try (var executor = Executors.newScheduledThreadPool(1)) {
       executor.schedule(
           () -> {

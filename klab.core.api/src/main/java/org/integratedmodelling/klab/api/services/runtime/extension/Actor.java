@@ -3,11 +3,16 @@ package org.integratedmodelling.klab.api.services.runtime.extension;
 import java.lang.annotation.*;
 
 /**
- * Specialized library for actors and verbs. Should support:
+ * Specialized library for actors and verbs. Can create either a singleton or an actor class whose
+ * agents must be instantiated. In both cases, a k.Actor behavior must specify "using" either the
+ * singleton name or the class name. If the name is a pathname, mandatory in components, the 'using'
+ * clause must declare a local alias: <code>using geospatial.raster as raster,
+ * using geospatial.Coverage as RasterObject</code> before the actor can be used in code. Verbs
+ * declared within the class will apply to it.
  *
- * scoping to one or more script types;
- * re-entrant, static or other execution models
+ * <p>TODO a @Constructor annotation should define the constructor(s) for non-singleton actors.
  *
+ * <p>scoping to one or more script types; re-entrant, static or other execution models
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -15,14 +20,23 @@ import java.lang.annotation.*;
 public @interface Actor {
 
     /**
-     * ID of the component. Must be unique, please use unambiguous paths like package or project
-     * names. Provides a namespace for its internal classes.
-     *
-     * @return component id
+     * Tags the constructor for the actor implementation. The class may be any, it will be expected as the
+     * first parameter in all verbs.
+     */
+    @Documented
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    @interface Constructor {
+
+    }
+
+    /**
+     * ID of the actor. Must be unique and include a path for any actor declared outside the core
+     * distribution. The name must be all lowercase for singletons and camelcase for objects.
      */
     String name();
 
-    String description() default "";
+    String description();
 
-
+    boolean singleton() default false;
 }
