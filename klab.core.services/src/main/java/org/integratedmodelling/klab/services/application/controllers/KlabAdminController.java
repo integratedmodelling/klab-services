@@ -2,16 +2,15 @@ package org.integratedmodelling.klab.services.application.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.authentication.Role;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
-import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
@@ -39,7 +38,7 @@ public class KlabAdminController {
   @PutMapping(ServicesAPI.ADMIN.SHUTDOWN)
   public boolean shutdown() {
     Logging.INSTANCE.info(
-        "Shutting down service instance " + instance.klabService().getLocalName());
+        "Shutting down service instance " + instance.klabService().serviceName());
     instance.shutdown();
     return true;
   }
