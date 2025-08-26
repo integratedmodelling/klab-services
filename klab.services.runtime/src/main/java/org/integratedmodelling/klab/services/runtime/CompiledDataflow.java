@@ -424,17 +424,6 @@ public class CompiledDataflow {
                   resource = adapter.contextualize(resource, observation.getGeometry(), scope);
                 }
 
-                /*
-                Finalize the sharding strategy w.r.t all the possible configurations FIXME no
-                 */
-                ((ObservationImpl) observation)
-                    .setShardingStrategy(
-                        runtimeService.establishShardingStrategy(
-                            observation.getObservable(),
-                            actuator.getShardingStrategy(),
-                            adapter.getAdapterInfo().shardingStrategy(),
-                            scope));
-
                 // enqueue data extraction from adapter method
                 final var contextualizer =
                     new ServiceResourceContextualizer(
@@ -481,17 +470,6 @@ public class CompiledDataflow {
                           + resource.getUrn());
                 }
 
-                /*
-                Finalize the sharding strategy w.r.t all the possible configurations
-                 */
-                ((ObservationImpl) observation)
-                    .setShardingStrategy(
-                        runtimeService.establishShardingStrategy(
-                            observation.getObservable(),
-                            actuator.getShardingStrategy(),
-                            adapterInfo.shardingStrategy(),
-                            scope));
-
                 // TODO validate type chain
                 if (adapterInfo.isContextualizing()) {
                   resource =
@@ -510,15 +488,6 @@ public class CompiledDataflow {
               }
             }
             case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
-
-              /*  We don't have a specific contextualizer, shards follow the observation  FIXME not needed */
-              ((ObservationImpl) observation)
-                  .setShardingStrategy(
-                      runtimeService.establishShardingStrategy(
-                          observation.getObservable(),
-                          actuator.getShardingStrategy(),
-                          null,
-                          scope));
 
               (scalarBuilder == null
                       ? (scalarBuilder =
