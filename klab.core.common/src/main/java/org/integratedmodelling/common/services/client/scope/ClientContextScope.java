@@ -380,7 +380,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   }
 
   @Override
-  public Data.ShardingStrategy getShardingStrategy() {
+  public Data.ShardingStrategy getShardingStrategy(Observation observation) {
     return shardingStrategy;
   }
 

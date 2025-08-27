@@ -348,9 +348,12 @@ public interface ContextScope extends SessionScope {
    * anything that was set by models or contextualizers, within the limits of the runtime's
    * configuration.
    *
-   * @return
+   * @param observation passed to enable specific choices w.r.t. geometry or observable, not
+   *     necessarily implemented.
+   * @return the non-null default sharding strategy, with default values wherever the implementation
+   *     is allowed to choose, or null if the scope permits any sharding strategy.
    */
-  Data.ShardingStrategy getShardingStrategy();
+  Data.ShardingStrategy getShardingStrategy(Observation observation);
 
   /**
    * Return the single value of a resolution constraint, or null if absent.

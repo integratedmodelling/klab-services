@@ -638,7 +638,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
-  public Data.ShardingStrategy getShardingStrategy() {
+  public Data.ShardingStrategy getShardingStrategy(Observation observation) {
     return shardingStrategy;
   }
 

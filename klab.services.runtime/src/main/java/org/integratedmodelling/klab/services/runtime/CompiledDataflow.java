@@ -19,14 +19,18 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
+import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.data.ClientResourceContextualizer;
@@ -56,6 +60,11 @@ public class CompiledDataflow {
   private Graph<Actuator, DependencyEdge> dependencyGraph;
   private Observation rootObservation;
   private Actuator rootActuator;
+  private Map<String, CallDescriptors> callInfo = new HashMap<>();
+
+  // this is used to keep info around during compilation without calling services too many times
+  private record CallDescriptors(
+      AdapterDescriptor adapterDescriptor, ServiceInfo serviceInfo, Resource resource) {}
 
   public CompiledDataflow(
       RuntimeService runtimeService,
@@ -78,6 +87,24 @@ public class CompiledDataflow {
     this.scope = contextScope;
     this.componentRegistry = componentRegistry;
     this.digitalTwin = contextScope.getDigitalTwin();
+  }
+
+  // use the cache to return the call info
+  private <T> T getCallInfo(ServiceCall call, Class<T> type) {
+    var ret = callInfo.get(call.getUrn());
+    if (ret == null) {
+      // TODO create the record
+    }
+    if (ret != null) {
+      if (AdapterDescriptor.class.isAssignableFrom(type)) {
+        return type.cast(ret.adapterDescriptor);
+      } else if (ServiceInfo.class.isAssignableFrom(type)) {
+        return type.cast(ret.serviceInfo);
+      } else if (Resource.class.isAssignableFrom(type)) {
+        return type.cast(ret.resource);
+      }
+    }
+    return null;
   }
 
   /**
@@ -364,7 +391,7 @@ public class CompiledDataflow {
                         runtimeService.settings(),
                         computationStrategy,
                         actuator.getShardingStrategy(),
-                        scope.getShardingStrategy());
+                        scope.getShardingStrategy(observation));
           }
 
           // submit the adjusted native strategy for storage and create the shards
@@ -455,10 +482,6 @@ public class CompiledDataflow {
                 // embedded
                 var adapterInfo =
                     service.get().retrieveAdapterInfo(resource.getAdapterType(), scope);
-                //                    componentRegistry.findAdapter(
-                //                        resource.getAdapterType(), /* TODO need the version in the
-                // resource */
-                //                        Version.ANY_VERSION);
 
                 if (adapterInfo == null) {
                   /*
@@ -488,7 +511,6 @@ public class CompiledDataflow {
               }
             }
             case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
-
               (scalarBuilder == null
                       ? (scalarBuilder =
                           runtimeService.getComputationBuilder(observation, scope, actuator))
@@ -670,14 +692,22 @@ public class CompiledDataflow {
         strategy. */
 
         switch (preset) {
-          case URN_RESOLVER -> {}
+          case URN_RESOLVER -> {
+            var adapterInfo = getCallInfo(call, AdapterDescriptor.class);
+            if (adapterInfo != null) {
+              return adapterInfo.shardingStrategy();
+            }
+          }
           case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
-            // scalar
+            return Data.ShardingStrategy.scalar();
           }
           default -> {}
         }
       } else {
-        //
+        var serviceInfo = getCallInfo(call, ServiceInfo.class);
+        if (serviceInfo != null) {
+          return serviceInfo.getShardingStrategy();
+        }
       }
       return null;
     }

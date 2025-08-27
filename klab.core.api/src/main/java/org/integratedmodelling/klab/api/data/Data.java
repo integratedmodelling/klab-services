@@ -73,6 +73,10 @@ public interface Data {
       this.dataType = dataType;
     }
 
+    public static ShardingStrategy scalar() {
+        return new ShardingStrategy();
+    }
+
     public FillCurve getCurve() {
       return curve;
     }
