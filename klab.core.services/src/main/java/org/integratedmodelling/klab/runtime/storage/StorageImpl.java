@@ -22,8 +22,9 @@ public class StorageImpl implements Storage {
   private final Observation observation;
   private final ContextScope scope;
   private final boolean doNotParallelize;
+  private final Data.ShardingStrategy shardingStrategy;
 
-  /*
+    /*
    * Buffer storage along slowest-varying dimensions. All dimensions except one (space) must have
    * linear indexing and come from the scheduler event that serves as an index.
    */
@@ -39,8 +40,9 @@ public class StorageImpl implements Storage {
    * @param contextScope
    * @param runtimeSettings
    */
-  public StorageImpl(Observation observation, ContextScope contextScope, Settings runtimeSettings) {
+  public StorageImpl(Observation observation, Data.ShardingStrategy shardingStrategy, ContextScope contextScope, Settings runtimeSettings) {
     this.observation = observation;
+    this.shardingStrategy = shardingStrategy;
     this.scope = contextScope;
     this.doNotParallelize =
         runtimeSettings.get(Setting.DO_NOT_PARALLELIZE_OBSERVATIONS, Boolean.class);
@@ -52,11 +54,12 @@ public class StorageImpl implements Storage {
     observation = null;
     scope = null;
     doNotParallelize = false;
+    shardingStrategy = null;
   }
 
   @Override
   public Type getNativeType() {
-    return observation.getShardingStrategy().getDataType();
+    return shardingStrategy.getDataType();
   }
 
   /**

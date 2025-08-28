@@ -135,15 +135,15 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
    */
   List<Long> getEventTimestamps();
 
-  /**
-   * Once contextualized, quality observations will have a distribution strategy that details the
-   * native representation in the storage. That will describe the architecture of the buffers stored
-   * in the knowledge graph and covering the geometry of the observation.
-   *
-   * @return a non-null distribution strategy for contextualized quality observations; null
-   *     otherwise.
-   */
-  Data.ShardingStrategy getShardingStrategy();
+//  /**
+//   * Once contextualized, quality observations will have a distribution strategy that details the
+//   * native representation in the storage. That will describe the architecture of the buffers stored
+//   * in the knowledge graph and covering the geometry of the observation.
+//   *
+//   * @return a non-null distribution strategy for contextualized quality observations; null
+//   *     otherwise.
+//   */
+//  Data.ShardingStrategy getShardingStrategy();
 
   /**
    * After resolution, this will report the 0-1 coverage resolved. Before resolution this will be 0.

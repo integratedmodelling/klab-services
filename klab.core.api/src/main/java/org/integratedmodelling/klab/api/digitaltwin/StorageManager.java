@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 
@@ -18,16 +19,16 @@ public interface StorageManager {
   /**
    * Create or retrieve storage for the passed observation, using the observation's scale and ID. If
    * creating, honor any constraints and configuration from the runtime config, lexical scope,
-   * adapters and/or contextualizers re: fill curve, splits and type, held in {@link
-   * Observation#getSharding()}
+   * adapters and/or contextualizers re: fill curve, splits and type.
    *
    * <p>If the storage has already been created at the time of the call, the annotation will be
    * ignored; the resulting shards will be remapped when they are accessed.
    *
    * @param observation
+   * @param shardingStrategy
    * @return the storage in the specified class.
    */
-  Storage getStorage(Observation observation);
+  Storage getStorage(Observation observation, Data.ShardingStrategy shardingStrategy);
 
   /**
    * Safely delete everything that has been stored in the scope we're running. Nothing should be

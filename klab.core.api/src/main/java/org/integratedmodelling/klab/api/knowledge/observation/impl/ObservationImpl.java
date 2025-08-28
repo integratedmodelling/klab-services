@@ -43,7 +43,7 @@ public class ObservationImpl implements Observation {
   private boolean substantialQuality;
   private long transientId = Klab.getNextId();
   private List<Notification> notifications = new ArrayList<>();
-  private Data.ShardingStrategy shardingStrategy;
+//  private Data.ShardingStrategy shardingStrategy;
 
   public ObservationImpl() {}
 
@@ -270,12 +270,12 @@ public class ObservationImpl implements Observation {
     this.substantialQuality = substantialQuality;
   }
 
-  @Override
-  public Data.ShardingStrategy getShardingStrategy() {
-    return shardingStrategy;
-  }
-
-  public void setShardingStrategy(Data.ShardingStrategy shardingStrategy) {
-    this.shardingStrategy = shardingStrategy;
-  }
+//  @Override
+//  public Data.ShardingStrategy getShardingStrategy() {
+//    return shardingStrategy;
+//  }
+//
+//  public void setShardingStrategy(Data.ShardingStrategy shardingStrategy) {
+//    this.shardingStrategy = shardingStrategy;
+//  }
 }

@@ -104,8 +104,8 @@ public class CompiledDataflow {
 
   // use the cache to return the call info
   private CallDescriptors getCallInfo(ServiceCall call) {
-    var info = callInfo.get(call.getUrn());
-    if (info == null) {
+    var ret = callInfo.get(call.getUrn());
+    if (ret == null) {
       var preset = RuntimeService.CoreFunctor.classify(call);
       AdapterDescriptor adapterDescriptor = null;
       Extensions.FunctionDescriptor serviceInfo = null;
@@ -143,11 +143,14 @@ public class CompiledDataflow {
         //  numeric there may be a float and double version.
         serviceInfo = componentRegistry.getFunctionDescriptor(call);
       }
-      info = new CallDescriptors(adapterDescriptor, serviceInfo, resource, embeddedAdapter);
-      callInfo.put(call.getUrn(), info);
+
+      if (adapterDescriptor != null || serviceInfo != null) {
+        ret = new CallDescriptors(adapterDescriptor, serviceInfo, resource, embeddedAdapter);
+        callInfo.put(call.getUrn(), ret);
+      }
     }
 
-    return null;
+    return ret;
   }
 
   /**
@@ -438,10 +441,6 @@ public class CompiledDataflow {
                         actuator.getShardingStrategy(),
                         scope.getShardingStrategy(observation));
           }
-
-          // submit the adjusted native strategy for storage and create the shards
-          // TODO check maybe this should be submitted to the digital twin instead
-          ((ObservationImpl) observation).setShardingStrategy(shardingStrategy);
         }
       }
 
@@ -566,15 +565,15 @@ public class CompiledDataflow {
         }
 
         /*
-        Finalize the sharding strategy w.r.t all the possible configurations
+          Finalize the sharding strategy w.r.t all the possible configurations
+          TODO check maybe this should be submitted to the digital twin instead
          */
         ((ObservationImpl) observation)
             .setShardingStrategy(
                 runtimeService.establishShardingStrategy(
-                    observation.getObservable(),
-                    actuator.getShardingStrategy(),
-                    callInfo.shardingStrategy(),
-                    scope));
+                    observation.getObservable(), scope,
+                    shardingStrategy,
+                    actuator.getShardingStrategy()));
 
         if (scalarBuilder != null) {
           var scalarMapper = scalarBuilder.build();

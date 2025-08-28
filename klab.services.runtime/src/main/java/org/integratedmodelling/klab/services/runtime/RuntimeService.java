@@ -702,19 +702,15 @@ public class RuntimeService extends BaseService
    * scope may further override it. Runtime settings may then force some of the configuration
    *
    * @param observable
-   * @param lexicalConfiguration
-   * @param runtimeConfiguration
    * @param contextScope
+   * @param configurations
    * @return the final sharding strategy for the passed observable, to be included in its
    *     observation. Never null unless the observable is not a quality.
    */
   public Data.ShardingStrategy establishShardingStrategy(
-      Observable observable,
-      Data.ShardingStrategy lexicalConfiguration,
-      Data.ShardingStrategy runtimeConfiguration,
-      ContextScope contextScope) {
+      Observable observable, ContextScope contextScope, Data.ShardingStrategy... configurations) {
 
-    System.out.println("DIO SUCCOSO");
+    System.out.println("DIO SUCCHIONE");
 
     // start with the default settings
     int splits = 0;
