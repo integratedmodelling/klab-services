@@ -109,10 +109,8 @@ public class CompiledDataflow {
       var preset = RuntimeService.CoreFunctor.classify(call);
       AdapterDescriptor adapterDescriptor = null;
       Extensions.FunctionDescriptor serviceInfo = null;
+      Adapter embeddedAdapter = null;
       Resource resource = null;
-      Adapter embeddedAdapter =
-          componentRegistry.getAdapter(
-              resource.getAdapterType(), /* TODO adapter version! */ Version.ANY_VERSION, scope);
 
       if (preset != null) {
         switch (preset) {
@@ -123,6 +121,13 @@ public class CompiledDataflow {
                     .getService(ResourcesService.class)
                     .retrieveResource(call.getParameters().getList("urns", String.class), scope);
             if (resource != null) {
+
+              embeddedAdapter =
+                  componentRegistry.getAdapter(
+                      resource.getAdapterType(), /* TODO adapter version! */
+                      Version.ANY_VERSION,
+                      scope);
+
               adapterDescriptor =
                   embeddedAdapter == null
                       ? scope
