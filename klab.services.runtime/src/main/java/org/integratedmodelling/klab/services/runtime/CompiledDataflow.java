@@ -64,7 +64,20 @@ public class CompiledDataflow {
 
   // this is used to keep info around during compilation without calling services too many times
   private record CallDescriptors(
-      AdapterDescriptor adapterDescriptor, ServiceInfo serviceInfo, Resource resource) {}
+      AdapterDescriptor adapterDescriptor,
+      Extensions.FunctionDescriptor serviceInfo,
+      Resource resource,
+      Adapter embeddedAdapter) {
+
+    public Data.ShardingStrategy shardingStrategy() {
+      if (adapterDescriptor != null) {
+        return adapterDescriptor.shardingStrategy();
+      } else if (serviceInfo != null) {
+        return serviceInfo.serviceInfo.getShardingStrategy();
+      }
+      return null;
+    }
+  }
 
   public CompiledDataflow(
       RuntimeService runtimeService,
@@ -90,20 +103,45 @@ public class CompiledDataflow {
   }
 
   // use the cache to return the call info
-  private <T> T getCallInfo(ServiceCall call, Class<T> type) {
-    var ret = callInfo.get(call.getUrn());
-    if (ret == null) {
-      // TODO create the record
-    }
-    if (ret != null) {
-      if (AdapterDescriptor.class.isAssignableFrom(type)) {
-        return type.cast(ret.adapterDescriptor);
-      } else if (ServiceInfo.class.isAssignableFrom(type)) {
-        return type.cast(ret.serviceInfo);
-      } else if (Resource.class.isAssignableFrom(type)) {
-        return type.cast(ret.resource);
+  private CallDescriptors getCallInfo(ServiceCall call) {
+    var info = callInfo.get(call.getUrn());
+    if (info == null) {
+      var preset = RuntimeService.CoreFunctor.classify(call);
+      AdapterDescriptor adapterDescriptor = null;
+      Extensions.FunctionDescriptor serviceInfo = null;
+      Resource resource = null;
+      Adapter embeddedAdapter =
+          componentRegistry.getAdapter(
+              resource.getAdapterType(), /* TODO adapter version! */ Version.ANY_VERSION, scope);
+
+      if (preset != null) {
+        switch (preset) {
+          case URN_RESOLVER -> {
+            // TODO use all services hostia
+            resource =
+                scope
+                    .getService(ResourcesService.class)
+                    .retrieveResource(call.getParameters().getList("urns", String.class), scope);
+            if (resource != null) {
+              adapterDescriptor =
+                  embeddedAdapter == null
+                      ? scope
+                          .getService(ResourcesService.class)
+                          .retrieveAdapterInfo(resource.getAdapterType(), scope)
+                      : embeddedAdapter.getAdapterInfo();
+            }
+          }
+          default -> {}
+        }
+      } else {
+        // TODO this should return a list of candidates, to match based on the parameters. For
+        //  numeric there may be a float and double version.
+        serviceInfo = componentRegistry.getFunctionDescriptor(call);
       }
+      info = new CallDescriptors(adapterDescriptor, serviceInfo, resource, embeddedAdapter);
+      callInfo.put(call.getUrn(), info);
     }
+
     return null;
   }
 
@@ -380,7 +418,9 @@ public class CompiledDataflow {
           for (var call : actuator.getComputation()) {
 
             // set to the strategy for the computation adjusted by the actuator's
-            var computationStrategy = getShardingStrategy(call);
+            var callInfo = getCallInfo(call);
+            var computationStrategy = callInfo == null ? null : callInfo.shardingStrategy();
+
             // TODO submit the strategy required by each computation and adjust the strategy
             //  use strategy.adjust(strategy.... in order of overriddance) returning another (or the
             // same) strategy.
@@ -406,18 +446,12 @@ public class CompiledDataflow {
        */
       for (var call : actuator.getComputation()) {
 
-        Extensions.FunctionDescriptor currentDescriptor = null;
-
-        /*
-         * These will accumulate arguments that may be required by the invoked method
-         */
-        Resource resource = null;
-        Urn urn = null;
+        var callInfo = getCallInfo(call);
         Expression expression = null;
         LookupTable lookupTable = null;
 
         var preset = RuntimeService.CoreFunctor.classify(call);
-        if (preset != null) {
+        if (preset != null && callInfo != null) {
 
           /* Turn the call into the appropriate function descriptor for the actual call, provided by
           the adapter or by the runtime. Sharding must be established for each call and only ONE shard
@@ -426,10 +460,6 @@ public class CompiledDataflow {
 
           switch (preset) {
             case URN_RESOLVER -> {
-              var urns = call.getParameters().getList("urns", String.class);
-              // TODO use all services
-              resource = scope.getService(ResourcesService.class).retrieveResource(urns, scope);
-              final Resource finalResource = resource;
 
               /*
               1. check if we have the adapter locally. If so we can use it directly. If the adapter was
@@ -437,11 +467,8 @@ public class CompiledDataflow {
               adapter's requirement, so if we don't have it by now, we should use the remote version
               anyway.
                */
-              var adapter =
-                  componentRegistry.getAdapter(
-                      resource.getAdapterType(), /* TODO adapter version! */
-                      Version.ANY_VERSION,
-                      scope);
+              var adapter = callInfo.embeddedAdapter();
+              var resource = callInfo.resource();
 
               if (adapter != null && adapter.isEmbeddable()) {
 
@@ -470,7 +497,7 @@ public class CompiledDataflow {
 
                 var service =
                     scope.getServices(ResourcesService.class).stream()
-                        .filter(r -> r.serviceId().equals(finalResource.getServiceId()))
+                        .filter(r -> r.serviceId().equals(callInfo.resource.getServiceId()))
                         .findFirst();
 
                 if (service.isEmpty()) {
@@ -522,13 +549,13 @@ public class CompiledDataflow {
               System.out.println("DEFER ZIOCAN");
             }
           }
-        } else {
-          // TODO this should return a list of candidates, to match based on the parameters. For
-          //  numeric there should be a float and double version.
-          currentDescriptor = componentRegistry.getFunctionDescriptor(call);
-        }
+        } /* else if (callInfo != null) {
+            // TODO this should return a list of candidates, to match based on the parameters. For
+            //  numeric there should be a float and double version.
+            currentDescriptor = callInfo.serviceInfo();
+          }*/
 
-        if (currentDescriptor == null) {
+        if (callInfo == null || callInfo.serviceInfo() == null) {
           scope.error("Cannot compile executor for " + actuator);
           return false;
         }
@@ -541,7 +568,7 @@ public class CompiledDataflow {
                 runtimeService.establishShardingStrategy(
                     observation.getObservable(),
                     actuator.getShardingStrategy(),
-                    currentDescriptor.serviceInfo.getShardingStrategy(),
+                    callInfo.shardingStrategy(),
                     scope));
 
         if (scalarBuilder != null) {
@@ -560,7 +587,7 @@ public class CompiledDataflow {
          * Should match arguments, check if they all match, and if not move to the next until
          * no available implementations remain.
          */
-        if (componentRegistry.implementation(currentDescriptor).method != null) {
+        if (componentRegistry.implementation(callInfo.serviceInfo()).method != null) {
 
           //          var runArguments =
           //              ;
@@ -569,10 +596,10 @@ public class CompiledDataflow {
           //            return false;
           //          }
 
-          if (currentDescriptor.staticMethod) {
-            Extensions.FunctionDescriptor finalDescriptor1 = currentDescriptor;
-            var implementation = componentRegistry.implementation(currentDescriptor);
-            var resource1 = resource;
+          if (callInfo.serviceInfo().staticMethod) {
+            //            Extensions.FunctionDescriptor finalDescriptor1 = callInfo.serviceInfo();
+            var implementation = componentRegistry.implementation(callInfo.serviceInfo());
+            var resource1 = callInfo.resource;
             if (implementation == null) {
               return false;
             }
@@ -587,7 +614,7 @@ public class CompiledDataflow {
                             null,
                             observation,
                             observation.getObservable(),
-                            urn,
+                            callInfo.resource == null ? null : Urn.of(callInfo.resource.getUrn()),
                             call.getParameters(),
                             call,
                             storage,
@@ -603,7 +630,7 @@ public class CompiledDataflow {
 
                     var context =
                         componentRegistry
-                            .implementation(finalDescriptor1)
+                            .implementation(callInfo.serviceInfo())
                             .method
                             .invoke(null, arguments.toArray());
 
@@ -614,23 +641,23 @@ public class CompiledDataflow {
                   }
                   return true;
                 });
-          } else if (componentRegistry.implementation(currentDescriptor).mainClassInstance
+          } else if (componentRegistry.implementation(callInfo.serviceInfo()).mainClassInstance
               != null) {
-            var implementation = componentRegistry.implementation(currentDescriptor);
-            var resource1 = resource;
-            Extensions.FunctionDescriptor finalDescriptor = currentDescriptor;
+            var implementation = componentRegistry.implementation(callInfo.serviceInfo());
+            //            var resource1 = resource;
+            //            Extensions.FunctionDescriptor finalDescriptor = currentDescriptor;
             executors.add(
                 (geometry, event, scope) -> {
                   try {
                     var arguments =
                         ComponentRegistry.matchArguments(
                             implementation.method,
-                            resource1,
+                            callInfo.resource(),
                             observation.getGeometry(),
                             null,
                             observation,
                             observation.getObservable(),
-                            urn,
+                            callInfo.resource == null ? null : Urn.of(callInfo.resource.getUrn()),
                             call.getParameters(),
                             call,
                             storage,
@@ -646,10 +673,11 @@ public class CompiledDataflow {
 
                     var context =
                         componentRegistry
-                            .implementation(finalDescriptor)
+                            .implementation(callInfo.serviceInfo())
                             .method
                             .invoke(
-                                componentRegistry.implementation(finalDescriptor).mainClassInstance,
+                                componentRegistry.implementation(callInfo.serviceInfo())
+                                    .mainClassInstance,
                                 arguments.toArray());
                     return true;
                   } catch (Exception e) {
@@ -677,39 +705,6 @@ public class CompiledDataflow {
       }
 
       return true;
-    }
-
-    private Data.ShardingStrategy getShardingStrategy(ServiceCall call) {
-
-      // TODO!
-
-      var preset = RuntimeService.CoreFunctor.classify(call);
-      if (preset != null) {
-
-        /* Turn the call into the appropriate function descriptor for the actual call, provided by
-        the adapter or by the runtime. Sharding must be established for each call and only ONE shard
-        must be handled by each execution, using distribution either inside or outside the compiled
-        strategy. */
-
-        switch (preset) {
-          case URN_RESOLVER -> {
-            var adapterInfo = getCallInfo(call, AdapterDescriptor.class);
-            if (adapterInfo != null) {
-              return adapterInfo.shardingStrategy();
-            }
-          }
-          case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
-            return Data.ShardingStrategy.scalar();
-          }
-          default -> {}
-        }
-      } else {
-        var serviceInfo = getCallInfo(call, ServiceInfo.class);
-        if (serviceInfo != null) {
-          return serviceInfo.getShardingStrategy();
-        }
-      }
-      return null;
     }
 
     @Override

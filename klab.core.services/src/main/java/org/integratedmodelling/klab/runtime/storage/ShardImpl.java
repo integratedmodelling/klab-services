@@ -44,7 +44,7 @@ public abstract class ShardImpl extends CursorImpl implements Storage.Shard {
 //    super(geometry, spaceFillingCurve);
     this.storage = stateStorage;
     this.timestamp = timestamp;
-    // NAAAH
+    // NAAAH revise everything
     this.dataType = stateStorage.getNativeType();
     this.urn = observation.getUrn() + "#" + stateStorage.stateStorage.nextBufferId();
     this.persistence = Persistence.SERVICE_SHUTDOWN;

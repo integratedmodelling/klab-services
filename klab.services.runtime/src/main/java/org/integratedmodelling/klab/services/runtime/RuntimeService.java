@@ -325,11 +325,12 @@ public class RuntimeService extends BaseService
       }
 
       if (fail.get()) {
-        serviceContextScope.send(
+        userScope.send(
             Notification.error(
-                "Error registering context with other services:" + " context is inoperative",
+                "Error registering context with other services: context is inoperative",
                 UIView.Interactivity.DISPLAY));
         serviceContextScope.setOperative(false);
+        return null;
       } else {
         // TODO create DT configuration object and send it through the channel
       }
@@ -712,6 +713,8 @@ public class RuntimeService extends BaseService
       Data.ShardingStrategy lexicalConfiguration,
       Data.ShardingStrategy runtimeConfiguration,
       ContextScope contextScope) {
+
+    System.out.println("DIO SUCCOSO");
 
     // start with the default settings
     int splits = 0;
