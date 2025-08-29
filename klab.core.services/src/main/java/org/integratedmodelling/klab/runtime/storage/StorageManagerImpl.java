@@ -253,16 +253,9 @@ public class StorageManagerImpl implements StorageManager {
 
   @Override
   public Storage createStorage(Observation observation, Data.ShardingStrategy shardingStrategy) {
-    // this should only be called when the sharding strategy is established, after compiling the
-    // contextualization dataflow.
-    //    if (observation.getShardingStrategy() == null) {
-    //      throw new KlabIllegalStateException(
-    //          "cannot create storage: no sharding strategy established for observation " +
-    // observation);
-    //    }
     return this.storage.computeIfAbsent(
         observation.getUrn(),
-        urn -> new StorageImpl(observation, shardingStrategy, contextScope, service.settings()));
+        urn -> new StorageImpl(observation, shardingStrategy, contextScope, this));
   }
 
   //  @SuppressWarnings("unchecked")

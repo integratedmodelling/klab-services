@@ -1,11 +1,13 @@
 package org.integratedmodelling.klab.runtime.storage;
 
 import com.dynatrace.dynahist.layout.Layout;
+import com.dynatrace.dynahist.layout.LogLinearLayout;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.CursorImpl;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -13,51 +15,54 @@ import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.utilities.Utils;
 
 /** Base buffer provides the histogram and the geometry indexing/merging */
-public abstract class ShardImpl extends CursorImpl implements Storage.Shard {
+public class ShardImpl extends CursorImpl implements Storage.Shard {
 
-  private final Data.FillCurve fillCurve;
   private final Persistence persistence;
-  private final Storage.Type dataType;
-  protected final long offset;
+  private final Data.ShardingStrategy shardingStrategy;
+  private final int shardIndex;
+  private final long timestamp;
+  private final Geometry geometry;
   private long id; // for reference in the knowledge graoh
   private final String urn; // for persistent reference in storage manager
-  private final StorageImplObsolete storage;
-  private final long timestamp;
+  private final StorageManagerImpl storage;
   protected com.dynatrace.dynahist.Histogram histogram;
   private long transientId = Klab.getNextId();
 
   /**
-   * @param geometry The <em>overall</em> geometry for the buffer
+   * @param geometry
+   * @param observation
    * @param stateStorage
-   * @param size
-   * @param fillCurve
-   * @param offset extent-based offsets with the start offset in the storage
    */
   protected ShardImpl(
       Geometry geometry,
       Observation observation,
-      StorageImplObsolete stateStorage,
-      long size,
-      Data.FillCurve fillCurve,
-      long offset,
-      long timestamp) {
-//    super(geometry, spaceFillingCurve);
+      Data.ShardingStrategy shardingStrategy,
+      int shardIndex,
+      long timestamp,
+      StorageManagerImpl stateStorage,
+      Persistence persistence) {
+    this.geometry = geometry;
     this.storage = stateStorage;
+    this.shardingStrategy = shardingStrategy;
+    this.shardIndex = shardIndex;
     this.timestamp = timestamp;
-    // NAAAH revise everything
-    this.dataType = stateStorage.getNativeType();
-    this.urn = observation.getUrn() + "#" + stateStorage.stateStorage.nextBufferId();
-    this.persistence = Persistence.SERVICE_SHUTDOWN;
-    this.offset = offset;
-    this.fillCurve = fillCurve;
-    if (stateStorage.stateStorage.isRecordHistogram()) {
+    this.urn = observation.getUrn() + "#" + stateStorage.nextBufferId();
+    this.persistence = persistence;
+    if (stateStorage.isRecordHistogram()) {
       this.histogram =
           com.dynatrace.dynahist.Histogram.createDynamic(
               histogramLayout(observation.getObservable()));
     }
   }
 
-  protected abstract Layout histogramLayout(Observable observable);
+  public static ShardImpl trivial(Storage.Type dataType) {
+    throw new KlabUnimplementedException("trivial shards are not yet supported");
+  }
+
+  private Layout histogramLayout(Observable observable) {
+    // TODO use sensible types and values for the observable
+    return LogLinearLayout.create(Double.MIN_NORMAL, 0, Double.MIN_VALUE, Double.MAX_VALUE);
+  }
 
   @Override
   public long getId() {
@@ -68,73 +73,49 @@ public abstract class ShardImpl extends CursorImpl implements Storage.Shard {
     this.id = id;
   }
 
-//  @Override
-  public long size() {
-    return multiplicity;
-  }
-
-//  @Override
-  public long offset() {
-    return offset;
-  }
-
-  public Storage.Type getDataType() {
-    return dataType;
-  }
-
   @Override
   public long getTransientId() {
     return transientId;
+  }
+
+  @Override
+  public Type classify() {
+    return Type.DATA;
   }
 
   public void setTransientId(long transientId) {
     this.transientId = transientId;
   }
 
-  public Data.FillCurve getFillingCurve() {
-    return fillCurve;
-  }
-
   public Persistence getPersistence() {
     return persistence;
   }
 
-//  @Override
+  @Override
+  public Geometry getGeometry() {
+    return geometry;
+  }
+
+  @Override
+  public Data.ShardingStrategy getShardingStrategy() {
+    return shardingStrategy;
+  }
+
+  @Override
+  public int getShardIndex() {
+    return shardIndex;
+  }
+
+  @Override
+  public Histogram getHistogram() {
+    return Utils.Data.adaptHistogram(this.histogram);
+  }
+
   public String getUrn() {
     return urn;
   }
 
-//  @Override
   public long getTimestamp() {
     return timestamp;
-  }
-
-  //  public long getInternalId() {
-  //    return internalId;
-  //  }
-
-  //  public void setInternalId(long internalId) {
-  //    this.internalId = internalId;
-  //  }
-
-  public Histogram histogram() {
-    return Utils.Data.adaptHistogram(this.histogram);
-  }
-
-  @Override
-  public String toString() {
-    return "Buffer{"
-        + "fillCurve="
-        + fillCurve
-        + ", size="
-        + multiplicity
-        + ", offset="
-        + offset
-        + ", id='"
-        + id
-        + '\''
-        + ", histogram="
-        + Utils.Json.asString(histogram())
-        + '}';
   }
 }

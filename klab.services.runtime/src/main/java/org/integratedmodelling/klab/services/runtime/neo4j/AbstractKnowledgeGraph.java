@@ -137,15 +137,15 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         case ShardImpl buffer -> {
           ret.put("id", buffer.getId());
           ret.put("persistence", buffer.getPersistence().name());
-          ret.put("type", buffer.getDataType().name());
-          ret.put("fillCurve", buffer.getFillingCurve().name());
-          ret.put("size", buffer.size());
-          ret.put("offset", buffer.offset());
+          ret.put("type", buffer.getShardingStrategy().getDataType().name());
+          ret.put("fillCurve", buffer.getShardingStrategy().getCurve().name());
+          ret.put("size", buffer.getGeometry().size());
+          ret.put("offset", buffer.getShardIndex());
           ret.put("timestamp", buffer.getTimestamp());
           ret.put("urn", buffer.getUrn());
           ret.put(
               "histogram",
-              org.integratedmodelling.common.utils.Utils.Json.asString(buffer.histogram()));
+              org.integratedmodelling.common.utils.Utils.Json.asString(buffer.getHistogram()));
         }
         default ->
             throw new KlabInternalErrorException(

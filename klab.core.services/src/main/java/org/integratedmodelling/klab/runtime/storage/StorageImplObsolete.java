@@ -194,9 +194,9 @@ public class StorageImplObsolete implements Storage {
 
   private Shard adaptBuffer(ShardImpl b, Data.FillCurve fillingCurve) {
     // TODO !
-    if (b.getFillingCurve() != fillingCurve) {
-      // TODO
-    }
+//    if (b.getFillingCurve() != fillingCurve) {
+//      // TODO
+//    }
     return b;
   }
 

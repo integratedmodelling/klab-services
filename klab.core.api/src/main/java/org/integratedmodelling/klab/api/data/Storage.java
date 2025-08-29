@@ -138,11 +138,14 @@ public interface Storage {
     Geometry getGeometry();
 
     /**
-     * The original fill curve for the stored data, or a remapped one that reinterprets it.
-     *
      * @return
      */
-    Data.FillCurve getFillCurve();
+    Data.ShardingStrategy getShardingStrategy();
+
+    /**
+     * @return
+     */
+    int getShardIndex();
 
     /**
      * Each shard should have a histogram built upon filling or upon demand, whichever is faster.
