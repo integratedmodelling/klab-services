@@ -242,17 +242,27 @@ public class StorageManagerImpl implements StorageManager {
   //    return Triple.of(splits, fillingCurve, storageType);
   //  }
 
+  public Storage getStorage(Observation observation) {
+    var ret = this.storage.get(observation.getUrn());
+    if (ret == null) {
+      throw new KlabIllegalStateException(
+          "cannot create storage: no storage found for " + observation);
+    }
+    return ret;
+  }
+
   @Override
   public Storage getStorage(Observation observation, Data.ShardingStrategy shardingStrategy) {
     // this should only be called when the sharding strategy is established, after compiling the
     // contextualization dataflow.
-    if (observation.getShardingStrategy() == null) {
-      throw new KlabIllegalStateException(
-          "cannot create storage: no sharding strategy established for observation " + observation);
-    }
+    //    if (observation.getShardingStrategy() == null) {
+    //      throw new KlabIllegalStateException(
+    //          "cannot create storage: no sharding strategy established for observation " +
+    // observation);
+    //    }
     return this.storage.computeIfAbsent(
         observation.getUrn(),
-        urn -> new StorageImpl(observation, contextScope, service.settings()));
+        urn -> new StorageImpl(observation, shardingStrategy, contextScope, service.settings()));
   }
 
   //  @SuppressWarnings("unchecked")

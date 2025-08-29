@@ -17,6 +17,17 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 public interface StorageManager {
 
   /**
+   * Get the storage for an existing observation. If the storage is not yet created, this must throw
+   * a KlabIllegalStateException.
+   *
+   * @param observation
+   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException if the storage
+   *     was not created before the call
+   * @return
+   */
+  Storage getStorage(Observation observation);
+
+  /**
    * Create or retrieve storage for the passed observation, using the observation's scale and ID. If
    * creating, honor any constraints and configuration from the runtime config, lexical scope,
    * adapters and/or contextualizers re: fill curve, splits and type.

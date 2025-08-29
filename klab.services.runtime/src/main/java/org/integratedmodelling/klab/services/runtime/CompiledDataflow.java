@@ -418,7 +418,7 @@ public class CompiledDataflow {
       /*
       establish the sharding strategy for the observation, if it is not yet set.
        */
-      var shardingStrategy = observation.getShardingStrategy();
+      Data.ShardingStrategy shardingStrategy = null;
       if (observation.getObservable().is(SemanticType.QUALITY)) {
         var observationIsNew = shardingStrategy == null;
         if (observationIsNew) {
@@ -544,7 +544,8 @@ public class CompiledDataflow {
             case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
               (scalarBuilder == null
                       ? (scalarBuilder =
-                          runtimeService.getComputationBuilder(observation, scope, actuator))
+                          runtimeService.getComputationBuilder(
+                              observation, shardingStrategy, scope, actuator))
                       : scalarBuilder)
                   .add(call);
               continue;
@@ -564,16 +565,17 @@ public class CompiledDataflow {
           return false;
         }
 
-        /*
-          Finalize the sharding strategy w.r.t all the possible configurations
-          TODO check maybe this should be submitted to the digital twin instead
-         */
-        ((ObservationImpl) observation)
-            .setShardingStrategy(
-                runtimeService.establishShardingStrategy(
-                    observation.getObservable(), scope,
-                    shardingStrategy,
-                    actuator.getShardingStrategy()));
+        //        /*
+        //         Finalize the sharding strategy w.r.t all the possible configurations
+        //         TODO check maybe this should be submitted to the digital twin instead
+        //        */
+        //        ((ObservationImpl) observation)
+        //            .setShardingStrategy(
+        //                runtimeService.establishShardingStrategy(
+        //                    observation.getObservable(),
+        //                    scope,
+        //                    shardingStrategy,
+        //                    actuator.getShardingStrategy()));
 
         if (scalarBuilder != null) {
           var scalarMapper = scalarBuilder.build();
@@ -583,7 +585,7 @@ public class CompiledDataflow {
         // if we're a quality, we need storage at the discretion of the StorageManager.
         Storage storage =
             observation.getObservable().is(SemanticType.QUALITY)
-                ? digitalTwin.getStorageManager().getStorage(observation)
+                ? digitalTwin.getStorageManager().getStorage(observation, shardingStrategy)
                 : null;
         /*
          * Create a runnable with matched parameters and have it set the context observation

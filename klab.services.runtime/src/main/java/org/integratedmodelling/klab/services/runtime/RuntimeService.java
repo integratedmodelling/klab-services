@@ -360,8 +360,11 @@ public class RuntimeService extends BaseService
    * for now is to use the Groovy builder.
    */
   public ScalarComputation.Builder getComputationBuilder(
-      Observation observation, ServiceContextScope scope, Actuator actuator) {
-    return ScalarComputationGroovy.builder(observation, scope, actuator);
+      Observation observation,
+      Data.ShardingStrategy shardingStrategy,
+      ServiceContextScope scope,
+      Actuator actuator) {
+    return ScalarComputationGroovy.builder(observation, shardingStrategy, scope, actuator);
   }
 
   /**

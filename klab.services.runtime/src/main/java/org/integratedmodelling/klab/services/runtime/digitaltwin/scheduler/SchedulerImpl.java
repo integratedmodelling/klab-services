@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -140,8 +141,8 @@ public class SchedulerImpl implements Scheduler {
   /**
    * This is called in response to the INIT event received by any root-level observation that was
    * successfully resolved. Successive executions of the same executors will happen by directly
-   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope, EventImpl,
-   * DigitalTwin.Transaction)}}}
+   * calling {@link #contextualize(Observation, Data.ShardingStrategy, Geometry,
+   * ServiceContextScope, EventImpl, DigitalTwin.Transaction)}}}
    *
    * @param observation
    */
@@ -272,7 +273,8 @@ public class SchedulerImpl implements Scheduler {
       DigitalTwin.Transaction transaction) {
     if (executor.apply(geometry, event, scope)) {
       if (observation.getObservable().is(SemanticType.QUALITY)) {
-        var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
+        var storage =
+            scope.getDigitalTwin().getStorageManager().getStorage(observation);
         if (storage != null) {
           for (var buffer : storage.getNativeShards(event)) {
             transaction.link(observation, buffer, GraphModel.Relationship.HAS_DATA);

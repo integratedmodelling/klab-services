@@ -1851,13 +1851,13 @@ public class ComponentRegistry {
           // TODO! Buffers/scanners must already be split as needed
         } else if (Storage.Scanner.class.isAssignableFrom(argument)) {
           // TODO! Buffers/scanners must already be split as needed
-        } else if (Storage.class.isAssignableFrom(argument)) {
+        } /*else if (Storage.class.isAssignableFrom(argument)) {
           storage =
               digitalTwin == null
                   ? null
                   : digitalTwin.getStorageManager().getStorage(observation);
           runArguments.add(storage);
-        } /*else if (LongStorage.class.isAssignableFrom(argument)) {
+        }*/ /*else if (LongStorage.class.isAssignableFrom(argument)) {
             storage =
                 digitalTwin == null
                     ? null

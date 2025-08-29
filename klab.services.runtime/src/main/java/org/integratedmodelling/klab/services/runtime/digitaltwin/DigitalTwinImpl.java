@@ -368,10 +368,10 @@ public class DigitalTwinImpl implements DigitalTwin {
       Data.ShardingStrategy shardingStrategy,
       ContextScope scope) {
 
-      // passing null is equivalent to "use the native strategy"
-      if (shardingStrategy != null) {
-          shardingStrategy = target.getShardingStrategy();
-      }
+    //      // passing null is equivalent to "use the native strategy"
+    //      if (shardingStrategy != null) {
+    //          shardingStrategy = target.getShardingStrategy();
+    //      }
 
     if (target.getObservable().is(SemanticType.COUNTABLE)) {
       // scope contextualized to the collective observation
@@ -395,7 +395,8 @@ public class DigitalTwinImpl implements DigitalTwin {
                                         instance,
                                         observation,
                                         event,
-                                        // FIXME not sure - child observations should have their own strategy, so null?
+                                        // FIXME not sure - child observations should have their own
+                                        // strategy, so null?
                                         null,
                                         observationScope);
                                   }
@@ -416,17 +417,11 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     if (data.hasStates()) {
 
-      var storage = scope.getDigitalTwin().getStorageManager().getStorage(target);
+      var storage = scope.getDigitalTwin().getStorageManager().getStorage(target, shardingStrategy);
 
       if (data instanceof DoubleDataImpl doubleData) {
 
-        var buffers =
-            storage.scan(
-                event,
-                /* FIXME the sharding strategy is the one for the adapter, should come with the data */
-                target.getShardingStrategy(),
-                Storage.DoubleScanner.class,
-                false);
+        var buffers = storage.scan(event, shardingStrategy, Storage.DoubleScanner.class, false);
 
         /* all buffers run in parallel */
         return Utils.Java.distributeComputation(
