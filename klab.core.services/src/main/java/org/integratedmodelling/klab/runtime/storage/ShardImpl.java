@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.utilities.Utils;
+import org.ojalgo.array.BufferArray;
 
 /** Base buffer provides the histogram and the geometry indexing/merging */
 public class ShardImpl extends CursorImpl implements Storage.Shard {
@@ -27,6 +28,7 @@ public class ShardImpl extends CursorImpl implements Storage.Shard {
   private final StorageManagerImpl storage;
   protected com.dynatrace.dynahist.Histogram histogram;
   private long transientId = Klab.getNextId();
+  private final BufferArray data;
 
   /**
    * @param geometry
@@ -53,6 +55,7 @@ public class ShardImpl extends CursorImpl implements Storage.Shard {
           com.dynatrace.dynahist.Histogram.createDynamic(
               histogramLayout(observation.getObservable()));
     }
+    this.data = /* TODO */ null;
   }
 
   public static ShardImpl trivial(Storage.Type dataType) {
