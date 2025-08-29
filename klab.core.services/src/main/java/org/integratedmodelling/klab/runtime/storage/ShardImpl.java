@@ -55,7 +55,14 @@ public class ShardImpl extends CursorImpl implements Storage.Shard {
           com.dynatrace.dynahist.Histogram.createDynamic(
               histogramLayout(observation.getObservable()));
     }
-    this.data = /* TODO */ null;
+    this.data =
+        switch (shardingStrategy.getDataType()) {
+          case DOUBLE -> stateStorage.getDoubleBuffer(geometry.size());
+          case FLOAT -> stateStorage.getFloatBuffer(geometry.size());
+          // TODO use size/int32.size for booleans and adapt the scanners
+          case INTEGER, KEYED, BOOLEAN -> stateStorage.getIntBuffer(geometry.size());
+          case LONG -> stateStorage.getLongBuffer(geometry.size());
+        };
   }
 
   public static ShardImpl trivial(Storage.Type dataType) {
