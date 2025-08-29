@@ -417,7 +417,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     if (data.hasStates()) {
 
-      var storage = scope.getDigitalTwin().getStorageManager().getStorage(target, shardingStrategy);
+      var storage = scope.getDigitalTwin().getStorageManager().createStorage(target, shardingStrategy);
 
       if (data instanceof DoubleDataImpl doubleData) {
 

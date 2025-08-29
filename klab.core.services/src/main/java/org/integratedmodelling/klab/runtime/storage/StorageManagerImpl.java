@@ -252,7 +252,7 @@ public class StorageManagerImpl implements StorageManager {
   }
 
   @Override
-  public Storage getStorage(Observation observation, Data.ShardingStrategy shardingStrategy) {
+  public Storage createStorage(Observation observation, Data.ShardingStrategy shardingStrategy) {
     // this should only be called when the sharding strategy is established, after compiling the
     // contextualization dataflow.
     //    if (observation.getShardingStrategy() == null) {

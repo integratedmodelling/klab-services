@@ -23,23 +23,19 @@ public interface StorageManager {
    * @param observation
    * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException if the storage
    *     was not created before the call
-   * @return
+   * @return the storage for the passed observation
    */
   Storage getStorage(Observation observation);
 
   /**
-   * Create or retrieve storage for the passed observation, using the observation's scale and ID. If
-   * creating, honor any constraints and configuration from the runtime config, lexical scope,
-   * adapters and/or contextualizers re: fill curve, splits and type.
-   *
-   * <p>If the storage has already been created at the time of the call, the annotation will be
-   * ignored; the resulting shards will be remapped when they are accessed.
+   * Create storage for the passed observation, using the observation's scale and ID and honoring
+   * the passed sharding strategy.
    *
    * @param observation
    * @param shardingStrategy
-   * @return the storage in the specified class.
+   * @return the newly created storage
    */
-  Storage getStorage(Observation observation, Data.ShardingStrategy shardingStrategy);
+  Storage createStorage(Observation observation, Data.ShardingStrategy shardingStrategy);
 
   /**
    * Safely delete everything that has been stored in the scope we're running. Nothing should be

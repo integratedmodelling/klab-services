@@ -21,14 +21,22 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 public interface Storage {
 
   enum Type {
-    //    @Deprecated
-    //    BOXING,
-    DOUBLE,
-    FLOAT,
-    INTEGER,
-    LONG,
-    KEYED,
-    BOOLEAN
+    DOUBLE(true),
+    FLOAT(true),
+    INTEGER(true),
+    LONG(true),
+    KEYED(false),
+    BOOLEAN(false);
+
+    private boolean number;
+
+    Type(boolean number) {
+      this.number = number;
+    }
+
+    public boolean isNumber() {
+      return number;
+    }
   }
 
   /**

@@ -769,4 +769,35 @@ public class RuntimeService extends BaseService
     }
     return List.of();
   }
+
+  /**
+   * Return a default sharding strategy for any observation based on the stored settings
+   *
+   * @return
+   */
+  public Data.ShardingStrategy getDefaultShardingStrategy(Observation observation) {
+
+    var ret = Data.ShardingStrategy.neutral();
+    ret.setDataType(
+        switch (observation.getObservable().getDescriptionType()) {
+          case QUANTIFICATION -> Storage.Type.DOUBLE;
+          case CATEGORIZATION -> Storage.Type.KEYED;
+          case VERIFICATION -> Storage.Type.BOOLEAN;
+          default ->
+              throw new KlabIllegalStateException(
+                  "Unexpected observable type for sharding strategy");
+        });
+
+    // apply settings to modify defaults
+    var forceFloats = settings.get(Setting.USE_SHORT_FLOAT_REPRESENTATION, Boolean.class);
+    var forceScalar = settings.get(Setting.DO_NOT_PARALLELIZE_OBSERVATIONS, Boolean.class);
+    if (ret.getDataType() == Storage.Type.DOUBLE && forceFloats) {
+      ret.setDataType(Storage.Type.FLOAT);
+    }
+    if (forceScalar) {
+      ret.setSuggestedSplits(1);
+    }
+
+    return ret;
+  }
 }

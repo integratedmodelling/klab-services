@@ -149,7 +149,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.resolutionCache = new HashMap<>();
     this.configuration = configuration;
     this.setName(configuration.getName());
-    this.shardingStrategy = new Data.ShardingStrategy();
+    // TODO use the configuration to override the sharding strategy
+    this.shardingStrategy = Data.ShardingStrategy.neutral();
     this.observationCache =
         CacheBuilder.newBuilder()
             .maximumSize(MAX_CACHED_OBSERVATIONS)

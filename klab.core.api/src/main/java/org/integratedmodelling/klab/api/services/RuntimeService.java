@@ -134,9 +134,9 @@ public interface RuntimeService extends KlabService {
    * graph unaltered. Note that observations of individual substantials, i.e. non-collective
    * subjects and agents, will complete successfully even if they cannot be "explained" by the
    * resolver, i.e. the ID will be valid and the knowledge graph will contain the observation, whose
-   * {@link Observation#isResolved()} will return false. All other observations will complete
-   * exceptionally if no dataflow can be built for them, and the knowledge graph will not contain
-   * the observation submitted after completion.
+   * {@link Observation} will be unresolved (no URN, id == {@link Observation#UNASSIGNED_ID}). All
+   * other observations will complete exceptionally if no dataflow can be built for them, and the
+   * knowledge graph will not contain the observation submitted after completion.
    *
    * @param observation the observation to submit
    * @param scope the context scope in which to submit the observation

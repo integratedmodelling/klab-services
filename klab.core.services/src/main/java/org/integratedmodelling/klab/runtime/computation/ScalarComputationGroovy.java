@@ -145,7 +145,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
       // ordering in this one is important
       Map<String, VarInfo> scalarBuffers = new LinkedHashMap<>();
       var selfStorage =
-          scope.getDigitalTwin().getStorageManager().getStorage(target, shardingStrategy);
+          scope.getDigitalTwin().getStorageManager().createStorage(target, shardingStrategy);
       var codeStatements = new ArrayList<String>();
 
       for (var step : steps) {
@@ -169,7 +169,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
                   scope
                       .getDigitalTwin()
                       .getStorageManager()
-                      .getStorage(observation, shardingStrategy);
+                      .createStorage(observation, shardingStrategy);
               codeInfo.getConstructorArguments().add("Observation " + identifier);
               codeInfo.getFieldDeclarations().add("Observation __" + identifier);
               codeInfo

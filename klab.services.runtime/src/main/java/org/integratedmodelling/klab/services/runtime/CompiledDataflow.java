@@ -19,9 +19,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -428,20 +426,23 @@ public class CompiledDataflow {
             // set to the strategy for the computation adjusted by the actuator's
             var callInfo = getCallInfo(call);
             var computationStrategy = callInfo == null ? null : callInfo.shardingStrategy();
-
-            // TODO submit the strategy required by each computation and adjust the strategy
-            //  use strategy.adjust(strategy.... in order of overriddance) returning another (or the
-            // same) strategy.
             shardingStrategy =
                 shardingStrategy == null
                     ? computationStrategy
-                    : shardingStrategy.adjust(
-                        runtimeService.settings(),
-                        computationStrategy,
-                        actuator.getShardingStrategy(),
-                        scope.getShardingStrategy(observation));
+                    : shardingStrategy.override(computationStrategy);
           }
         }
+      }
+
+      if (shardingStrategy != null) {
+        // apply any forcings to the merged sharding strategy obtained so far. The actuator's
+        // strategy (coming from model annotations) is first to override; scope is next, and service
+        // is last, overriding scope settings if needed. This may be revised.
+        shardingStrategy =
+            shardingStrategy.override(
+                actuator.getShardingStrategy(),
+                scope.getShardingStrategy(observation),
+                runtimeService.getDefaultShardingStrategy(observation));
       }
 
       /**
@@ -585,7 +586,7 @@ public class CompiledDataflow {
         // if we're a quality, we need storage at the discretion of the StorageManager.
         Storage storage =
             observation.getObservable().is(SemanticType.QUALITY)
-                ? digitalTwin.getStorageManager().getStorage(observation, shardingStrategy)
+                ? digitalTwin.getStorageManager().createStorage(observation, shardingStrategy)
                 : null;
         /*
          * Create a runnable with matched parameters and have it set the context observation

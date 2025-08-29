@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
 
-import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -73,8 +72,30 @@ public interface Data {
       this.dataType = dataType;
     }
 
-    public static ShardingStrategy scalar() {
-        return new ShardingStrategy();
+    /**
+     * Neutral sharding strategy that won't override anything when merged with another.
+     *
+     * @return
+     */
+    public static ShardingStrategy neutral() {
+      return new ShardingStrategy();
+    }
+
+    /**
+     * Return a trivial, linear-filling, non-parallelizing, all-accepting sharding strategy for the
+     * passed storage type. For testing purposes.
+     *
+     * @param dataType
+     * @return
+     */
+    public static ShardingStrategy trivial(Storage.Type dataType) {
+      var ret = new ShardingStrategy();
+      ret.curve = FillCurve.D1_LINEAR;
+      ret.suggestedSplits = 1;
+      ret.minSplitSize = 0;
+      ret.maxBufferSize = 0;
+      ret.dataType = dataType;
+      return ret;
     }
 
     public FillCurve getCurve() {
@@ -117,6 +138,11 @@ public interface Data {
       this.dataType = dataType;
     }
 
+    private ShardingStrategy copy() {
+      return new ShardingStrategy(
+          this.curve, this.suggestedSplits, this.minSplitSize, this.maxBufferSize, this.dataType);
+    }
+
     /**
      * Adjust the strategy to reflect the passed others, which may override the current values. The
      * passed others are in order of precedence: the one after the first overrides the previous.
@@ -125,9 +151,37 @@ public interface Data {
      * @param others
      * @return
      */
-    public ShardingStrategy adjust(Settings settings, ShardingStrategy... others) {
-      // TODO
-      return this;
+    public ShardingStrategy override(ShardingStrategy... others) {
+      var ret = this.copy();
+      if (others != null) {
+        for (var other : others) {
+          if (other != null) {
+            if (ret.dataType == null || other.dataType == null) {
+              ret.dataType = other.dataType;
+            } else if (ret.dataType != other.dataType) {
+              if (ret.dataType.isNumber() && other.dataType.isNumber()) {
+                ret.dataType = other.dataType;
+              } else {
+                throw new IllegalArgumentException(
+                    "Incompatible data types: " + ret.dataType + " vs. " + other.dataType);
+              }
+            }
+            if (ret.curve == FillCurve.UNSPECIFIED || other.curve != FillCurve.UNSPECIFIED) {
+              ret.curve = other.curve;
+            }
+            if (ret.suggestedSplits == -1 || other.suggestedSplits != -1) {
+              ret.suggestedSplits = other.suggestedSplits;
+            }
+            if (ret.minSplitSize == 0 || other.suggestedSplits != 0) {
+              ret.minSplitSize = other.minSplitSize;
+            }
+            if (ret.maxBufferSize == 0 || other.maxBufferSize != 0) {
+              ret.maxBufferSize = other.maxBufferSize;
+            }
+          }
+        }
+      }
+      return ret;
     }
   }
 
