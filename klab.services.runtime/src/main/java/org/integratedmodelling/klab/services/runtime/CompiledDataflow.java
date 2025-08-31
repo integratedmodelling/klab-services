@@ -2,6 +2,10 @@ package org.integratedmodelling.klab.services.runtime;
 
 import com.google.common.collect.ImmutableList;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.Klab;
@@ -40,10 +44,6 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 
-/**
- * Object that follows the execution of the actuators. Each run produces a new context that is the
- * one for the next execution.
- */
 public class CompiledDataflow {
 
   private final RuntimeService runtimeService;
@@ -53,12 +53,12 @@ public class CompiledDataflow {
   private boolean empty;
   private Throwable cause;
   private List<Pair<Actuator, Integer>> computation = new ArrayList<>();
-  private Map<Long, ExecutorImpl> operations = new HashMap<>();
-  private Map<Long, Observation> dependentObservations = new HashMap<>();
+  private final Map<Long, ExecutorImpl> operations = new HashMap<>();
+  private final Map<Long, Observation> dependentObservations = new HashMap<>();
   private Graph<Actuator, DependencyEdge> dependencyGraph;
   private Observation rootObservation;
   private Actuator rootActuator;
-  private Map<String, CallDescriptors> callInfo = new HashMap<>();
+  private final Map<String, CallDescriptors> callInfo = new HashMap<>();
 
   // this is used to keep info around during compilation without calling services too many times
   private record CallDescriptors(
@@ -167,6 +167,7 @@ public class CompiledDataflow {
     requireObservations(rootActuator);
 
     for (var pair : this.computation) {
+      // todo change this with a loop over
       var operation = new ExecutorImpl(pair.getFirst());
       if (!operation.isOperational()) {
         return false;
@@ -448,6 +449,11 @@ public class CompiledDataflow {
       /**
        * Now actually compile each computation, adapting the sharding strategy to whatever the
        * specific computation requires.
+       *
+       * <p>TODO the calls should be for one shard at a time. Ingestion in the DT, when needed,
+       * should happen AFTER all shards have computed. If there is >1 shard, we should keep the
+       * executor functions and wrap them into another one that runs the shard executors in
+       * parallel.
        */
       for (var call : actuator.getComputation()) {
 
@@ -487,11 +493,17 @@ public class CompiledDataflow {
                 final var contextualizer =
                     new ServiceResourceContextualizer(
                         adapter, resource, observation, scope.getDigitalTwin());
-                executors.add(
+
+                // TODO this is in a ?: statement compiling the distribution strategy over the
+                //  shards obtained through the LOCAL sharding strategy.
+                TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor =
                     (geometry, event, scope) ->
                         contextualizer.contextualize(
                             // pass the operation for provenance recording
-                            observation, event, scope));
+                            observation, event, scope);
+
+                executors.add(executor);
+
                 continue;
 
               } else {
@@ -537,6 +549,7 @@ public class CompiledDataflow {
                 final var contextualizer =
                     new ClientResourceContextualizer(service.get(), resource, observation);
                 executors.add(
+                    // TODO same strategy as above
                     (geometry, event, scope) ->
                         contextualizer.contextualize(observation, event, scope));
                 continue;
@@ -566,20 +579,9 @@ public class CompiledDataflow {
           return false;
         }
 
-        //        /*
-        //         Finalize the sharding strategy w.r.t all the possible configurations
-        //         TODO check maybe this should be submitted to the digital twin instead
-        //        */
-        //        ((ObservationImpl) observation)
-        //            .setShardingStrategy(
-        //                runtimeService.establishShardingStrategy(
-        //                    observation.getObservable(),
-        //                    scope,
-        //                    shardingStrategy,
-        //                    actuator.getShardingStrategy()));
-
         if (scalarBuilder != null) {
           var scalarMapper = scalarBuilder.build();
+          // scalar mapper must honor the sharding strategy configured in it
           executors.add(scalarMapper::execute);
         }
 
@@ -697,6 +699,10 @@ public class CompiledDataflow {
         }
       }
 
+      // here reunite the shards if >1 or compile the executor in if only one exists
+
+      // same logic here, wrap as many trifunctions as shards into a parallel wrapper unless shards
+      // == 1
       if (scalarBuilder != null) {
         var scalarMapper = scalarBuilder.build();
         executors.add(
@@ -841,6 +847,29 @@ public class CompiledDataflow {
     currentGroup.add(current);
 
     return executionOrder;
+  }
+
+  // TODO adapt to specific executor task and monitoring
+  // use in executor: return (shards == null || shards.size == 1)
+  //     ? executor.apply(geometry, event, scope)
+  //     : distributeComputation(shards, executor, event, scope);
+  public boolean distributeComputation(
+      Collection<Storage.Shard> objects,
+      TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor,
+      Scheduler.Event event,
+      ContextScope scope) {
+
+    List<Callable<Object>> tasks = new ArrayList<>();
+    for (Storage.Shard object : objects) {
+      //      tasks.add(Executors.callable(() -> task.accept(object)));
+    }
+
+    try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+      var ret = executorService.invokeAll(tasks);
+      return ret.stream().noneMatch(objectFuture -> objectFuture.state() == Future.State.FAILED);
+    } catch (Throwable t) {
+      return false;
+    }
   }
 
   private static class DependencyEdge extends DefaultEdge {

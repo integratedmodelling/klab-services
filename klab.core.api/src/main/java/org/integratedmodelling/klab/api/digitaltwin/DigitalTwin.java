@@ -324,6 +324,8 @@ public interface DigitalTwin extends RuntimeAsset {
    * Ingest the contextualized data coming from a resource contextualization into the passed
    * observation target.
    *
+   * TODO this ingests a single shard at a time.
+   *
    * @param data
    * @param target
    * @param event

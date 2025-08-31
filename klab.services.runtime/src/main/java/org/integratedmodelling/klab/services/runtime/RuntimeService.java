@@ -523,11 +523,12 @@ public class RuntimeService extends BaseService
 
     if (transaction instanceof DigitalTwinImpl.TransactionImpl transactionImpl) {
       for (var rootActuator : dataflow.getComputation()) {
-        var executionSequence = new CompiledDataflow(this, /*dataflow,*/ rootObservation, scope);
+        var executionSequence = new CompiledDataflow(this, rootObservation, scope);
         if (!executionSequence.compile(rootActuator)) {
           transaction.fail(
               new KlabCompilationError(
-                  "Could not compile execution sequence for this target observation"));
+                  "Could not compile execution sequence for target observation "
+                      + rootObservation));
           return false;
         }
 
@@ -698,62 +699,66 @@ public class RuntimeService extends BaseService
     return false;
   }
 
-  /**
-   * Establish the sharding strategy for the observable in the lexical and runtime context. The
-   * runtime configuration (from the adapter or contextualizer) should be the starting point; the
-   * lexical configuration (from models or observables) may override it within "legal" limits; the
-   * scope may further override it. Runtime settings may then force some of the configuration
-   *
-   * @param observable
-   * @param contextScope
-   * @param configurations
-   * @return the final sharding strategy for the passed observable, to be included in its
-   *     observation. Never null unless the observable is not a quality.
-   */
-  public Data.ShardingStrategy establishShardingStrategy(
-      Observable observable, ContextScope contextScope, Data.ShardingStrategy... configurations) {
-
-    System.out.println("DIO SUCCHIONE");
-
-    // start with the default settings
-    int splits = 0;
-    long minSize = 0;
-    long maxSize = 0;
-    Data.FillCurve fillCurve = Data.FillCurve.UNSPECIFIED;
-    Storage.Type dataType =
-        switch (observable.getDescriptionType()) {
-          case VOID,
-              CHARACTERIZATION,
-              ACKNOWLEDGEMENT,
-              CONNECTION,
-              CLASSIFICATION,
-              INSTANTIATION,
-              DETECTION,
-              SIMULATION ->
-              throw new KlabIllegalStateException("Cannot create storage for " + observable);
-          case QUANTIFICATION ->
-              // TODO this should also consider any constraints in the observation distribution data
-              settings.get(Setting.USE_SHORT_FLOAT_REPRESENTATION, Boolean.class)
-                  ? Storage.Type.FLOAT
-                  : Storage.Type.DOUBLE;
-          case CATEGORIZATION -> Storage.Type.KEYED;
-          case VERIFICATION -> Storage.Type.BOOLEAN;
-        };
-
-    if (!observable.is(SemanticType.QUALITY)) {
-      return null;
-    }
-
-    var ret = new Data.ShardingStrategy();
-
-    ret.setCurve(fillCurve);
-    ret.setMaxBufferSize(maxSize);
-    ret.setMinSplitSize(minSize);
-    ret.setSuggestedSplits(splits);
-    ret.setDataType(dataType);
-
-    return ret;
-  }
+  //  /**
+  //   * Establish the sharding strategy for the observable in the lexical and runtime context. The
+  //   * runtime configuration (from the adapter or contextualizer) should be the starting point;
+  // the
+  //   * lexical configuration (from models or observables) may override it within "legal" limits;
+  // the
+  //   * scope may further override it. Runtime settings may then force some of the configuration
+  //   *
+  //   * @param observable
+  //   * @param contextScope
+  //   * @param configurations
+  //   * @return the final sharding strategy for the passed observable, to be included in its
+  //   *     observation. Never null unless the observable is not a quality.
+  //   */
+  //  public Data.ShardingStrategy establishShardingStrategy(
+  //      Observable observable, ContextScope contextScope, Data.ShardingStrategy... configurations)
+  // {
+  //
+  //    System.out.println("DIO SUCCHIONE");
+  //
+  //    // start with the default settings
+  //    int splits = 0;
+  //    long minSize = 0;
+  //    long maxSize = 0;
+  //    Data.FillCurve fillCurve = Data.FillCurve.UNSPECIFIED;
+  //    Storage.Type dataType =
+  //        switch (observable.getDescriptionType()) {
+  //          case VOID,
+  //              CHARACTERIZATION,
+  //              ACKNOWLEDGEMENT,
+  //              CONNECTION,
+  //              CLASSIFICATION,
+  //              INSTANTIATION,
+  //              DETECTION,
+  //              SIMULATION ->
+  //              throw new KlabIllegalStateException("Cannot create storage for " + observable);
+  //          case QUANTIFICATION ->
+  //              // TODO this should also consider any constraints in the observation distribution
+  // data
+  //              settings.get(Setting.USE_SHORT_FLOAT_REPRESENTATION, Boolean.class)
+  //                  ? Storage.Type.FLOAT
+  //                  : Storage.Type.DOUBLE;
+  //          case CATEGORIZATION -> Storage.Type.KEYED;
+  //          case VERIFICATION -> Storage.Type.BOOLEAN;
+  //        };
+  //
+  //    if (!observable.is(SemanticType.QUALITY)) {
+  //      return null;
+  //    }
+  //
+  //    var ret = new Data.ShardingStrategy();
+  //
+  //    ret.setCurve(fillCurve);
+  //    ret.setMaxBufferSize(maxSize);
+  //    ret.setMinSplitSize(minSize);
+  //    ret.setSuggestedSplits(splits);
+  //    ret.setDataType(dataType);
+  //
+  //    return ret;
+  //  }
 
   @Override
   public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(

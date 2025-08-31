@@ -47,7 +47,7 @@ public abstract class AbstractResourceContextualizer {
           adapters == null || adapters.isEmpty()
               ? resource.getAdapterType()
               : (adapters + "," + resource.getAdapterType());
-      observation.getMetadata().put(Metadata.KLAB_ADAPTER_URNS, adapters);
+      observation.getMetadata().put(Metadata.KLAB_ADAPTER_URNS, adapters); 
 
       // FIXME this must be outside, after 1+ contextualizations have been done per shard
       return scope
