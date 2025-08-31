@@ -152,12 +152,12 @@ public class StorageImpl implements Storage {
   @Override
   public <T extends Scanner> List<T> scan(
       Scheduler.Event locator,
-      Data.ShardingStrategy request,
+      Data.ShardingStrategy shardingStrategy,
       Class<T> scannerClass,
       boolean readOnly) {
     var shards = getNativeShards(locator);
     var nativeScanners = shards.stream().map(this::getNativeScanner).toList();
-    return remapScanners(nativeScanners, request, scannerClass);
+    return remapScanners(nativeScanners, shardingStrategy, scannerClass);
   }
 
   /**
@@ -166,14 +166,14 @@ public class StorageImpl implements Storage {
    * need to be cast to remap to a different compatible type.
    *
    * @param nativeScanners
-   * @param request
+   * @param shardingStrategy
    * @param scannerClass
    * @return
    * @param <T>
    */
   private <T extends Scanner> List<T> remapScanners(
-      List<Scanner> nativeScanners, Data.ShardingStrategy request, Class<T> scannerClass) {
-    // TODO!
+      List<Scanner> nativeScanners, Data.ShardingStrategy shardingStrategy, Class<T> scannerClass) {
+    // TODO! two steps: 1) splits & curve; 2) data type casting
     return (List<T>) nativeScanners;
   }
 
