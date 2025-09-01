@@ -155,6 +155,8 @@ public interface Storage {
      * @return
      */
     Histogram getHistogram();
+
+    Scanner getNativeScanner();
   }
 
   /**

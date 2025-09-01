@@ -2,27 +2,30 @@ package org.integratedmodelling.klab.api.data;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.PrimitiveIterator;
 
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * The <code>Data</code> object encapsulates the network-transmissible data package specified
- * through the Avro schema and understood by all k.LAB services. If the {@link
- * org.integratedmodelling.klab.api.services.resources.adapters.Adapter} used is available locally,
- * no network transmission will happen. A Data object must be created with a name, an Observable and
- * a Geometry.
+ * through the Avro schema and understood by all k.LAB services. If the {@link Adapter} used is
+ * available locally, no network transmission will happen. A Data object must be created with a
+ * name, an Observable and a Geometry.
  *
  * <p>A Data object that wraps a quality observation will be unmarshalled with an appropriate
- * subclass implementing one of the {@link java.util.PrimitiveIterator} interfaces, so that the
- * numbers can be extracted as needed without boxing as long as the primitive iterator methods are
- * used. In the case of a category quality, the object will implement {@link
- * java.util.PrimitiveIterator.OfInt} and the dataKey will be instantiated as well so that the
- * (Integer) numbers can be translated to the needed objects, normally {@link
- * org.integratedmodelling.klab.api.knowledge.Concept} instances.
+ * subclass implementing one of the {@link PrimitiveIterator} interfaces, so that the numbers can be
+ * extracted as needed without boxing as long as the primitive iterator methods are used. In the
+ * case of a category quality, the object will implement {@link PrimitiveIterator.OfInt} and the
+ * dataKey will be instantiated as well so that the (Integer) numbers can be translated to the
+ * needed objects, normally {@link Concept} instances.
  */
 public interface Data {
 
@@ -33,7 +36,7 @@ public interface Data {
    * by the resolver after collecting the info from the computation (adapter or contextualizer) and
    * compounding it with any overrides from model/observable annotations and/or runtime
    * configuration. The finalized distribution strategy is included in the {@link
-   * org.integratedmodelling.klab.api.services.runtime.Actuator}s produced by the resolver for any
+   * Actuator}s produced by the resolver for any
    * quality observations.
    *
    * <p>TODO we should also enable a split based on a collective concept used as spatial/temporal
@@ -182,6 +185,31 @@ public interface Data {
         }
       }
       return ret;
+    }
+
+    public boolean equals(ShardingStrategy other) {
+      if (other == null) return false;
+      return suggestedSplits == other.suggestedSplits
+          && minSplitSize == other.minSplitSize
+          && maxBufferSize == other.maxBufferSize
+          && curve == other.curve
+          && dataType == other.dataType;
+    }
+
+    /**
+     * Return the base interface for the storage scanner adopting this strategy
+     *
+     * @return
+     */
+    public Class<? extends Storage.Scanner> getScannerClass() {
+      return switch (dataType) {
+        case DOUBLE -> Storage.DoubleScanner.class;
+        case FLOAT -> Storage.FloatScanner.class;
+        case INTEGER -> Storage.IntScanner.class;
+        case LONG -> Storage.LongScanner.class;
+        case KEYED -> Storage.KeyScanner.class;
+        case BOOLEAN -> Storage.BooleanScanner.class;
+      };
     }
   }
 
@@ -793,9 +821,9 @@ public interface Data {
    * observable requested, and other ancillary observations may have been produced if requested
    * through an observation constraint.
    *
-   * <p>Each returned object will implement one of the {@link java.util.PrimitiveIterator} classes.
-   * A class switch should be used along with the fill curve to transfer the data to the storage,
-   * filtering through the {@link #dataKey()} if appropriate.
+   * <p>Each returned object will implement one of the {@link PrimitiveIterator} classes. A class
+   * switch should be used along with the fill curve to transfer the data to the storage, filtering
+   * through the {@link #dataKey()} if appropriate.
    *
    * @return a list of child data objects
    */
@@ -816,10 +844,8 @@ public interface Data {
 
   /**
    * This is not null only when the observable is a categorical quality, i.e its {@link
-   * org.integratedmodelling.klab.api.knowledge.DescriptionType} is {@link
-   * org.integratedmodelling.klab.api.knowledge.DescriptionType#CATEGORIZATION}. In this case the
-   * data object will implement {@link java.util.PrimitiveIterator.OfInt} and can be iterated to
-   * extract the categories.
+   * DescriptionType} is {@link DescriptionType#CATEGORIZATION}. In this case the data object will
+   * implement {@link PrimitiveIterator.OfInt} and can be iterated to extract the categories.
    *
    * @return a map of integer keys to category string values
    */

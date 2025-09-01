@@ -155,9 +155,13 @@ public class StorageImpl implements Storage {
       Data.ShardingStrategy shardingStrategy,
       Class<T> scannerClass,
       boolean readOnly) {
-    var shards = getNativeShards(locator);
-    var nativeScanners = shards.stream().map(this::getNativeScanner).toList();
-    return remapScanners(nativeScanners, shardingStrategy, scannerClass);
+    if (this.shardingStrategy.equals(shardingStrategy)) {
+      return getNativeShards(locator).stream().map(shard -> (T) shard.getNativeScanner()).toList();
+    }
+    return remapScanners(
+        getNativeShards(locator).stream().map(this::getNativeScanner).toList(),
+        shardingStrategy,
+        scannerClass);
   }
 
   /**
@@ -189,10 +193,7 @@ public class StorageImpl implements Storage {
 
   private <T extends Scanner> T mapShardToScanner(
       Shard shard, Data.ShardingStrategy request, Class<T> scannerClass) {
-    // GAAAGH
-    // get native scanner
-    // map as needed
-    return null;
+    throw new KlabUnimplementedException("shard mapping unimplemented");
   }
 
   @Override

@@ -27,6 +27,8 @@ import org.integratedmodelling.klab.api.utils.Utils;
 /**
  * Scalar computation implementation using Groovy-based expressions and turning the sequence into a
  * compiled Java class for execution.
+ *
+ * TODO FIXME update for using Scanner on independent shards and not Storage
  */
 public class ScalarComputationGroovy implements ScalarComputation {
 
@@ -44,7 +46,6 @@ public class ScalarComputationGroovy implements ScalarComputation {
     private final Actuator actuator;
     private final Observation target;
     private static GroovyProcessor groovyProcessor = new GroovyProcessor();
-    private final Data.ShardingStrategy shardingStrategy;
 
     // list of th
     //
@@ -57,15 +58,10 @@ public class ScalarComputationGroovy implements ScalarComputation {
       Object constantLiteral;
     }
 
-    public BuilderImpl(
-        Observation target,
-        Data.ShardingStrategy shardingStrategy,
-        ContextScope scope,
-        Actuator actuator) {
+    public BuilderImpl(Observation target, ContextScope scope, Actuator actuator) {
       this.scope = scope;
       this.actuator = actuator;
       this.target = target;
-      this.shardingStrategy = shardingStrategy;
     }
 
     @Override
@@ -144,8 +140,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
       // ordering in this one is important
       Map<String, VarInfo> scalarBuffers = new LinkedHashMap<>();
-      var selfStorage =
-          scope.getDigitalTwin().getStorageManager().createStorage(target, shardingStrategy);
+      var selfStorage = scope.getDigitalTwin().getStorageManager().getStorage(target);
       var codeStatements = new ArrayList<String>();
 
       for (var step : steps) {
@@ -165,11 +160,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
               }
               // FIXME we must have buffers and/or scanners, one per instance because we are
               //  downstream of parallelization
-              var storage =
-                  scope
-                      .getDigitalTwin()
-                      .getStorageManager()
-                      .createStorage(observation, shardingStrategy);
+              var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
               codeInfo.getConstructorArguments().add("Observation " + identifier);
               codeInfo.getFieldDeclarations().add("Observation __" + identifier);
               codeInfo
@@ -241,7 +232,6 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
     private String getTypeDeclaration(Storage storage) {
       return switch (storage.getNativeType()) {
-        //        case BOXING -> "Object";
         case DOUBLE -> "double";
         case FLOAT -> "float";
         case INTEGER -> "int";
@@ -274,11 +264,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
     return false;
   }
 
-  public static Builder builder(
-      Observation target,
-      Data.ShardingStrategy shardingStrategy,
-      ContextScope scope,
-      Actuator actuator) {
-    return new BuilderImpl(target, shardingStrategy, scope, actuator);
+  public static Builder builder(Observation target, ContextScope scope, Actuator actuator) {
+    return new BuilderImpl(target, scope, actuator);
   }
 }

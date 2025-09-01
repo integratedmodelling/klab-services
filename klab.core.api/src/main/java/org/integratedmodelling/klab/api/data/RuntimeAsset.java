@@ -24,7 +24,6 @@ public interface RuntimeAsset {
   ContextAsset CONTEXT_ASSET = new ContextAsset();
   ProvenanceAsset PROVENANCE_ASSET = new ProvenanceAsset();
   DataflowAsset DATAFLOW_ASSET = new DataflowAsset();
-  long CONTEXT_ID = 1L;
 
   /** The status of an asset, which may be added to the metadata using the "status" property. */
   enum Status {
@@ -44,7 +43,7 @@ public interface RuntimeAsset {
     ACTIVITY(Activity.class),
     PLAN(Plan.class),
     AGENT(Agent.class),
-//    ARTIFACT(Storage.class),
+    //    ARTIFACT(Storage.class),
     DATA(Storage.Shard.class),
     LINK(KnowledgeGraph.Link.class);
 
@@ -79,11 +78,11 @@ public interface RuntimeAsset {
       if (KnowledgeGraph.Link.class.isAssignableFrom(assetClass)) {
         return LINK;
       }
-//      if (Artifact.class.isAssignableFrom(assetClass)
-//          || Storage.class.isAssignableFrom(assetClass)) {
-//        return ARTIFACT;
-//      }
-     throw new KlabIllegalArgumentException("No runtime asset class for " + assetClass);
+      //      if (Artifact.class.isAssignableFrom(assetClass)
+      //          || Storage.class.isAssignableFrom(assetClass)) {
+      //        return ARTIFACT;
+      //      }
+      throw new KlabIllegalArgumentException("No runtime asset class for " + assetClass);
     }
   }
 
@@ -111,16 +110,6 @@ public interface RuntimeAsset {
    * @return the transient ID of this object
    */
   long getTransientId();
-
-//  /**
-//   * Used when a RuntimeAsset is requested at client side to optimize "lazy" access to the whole
-//   * graph. This will only return a positive number when the number of incoming relationships in the
-//   * graph is known; the number should only be considered valid at the time of the request. If the
-//   * number cannot be assessed, a negative value will be returned.
-//   *
-//   * @return number of incoming relationships in the knowledge graph, or < 0 for unknown.
-//   */
-//  long getChildCount();
 
   Type classify();
 

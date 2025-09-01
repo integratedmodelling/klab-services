@@ -25,10 +25,10 @@ import java.util.Optional;
  *
  * <p>The way this is intended is that a {@link
  * org.integratedmodelling.klab.api.services.RuntimeService} contains a main knowledge graph,
- * initialized at startup, which is {@link #contextualize(ContextScope)}d to obtain the knowledge
- * graph for each observation scope. The API depends on this behavior so that persistent sessions
- * and contexts that have not expired can be retrieved for a given {@link UserScope} by the
- * respective service calls.
+ * initialized at startup, which is contextualized on the {@link ContextScope} to obtain the
+ * knowledge graph for that scope. The API depends on this behavior so that persistent sessions and
+ * contexts that have not expired can be retrieved for a given {@link UserScope} by the respective
+ * service calls.
  */
 public interface KnowledgeGraph {
 
@@ -213,12 +213,9 @@ public interface KnowledgeGraph {
    */
   void clear();
 
-  //
-  //  KnowledgeGraph contextualize(ContextScope scope);
-
   /**
-   * The graph node that represents the scope we run under. If the KG is not the return value of a
-   * {@link #contextualize(ContextScope)} call, this will throw an exception.
+   * The graph node that represents the scope we run under. If the KG is not contextualized to a
+   * scope, this will throw an exception.
    *
    * @return
    */
@@ -226,8 +223,7 @@ public interface KnowledgeGraph {
 
   /**
    * The graph node that represents the root provenance node within the scope we run under. If the
-   * KG is not the return value of a {@link #contextualize(ContextScope)} call, this will throw an
-   * exception.
+   * KG is not contextualized to a scope, this will throw an exception.
    *
    * @return
    */
@@ -235,8 +231,7 @@ public interface KnowledgeGraph {
 
   /**
    * The graph node that represents the root dataflow node within the scope we run under. If the KG
-   * is not the return value of a {@link #contextualize(ContextScope)} call, this will throw an
-   * exception.
+   * is not contextualized to a scope, this will throw an exception.
    *
    * @return
    */

@@ -60,6 +60,20 @@ public class CompiledDataflow {
   private Actuator rootActuator;
   private final Map<String, CallDescriptors> callInfo = new HashMap<>();
 
+  ///  The executor for each step, negotiating the various execution strategies and sharding.
+  ///
+  ///  Three possible execution strategies corresponding to different subclasses:
+  ///  - Call a function from a prototype
+  ///  - Call a local adapter
+  ///  - Invoke a remote adapter and ingest the outputs into local storage
+  ///
+  ///  Must store the observation, the scope, and any target sharding strategy
+  ///
+  @FunctionalInterface
+  public interface ContextualExecutor {
+    public boolean execute(Scheduler.Event context);
+  }
+
   // this is used to keep info around during compilation without calling services too many times
   private record CallDescriptors(
       AdapterDescriptor adapterDescriptor,
@@ -416,35 +430,43 @@ public class CompiledDataflow {
 
       /*
       establish the sharding strategy for the observation, if it is not yet set.
+      TODO must retrieve from the KG in an existing observation!
        */
-      Data.ShardingStrategy shardingStrategy = null;
+      Data.ShardingStrategy nativeShardingStrategy = null;
       if (observation.getObservable().is(SemanticType.QUALITY)) {
-        var observationIsNew = shardingStrategy == null;
-        if (observationIsNew) {
+        var observationIsNew = nativeShardingStrategy == null;
+        if (observationIsNew) { // TODO FIXME HOSTIA
 
           for (var call : actuator.getComputation()) {
 
             // set to the strategy for the computation adjusted by the actuator's
             var callInfo = getCallInfo(call);
             var computationStrategy = callInfo == null ? null : callInfo.shardingStrategy();
-            shardingStrategy =
-                shardingStrategy == null
+            nativeShardingStrategy =
+                nativeShardingStrategy == null
                     ? computationStrategy
-                    : shardingStrategy.override(computationStrategy);
+                    : nativeShardingStrategy.override(computationStrategy);
           }
         }
       }
 
-      if (shardingStrategy != null) {
+      if (nativeShardingStrategy != null) {
         // apply any forcings to the merged sharding strategy obtained so far. The actuator's
         // strategy (coming from model annotations) is first to override; scope is next, and service
         // is last, overriding scope settings if needed. This may be revised.
-        shardingStrategy =
-            shardingStrategy.override(
+        nativeShardingStrategy =
+            nativeShardingStrategy.override(
                 actuator.getShardingStrategy(),
                 scope.getShardingStrategy(observation),
                 runtimeService.getDefaultShardingStrategy(observation));
       }
+
+      // if we're a quality, we now have a sharding strategy so we can create the native storage at
+      // the discretion of the StorageManager.
+      Storage storage =
+          observation.getObservable().is(SemanticType.QUALITY)
+              ? digitalTwin.getStorageManager().createStorage(observation, nativeShardingStrategy)
+              : null;
 
       /**
        * Now actually compile each computation, adapting the sharding strategy to whatever the
@@ -494,13 +516,19 @@ public class CompiledDataflow {
                     new ServiceResourceContextualizer(
                         adapter, resource, observation, scope.getDigitalTwin());
 
-                // TODO this is in a ?: statement compiling the distribution strategy over the
-                //  shards obtained through the LOCAL sharding strategy.
+                // TODO this cannot be the simple executor, needs the scanner to be passed after
                 TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor =
                     (geometry, event, scope) ->
                         contextualizer.contextualize(
                             // pass the operation for provenance recording
+                            // TODO must get the scanner too
                             observation, event, scope);
+
+                if (nativeShardingStrategy != null) {
+                  executor =
+                      new ShardingExecutor(
+                          observation, adapter.getAdapterInfo().shardingStrategy(), executor);
+                }
 
                 executors.add(executor);
 
@@ -548,18 +576,24 @@ public class CompiledDataflow {
                 // enqueue data extraction from service method
                 final var contextualizer =
                     new ClientResourceContextualizer(service.get(), resource, observation);
-                executors.add(
-                    // TODO same strategy as above
+                TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor =
                     (geometry, event, scope) ->
-                        contextualizer.contextualize(observation, event, scope));
+                        contextualizer.contextualize(observation, event, scope);
+
+                if (nativeShardingStrategy != null) {
+                  executor =
+                      new ShardingExecutor(observation, adapterInfo.shardingStrategy(), executor);
+                }
+
+                executors.add(executor);
+
                 continue;
               }
             }
             case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
               (scalarBuilder == null
                       ? (scalarBuilder =
-                          runtimeService.getComputationBuilder(
-                              observation, shardingStrategy, scope, actuator))
+                          runtimeService.getComputationBuilder(observation, scope, actuator))
                       : scalarBuilder)
                   .add(call);
               continue;
@@ -581,15 +615,14 @@ public class CompiledDataflow {
 
         if (scalarBuilder != null) {
           var scalarMapper = scalarBuilder.build();
-          // scalar mapper must honor the sharding strategy configured in it
-          executors.add(scalarMapper::execute);
+          TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor =
+              scalarMapper::execute;
+          if (nativeShardingStrategy != null) {
+            executor = new ShardingExecutor(observation, callInfo.shardingStrategy(), executor);
+          }
+          executors.add(executor);
         }
 
-        // if we're a quality, we need storage at the discretion of the StorageManager.
-        Storage storage =
-            observation.getObservable().is(SemanticType.QUALITY)
-                ? digitalTwin.getStorageManager().createStorage(observation, shardingStrategy)
-                : null;
         /*
          * Create a runnable with matched parameters and have it set the context observation
          * TODO each should adapt the scanners to its own sharding strategy at execution
@@ -598,13 +631,6 @@ public class CompiledDataflow {
          */
         if (componentRegistry.implementation(callInfo.serviceInfo()).method != null) {
 
-          //          var runArguments =
-          //              ;
-          //
-          //          if (runArguments == null) {
-          //            return false;
-          //          }
-
           if (callInfo.serviceInfo().staticMethod) {
             //            Extensions.FunctionDescriptor finalDescriptor1 = callInfo.serviceInfo();
             var implementation = componentRegistry.implementation(callInfo.serviceInfo());
@@ -612,7 +638,8 @@ public class CompiledDataflow {
             if (implementation == null) {
               return false;
             }
-            executors.add(
+
+            TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor =
                 (geometry, event, scope) -> {
                   try {
                     var arguments =
@@ -649,13 +676,17 @@ public class CompiledDataflow {
                     scope.error(e /* TODO tracing parameters */);
                   }
                   return true;
-                });
+                };
+
+            executors.add(
+                nativeShardingStrategy == null
+                    ? executor
+                    : new ShardingExecutor(observation, callInfo.shardingStrategy(), executor));
+
           } else if (componentRegistry.implementation(callInfo.serviceInfo()).mainClassInstance
               != null) {
             var implementation = componentRegistry.implementation(callInfo.serviceInfo());
-            //            var resource1 = resource;
-            //            Extensions.FunctionDescriptor finalDescriptor = currentDescriptor;
-            executors.add(
+            TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor =
                 (geometry, event, scope) -> {
                   try {
                     var arguments =
@@ -694,7 +725,12 @@ public class CompiledDataflow {
                     scope.error(e /* TODO tracing parameters */);
                   }
                   return true;
-                });
+                };
+
+            executors.add(
+                nativeShardingStrategy == null
+                    ? executor
+                    : new ShardingExecutor(observation, callInfo.shardingStrategy(), executor));
           }
         }
       }
@@ -849,26 +885,49 @@ public class CompiledDataflow {
     return executionOrder;
   }
 
-  // TODO adapt to specific executor task and monitoring
-  // use in executor: return (shards == null || shards.size == 1)
-  //     ? executor.apply(geometry, event, scope)
-  //     : distributeComputation(shards, executor, event, scope);
-  public boolean distributeComputation(
-      Collection<Storage.Shard> objects,
-      TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor,
-      Scheduler.Event event,
-      ContextScope scope) {
+  //  private class ShardedFuntion implements BiFunction<>
 
-    List<Callable<Object>> tasks = new ArrayList<>();
-    for (Storage.Shard object : objects) {
-      //      tasks.add(Executors.callable(() -> task.accept(object)));
+  private class ShardingExecutor
+      implements TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> {
+
+    private final Observation observation;
+    private final Data.ShardingStrategy targetShardingStrategy;
+    private final TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor;
+
+    public ShardingExecutor(
+        Observation observation,
+        Data.ShardingStrategy targetShardingStrategy,
+        // TODO this must be adapted to something that also gets a scanner - consumer of event,
+        // geometry
+        TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor) {
+      this.observation = observation;
+      this.targetShardingStrategy = targetShardingStrategy;
+      this.executor = executor;
     }
 
-    try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
-      var ret = executorService.invokeAll(tasks);
-      return ret.stream().noneMatch(objectFuture -> objectFuture.state() == Future.State.FAILED);
-    } catch (Throwable t) {
-      return false;
+    @Override
+    public Boolean apply(Geometry geometry, Scheduler.Event event, ContextScope contextScope) {
+
+      var storage = contextScope.getDigitalTwin().getStorageManager().getStorage(observation);
+      List<Callable<Object>> tasks = new ArrayList<>();
+      //      for (var shard : storage.getShards(event, targetShardingStrategy)) {
+      //          tasks.add(
+      //            () -> {
+      //              try {
+      //                return executor.apply(shard.getGeometry(), event, contextScope);
+      //              } catch (Throwable e) {
+      //                contextScope.error(e);
+      //                return false;
+      //              }
+      //            });
+      //      }
+
+      try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+        var ret = executorService.invokeAll(tasks);
+        return ret.stream().noneMatch(objectFuture -> objectFuture.state() == Future.State.FAILED);
+      } catch (Throwable t) {
+        return false;
+      }
     }
   }
 
