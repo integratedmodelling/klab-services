@@ -71,7 +71,7 @@ public class CompiledDataflow {
   ///
   @FunctionalInterface
   public interface ContextualExecutor {
-    public boolean execute(Scheduler.Event context);
+    boolean execute(Scheduler.Event context);
   }
 
   // this is used to keep info around during compilation without calling services too many times
