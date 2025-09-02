@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.utilities.Utils;
 
 // TODO this will become the next Storage implementation
 public class StorageImpl implements Storage {
@@ -159,7 +160,7 @@ public class StorageImpl implements Storage {
       return getNativeShards(locator).stream().map(shard -> (T) shard.getNativeScanner()).toList();
     }
     return remapScanners(
-        getNativeShards(locator).stream().map(this::getNativeScanner).toList(),
+        getNativeShards(locator).stream().map(shard -> shard.getNativeScanner()).toList(),
         shardingStrategy,
         scannerClass);
   }
@@ -181,13 +182,34 @@ public class StorageImpl implements Storage {
     return (List<T>) nativeScanners;
   }
 
-  /**
-   * Get the native scanner for the passed shard.
-   *
-   * @param shard
-   * @return a scanner over the data in the shard.
-   */
-  private Scanner getNativeScanner(Shard shard) {
+  @Override
+  public Data.ShardingStrategy getNativeShardingStrategy() {
+    return nativeShardingStrategy;
+  }
+
+  public List<Shard> allShards() {
+    var ret = new ArrayList<Shard>();
+    shards.values().forEach(ret::addAll);
+    return ret;
+  }
+
+  public com.dynatrace.dynahist.Histogram histogram() {
+
+    var allBuffers = allShards();
+    if (allBuffers.size() == 1) {
+      return ((ShardImpl) allBuffers.getFirst()).histogram;
+    } else if (allBuffers.size() > 1) {
+      com.dynatrace.dynahist.Histogram ret = null;
+      var first = ((ShardImpl) allBuffers.getFirst()).histogram;
+      if (first != null) {
+        ret = com.dynatrace.dynahist.Histogram.createDynamic(first.getLayout());
+        for (var buffer : allBuffers) {
+          if (((ShardImpl) buffer).histogram != null) {
+            ret.addHistogram(((ShardImpl) buffer).histogram);
+          }
+        }
+      }
+    }
     return null;
   }
 
@@ -198,7 +220,7 @@ public class StorageImpl implements Storage {
 
   @Override
   public Histogram getHistogram() {
-    return null;
+    return Utils.Data.adaptHistogram(histogram());
   }
 
   public static void main(String[] args) {

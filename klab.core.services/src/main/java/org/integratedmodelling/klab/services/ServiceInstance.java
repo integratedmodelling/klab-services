@@ -1,5 +1,16 @@
 package org.integratedmodelling.klab.services;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.ServiceIdentityImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
@@ -12,14 +23,11 @@ import org.integratedmodelling.common.services.client.resolver.ResolverClient;
 import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.configuration.Setting;
-import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -28,18 +36,6 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.base.BaseService;
-
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 
 /**
  * This class is a wrapper for a {@link KlabService} whose main purpose is to provide it with a
@@ -454,19 +450,19 @@ public abstract class ServiceInstance<T extends BaseService> {
 
         // register remote components and adapters with our component registry avoiding clients
         for (var service : klabService().serviceScope().getServices(ResourcesService.class)) {
-          System.out.println("type to register service "+service.serviceName());
+//          System.out.println("type to register service "+service.serviceName());
           klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
         }
         for (var service : klabService().serviceScope().getServices(Reasoner.class)) {
-          System.out.println("type to register service "+service.serviceName());
+//          System.out.println("type to register service "+service.serviceName());
           klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
         }
         for (var service : klabService().serviceScope().getServices(Resolver.class)) {
-          System.out.println("type to register service "+service.serviceName());
+//          System.out.println("type to register service "+service.serviceName());
           klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
         }
         for (var service : klabService().serviceScope().getServices(RuntimeService.class)) {
-          System.out.println("type to register service "+service.serviceName());
+//          System.out.println("type to register service "+service.serviceName());
           klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
         }
         setBusy(false);

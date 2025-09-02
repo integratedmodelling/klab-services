@@ -202,6 +202,9 @@ public interface Data {
      * @return
      */
     public Class<? extends Storage.Scanner> getScannerClass() {
+      if (dataType == null) {
+        return null;
+      }
       return switch (dataType) {
         case DOUBLE -> Storage.DoubleScanner.class;
         case FLOAT -> Storage.FloatScanner.class;

@@ -39,7 +39,6 @@ public class ClientDigitalTwin implements DigitalTwin {
 
   public ClientDigitalTwin(ContextScope scope, String id) {
     this.scope = scope;
-    System.out.println("PUTO");
     this.runtimeClient = scope.getService(RuntimeService.class);
     if (this.runtimeClient instanceof RuntimeClient rc) {
       this.knowledgeGraph = new ClientKnowledgeGraph(scope, rc);

@@ -195,6 +195,13 @@ public interface Storage {
       boolean readOnly);
 
   /**
+   * The native sharding strategy for the observation we represent.
+   *
+   * @return
+   */
+  Data.ShardingStrategy getNativeShardingStrategy();
+
+  /**
    * This will be known after the first buffer is created.
    *
    * @return
