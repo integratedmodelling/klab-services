@@ -136,7 +136,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
           yield ret;
         }
-//        case ServiceInfo info -> info.getAnnotations();
+        //        case ServiceInfo info -> info.getAnnotations();
         default -> new ArrayList<>();
       };
     }
@@ -2051,6 +2051,17 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       List<T> ret = new ArrayList<>();
       for (Collection<T> list : resources) {
         ret.addAll(list);
+      }
+      return ret;
+    }
+
+    @SafeVarargs
+    public static <T> List<T> join(Class<T> returnClass, Collection... resources) {
+      List<T> ret = new ArrayList<>();
+      for (var list : resources) {
+        for (var object : list) {
+          ret.add((T) object);
+        }
       }
       return ret;
     }

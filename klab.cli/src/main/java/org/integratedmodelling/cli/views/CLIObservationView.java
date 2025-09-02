@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -402,10 +403,11 @@ public class CLIObservationView extends CLIView implements RuntimeView, Runnable
 
       PrintWriter out = commandSpec.commandLine().getOut();
       PrintWriter err = commandSpec.commandLine().getErr();
+      var persistence = Persistence.IDLE_TIMEOUT; // TODO link to options
       var newContext =
           KlabCLI.INSTANCE
               .modeler()
-              .openNewContext(DigitalTwin.Configuration.builder().name(name).build());
+              .openNewContext(DigitalTwin.Configuration.builder().name(name).persistence(persistence).build());
       out.println(
           CommandLine.Help.Ansi.AUTO.string(
               "@|green New context " + newContext.getName() + " created|@"));
