@@ -39,12 +39,12 @@ public class ContextualizingDataBuilder implements Data.Builder {
   }
 
   @Override
-  public <T extends Storage.Shard> T scanner(Class<T> scannerClass) {
+  public <T extends Storage.Scanner> T scanner(Class<T> scannerClass) {
     return null;
   }
 
   @Override
-  public <T extends Storage.Shard> T scanner(String identifier, Class<T> scannerClass) {
+  public <T extends Storage.Scanner> T scanner(String identifier, Class<T> scannerClass) {
     return null;
   }
 

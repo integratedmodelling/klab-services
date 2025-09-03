@@ -684,7 +684,7 @@ public interface Data {
      * @throws KlabIllegalStateException if the artifact type is incompatible with the requested
      *     scanner class
      */
-    <T extends Storage.Shard> T scanner(Class<T> scannerClass);
+    <T extends Storage.Scanner> T scanner(Class<T> scannerClass);
 
     /**
      * Return a scanner of the specified type for an additional output or for an input, using the
@@ -701,7 +701,7 @@ public interface Data {
      * @return
      * @param <T>
      */
-    <T extends Storage.Shard> T scanner(String identifier, Class<T> scannerClass);
+    <T extends Storage.Scanner> T scanner(String identifier, Class<T> scannerClass);
 
     /**
      * Must be called on any secondary builders. Should NOT be called on the root builder, passed to
@@ -709,6 +709,7 @@ public interface Data {
      * from a {@link #state(Observable)} or {@link #object(String, Observable, Geometry)} call.
      *
      * @return the built Data object
+     * @deprecated should NOT be called
      */
     Data build();
   }
