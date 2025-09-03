@@ -611,8 +611,7 @@ public class ResourcesProvider extends BaseService
             ? observation.getObservable().getUrn()
             : observation.getObservable().getStatedName();
 
-    var builder =
-        new SerializingDataBuilder(name, observation.getObservable(), observation.getGeometry());
+    var builder = new SerializingDataBuilder(name, observation.getGeometry());
     Urn urn = Urn.of(resource.getUrn());
 
     if (adapter.encode(

@@ -29,7 +29,7 @@ public class ContextualizingDataBuilder implements Data.Builder {
   }
 
   @Override
-  public Data.Builder state(Observable observable) {
+  public Data.Builder state(String observable) {
     return null;
   }
 
@@ -39,8 +39,12 @@ public class ContextualizingDataBuilder implements Data.Builder {
   }
 
   @Override
-  public <T extends Storage.Shard> T buffer(
-      Class<T> fillerClass, Data.FillCurve fillCurve) {
+  public <T extends Storage.Shard> T scanner(Class<T> scannerClass) {
+    return null;
+  }
+
+  @Override
+  public <T extends Storage.Shard> T scanner(String identifier, Class<T> scannerClass) {
     return null;
   }
 

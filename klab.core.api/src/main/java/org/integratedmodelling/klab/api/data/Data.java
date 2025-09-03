@@ -2,9 +2,7 @@ package org.integratedmodelling.klab.api.data;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.PrimitiveIterator;
-
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -214,66 +212,6 @@ public interface Data {
         case BOOLEAN -> Storage.BooleanScanner.class;
       };
     }
-  }
-
-  /**
-   * A Cursor iterates one or more geometry dimensions using a long offset. If the geometry it
-   * refers to results from splitting an original larger geometry, it can also locate the current
-   * offset in it.
-   *
-   * @deprecated use the updated fillcurve/split/type etc. data
-   */
-  interface Cursor {
-
-    /**
-     * The linear offset in the geometry corresponding to the dimension offsets passed relative to
-     * the space filling curve implemented, possibly along with offsets in any other varying
-     * dimensions. The passed offsets will be matched to the varying dimensions, ignoring the
-     * geometry extents that do not vary and assuming the dimensionality of the filling curve to
-     * establish the leval number of parameters. This should be used in situations when the geometry
-     * has been filtered so that only the varying dimensions remain.
-     *
-     * @param dimensionOffsets
-     * @return the offset or -1L if no mapping is possible.
-     */
-    long offset(Cursor other, long... dimensionOffsets);
-
-    /**
-     * Produce a scanner that, at minimum, will produce all the consecutive long indices along the
-     * fill curve. The scanners exposed by cursors that scan a data buffer can also expose methods
-     * to set/get typed values sequentially.
-     *
-     * @return a primitive iterator of long values representing indices along the fill curve
-     */
-    PrimitiveIterator.OfLong scan();
-  }
-
-  /** Non-boxing mapper for extent offsets to n-dimensional coordinates. */
-  @FunctionalInterface
-  @Deprecated
-  interface LongToLongArrayFunction {
-
-    /**
-     * Applies this function to the given argument.
-     *
-     * @param value the function argument
-     * @return the function result
-     */
-    long[] apply(long value);
-  }
-
-  /** Non-boxing mapper for extent n-dimensional coordinates to linear offsets. */
-  @FunctionalInterface
-  @Deprecated
-  interface LongArrayToLongFunction {
-
-    /**
-     * Applies this function to the given argument.
-     *
-     * @param value the function argument
-     * @return the function result
-     */
-    long apply(long[] value);
   }
 
   /**
@@ -714,14 +652,14 @@ public interface Data {
     Builder metadata(String key, Object value);
 
     /**
-     * Returns a new builder on which build() must be called to confirm the transaction. The
-     * geometry is mandatorily that of the builder and the name is the URN of the observable. On the
-     * builder, one of the fillers must be called to set the numbers.
+     * Returns a builder specialized for a secondary observation identified by a <em>known</em>
+     * identifier. Using this is only necessary if anything must be set for the observation besides
+     * the values, such as metadata. Otherwise the scanner can simply be retrieved directly using
+     * {@link #scanner(String, Class)}.
      *
-     * @param observable the observable for which to create a state
      * @return a new builder for the state
      */
-    Builder state(Observable observable);
+    Builder state(String outputId);
 
     /**
      * Returns a new builder for an object, on which build() must be called to confirm the
@@ -729,35 +667,41 @@ public interface Data {
      * used to add metadata, states or child objects.
      *
      * @param name the name of the object
-     * @param observable the observable for the object
+     * @param observable the observable for the object FIXME should not be necessary?
      * @param geometry the geometry for the object
      * @return a new builder for the object
      */
     Builder object(String name, Observable observable, Geometry geometry);
 
     /**
-     * Create a buffer of the specified type using the specified space filling curve. Must be called
-     * on the result of state() or an exception will be thrown. When constructing a state, only one
-     * buffer is requested for the full observation; if the data are produced in parallel, the
-     * buffer implementation must allow concurrent setting. At the resource side, the parallelism is
-     * usually handled by making multiple requests in parallel rather than splitting one into
-     * multiple buffers.
+     * Create a scanner of the specified type using the filling curve and geometry declared for the
+     * adapter or method. The scanner will be matched to the geometry being contextualized and will
+     * refer to the main output.
      *
-     * <p>TODO restore a buffers() with a size or split parameter to produce multiple parallel
-     * buffers. Those need to be known at the consumer side, so they would complicate the Avro
-     * schema.
-     *
-     * <p>FIXME this should return a filler, not a Buffer. The buffer exists outside of the builder.
-     * This one just forces the call to scan() which adds nothing to the semantics.
-     *
-     * @param fillerClass the class of buffer to create
-     * @param fillCurve the space filling curve to use
-     * @return a single buffer of the specified type using the specified space filling curve
-     * @param <T> the type of buffer
-     * @throws KlabIllegalStateException if called on an object builder or if the filling curve
-     *     cannot be matched to the geometry.
+     * @param scannerClass the class of scanner to create
+     * @return a single scanner of the specified type using the specified space filling curve
+     * @param <T> the type of scanner desired
+     * @throws KlabIllegalStateException if the artifact type is incompatible with the requested
+     *     scanner class
      */
-    <T extends Storage.Shard> T buffer(Class<T> fillerClass, FillCurve fillCurve);
+    <T extends Storage.Shard> T scanner(Class<T> scannerClass);
+
+    /**
+     * Return a scanner of the specified type for an additional output or for an input, using the
+     * filling curve and geometry declared for the adapter or method. The identifier will be matched
+     * to the inputs and additional outputs declared for the contextualizer being used, and an
+     * exception will be thrown if the correspondent observation is not understood. If the scanner
+     * refers to an input observation, any set operations called on it will throw an exception.
+     *
+     * <p>Scanners can be retrieved by an instance returned by state() if anything besides the
+     * values must be set in the observation.
+     *
+     * @param identifier
+     * @param scannerClass
+     * @return
+     * @param <T>
+     */
+    <T extends Storage.Shard> T scanner(String identifier, Class<T> scannerClass);
 
     /**
      * Must be called on any secondary builders. Should NOT be called on the root builder, passed to
