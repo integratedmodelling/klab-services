@@ -1081,11 +1081,9 @@ public class ComponentRegistry {
     distribution.setMaxBufferSize(annotation.maxSize());
     distribution.setMinSplitSize(annotation.minSizeForSplitting());
     distribution.setSuggestedSplits(annotation.split());
+    distribution.setDataType(Storage.Type.defaultFor(annotation.type()));
     ret.setShardingStrategy(distribution);
-
-    for (Artifact.Type a : annotation.type()) {
-      ret.getType().add(a);
-    }
+    ret.getType().add(annotation.type());
 
     for (KlabFunction.Argument argument : annotation.parameters()) {
       var arg = createArgument(argument);
@@ -1099,24 +1097,6 @@ public class ComponentRegistry {
       var arg = createArgument(argument);
       ret.getExports().add(arg);
     }
-
-    //    AnnotationImpl storageAnnotation = null;
-    //
-    //    if (annotation.fillCurve() != null) {
-    //      storageAnnotation =
-    //          org.integratedmodelling.klab.api.lang.Annotation.of(
-    //              "storage", "fillcurve", annotation.fillCurve().name());
-    //    }
-    //    if (annotation.split() > 0) {
-    //      if (storageAnnotation == null) {
-    //        storageAnnotation = org.integratedmodelling.klab.api.lang.Annotation.of("storage");
-    //      }
-    //      storageAnnotation.put("splits", annotation.split());
-    //    }
-    //
-    //    if (storageAnnotation != null) {
-    //      ret.getAnnotations().add(storageAnnotation);
-    //    }
 
     return ret;
   }
@@ -1852,44 +1832,45 @@ public class ComponentRegistry {
         } else if (Storage.Scanner.class.isAssignableFrom(argument)) {
           // TODO! Buffers/scanners must already be split as needed
         } /*else if (Storage.class.isAssignableFrom(argument)) {
+            storage =
+                digitalTwin == null
+                    ? null
+                    : digitalTwin.getStorageManager().getStorage(observation);
+            runArguments.add(storage);
+          }*/
+        /*else if (LongStorage.class.isAssignableFrom(argument)) {
           storage =
               digitalTwin == null
                   ? null
-                  : digitalTwin.getStorageManager().getStorage(observation);
+                  : digitalTwin
+                      .getStateStorage()
+                      .promoteStorage(observation, storage, LongStorage.class);
           runArguments.add(storage);
-        }*/ /*else if (LongStorage.class.isAssignableFrom(argument)) {
-            storage =
-                digitalTwin == null
-                    ? null
-                    : digitalTwin
-                        .getStateStorage()
-                        .promoteStorage(observation, storage, LongStorage.class);
-            runArguments.add(storage);
-          } else if (FloatStorage.class.isAssignableFrom(argument)) {
-            storage =
-                digitalTwin == null
-                    ? null
-                    : digitalTwin
-                        .getStateStorage()
-                        .promoteStorage(observation, storage, FloatStorage.class);
-            runArguments.add(storage);
-          } else if (BooleanStorage.class.isAssignableFrom(argument)) {
-            storage =
-                digitalTwin == null
-                    ? null
-                    : digitalTwin
-                        .getStateStorage()
-                        .promoteStorage(observation, storage, BooleanStorage.class);
-            runArguments.add(storage);
-          } else if (KeyedStorage.class.isAssignableFrom(argument)) {
-            storage =
-                digitalTwin == null
-                    ? null
-                    : digitalTwin
-                        .getStateStorage()
-                        .promoteStorage(observation, storage, KeyedStorage.class);
-            runArguments.add(storage);
-          } */ else if (Scale.class.isAssignableFrom(argument)) {
+        } else if (FloatStorage.class.isAssignableFrom(argument)) {
+          storage =
+              digitalTwin == null
+                  ? null
+                  : digitalTwin
+                      .getStateStorage()
+                      .promoteStorage(observation, storage, FloatStorage.class);
+          runArguments.add(storage);
+        } else if (BooleanStorage.class.isAssignableFrom(argument)) {
+          storage =
+              digitalTwin == null
+                  ? null
+                  : digitalTwin
+                      .getStateStorage()
+                      .promoteStorage(observation, storage, BooleanStorage.class);
+          runArguments.add(storage);
+        } else if (KeyedStorage.class.isAssignableFrom(argument)) {
+          storage =
+              digitalTwin == null
+                  ? null
+                  : digitalTwin
+                      .getStateStorage()
+                      .promoteStorage(observation, storage, KeyedStorage.class);
+          runArguments.add(storage);
+        } */ else if (Scale.class.isAssignableFrom(argument)) {
           if (scale == null && geometry != null) {
             scale = GeometryRepository.INSTANCE.scale(geometry);
           }

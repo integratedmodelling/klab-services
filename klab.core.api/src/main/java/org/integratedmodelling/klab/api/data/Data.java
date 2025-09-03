@@ -159,9 +159,9 @@ public interface Data {
       if (others != null) {
         for (var other : others) {
           if (other != null) {
-            if (ret.dataType == null || other.dataType == null) {
+            if (ret.dataType == null) {
               ret.dataType = other.dataType;
-            } else if (ret.dataType != other.dataType) {
+            } else if (other.dataType != null && ret.dataType != other.dataType) {
               if (ret.dataType.isNumber() && other.dataType.isNumber()) {
                 ret.dataType = other.dataType;
               } else {

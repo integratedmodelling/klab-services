@@ -37,23 +37,21 @@ public class StorageManagerImpl implements StorageManager {
   private final ServiceContextScope contextScope;
   private final File propertyFile;
   private final RuntimeService service;
-  private File workspace;
-  private File floatBackupFile;
-  private File doubleBackupFile;
-  private File intBackupFile;
-  private File longBackupFile;
-  private File booleanBackupFile;
-  private int histogramBinSize = 20;
+  private final File workspace;
+  private final File floatBackupFile;
+  private final File doubleBackupFile;
+  private final File intBackupFile;
+  private final File longBackupFile;
+  private final File booleanBackupFile;
+  private final int histogramBinSize = 20;
   private final Map<String, Storage> storage = new HashMap<>();
-  private AtomicLong nextId = new AtomicLong(0);
+  private final AtomicLong nextId = new AtomicLong(0);
 
   public boolean isRecordHistogram() {
     return recordHistogram;
   }
 
   private boolean recordHistogram = true;
-
-  private Parallelism parallelism = Parallelism.ONE;
 
   public StorageManagerImpl(RuntimeService service, ServiceContextScope scope) {
     // choose the mm files, parallelism level and the floating point representation
@@ -154,20 +152,6 @@ public class StorageManagerImpl implements StorageManager {
     }
   }
 
-  //  /**
-  //   * Find out the representative interface of the passed buffer.
-  //   *
-  //   * @param buffer
-  //   * @return
-  //   */
-  //  public static Class<? extends Storage.Buffer> bufferClass(Storage.Buffer buffer) {
-  //    return switch (buffer) {
-  //      case DoubleBufferImpl ignored -> Storage.DoubleBuffer.class;
-  //      // TODO the rest!
-  //      default -> throw new KlabIllegalArgumentException("not a recognized buffer type");
-  //    };
-  //  }
-
   public BufferArray getIntBuffer(long sliceSize) {
     return getIntFactory().make(sliceSize);
   }
@@ -192,56 +176,6 @@ public class StorageManagerImpl implements StorageManager {
     return histogramBinSize;
   }
 
-  //  public static Triple<Integer, Data.FillCurve, Storage.Type> getOptions(
-  //      ServiceContextScope contextScope, Annotation storageAnnotation, Observation observation) {
-  //    // defaults
-  //    var splits = contextScope.getParallelism().getAsInt();
-  //    var fillingCurve = Data.FillCurve.defaultCurve(observation.getGeometry());
-  //    var storageType =
-  //        contextScope
-  //            .getService(RuntimeService.class)
-  //            .capabilities(contextScope)
-  //            .getDefaultStorageType();
-  //
-  //    /*
-  //     * Find specs if any. May not be honored.
-  //     */
-  //    if (storageAnnotation != null) {
-  //      if (storageAnnotation.containsKey("fillcurve")) {
-  //        try {
-  //          fillingCurve =
-  //
-  // Data.FillCurve.valueOf(storageAnnotation.get("fillcurve").toString().toUpperCase());
-  //        } catch (Throwable t) {
-  //          contextScope.error(
-  //              "Wrong fill curve specification: "
-  //                  + storageAnnotation.get("fillcurve")
-  //                  + " in "
-  //                  + observation);
-  //        }
-  //      }
-  //
-  //      if (storageAnnotation.containsKey("type")) {
-  //        try {
-  //          storageType =
-  //              Storage.Type.valueOf(storageAnnotation.get("type").toString().toUpperCase());
-  //        } catch (Throwable t) {
-  //          contextScope.error(
-  //              "Wrong storage type specification: "
-  //                  + storageAnnotation.get("type")
-  //                  + " in "
-  //                  + observation);
-  //        }
-  //      }
-  //
-  //      if (storageAnnotation.containsKey("splits")) {
-  //        splits = contextScope.getSplits(storageAnnotation.get("splits", Integer.class));
-  //      }
-  //    }
-  //
-  //    return Triple.of(splits, fillingCurve, storageType);
-  //  }
-
   public Storage getStorage(Observation observation) {
     var ret = this.storage.get(observation.getUrn());
     if (ret == null) {
@@ -256,69 +190,6 @@ public class StorageManagerImpl implements StorageManager {
     return this.storage.computeIfAbsent(
         observation.getUrn(),
         urn -> new StorageImpl(observation, shardingStrategy, contextScope, this));
-  }
-
-  //  @SuppressWarnings("unchecked")
-  //  @Override
-  //  private Storage getOrCreateStorage(Observation observation) {
-  //
-  //    Class<?> sClass = storageClass;
-  //    if (storageClass == Storage.class) {
-  //      sClass =
-  //          switch (observation.getObservable().getArtifactType()) {
-  //            //            case BOOLEAN -> BooleanStorage.class;
-  //            case NUMBER -> /* TODO use config to choose between double and float */
-  //                DoubleStorage.class;
-  //            //            case TEXT, CONCEPT -> KeyedStorage.class;
-  //            default ->
-  //                throw new KlabIllegalStateException(
-  //                    "scalar mapping to type "
-  //                        + observation.getObservable().getArtifactType()
-  //                        + " not supported");
-  //          };
-  //    }
-  //
-  //    T ret = getExistingStorage(observation, (Class<T>) sClass);
-  //
-  //    if (ret == null) {
-  //      if (DoubleStorage.class.isAssignableFrom(sClass)) {
-  //        ret = (T) new DoubleStorage(observation, this, contextScope);
-  //      } /*else if (LongStorage.class.isAssignableFrom(sClass)) {
-  //          ret = (T) new LongStorage(observation, this, contextScope);
-  //        } else if (FloatStorage.class.isAssignableFrom(sClass)) {
-  //          ret = (T) new FloatStorage(observation, this, contextScope);
-  //        } else if (IntStorage.class.isAssignableFrom(sClass)) {
-  //          ret = (T) new IntStorage(observation, this, contextScope);
-  //        } else if (BooleanStorage.class.isAssignableFrom(sClass)) {
-  //          ret = (T) new BooleanStorage(observation, this, contextScope);
-  //        } else if (KeyedStorage.class.isAssignableFrom(sClass)) {
-  //          ret = (T) new KeyedStorage(observation, this, contextScope);
-  //        }*/
-  //    }
-  //
-  //    if (ret != null) {
-  //      // TODO load any pre-existing state
-  //      storage.put(observation.getUrn(), ret);
-  //      return ret;
-  //    }
-  //
-  //    throw new KlabUnimplementedException(
-  //        "cannot create storage of class " + sClass.getCanonicalName());
-  //  }
-
-  //  @Override
-  public <T extends Storage> T promoteStorage(
-      Observation observation, Storage existingStorage, Class<T> storageClass) {
-
-    if (existingStorage == null) {
-      //      return getOrCreateStorage(observation, storageClass);
-    } else if (storageClass.isAssignableFrom(existingStorage.getClass())) {
-      return (T) existingStorage;
-    }
-
-    // TODO create a casting delegate or throw an exception
-
-    return null;
   }
 
   @Override

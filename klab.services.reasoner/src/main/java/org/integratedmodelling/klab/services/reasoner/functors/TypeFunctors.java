@@ -24,7 +24,7 @@ public class TypeFunctors {
   @KlabFunction(
       name = "concrete",
       description = "Check if an observable is concrete",
-      type = {Artifact.Type.BOOLEAN})
+      type = Artifact.Type.BOOLEAN)
   public boolean isConcrete(Semantics semantics) {
     return !semantics.isAbstract();
   }
@@ -32,7 +32,7 @@ public class TypeFunctors {
   @KlabFunction(
       name = "abstract",
       description = "Check if an observable is abstract",
-      type = {Artifact.Type.BOOLEAN})
+      type = Artifact.Type.BOOLEAN)
   public boolean isAbstract(Semantics semantics) {
     return semantics.isAbstract();
   }
@@ -40,7 +40,7 @@ public class TypeFunctors {
   @KlabFunction(
       name = "collective",
       description = "Check if an observable is collective",
-      type = {Artifact.Type.BOOLEAN})
+      type = Artifact.Type.BOOLEAN)
   public boolean isCollective(Semantics semantics) {
     return semantics.asConcept().isCollective();
   }
@@ -48,7 +48,7 @@ public class TypeFunctors {
   @KlabFunction(
           name = "predicates.count",
           description = "Return the number of predicates in the expression",
-          type = {Artifact.Type.BOOLEAN})
+          type = Artifact.Type.BOOLEAN)
   public int countPredicates(Semantics semantics) {
     return reasoner.traits(semantics).size() + reasoner.roles(semantics).size();
   }
@@ -56,7 +56,7 @@ public class TypeFunctors {
   @KlabFunction(
       name = "operator.splitfirst",
       description = "Remove the first predicate from an observable and return the two parts",
-      type = {Artifact.Type.CONCEPT})
+      type = Artifact.Type.CONCEPT)
   public List<Concept> splitFirst(Semantics semantics) {
     /** TODO TODO TODO */
     return List.of(semantics.asConcept(), semantics.asConcept());
@@ -65,7 +65,7 @@ public class TypeFunctors {
   @KlabFunction(
           name = "lexicalroot",
           description = "Return the lexical root of a predicate",
-          type = {Artifact.Type.CONCEPT})
+          type = Artifact.Type.CONCEPT)
   public Concept lexicalRoot(Semantics semantics) {
     return reasoner.lexicalRoot(semantics);
   }
@@ -73,7 +73,7 @@ public class TypeFunctors {
   @KlabFunction(
       name = "arity.single",
       description = "Return the singular counterpart of a collective observable",
-      type = {Artifact.Type.CONCEPT})
+      type = Artifact.Type.CONCEPT)
   public Semantics changeArityToSingle(Semantics semantics) {
 
     if (semantics.asConcept().isCollective()) {
@@ -88,7 +88,7 @@ public class TypeFunctors {
   @KlabFunction(
       name = "arity.collective",
       description = "Return the collective counterpart of a singular observable",
-      type = {Artifact.Type.CONCEPT})
+      type = Artifact.Type.CONCEPT)
   public Semantics changeArityToCollective(Semantics semantics) {
 
     if (!semantics.asConcept().isCollective()) {

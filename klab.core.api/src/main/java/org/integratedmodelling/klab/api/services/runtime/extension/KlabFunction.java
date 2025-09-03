@@ -209,7 +209,7 @@ public @interface KlabFunction {
 
   Argument[] parameters() default {};
 
-  Artifact.Type[] type();
+  Artifact.Type type();
 
   String unit() default "";
 

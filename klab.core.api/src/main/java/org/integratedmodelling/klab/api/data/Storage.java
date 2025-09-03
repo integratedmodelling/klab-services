@@ -4,7 +4,9 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.PrimitiveIterator;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 
 /**
  * Base storage providing only general methods. There is one Storage object per observation, managed
@@ -36,6 +38,18 @@ public interface Storage {
 
     public boolean isNumber() {
       return number;
+    }
+
+    public static Type defaultFor(Artifact.Type artifactType) {
+      if (artifactType == null) {
+        return null;
+      }
+      return switch (artifactType) {
+        case NUMBER -> DOUBLE;
+        case BOOLEAN -> BOOLEAN;
+        case CONCEPT -> KEYED;
+        default -> null;
+      };
     }
   }
 

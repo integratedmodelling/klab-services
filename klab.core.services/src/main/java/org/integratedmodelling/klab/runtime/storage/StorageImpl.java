@@ -25,7 +25,6 @@ public class StorageImpl implements Storage {
   private final ContextScope scope;
   private final Data.ShardingStrategy nativeShardingStrategy;
   private final StorageManagerImpl storageManager;
-  private Data.ShardingStrategy shardingStrategy;
 
   /*
    * Buffer storage along slowest-varying dimensions. All dimensions except one (space) must have
@@ -156,7 +155,7 @@ public class StorageImpl implements Storage {
       Data.ShardingStrategy shardingStrategy,
       Class<T> scannerClass,
       boolean readOnly) {
-    if (this.shardingStrategy.equals(shardingStrategy)) {
+    if (this.nativeShardingStrategy.equals(shardingStrategy)) {
       return getNativeShards(locator).stream().map(shard -> (T) shard.getNativeScanner()).toList();
     }
     return remapScanners(
