@@ -486,9 +486,9 @@ public class ScaleImpl implements Scale {
     if the dimension is a scale, locate all extents. If an extent, locate all. If an offset, locate whatever is
     in the offset.
      */
-    if (dimension instanceof Offset offset) {
+    /*if (dimension instanceof Offset offset) {
       // TODO
-    } else if (dimension instanceof Extent extent) {
+    } else */if (dimension instanceof Extent extent) {
       Extent<?> mine = extent(extent.getType());
       if (mine != null) {
         return with(mine.at(extent));

@@ -245,6 +245,6 @@ public interface Adapter {
       Observable observable,
       Urn urn,
       Parameters<String> urnParameters,
-      Data inputs,
+//      Data inputs,
       Scope scope);
 }

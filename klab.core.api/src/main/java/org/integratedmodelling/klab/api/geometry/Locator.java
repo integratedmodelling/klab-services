@@ -20,11 +20,11 @@ package org.integratedmodelling.klab.api.geometry;
  * {@link OffsetImpl}.
  * <p>
  * Locators can be parsed from a simple string parameters using the syntax below:
- * 
+ *
  * <pre>
  * &lt;geometry&gt;@n,m,...
  * </pre>
- * 
+ * <p>
  * where the {@link Geometry geometry} specs before @ and the @ character itself are optional if the
  * locator is part of a request that unambiguously identifies an observation. Any of the numbers in
  * the list after that is either a linear long integer offset in the correspondent dimension of the
@@ -32,7 +32,7 @@ package org.integratedmodelling.klab.api.geometry;
  * dimensionality > 1, and each can be substituted by a dot, meaning that the entire dimension is
  * located. If only one offset is mentioned, the remaining ones are substituted with dots. So
  * usually [0] in a temporally explicit context means whatever is located at t=0.
- * 
+ *
  * @author Ferd
  *
  */
@@ -42,7 +42,7 @@ public interface Locator {
      * Use UniversalLocator.INSTANCE instead of null to pass to extent functions when the entire
      * extent should be used.
      */
-    public class UniversalLocator implements Locator {
+    class UniversalLocator implements Locator {
 
         public static UniversalLocator INSTANCE = new UniversalLocator();
 
@@ -58,7 +58,7 @@ public interface Locator {
      * of an extent we want to selec the returned locator may only report location information for
      * that extent. For example, geometry.as(Space.class) will return a locator reflecting only the
      * spatial dimension. Such partial locators should not be used for further location.
-     * 
+     *
      * @param cls
      * @return
      */

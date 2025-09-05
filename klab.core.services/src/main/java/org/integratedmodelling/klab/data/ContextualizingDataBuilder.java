@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 /** The builder to use when the digital twin is available locally. */
 public class ContextualizingDataBuilder implements Data.Builder {
   public ContextualizingDataBuilder(
-      String name, Observation observation, DigitalTwin digitalTwin) {}
+          String name, Data inputData, Observation observation, DigitalTwin digitalTwin) {}
 
   @Override
   public Data.Builder notification(Notification notification) {
@@ -48,7 +48,7 @@ public class ContextualizingDataBuilder implements Data.Builder {
     return null;
   }
 
-  @Override
+//  @Override
   public Data build() {
     return null;
   }

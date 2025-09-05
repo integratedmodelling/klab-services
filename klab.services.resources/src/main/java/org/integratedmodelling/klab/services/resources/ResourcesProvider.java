@@ -611,7 +611,7 @@ public class ResourcesProvider extends BaseService
             ? observation.getObservable().getUrn()
             : observation.getObservable().getStatedName();
 
-    var builder = new SerializingDataBuilder(name, observation.getGeometry());
+    var builder = new SerializingDataBuilder(name, input, observation.getGeometry());
     Urn urn = Urn.of(resource.getUrn());
 
     if (adapter.encode(
@@ -623,7 +623,7 @@ public class ResourcesProvider extends BaseService
         observation.getObservable(),
         urn,
         Parameters.create(urn.getParameters()),
-        input,
+//        input,
         scope)) {
       return builder.build();
     }

@@ -42,11 +42,10 @@ public class ServiceResourceContextualizer extends AbstractResourceContextualize
             : observation.getObservable().getStatedName();
 
     // FIXME needs a server-side builder that uses the DT's buffers
-    Data.Builder builder = new ContextualizingDataBuilder(name, observation, digitalTwin);
+    var builder = new ContextualizingDataBuilder(name, getInputData(scope), observation, digitalTwin);
 
     // TODO add observation, observable, urn, input data if the resource requires them, observation
     //  storage and anything the adapter may want.
-    var inputData = getInputData(scope);
     adapter.encode(
         resource,
         geometry,
@@ -56,7 +55,7 @@ public class ServiceResourceContextualizer extends AbstractResourceContextualize
         observable,
         urn,
         urnParameters,
-        inputData,
+//        inputData,
         scope);
     return builder.build();
   }

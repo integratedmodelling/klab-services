@@ -1293,14 +1293,14 @@ public class GeometryImpl implements Geometry {
      */
     if (Geometry.class.isAssignableFrom(cls)) {
       return (T) this;
-    } else if (OffsetImpl.class.isAssignableFrom(cls)) {
+    } /*else if (OffsetImpl.class.isAssignableFrom(cls)) {
       if (!hasShape(this)) {
         throw new KlabIllegalStateException(
             "cannot see a geometry as an offset locator unless shape is specified for all "
                 + "extents");
       }
       return (T) new OffsetImpl(this);
-    }
+    }*/
     throw new KlabIllegalArgumentException(
         "cannot translate a simple geometry into a " + cls.getCanonicalName());
   }
@@ -1658,9 +1658,9 @@ public class GeometryImpl implements Geometry {
   // }
 
   //    @Override
-  public Iterator<Locator> iterator() {
-    return new GeometryIterator(this);
-  }
+//  public Iterator<Locator> iterator() {
+//    return new GeometryIterator(this);
+//  }
 
   @Override
   public boolean isGeneric() {

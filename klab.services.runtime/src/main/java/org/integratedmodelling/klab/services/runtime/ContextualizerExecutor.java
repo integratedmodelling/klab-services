@@ -55,7 +55,7 @@ public class ContextualizerExecutor extends AbstractExecutor
               callInfo.resource() == null ? null : Urn.of(callInfo.resource().getUrn()),
               call.getParameters(),
               call,
-              storage,
+//              storage,
               null, // expression,
               null, // lookupTable,
               null,

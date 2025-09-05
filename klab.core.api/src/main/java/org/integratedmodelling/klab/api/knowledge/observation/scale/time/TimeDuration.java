@@ -21,12 +21,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Re
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.TimeDurationImpl;
 import org.integratedmodelling.klab.api.lang.Quantity;
 
-/**
- * The Interface ITimeDuration.
- *
- * @author ferdinando.villa
- * @version $Id: $Id
- */
 public interface TimeDuration extends Serializable, Comparable<TimeDuration> {
 
     /**

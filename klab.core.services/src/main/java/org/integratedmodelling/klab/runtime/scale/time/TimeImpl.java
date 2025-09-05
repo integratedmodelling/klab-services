@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.runtime.scale.time;
 
 import org.integratedmodelling.klab.api.data.mediation.Unit;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
@@ -9,10 +11,7 @@ import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TemporalExtension;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.*;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -90,6 +89,32 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 
         if (locator == this || locator.equals(this)) {
             return this;
+        }
+
+        if (locator instanceof TimeInstant timeInstant) {
+            if (timeInstant.getMilliseconds() >= start.getMilliseconds() && timeInstant.getMilliseconds() < end.getMilliseconds()) {
+                // FIXME wrong: if this is an extent of this as a grid, return that extent!
+                for (var extent : this) {
+                    if (extent.getStart().getMilliseconds() >= timeInstant.getMilliseconds()
+                            && extent.getEnd().getMilliseconds() < timeInstant.getMilliseconds()) {
+                        return extent;
+                    }
+                }
+                // should never happen
+                return termination();
+            } else if (timeInstant.getMilliseconds() >= end.getMilliseconds()) {
+                return termination();
+            } else {
+                throw new KlabIllegalArgumentException("Cannot locate " + this + " at " + timeInstant);
+            }
+        } else if (locator instanceof Time timeExtent) {
+            if (timeExtent.getTimeType() == Time.Type.INITIALIZATION) {
+                return initialization(this);
+            } else if (timeExtent.getTimeType() == Time.Type.TERMINATION) {
+                return termination(this);
+            } else if (this.contains(timeExtent)) {
+                return timeExtent;
+            }
         }
 
         // TODO Auto-generated method stub
