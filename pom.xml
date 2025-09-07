@@ -132,6 +132,11 @@
                     <configuration>
                         <source>${maven.compiler.source}</source>
                         <target>${maven.compiler.target}</target>
+                        <compilerArgs>
+                            <arg>-J-Duser.language=en_us</arg>
+                            <arg>-g</arg>
+                            <arg>-parameters</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
                 <plugin>

@@ -92,7 +92,7 @@ public @interface KlabFunction {
    * validated. This can also be declared in the main prototype.
    */
   @Target({ElementType.PARAMETER})
-  @interface Import {
+  @interface Input {
 
     String name();
 
@@ -125,7 +125,7 @@ public @interface KlabFunction {
    * will be validated. This can also be declared in the main prototype.
    */
   @Target({ElementType.PARAMETER})
-  @interface Export {
+  @interface Output {
 
     String name();
 
@@ -203,9 +203,9 @@ public @interface KlabFunction {
 
   String dataflowLabel() default "";
 
-  Import[] imports() default {};
+  Input[] inputs() default {};
 
-  Export[] exports() default {};
+  Output[] outputs() default {};
 
   Argument[] parameters() default {};
 

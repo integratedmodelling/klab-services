@@ -21,83 +21,82 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class ContextualizerExecutor extends AbstractExecutor
-    implements CompiledDataflow.ContextualExecutor {
+        implements CompiledDataflow.ContextualExecutor {
 
-  private final ComponentRegistry componentRegistry;
-  private final ServiceCall call;
+    private final ComponentRegistry componentRegistry;
+    private final ServiceCall call;
 
-  public ContextualizerExecutor(
-      ComponentRegistry componentRegistry,
-      CompiledDataflow.CallDescriptors callInfo,
-      Observation observation,
-      ServiceCall call,
-      ContextScope scope) {
-    super(callInfo, observation, scope);
-    this.componentRegistry = componentRegistry;
-    this.call = call;
-  }
-
-  protected boolean run(Scheduler.Event event, Storage.Scanner scanner) {
-
-    var geometry = scanner.shard().getGeometry();
-
-    if (componentRegistry.implementation(callInfo.serviceInfo()).method != null) {
-
-      var implementation = componentRegistry.implementation(callInfo.serviceInfo());
-      var arguments =
-          ComponentRegistry.matchArguments(
-              implementation.method,
-              callInfo.resource(),
-              geometry,
-              null,
-              observation,
-              observation.getObservable(),
-              callInfo.resource() == null ? null : Urn.of(callInfo.resource().getUrn()),
-              call.getParameters(),
-              call,
-//              storage,
-              null, // expression,
-              null, // lookupTable,
-              null,
-              event,
-              scope);
-
-      if (arguments == null) {
-        return false;
-      }
-
-      if (callInfo.serviceInfo().staticMethod) {
-        try {
-          var context =
-              componentRegistry
-                  .implementation(callInfo.serviceInfo())
-                  .method
-                  .invoke(null, arguments.toArray());
-
-        } catch (Exception e) {
-          cause = e;
-          scope.error(e /* TODO tracing parameters */);
-          return false;
-        }
-
-      } else if (componentRegistry.implementation(callInfo.serviceInfo()).mainClassInstance
-          != null) {
-        try {
-          var context =
-              componentRegistry
-                  .implementation(callInfo.serviceInfo())
-                  .method
-                  .invoke(
-                      componentRegistry.implementation(callInfo.serviceInfo()).mainClassInstance,
-                      arguments.toArray());
-          return true;
-        } catch (Exception e) {
-          cause = e;
-          scope.error(e /* TODO tracing parameters */);
-          return false;
-        }
-      }
+    public ContextualizerExecutor(
+            ComponentRegistry componentRegistry,
+            CompiledDataflow.CallDescriptors callInfo,
+            Observation observation,
+            ServiceCall call,
+            ContextScope scope) {
+        super(callInfo, observation, scope);
+        this.componentRegistry = componentRegistry;
+        this.call = call;
     }
-    return true;
-  }
+
+    protected boolean run(Scheduler.Event event, Storage.Scanner scanner) {
+
+        var geometry = scanner.shard().getGeometry();
+
+        if (componentRegistry.implementation(callInfo.serviceInfo()).method != null) {
+
+            var implementation = componentRegistry.implementation(callInfo.serviceInfo());
+            var arguments =
+                    matchArguments(
+                            implementation.method,
+                            callInfo.resource(),
+                            geometry,
+                            null,
+                            observation,
+                            observation.getObservable(),
+                            callInfo.resource() == null ? null : Urn.of(callInfo.resource().getUrn()),
+                            call.getParameters(),
+                            call,
+                            null, // expression,
+                            null, // lookupTable,
+                            null,
+                            event,
+                            scope);
+
+            if (arguments == null) {
+                return false;
+            }
+
+            if (callInfo.serviceInfo().staticMethod) {
+                try {
+                    var context =
+                            componentRegistry
+                                    .implementation(callInfo.serviceInfo())
+                                    .method
+                                    .invoke(null, arguments.toArray());
+
+                } catch (Exception e) {
+                    cause = e;
+                    scope.error(e /* TODO tracing parameters */);
+                    return false;
+                }
+
+            } else if (componentRegistry.implementation(callInfo.serviceInfo()).mainClassInstance
+                    != null) {
+                try {
+                    var context =
+                            componentRegistry
+                                    .implementation(callInfo.serviceInfo())
+                                    .method
+                                    .invoke(
+                                            componentRegistry.implementation(callInfo.serviceInfo()).mainClassInstance,
+                                            arguments.toArray());
+                    return true;
+                } catch (Exception e) {
+                    cause = e;
+                    scope.error(e /* TODO tracing parameters */);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }

@@ -600,12 +600,12 @@ public class ServiceInfoImpl implements ServiceInfo {
   }
 
   @Override
-  public List<Argument> listImports() {
+  public List<Argument> listInputs() {
     return new Utils.Casts<ArgumentImpl, Argument>().cast(imports);
   }
 
   @Override
-  public List<Argument> listExports() {
+  public List<Argument> listOutputs() {
     return new Utils.Casts<ArgumentImpl, Argument>().cast(exports);
   }
 

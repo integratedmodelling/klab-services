@@ -1095,11 +1095,11 @@ public class ComponentRegistry {
             var arg = createArgument(argument);
             ret.getArguments().put(arg.getName(), arg);
         }
-        for (KlabFunction.Export argument : annotation.exports()) {
+        for (KlabFunction.Output argument : annotation.outputs()) {
             var arg = createArgument(argument);
             ret.getImports().add(arg);
         }
-        for (KlabFunction.Import argument : annotation.imports()) {
+        for (KlabFunction.Input argument : annotation.inputs()) {
             var arg = createArgument(argument);
             ret.getExports().add(arg);
         }
@@ -1189,7 +1189,7 @@ public class ComponentRegistry {
         return arg;
     }
 
-    private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Import argument) {
+    private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Input argument) {
         var arg = new ServiceInfoImpl.ArgumentImpl();
         arg.setName(argument.name());
         arg.setDescription(argument.description());
@@ -1202,7 +1202,7 @@ public class ComponentRegistry {
         return arg;
     }
 
-    private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Export argument) {
+    private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Output argument) {
         var arg = new ServiceInfoImpl.ArgumentImpl();
         arg.setName(argument.name());
         arg.setDescription(argument.description());
@@ -1757,7 +1757,6 @@ public class ComponentRegistry {
                         urn,
                         urnParameters,
                         serviceCall,
-//            storage,
                         expression,
                         lookupTable,
                         inputData,
@@ -1803,7 +1802,6 @@ public class ComponentRegistry {
             Urn urn,
             Parameters<String> urnParameters,
             ServiceCall serviceCall,
-//      Storage storage,
             Expression expression,
             LookupTable lookupTable,
             Data inputData,
