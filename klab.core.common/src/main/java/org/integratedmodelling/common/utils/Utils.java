@@ -2056,6 +2056,17 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     }
 
     @SafeVarargs
+    public static <T> List<T> join(Class<T> returnClass, Collection<? extends T>... resources) {
+      List<T> ret = new ArrayList<>();
+      for (var list : resources) {
+        for (var object : list) {
+          ret.add((T) object);
+        }
+      }
+      return ret;
+    }
+
+    @SafeVarargs
     public static <T> List<T> join(Iterable<T>... resources) {
       List<T> ret = new ArrayList<>();
       for (Iterable<T> list : resources) {

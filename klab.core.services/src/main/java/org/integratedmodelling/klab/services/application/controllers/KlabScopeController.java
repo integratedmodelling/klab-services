@@ -6,9 +6,11 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.services.client.resolver.ResolverClient;
@@ -328,6 +330,19 @@ public class KlabScopeController {
           */
           serviceSessionScope.setHostServiceId(serviceIdHeader);
           serviceSessionScope.setServices(resources, resolvers, reasoners, runtimes);
+
+                    /*
+          Give all services a few milliseconds to ensure that they've connected
+           */
+          var allServices =
+                  Utils.Collections.join(KlabService.class, resources, resolvers, reasoners, runtimes);
+          Utils.Java.distributeComputation(
+                  allServices,
+                  s -> {
+                    if (s instanceof ServiceClient serviceClient) {
+                      serviceClient.tryConnection(500, TimeUnit.MILLISECONDS);
+                    }
+                  });
         }
 
         var ret = sessionScope.createContext(request.getConfiguration());
