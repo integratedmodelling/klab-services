@@ -1097,11 +1097,11 @@ public class ComponentRegistry {
         }
         for (KlabFunction.Output argument : annotation.outputs()) {
             var arg = createArgument(argument);
-            ret.getImports().add(arg);
+            ret.getInputs().add(arg);
         }
         for (KlabFunction.Input argument : annotation.inputs()) {
             var arg = createArgument(argument);
-            ret.getExports().add(arg);
+            ret.getOutputs().add(arg);
         }
 
         return ret;

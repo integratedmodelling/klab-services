@@ -26,176 +26,6 @@ public class GeometryImpl implements Geometry {
     this.empty = false;
   }
 
-  //  /**
-  //   * An internal descriptor for a locator. The API requires using this to disambiguate locators
-  // that
-  //   * use world coordinates.
-  //   *
-  //   * @author ferdinando.villa
-  //   */
-  //  public static class DimensionTarget {
-  //
-  //    // this and the next null if the target is an entire scale or just offsets
-  //    public Dimension.Type type;
-  //    // the only way to get this is by passing a single Dimension or Extent parameter
-  //    public Dimension extent;
-  //    // if single parameter is a geometry or scale, this isn't null
-  //    public Geometry geometry;
-  //    // this null if target is scanned in its entirety
-  //    public long[] offsets;
-  //
-  //    // this like offsets but only if the numbers are doubles (first number coerces
-  //    // the second). Not handled in Geometry, only in Scale.
-  //    public double[] coordinates;
-  //
-  //    // if not null, we got something else and Geometry will throw an error, but
-  //    // Scale
-  //    // may not.
-  //    public Object[] otherLocators;
-  //
-  //    private void defineOffsets(List<Number> numbers) {
-  //      if (numbers.size() > 0) {
-  //        if (numbers.get(0) instanceof Double || numbers.get(0) instanceof Float) {
-  //          offsets = new long[numbers.size()];
-  //          int i = 0;
-  //          for (Number l : numbers) {
-  //            coordinates[i++] = l.doubleValue();
-  //          }
-  //
-  //        } else {
-  //          offsets = new long[numbers.size()];
-  //          int i = 0;
-  //          for (Number l : numbers) {
-  //            offsets[i++] = l.longValue();
-  //          }
-  //        }
-  //      }
-  //    }
-  //
-  //    public void defineOthers(List<Object> others) {
-  //      if (others.size() > 0) {
-  //        this.otherLocators = others.toArray();
-  //      }
-  //    }
-  //
-  //    private DimensionTarget() {}
-  //
-  //    /**
-  //     * Public constructor for when this is used by a semantic IExtent to disambiguate a
-  //     * world-coordinate locator.
-  //     *
-  //     * @param dimension
-  //     * @param offsets
-  //     */
-  //    public DimensionTarget(Dimension dimension, long[] offsets) {
-  //      this.type = dimension.getType();
-  //      this.extent = dimension;
-  //      this.offsets = offsets;
-  //    }
-  //
-  //    @Override
-  //    public String toString() {
-  //      return "<L "
-  //          + (type == null ? "" : type.name())
-  //          + (extent == null ? "" : extent.toString())
-  //          + (geometry == null ? "" : geometry.toString())
-  //          + (offsets == null ? "" : Arrays.toString(offsets))
-  //          + ">";
-  //    }
-  //  }
-
-  //    public static List<DimensionTarget> separateTargets(Object... locators) {
-  //        List<DimensionTarget> ret = new ArrayList<>();
-  //        DimensionTarget current = null;
-  //        List<Number> numbers = new ArrayList<>();
-  //        List<Object> others = new ArrayList<>();
-  //
-  //        boolean haveGeometry = false;
-  //        int nExtents = 0;
-  //
-  //        if (locators != null) {
-  //            for (int i = 0; i < locators.length; i++) {
-  //                Object o = locators[i];
-  //                if (o instanceof Number) {
-  //
-  //                    if (current == null) {
-  //                        current = new DimensionTarget();
-  //                    }
-  //
-  //                    numbers.add((Number) o);
-  //
-  //                } else if (o instanceof int[]) {
-  //                    for (int of : (int[]) o) {
-  //                        numbers.add(of);
-  //                    }
-  //                } else if (o instanceof long[]) {
-  //                    for (long of : (long[]) o) {
-  //                        numbers.add(of);
-  //                    }
-  //                } else {
-  //
-  //                    if (current != null) {
-  //                        current.defineOffsets(numbers);
-  //                        current.defineOthers(others);
-  //                        ret.add(current);
-  //                    }
-  //                    current = new DimensionTarget();
-  //                    numbers.clear();
-  //                    others.clear();
-  //
-  //                    if (o instanceof Dimension.Type) {
-  //                        current.type = (Dimension.Type) o;
-  //                    } else if (o instanceof Dimension) {
-  //                        nExtents++;
-  //                        current.extent = (Dimension) o;
-  //                        current.type = ((Dimension) o).getType();
-  //                    } else if (o instanceof Scale) {
-  //                        current.geometry = (Scale) o;
-  //                    } else if (o instanceof Geometry) {
-  //                        haveGeometry = true;
-  //                        current.geometry = (Geometry) o;
-  //                    } else if (o instanceof Class<?>) {
-  //                        if (Space.class.isAssignableFrom((Class<?>) o)) {
-  //                            current.type = Dimension.Type.SPACE;
-  //                        } else if (Time.class.isAssignableFrom((Class<?>) o)) {
-  //                            current.type = Dimension.Type.TIME;
-  //                        } else {
-  //                            throw new KIllegalArgumentException("illegal locator definition: " +
-  // o);
-  //                        }
-  //                    } else {
-  //                        // add to 'weird' stuff for other APIs to process
-  //                        others.add(o);
-  //                    }
-  //                }
-  //            }
-  //
-  //            if (current != null) {
-  //                current.defineOffsets(numbers);
-  //                ret.add(current);
-  //            }
-  //        }
-  //
-  //        if (ret.isEmpty() && !numbers.isEmpty()) {
-  //            current = new DimensionTarget();
-  //            current.defineOffsets(numbers);
-  //            ret.add(current);
-  //        }
-  //
-  //        if (haveGeometry && ret.size() > 1) {
-  //            throw new KIllegalArgumentException(
-  //                    "locators defined through a concrete geometry cannot have any other locator
-  //                    parameter");
-  //        }
-  //        if (nExtents > 0 && ret.size() != nExtents) {
-  //            throw new KIllegalArgumentException(
-  //                    "locators defined through concrete extents cannot have non-extent locator
-  //                    parameters");
-  //        }
-  //
-  //        return ret;
-  //    }
-
   /** Key for the original geometry in the metadata, when this is the result of a split */
   public static final String OVERALL_PARENT_GEOMETRY_KEY = "overall.parent.geometry";
 
@@ -325,110 +155,6 @@ public class GeometryImpl implements Geometry {
     return ret;
   }
 
-  // /**
-  // * Create a geometry from the structured session bean but don't add a shape if
-  // * it's there.
-  // *
-  // * @param scaleRef
-  // * @return
-  // */
-  // public static Geometry createGrid(ScaleReference scaleRef) {
-  //
-  // String spec = scaleRef.getSpaceUnit() == null ? "S1" : "S2";
-  // boolean hasTime = false;
-  //
-  // Geometry ret =
-  // Geometry.create(spec).withProjection("EPSG:4326").withBoundingBox(scaleRef.getEast(),
-  // scaleRef.getWest(), scaleRef.getSouth(), scaleRef.getNorth());
-  //
-  // if (scaleRef.getSpaceUnit() != null) {
-  // ret = ret.withGridResolution(scaleRef.getSpaceResolution() + " " + scaleRef.getSpaceUnit());
-  // }
-  //
-  // if (scaleRef.getStart() > 0) {
-  // ret = ret.withTemporalStart(scaleRef.getStart());
-  // hasTime = true;
-  // }
-  // if (scaleRef.getEnd() > 0) {
-  // ret = ret.withTemporalEnd(scaleRef.getEnd());
-  // hasTime = true;
-  // }
-  // if (scaleRef.getTimeResolutionDescription() != null) {
-  // ret = ret.withTemporalResolution(scaleRef.getTimeResolutionMultiplier() + "." +
-  // scaleRef.getTimeUnit());
-  // hasTime = true;
-  // }
-  //
-  // if (scaleRef.getTimeType() != null) {
-  // ret = ret.withTimeType(scaleRef.getTimeType());
-  // } else if (hasTime) {
-  // ret = ret.withTimeType("LOGICAL");
-  // }
-  //
-  // for (String key : scaleRef.getMetadata().keySet()) {
-  // ret = ret.withSpatialParameter(key, scaleRef.getMetadata().get(key));
-  // }
-  //
-  // return ret;
-  // }
-
-  // /**
-  // * Create a geometry from a structured bean. Assumes time is there
-  // *
-  // * @param bean
-  // * @return
-  // */
-  // public static Geometry create(ScaleReference scaleRef) {
-  //
-  // String spec = scaleRef.getSpaceUnit() == null ? "S1" : "S2";
-  // boolean hasTime = false;
-  //
-  // // if (scaleRef.getTimeGeometry() != null) {
-  // // spec = scaleRef.getTimeGeometry() + spec;
-  // // hasTime = true;
-  // // }
-  //
-  // Geometry ret =
-  // Geometry.create(spec).withProjection("EPSG:4326").withBoundingBox(scaleRef.getEast(),
-  // scaleRef.getWest(), scaleRef.getSouth(), scaleRef.getNorth());
-  //
-  // if (scaleRef.getSpaceUnit() != null) {
-  // ret = ret.withGridResolution(scaleRef.getSpaceResolution() + " " + scaleRef.getSpaceUnit());
-  // }
-  //
-  // if (scaleRef.getShape() != null) {
-  // ret = ret.withShape(scaleRef.getShape());
-  // }
-  //
-  // // if (scaleRef.getTimeGeometry() == null) {
-  // if (scaleRef.getStart() > 0) {
-  // ret = ret.withTemporalStart(scaleRef.getStart());
-  // hasTime = true;
-  // }
-  // if (scaleRef.getEnd() > 0) {
-  // ret = ret.withTemporalEnd(scaleRef.getEnd());
-  // hasTime = true;
-  // }
-  // if (scaleRef.getTimeResolutionDescription() != null) {
-  // ret = ret.withTemporalResolution(scaleRef.getTimeResolutionMultiplier() + "." +
-  // scaleRef.getTimeUnit());
-  // hasTime = true;
-  // }
-  // // }
-  //
-  // if (scaleRef.getTimeType() != null) {
-  // ret = ret.withTimeType(scaleRef.getTimeType());
-  // } else if (hasTime) {
-  // ret = ret.withTimeType("LOGICAL");
-  // }
-  //
-  // for (String key : scaleRef.getMetadata().keySet()) {
-  // ret = ret.withSpatialParameter(key, scaleRef.getMetadata().get(key));
-  // }
-  //
-  // return ret;
-  // }
-
   private static GeometryImpl create(Iterable<Dimension> dims) {
     GeometryImpl ret = new GeometryImpl();
     for (Dimension dim : dims) {
@@ -478,14 +204,14 @@ public class GeometryImpl implements Geometry {
   }
 
   public static GeometryImpl distributedIn(ExtentDimension key) {
-      return switch (key) {
-          case AREAL -> makeGeometry("S2", 0);
-          case LINEAL -> makeGeometry("S1", 0);
-          case PUNTAL -> makeGeometry("S0", 0);
-          case TEMPORAL -> makeGeometry("T1", 0);
-          case VOLUMETRIC -> makeGeometry("S3", 0);
-          default -> empty();
-      };
+    return switch (key) {
+      case AREAL -> makeGeometry("S2", 0);
+      case LINEAL -> makeGeometry("S1", 0);
+      case PUNTAL -> makeGeometry("S0", 0);
+      case TEMPORAL -> makeGeometry("T1", 0);
+      case VOLUMETRIC -> makeGeometry("S3", 0);
+      default -> empty();
+    };
   }
 
   /**
@@ -1294,306 +1020,26 @@ public class GeometryImpl implements Geometry {
     if (Geometry.class.isAssignableFrom(cls)) {
       return (T) this;
     } /*else if (OffsetImpl.class.isAssignableFrom(cls)) {
-      if (!hasShape(this)) {
-        throw new KlabIllegalStateException(
-            "cannot see a geometry as an offset locator unless shape is specified for all "
-                + "extents");
-      }
-      return (T) new OffsetImpl(this);
-    }*/
+        if (!hasShape(this)) {
+          throw new KlabIllegalStateException(
+              "cannot see a geometry as an offset locator unless shape is specified for all "
+                  + "extents");
+        }
+        return (T) new OffsetImpl(this);
+      }*/
     throw new KlabIllegalArgumentException(
         "cannot translate a simple geometry into a " + cls.getCanonicalName());
   }
 
   @Override
   public Geometry at(Locator locator) {
-    //        return at(separateTargets(locators));
-    //    }
-    //
-    //    private Locator at(List<DimensionTarget> targets) {
-    //
-    //        if (!hasShape(this)) {
     throw new KlabUnimplementedException("Geometry::at");
-    //        }
-
-    /*
-    TODO if the locator is a dimension, locate the corresponding offsets and produce a subset geometry.
-      If a
-     geometry, do the same with all offsets. Empty geometry should return self. Non-empty geometry with
-      empty locator should also
-     return self.
-     */
-
-    /*
-     * dimension-specific targets cannot be combined with an overall targets.
-     */
-    //        DimensionTarget locator = null;
-    //        for (DimensionTarget target : targets) {
-    //            if (target.type == null) {
-    //                locator = target;
-    //                break;
-    //            }
-    //        }
-
-    //        if (locator != null && targets.size() > 1) {
-    //            throw new KIllegalStateException("Geometry cannot be located with both
-    //            dimension-specific and overall
-    //            locators");
-    //        }
-
-    //        if (locator != null) {
-    //        return (locator instanceof Geometry g && g.isEmpty()) ? this : new OffsetImpl(this,
-    //        convertToOffsets
-    //        (locator));
-    //        }
-
-    //        if (!targets.isEmpty()) {
-    //            long[] pos = new long[this.dimensions.size()];
-    //            int i = 0;
-    //            for (Dimension dimension : this.dimensions) {
-    //                boolean found = false;
-    //                for (DimensionTarget target : targets) {
-    //
-    //                    if (target.coordinates != null || target.otherLocators != null) {
-    //                        // we don't handle these here
-    //                        throw new KIllegalStateException("Unrecognized locators for a
-    // Geometry:
-    //                        check usage");
-    //                    }
-    //
-    //                    if (target.type != null && target.type == dimension.getType()) {
-    //                        found = true;
-    //                        if (target.offsets != null) {
-    //                            if (target.offsets.length > 1) {
-    //                                pos[i] = dimension.offset(target.offsets);
-    //                            } else {
-    //                                pos[i] = target.offsets[0];
-    //                            }
-    //                        } else {
-    //                            pos[i] = dimension.size() == 1 ? 0 : -1;
-    //                        }
-    //                    }
-    //                    if (!found) {
-    //                        pos[i] = dimension.size() == 1 ? 0 : -1;
-    //                    }
-    //                }
-    //                i++;
-    //            }
-    //
-    //            return new OffsetImpl(this, pos);
   }
-
-  //
-  //    @Override
-  //    public String hash() {
-  //        if (this.hash == null) {
-  //            this.hash = Utils.Strings.hash(encode());
-  //        }
-  //        return this.hash;
-  //    }
 
   @Override
   public long[] getExtentOffsets() {
     return new long[dimensions.size()];
   }
-
-  //
-  //  @Override
-  //  public List<Geometry> split(Data.FillCurve fillCurve, int suggestedSplits) {
-  //    // Minimal implementation: split only the SPACE dimension of regular, defined shapes.
-  //    // Other dimensions remain unchanged. Tiles are adjacent and cover the whole bbox (if 2D
-  // bbox
-  //    // exists).
-  //    if (suggestedSplits <= 1) {
-  //      return List.of(this);
-  //    }
-  //
-  //    Dimension spaceDim = dimension(Dimension.Type.SPACE);
-  //    if (spaceDim == null) {
-  //      return List.of(this);
-  //    }
-  //
-  //    // Determine effective curve
-  //    Data.FillCurve curve =
-  //        (fillCurve == null || fillCurve == Data.FillCurve.UNSPECIFIED)
-  //            ? Data.FillCurve.defaultCurve(this)
-  //            : fillCurve;
-  //
-  //    // Validate dimensionality
-  //    int nDim = spaceDim.getDimensionality();
-  //    if (nDim <= 0) {
-  //      return List.of(this);
-  //    }
-  //    if (curve != Data.FillCurve.UNSPECIFIED && curve.dimensions != nDim) {
-  //      // For minimal change, if dimensions mismatch we do not attempt reshaping here.
-  //      return List.of(this);
-  //    }
-  //
-  //    List<Long> shape = spaceDim.getShape();
-  //    if (shape == null || shape.isEmpty()) {
-  //      return List.of(this);
-  //    }
-  //    for (Long s : shape) {
-  //      if (s == null || s <= 0 || s == INFINITE_SIZE || s == UNDEFINED) {
-  //        return List.of(this);
-  //      }
-  //    }
-  //
-  //    // If the total cells are fewer than suggested splits, nothing to do
-  //    long totalCells = 1L;
-  //    for (Long s : shape) totalCells *= s;
-  //    if (totalCells <= suggestedSplits) {
-  //      return List.of(this);
-  //    }
-  //
-  //    // Compute per-axis partition counts using a greedy approach to reach ~suggestedSplits
-  //    int[] partCounts = new int[nDim];
-  //    Arrays.fill(partCounts, 1);
-  //
-  //    long targetTiles = Math.max(1, suggestedSplits);
-  //    long currentTiles = 1;
-  //    // Greedily increase the partition count on the axis that currently has the largest cell
-  // span
-  //    // while we haven't reached the target number of tiles and we can still split.
-  //    while (currentTiles < targetTiles) {
-  //      int bestAxis = -1;
-  //      double bestSpan = -1.0;
-  //      for (int d = 0; d < nDim; d++) {
-  //        long sizeD = shape.get(d);
-  //        if (partCounts[d] < sizeD) {
-  //          // Effective span per tile along this axis if split one more time
-  //          double span = (double) sizeD / (partCounts[d] + 1);
-  //          if (span > bestSpan) {
-  //            bestSpan = span;
-  //            bestAxis = d;
-  //          }
-  //        }
-  //      }
-  //      if (bestAxis < 0) {
-  //        break; // cannot split further
-  //      }
-  //      partCounts[bestAxis]++;
-  //      currentTiles = 1;
-  //      for (int d = 0; d < nDim; d++) currentTiles *= partCounts[d];
-  //      // Guard against overflow or runaway
-  //      if (currentTiles <= 0 || currentTiles > totalCells) {
-  //        break;
-  //      }
-  //    }
-  //
-  //    // Build chunk sizes per axis ensuring coverage of all cells
-  //    long[][] chunks = new long[nDim][];
-  //    for (int d = 0; d < nDim; d++) {
-  //      int p = partCounts[d];
-  //      long sizeD = shape.get(d);
-  //      chunks[d] = new long[p];
-  //      long base = sizeD / p;
-  //      long rem = sizeD % p;
-  //      for (int i = 0; i < p; i++) {
-  //        chunks[d][i] = base + (i < rem ? 1 : 0);
-  //      }
-  //    }
-  //
-  //    // Prepare bbox values if available and nDim == 2
-  //    Object bboxObj = spaceDim.getParameters().get(PARAMETER_SPACE_BOUNDINGBOX);
-  //    Double minX = null, maxX = null, minY = null, maxY = null;
-  //    boolean hasBbox = false;
-  //    if (bboxObj != null && nDim == 2) {
-  //      if (bboxObj instanceof List<?> list && list.size() >= 4) {
-  //        try {
-  //          minX = ((Number) list.get(0)).doubleValue();
-  //          maxX = ((Number) list.get(1)).doubleValue();
-  //          minY = ((Number) list.get(2)).doubleValue();
-  //          maxY = ((Number) list.get(3)).doubleValue();
-  //          hasBbox = true;
-  //        } catch (ClassCastException ignore) {
-  //          hasBbox = false;
-  //        }
-  //      } else if (bboxObj instanceof String string) {
-  //        try {
-  //          List<Double> corners = Utils.Data.parseList(string, Double.class);
-  //          if (corners != null && corners.size() >= 4) {
-  //            minX = corners.get(0);
-  //            maxX = corners.get(1);
-  //            minY = corners.get(2);
-  //            maxY = corners.get(3);
-  //            hasBbox = true;
-  //          }
-  //        } catch (Exception ignore) {
-  //          hasBbox = false;
-  //        }
-  //      }
-  //    }
-  //
-  //    // Enumerate all tiles and build geometries
-  //    List<Geometry> result = new ArrayList<>();
-  //
-  //    // To enumerate multidimensional indices, we maintain counters for each axis
-  //    int[] idx = new int[nDim];
-  //    Arrays.fill(idx, 0);
-  //    boolean done = false;
-  //    while (!done) {
-  //      // Compute start offsets per axis
-  //      long[] start = new long[nDim];
-  //      for (int d = 0; d < nDim; d++) {
-  //        long sum = 0;
-  //        for (int i = 0; i < idx[d]; i++) sum += chunks[d][i];
-  //        start[d] = sum;
-  //      }
-  //
-  //      // Compute tile shape for this index
-  //      List<Long> tileShape = new ArrayList<>(nDim);
-  //      for (int d = 0; d < nDim; d++) {
-  //        tileShape.add(chunks[d][idx[d]]);
-  //      }
-  //
-  //      // FIXME this does not do the right thing, at least not always. BB must split according to
-  //      //  first and last point w.r.t. fill curve.
-  //      // TODO check that this works well at least with XY
-  //      // Create a new geometry copying all dimensions, adjusting SPACE
-  //      List<Dimension> newDims = new ArrayList<>();
-  //      for (Dimension d : getDimensions()) {
-  //        DimensionImpl copy = ((DimensionImpl) d).copy();
-  //        if (d.getType() == Dimension.Type.SPACE) {
-  //          copy.shape = new ArrayList<>(tileShape);
-  //          // Adjust bbox for 2D grids if present
-  //          if (hasBbox && nDim == 2) {
-  //            double dx = (maxX - minX) / shape.get(0);
-  //            double dy = (maxY - minY) / shape.get(1);
-  //            long startX = start[0];
-  //            long startY = start[1];
-  //            long w = tileShape.get(0);
-  //            long h = tileShape.get(1);
-  //            double tMinX = minX + startX * dx;
-  //            double tMaxX = minX + (startX + w) * dx;
-  //            double tMinY = minY + startY * dy;
-  //            double tMaxY = minY + (startY + h) * dy;
-  //            copy.parameters.put(
-  //                PARAMETER_SPACE_BOUNDINGBOX,
-  //                GeometryImpl.encodeVal(new double[] {tMinX, tMaxX, tMinY, tMaxY}));
-  //          }
-  //        }
-  //        newDims.add(copy);
-  //      }
-  //
-  //      result.add(create(newDims));
-  //
-  //      // Increment multidimensional index
-  //      for (int d = nDim - 1; d >= 0; d--) {
-  //        idx[d]++;
-  //        if (idx[d] < partCounts[d]) {
-  //          break;
-  //        } else {
-  //          idx[d] = 0;
-  //          if (d == 0) {
-  //            done = true;
-  //          }
-  //        }
-  //      }
-  //    }
-  //
-  //    return result;
-  //  }
 
   public Geometry withMetadata(String key, Object value) {
     this.metadata.put(key, value);
@@ -1636,31 +1082,6 @@ public class GeometryImpl implements Geometry {
   protected long[] convertToOffsets(Locator locator) {
     throw new KlabUnimplementedException("Geometry::convertToOffsets");
   }
-
-  //    // no arguments: locate this with this
-  //        return this;
-  //    }
-  //
-  // @Override
-  // public MultidimensionalCursor getCursor() {
-  // if (this.cursor == null) {
-  // this.cursor = new MultidimensionalCursor(this);
-  // }
-  // return this.cursor;
-  // }
-  //
-  // public static long computeOffset(long[] pos, KGeometry geometry) {
-  // return geometry.getCursor().getElementOffset(pos);
-  // }
-  //
-  // public static long[] computeOffsets(long pos, KGeometry geometry) {
-  // return geometry.getCursor().getElementIndexes(pos);
-  // }
-
-  //    @Override
-//  public Iterator<Locator> iterator() {
-//    return new GeometryIterator(this);
-//  }
 
   @Override
   public boolean isGeneric() {
@@ -1808,15 +1229,6 @@ public class GeometryImpl implements Geometry {
         && dimension(Dimension.Type.TIME).size() == INFINITE_SIZE;
   }
 
-  // public void setOriginalScale(KScale originalScale) {
-  // this.originalScale = originalScale;
-  // }
-
-  // @Override
-  // public KGeometry getGeometry() {
-  // return originalScale;
-  // }
-
   /**
    * Based on conventions, extract any parameters from a dimension that can provide location within
    * a scale.
@@ -1928,10 +1340,4 @@ public class GeometryImpl implements Geometry {
     geometry.dimensions.add(ret);
     return ret;
   }
-
-  //    @Override
-  //    public Geometry geometry() {
-  //        return this;
-  //    }
-
 }

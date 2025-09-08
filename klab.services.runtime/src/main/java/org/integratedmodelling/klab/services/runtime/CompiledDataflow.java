@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -473,9 +474,11 @@ public class CompiledDataflow {
                   actuator.getShardingStrategy(),
                   scope.getShardingStrategy(observation),
                   runtimeService.getDefaultShardingStrategy(observation));
-
         }
       }
+
+      Map<String, Observable> knownObservations = new HashMap<>();
+      // TODO fill in the observables
 
       /**
        * Now actually compile each computation, adapting the sharding strategy to whatever the
@@ -502,13 +505,17 @@ public class CompiledDataflow {
           switch (preset) {
             case URN_RESOLVER -> {
               if (scalarBuilder != null) {
-                executors.add(new ScalarOperationExecutor(scalarBuilder, observation, scope));
+                executors.add(
+                    new ScalarOperationExecutor(
+                        scalarBuilder, observation, knownObservations, scope));
                 scalarBuilder = null;
               }
               if (callInfo.embeddedAdapter() != null) {
-                executors.add(new LocalAdapterExecutor(callInfo, observation, scope));
+                executors.add(
+                    new LocalAdapterExecutor(callInfo, observation, knownObservations, scope));
               } else {
-                executors.add(new RemoteAdapterExecutor(callInfo, observation, scope));
+                executors.add(
+                    new RemoteAdapterExecutor(callInfo, observation, knownObservations, scope));
               }
             }
             case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
@@ -520,7 +527,9 @@ public class CompiledDataflow {
             }
             case DEFER_RESOLUTION -> {
               if (scalarBuilder != null) {
-                executors.add(new ScalarOperationExecutor(scalarBuilder, observation, scope));
+                executors.add(
+                    new ScalarOperationExecutor(
+                        scalarBuilder, observation, knownObservations, scope));
                 scalarBuilder = null;
               }
               throw new KlabUnimplementedException("Deferral execution not yet implemented");
@@ -530,16 +539,19 @@ public class CompiledDataflow {
           // TODO handle scalar geometry contextualizers! Must add to builder if not preset but
           //  geometry is scalar!!!
           if (scalarBuilder != null) {
-            executors.add(new ScalarOperationExecutor(scalarBuilder, observation, scope));
+            executors.add(
+                new ScalarOperationExecutor(scalarBuilder, observation, knownObservations, scope));
             scalarBuilder = null;
           }
           executors.add(
-              new ContextualizerExecutor(componentRegistry, callInfo, observation, call, scope));
+              new ContextualizerExecutor(
+                  componentRegistry, callInfo, observation, knownObservations, call, scope));
         }
       }
 
       if (scalarBuilder != null) {
-        executors.add(new ScalarOperationExecutor(scalarBuilder, observation, scope));
+        executors.add(
+            new ScalarOperationExecutor(scalarBuilder, observation, knownObservations, scope));
       }
 
       return true;

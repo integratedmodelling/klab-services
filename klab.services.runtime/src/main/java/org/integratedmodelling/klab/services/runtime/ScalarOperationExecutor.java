@@ -2,9 +2,12 @@ package org.integratedmodelling.klab.services.runtime;
 
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
+
+import java.util.Map;
 
 public class ScalarOperationExecutor extends AbstractExecutor
     implements CompiledDataflow.ContextualExecutor {
@@ -13,8 +16,11 @@ public class ScalarOperationExecutor extends AbstractExecutor
   private ScalarComputation scalarMapper;
 
   public ScalarOperationExecutor(
-      ScalarComputation.Builder builder, Observation observation, ContextScope scope) {
-    super(null, observation, scope);
+      ScalarComputation.Builder builder,
+      Observation observation,
+      Map<String, Observable> localNames,
+      ContextScope scope) {
+    super(null, observation, scope, localNames);
     this.scalarBuilder = builder;
   }
 

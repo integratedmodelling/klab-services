@@ -2,11 +2,14 @@ package org.integratedmodelling.klab.services.runtime;
 
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.data.ServiceResourceContextualizer;
+
+import java.util.Map;
 
 public class LocalAdapterExecutor extends AbstractExecutor
     implements CompiledDataflow.ContextualExecutor {
@@ -15,8 +18,11 @@ public class LocalAdapterExecutor extends AbstractExecutor
   private Resource resource;
 
   public LocalAdapterExecutor(
-      CompiledDataflow.CallDescriptors callInfo, Observation observation, ContextScope scope) {
-    super(callInfo, observation, scope);
+      CompiledDataflow.CallDescriptors callInfo,
+      Observation observation,
+      Map<String, Observable> localNames,
+      ContextScope scope) {
+    super(callInfo, observation, scope, localNames);
     this.adapter = callInfo.embeddedAdapter();
     this.resource = callInfo.resource();
   }

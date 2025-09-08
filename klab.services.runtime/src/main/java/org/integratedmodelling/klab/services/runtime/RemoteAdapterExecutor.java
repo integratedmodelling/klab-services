@@ -6,12 +6,15 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.data.ClientResourceContextualizer;
+
+import java.util.Map;
 
 public class RemoteAdapterExecutor extends AbstractExecutor
     implements CompiledDataflow.ContextualExecutor {
@@ -22,9 +25,12 @@ public class RemoteAdapterExecutor extends AbstractExecutor
   private ResourcesService service = null;
 
   public RemoteAdapterExecutor(
-      CompiledDataflow.CallDescriptors callInfo, Observation observation, ContextScope scope) {
+      CompiledDataflow.CallDescriptors callInfo,
+      Observation observation,
+      Map<String, Observable> localNames,
+      ContextScope scope) {
 
-    super(callInfo, observation, scope);
+    super(callInfo, observation, scope, localNames);
 
     this.resource = callInfo.resource();
 
