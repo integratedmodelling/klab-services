@@ -103,4 +103,10 @@ public class ContextualizerExecutor extends AbstractExecutor
     }
     return true;
   }
+
+  @Override
+  public boolean validate() {
+    // TODO validate service call, return types etc.
+    return true;
+  }
 }

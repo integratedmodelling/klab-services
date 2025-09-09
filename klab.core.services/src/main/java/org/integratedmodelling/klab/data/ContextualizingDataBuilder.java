@@ -6,12 +6,13 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /** The builder to use when the digital twin is available locally. */
 public class ContextualizingDataBuilder implements Data.Builder {
   public ContextualizingDataBuilder(
-          String name, Data inputData, Observation observation, DigitalTwin digitalTwin) {}
+          String name, Data inputData, Observation observation, ContextScope contextScope) {}
 
   @Override
   public Data.Builder notification(Notification notification) {

@@ -261,7 +261,7 @@ public class ResolutionCompiler {
       var dependencyResolution = resolve(dependency, scaleToCover, ret, scope);
 
       // FIXME if the dep is on a collective, the geom of the obs will be the observer's and this
-      //  will be irrelevant
+      //  will be irrelevant 00 FIXME HERE - dependencyResolution.targetCOverage merges to insufficient the FIRST time only
       var cov = ret.checkCoverage(dependencyResolution);
       if (!cov.isRelevant()) {
         if (dependency.isOptional()) {

@@ -30,6 +30,7 @@ import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -88,6 +89,14 @@ public class CompiledDataflow {
   /// observation, the scope, and any target sharding strategy
   ///
   public interface ContextualExecutor {
+
+    /**
+     * Called before insertion in the compiled dataflow to ensure everything is OK and online with
+     * the resources being contextualized.
+     *
+     * @return
+     */
+    boolean validate();
 
     ///  Main executor method
     /// @return true if successful. A `false` return value will stop contextualization.
@@ -505,18 +514,23 @@ public class CompiledDataflow {
           switch (preset) {
             case URN_RESOLVER -> {
               if (scalarBuilder != null) {
-                executors.add(
-                    new ScalarOperationExecutor(
-                        scalarBuilder, observation, knownObservations, scope));
+                if (!getScalarOperator(scalarBuilder, knownObservations)) {
+                  return false;
+                }
                 scalarBuilder = null;
               }
-              if (callInfo.embeddedAdapter() != null) {
-                executors.add(
-                    new LocalAdapterExecutor(callInfo, observation, knownObservations, scope));
-              } else {
-                executors.add(
-                    new RemoteAdapterExecutor(callInfo, observation, knownObservations, scope));
+              ContextualExecutor executor =
+                  callInfo.embeddedAdapter() != null
+                      ? new LocalAdapterExecutor(callInfo, observation, knownObservations, scope)
+                      : new RemoteAdapterExecutor(callInfo, observation, knownObservations, scope);
+              if (!executor.validate()) {
+                var cause = executor.getCause();
+                if (cause != null) {
+                  scope.error(cause);
+                }
+                return false;
               }
+              executors.add(executor);
             }
             case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
               (scalarBuilder == null
@@ -527,9 +541,9 @@ public class CompiledDataflow {
             }
             case DEFER_RESOLUTION -> {
               if (scalarBuilder != null) {
-                executors.add(
-                    new ScalarOperationExecutor(
-                        scalarBuilder, observation, knownObservations, scope));
+                if (!getScalarOperator(scalarBuilder, knownObservations)) {
+                  return false;
+                }
                 scalarBuilder = null;
               }
               throw new KlabUnimplementedException("Deferral execution not yet implemented");
@@ -539,8 +553,9 @@ public class CompiledDataflow {
           // TODO handle scalar geometry contextualizers! Must add to builder if not preset but
           //  geometry is scalar!!!
           if (scalarBuilder != null) {
-            executors.add(
-                new ScalarOperationExecutor(scalarBuilder, observation, knownObservations, scope));
+            if (!getScalarOperator(scalarBuilder, knownObservations)) {
+              return false;
+            }
             scalarBuilder = null;
           }
           executors.add(
@@ -550,10 +565,26 @@ public class CompiledDataflow {
       }
 
       if (scalarBuilder != null) {
-        executors.add(
-            new ScalarOperationExecutor(scalarBuilder, observation, knownObservations, scope));
+        if (!getScalarOperator(scalarBuilder, knownObservations)) {
+          return false;
+        }
       }
 
+      return true;
+    }
+
+    private boolean getScalarOperator(
+        ScalarComputation.Builder scalarBuilder, Map<String, Observable> knownObservations) {
+      var executor =
+          new ScalarOperationExecutor(scalarBuilder, observation, knownObservations, scope);
+      if (!executor.validate()) {
+        var cause = executor.getCause();
+        if (cause != null) {
+          scope.error(cause);
+        }
+        return false;
+      }
+      executors.add(executor);
       return true;
     }
 

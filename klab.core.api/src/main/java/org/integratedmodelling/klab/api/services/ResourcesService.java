@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 
 import java.io.File;
@@ -117,10 +118,10 @@ public interface ResourcesService extends KlabService {
     Set<CRUDOperation> getPermissions();
   }
 
-//  default String getServiceName() {
-//    return "klab.resources.service";
-//  }
-//
+  //  default String getServiceName() {
+  //    return "klab.resources.service";
+  //  }
+  //
   /**
    * Scope CAN be null for generic public capabilities.
    *
@@ -296,7 +297,10 @@ public interface ResourcesService extends KlabService {
    * must be compatible with the type of data extracted.
    *
    * @param contextualizedResource the resource that needs to be contextualized
-   * @param observation provides semantics and geometry for the contextualization
+   * @param observation provides semantics and metadata for the contextualization. The geometry is
+   *     ignored, using the explicit parameter instead.
+   * @param geometry the geometry of the contextualization. Not necessarily equal to the
+   *     observation's, because of possible upstream sharding strategies.
    * @param event the scheduler event that triggered this contextualization
    * @param input data that contains the state relevant to the contextualization. This is null
    *     unless the resource requires inputs.
@@ -307,6 +311,7 @@ public interface ResourcesService extends KlabService {
   CompletableFuture<Data> contextualize(
       Resource contextualizedResource,
       Observation observation,
+      Geometry geometry,
       Scheduler.Event event,
       Data input,
       Scope scope);

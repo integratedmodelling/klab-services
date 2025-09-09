@@ -12,15 +12,13 @@ import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.configuration.Setting;
-import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -37,9 +35,11 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
+import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.view.UIView;
+import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
@@ -360,9 +360,7 @@ public class RuntimeService extends BaseService
    * for now is to use the Groovy builder.
    */
   public ScalarComputation.Builder getComputationBuilder(
-      Observation observation,
-      ServiceContextScope scope,
-      Actuator actuator) {
+      Observation observation, ServiceContextScope scope, Actuator actuator) {
     return ScalarComputationGroovy.builder(observation, scope, actuator);
   }
 
@@ -635,6 +633,29 @@ public class RuntimeService extends BaseService
           return resolution;
         }
         ret = Utils.Resources.merge(ret, resolution);
+        if (!ret.isEmpty()) {
+          for (var resource : resolution.getResults()) {
+            if (resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.RESOURCE) {
+              var service =
+                  scope.getService(
+                      ResourcesService.class, ks -> ks.serviceId().equals(resource.getServiceId()));
+              if (service == null) {
+                return ResourceSet.empty(
+                    Notification.error(
+                        "Resource "
+                            + resource.getResourceUrn()
+                            + " is in a service that is not available"));
+              }
+              var res = service.retrieveResource(List.of(resource.getResourceUrn()), scope);
+              if (res == null) {
+                return ResourceSet.empty(
+                    Notification.error(
+                        "Resource " + resource.getResourceUrn() + " is not available"));
+              }
+
+            }
+          }
+        }
       }
 
       // if any embeddable component was returned, attempt to load it

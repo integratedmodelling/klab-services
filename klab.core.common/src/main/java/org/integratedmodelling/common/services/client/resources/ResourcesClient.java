@@ -197,19 +197,18 @@ public class ResourcesClient extends ServiceClient
 
     var ret =
         client
-//            .withHeader(
-//                ServicesAPI.MESSAGING_URL_HEADER,
-//                federation == null ? null : federation.getBroker())
-//            .withHeader(
-//                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null : federation.getId())
+            //            .withHeader(
+            //                ServicesAPI.MESSAGING_URL_HEADER,
+            //                federation == null ? null : federation.getBroker())
+            //            .withHeader(
+            //                ServicesAPI.FEDERATION_ID_HEADER, federation == null ? null :
+            // federation.getId())
             .post(
-                ServicesAPI.CREATE_SESSION,
-                request,
-                String.class,
-                "id",
-                scope instanceof ServiceSideScope serviceSideScope
-                    ? serviceSideScope.getId()
-                    : null);
+            ServicesAPI.CREATE_SESSION,
+            request,
+            String.class,
+            "id",
+            scope instanceof ServiceSideScope serviceSideScope ? serviceSideScope.getId() : null);
 
     if (federation != null && scope instanceof MessagingChannelImpl messagingChannel) {
       var queues =
@@ -480,6 +479,7 @@ public class ResourcesClient extends ServiceClient
   public CompletableFuture<Data> contextualize(
       Resource contextualizedResource,
       Observation observation,
+      Geometry geometry,
       Scheduler.Event event,
       @Nullable Data data,
       Scope scope) {
@@ -488,7 +488,7 @@ public class ResourcesClient extends ServiceClient
         DataRequest.newBuilder()
             .setInputData(data instanceof BaseDataImpl data1 ? data1.asInstance() : null)
             .setObservable(observation.getObservable().getUrn())
-            .setGeometry(observation.getGeometry().encode())
+            .setGeometry(geometry.encode())
             .setResourceUrns(List.of(contextualizedResource.getUrn()))
             .setStartTime(event == null ? 0 : event.getTime().getStart().getMilliseconds())
             .setEndTime(event == null ? 0 : event.getTime().getEnd().getMilliseconds())
@@ -518,7 +518,11 @@ public class ResourcesClient extends ServiceClient
   public AdapterDescriptor retrieveAdapterInfo(String adapterType, Scope scope) {
     return client
         .withScope(scope)
-        .get(ServicesAPI.RESOURCES.RETRIEVE_ADAPTER_INFO, AdapterDescriptor.class, "urn", adapterType);
+        .get(
+            ServicesAPI.RESOURCES.RETRIEVE_ADAPTER_INFO,
+            AdapterDescriptor.class,
+            "urn",
+            adapterType);
   }
 
   @Override

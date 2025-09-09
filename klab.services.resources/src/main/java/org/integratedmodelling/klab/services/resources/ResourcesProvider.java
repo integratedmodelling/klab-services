@@ -585,17 +585,20 @@ public class ResourcesProvider extends BaseService
   @Override
   public CompletableFuture<Data> contextualize(
       Resource resource,
+      // FIXME needs to pass a geometry explicitly
       Observation observation,
+      Geometry geometry,
       Scheduler.Event event,
       @Nullable Data input,
       Scope scope) {
     return CompletableFuture.supplyAsync(
-        () -> contextualizeSynchronous(resource, observation, event, input, scope));
+        () -> contextualizeSynchronous(resource, observation, geometry, event, input, scope));
   }
 
   public Data contextualizeSynchronous(
       Resource resource,
       Observation observation,
+      Geometry geometry,
       Scheduler.Event event,
       @Nullable Data input,
       Scope scope) {
@@ -611,19 +614,25 @@ public class ResourcesProvider extends BaseService
             ? observation.getObservable().getUrn()
             : observation.getObservable().getStatedName();
 
+    if (!adapter.validate(
+        resource, scope, ResourceAdapter.Validator.LifecyclePhase.PreContextualization)) {
+      return Data.empty(
+          Notification.error(
+              "Resource " + resource.getUrn() + " failed remote pre-contextualization validation"));
+    }
+
     var builder = new SerializingDataBuilder(name, input, observation.getGeometry());
     Urn urn = Urn.of(resource.getUrn());
 
     if (adapter.encode(
         resource,
-        observation.getGeometry(),
+        geometry,
         event,
         builder,
         observation,
         observation.getObservable(),
         urn,
         Parameters.create(urn.getParameters()),
-//        input,
         scope)) {
       return builder.build();
     }

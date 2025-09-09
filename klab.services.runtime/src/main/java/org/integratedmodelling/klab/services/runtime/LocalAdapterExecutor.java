@@ -1,12 +1,16 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.data.ServiceResourceContextualizer;
 
 import java.util.Map;
@@ -28,15 +32,21 @@ public class LocalAdapterExecutor extends AbstractExecutor
   }
 
   @Override
+  public boolean validate() {
+    return adapter.validate(
+        resource, scope, ResourceAdapter.Validator.LifecyclePhase.PreContextualization);
+  }
+
+  @Override
   protected boolean run(Scheduler.Event event, Storage.Scanner scanner) {
 
+    var res = resource;
     if (adapter.hasContextualizer()) {
-      resource = adapter.contextualize(resource, scanner.shard().getGeometry(), scope);
+      res = adapter.contextualize(resource, scanner.shard().getGeometry(), scope);
     }
 
     // enqueue data extraction from adapter method TODO needs the scanner
-    final var contextualizer =
-        new ServiceResourceContextualizer(adapter, resource, observation, scope.getDigitalTwin());
+    final var contextualizer = new ServiceResourceContextualizer(adapter, res, observation, scope);
 
     // TODO this cannot be the simple executor, needs the scanner to be passed after
     return contextualizer.contextualize(

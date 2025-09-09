@@ -132,7 +132,7 @@ public class SchedulerImpl implements Scheduler {
   private Triple<Long, Long, Time.Resolution> register(Geometry geometry) {
     // TODO record frequency @ starting point and determine which events to send
     Time time = GeometryRepository.INSTANCE.scale(geometry).getTime();
-    if (time != null) {
+    if (time != null && !time.isEmpty()) {
       return notifyTime(time);
     }
     return Triple.of(0L, 0L, null);
@@ -273,8 +273,7 @@ public class SchedulerImpl implements Scheduler {
       DigitalTwin.Transaction transaction) {
     if (executor.apply(geometry, event, scope)) {
       if (observation.getObservable().is(SemanticType.QUALITY)) {
-        var storage =
-            scope.getDigitalTwin().getStorageManager().getStorage(observation);
+        var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
         if (storage != null) {
           for (var buffer : storage.getNativeShards(event)) {
             transaction.link(observation, buffer, GraphModel.Relationship.HAS_DATA);
@@ -340,7 +339,7 @@ public class SchedulerImpl implements Scheduler {
       rootScope.send(
           Message.MessageClass.DigitalTwin,
           Message.MessageType.ScheduleModified,
-          timeEmitter.getSchedule());
+          TimeEmitter.getSchedule());
     }
     return Triple.of(tStart, tEnd, time.getResolution());
   }

@@ -38,7 +38,9 @@ public class ClientResourceContextualizer extends AbstractResourceContextualizer
   protected Data getData(Geometry geometry, Scheduler.Event event, ContextScope scope) {
     try {
       // this one is synchronous, called within a CompletableFuture anyway
-      return service.contextualize(resource, observation, event, getInputData(scope), scope).get();
+      return service
+          .contextualize(resource, observation, geometry, event, getInputData(scope), scope)
+          .get();
     } catch (Exception e) {
       throw new KlabResourceAccessException(e);
     }

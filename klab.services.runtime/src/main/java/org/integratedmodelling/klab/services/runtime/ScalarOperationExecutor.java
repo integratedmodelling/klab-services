@@ -26,9 +26,20 @@ public class ScalarOperationExecutor extends AbstractExecutor
 
   @Override
   protected boolean run(Scheduler.Event event, Storage.Scanner scanner) {
-    if (scalarMapper == null) {
-      scalarMapper = scalarBuilder.build();
-    }
+
     return scalarMapper.execute(scanner.shard().getGeometry(), event, scope);
+  }
+
+  @Override
+  public boolean validate() {
+    if (scalarMapper == null) {
+      try {
+        scalarMapper = scalarBuilder.build();
+      } catch (Exception e) {
+        cause = e;
+        return false;
+      }
+    }
+    return true;
   }
 }

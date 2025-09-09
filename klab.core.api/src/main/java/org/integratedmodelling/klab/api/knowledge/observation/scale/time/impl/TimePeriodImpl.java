@@ -23,312 +23,313 @@ import java.util.List;
 
 public class TimePeriodImpl implements TimePeriod {
 
-    @Serial
-    private static final long serialVersionUID = -3603666163320131572L;
+  @Serial private static final long serialVersionUID = -3603666163320131572L;
 
-    TimeInstant start;
-    TimeInstant end;
-    Resolution resolution;
-    Time.Type type = Type.PHYSICAL;
+  TimeInstant start;
+  TimeInstant end;
+  Resolution resolution;
+  Time.Type type = Type.PHYSICAL;
 
-    public TimePeriodImpl() {
+  public TimePeriodImpl() {}
+
+  public TimePeriodImpl(long start, long end) {
+    this.start = TimeInstant.create(start);
+    this.end = TimeInstant.create(end);
+    this.resolution = Resolution.of(this.start, this.end);
+  }
+
+  public TimePeriodImpl(long start, long end, Time.Type type) {
+    this.start = TimeInstant.create(start);
+    this.end = TimeInstant.create(end);
+    this.resolution = Resolution.of(this.start, this.end);
+    this.type = type;
+  }
+
+  @Override
+  public Time collapsed() {
+    return this;
+  }
+
+  @Override
+  public Time getExtent(long stateIndex) {
+    if (stateIndex != 0) {
+      throw new KlabIllegalArgumentException(
+          "Illegal extent extracted from time period: " + stateIndex);
     }
+    return this;
+  }
 
-    public TimePeriodImpl(long start, long end) {
-        this.start = TimeInstant.create(start);
-        this.end = TimeInstant.create(end);
-        this.resolution = Resolution.of(this.start, this.end);
-    }
+  @Override
+  public TimeInstant getStart() {
+    return start;
+  }
 
-    public TimePeriodImpl(long start, long end, Time.Type type) {
-        this.start = TimeInstant.create(start);
-        this.end = TimeInstant.create(end);
-        this.resolution = Resolution.of(this.start, this.end);
-        this.type = type;
-    }
+  @Override
+  public TimeInstant getEnd() {
+    return end;
+  }
 
-    @Override
-    public Time collapsed() {
-        return this;
-    }
+  @Override
+  public TimeDuration getStep() {
+    return TimeDuration.of(end.getMilliseconds() - start.getMilliseconds(), resolution.getType());
+  }
 
-    @Override
-    public Time getExtent(long stateIndex) {
-        if (stateIndex != 0) {
-            throw new KlabIllegalArgumentException(
-                    "Illegal extent extracted from time period: " + stateIndex);
-        }
-        return this;
-    }
+  @Override
+  public Resolution getResolution() {
+    return resolution;
+  }
 
-    @Override
-    public TimeInstant getStart() {
-        return start;
-    }
+  @Override
+  public Resolution getCoverageResolution() {
+    return resolution;
+  }
 
-    @Override
-    public TimeInstant getEnd() {
-        return end;
-    }
+  @Override
+  public long getCoverageLocatorStart() {
+    return 0;
+  }
 
-    @Override
-    public TimeDuration getStep() {
-        return TimeDuration.of(end.getMilliseconds() - start.getMilliseconds(), resolution.getType());
-    }
+  @Override
+  public long getCoverageLocatorEnd() {
+    return 0;
+  }
 
-    @Override
-    public Resolution getResolution() {
-        return resolution;
-    }
+  @Override
+  public boolean is(Type type) {
+    return false;
+  }
 
-    @Override
-    public Resolution getCoverageResolution() {
-        return resolution;
-    }
+  @Override
+  public Type getTimeType() {
+    return type;
+  }
 
-    @Override
-    public long getCoverageLocatorStart() {
-        return 0;
-    }
+  @Override
+  public boolean intersects(Dimension dimension) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-    @Override
-    public long getCoverageLocatorEnd() {
-        return 0;
-    }
+  @Override
+  public double getLength(Unit temporalUnit) {
+    // TODO Auto-generated method stub
+    return end.getMilliseconds() - start.getMilliseconds();
+  }
 
-    @Override
-    public boolean is(Type type) {
-        return false;
-    }
+  @Override
+  public Time getNext() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-    @Override
-    public Type getTimeType() {
-        return type;
-    }
+  @Override
+  public Time earliest() {
+    // TODO Auto-generated method stub
+    return this;
+  }
 
-    @Override
-    public boolean intersects(Dimension dimension) {
-        // TODO Auto-generated method stub
-        return false;
-    }
+  @Override
+  public Time latest() {
+    // TODO Auto-generated method stub
+    return this;
+  }
 
-    @Override
-    public double getLength(Unit temporalUnit) {
-        // TODO Auto-generated method stub
-        return end.getMilliseconds() - start.getMilliseconds();
-    }
+  @Override
+  public Time initialization() {
+    return type == Type.INITIALIZATION
+        ? this
+        : new TimePeriodImpl(start.getMilliseconds(), end.getMilliseconds(), Type.INITIALIZATION);
+  }
 
-    @Override
-    public Time getNext() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override
+  public Time termination() {
+    return type == Type.TERMINATION
+        ? this
+        : new TimePeriodImpl(start.getMilliseconds(), end.getMilliseconds(), Type.TERMINATION);
+  }
 
-    @Override
-    public Time earliest() {
-        // TODO Auto-generated method stub
-        return this;
-    }
+  @Override
+  public TimeInstant getFocus() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-    @Override
-    public Time latest() {
-        // TODO Auto-generated method stub
-        return this;
-    }
+  @Override
+  public Time at(Locator locator) {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-    @Override
-    public Time initialization() {
-        return type == Type.INITIALIZATION
-                ? this
-                : new TimePeriodImpl(start.getMilliseconds(), end.getMilliseconds(), Type.INITIALIZATION);
-    }
+  @Override
+  public int getRank() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
 
-    @Override
-    public Time termination() {
-        return type == Type.TERMINATION
-                ? this
-                : new TimePeriodImpl(start.getMilliseconds(), end.getMilliseconds(), Type.TERMINATION);
-    }
+  @Override
+  public double getDimensionSize() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
 
-    @Override
-    public TimeInstant getFocus() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override
+  public Unit getDimensionUnit() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-    @Override
-    public Time at(Locator locator) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override
+  public double getStandardizedDimension(Locator locator) {
+    return getDimensionSize();
+  }
 
-    @Override
-    public int getRank() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
+  @Override
+  public <T extends TopologicallyComparable<T>> Extent<T> merge(
+      Extent<T> other, LogicalConnector how) {
+    return null;
+  }
 
-    @Override
-    public double getDimensionSize() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
+  @Override
+  public boolean isEmpty() {
+    return false;
+  }
 
-    @Override
-    public Unit getDimensionUnit() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override
+  public boolean matches(Collection<Constraint> constraints) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-    @Override
-    public double getStandardizedDimension(Locator locator) {
-        return getDimensionSize();
-    }
+  @Override
+  public <T extends Locator> T as(Class<T> cls) {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-    @Override
-    public <T extends TopologicallyComparable<T>> Extent<T> merge(
-            Extent<T> other, LogicalConnector how) {
-        return null;
-    }
+  @Override
+  public long size() {
+    return 1;
+  }
 
-    @Override
-    public boolean isEmpty() {
-        return false;
-    }
+  @Override
+  public boolean contains(Time o) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-    @Override
-    public boolean matches(Collection<Constraint> constraints) {
-        // TODO Auto-generated method stub
-        return false;
-    }
+  @Override
+  public boolean intersects(Time o) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-    @Override
-    public <T extends Locator> T as(Class<T> cls) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override
+  public Iterator<Time> iterator() {
+    return List.of((Time) this).iterator();
+  }
 
-    @Override
-    public long size() {
-        return 1;
-    }
+  @Override
+  public long[] locate(Dimension dimension) {
+    // TODO
+    return new long[0];
+  }
 
-    @Override
-    public boolean contains(Time o) {
-        // TODO Auto-generated method stub
-        return false;
-    }
+  @Override
+  public boolean isGeneric() {
+    // TODO Auto-generated method stub
+    return start == null
+        || end == null
+        || start.getMilliseconds() == 0
+        || end.getMilliseconds() == Long.MAX_VALUE;
+  }
 
-    @Override
-    public boolean intersects(Time o) {
-        // TODO Auto-generated method stub
-        return false;
-    }
+  @Override
+  public org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type getType() {
+    return Dimension.Type.TIME;
+  }
 
-    @Override
-    public Iterator<Time> iterator() {
-        return List.of((Time) this).iterator();
-    }
+  @Override
+  public boolean isRegular() {
+    return false;
+  }
 
-    @Override
-    public long[] locate(Dimension dimension) {
-        // TODO
-        return new long[0];
-    }
+  @Override
+  public int getDimensionality() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
 
-    @Override
-    public boolean isGeneric() {
-        // TODO Auto-generated method stub
-        return false;
-    }
+  @Override
+  public long offset(long... offsets) {
+    // TODO Auto-generated method stub
+    return 0;
+  }
 
-    @Override
-    public org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type getType() {
-        return Dimension.Type.TIME;
-    }
+  @Override
+  public List<Long> getShape() {
+    return List.of(start.getMilliseconds(), end.getMilliseconds());
+  }
 
-    @Override
-    public boolean isRegular() {
-        return false;
-    }
+  @Override
+  public Parameters<String> getParameters() {
+    return Parameters.create();
+  }
 
-    @Override
-    public int getDimensionality() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
+  @Override
+  public ExtentDimension extentDimension() {
+    return ExtentDimension.LINEAL;
+  }
 
-    @Override
-    public long offset(long... offsets) {
-        // TODO Auto-generated method stub
-        return 0;
-    }
+  @Override
+  public String encode() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-    @Override
-    public List<Long> getShape() {
-        return List.of(start.getMilliseconds(), end.getMilliseconds());
-    }
+  @Override
+  public boolean distributed() {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-    @Override
-    public Parameters<String> getParameters() {
-        return Parameters.create();
-    }
+  @Override
+  public boolean contains(TimeInstant time) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-    @Override
-    public ExtentDimension extentDimension() {
-        return ExtentDimension.LINEAL;
-    }
+  @Override
+  public boolean contains(long millisInstant) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-    @Override
-    public String encode() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override
+  public boolean endsBefore(TimeInstant instant) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-    @Override
-    public boolean distributed() {
-        // TODO Auto-generated method stub
-        return false;
-    }
+  @Override
+  public boolean endsBefore(Time other) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-    @Override
-    public boolean contains(TimeInstant time) {
-        // TODO Auto-generated method stub
-        return false;
-    }
+  @Override
+  public boolean overlaps(Time other) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 
-    @Override
-    public boolean contains(long millisInstant) {
-        // TODO Auto-generated method stub
-        return false;
-    }
+  @Override
+  public long getMillis() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
 
-    @Override
-    public boolean endsBefore(TimeInstant instant) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean endsBefore(Time other) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean overlaps(Time other) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public long getMillis() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public String encode(String language) {
-        return /*encodeCall().encode(language)*/ "TIME-UNIMPLEMENTED";
-    }
+  @Override
+  public String encode(String language) {
+    return /*encodeCall().encode(language)*/ "TIME-UNIMPLEMENTED";
+  }
 }

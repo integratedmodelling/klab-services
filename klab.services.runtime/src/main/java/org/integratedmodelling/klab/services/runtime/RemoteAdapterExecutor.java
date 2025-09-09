@@ -78,17 +78,23 @@ public class RemoteAdapterExecutor extends AbstractExecutor
         return false;
       }
 
+      var res = this.resource;
       // TODO validate type chain
       if (adapterInfo.isContextualizing()) {
-        resource =
-            service.get().contextualizeResource(resource, scanner.shard().getGeometry(), scope);
+        res = service.get().contextualizeResource(resource, scanner.shard().getGeometry(), scope);
       }
 
       // enqueue data extraction from service method TODO pass the scanner and use its geometry
-      contextualizer = new ClientResourceContextualizer(service.get(), resource, observation);
+      contextualizer = new ClientResourceContextualizer(service.get(), res, observation);
     }
 
     // FIXME must use scanner and its geometry
     return contextualizer.contextualize(observation, event, scope);
+  }
+
+  @Override
+  public boolean validate() {
+    // TODO send the validation request to the service
+    return true;
   }
 }
