@@ -368,20 +368,19 @@ public class ServiceAuthorizationManager {
     if (scopeHeader != null) {
       // ...then contextualized as needed
       var scopeData = ContextScope.parseScopeId(scopeHeader);
+      scope =
+          klabService
+              .get()
+              .klabService()
+              .getScopeManager()
+              .getScope(ret, scopeData.type().classify(), scopeData.scopeId());
       if (scope instanceof ServiceContextScope) {
         scope =
-                klabService
-                        .get()
-                        .klabService()
-                        .getScopeManager()
-                        .contextualizeScope((ServiceContextScope) scope, scopeData);
-      } else {
-        scope =
-                klabService
-                        .get()
-                        .klabService()
-                        .getScopeManager()
-                        .getScope(ret, scopeData.type().classify(), scopeData.scopeId());
+            klabService
+                .get()
+                .klabService()
+                .getScopeManager()
+                .contextualizeScope((ServiceContextScope) scope, scopeData);
       }
     }
 
