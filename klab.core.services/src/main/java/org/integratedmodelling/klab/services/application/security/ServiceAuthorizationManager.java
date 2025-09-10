@@ -364,8 +364,10 @@ public class ServiceAuthorizationManager {
     if (scope == null) {
       System.out.println("DIO DIO");
     }
-    Scope resolvedScope = null;
-    if (scopeHeader != null) {
+    Scope resolvedScope;
+    if (scopeHeader == null) {
+      resolvedScope = scope;
+    } else {
       // ...then contextualized as needed
       var scopeData = ContextScope.parseScopeId(scopeHeader);
       resolvedScope =
