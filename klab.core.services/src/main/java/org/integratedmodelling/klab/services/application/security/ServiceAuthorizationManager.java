@@ -364,18 +364,18 @@ public class ServiceAuthorizationManager {
     if (scope == null) {
       System.out.println("DIO DIO");
     }
-
+    Scope resolvedScope = null;
     if (scopeHeader != null) {
       // ...then contextualized as needed
       var scopeData = ContextScope.parseScopeId(scopeHeader);
-      scope =
+      resolvedScope =
           klabService
               .get()
               .klabService()
               .getScopeManager()
               .getScope(ret, scopeData.type().classify(), scopeData.scopeId());
-      if (scope instanceof ServiceContextScope) {
-        scope =
+      if (resolvedScope == null && scope instanceof ServiceContextScope) {
+        resolvedScope =
             klabService
                 .get()
                 .klabService()
@@ -384,7 +384,7 @@ public class ServiceAuthorizationManager {
       }
     }
 
-    if (scope == null) {
+    if (resolvedScope == null) {
       Logging.INSTANCE.error(
           "Internal error: user "
               + ret.getUsername()
@@ -394,7 +394,7 @@ public class ServiceAuthorizationManager {
     }
 
     ret.setInfo("scopeHeader=" + scopeHeader + "; serverKey=" + serverKey);
-    ret.setScope(scope);
+    ret.setScope(resolvedScope);
 
     return ret;
   }
