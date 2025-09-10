@@ -2,35 +2,38 @@ package org.integratedmodelling.klab.data;
 
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.exceptions.KlabContextualizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 
-import java.util.concurrent.ExecutionException;
+import java.util.Map;
 
 /**
  * One of these is created per resource contextualization operation. Drives the functions in the
  * adapter to create the contextualized resource payload, which is an Instance object from the Avro
  * schema.
  */
-public class ClientResourceContextualizer extends AbstractResourceContextualizer {
+public class RemoteResourceContextualizer extends AbstractResourceContextualizer {
 
   private final ResourcesService service;
 
   /**
-   * Pass a resource. If the adapter must adapt it to the context, this must happen before the call.
-   * TODO maybe we should internalize this, given that we now get the adapter.
+   * Pass a resource to have it contextualized by a remote resources service.
    *
    * @param service
    * @param resource
    */
-  public ClientResourceContextualizer(
-      ResourcesService service, Resource resource, Observation observation) {
-    super(resource, observation);
+  public RemoteResourceContextualizer(
+      ResourcesService service,
+      Resource resource,
+      Observation observation,
+      Map<String, Observable> localNames,
+      ContextScope scope) {
+    super(resource, observation, localNames, scope);
     this.service = service;
   }
 

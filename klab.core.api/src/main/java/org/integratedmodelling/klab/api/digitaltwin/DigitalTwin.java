@@ -324,7 +324,7 @@ public interface DigitalTwin extends RuntimeAsset {
    * Ingest the contextualized data coming from a resource contextualization into the passed
    * observation target.
    *
-   * TODO this ingests a single shard at a time.
+   * <p>TODO this ingests a single shard at a time.
    *
    * @param data
    * @param target
@@ -334,6 +334,9 @@ public interface DigitalTwin extends RuntimeAsset {
    *     substituted by the original observations's native strategy.
    * @param scope
    * @return true if ingestion was successful
+   * @deprecated this should become unnecessary. Ingestion of child observations should be called
+   *     from within the ContextualExecutors, and scanners are set up to handle transfer to storage.
+   *     The scheduler must be notified in there.
    */
   boolean ingest(
       Data data,

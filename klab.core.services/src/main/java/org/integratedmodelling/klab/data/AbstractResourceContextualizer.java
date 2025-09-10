@@ -4,6 +4,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -16,29 +17,38 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Scanner;
 
 public abstract class AbstractResourceContextualizer {
 
-  // These are used to satisfy the dependencies of the methods
   protected Resource resource;
   protected Urn urn;
   protected Parameters<String> urnParameters;
   protected Observation observation;
   protected Observable observable;
+  protected ContextScope scope;
+  protected final Map<String, Observable> localNames;
 
-  protected AbstractResourceContextualizer(Resource resource, Observation observation) {
+  protected AbstractResourceContextualizer(
+      Resource resource,
+      Observation observation,
+      Map<String, Observable> localNames,
+      ContextScope scope) {
     this.resource = resource;
     this.urn = Urn.of(resource.getUrn());
     this.urnParameters = Parameters.create(this.urn.getParameters());
     this.observation = observation;
+    this.localNames = localNames;
     this.observable = observation.getObservable();
+    this.scope = scope;
   }
 
-  public boolean contextualize(Observation observation, Scheduler.Event event, ContextScope scope) {
+  public boolean contextualize(Storage.Scanner scanner, Scheduler.Event event) {
 
     try {
       // FIXME this must be done once per shard using the shard's geometry
-      var data = getData(observation.getGeometry(), event, scope);
+      var data = getData(scanner.shard().getGeometry(), event, scope);
       if (data == null || data.empty()) {
         return false;
       }
@@ -47,7 +57,7 @@ public abstract class AbstractResourceContextualizer {
           adapters == null || adapters.isEmpty()
               ? resource.getAdapterType()
               : (adapters + "," + resource.getAdapterType());
-      observation.getMetadata().put(Metadata.KLAB_ADAPTER_URNS, adapters); 
+      observation.getMetadata().put(Metadata.KLAB_ADAPTER_URNS, adapters);
 
       // FIXME this must be outside, after 1+ contextualizations have been done per shard
       return scope
@@ -70,5 +80,14 @@ public abstract class AbstractResourceContextualizer {
     return null;
   }
 
+  /**
+   * Invoke the service API or, if the adapter is local, create a Data.Builder and pass it to the
+   * adapter for direct retrieval.
+   *
+   * @param geometry
+   * @param event
+   * @param scope
+   * @return
+   */
   protected abstract Data getData(Geometry geometry, Scheduler.Event event, ContextScope scope);
 }

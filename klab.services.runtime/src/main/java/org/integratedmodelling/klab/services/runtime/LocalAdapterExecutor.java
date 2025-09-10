@@ -1,17 +1,14 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.data.ServiceResourceContextualizer;
+import org.integratedmodelling.klab.data.LocalResourceContextualizer;
 
 import java.util.Map;
 
@@ -46,12 +43,10 @@ public class LocalAdapterExecutor extends AbstractExecutor
     }
 
     // enqueue data extraction from adapter method TODO needs the scanner
-    final var contextualizer = new ServiceResourceContextualizer(adapter, res, observation, scope);
+    final var contextualizer =
+        new LocalResourceContextualizer(adapter, res, observation, localNames, scope);
 
     // TODO this cannot be the simple executor, needs the scanner to be passed after
-    return contextualizer.contextualize(
-        // pass the operation for provenance recording
-        // TODO must get the event only
-        observation, event, scope);
+    return contextualizer.contextualize(scanner, event);
   }
 }

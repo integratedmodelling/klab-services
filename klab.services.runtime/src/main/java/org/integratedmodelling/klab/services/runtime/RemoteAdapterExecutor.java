@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.services.runtime;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -12,7 +11,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
-import org.integratedmodelling.klab.data.ClientResourceContextualizer;
+import org.integratedmodelling.klab.data.RemoteResourceContextualizer;
 
 import java.util.Map;
 
@@ -21,7 +20,7 @@ public class RemoteAdapterExecutor extends AbstractExecutor
 
   private final AdapterDescriptor adapterInfo;
   private Resource resource;
-  private ClientResourceContextualizer contextualizer;
+  private RemoteResourceContextualizer contextualizer;
   private ResourcesService service = null;
 
   public RemoteAdapterExecutor(
@@ -85,11 +84,12 @@ public class RemoteAdapterExecutor extends AbstractExecutor
       }
 
       // enqueue data extraction from service method TODO pass the scanner and use its geometry
-      contextualizer = new ClientResourceContextualizer(service.get(), res, observation);
+      contextualizer =
+          new RemoteResourceContextualizer(service.get(), res, observation, localNames, scope);
     }
 
     // FIXME must use scanner and its geometry
-    return contextualizer.contextualize(observation, event, scope);
+    return contextualizer.contextualize(scanner, event);
   }
 
   @Override
