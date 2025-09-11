@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -17,8 +18,12 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public abstract class AbstractResourceContextualizer {
 
@@ -47,11 +52,7 @@ public abstract class AbstractResourceContextualizer {
   public boolean contextualize(Storage.Scanner scanner, Scheduler.Event event) {
 
     try {
-      // FIXME this must be done once per shard using the shard's geometry
-      var data = getData(scanner.shard().getGeometry(), event, scope);
-      if (data == null || data.empty()) {
-        return false;
-      }
+      var builder = getData(scanner, event, scope);
       var adapters = observation.getMetadata().get(Metadata.KLAB_ADAPTER_URNS, String.class);
       adapters =
           adapters == null || adapters.isEmpty()
@@ -59,10 +60,57 @@ public abstract class AbstractResourceContextualizer {
               : (adapters + "," + resource.getAdapterType());
       observation.getMetadata().put(Metadata.KLAB_ADAPTER_URNS, adapters);
 
-      // FIXME this must be outside, after 1+ contextualizations have been done per shard
-      return scope
-          .getDigitalTwin()
-          .ingest(data, observation, event, /* FIXME DIO CAN */ null, scope);
+      // TODO the shards have been filled. Ingest and resolve any new objects
+
+        if (observable.is(SemanticType.COUNTABLE)) {
+            // scope contextualized to the collective observation
+            var observationScope = scope.within(observation);
+            List<Callable<Observation>> tasks = new ArrayList<>();
+            for (var instance : builder.getObjects()) {
+                var child = builder.getObservation();
+                if (child != null) {
+                    // ingest the observation according to the native shards
+                    tasks.add(
+                            Executors.callable(
+                                    () -> {
+                                        var result =
+                                                observationScope
+                                                        .submit(child)
+                                                        .thenAccept(
+                                                                (obs -> {
+/*                                                                    // resolve any child observations, states or instances
+                                                                    if (instance.hasStates() || instance.size() > 0) {
+                                                                        ingest(
+                                                                                instance,
+                                                                                child,
+                                                                                event,
+                                                                                // FIXME not sure - child observations should have their own
+                                                                                // strategy, so null?
+                                                                                null,
+                                                                                observationScope);
+                                                                    }
+                                                                */}));
+                                    },
+                                    child));
+                }
+            }
+            if (!tasks.isEmpty()) {
+                try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                    return executor.invokeAll(tasks).stream().noneMatch(Future::isCancelled);
+                } catch (InterruptedException e) {
+                    scope.error(e);
+                    return false;
+                }
+            }
+        }
+
+
+        //        // FIXME this must be outside, after 1+ contextualizations have been done per shard
+      //        return scope
+      //                .getDigitalTwin()
+      //                .ingest(data, observation, event, /* FIXME DIO CAN */ null, scope);
+      return true;
+
     } catch (Exception e) {
       scope.error(e);
       return false;
@@ -84,10 +132,12 @@ public abstract class AbstractResourceContextualizer {
    * Invoke the service API or, if the adapter is local, create a Data.Builder and pass it to the
    * adapter for direct retrieval.
    *
-   * @param geometry
+   * @param scanner
    * @param event
    * @param scope
-   * @return
+   * @return TODO CHECK this shouldn't need to return Data in all situations, just when remote, so
+   *     absorb into the specific API
    */
-  protected abstract Data getData(Geometry geometry, Scheduler.Event event, ContextScope scope);
+  protected abstract Data.Builder getData(
+      Storage.Scanner scanner, Scheduler.Event event, ContextScope scope);
 }

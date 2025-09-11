@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.data;
 
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -38,12 +39,23 @@ public class RemoteResourceContextualizer extends AbstractResourceContextualizer
   }
 
   @Override
-  protected Data getData(Geometry geometry, Scheduler.Event event, ContextScope scope) {
+  protected Data.Builder getData(
+      Storage.Scanner scanner, Scheduler.Event event, ContextScope scope) {
     try {
-      // this one is synchronous, called within a CompletableFuture anyway
-      return service
-          .contextualize(resource, observation, geometry, event, getInputData(scope), scope)
-          .get();
+      var data =
+          service
+              .contextualize(
+                  resource,
+                  observation,
+                  scanner.shard().getGeometry(),
+                  event,
+                  getInputData(scope),
+                  scope)
+              // this one is synchronous, called within a CompletableFuture anyway
+              .get();
+
+      return new WrappingDataBuilder(data, observation, event, scanner, scope).fillShards();
+
     } catch (Exception e) {
       throw new KlabResourceAccessException(e);
     }

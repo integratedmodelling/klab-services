@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.data;
 
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -38,7 +39,8 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
   }
 
   @Override
-  protected Data getData(Geometry geometry, Scheduler.Event event, ContextScope scope) {
+  protected Data.Builder getData(
+      Storage.Scanner scanner, Scheduler.Event event, ContextScope scope) {
 
     var name =
         observation.getObservable().getStatedName() == null
@@ -48,10 +50,34 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
     // FIXME needs a server-side builder that uses the DT's buffers
     var builder = new DirectDataBuilder(name, getInputData(scope), observation, scope);
 
+    if (scanner != null) {
+      builder.setScanner("self", scanner);
+      for (var entry : localNames.keySet()) {
+        Observation observation = null; // TODO get the obs with the keyed observable
+        if (observation == null) {
+          var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
+          var shards = storage.scan(event, scanner.shard().getShardingStrategy(), null, true);
+          var oscan = shards.get(scanner.shard().getShardIndex());
+          builder.setScanner(entry, oscan);
+        }
+      }
+    }
+
     // TODO add observation, observable, urn, input data if the resource requires them, observation
     //  storage and anything the adapter may want.
     adapter.encode(
-        resource, geometry, event, builder, observation, observable, urn, urnParameters, scope);
-    return builder.build();
+        resource,
+        scanner == null ? null : scanner.shard().getGeometry(),
+        event,
+        builder,
+        observation,
+        observable,
+        urn,
+        urnParameters,
+        scope);
+
+    // TODO ingest and resolve object observations from the contextualization
+
+    return builder;
   }
 }
