@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.common.data.Instance;
@@ -55,6 +56,11 @@ public class SerializingDataBuilder implements Data.Builder {
     }
 
     @Override
+    public List<Data.Builder> getObjects() {
+    return List.of();
+    }
+
+    @Override
     public Data.Builder adapter(String adapterId) {
         this.adapter = adapterId;
         return this;
@@ -83,6 +89,11 @@ public class SerializingDataBuilder implements Data.Builder {
 
     @Override
     public <T extends Storage.Scanner> T scanner(String identifier, Class<T> scannerClass) {
+        return null;
+    }
+
+    @Override
+    public Observation getObservation() {
         return null;
     }
 
