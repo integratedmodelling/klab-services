@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.StorageManager;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -40,6 +41,7 @@ public class ContextualizerExecutor extends AbstractExecutor
     this.call = call;
   }
 
+  @Override
   protected boolean run(Scheduler.Event event, Storage.Scanner scanner) {
 
     var geometry = scanner.shard().getGeometry();

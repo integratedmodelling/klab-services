@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
@@ -88,7 +89,6 @@ public class RemoteAdapterExecutor extends AbstractExecutor
           new RemoteResourceContextualizer(service.get(), res, observation, localNames, scope);
     }
 
-    // FIXME must use scanner and its geometry
     return contextualizer.contextualize(scanner, event);
   }
 

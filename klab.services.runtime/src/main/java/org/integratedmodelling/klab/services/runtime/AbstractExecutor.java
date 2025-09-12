@@ -71,7 +71,10 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
     try {
       for (var scanner :
           storage.scan(
-              event, localShardingStrategy, localShardingStrategy.getScannerClass(), false)) {
+              event,
+              localShardingStrategy,
+              localShardingStrategy.getScannerClass(),
+              false)) {
         tasks.add(() -> run(event, scanner));
       }
     } catch (Throwable t) {
@@ -89,7 +92,8 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
     }
   }
 
-  protected abstract boolean run(Scheduler.Event event, Storage.Scanner scanner);
+  protected abstract boolean run(
+      Scheduler.Event event, Storage.Scanner scanner);
 
   @Override
   public Throwable getCause() {

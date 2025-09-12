@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.SchedulerEventImpl;
+import org.integratedmodelling.klab.api.lang.TetraFunction;
 import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -54,6 +55,13 @@ import java.util.function.Function;
  * @author ferdinando.villa
  */
 public interface Scheduler {
+
+  /** Execute a step in the contextualization. */
+  @FunctionalInterface
+  interface Executor {
+    boolean execute(
+        Geometry geometry, Event event, ContextScope scope, DigitalTwin.Transaction transaction);
+  }
 
   interface Event {
 
@@ -125,8 +133,7 @@ public interface Scheduler {
    * @param executor
    */
   void registerExecutor(
-      Observation observation,
-      TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor);
+      Observation observation, TriFunction<Geometry, Event, ContextScope, Boolean> executor);
 
   /**
    * The scheduler keeps the first time instant seen in the DT. This can change during the lifetime

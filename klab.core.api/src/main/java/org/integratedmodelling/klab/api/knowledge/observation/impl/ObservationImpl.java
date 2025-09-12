@@ -43,7 +43,8 @@ public class ObservationImpl implements Observation {
   private boolean substantialQuality;
   private long transientId = Klab.getNextId();
   private List<Notification> notifications = new ArrayList<>();
-//  private Data.ShardingStrategy shardingStrategy;
+
+  //  private Data.ShardingStrategy shardingStrategy;
 
   public ObservationImpl() {}
 
@@ -256,7 +257,7 @@ public class ObservationImpl implements Observation {
   }
 
   /**
-   * Non-API: we record the fact that an observation is a quality of a substantial so that we know
+   * Non-API: we record the fact that an observation is a quality of a substantial, so that we know
    * when to initialize or check for initialization without having to interrogate the knowledge
    * graph to extract the observation's parent.
    *
@@ -269,13 +270,4 @@ public class ObservationImpl implements Observation {
   public void setSubstantialQuality(boolean substantialQuality) {
     this.substantialQuality = substantialQuality;
   }
-
-//  @Override
-//  public Data.ShardingStrategy getShardingStrategy() {
-//    return shardingStrategy;
-//  }
-//
-//  public void setShardingStrategy(Data.ShardingStrategy shardingStrategy) {
-//    this.shardingStrategy = shardingStrategy;
-//  }
 }

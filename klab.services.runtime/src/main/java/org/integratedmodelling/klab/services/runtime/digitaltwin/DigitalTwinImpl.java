@@ -360,115 +360,119 @@ public class DigitalTwinImpl implements DigitalTwin {
     return this.scheduler;
   }
 
-  @Override
-  public boolean ingest(
-      Data data,
-      Observation target,
-      Scheduler.Event event,
-      Data.ShardingStrategy shardingStrategy,
-      ContextScope scope) {
-
-    //      // passing null is equivalent to "use the native strategy"
-    //      if (shardingStrategy != null) {
-    //          shardingStrategy = target.getShardingStrategy();
-    //      }
-
-    if (target.getObservable().is(SemanticType.COUNTABLE)) {
-      // scope contextualized to the collective observation
-      var observationScope = scope.within(target);
-      List<Callable<Observation>> tasks = new ArrayList<>();
-      for (var instance : data.children()) {
-        var observation = DigitalTwin.createObservation(observationScope, instance);
-        if (observation != null) {
-          // ingest the observation according to the native shards
-          tasks.add(
-              Executors.callable(
-                  () -> {
-                    var result =
-                        observationScope
-                            .submit(observation)
-                            .thenAccept(
-                                (obs -> {
-                                  // resolve any child observations, states or instances
-                                  if (instance.hasStates() || instance.size() > 0) {
-                                    ingest(
-                                        instance,
-                                        observation,
-                                        event,
-                                        // FIXME not sure - child observations should have their own
-                                        // strategy, so null?
-                                        null,
-                                        observationScope);
-                                  }
-                                }));
-                  },
-                  observation));
-        }
-      }
-      if (!tasks.isEmpty()) {
-        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-          return executor.invokeAll(tasks).stream().noneMatch(Future::isCancelled);
-        } catch (InterruptedException e) {
-          scope.error(e);
-          return false;
-        }
-      }
-    }
-
-    if (data.hasStates()) {
-
-      var storage = scope.getDigitalTwin().getStorageManager().createStorage(target, shardingStrategy);
-
-      if (data instanceof DoubleDataImpl doubleData) {
-
-        var buffers = storage.scan(event, shardingStrategy, Storage.DoubleScanner.class, false);
-
-        /* all buffers run in parallel */
-        return Utils.Java.distributeComputation(
-            buffers,
-            scanner -> {
-              while (doubleData.hasNext()) {
-                scanner.add(doubleData.nextDouble());
-              }
-            });
-      } /*else if (data instanceof LongDataImpl longData) {
-          var longStorage =
-              scope
-                  .getDigitalTwin()
-                  .getStateStorage()
-                  .promoteStorage(target, storage, LongStorage.class);
-          var buffer =
-              longStorage.buffer(
-                  data.geometry().size(), data.fillCurve(), data.geometry().getExtentOffsets());
-          var filler = buffer.filler(Data.LongFiller.class);
-          while (longData.hasNext()) {
-            filler.add(longData.nextLong());
-          }
-        } else if (data instanceof IntDataImpl intData) {
-          var key = intData.getDataKey();
-          if (key == null) {
-            var intStorage =
-                scope
-                    .getDigitalTwin()
-                    .getStateStorage()
-                    .promoteStorage(target, storage, IntStorage.class);
-            var buffer =
-                intStorage.buffer(
-                    data.geometry().size(), data.fillCurve(), data.geometry().getExtentOffsets());
-            var filler = buffer.filler(Data.IntFiller.class);
-            while (intData.hasNext()) {
-              filler.add(intData.nextInt());
-            }
-            return true;
-          } else {
-            // TODO have the data object adapt the key to the observable before use
-            var table = new HashMap<Integer, Object>();
-          }
-        }*/
-    }
-
-    return false;
-  }
+  //  @Override
+  //  public boolean ingest(
+  //      Data data,
+  //      Observation target,
+  //      Scheduler.Event event,
+  //      Data.ShardingStrategy shardingStrategy,
+  //      ContextScope scope) {
+  //
+  //    //      // passing null is equivalent to "use the native strategy"
+  //    //      if (shardingStrategy != null) {
+  //    //          shardingStrategy = target.getShardingStrategy();
+  //    //      }
+  //
+  //    if (target.getObservable().is(SemanticType.COUNTABLE)) {
+  //      // scope contextualized to the collective observation
+  //      var observationScope = scope.within(target);
+  //      List<Callable<Observation>> tasks = new ArrayList<>();
+  //      for (var instance : data.children()) {
+  //        var observation = DigitalTwin.createObservation(observationScope, instance);
+  //        if (observation != null) {
+  //          // ingest the observation according to the native shards
+  //          tasks.add(
+  //              Executors.callable(
+  //                  () -> {
+  //                    var result =
+  //                        observationScope
+  //                            .submit(observation)
+  //                            .thenAccept(
+  //                                (obs -> {
+  //                                  // resolve any child observations, states or instances
+  //                                  if (instance.hasStates() || instance.size() > 0) {
+  //                                    ingest(
+  //                                        instance,
+  //                                        observation,
+  //                                        event,
+  //                                        // FIXME not sure - child observations should have their
+  // own
+  //                                        // strategy, so null?
+  //                                        null,
+  //                                        observationScope);
+  //                                  }
+  //                                }));
+  //                  },
+  //                  observation));
+  //        }
+  //      }
+  //      if (!tasks.isEmpty()) {
+  //        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+  //          return executor.invokeAll(tasks).stream().noneMatch(Future::isCancelled);
+  //        } catch (InterruptedException e) {
+  //          scope.error(e);
+  //          return false;
+  //        }
+  //      }
+  //    }
+  //
+  //    if (data.hasStates()) {
+  //
+  //      var storage = scope.getDigitalTwin().getStorageManager().createStorage(target,
+  // shardingStrategy);
+  //
+  //      if (data instanceof DoubleDataImpl doubleData) {
+  //
+  //        var buffers = storage.scan(event, shardingStrategy, Storage.DoubleScanner.class, false,
+  // transaction());
+  //
+  //        /* all buffers run in parallel */
+  //        return Utils.Java.distributeComputation(
+  //            buffers,
+  //            scanner -> {
+  //              while (doubleData.hasNext()) {
+  //                scanner.add(doubleData.nextDouble());
+  //              }
+  //            });
+  //      } /*else if (data instanceof LongDataImpl longData) {
+  //          var longStorage =
+  //              scope
+  //                  .getDigitalTwin()
+  //                  .getStateStorage()
+  //                  .promoteStorage(target, storage, LongStorage.class);
+  //          var buffer =
+  //              longStorage.buffer(
+  //                  data.geometry().size(), data.fillCurve(), data.geometry().getExtentOffsets());
+  //          var filler = buffer.filler(Data.LongFiller.class);
+  //          while (longData.hasNext()) {
+  //            filler.add(longData.nextLong());
+  //          }
+  //        } else if (data instanceof IntDataImpl intData) {
+  //          var key = intData.getDataKey();
+  //          if (key == null) {
+  //            var intStorage =
+  //                scope
+  //                    .getDigitalTwin()
+  //                    .getStateStorage()
+  //                    .promoteStorage(target, storage, IntStorage.class);
+  //            var buffer =
+  //                intStorage.buffer(
+  //                    data.geometry().size(), data.fillCurve(),
+  // data.geometry().getExtentOffsets());
+  //            var filler = buffer.filler(Data.IntFiller.class);
+  //            while (intData.hasNext()) {
+  //              filler.add(intData.nextInt());
+  //            }
+  //            return true;
+  //          } else {
+  //            // TODO have the data object adapt the key to the observable before use
+  //            var table = new HashMap<Integer, Object>();
+  //          }
+  //        }*/
+  //    }
+  //
+  //    return false;
+  //  }
 
   @Override
   public Provenance getProvenanceGraph(ContextScope context) {

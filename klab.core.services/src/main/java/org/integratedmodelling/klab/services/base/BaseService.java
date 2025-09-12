@@ -174,22 +174,6 @@ public abstract class BaseService implements KlabService {
     return embeddedBroker;
   }
 
-  //  /**
-  //   * Set up the messaging queues according to configuration in case the user is local and
-  //   * privileged. TODO this ignores the configuration for now.
-  //   *
-  //   * @param scope
-  //   * @param capabilities
-  //   */
-  //  public void setupMessaging(UserScope scope, ServiceCapabilities capabilities) {
-  //    if (scope instanceof ServiceUserScope serviceUserScope && serviceUserScope.isLocal()) {
-  //      capabilities.getAvailableMessagingQueues().add(Message.Queue.Errors);
-  //      capabilities.getAvailableMessagingQueues().add(Message.Queue.Warnings);
-  //      capabilities.getAvailableMessagingQueues().add(Message.Queue.Info);
-  //      // TODO configure debug
-  //    }
-  //  }
-
   /**
    * The scope manager is created on demand as not all services need it.
    *
@@ -493,6 +477,10 @@ public abstract class BaseService implements KlabService {
               + " is available");
     }
     var exportSchema = schemata.getFirst();
+
+    // TODO if the schema is in an adapter, we must either ensure that we have the data (i.e., scope is
+    //  a context scope and the DT is local) or call the exported parametrically from a resources service.
+
     ServiceCall serviceCall =
         ServiceCallImpl.create(exportSchema.getSchemaId(), "MEDIA_TYPE", mediaType);
     serviceCall.getParameters().putUnnamed(urn);

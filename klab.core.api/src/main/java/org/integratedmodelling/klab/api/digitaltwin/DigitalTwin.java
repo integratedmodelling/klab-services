@@ -177,6 +177,7 @@ public interface DigitalTwin extends RuntimeAsset {
      * @param geometry
      * @param event
      * @param scope
+     * @param transaction the transaction in which the executor is being executed.
      * @return true if execution was successful
      */
     boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope);
@@ -320,30 +321,34 @@ public interface DigitalTwin extends RuntimeAsset {
    */
   Dataflow getDataflowGraph(ContextScope context);
 
-  /**
-   * Ingest the contextualized data coming from a resource contextualization into the passed
-   * observation target.
-   *
-   * <p>TODO this ingests a single shard at a time.
-   *
-   * @param data
-   * @param target
-   * @param event
-   * @param shardingStrategy the sharding strategy adopted for the resource contextualization, which
-   *     may differ from the native strategy in the observation. Null may be passed, which must be
-   *     substituted by the original observations's native strategy.
-   * @param scope
-   * @return true if ingestion was successful
-   * @deprecated this should become unnecessary. Ingestion of child observations should be called
-   *     from within the ContextualExecutors, and scanners are set up to handle transfer to storage.
-   *     The scheduler must be notified in there.
-   */
-  boolean ingest(
-      Data data,
-      Observation target,
-      Scheduler.Event event,
-      Data.ShardingStrategy shardingStrategy,
-      ContextScope scope);
+  //  /**
+  //   * Ingest the contextualized data coming from a resource contextualization into the passed
+  //   * observation target.
+  //   *
+  //   * <p>TODO this ingests a single shard at a time.
+  //   *
+  //   * @param data
+  //   * @param target
+  //   * @param event
+  //   * @param shardingStrategy the sharding strategy adopted for the resource contextualization,
+  // which
+  //   *     may differ from the native strategy in the observation. Null may be passed, which must
+  // be
+  //   *     substituted by the original observations's native strategy.
+  //   * @param scope
+  //   * @return true if ingestion was successful
+  //   * @deprecated this should become unnecessary. Ingestion of child observations should be
+  // called
+  //   *     from within the ContextualExecutors, and scanners are set up to handle transfer to
+  // storage.
+  //   *     The scheduler must be notified in there.
+  //   */
+  //  boolean ingest(
+  //      Data data,
+  //      Observation target,
+  //      Scheduler.Event event,
+  //      Data.ShardingStrategy shardingStrategy,
+  //      ContextScope scope);
 
   /**
    * Dispose of all storage and data, either in memory only or also on any attached storage. Whether

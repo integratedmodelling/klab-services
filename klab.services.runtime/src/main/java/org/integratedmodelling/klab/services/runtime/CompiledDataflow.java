@@ -584,7 +584,10 @@ public class CompiledDataflow {
     }
 
     @Override
-    public boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
+    public boolean run(
+        Geometry geometry,
+        Scheduler.Event event,
+        ContextScope scope) {
 
       createStorage();
 

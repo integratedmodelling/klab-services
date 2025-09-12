@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.data;
 
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -40,7 +41,9 @@ public class RemoteResourceContextualizer extends AbstractResourceContextualizer
 
   @Override
   protected Data.Builder getData(
-      Storage.Scanner scanner, Scheduler.Event event, ContextScope scope) {
+      Storage.Scanner scanner,
+      Scheduler.Event event,
+      ContextScope scope) {
     try {
       var data =
           service

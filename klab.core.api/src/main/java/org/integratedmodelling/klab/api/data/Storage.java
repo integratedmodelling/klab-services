@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.api.data;
 import java.io.Serializable;
 import java.util.List;
 import java.util.PrimitiveIterator;
+
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;

@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.data;
 
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -40,7 +41,9 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
 
   @Override
   protected Data.Builder getData(
-      Storage.Scanner scanner, Scheduler.Event event, ContextScope scope) {
+      Storage.Scanner scanner,
+      Scheduler.Event event,
+      ContextScope scope) {
 
     var name =
         observation.getObservable().getStatedName() == null
@@ -56,7 +59,8 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
         Observation observation = null; // TODO get the obs with the keyed observable
         if (observation == null) {
           var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
-          var shards = storage.scan(event, scanner.shard().getShardingStrategy(), null, true);
+          var shards =
+              storage.scan(event, scanner.shard().getShardingStrategy(), null, true);
           var oscan = shards.get(scanner.shard().getShardIndex());
           builder.setScanner(entry, oscan);
         }
@@ -75,8 +79,6 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
         urn,
         urnParameters,
         scope);
-
-    // TODO ingest and resolve object observations from the contextualization
 
     return builder;
   }

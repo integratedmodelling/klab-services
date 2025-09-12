@@ -16,6 +16,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +29,7 @@ import java.util.concurrent.Future;
 
 public abstract class AbstractResourceContextualizer {
 
+  private static final Logger log = LoggerFactory.getLogger(AbstractResourceContextualizer.class);
   protected Resource resource;
   protected Urn urn;
   protected Parameters<String> urnParameters;
@@ -60,52 +63,55 @@ public abstract class AbstractResourceContextualizer {
               : (adapters + "," + resource.getAdapterType());
       observation.getMetadata().put(Metadata.KLAB_ADAPTER_URNS, adapters);
 
-      // TODO the shards have been filled. Ingest and resolve any new objects
+      // TODO the shards have been filled. Update shard data in the transaction for KG update
+      if (scanner != null) {
+        // TODO
+      }
 
-        if (observable.is(SemanticType.COUNTABLE)) {
-            // scope contextualized to the collective observation
-            var observationScope = scope.within(observation);
-            List<Callable<Observation>> tasks = new ArrayList<>();
-            for (var instance : builder.getObjects()) {
-                var child = builder.getObservation();
-                if (child != null) {
-                    // ingest the observation according to the native shards
-                    tasks.add(
-                            Executors.callable(
-                                    () -> {
-                                        var result =
-                                                observationScope
-                                                        .submit(child)
-                                                        .thenAccept(
-                                                                (obs -> {
-/*                                                                    // resolve any child observations, states or instances
-                                                                    if (instance.hasStates() || instance.size() > 0) {
-                                                                        ingest(
-                                                                                instance,
-                                                                                child,
-                                                                                event,
-                                                                                // FIXME not sure - child observations should have their own
-                                                                                // strategy, so null?
-                                                                                null,
-                                                                                observationScope);
-                                                                    }
-                                                                */}));
-                                    },
-                                    child));
-                }
-            }
-            if (!tasks.isEmpty()) {
-                try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-                    return executor.invokeAll(tasks).stream().noneMatch(Future::isCancelled);
-                } catch (InterruptedException e) {
-                    scope.error(e);
-                    return false;
-                }
-            }
+      // ingest and resolve any new objects
+      if (observable.is(SemanticType.COUNTABLE)) {
+        // scope contextualized to the collective observation
+        var observationScope = scope.within(observation);
+        List<Callable<Observation>> tasks = new ArrayList<>();
+        for (var instance : builder.getObjects()) {
+          var child = builder.getObservation();
+          if (child != null) {
+            // ingest the observation according to the native shards
+            tasks.add(
+                Executors.callable(
+                    () -> {
+                      var result =
+                          observationScope
+                              .submit(child)
+                              .thenAccept(
+                                  (obs -> {
+                                    /*                                                                    // resolve any child observations, states or instances
+                                        if (instance.hasStates() || instance.size() > 0) {
+                                            ingest(
+                                                    instance,
+                                                    child,
+                                                    event,
+                                                    // FIXME not sure - child observations should have their own
+                                                    // strategy, so null?
+                                                    null,
+                                                    observationScope);
+                                        }
+                                    */ }));
+                    },
+                    child));
+          }
         }
+        if (!tasks.isEmpty()) {
+          try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            return executor.invokeAll(tasks).stream().noneMatch(Future::isCancelled);
+          } catch (InterruptedException e) {
+            scope.error(e);
+            return false;
+          }
+        }
+      }
 
-
-        //        // FIXME this must be outside, after 1+ contextualizations have been done per shard
+      //        // FIXME this must be outside, after 1+ contextualizations have been done per shard
       //        return scope
       //                .getDigitalTwin()
       //                .ingest(data, observation, event, /* FIXME DIO CAN */ null, scope);
