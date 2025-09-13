@@ -177,7 +177,6 @@ public interface DigitalTwin extends RuntimeAsset {
      * @param geometry
      * @param event
      * @param scope
-     * @param transaction the transaction in which the executor is being executed.
      * @return true if execution was successful
      */
     boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope);
