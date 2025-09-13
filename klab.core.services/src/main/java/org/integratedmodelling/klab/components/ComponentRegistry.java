@@ -1525,6 +1525,7 @@ public class ComponentRegistry {
                     null,
                     null,
                     null,
+                    null,
                     scope);
 
             if (ret instanceof Boolean) {
@@ -1579,6 +1580,7 @@ public class ComponentRegistry {
                 urn,
                 urnParameters,
                 null,
+                builder == null ? null : builder.scanner(Storage.Scanner.class),
                 null,
                 null,
                 null,
@@ -1782,7 +1784,7 @@ public class ComponentRegistry {
       Urn urn,
       Parameters<String> urnParameters,
       ServiceCall serviceCall,
-      //      Storage storage,
+      Storage.Scanner scanner,
       Expression expression,
       LookupTable lookupTable,
       Data inputData,
@@ -1804,6 +1806,7 @@ public class ComponentRegistry {
             urn,
             urnParameters,
             serviceCall,
+            scanner,
             expression,
             lookupTable,
             inputData,
@@ -1850,6 +1853,7 @@ public class ComponentRegistry {
       Urn urn,
       Parameters<String> urnParameters,
       ServiceCall serviceCall,
+      Storage.Scanner scanner,
       Expression expression,
       LookupTable lookupTable,
       Data inputData,
@@ -1882,50 +1886,10 @@ public class ComponentRegistry {
         } else if (Parameters.class.isAssignableFrom(argument)) {
           runArguments.add(urnParameters);
         } else if (Storage.Shard.class.isAssignableFrom(argument)) {
-          // TODO! Buffers/scanners must already be split as needed
+          runArguments.add(scanner == null ? null : scanner.shard());
         } else if (Storage.Scanner.class.isAssignableFrom(argument)) {
-          // TODO! Buffers/scanners must already be split as needed
-        } /*else if (Storage.class.isAssignableFrom(argument)) {
-            storage =
-                digitalTwin == null
-                    ? null
-                    : digitalTwin.getStorageManager().getStorage(observation);
-            runArguments.add(storage);
-          }*/
-        /*else if (LongStorage.class.isAssignableFrom(argument)) {
-          storage =
-              digitalTwin == null
-                  ? null
-                  : digitalTwin
-                      .getStateStorage()
-                      .promoteStorage(observation, storage, LongStorage.class);
-          runArguments.add(storage);
-        } else if (FloatStorage.class.isAssignableFrom(argument)) {
-          storage =
-              digitalTwin == null
-                  ? null
-                  : digitalTwin
-                      .getStateStorage()
-                      .promoteStorage(observation, storage, FloatStorage.class);
-          runArguments.add(storage);
-        } else if (BooleanStorage.class.isAssignableFrom(argument)) {
-          storage =
-              digitalTwin == null
-                  ? null
-                  : digitalTwin
-                      .getStateStorage()
-                      .promoteStorage(observation, storage, BooleanStorage.class);
-          runArguments.add(storage);
-        } else if (KeyedStorage.class.isAssignableFrom(argument)) {
-          storage =
-              digitalTwin == null
-                  ? null
-                  : digitalTwin
-                      .getStateStorage()
-                      .promoteStorage(observation, storage, KeyedStorage.class);
-          runArguments.add(storage);
-        } */
-        else if (Scale.class.isAssignableFrom(argument)) {
+          runArguments.add(scanner);
+        } else if (Scale.class.isAssignableFrom(argument)) {
           if (scale == null && geometry != null) {
             scale = GeometryRepository.INSTANCE.scale(geometry);
           }

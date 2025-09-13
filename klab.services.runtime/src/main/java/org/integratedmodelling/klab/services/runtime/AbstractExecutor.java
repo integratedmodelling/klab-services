@@ -9,10 +9,8 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Expression;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
@@ -52,34 +50,37 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   @Override
   public boolean execute(Scheduler.Event event) {
 
-    if (storage == null) {
-      storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
-    }
-    if (storage == null) {
-      cause = new KlabIllegalStateException("No storage available for " + observation);
-      return false;
-    }
-    var localShardingStrategy =
-        callInfo == null ? storage.getNativeShardingStrategy() : callInfo.shardingStrategy();
-    if (localShardingStrategy == null) {
-      cause = new KlabIllegalStateException("No sharding strategy available for " + observation);
-      return false;
-    }
-
     List<Callable<Object>> tasks = new ArrayList<>();
 
-    try {
-      for (var scanner :
-          storage.scan(
-              event,
-              localShardingStrategy,
-              localShardingStrategy.getScannerClass(),
-              false)) {
-        tasks.add(() -> run(event, scanner));
+    if (observation.getObservable().is(SemanticType.QUALITY)) {
+      if (storage == null) {
+        storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
       }
-    } catch (Throwable t) {
-      cause = t;
-      return false;
+      if (storage == null) {
+        cause = new KlabIllegalStateException("No storage available for " + observation);
+        return false;
+      }
+      var localShardingStrategy =
+          callInfo == null ? storage.getNativeShardingStrategy() : callInfo.shardingStrategy();
+      if (localShardingStrategy == null) {
+        cause = new KlabIllegalStateException("No sharding strategy available for " + observation);
+        return false;
+      }
+
+      try {
+        for (var scanner :
+            storage.scan(
+                event, localShardingStrategy, localShardingStrategy.getScannerClass(), false)) {
+          tasks.add(() -> run(event, scanner));
+        }
+      } catch (Throwable t) {
+        cause = t;
+        return false;
+      }
+
+    } else {
+      // non-quality
+      tasks.add(() -> run(event, null));
     }
 
     try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -92,8 +93,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
     }
   }
 
-  protected abstract boolean run(
-      Scheduler.Event event, Storage.Scanner scanner);
+  protected abstract boolean run(Scheduler.Event event, Storage.Scanner scanner);
 
   @Override
   public Throwable getCause() {

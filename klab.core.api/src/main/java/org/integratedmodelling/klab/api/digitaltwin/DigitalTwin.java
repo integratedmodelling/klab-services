@@ -476,6 +476,7 @@ public interface DigitalTwin extends RuntimeAsset {
       ret.setValue(defaultValue);
       ret.setName(name);
       ret.setId(id);
+      ret.setType(observable.getArtifactType());
       return ret;
     }
 

@@ -354,14 +354,6 @@ public interface Observable extends Semantics, Resolvable {
     Builder withAnnotation(Annotation annotation);
 
     Collection<Notification> getNotifications();
-
-    //    /**
-    //     * Advanced. Use ONLY internally!
-    //     *
-    //     * @param s
-    //     * @return
-    //     */
-    //    Builder withReferenceName(String s);
   }
 
   /**
@@ -398,11 +390,6 @@ public interface Observable extends Semantics, Resolvable {
    * @return
    */
   NumericRange getRange();
-
-  //  /**
-  //   * @return
-  //   */
-  //  List<Pair<ValueOperator, Object>> getValueOperators();
 
   /**
    * Each observable must be able to quickly assess the type of the description (observation
@@ -445,14 +432,6 @@ public interface Observable extends Semantics, Resolvable {
    * @return
    */
   ValueMediator mediator();
-
-  //
-  //  /**
-  //   * Not null if the (quality) observable has been given a pre-observed value.
-  //   *
-  //   * @return
-  //   */
-  //  Object getValue();
 
   /**
    * If a default value was defined for a quality observable, it is returned here. It will be
@@ -646,7 +625,6 @@ public interface Observable extends Semantics, Resolvable {
       throw new KlabIllegalStateException("k.LAB environment not configured");
     }
     return configuration.promoteConceptToObservable(
-            configuration.getNonSemanticConcept(SemanticType.NOTHING), named);
+        configuration.getNonSemanticConcept(SemanticType.NOTHING), named);
   }
-
 }

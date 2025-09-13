@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -17,6 +18,7 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -44,26 +46,39 @@ public class ContextualizerExecutor extends AbstractExecutor
   @Override
   protected boolean run(Scheduler.Event event, Storage.Scanner scanner) {
 
-    var geometry = scanner.shard().getGeometry();
+    var geometry = scanner == null ? observation.getGeometry() : scanner.shard().getGeometry();
 
     if (componentRegistry.implementation(callInfo.serviceInfo()).method != null) {
 
       var implementation = componentRegistry.implementation(callInfo.serviceInfo());
+
+      Data.Builder builder = null;
+      boolean needsBuilder =
+          Arrays.stream(implementation.method.getParameterTypes())
+              .anyMatch(cls -> cls.isAssignableFrom(Data.Builder.class));
+
+      if (needsBuilder) {
+        // TODO! MUST PROVIDE A BUILDER IF REQUESTED - for instantiators it's the only way
+      }
+
       var arguments =
           matchArguments(
               implementation.method,
               callInfo.resource(),
               geometry,
-              null,
+              builder,
               scanner,
               observation,
               observation.getObservable(),
+              // TODO can be smarter if a resource or a resource URN is in the parameters
               callInfo.resource() == null ? null : Urn.of(callInfo.resource().getUrn()),
               call.getParameters(),
               call,
+              // TODO can be smarter if an expression is in the parameters
               null, // expression,
+              // TODO can be smarter if a lookup table is in the parameters
               null, // lookupTable,
-              null,
+              null, // TODO INPUTS add
               event,
               scope);
 
@@ -78,6 +93,8 @@ public class ContextualizerExecutor extends AbstractExecutor
                   .implementation(callInfo.serviceInfo())
                   .method
                   .invoke(null, arguments.toArray());
+
+          // TODO PROCESS RESULT - BOOLEAN, NOTIFICATION ETC.
 
         } catch (Exception e) {
           cause = e;

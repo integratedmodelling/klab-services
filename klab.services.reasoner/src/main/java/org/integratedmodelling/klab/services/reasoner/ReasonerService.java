@@ -2583,6 +2583,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             observable.setName(concept.getFormalName());
             observable.setStatedName(concept.getFormalName());
             observable.setReferenceName(concept.getFormalName());
+            observable.setArtifactType(Artifact.Type.forSemantics(nsmain.getType()));
             return observable;
         }
 

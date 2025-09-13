@@ -74,7 +74,7 @@ public abstract class AbstractResourceContextualizer {
         var observationScope = scope.within(observation);
         List<Callable<Observation>> tasks = new ArrayList<>();
         for (var instance : builder.getObjects()) {
-          var child = builder.getObservation();
+          var child = instance.getObservation();
           if (child != null) {
             // ingest the observation according to the native shards
             tasks.add(
@@ -85,6 +85,9 @@ public abstract class AbstractResourceContextualizer {
                               .submit(child)
                               .thenAccept(
                                   (obs -> {
+                                    // TODO if states are there, should use a `klab.inline` adapter
+                                    //  that just matches a buffer to the geometry, and
+                                    //  the inline method for the observation resolution.
                                     /*                                                                    // resolve any child observations, states or instances
                                         if (instance.hasStates() || instance.size() > 0) {
                                             ingest(

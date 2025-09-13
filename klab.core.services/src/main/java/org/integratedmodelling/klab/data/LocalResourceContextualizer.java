@@ -41,9 +41,7 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
 
   @Override
   protected Data.Builder getData(
-      Storage.Scanner scanner,
-      Scheduler.Event event,
-      ContextScope scope) {
+      Storage.Scanner scanner, Scheduler.Event event, ContextScope scope) {
 
     var name =
         observation.getObservable().getStatedName() == null
@@ -57,10 +55,9 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
       builder.setScanner("self", scanner);
       for (var entry : localNames.keySet()) {
         Observation observation = null; // TODO get the obs with the keyed observable
-        if (observation == null) {
+        if (observation != null) {
           var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
-          var shards =
-              storage.scan(event, scanner.shard().getShardingStrategy(), null, true);
+          var shards = storage.scan(event, scanner.shard().getShardingStrategy(), null, true);
           var oscan = shards.get(scanner.shard().getShardIndex());
           builder.setScanner(entry, oscan);
         }
@@ -71,7 +68,7 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
     //  storage and anything the adapter may want.
     adapter.encode(
         resource,
-        scanner == null ? null : scanner.shard().getGeometry(),
+        scanner == null ? observation.getGeometry() : scanner.shard().getGeometry(),
         event,
         builder,
         observation,

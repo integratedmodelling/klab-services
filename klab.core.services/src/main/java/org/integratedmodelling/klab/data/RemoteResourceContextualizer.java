@@ -41,9 +41,7 @@ public class RemoteResourceContextualizer extends AbstractResourceContextualizer
 
   @Override
   protected Data.Builder getData(
-      Storage.Scanner scanner,
-      Scheduler.Event event,
-      ContextScope scope) {
+      Storage.Scanner scanner, Scheduler.Event event, ContextScope scope) {
     try {
       var data =
           service
@@ -57,7 +55,9 @@ public class RemoteResourceContextualizer extends AbstractResourceContextualizer
               // this one is synchronous, called within a CompletableFuture anyway
               .get();
 
-      return new WrappingDataBuilder(data, observation, event, scanner, scope).fillShards();
+      return new WrappingDataBuilder(
+              data, observation, event, scanner, resource.getAdapterType(), scope)
+          .fillShards();
 
     } catch (Exception e) {
       throw new KlabResourceAccessException(e);
