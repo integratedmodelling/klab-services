@@ -96,6 +96,8 @@ public class ContextualizerExecutor extends AbstractExecutor
 
           // TODO PROCESS RESULT - BOOLEAN, NOTIFICATION ETC.
 
+          // TODO INGEST DATA IF BUILDER WAS PASSED
+
         } catch (Exception e) {
           cause = e;
           scope.error(e /* TODO tracing parameters */);
