@@ -68,9 +68,9 @@ public class ObservableImpl implements Observable {
 
   public ObservableImpl() {}
 
-  public ObservableImpl(Concept concept) {
-    setSemantics(concept);
-  }
+//  public ObservableImpl(Concept concept) {
+//    setSemantics(concept);
+//  }
 
   private ObservableImpl(ObservableImpl other) {
     this.semantics = other.semantics;

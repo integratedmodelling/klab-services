@@ -46,7 +46,7 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
-import org.integratedmodelling.klab.runtime.storage.BufferImpl;
+import org.integratedmodelling.klab.runtime.storage.ShardImpl;
 import org.neo4j.cypherdsl.core.*;
 import org.neo4j.driver.*;
 import org.neo4j.driver.exceptions.TransientException;
@@ -782,7 +782,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           case Activity ignored3 -> name + ".id = $" + queryVariable;
           case Observation ignored2 -> name + ".id = $" + queryVariable;
           case Actuator ignored1 -> name + ".id = $" + queryVariable;
-          case Storage.Buffer ignored -> name + ".id = $" + queryVariable;
+          case Storage.Shard ignored -> name + ".id = $" + queryVariable;
           case Agent ignored -> name + ".name = $" + queryVariable;
           default -> null;
         };
@@ -806,7 +806,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           case ActivityImpl activity -> activity.getId();
           case ObservationImpl observation -> observation.getId();
           case Agent agent -> agent.getName();
-          case BufferImpl buffer -> buffer.getId();
+          case ShardImpl buffer -> buffer.getId();
           default -> null;
         };
 
@@ -830,7 +830,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         observation.setUrn(rootContextId + "." + id);
       }
       case ActuatorImpl actuator -> actuator.setId(id);
-      case BufferImpl buffer -> buffer.setId(id);
+      case ShardImpl buffer -> buffer.setId(id);
       case ActivityImpl activity -> {
         activity.setId(id);
         activity.setUrn(rootContextId + "." + id);
@@ -909,7 +909,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return "Agent";
       } else if (Plan.class.isAssignableFrom(cls)) {
         return "Plan";
-      } else if (Storage.Buffer.class.isAssignableFrom(cls)) {
+      } else if (Storage.Shard.class.isAssignableFrom(cls)) {
         return "Data";
       }
     }
@@ -920,7 +920,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           case Activity x -> "Activity";
           case Actuator x -> "Actuator";
           case Agent x -> "Agent";
-          case Storage.Buffer x -> "Data";
+          case Storage.Shard x -> "Data";
           case Plan x -> "Plan";
           default -> null;
         };

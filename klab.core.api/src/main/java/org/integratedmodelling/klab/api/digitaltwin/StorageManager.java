@@ -1,10 +1,8 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.Annotation;
-
-import java.util.Collection;
 
 /**
  * The state storage is a persistent store of state storage data for the digital twin. Each digital
@@ -19,27 +17,25 @@ import java.util.Collection;
 public interface StorageManager {
 
   /**
-   * Create or retrieve storage for the passed observation, using the observation's scale and ID.
-   * The type of the storage will be the default for the observable in the implementation.
+   * Get the storage for an existing observation. If the storage is not yet created, this must throw
+   * a KlabIllegalStateException.
    *
    * @param observation
-   * @return the storage in the specified class.
+   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException if the storage
+   *     was not created before the call
+   * @return the storage for the passed observation
    */
   Storage getStorage(Observation observation);
 
   /**
-   * Get any existing storage for the passed observation or create it honoring any constraints and
-   * configuration embedded in a <code>@storage</code> annotation re: fill curve, splits and type,
-   * which contains the merged options coming from the model, the observable or the namespace.
-   *
-   * <p>If the storage has already been created at the time of the call, the annotation will be
-   * ignored.
+   * Create storage for the passed observation, using the observation's scale and ID and honoring
+   * the passed sharding strategy.
    *
    * @param observation
-   * @param storageAnnotation
-   * @return
+   * @param shardingStrategy
+   * @return the newly created storage
    */
-  Storage getStorage(Observation observation, Annotation storageAnnotation);
+  Storage createStorage(Observation observation, Data.ShardingStrategy shardingStrategy);
 
   /**
    * Safely delete everything that has been stored in the scope we're running. Nothing should be

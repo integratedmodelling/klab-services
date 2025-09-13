@@ -375,7 +375,9 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 
     Extent<?> orig = extent(type);
 
-    if (orig instanceof Time && ((Time) orig).is(Time.Type.INITIALIZATION)) {
+    if (orig instanceof Time time && time.is(Time.Type.INITIALIZATION)) {
+      return Pair.of(orig, 1.0);
+    } else if (other instanceof Time time && time.isGeneric()) {
       return Pair.of(orig, 1.0);
     }
 

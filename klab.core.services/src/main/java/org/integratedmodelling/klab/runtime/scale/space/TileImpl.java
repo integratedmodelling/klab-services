@@ -81,6 +81,11 @@ public class TileImpl extends ShapeImpl implements Tile {
     return ret.encode(language);
   }
 
+  @Override
+  public boolean isRegular() {
+    return true;
+  }
+
   public static TileImpl create(Shape shape, Grid grid, boolean adjust) {
     return new TileImpl(shape, grid, adjust);
   }

@@ -6,42 +6,37 @@ import java.util.*;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.ScalarComputation;
+import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
-import org.integratedmodelling.klab.data.ClientResourceContextualizer;
-import org.integratedmodelling.klab.data.ServiceResourceContextualizer;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
-import org.integratedmodelling.klab.utilities.Utils;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 
-/**
- * Object that follows the execution of the actuators. Each run produces a new context that is the
- * one for the next execution.
- */
 public class CompiledDataflow {
 
   private final RuntimeService runtimeService;
@@ -51,11 +46,72 @@ public class CompiledDataflow {
   private boolean empty;
   private Throwable cause;
   private List<Pair<Actuator, Integer>> computation = new ArrayList<>();
-  private Map<Long, ExecutorImpl> operations = new HashMap<>();
-  private Map<Long, Observation> dependentObservations = new HashMap<>();
+  private final Map<Long, ExecutorImpl> operations = new HashMap<>();
+  private final Map<Long, Observation> dependentObservations = new HashMap<>();
   private Graph<Actuator, DependencyEdge> dependencyGraph;
   private Observation rootObservation;
   private Actuator rootActuator;
+  private final Map<String, CallDescriptors> callInfo = new HashMap<>();
+
+  public void createStorage() {
+
+    for (var operation : operations.values()) {
+      if (operation.observation.getObservable().is(SemanticType.QUALITY)) {
+        digitalTwin
+            .getStorageManager()
+            .createStorage(operation.observation, operation.nativeShardingStrategy);
+      }
+    }
+  }
+
+  /// The executor for each step in a contextualization, each negotiating the various execution
+  /// strategies and any sharding logic. These may be executed in parallel or sequentially. Sharding
+  /// is always parallel and implemented inside each individual executor.
+  ///
+  ///  Four possible execution strategies corresponding to different subclasses:
+  ///  - Call a function from a prototype
+  ///  - Call a local adapter
+  ///  - Invoke a remote adapter and ingest the outputs into local storage
+  ///  - Distribute a scalar operation like an expression computation or a table lookup over the
+  ///    geometry
+  ///
+  /// As the only parameter for the execution is the event, the executors must store the
+  /// observation, the scope, and any target sharding strategy
+  ///
+  public interface ContextualExecutor {
+
+    /**
+     * Called before insertion in the compiled dataflow to ensure everything is OK and online with
+     * the resources being contextualized.
+     *
+     * @return
+     */
+    boolean validate();
+
+    ///  Main executor method
+    /// @return true if successful. A `false` return value will stop contextualization.
+    boolean execute(Scheduler.Event event);
+
+    ///  If [#execute] has returned false, the cause should be here.
+    Throwable getCause();
+  }
+
+  // this is used to keep info around during compilation without calling services too many times
+  public record CallDescriptors(
+      AdapterDescriptor adapterDescriptor,
+      Extensions.FunctionDescriptor serviceInfo,
+      Resource resource,
+      Adapter embeddedAdapter) {
+
+    public Data.ShardingStrategy shardingStrategy() {
+      if (adapterDescriptor != null) {
+        return adapterDescriptor.shardingStrategy();
+      } else if (serviceInfo != null) {
+        return serviceInfo.serviceInfo.getShardingStrategy();
+      }
+      return null;
+    }
+  }
 
   public CompiledDataflow(
       RuntimeService runtimeService,
@@ -80,8 +136,60 @@ public class CompiledDataflow {
     this.digitalTwin = contextScope.getDigitalTwin();
   }
 
+  // use the cache to return the call info
+  private CallDescriptors getCallInfo(ServiceCall call) {
+    var ret = callInfo.get(call.getUrn());
+    if (ret == null) {
+      var preset = RuntimeService.CoreFunctor.classify(call);
+      AdapterDescriptor adapterDescriptor = null;
+      Extensions.FunctionDescriptor serviceInfo = null;
+      Adapter embeddedAdapter = null;
+      Resource resource = null;
+
+      if (preset != null) {
+        switch (preset) {
+          case URN_RESOLVER -> {
+            // TODO use all services hostia
+            resource =
+                scope
+                    .getService(ResourcesService.class)
+                    .retrieveResource(call.getParameters().getList("urns", String.class), scope);
+            if (resource != null) {
+
+              embeddedAdapter =
+                  componentRegistry.getAdapter(
+                      resource.getAdapterType(), /* TODO adapter version! */
+                      Version.ANY_VERSION,
+                      scope);
+
+              adapterDescriptor =
+                  embeddedAdapter == null
+                      ? scope
+                          .getService(ResourcesService.class)
+                          .retrieveAdapterInfo(resource.getAdapterType(), scope)
+                      : embeddedAdapter.getAdapterInfo();
+            }
+          }
+          default -> {}
+        }
+      } else {
+        // TODO this should return a list of candidates, to match based on the parameters. For
+        //  numeric there may be a float and double version.
+        serviceInfo = componentRegistry.getFunctionDescriptor(call);
+      }
+
+      if (adapterDescriptor != null || serviceInfo != null) {
+        ret = new CallDescriptors(adapterDescriptor, serviceInfo, resource, embeddedAdapter);
+        callInfo.put(call.getUrn(), ret);
+      }
+    }
+
+    return ret;
+  }
+
   /**
-   * Build the ordered dependency graph, the executors and the observations
+   * Build the ordered dependency graph, the executors and the observations, using the sharding
+   * strategies computed for each actuator, merged and mapped to the observation's native sharding.
    *
    * @param rootActuator
    * @return
@@ -95,6 +203,7 @@ public class CompiledDataflow {
     requireObservations(rootActuator);
 
     for (var pair : this.computation) {
+      // todo change this with a loop over
       var operation = new ExecutorImpl(pair.getFirst());
       if (!operation.isOperational()) {
         return false;
@@ -319,11 +428,11 @@ public class CompiledDataflow {
   class ExecutorImpl implements DigitalTwin.Executor {
 
     private final Observation observation;
-    protected List<TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean>> executors =
-        new ArrayList<>();
+    protected List<ContextualExecutor> executors = new ArrayList<>();
     private boolean scalar;
     private final boolean operational;
     private final List<ServiceCall> serviceCalls = new ArrayList<>();
+    private Data.ShardingStrategy nativeShardingStrategy;
 
     public ExecutorImpl(Actuator actuator) {
       this.observation =
@@ -331,6 +440,8 @@ public class CompiledDataflow {
               ? rootObservation
               : dependentObservations.get(actuator.getId());
       this.operational = compile(actuator);
+      // TODO if this is restoring an existing observation from the KG, the sharding strategy MUST
+      //  be restored too
     }
 
     private boolean compile(Actuator actuator) {
@@ -341,118 +452,75 @@ public class CompiledDataflow {
 
       ScalarComputation.Builder scalarBuilder = null;
 
-      // each service call may produce one or more function descriptors
-      // separate scalar calls into groups and compile them into one assembled functor
+      if (observation.getObservable().is(SemanticType.QUALITY) && nativeShardingStrategy == null) {
+        for (var call : actuator.getComputation()) {
+          // set to the strategy for the computation adjusted by the actuator's
+          var callInfo = getCallInfo(call);
+          var computationStrategy = callInfo == null ? null : callInfo.shardingStrategy();
+          nativeShardingStrategy =
+              nativeShardingStrategy == null
+                  ? computationStrategy
+                  : nativeShardingStrategy.override(computationStrategy);
+        }
+
+        if (nativeShardingStrategy != null) {
+          // apply any forcings to the merged sharding strategy obtained so far. The actuator's
+          // strategy (coming from model annotations) is first to override; scope is next, and
+          // service
+          // is last, overriding scope settings if needed. This may be revised.
+          nativeShardingStrategy =
+              nativeShardingStrategy.override(
+                  actuator.getShardingStrategy(),
+                  scope.getShardingStrategy(observation),
+                  runtimeService.getDefaultShardingStrategy(observation));
+        }
+      }
+
+      Map<String, Observable> knownObservations = new HashMap<>();
+      // TODO fill in the observables
+
+      /**
+       * Now actually compile each computation, adapting the sharding strategy to whatever the
+       * specific computation requires.
+       *
+       * <p>TODO the calls should be for one shard at a time. Ingestion in the DT, when needed,
+       * should happen AFTER all shards have computed. If there is >1 shard, we should keep the
+       * executor functions and wrap them into another one that runs the shard executors in
+       * parallel.
+       */
       for (var call : actuator.getComputation()) {
 
-        Extensions.FunctionDescriptor currentDescriptor = null;
-
-        /*
-         * These will accumulate arguments that may be required by the invoked method
-         */
-        Resource resource = null;
-        Urn urn = null;
+        var callInfo = getCallInfo(call);
         Expression expression = null;
         LookupTable lookupTable = null;
 
+        if (callInfo == null) {
+          scope.error("Cannot compile executor for " + actuator);
+          return false;
+        }
+
         var preset = RuntimeService.CoreFunctor.classify(call);
         if (preset != null) {
-
-          /* Turn the call into the appropriate function descriptor for the actual call, provided by
-          the adapter or by the runtime. */
-
           switch (preset) {
             case URN_RESOLVER -> {
-              var urns = call.getParameters().getList("urns", String.class);
-              // TODO use all services
-              resource = scope.getService(ResourcesService.class).retrieveResource(urns, scope);
-              final Resource finalResource = resource;
-
-              // FIXME THIS MUST CREATE AS MANY BUFFERS AS THE ADAPTER REQUESTS, USING SPLIT GEOMETRIES AND
-              //  MULTIPLE PARALLEL CALLS
-
-              /*
-              1. check if we have the adapter locally. If so we can use it directly. If the adapter was
-              embeddable, the resolver will have called RuntimeService::resolveContextualizable with the
-              adapter's requirement, so if we don't have it by now, we should use the remote version
-              anyway.
-               */
-              var adapter =
-                  componentRegistry.getAdapter(
-                      resource.getAdapterType(), /* TODO adapter version! */
-                      Version.ANY_VERSION,
-                      scope);
-
-              if (adapter != null && adapter.isEmbeddable()) {
-
-                if (adapter.hasContextualizer()) {
-                  // FIXME move this within the URN_RESOLVER. Also shouldn't happen unless the
-                  // adapter is local.
-                  resource = adapter.contextualize(resource, observation.getGeometry(), scope);
+              if (scalarBuilder != null) {
+                if (!getScalarOperator(scalarBuilder, knownObservations)) {
+                  return false;
                 }
-
-                // enqueue data extraction from adapter method
-                final var contextualizer =
-                    new ServiceResourceContextualizer(
-                        adapter, resource, observation, scope.getDigitalTwin());
-                executors.add(
-                    (geometry, event, scope) ->
-                        contextualizer.contextualize(
-                            // pass the operation for provenance recording
-                            observation, event, scope));
-                continue;
-
-              } else {
-
-                /*
-                2. Use the adapter from the service that provides it.
-                 */
-
-                var service =
-                    scope.getServices(ResourcesService.class).stream()
-                        .filter(r -> r.serviceId().equals(finalResource.getServiceId()))
-                        .findFirst();
-
-                if (service.isEmpty()) {
-                  throw new KlabInternalErrorException(
-                      "Illegal service ID in resource " + resource.getUrn());
-                }
-
-                // FIXME the adapter info must come from the resource service, given that it is
-                // embedded
-                var adapterInfo =
-                    service.get().retrieveAdapterInfo(resource.getAdapterType(), scope);
-                //                    componentRegistry.findAdapter(
-                //                        resource.getAdapterType(), /* TODO need the version in the
-                // resource */
-                //                        Version.ANY_VERSION);
-
-                if (adapterInfo == null) {
-                  /*
-                  Shouldn't happen unless the service is misconfigured. TODO this should log a special
-                  event for admins to react to.
-                   */
-                  throw new KlabServiceAccessException(
-                      "Service providing the resource does not provide the adapter: "
-                          + resource.getUrn());
-                }
-
-                // TODO validate type chain
-                if (adapterInfo.isContextualizing()) {
-                  resource =
-                      service
-                          .get()
-                          .contextualizeResource(resource, observation.getGeometry(), scope);
-                }
-
-                // enqueue data extraction from service method
-                final var contextualizer =
-                    new ClientResourceContextualizer(service.get(), resource, observation);
-                executors.add(
-                    (geometry, event, scope) ->
-                        contextualizer.contextualize(observation, event, scope));
-                continue;
+                scalarBuilder = null;
               }
+              ContextualExecutor executor =
+                  callInfo.embeddedAdapter() != null
+                      ? new LocalAdapterExecutor(callInfo, observation, knownObservations, scope)
+                      : new RemoteAdapterExecutor(callInfo, observation, knownObservations, scope);
+              if (!executor.validate()) {
+                var cause = executor.getCause();
+                if (cause != null) {
+                  scope.error(cause);
+                }
+                return false;
+              }
+              executors.add(executor);
             }
             case EXPRESSION_RESOLVER, LUT_RESOLVER, CONSTANT_RESOLVER -> {
               (scalarBuilder == null
@@ -460,163 +528,53 @@ public class CompiledDataflow {
                           runtimeService.getComputationBuilder(observation, scope, actuator))
                       : scalarBuilder)
                   .add(call);
-              continue;
             }
             case DEFER_RESOLUTION -> {
-              System.out.println("DEFER ZIOCAN");
+              if (scalarBuilder != null) {
+                if (!getScalarOperator(scalarBuilder, knownObservations)) {
+                  return false;
+                }
+                scalarBuilder = null;
+              }
+              throw new KlabUnimplementedException("Deferral execution not yet implemented");
             }
           }
         } else {
-          // TODO this should return a list of candidates, to match based on the parameters. For
-          //  numeric there should be a float and double version.
-          currentDescriptor = componentRegistry.getFunctionDescriptor(call);
-        }
-
-        if (currentDescriptor == null) {
-          scope.error("Cannot compile executor for " + actuator);
-          return false;
-        }
-
-        if (scalarBuilder != null) {
-          var scalarMapper = scalarBuilder.build();
-          executors.add(scalarMapper::execute);
-        }
-
-        var storageAnnotation =
-            Utils.Annotations.mergeAnnotations(
-                "storage", currentDescriptor.serviceInfo, actuator, observation.getObservable());
-
-        // if we're a quality, we need storage at the discretion of the StorageManager.
-        Storage storage =
-            observation.getObservable().is(SemanticType.QUALITY)
-                ? digitalTwin.getStorageManager().getStorage(observation, storageAnnotation)
-                : null;
-        /*
-         * Create a runnable with matched parameters and have it set the context observation
-         * TODO allow multiple methods with same annotation, taking different storage
-         *  implementations, enabling the storage manager to be configured for the wanted precision
-         *
-         * Should match arguments, check if they all match, and if not move to the next until
-         * no available implementations remain.
-         */
-        if (componentRegistry.implementation(currentDescriptor).method != null) {
-
-          //          var runArguments =
-          //              ;
-          //
-          //          if (runArguments == null) {
-          //            return false;
-          //          }
-
-          if (currentDescriptor.staticMethod) {
-            Extensions.FunctionDescriptor finalDescriptor1 = currentDescriptor;
-            var implementation = componentRegistry.implementation(currentDescriptor);
-            var resource1 = resource;
-            if (implementation == null) {
+          // TODO handle scalar geometry contextualizers! Must add to builder if not preset but
+          //  geometry is scalar!!!
+          if (scalarBuilder != null) {
+            if (!getScalarOperator(scalarBuilder, knownObservations)) {
               return false;
             }
-            executors.add(
-                (geometry, event, scope) -> {
-                  try {
-                    var arguments =
-                        ComponentRegistry.matchArguments(
-                            implementation.method,
-                            resource1,
-                            observation.getGeometry(),
-                            null,
-                            observation,
-                            observation.getObservable(),
-                            urn,
-                            call.getParameters(),
-                            call,
-                            storage,
-                            expression,
-                            lookupTable,
-                            null,
-                            storageAnnotation,
-                            event,
-                            scope);
-
-                    if (arguments == null) {
-                      return false;
-                    }
-
-                    var context =
-                        componentRegistry
-                            .implementation(finalDescriptor1)
-                            .method
-                            .invoke(null, arguments.toArray());
-
-                    return true;
-                  } catch (Exception e) {
-                    cause = e;
-                    scope.error(e /* TODO tracing parameters */);
-                  }
-                  return true;
-                });
-          } else if (componentRegistry.implementation(currentDescriptor).mainClassInstance
-              != null) {
-            var implementation = componentRegistry.implementation(currentDescriptor);
-            var resource1 = resource;
-            Extensions.FunctionDescriptor finalDescriptor = currentDescriptor;
-            executors.add(
-                (geometry, event, scope) -> {
-                  try {
-                    var arguments =
-                        ComponentRegistry.matchArguments(
-                            implementation.method,
-                            resource1,
-                            observation.getGeometry(),
-                            null,
-                            observation,
-                            observation.getObservable(),
-                            urn,
-                            call.getParameters(),
-                            call,
-                            storage,
-                            expression,
-                            lookupTable,
-                            null,
-                            storageAnnotation,
-                            event,
-                            scope);
-
-                    if (arguments == null) {
-                      return false;
-                    }
-
-                    var context =
-                        componentRegistry
-                            .implementation(finalDescriptor)
-                            .method
-                            .invoke(
-                                componentRegistry.implementation(finalDescriptor).mainClassInstance,
-                                arguments.toArray());
-                    return true;
-                  } catch (Exception e) {
-                    cause = e;
-                    scope.error(e /* TODO tracing parameters */);
-                  }
-                  return true;
-                });
+            scalarBuilder = null;
           }
+          executors.add(
+              new ContextualizerExecutor(
+                  componentRegistry, callInfo, observation, knownObservations, call, scope));
         }
       }
 
       if (scalarBuilder != null) {
-        var scalarMapper = scalarBuilder.build();
-        executors.add(
-            (geometry, event, scope) -> {
-              try {
-                return scalarMapper.execute(geometry, event, scope);
-              } catch (Throwable e) {
-                cause = e;
-                scope.error(e /* TODO tracing parameters */);
-                throw e;
-              }
-            });
+        if (!getScalarOperator(scalarBuilder, knownObservations)) {
+          return false;
+        }
       }
 
+      return true;
+    }
+
+    private boolean getScalarOperator(
+        ScalarComputation.Builder scalarBuilder, Map<String, Observable> knownObservations) {
+      var executor =
+          new ScalarOperationExecutor(scalarBuilder, observation, knownObservations, scope);
+      if (!executor.validate()) {
+        var cause = executor.getCause();
+        if (cause != null) {
+          scope.error(cause);
+        }
+        return false;
+      }
+      executors.add(executor);
       return true;
     }
 
@@ -628,6 +586,10 @@ public class CompiledDataflow {
     @Override
     public boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
+      if (observation.getObservable().is(SemanticType.QUALITY)) {
+        createStorage();
+      }
+
       scope.send(
           Message.create(
               scope,
@@ -636,7 +598,7 @@ public class CompiledDataflow {
               observation));
 
       for (var executor : executors) {
-        if (!executor.apply(geometry, event, scope)) {
+        if (!executor.execute(event)) {
           scope.send(
               Message.create(
                   scope,
@@ -662,10 +624,6 @@ public class CompiledDataflow {
     }
   }
 
-  //  private void setExecutionContext(Object returnedValue) {
-  //    this.currentExecutionContext = returnedValue;
-  //  }
-
   public String statusLine() {
     return "Execution terminated";
   }
@@ -676,16 +634,6 @@ public class CompiledDataflow {
 
   public Klab.ErrorContext errorContext() {
     return Klab.ErrorContext.RUNTIME;
-  }
-
-  /**
-   * TODO this should be something recognized by the notification to fully describe the context of
-   * execution.
-   *
-   * @return
-   */
-  public Object statusInfo() {
-    return null;
   }
 
   public boolean isEmpty() {

@@ -6,20 +6,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.server.SystemLauncher;
-import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.configuration.Setting;
-import org.integratedmodelling.klab.api.data.KnowledgeGraph;
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -35,14 +35,15 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
+import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.view.UIView;
+import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.RuntimeConfiguration;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4JEmbedded;
@@ -309,10 +310,10 @@ public class RuntimeService extends BaseService
                   () -> {
                     for (var service : serviceContextScope.getServices(serviceClass)) {
                       // if things are OK, the service repeats the ID back
-                      if (service.status().isAvailable() &&
-                              !serviceContextScope
-                          .getId()
-                          .equals(service.registerNewContext(serviceContextScope, userScope))) {
+                      if (service.status().isAvailable()
+                          && !serviceContextScope
+                              .getId()
+                              .equals(service.registerNewContext(serviceContextScope, userScope))) {
                         fail.set(true);
                       }
                     }
@@ -324,11 +325,12 @@ public class RuntimeService extends BaseService
       }
 
       if (fail.get()) {
-        serviceContextScope.send(
+        userScope.send(
             Notification.error(
-                "Error registering context with other services:" + " context is inoperative",
+                "Error registering context with other services: context is inoperative",
                 UIView.Interactivity.DISPLAY));
         serviceContextScope.setOperative(false);
+        return null;
       } else {
         // TODO create DT configuration object and send it through the channel
       }
@@ -518,11 +520,12 @@ public class RuntimeService extends BaseService
 
     if (transaction instanceof DigitalTwinImpl.TransactionImpl transactionImpl) {
       for (var rootActuator : dataflow.getComputation()) {
-        var executionSequence = new CompiledDataflow(this, /*dataflow,*/ rootObservation, scope);
+        var executionSequence = new CompiledDataflow(this, rootObservation, scope);
         if (!executionSequence.compile(rootActuator)) {
           transaction.fail(
               new KlabCompilationError(
-                  "Could not compile execution sequence for this target observation"));
+                  "Could not compile execution sequence for target observation "
+                      + rootObservation));
           return false;
         }
 
@@ -630,6 +633,29 @@ public class RuntimeService extends BaseService
           return resolution;
         }
         ret = Utils.Resources.merge(ret, resolution);
+        if (!ret.isEmpty()) {
+          for (var resource : resolution.getResults()) {
+            if (resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.RESOURCE) {
+              var service =
+                  scope.getService(
+                      ResourcesService.class, ks -> ks.serviceId().equals(resource.getServiceId()));
+              if (service == null) {
+                return ResourceSet.empty(
+                    Notification.error(
+                        "Resource "
+                            + resource.getResourceUrn()
+                            + " is in a service that is not available"));
+              }
+              var res = service.retrieveResource(List.of(resource.getResourceUrn()), scope);
+              if (res == null) {
+                return ResourceSet.empty(
+                    Notification.error(
+                        "Resource " + resource.getResourceUrn() + " is not available"));
+              }
+
+            }
+          }
+        }
       }
 
       // if any embeddable component was returned, attempt to load it
@@ -706,5 +732,36 @@ public class RuntimeService extends BaseService
           "Not ready to compile arbitrary KG query implementations");
     }
     return List.of();
+  }
+
+  /**
+   * Return a default sharding strategy for any observation based on the stored settings
+   *
+   * @return
+   */
+  public Data.ShardingStrategy getDefaultShardingStrategy(Observation observation) {
+
+    var ret = Data.ShardingStrategy.neutral();
+    ret.setDataType(
+        switch (observation.getObservable().getDescriptionType()) {
+          case QUANTIFICATION -> Storage.Type.DOUBLE;
+          case CATEGORIZATION -> Storage.Type.KEYED;
+          case VERIFICATION -> Storage.Type.BOOLEAN;
+          default ->
+              throw new KlabIllegalStateException(
+                  "Unexpected observable type for sharding strategy");
+        });
+
+    // apply settings to modify defaults
+    var forceFloats = settings.get(Setting.USE_SHORT_FLOAT_REPRESENTATION, Boolean.class);
+    var forceScalar = settings.get(Setting.DO_NOT_PARALLELIZE_OBSERVATIONS, Boolean.class);
+    if (ret.getDataType() == Storage.Type.DOUBLE && forceFloats) {
+      ret.setDataType(Storage.Type.FLOAT);
+    }
+    if (forceScalar) {
+      ret.setSuggestedSplits(1);
+    }
+
+    return ret;
   }
 }

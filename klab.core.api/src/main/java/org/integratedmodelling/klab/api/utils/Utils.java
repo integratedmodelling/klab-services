@@ -50,6 +50,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -3910,6 +3911,31 @@ public class Utils {
     }
 
     /**
+     * Distribute a consumer over a set of objects in one virtual thread per object. Return only
+     * when all the threads are finished and return status.
+     *
+     * @param objects
+     * @param task
+     * @return
+     * @param <T>
+     */
+    public static <T> boolean distributeComputation(
+        Collection<T> objects, Consumer<T> task, int timeout, TimeUnit unit) {
+
+      List<Callable<Object>> tasks = new ArrayList<>();
+      for (T object : objects) {
+        tasks.add(Executors.callable(() -> task.accept(object)));
+      }
+
+      try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+        var ret = executorService.invokeAll(tasks, timeout, unit);
+        return ret.stream().noneMatch(objectFuture -> objectFuture.state() == Future.State.FAILED);
+      } catch (Throwable t) {
+        return false;
+      }
+    }
+
+    /**
      * Same as {@link #distributeComputation(Collection, Consumer)} but using a scope to report any
      * error conditions before returning as usual.
      *
@@ -3962,7 +3988,7 @@ public class Utils {
               case Concept ignored -> Concept.class;
               case Storage ignored -> Storage.class;
               // TODO specialized buffers first
-              case Storage.Buffer ignored -> Storage.Buffer.class;
+              case Storage.Shard ignored -> Storage.Shard.class;
               default -> Object.class;
             };
       }

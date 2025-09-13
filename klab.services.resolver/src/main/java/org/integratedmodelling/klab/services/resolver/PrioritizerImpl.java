@@ -551,7 +551,9 @@ public class PrioritizerImpl implements Prioritizer<Model> {
     var mrange =
         NumericRange.create(modelStart == -1 ? 0 : modelStart, modelEnd == -1 ? 0 : modelEnd);
     var crange =
-        NumericRange.create(time.getStart().getMilliseconds(), time.getEnd().getMilliseconds());
+        NumericRange.create(
+            time.getStart() == null ? 0 : time.getStart().getMilliseconds(),
+            time.getEnd() == null ? Long.MAX_VALUE : time.getEnd().getMilliseconds());
 
     /*
      * coverage: if non-grid, 100 for covered, 75 - [0-25] for partially covered, 50

@@ -34,6 +34,7 @@ public class AdapterDescriptor {
   private int splits;
   private Data.FillCurve fillCurve;
   private long minSplitSize;
+  private long maxSize;
 
   // do not remove - for the deserializer
   public AdapterDescriptor() {}
@@ -219,5 +220,19 @@ public class AdapterDescriptor {
 
   public void setMinSplitSize(long minSplitSize) {
     this.minSplitSize = minSplitSize;
+  }
+
+  /**
+   * Create a sharding strategy descriptor from the adapter's parameters.
+   *
+   * @return
+   */
+  public Data.ShardingStrategy shardingStrategy() {
+    var distribution = new Data.ShardingStrategy();
+    distribution.setCurve(fillCurve);
+    distribution.setMaxBufferSize(maxSize);
+    distribution.setMinSplitSize(minSplitSize);
+    distribution.setSuggestedSplits(splits);
+    return distribution;
   }
 }

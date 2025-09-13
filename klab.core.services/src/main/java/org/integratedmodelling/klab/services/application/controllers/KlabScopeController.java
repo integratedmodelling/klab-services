@@ -2,10 +2,10 @@ package org.integratedmodelling.klab.services.application.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.net.URL;
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import org.integratedmodelling.common.authentication.Authentication;
@@ -44,6 +44,10 @@ public class KlabScopeController {
 
   @Autowired ServiceNetworkedInstance<?> instance;
 
+  // TODO we should have a map of top-level service clients per URL, and create children with the
+  //  identity we need upon connection.
+  Map<URL, ServiceClient> serviceClientMap = Collections.synchronizedMap(new HashMap<>());
+
   /**
    * Create a session with the passed name. If a broker is available, also setup messaging and any
    * messaging queues requested with the call, defaulting as per implementation.
@@ -63,10 +67,7 @@ public class KlabScopeController {
       Principal principal,
       HttpServletResponse response,
       @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required = false)
-          Collection<Message.Queue> queuesHeader /*,
-      @RequestHeader(value = ServicesAPI.MESSAGING_URL_HEADER, required = false) String brokerUrl,
-      @RequestHeader(value = ServicesAPI.FEDERATION_ID_HEADER, required = false)
-          String federationId*/) {
+          Collection<Message.Queue> queuesHeader) {
 
     if (principal instanceof EngineAuthorization authorization) {
 
@@ -231,9 +232,6 @@ public class KlabScopeController {
           Collection<Message.Queue> queuesHeader,
       @RequestHeader(value = ServicesAPI.SERVICE_ID_HEADER, required = false)
           String serviceIdHeader,
-      /* @RequestHeader(value = ServicesAPI.FEDERATION_ID_HEADER, required = false)
-          String federationId,
-      @RequestHeader(value = ServicesAPI.MESSAGING_URL_HEADER, required = false) String brokerUrl,*/
       HttpServletResponse response) {
 
     if (principal instanceof EngineAuthorization authorization) {
@@ -245,10 +243,6 @@ public class KlabScopeController {
         var userScope = sessionScope.getParentScope(Scope.Type.USER, UserScope.class);
         var identity = sessionScope.getIdentity();
         var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
-
-        //        if (federationId != null) {
-        //          federation = new Federation(federationId, brokerUrl);
-        //        }
 
         if (federation != null
             && !identity.getData().containsKey(UserIdentity.FEDERATION_DATA_PROPERTY)) {
@@ -330,19 +324,18 @@ public class KlabScopeController {
           */
           serviceSessionScope.setHostServiceId(serviceIdHeader);
           serviceSessionScope.setServices(resources, resolvers, reasoners, runtimes);
-
-                    /*
+          /*
           Give all services a few milliseconds to ensure that they've connected
            */
           var allServices =
-                  Utils.Collections.join(KlabService.class, resources, resolvers, reasoners, runtimes);
+              Utils.Collections.join(KlabService.class, resources, resolvers, reasoners, runtimes);
           Utils.Java.distributeComputation(
-                  allServices,
-                  s -> {
-                    if (s instanceof ServiceClient serviceClient) {
-                      serviceClient.tryConnection(500, TimeUnit.MILLISECONDS);
-                    }
-                  });
+              allServices,
+              s -> {
+                if (s instanceof ServiceClient serviceClient) {
+                  serviceClient.tryConnection(500, TimeUnit.MILLISECONDS);
+                }
+              });
         }
 
         var ret = sessionScope.createContext(request.getConfiguration());

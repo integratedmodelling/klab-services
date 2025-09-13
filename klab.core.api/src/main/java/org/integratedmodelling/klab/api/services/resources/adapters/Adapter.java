@@ -245,6 +245,17 @@ public interface Adapter {
       Observable observable,
       Urn urn,
       Parameters<String> urnParameters,
-      Data inputs,
       Scope scope);
+
+  /**
+   * Retrieve any validator specified for the passed lifecycle phase and return the result of the
+   * call (return value if boolean or true if no exception has been thrown), if any, or true if
+   * there is no validator.
+   *
+   * @param resource
+   * @param scope
+   * @param phase
+   * @return true if validation has succeeded or was not required.
+   */
+  boolean validate(Resource resource, Scope scope, ResourceAdapter.Validator.LifecyclePhase phase);
 }

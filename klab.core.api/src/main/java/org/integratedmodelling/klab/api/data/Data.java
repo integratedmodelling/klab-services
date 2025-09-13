@@ -1,102 +1,220 @@
 package org.integratedmodelling.klab.api.data;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
 
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * The <code>Data</code> object encapsulates the network-transmissible data package specified
- * through the Avro schema and understood by all k.LAB services. If the {@link
- * org.integratedmodelling.klab.api.services.resources.adapters.Adapter} used is available locally,
- * no network transmission will happen. A Data object must be created with a name, an Observable and
- * a Geometry.
+ * through the Avro schema and understood by all k.LAB services. If the {@link Adapter} used is
+ * available locally, no network transmission will happen. A Data object must be created with a
+ * name, an Observable and a Geometry.
  *
  * <p>A Data object that wraps a quality observation will be unmarshalled with an appropriate
- * subclass implementing one of the {@link java.util.PrimitiveIterator} interfaces, so that the
- * numbers can be extracted as needed without boxing as long as the primitive iterator methods are
- * used. In the case of a category quality, the object will implement {@link
- * java.util.PrimitiveIterator.OfInt} and the dataKey will be instantiated as well so that the
- * (Integer) numbers can be translated to the needed objects, normally {@link
- * org.integratedmodelling.klab.api.knowledge.Concept} instances.
+ * subclass implementing one of the {@link PrimitiveIterator} interfaces, so that the numbers can be
+ * extracted as needed without boxing as long as the primitive iterator methods are used. In the
+ * case of a category quality, the object will implement {@link PrimitiveIterator.OfInt} and the
+ * dataKey will be instantiated as well so that the (Integer) numbers can be translated to the
+ * needed objects, normally {@link Concept} instances.
  */
 public interface Data {
 
   /**
-   * TODO merge Cursor and Filler (call it Cursor). Enable 6 unboxing methods for data access in
-   * each subclass:
+   * This collects the information related to how the data should be either stored in memory or
+   * remapped for access by specific contextualizers or adapters, enabling the creation of
+   * independent buffers for parallelization based on the type of contextualization. It is created
+   * by the resolver after collecting the info from the computation (adapter or contextualizer) and
+   * compounding it with any overrides from model/observable annotations and/or runtime
+   * configuration. The finalized distribution strategy is included in the {@link
+   * Actuator}s produced by the resolver for any
+   * quality observations.
    *
-   * <p>add(value) -> standard add using buffer's curve add(value, FillCurve) -> add translating
-   * offsets from another curve set to the same geometry value get() -> retrieve using buffer value
-   * get(FillCurve) -> retrieve at current position translating curve value get(long) -> random
-   * access get() set(value, long) -> random access set()
+   * <p>TODO we should also enable a split based on a collective concept used as spatial/temporal
+   * context for individual computations. This would trigger resolution at the resolver side. It
+   * would be specified in a model using an annotation like <code>
    *
-   * <p>TODO OR: avoid the ones with FillCurve and just ask for a specific curve when creating the
-   * cursor. So just add(value), get(), set(value, long) and get(long). Class without checking: a
-   * different class for the two cases. The method should be available as FC translation from
-   * (maybe) the geometry?
+   * @split({{each hydrology:RiverBasin}})</code> on a model.
+   * <p>
+   * - curve the fill curve providing meaning for the sequence of data in storage
+   * - suggestedSplits the number of splits suggested for data parallelization, with -1 for
+   * arbitrary and 1 for no splits.
+   * - minSplitSize minimum geometry size for a buffer when splits are requested
+   * - maxBufferSize maximum size for the overall data operation to apply. If the geometry is
+   * larger than this, the adapter or contextualizer will be rejected by the resolver.
+   * - dataType the requested or native data type for the operation.
    */
+  class ShardingStrategy {
 
-  /**
-   * A Cursor iterates one or more geometry dimensions using a long offset. If the geometry it
-   * refers to results from splitting an original larger geometry, it can also locate the current
-   * offset in it.
-   */
-  interface Cursor {
+    private FillCurve curve = FillCurve.UNSPECIFIED;
+    private int suggestedSplits = -1;
+    private long minSplitSize = 0;
+    private long maxBufferSize = 0;
+    private Storage.Type dataType;
 
-    /**
-     * The linear offset in the geometry corresponding to the dimension offsets passed relative to
-     * the space filling curve implemented, possibly along with offsets in any other varying
-     * dimensions. The passed offsets will be matched to the varying dimensions, ignoring the
-     * geometry extents that do not vary and assuming the dimensionality of the filling curve to
-     * establish the leval number of parameters. This should be used in situations when the geometry
-     * has been filtered so that only the varying dimensions remain.
-     *
-     * @param dimensionOffsets
-     * @return the offset or -1L if no mapping is possible.
-     */
-    long offset(Cursor other, long... dimensionOffsets);
+    public ShardingStrategy() {}
 
-    /**
-     * Produce a scanner that, at minimum, will produce all the consecutive long indices along the
-     * fill curve. The scanners exposed by cursors that scan a data buffer can also expose methods
-     * to set/get typed values sequentially.
-     *
-     * @return a primitive iterator of long values representing indices along the fill curve
-     */
-    PrimitiveIterator.OfLong scan();
-  }
-
-  /** Non-boxing mapper for extent offsets to n-dimensional coordinates. */
-  @FunctionalInterface
-  public interface LongToLongArrayFunction {
+    public ShardingStrategy(
+        FillCurve curve,
+        int suggestedSplits,
+        long minSplitSize,
+        long maxBufferSize,
+        Storage.Type dataType) {
+      this.curve = curve;
+      this.suggestedSplits = suggestedSplits;
+      this.minSplitSize = minSplitSize;
+      this.maxBufferSize = maxBufferSize;
+      this.dataType = dataType;
+    }
 
     /**
-     * Applies this function to the given argument.
+     * Neutral sharding strategy that won't override anything when merged with another.
      *
-     * @param value the function argument
-     * @return the function result
+     * @return
      */
-    long[] apply(long value);
-  }
-
-  /** Non-boxing mapper for extent n-dimensional coordinates to linear offsets. */
-  @FunctionalInterface
-  public interface LongArrayToLongFunction {
+    public static ShardingStrategy neutral() {
+      return new ShardingStrategy();
+    }
 
     /**
-     * Applies this function to the given argument.
+     * Return a trivial, linear-filling, non-parallelizing, all-accepting sharding strategy for the
+     * passed storage type. For testing purposes.
      *
-     * @param value the function argument
-     * @return the function result
+     * @param dataType
+     * @return
      */
-    long apply(long[] value);
+    public static ShardingStrategy trivial(Storage.Type dataType) {
+      var ret = new ShardingStrategy();
+      ret.curve = FillCurve.D1_LINEAR;
+      ret.suggestedSplits = 1;
+      ret.minSplitSize = 0;
+      ret.maxBufferSize = 0;
+      ret.dataType = dataType;
+      return ret;
+    }
+
+    public FillCurve getCurve() {
+      return curve;
+    }
+
+    public void setCurve(FillCurve curve) {
+      this.curve = curve;
+    }
+
+    public int getSuggestedSplits() {
+      return suggestedSplits;
+    }
+
+    public void setSuggestedSplits(int suggestedSplits) {
+      this.suggestedSplits = suggestedSplits;
+    }
+
+    public long getMinSplitSize() {
+      return minSplitSize;
+    }
+
+    public void setMinSplitSize(long minSplitSize) {
+      this.minSplitSize = minSplitSize;
+    }
+
+    public long getMaxBufferSize() {
+      return maxBufferSize;
+    }
+
+    public void setMaxBufferSize(long maxBufferSize) {
+      this.maxBufferSize = maxBufferSize;
+    }
+
+    public Storage.Type getDataType() {
+      return dataType;
+    }
+
+    public void setDataType(Storage.Type dataType) {
+      this.dataType = dataType;
+    }
+
+    private ShardingStrategy copy() {
+      return new ShardingStrategy(
+          this.curve, this.suggestedSplits, this.minSplitSize, this.maxBufferSize, this.dataType);
+    }
+
+    /**
+     * Adjust the strategy to reflect the passed others, which may override the current values. The
+     * passed others are in order of precedence: the one after the first overrides the previous.
+     * Overriding may only happen if compatible (e.g. the data type).
+     *
+     * @param others
+     * @return
+     */
+    public ShardingStrategy override(ShardingStrategy... others) {
+      var ret = this.copy();
+      if (others != null) {
+        for (var other : others) {
+          if (other != null) {
+            if (ret.dataType == null) {
+              ret.dataType = other.dataType;
+            } else if (other.dataType != null && ret.dataType != other.dataType) {
+              if (ret.dataType.isNumber() && other.dataType.isNumber()) {
+                ret.dataType = other.dataType;
+              } else {
+                throw new IllegalArgumentException(
+                    "Incompatible data types: " + ret.dataType + " vs. " + other.dataType);
+              }
+            }
+            if (ret.curve == FillCurve.UNSPECIFIED || other.curve != FillCurve.UNSPECIFIED) {
+              ret.curve = other.curve;
+            }
+            if (ret.suggestedSplits == -1 || other.suggestedSplits != -1) {
+              ret.suggestedSplits = other.suggestedSplits;
+            }
+            if (ret.minSplitSize == 0 || other.suggestedSplits != 0) {
+              ret.minSplitSize = other.minSplitSize;
+            }
+            if (ret.maxBufferSize == 0 || other.maxBufferSize != 0) {
+              ret.maxBufferSize = other.maxBufferSize;
+            }
+          }
+        }
+      }
+      return ret;
+    }
+
+    public boolean equals(ShardingStrategy other) {
+      if (other == null) return false;
+      return suggestedSplits == other.suggestedSplits
+          && minSplitSize == other.minSplitSize
+          && maxBufferSize == other.maxBufferSize
+          && curve == other.curve
+          && dataType == other.dataType;
+    }
+
+    /**
+     * Return the base interface for the storage scanner adopting this strategy
+     *
+     * @return
+     */
+    public Class<? extends Storage.Scanner> getScannerClass() {
+      if (dataType == null) {
+        return null;
+      }
+      return switch (dataType) {
+        case DOUBLE -> Storage.DoubleScanner.class;
+        case FLOAT -> Storage.FloatScanner.class;
+        case INTEGER -> Storage.IntScanner.class;
+        case LONG -> Storage.LongScanner.class;
+        case KEYED -> Storage.KeyScanner.class;
+        case BOOLEAN -> Storage.BooleanScanner.class;
+      };
+    }
   }
 
   /**
@@ -517,6 +635,13 @@ public interface Data {
     Builder notification(Notification notification);
 
     /**
+     * Any objects built during contextualization will be available here
+     *
+     * @return
+     */
+    List<Builder> getObjects();
+
+    /**
      * Pass the ID of an adapter that will interpret the contents. If not passed, raw binary content
      * is assumed. If passed, the data object built may contain only references to the configuration
      * of the identified adapter.
@@ -537,14 +662,14 @@ public interface Data {
     Builder metadata(String key, Object value);
 
     /**
-     * Returns a new builder on which build() must be called to confirm the transaction. The
-     * geometry is mandatorily that of the builder and the name is the URN of the observable. On the
-     * builder, one of the fillers must be called to set the numbers.
+     * Returns a builder specialized for a secondary observation identified by a <em>known</em>
+     * identifier. Using this is only necessary if anything must be set for the observation besides
+     * the values, such as metadata. Otherwise the scanner can simply be retrieved directly using
+     * {@link #scanner(String, Class)}.
      *
-     * @param observable the observable for which to create a state
      * @return a new builder for the state
      */
-    Builder state(Observable observable);
+    Builder state(String outputId);
 
     /**
      * Returns a new builder for an object, on which build() must be called to confirm the
@@ -552,44 +677,48 @@ public interface Data {
      * used to add metadata, states or child objects.
      *
      * @param name the name of the object
-     * @param observable the observable for the object
+     * @param observable the observable for the object FIXME should not be necessary?
      * @param geometry the geometry for the object
      * @return a new builder for the object
      */
     Builder object(String name, Observable observable, Geometry geometry);
 
     /**
-     * Create a buffer of the specified type using the specified space filling curve. Must be called
-     * on the result of state() or an exception will be thrown. When constructing a state, only one
-     * buffer is requested for the full observation; if the data are produced in parallel, the
-     * buffer implementation must allow concurrent setting. At the resource side, the parallelism is
-     * usually handled by making multiple requests in parallel rather than splitting one into
-     * multiple buffers.
+     * Create a scanner of the specified type using the filling curve and geometry declared for the
+     * adapter or method. The scanner will be matched to the geometry being contextualized and will
+     * refer to the main output.
      *
-     * <p>TODO restore a buffers() with a size or split parameter to produce multiple parallel
-     * buffers. Those need to be known at the consumer side, so they would complicate the Avro
-     * schema.
-     *
-     * <p>FIXME this should return a filler, not a Buffer. The buffer exists outside of the builder.
-     * This one just forces the call to scan() which adds nothing to the semantics.
-     *
-     * @param fillerClass the class of buffer to create
-     * @param fillCurve the space filling curve to use
-     * @return a single buffer of the specified type using the specified space filling curve
-     * @param <T> the type of buffer
-     * @throws KlabIllegalStateException if called on an object builder or if the filling curve
-     *     cannot be matched to the geometry.
+     * @param scannerClass the class of scanner to create
+     * @param <T> the type of scanner desired
+     * @return a single scanner of the specified type using the specified space filling curve
+     * @throws KlabIllegalStateException if the artifact type is incompatible with the requested
+     *     scanner class
      */
-    <T extends Storage.Buffer> T buffer(Class<T> fillerClass, FillCurve fillCurve);
+    <T extends Storage.Scanner> T scanner(Class<T> scannerClass);
 
     /**
-     * Must be called on any secondary builders. Should NOT be called on the root builder, passed to
-     * encoders. Nothing needs to be done with the output which is automatically added if this comes
-     * from a {@link #state(Observable)} or {@link #object(String, Observable, Geometry)} call.
+     * Return a scanner of the specified type for an additional output or for an input, using the
+     * filling curve and geometry declared for the adapter or method. The identifier will be matched
+     * to the inputs and additional outputs declared for the contextualizer being used, and an
+     * exception will be thrown if the correspondent observation is not understood. If the scanner
+     * refers to an input observation, any set operations called on it will throw an exception.
      *
-     * @return the built Data object
+     * <p>Scanners can be retrieved by an instance returned by state() if anything besides the
+     * values must be set in the observation.
+     *
+     * @param identifier
+     * @param scannerClass
+     * @param <T>
+     * @return
      */
-    Data build();
+    <T extends Storage.Scanner> T scanner(String identifier, Class<T> scannerClass);
+
+    /**
+     * Retrieve the observation being contextualized (not resolved at this point).
+     *
+     * @return
+     */
+    Observation getObservation();
   }
 
   /**
@@ -647,32 +776,31 @@ public interface Data {
    * observable requested, and other ancillary observations may have been produced if requested
    * through an observation constraint.
    *
-   * <p>Each returned object will implement one of the {@link java.util.PrimitiveIterator} classes.
-   * A class switch should be used along with the fill curve to transfer the data to the storage,
-   * filtering through the {@link #dataKey()} if appropriate.
+   * <p>Each returned object will implement one of the {@link PrimitiveIterator} classes. A class
+   * switch should be used along with the fill curve to transfer the data to the storage, filtering
+   * through the {@link #dataKey()} if appropriate.
    *
    * @return a list of child data objects
    */
   List<Data> children();
 
-  /**
-   * Annotations are important because they contain indications re: fill curve, splits and any
-   * runtime configuration. The key annotations for qualities are <code>fillcurve</code> and <code>
-   * split</code>.
-   *
-   * <p>TODO expose annotation names and methods so they are recognized and validated at the API
-   * level
-   *
-   * @return a collection of annotations associated with this data object
-   */
-  Collection<Annotation> annotations();
+  //  /**
+  //   * Annotations are important because they contain indications re: fill curve, splits and any
+  //   * runtime configuration. The key annotations for qualities are <code>fillcurve</code> and
+  // <code>
+  //   * split</code>.
+  //   *
+  //   * <p>TODO expose annotation names and methods so they are recognized and validated at the API
+  //   * level
+  //   *
+  //   * @return a collection of annotations associated with this data object
+  //   */
+  //  Collection<Annotation> annotations();
 
   /**
    * This is not null only when the observable is a categorical quality, i.e its {@link
-   * org.integratedmodelling.klab.api.knowledge.DescriptionType} is {@link
-   * org.integratedmodelling.klab.api.knowledge.DescriptionType#CATEGORIZATION}. In this case the
-   * data object will implement {@link java.util.PrimitiveIterator.OfInt} and can be iterated to
-   * extract the categories.
+   * DescriptionType} is {@link DescriptionType#CATEGORIZATION}. In this case the data object will
+   * implement {@link PrimitiveIterator.OfInt} and can be iterated to extract the categories.
    *
    * @return a map of integer keys to category string values
    */
@@ -742,10 +870,10 @@ public interface Data {
         return List.of();
       }
 
-      @Override
-      public Collection<Annotation> annotations() {
-        return List.of();
-      }
+      //      @Override
+      //      public Collection<Annotation> annotations() {
+      //        return List.of();
+      //      }
 
       @Override
       public Map<Integer, String> dataKey() {

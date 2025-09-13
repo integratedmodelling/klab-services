@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -25,6 +27,8 @@ import org.integratedmodelling.klab.api.utils.Utils;
 /**
  * Scalar computation implementation using Groovy-based expressions and turning the sequence into a
  * compiled Java class for execution.
+ *
+ * TODO FIXME update for using Scanner on independent shards and not Storage
  */
 public class ScalarComputationGroovy implements ScalarComputation {
 
@@ -123,7 +127,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
       args.add(scope);
       args.add(target);
 
-      /**
+      /*
        * TODO all steps must generate merged local variables (using a map) and individual scalar
        * code blocks. These must be generated inside the main loop within the concurrent buffer
        * mapper function. The main loop iterates the selfBuffer[n] which is the last parameter in
@@ -154,6 +158,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
               if (desc.nonScalarReferenceCount() + desc.scalarReferenceCount() > 0) {
                 args.add(observation);
               }
+              // FIXME we must have buffers and/or scanners, one per instance because we are
+              //  downstream of parallelization
               var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
               codeInfo.getConstructorArguments().add("Observation " + identifier);
               codeInfo.getFieldDeclarations().add("Observation __" + identifier);
@@ -182,7 +188,9 @@ public class ScalarComputationGroovy implements ScalarComputation {
       scalarBuffers.put("self", new VarInfo("self", getTypeDeclaration(selfStorage), 0));
 
       // buffer creation
-      codeInfo.getBodyInitializationStatements().add("def eventTime = event == null ? null : event.time");
+      codeInfo
+          .getBodyInitializationStatements()
+          .add("def eventTime = event == null ? null : event.time");
       StringBuilder bufferDeclaration =
           new StringBuilder("def bufferSets = Utils.Collections.transpose(selfBuffers");
       for (String var : scalarBuffers.keySet()) {
@@ -223,8 +231,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
     }
 
     private String getTypeDeclaration(Storage storage) {
-      return switch (storage.getType()) {
-        case BOXING -> "Object";
+      return switch (storage.getNativeType()) {
         case DOUBLE -> "double";
         case FLOAT -> "float";
         case INTEGER -> "int";

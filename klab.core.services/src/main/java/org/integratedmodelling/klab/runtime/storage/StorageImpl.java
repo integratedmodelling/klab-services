@@ -1,119 +1,245 @@
 package org.integratedmodelling.klab.runtime.storage;
 
-import java.util.*;
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NavigableMap;
+import java.util.TreeMap;
+
 import org.integratedmodelling.common.knowledge.GeometryRepository;
-import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Geometries;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
-import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.scope.Persistence;
-import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 
-/**
- * Abstract storage class providing geometry and buffer indexing, histograms, merging and splitting.
- */
+// TODO this will become the next Storage implementation
 public class StorageImpl implements Storage {
 
-  @Deprecated protected final Geometry geometry;
-  @Deprecated protected Data.FillCurve fillCurve;
-  @Deprecated protected int splits;
+  private final Observation observation;
+  private final ContextScope scope;
+  private final Data.ShardingStrategy nativeShardingStrategy;
+  private final StorageManagerImpl storageManager;
 
-  protected final Type type;
-  protected final StorageManagerImpl stateStorage;
-  protected final Observation observation;
-  protected final ServiceContextScope contextScope;
-  protected Persistence persistence;
-  private long transientId = Klab.getNextId();
+  private static class ComparableLongList extends ArrayList<Long>
+      implements Comparable<ComparableLongList> {
+    @Serial private static final long serialVersionUID = 1L;
 
-  /*
-   * Buffer storage along slowest-varying dimensions. All dimensions except the
-   * last (space) have linear indexing along a "start" number. The final version of this
-   * should have a Pair<NavigableMap, List<AbstractBuffer>> argument, which makes it compatible
-   * with multiple non-spatial dimensions. But that's unlikely to be useful soon and makes the code
-   * very complex, so we just assume start time as the first index and let the implementation provide
-   * as many buffers as needed for the second, which is assumed to be space.
-   *
-   */
-  private NavigableMap<Long, List<BufferImpl>> buffers = new TreeMap<>();
-
-  protected StorageImpl(
-      Observation observation,
-      Type type,
-      Data.FillCurve fillingCurve,
-      int splits,
-      StorageManagerImpl stateStorage,
-      ServiceContextScope contextScope) {
-    this.type = type;
-    this.stateStorage = stateStorage;
-    this.observation = observation;
-    this.geometry = observation.getGeometry();
-    this.contextScope = contextScope;
-    this.fillCurve = fillingCurve;
-    this.splits = contextScope.getSplits(splits);
-  }
-
-  /**
-   * Used after the buffers have been created.
-   *
-   * @param geometry
-   * @return
-   */
-  public List<Buffer> buffers(Geometry geometry, Time eventTime) {
-    return buffersCovering(geometry, eventTime, this.fillCurve, this.type);
-  }
-
-//  @Override
-//  public List<? extends Buffer> buffers(
-//      Geometry geometry, Time eventTime, Annotation storageAnnotation) {
-//    return List.of();
-//  }
-
-  @Override
-  public <T extends Buffer> List<T> buffers(
-      Geometry geometry, Time eventTime, Class<T> bufferClass) {
-
-    var nVaryingDimensions = geometry.getDimensions().stream().filter(d -> d.size() > 1).count();
-    if (nVaryingDimensions > 1) {
-      throw new KlabIllegalStateException(
-          "Cannot create or retrieve buffers for more than one varying geometry extent at a time");
+    public ComparableLongList() {
+      super();
     }
 
-    return (List<T>) buffersCovering(geometry, eventTime, this.fillCurve, this.type);
+    public ComparableLongList(List<Long> key) {
+      super(key);
+    }
+
+    @Override
+    public int compareTo(ComparableLongList other) {
+      int size = Math.min(this.size(), other.size());
+      for (int i = 0; i < size; i++) {
+        int comparison = Long.compare(this.get(i), other.get(i));
+        if (comparison != 0) {
+          return comparison;
+        }
+      }
+      return Integer.compare(this.size(), other.size());
+    }
   }
 
   /*
-  The storage doesn't have a fill curve until the first buffer request.
+   * Buffer storage along slowest-varying dimensions. All dimensions except one (space) must have
+   * linear indexing and come from the scheduler event that serves as an index.
    */
+  private NavigableMap<ComparableLongList, List<Shard>> shards = new TreeMap<>();
+
+  /**
+   * Create the storage container for the observation according to the observation's own sharding
+   * strategy, which determines the specific native type for numeric observations, and all options
+   * related to storage and distribution. Shards are created upon first access and reinterpreted
+   * according to the requesting sharding strategy.
+   *
+   * @param observation
+   * @param contextScope
+   */
+  public StorageImpl(
+      Observation observation,
+      Data.ShardingStrategy shardingStrategy,
+      ContextScope contextScope,
+      StorageManagerImpl storageManager) {
+    this.observation = observation;
+    this.scope = contextScope;
+    this.storageManager = storageManager;
+    // TODO prepare shard descriptors from any existing shards in the knowledge graph! If there is a
+    // different sharding strategy, adopt that as native and create mediators.
+    this.nativeShardingStrategy = shardingStrategy;
+  }
+
+  // used only for testing, won't work for anything else
+  private StorageImpl() {
+    observation = null;
+    scope = null;
+    nativeShardingStrategy = Data.ShardingStrategy.trivial(Type.DOUBLE);
+    storageManager = null;
+  }
+
   @Override
-  public Data.FillCurve spaceFillCurve() {
-    return fillCurve;
+  public Type getNativeType() {
+    return nativeShardingStrategy.getDataType();
   }
 
   /**
-   * Retrieve the merged histogram. TODO we should cache if the owning state is finalized.
+   * Generate the best-case scenario for an overall geometry according to preferences set in the
+   * adapter or contextualizer.
    *
+   * @param original
+   * @param desiredSplits
+   * @param minSize
+   * @param maxSize
    * @return
    */
+  private List<Geometry> getGeometries(
+      Geometry original, int desiredSplits, long minSize, long maxSize) {
+
+    if (desiredSplits == 1) {
+      return List.of(original);
+    }
+    var splits = desiredSplits;
+    if (splits <= 0) {
+      var dsplits = original.size() / minSize;
+      while (original.size() / dsplits > maxSize) {
+        dsplits *= 2;
+      }
+      splits = (int) dsplits;
+    }
+
+    return original.split(splits);
+  }
+
+  @Override
+  public List<Shard> getNativeShards(Scheduler.Event event) {
+
+    var time = event.getTime();
+    if (time.size() != 1) {
+      throw new KlabUnimplementedException(
+          "Multiple time steps for a buffer request during contextualization");
+    }
+
+    var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry()).at(time);
+    long timeStart = time.is(Time.Type.INITIALIZATION) ? 0 : time.getStart().getMilliseconds();
+    var key =
+        scale.getExtents().stream()
+            // TODO generalize: remove the moving dimension in the geometry - no scenarios so far
+            //  under which it's not space.
+            .filter(e -> e.getType() != Geometry.Dimension.Type.SPACE)
+            .map(
+                e ->
+                    e.getType() == Geometry.Dimension.Type.TIME
+                        ? timeStart
+                        : /* TODO use the index for any further dimension, unused for now */ 0L)
+            .toList();
+
+    return shards.computeIfAbsent(new ComparableLongList(key), k -> createShards(scale, timeStart));
+  }
+
+  private List<Shard> createShards(Scale scale, long timeStart) {
+
+    if (scale.size() == 1) {
+      return List.of(ShardImpl.trivial(nativeShardingStrategy.getDataType()));
+    }
+
+    var shards = new ArrayList<Shard>();
+    int index = 0; // TODO do we need this to change with the time slice?
+    for (var geometry :
+        getGeometries(
+            scale,
+            nativeShardingStrategy.getSuggestedSplits(),
+            nativeShardingStrategy.getMinSplitSize(),
+            nativeShardingStrategy.getMaxBufferSize())) {
+      var shard =
+          new ShardImpl(
+              geometry,
+              observation,
+              nativeShardingStrategy,
+              index++,
+              timeStart,
+              storageManager,
+              scope.getConfiguration().getPersistence());
+
+      shards.add(shard);
+    }
+
+    return shards;
+  }
+
+  @Override
+  public <T extends Scanner> List<T> scan(
+      Scheduler.Event locator,
+      Data.ShardingStrategy shardingStrategy,
+      Class<T> scannerClass,
+      boolean readOnly) {
+    if (this.nativeShardingStrategy.equals(shardingStrategy)) {
+      return getNativeShards(locator).stream()
+          .map(shard -> (T) shard.getNativeScanner())
+          .toList();
+    }
+    return remapScanners(
+        getNativeShards(locator).stream()
+            .map(shard -> shard.getNativeScanner())
+            .toList(),
+        shardingStrategy,
+        scannerClass);
+  }
+
+  /**
+   * Remap a list of scanners to those representing the requested sharding strategy. This may entail
+   * creating temporary geometries and merging or splitting scanners to reflect them. Data types may
+   * need to be cast to remap to a different compatible type.
+   *
+   * @param nativeScanners
+   * @param shardingStrategy
+   * @param scannerClass
+   * @param <T>
+   * @return
+   */
+  private <T extends Scanner> List<T> remapScanners(
+      List<Scanner> nativeScanners, Data.ShardingStrategy shardingStrategy, Class<T> scannerClass) {
+    // TODO! two steps: 1) splits & curve; 2) data type casting
+    return (List<T>) nativeScanners;
+  }
+
+  @Override
+  public Data.ShardingStrategy getNativeShardingStrategy() {
+    return nativeShardingStrategy;
+  }
+
+  public List<Shard> allShards() {
+    var ret = new ArrayList<Shard>();
+    shards.values().forEach(ret::addAll);
+    return ret;
+  }
+
   public com.dynatrace.dynahist.Histogram histogram() {
 
-    var allBuffers = allBuffers();
+    var allBuffers = allShards();
     if (allBuffers.size() == 1) {
-      return ((BufferImpl) allBuffers.getFirst()).histogram;
+      return ((ShardImpl) allBuffers.getFirst()).histogram;
     } else if (allBuffers.size() > 1) {
       com.dynatrace.dynahist.Histogram ret = null;
-      var first = ((BufferImpl) allBuffers.getFirst()).histogram;
+      var first = ((ShardImpl) allBuffers.getFirst()).histogram;
       if (first != null) {
         ret = com.dynatrace.dynahist.Histogram.createDynamic(first.getLayout());
         for (var buffer : allBuffers) {
-          if (((BufferImpl) buffer).histogram != null) {
-            ret.addHistogram(((BufferImpl) buffer).histogram);
+          if (((ShardImpl) buffer).histogram != null) {
+            ret.addHistogram(((ShardImpl) buffer).histogram);
           }
         }
       }
@@ -121,92 +247,9 @@ public class StorageImpl implements Storage {
     return null;
   }
 
-  @Override
-  public Persistence persistence() {
-    return persistence;
-  }
-
-  protected List<Buffer> buffersCovering(
-      Geometry geometry, Time eventTime, Data.FillCurve fillingCurve, Type dataType) {
-
-    var scale = GeometryRepository.INSTANCE.scale(geometry);
-    var time = eventTime == null ? scale.getTime() : eventTime;
-    if (time.size() != 1) {
-      throw new KlabUnimplementedException(
-          "Multiple time steps for a buffer request during contextualization");
-    }
-
-    long timeStart = time.is(Time.Type.INITIALIZATION) ? 0 : time.getStart().getMilliseconds();
-    return buffers
-        .computeIfAbsent(
-            timeStart, k -> new ArrayList<>(createBuffers(geometry, observation, timeStart)))
-        .stream()
-        .map(b -> adaptBuffer(b, fillingCurve))
-        .toList();
-  }
-
-  private List<BufferImpl> createBuffers(
-      Geometry geometry, Observation observation, long timestamp) {
-
-    var ret = new ArrayList<BufferImpl>();
-    long[] splitSizes = new long[splits];
-    long size = geometry.size() / splits;
-    long remd = geometry.size() % splits;
-    Arrays.fill(splitSizes, size);
-    splitSizes[splits - 1] += remd;
-
-    long offset = 0L;
-    for (long bs : splitSizes) {
-      ret.add(
-          switch (type) {
-            case BOXING -> null;
-            case DOUBLE ->
-                new DoubleBufferImpl(geometry, observation, this, bs, fillCurve, offset, timestamp);
-            case FLOAT -> null;
-            case INTEGER -> null;
-            case LONG -> null;
-            case KEYED -> null;
-            case BOOLEAN -> null;
-          });
-      offset += bs;
-    }
-
-    return ret;
-  }
-
-  @Override
-  public long getTransientId() {
-    return transientId;
-  }
-
-  /** DO NOT CALL - reserved for serialization purposes */
-  public void setTransientId(long transientId) {
-    this.transientId = transientId;
-  }
-
-  private Buffer adaptBuffer(BufferImpl b, Data.FillCurve fillingCurve) {
-    // TODO !
-    if (b.getFillingCurve() != fillingCurve) {
-      // TODO
-    }
-    return b;
-  }
-
-  @Override
-  public List<Buffer> allBuffers() {
-    var ret = new ArrayList<Buffer>();
-    buffers.values().forEach(ret::addAll);
-    return ret;
-  }
-
-  @Override
-  public Type getType() {
-    return this.type;
-  }
-
-  @Override
-  public Geometry getGeometry() {
-    return this.geometry;
+  private <T extends Scanner> T mapShardToScanner(
+      Shard shard, Data.ShardingStrategy request, Class<T> scannerClass) {
+    throw new KlabUnimplementedException("shard mapping unimplemented");
   }
 
   @Override
@@ -214,12 +257,13 @@ public class StorageImpl implements Storage {
     return Utils.Data.adaptHistogram(histogram());
   }
 
-  @Override
-  public long getId() {
-    return 0;
-  }
+  public static void main(String[] args) {
 
-  public Data.FillCurve getFillCurve() {
-    return fillCurve;
+    var s = new StorageImpl();
+
+    var original = Geometry.create(Geometries.CENTRAL_COLOMBIA);
+    for (var g : s.getGeometries(original, -1, 65600, Long.MAX_VALUE)) {
+      System.out.println(g);
+    }
   }
 }

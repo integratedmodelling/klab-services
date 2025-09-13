@@ -54,9 +54,13 @@ public class AMQPChannel {
     this.queue = queue;
     this.exchangeName = federation.getId() + ".exchange";
     this.messageConsumer = messageConsumer;
-    this.online = connect();
-    this.federationWide = queue.equals(federation.getId());
     this.klabChannel = channel;
+    if (queue == null || channel == null) {
+      this.online = false;
+    } else {
+      this.federationWide = queue.equals(federation.getId());
+      this.online = connect();
+    }
   }
 
   public void filter(Collection<Message.Queue> queues) {

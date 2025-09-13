@@ -236,14 +236,6 @@ public interface ContextScope extends SessionScope {
    */
   Collection<Observation> affected(Observation observation);
 
-  //  /**
-  //   * Start the scheduling if the context occurs; do nothing if not, or if there are no new
-  //   * transitions to calculate. This can be called multiple times, normally after each
-  // observation,
-  //   * with intelligent "replay" of any transitions that need to be seen again.
-  //   */
-  //  void runTransitions();
-
   /**
    * Return the portion of the provenance graph that pertains to this scope. This may be empty in an
    * empty context, never null. Provenance will be relative to the context observation this scope
@@ -350,6 +342,18 @@ public interface ContextScope extends SessionScope {
    * @return
    */
   List<ResolutionConstraint> getResolutionConstraints();
+
+  /**
+   * The scope can be created with an explicitly set sharding strategy, to override or limit
+   * anything that was set by models or contextualizers, within the limits of the runtime's
+   * configuration.
+   *
+   * @param observation passed to enable specific choices w.r.t. geometry or observable, not
+   *     necessarily implemented.
+   * @return the non-null default sharding strategy, with default values wherever the implementation
+   *     is allowed to choose, or null if the scope permits any sharding strategy.
+   */
+  Data.ShardingStrategy getShardingStrategy(Observation observation);
 
   /**
    * Return the single value of a resolution constraint, or null if absent.

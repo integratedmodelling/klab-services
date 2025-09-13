@@ -58,6 +58,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private Observation contextObservation;
   private URL url;
   private DigitalTwin digitalTwin;
+  private Data.ShardingStrategy shardingStrategy;
 
   // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
   protected ServiceContextScope parent;
@@ -94,6 +95,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.nextResolutionId = parent.nextResolutionId;
     this.currentActivity = parent.currentActivity;
     this.configuration = parent.configuration;
+    this.shardingStrategy = parent.shardingStrategy;
   }
 
   @Override
@@ -147,6 +149,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.resolutionCache = new HashMap<>();
     this.configuration = configuration;
     this.setName(configuration.getName());
+    // TODO use the configuration to override the sharding strategy
+    this.shardingStrategy = Data.ShardingStrategy.neutral();
     this.observationCache =
         CacheBuilder.newBuilder()
             .maximumSize(MAX_CACHED_OBSERVATIONS)
@@ -632,6 +636,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
     throw new KlabInternalErrorException(
         "ServiceContextScope::registerObservation: unexpected observation implementation");
+  }
+
+  @Override
+  public Data.ShardingStrategy getShardingStrategy(Observation observation) {
+    return shardingStrategy;
   }
 
   public ServiceContextScope initializeResolution() {

@@ -1,12 +1,14 @@
 package org.integratedmodelling.klab.api.data;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.PrimitiveIterator;
 
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
-import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.scope.Persistence;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 
 /**
  * Base storage providing only general methods. There is one Storage object per observation, managed
@@ -15,276 +17,217 @@ import org.integratedmodelling.klab.api.scope.Persistence;
  *
  * <p>The interface is implemented by classes specialized for a particular type of data, enabling
  * faster, non-boxing native operation. For this reason there are no set/get methods in the base
- * {@link Buffer} interface used for I/O. The runtime makes the choice based on the API of the
+ * {@link Shard} interface used for I/O. The runtime makes the choice based on the API of the
  * contextualizers or annotations added to models or concepts.
  *
  * @author Ferd
  */
-public interface Storage extends RuntimeAsset {
+public interface Storage {
 
   enum Type {
-    @Deprecated
-    BOXING,
-    DOUBLE,
-    FLOAT,
-    INTEGER,
-    LONG,
-    KEYED,
-    BOOLEAN
+    DOUBLE(true),
+    FLOAT(true),
+    INTEGER(true),
+    LONG(true),
+    KEYED(false),
+    BOOLEAN(false);
+
+    private boolean number;
+
+    Type(boolean number) {
+      this.number = number;
+    }
+
+    public boolean isNumber() {
+      return number;
+    }
+
+    public static Type defaultFor(Artifact.Type artifactType) {
+      if (artifactType == null) {
+        return null;
+      }
+      return switch (artifactType) {
+        case NUMBER -> DOUBLE;
+        case BOOLEAN -> BOOLEAN;
+        case CONCEPT -> KEYED;
+        default -> null;
+      };
+    }
   }
 
   /**
-   * Tag interface for a buffer that can be filled according to a geometry and a filling curve.
-   * Offset and size may cover the full storage geometry or a sub-geometry for parallel, distributed
-   * implementations. Temporal events will produce modified buffers that share the same geometry
-   * except for the temporal extension. The Buffer subclass obtained with Buffer is a value iterator
-   * of the necessary type, with preference for non-boxing iterators.
+   * The filler is used to fill the buffer with values. The core interface extends a primitive long
+   * iterator (of which only hasNext() may be used) and does not expose the three most important
+   * functions: get() for read scanners, add() for write scanners, and peek() to check the current
+   * value. It must be used sequentially as an iterator, and only the peek() function can be called
+   * without advancing the iteration.
    *
-   * <p>Buffers are {@link RuntimeAsset}s because they end up in the {@link KnowledgeGraph} exposed
-   * by the {@link org.integratedmodelling.klab.api.digitaltwin.DigitalTwin}.
+   * <p>TODO revise if eventually Java supports primitive var types and this can be done right
    *
-   * <p>Specific buffer types should also implement a mapping function for map/reduce operations.
-   * @deprecated see new implementation in StorageHelper
+   * <p>Iteration proceeds along the geometry and the fill curve of the originating Buffer, which
+   * can be retrieved in a read-only wrapper if needed.
    */
-  interface Buffer extends Data.Cursor, RuntimeAsset {
-
-    default RuntimeAsset.Type classify() {
-      return Type.DATA;
-    }
+  interface Scanner extends PrimitiveIterator.OfLong {
 
     /**
-     * Size of the buffer. In a simple situation this will normally be equal to the size of the
-     * fastest-changing extent of the geometry.
+     * Read-only view of the shard, used if the geometry or histogram needs to be accessed. These
+     * can also be bound to contextualizer arguments for the observation being contextualized (but
+     * not necessarily for any input observations).
+     *
+     * @return
+     */
+    Shard shard();
+
+    /**
+     * Total size of the buffer we represent.
      *
      * @return
      */
     long size();
-
-    /**
-     * Locators of the buffer relative to the storage's fill curve and the sub-geometry of the
-     * overall storage geometry represented in it. Must agree with the number of buffers and the
-     * size. These are linear offsets, one per dimension.
-     *
-     * @return
-     */
-    long offset();
-
-    String getUrn();
-
-    long getTimestamp();
   }
 
-  interface DoubleBuffer extends Buffer {
+  interface DoubleScanner extends Scanner {
+    double get();
 
-    interface DoubleScanner extends PrimitiveIterator.OfLong {
+    double peek();
 
-      /**
-       * Return the value at the current offset in the iterator and advance the iteration.
-       *
-       * @return
-       */
-      double get();
-
-      /**
-       * Return the value at the current offset in the iterator without advancing the iteration.
-       *
-       * @return
-       */
-      double peek();
-
-      /**
-       * Set the value at the current iterable offset and advance the iteration. Do not use after
-       * get() - use peek() if the value must be known.
-       *
-       * @param value
-       */
-      void add(double value);
-    }
-
-    @Override
-    DoubleScanner scan();
-
-    /**
-     * Random access value. The offset is according to the overall fill curve and buffer-specific
-     * offsets.
-     *
-     * @param offset
-     */
-    double get(long offset);
-
-    /**
-     * Random value set. May be inefficient. Offset as in {@link #get(long)}.
-     *
-     * @param value
-     * @param offset
-     */
-    void set(double value, long offset);
-
-    /**
-     * Supposed to be more efficient than a loop, based on the implementation.
-     *
-     * @param value
-     */
-    void fill(double value);
+    void add(double value);
   }
 
-  interface LongBuffer extends Buffer {
+  interface IntScanner extends Scanner {
+    int get();
 
-    /**
-     * Return the value at the current offset in the iterator and advance the iteration.
-     *
-     * @return
-     */
+    int peek();
+
+    void add(int value);
+  }
+
+  interface LongScanner extends Scanner {
     long get();
 
+    long peek();
+
+    void add(long value);
+  }
+
+  interface FloatScanner extends Scanner {
+    float get();
+
+    float peek();
+
+    void add(float value);
+  }
+
+  interface BooleanScanner extends Scanner {
+    boolean get();
+
+    boolean peek();
+
+    void add(boolean value);
+  }
+
+  interface KeyScanner<T extends Serializable> extends Scanner {
+    T get();
+
+    T peek();
+
+    void add(T value);
+  }
+
+  /**
+   * New shard API to substitute Storage.Buffer. Shards are just storage and may be implemented in
+   * different ways by the adopted {@link
+   * org.integratedmodelling.klab.api.digitaltwin.StorageManager}. They are not normally used
+   * directly at the API level; interaction happens through scanners retrieved from Storage#scan(),
+   * which can adapt the shards to any compatible choice of parallelism and fill curve. The scanners
+   * are bound to contextualizer parameters to enable data access.
+   */
+  interface Shard extends RuntimeAsset {
+
     /**
-     * Return the value at the current offset in the iterator without advancing the iteration.
+     * Some "tile"of the observation geometry. No shard can ever overlap another's geometry, and the
+     * shard union is the observation's geometry. Shape constraints are not passed down to grid
+     * shards.
      *
      * @return
      */
-    long peek();
+    Geometry getGeometry();
 
     /**
-     * Set the value at the current iterable offset and advance the iteration. Do not use after
-     * get()!
-     *
-     * @param value
+     * @return
      */
-    void add(long value);
+    Data.ShardingStrategy getShardingStrategy();
 
     /**
-     * Random access value. The offset is according to the overall fill curve and buffer-specific
-     * offsets.
-     *
-     * @param offset
+     * @return
      */
-    long get(long offset);
+    int getShardIndex();
 
     /**
-     * Random value set. May be inefficient. Offset as in {@link #get(long)}.
+     * Each shard should have a histogram built upon filling or upon demand, whichever is faster.
+     * Histogram implementation must allow merging so that the contextualizers can access aggregated
+     * observation information quickly by binding the histogram to the contextualizing functions.
      *
-     * @param value
-     * @param offset
+     * @return
      */
-    void set(long value, long offset);
+    Histogram getHistogram();
 
-    /**
-     * Supposed to be more efficient than a loop, based on the implementation.
-     *
-     * @param value
-     */
-    void fill(long value);
+    Scanner getNativeScanner();
   }
 
-  default RuntimeAsset.Type classify() {
-    return RuntimeAsset.Type.ARTIFACT;
-  }
-
-  Type getType();
-
   /**
-   * The {@link Data.FillCurve} for the spatial arrangement in the buffers. The fill curve is
-   * established based on the geometry unless a <code>@fillcurve
-   * </code> annotation is present on the model. The fill curve is irrelevant if there is only one
-   * spatial state or no spatial extent at all. In such cases it's best to avoid initializing a moot
-   * Hilbert curve which has more overhead than the others.
+   * Return the native buffers for the observation we represent correspondent to the sharding
+   * configuration set in the observation and the scheduler event that determined their computation.
+   * This is called by the scheduler to update the knowledge graph within the transaction that
+   * executed a successful contextualization.
    *
-   * <p>The storage may not have a fill curve until the first buffers are created.
-   *
-   * @return the spatial fill curve for the spatial extent.
+   * @param event
+   * @return a list of buffers, possibly empty.
    */
-  Data.FillCurve spaceFillCurve();
+  List<Shard> getNativeShards(Scheduler.Event event);
 
   /**
-   * Return the buffers that cover the passed geometry at the passed time. The time in the geometry
-   * is considered only if the specific time transition is null. Implementations may constrain this
-   * to only work with geometries that are "in phase" with the existing buffers, throwing an
-   * exception if not. Buffers should be created as required. The type, amount and filling curve of
-   * the buffers will reflect the defaults from service configuration, possibly overridden through
-   * the annotations passed at the moment of creating the storage. The service MUST ensure that the
-   * buffer splits are identical across all the qualities within the same subject.
+   * Create or retrieve scanners for the observation we represent, honoring any requests in terms of
+   * splits and fill curve. If the buffers do not exist natively for the observation, they will be
+   * created (with the current logic they should always exist, as the scheduler builds them before
+   * contextualization). If the sharding strategy is different from the native, the scanners will be
+   * mappers for the original ones. The overall constraint is the original observation geometry,
+   * which all buffers must ultimately cover exactly, and its dimensionality, which must be
+   * preserved at all times.
    *
-   * @param geometry
-   * @param transition the time from the event being contextualized.
-   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
-   *     parameters cause non-resolvable geometry conflicts with the underlying implementation.
-   * @return
+   * @param locator the event that sets the boundaries for the buffer computation within the
+   *     observation geometry. It must result in at most one varying dimension, normally space.
+   * @param request the specifications for the buffer geometry, fill curve and split logic.`
+   * @param scannerClass the scanner class to instantiate for the returned buffers.
+   * @param readOnly if true, the returned scanners will be read-only and throw an exception on
+   *     add().
+   * @return a list of new or existing scanners, possibly wrapped in mediating scanners that
+   *     ultimately affect the native shards according to the original geometry.
    */
-  List<? extends Storage.Buffer> buffers(Geometry geometry, Time transition);
-
-//  /**
-//   * Return the buffers that cover the passed geometry at the passed time. The time in the geometry
-//   * * is considered only if the specific time transition is null. Like {@link #buffers(Geometry,
-//   * Time)} but enables some degree of recontextualization so that contextualizers can establish the
-//   * fill curve they expect to use. The returned buffers must be capable of adapting to the
-//   * requested parameters, which would normally come as <code>@storage</code> annotations built from
-//   * the contextualizer's declaration.
-//   *
-//   * @param geometry
-//   * @param transition the time from the event being contextualized.
-//   * @param storageAnnotation
-//   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
-//   *     parameters cause non-resolvable conflicts with the underlying implementation.
-//   * @return
-//   */
-//  List<? extends Storage.Buffer> buffers(
-//      Geometry geometry, Time transition, Annotation storageAnnotation);
+  <T extends Scanner> List<T> scan(
+      Scheduler.Event locator,
+      Data.ShardingStrategy request,
+      Class<T> scannerClass,
+      boolean readOnly);
 
   /**
-   * Retrieve all buffers that cover the passed geometry at the passed time. The time in the
-   * geometry is considered only if the specific time transition is null, The geometry must be in
-   * phase with the overall geometry. Implementations may provide support for partial geometries
-   * within a single extent but this is not expected in general. There may be multiple buffers even
-   * with a single time extent, and they should be usable in parallel as needed. This one is called
-   * by contextualizers to obtain, and according to implementation possibly create, the needed
-   * buffer(s) for reading and writing according to the contextualization stage.
-   *
-   * <p>The buffers are allocated using the default fill curve and an implementation-dependent
-   * strategy unless a <code>@split</code> annotation is present on the model to define the split
-   * strategy.
-   *
-   * @param geometry the (sub)-geometry that covers the buffers. According to implementation, the
-   *     geometry's coverage of the overall geometry may be more or less constrained.
-   * @param transition the time from the event being contextualized.
-   * @param bufferClass the class of the buffer, which is needed to access the non-boxing add, set
-   *     and get methods exposed by the different {@link Buffer} subclasses. If a class is asked for
-   *     that does not match the existing buffers, a mediating buffer should be produced. The native
-   *     buffer class should always be understandable based on the storage type.
-   * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
-   *     parameters cause non-resolvable type or geometry conflicts with the underlying
-   *     implementation.
-   */
-  <T extends Storage.Buffer> List<T> buffers(
-      Geometry geometry, Time transition, Class<T> bufferClass);
-
-  /**
-   * After the contextualization is finished, the storage will contain one or more buffers with the
-   * data content, geometry and data fill curve. The set of buffers will cover the geometry of the
-   * observation. This one returns all the existing buffers; they are expected to be fully defined
-   * and read-only at this stage.
-   */
-  List<Storage.Buffer> allBuffers();
-
-  /**
-   * The overall geometry of the storage. Will change during contextualization to reflect dynamic
-   * dimensions extended by events.
+   * The native sharding strategy for the observation we represent.
    *
    * @return
    */
-  Geometry getGeometry();
+  Data.ShardingStrategy getNativeShardingStrategy();
 
   /**
-   * The merged histogram build on demand by merging that of all buffers created.
+   * This will be known after the first buffer is created.
+   *
+   * @return
+   */
+  Type getNativeType();
+
+  /**
+   * The merged histogram built on demand by merging that of all existing shards.
    *
    * @return
    */
   Histogram getHistogram();
-
-  /**
-   * The persistence tells us whether we need to periodically offload the buffers to disk in order
-   * to keep the digital twin consistent across server boots.
-   *
-   * @return
-   */
-  Persistence persistence();
 }

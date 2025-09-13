@@ -1,11 +1,11 @@
 package org.integratedmodelling.common.lang;
 
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.documentation.Documentation;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
-import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -198,7 +198,7 @@ public class ServiceInfoImpl implements ServiceInfo {
 
     private String name;
     // stable ordering reflecting that of the declaration
-    private Map<String, ArgumentImpl> arguments = new LinkedHashMap<>();
+    private Map<String, Argument> arguments = new LinkedHashMap<>();
     private String description;
     private List<Type> type = new ArrayList<>();
     private Geometry geometry;
@@ -206,16 +206,17 @@ public class ServiceInfoImpl implements ServiceInfo {
     private boolean contextualizer;
     private boolean filter;
     private String label = null;
-    private List<ArgumentImpl> exports = new ArrayList<>();
-    private List<ArgumentImpl> imports = new ArrayList<>();
-    private List<ArgumentImpl> inputAnnotations = new ArrayList<>();
-    private List<ArgumentImpl> outputAnnotations = new ArrayList<>();
+    private List<Argument> outputs = new ArrayList<>();
+    private List<Argument> inputs = new ArrayList<>();
+    private List<Argument> inputAnnotations = new ArrayList<>();
+    private List<Argument> outputAnnotations = new ArrayList<>();
     private boolean isConst;
     private boolean reentrant;
     private FunctionType functionType;
     private Set<KnowledgeClass> targets = EnumSet.noneOf(KnowledgeClass.class);
     private Set<String> mediaTypes = new HashSet<>();
-    private List<Annotation> annotations = new ArrayList<>();
+    //  private List<Annotation> annotations = new ArrayList<>();
+    private Data.ShardingStrategy shardingStrategy;
 
     public String getLabel() {
         return label;
@@ -229,7 +230,7 @@ public class ServiceInfoImpl implements ServiceInfo {
         this.name = name;
     }
 
-    public void setArguments(Map<String, ArgumentImpl> arguments) {
+    public void setArguments(Map<String, Argument> arguments) {
         this.arguments = arguments;
     }
 
@@ -264,7 +265,7 @@ public class ServiceInfoImpl implements ServiceInfo {
         return arguments.get(argumentId);
     }
 
-    public Map<String, ArgumentImpl> getArguments() {
+    public Map<String, Argument> getArguments() {
         return arguments;
     }
 
@@ -278,7 +279,7 @@ public class ServiceInfoImpl implements ServiceInfo {
         List<Notification> ret = new ArrayList<>();
         // validate existing arguments
         for (String arg : function.getParameters().keySet()) {
-            ArgumentImpl argument = arguments.get(arg);
+            var argument = arguments.get(arg);
             if (argument == null) {
                 ret.add(Notification.error(name + ": argument " + arg + " is not recognized"));
             } else {
@@ -294,8 +295,8 @@ public class ServiceInfoImpl implements ServiceInfo {
             }
         }
         // ensure that all mandatory args are there
-        for (ArgumentImpl arg : arguments.values()) {
-            if (!arg.isOptional() && !function.getParameters().containsKey(arg.name)) {
+        for (var arg : arguments.values()) {
+            if (!arg.isOptional() && !function.getParameters().containsKey(arg.getName())) {
                 // ret.add(Pair.of(name + ": mandatory argument " + arg.name + " was not passed",
                 // Level.SEVERE));
             }
@@ -314,62 +315,61 @@ public class ServiceInfoImpl implements ServiceInfo {
         if (val == null) {
             return true;
         }
-        switch(argument.getType().get(typeIndex)) {
-        case ANNOTATION:
-            break;
-        case BOOLEAN:
-            if (!(val instanceof Boolean)) {
-                return null;
-            }
-            break;
-        case CONCEPT:
-            // IConceptDescriptor cd = Kim.INSTANCE.getConceptDescriptor(val.toString());
-            // if (cd == null) {
-            // return false;
-            // }
-            break;
-        case ENUM:
-            if (argument.enumValues == null || !argument.enumValues.contains(val.toString())) {
-                return null;
-            }
-            break;
-        case LIST:
-            if (!(val instanceof List)) {
-                List<Object> ret = new ArrayList<>();
-                ret.add(val);
-                val = ret;
-            }
-            break;
-        case NUMBER:
-            if (!(val instanceof Number)) {
-                return null;
-            }
-            break;
-        case EXTENT:
-        case SPATIALEXTENT:
-        case TEMPORALEXTENT:
-        case OBJECT:
-            // TODO must be a map or table literal with proper type specs, or a symbol
-            // defined as
-            // such, if passed through k.IM.
-            break;
-        case PROCESS:
-            break;
-        case RANGE:
-            break;
-        case TEXT:
-            if (!(val instanceof String)) {
-                return null;
-            }
-            break;
-        case VALUE:
-            break;
-        case VOID:
-            // shouldn't happen
-            break;
-        default:
-            break;
-
+        switch (argument.getType().get(typeIndex)) {
+            case ANNOTATION:
+                break;
+            case BOOLEAN:
+                if (!(val instanceof Boolean)) {
+                    return null;
+                }
+                break;
+            case CONCEPT:
+                // IConceptDescriptor cd = Kim.INSTANCE.getConceptDescriptor(val.toString());
+                // if (cd == null) {
+                // return false;
+                // }
+                break;
+            case ENUM:
+                if (argument.enumValues == null || !argument.enumValues.contains(val.toString())) {
+                    return null;
+                }
+                break;
+            case LIST:
+                if (!(val instanceof List)) {
+                    List<Object> ret = new ArrayList<>();
+                    ret.add(val);
+                    val = ret;
+                }
+                break;
+            case NUMBER:
+                if (!(val instanceof Number)) {
+                    return null;
+                }
+                break;
+            case EXTENT:
+            case SPATIALEXTENT:
+            case TEMPORALEXTENT:
+            case OBJECT:
+                // TODO must be a map or table literal with proper type specs, or a symbol
+                // defined as
+                // such, if passed through k.IM.
+                break;
+            case PROCESS:
+                break;
+            case RANGE:
+                break;
+            case TEXT:
+                if (!(val instanceof String)) {
+                    return null;
+                }
+                break;
+            case VALUE:
+                break;
+            case VOID:
+                // shouldn't happen
+                break;
+            default:
+                break;
         }
         return val;
     }
@@ -390,43 +390,31 @@ public class ServiceInfoImpl implements ServiceInfo {
                 }
             }
 
-            String ret = Utils.Strings.justifyLeft(
-                    Utils.Strings.pack(description == null || description.isEmpty() ? "No description provided." : description),
-                    80) + (tags ? "<p>" : "\n\n");
+            String ret = Utils.Strings.justifyLeft(Utils.Strings.pack(description == null || description.isEmpty() ? "No description provided." : description), 80) + (tags ? "<p>" : "\n\n");
             if (tags) {
                 ret += "<dl>";
             }
             for (String argument : arguments.keySet()) {
                 Argument arg = arguments.get(argument);
-                ret += "  " + (tags ? "<dt>" : "") + (arg.isOptional() ? "" : "* ") + argument + (tags ? "</dt>" : "")
-                        + (tags ? "" : ":\n");
-                String description = Utils.Strings.pack(arg.getDescription() == null || arg.getDescription().isEmpty()
-                        ? "No description provided."
-                        : arg.getDescription() + "\n");
-                ret += tags
-                        ? ("<dd>" + description + "</dd>")
-                        : Utils.Strings.indent(Utils.Strings.justifyLeft(description, 50), 15);
+                ret += "  " + (tags ? "<dt>" : "") + (arg.isOptional() ? "" : "* ") + argument + (tags ? "</dt>" : "") + (tags ? "" : ":\n");
+                String description = Utils.Strings.pack(arg.getDescription() == null || arg.getDescription().isEmpty() ? "No description provided." : arg.getDescription() + "\n");
+                ret += tags ? ("<dd>" + description + "</dd>") : Utils.Strings.indent(Utils.Strings.justifyLeft(description, 50), 15);
                 ret += (tags ? "" : "\n");
             }
             if (tags) {
                 ret += "</dl>";
             }
 
-            if (imports.size() > 0) {
+            if (inputs.size() > 0) {
                 ret += "\n\n" + (tags ? "<p>" : "");
                 ret += "Imports (match dependency names):" + (tags ? "</p>" : "") + "\n\n";
                 if (tags) {
                     ret += "<dl>";
                 }
-                for (Argument arg : imports) {
-                    ret += "  " + (tags ? "<dt>" : "") + (arg.isOptional() ? "" : "* ") + arg.getName() + (tags ? "</dt>" : "")
-                            + (tags ? "" : ":\n");
-                    String description = Utils.Strings.pack(arg.getDescription() == null || arg.getDescription().isEmpty()
-                            ? "No description provided."
-                            : arg.getDescription());
-                    ret += tags
-                            ? ("<dd>" + description + "</dd>")
-                            : Utils.Strings.indent(Utils.Strings.justifyLeft(description, 50), 15);
+                for (Argument arg : inputs) {
+                    ret += "  " + (tags ? "<dt>" : "") + (arg.isOptional() ? "" : "* ") + arg.getName() + (tags ? "</dt>" : "") + (tags ? "" : ":\n");
+                    String description = Utils.Strings.pack(arg.getDescription() == null || arg.getDescription().isEmpty() ? "No description provided." : arg.getDescription());
+                    ret += tags ? ("<dd>" + description + "</dd>") : Utils.Strings.indent(Utils.Strings.justifyLeft(description, 50), 15);
                     ret += (tags ? "" : "\n");
                 }
                 if (tags) {
@@ -434,21 +422,16 @@ public class ServiceInfoImpl implements ServiceInfo {
                 }
             }
 
-            if (exports.size() > 0) {
+            if (outputs.size() > 0) {
                 ret += "\n\n" + (tags ? "<p>" : "");
                 ret += "Exports (match output names):" + (tags ? "</p>" : "") + "\n\n";
                 if (tags) {
                     ret += "<dl>";
                 }
-                for (Argument arg : exports) {
-                    ret += "  " + (tags ? "<dt>" : "") + (arg.isOptional() ? "" : "* ") + arg.getName() + (tags ? "</dt>" : "")
-                            + (tags ? "" : ":\n");
-                    String description = Utils.Strings.pack(arg.getDescription() == null || arg.getDescription().isEmpty()
-                            ? "No description provided."
-                            : arg.getDescription());
-                    ret += tags
-                            ? ("<dd>" + description + "</dd>")
-                            : Utils.Strings.indent(Utils.Strings.justifyLeft(description, 50), 15);
+                for (Argument arg : outputs) {
+                    ret += "  " + (tags ? "<dt>" : "") + (arg.isOptional() ? "" : "* ") + arg.getName() + (tags ? "</dt>" : "") + (tags ? "" : ":\n");
+                    String description = Utils.Strings.pack(arg.getDescription() == null || arg.getDescription().isEmpty() ? "No description provided." : arg.getDescription());
+                    ret += tags ? ("<dd>" + description + "</dd>") : Utils.Strings.indent(Utils.Strings.justifyLeft(description, 50), 15);
                     ret += (tags ? "" : "\n");
                 }
                 if (tags) {
@@ -463,14 +446,9 @@ public class ServiceInfoImpl implements ServiceInfo {
                     ret += "<dl>";
                 }
                 for (Argument arg : outputAnnotations) {
-                    ret += "  " + (tags ? "<dt>" : "") + (arg.isOptional() ? "" : "* ") + arg.getName() + (tags ? "</dt>" : "")
-                            + (tags ? "" : ":\n");
-                    String description = Utils.Strings.pack(arg.getDescription() == null || arg.getDescription().isEmpty()
-                            ? "No description provided."
-                            : arg.getDescription());
-                    ret += tags
-                            ? ("<dd>" + description + "</dd>")
-                            : Utils.Strings.indent(Utils.Strings.justifyLeft(description, 50), 15);
+                    ret += "  " + (tags ? "<dt>" : "") + (arg.isOptional() ? "" : "* ") + arg.getName() + (tags ? "</dt>" : "") + (tags ? "" : ":\n");
+                    String description = Utils.Strings.pack(arg.getDescription() == null || arg.getDescription().isEmpty() ? "No description provided." : arg.getDescription());
+                    ret += tags ? ("<dd>" + description + "</dd>") : Utils.Strings.indent(Utils.Strings.justifyLeft(description, 50), 15);
                     ret += (tags ? "" : "\n");
                 }
                 if (tags) {
@@ -485,14 +463,9 @@ public class ServiceInfoImpl implements ServiceInfo {
                     ret += "<dl>";
                 }
                 for (Argument arg : outputAnnotations) {
-                    ret += "  " + (tags ? "<dt>" : "") + (arg.isOptional() ? "" : "* ") + arg.getName() + (tags ? "</dt>" : "")
-                            + (tags ? "" : ":\n");
-                    String description = Utils.Strings.pack(arg.getDescription() == null || arg.getDescription().isEmpty()
-                            ? "No description provided."
-                            : arg.getDescription());
-                    ret += tags
-                            ? ("<dd>" + description + "</dd>")
-                            : Utils.Strings.indent(Utils.Strings.justifyLeft(description, 50), 15);
+                    ret += "  " + (tags ? "<dt>" : "") + (arg.isOptional() ? "" : "* ") + arg.getName() + (tags ? "</dt>" : "") + (tags ? "" : ":\n");
+                    String description = Utils.Strings.pack(arg.getDescription() == null || arg.getDescription().isEmpty() ? "No description provided." : arg.getDescription());
+                    ret += tags ? ("<dd>" + description + "</dd>") : Utils.Strings.indent(Utils.Strings.justifyLeft(description, 50), 15);
                     ret += (tags ? "" : "\n");
                 }
                 if (tags) {
@@ -501,7 +474,6 @@ public class ServiceInfoImpl implements ServiceInfo {
             }
 
             return ret;
-
         }
         return shortSynopsis();
     }
@@ -511,22 +483,22 @@ public class ServiceInfoImpl implements ServiceInfo {
 
         String ret = getName();
 
-        for (ArgumentImpl arg : arguments.values()) {
+        for (var arg : arguments.values()) {
             if (arg.isOptional()) {
-                ret += " [" + arg.getName() + "=" + arg.type + printEnumValues(arg) + "]";
+                ret += " [" + arg.getName() + "=" + arg.getType() + printEnumValues(arg) + "]";
             } else {
-                ret += " " + arg.name + "=" + arg.type + printEnumValues(arg);
+                ret += " " + arg.getName() + "=" + arg.getType() + printEnumValues(arg);
             }
         }
 
         return ret;
     }
 
-    private String printEnumValues(ArgumentImpl arg) {
+    private String printEnumValues(Argument arg) {
         String ret = "";
-        if (arg.type.get(0) == Type.ENUM) {
+        if (arg.getType().get(0) == Type.ENUM) {
             ret += "(";
-            for (String s : arg.enumValues) {
+            for (String s : arg.getEnumValues()) {
                 ret += (ret.length() == 1 ? "" : ",") + s;
             }
             ret += ")";
@@ -559,34 +531,34 @@ public class ServiceInfoImpl implements ServiceInfo {
     }
 
     @Override
-    public List<Argument> listImports() {
-        return new Utils.Casts<ArgumentImpl, Argument>().cast(imports);
+    public List<Argument> listInputs() {
+        return inputs;
     }
 
     @Override
-    public List<Argument> listExports() {
-        return new Utils.Casts<ArgumentImpl, Argument>().cast(exports);
+    public List<Argument> listOutputs() {
+        return outputs;
     }
 
-    public List<Argument> getImports() {
-        return new Utils.Casts<ArgumentImpl, Argument>().cast(imports);
+    public List<Argument> getInputs() {
+        return inputs;
     }
 
-    public List<Argument> getExports() {
-        return new Utils.Casts<ArgumentImpl, Argument>().cast(exports);
+    public List<Argument> getOutputs() {
+        return outputs;
     }
 
-    public void setImports(List<ArgumentImpl> arguments) {
-        this.imports = arguments;
+    public void setInputs(List<Argument> arguments) {
+        this.inputs = arguments;
     }
 
-    public void setExports(List<ArgumentImpl> arguments) {
-        this.exports = arguments;
+    public void setOutputs(List<Argument> arguments) {
+        this.outputs = arguments;
     }
 
     @Override
     public Collection<Argument> listImportAnnotations() {
-        return new Utils.Casts<ArgumentImpl, Argument>().cast(inputAnnotations);
+        return inputAnnotations;
     }
 
     @Override
@@ -596,7 +568,7 @@ public class ServiceInfoImpl implements ServiceInfo {
 
     @Override
     public Collection<Argument> listExportAnnotations() {
-        return new Utils.Casts<ArgumentImpl, Argument>().cast(outputAnnotations);
+        return outputAnnotations;
     }
 
     @Override
@@ -604,19 +576,19 @@ public class ServiceInfoImpl implements ServiceInfo {
         return isConst;
     }
 
-    public List<ArgumentImpl> getInputAnnotations() {
+    public List<Argument> getInputAnnotations() {
         return inputAnnotations;
     }
 
-    public void setInputAnnotations(List<ArgumentImpl> inputAnnotations) {
+    public void setInputAnnotations(List<Argument> inputAnnotations) {
         this.inputAnnotations = inputAnnotations;
     }
 
-    public List<ArgumentImpl> getOutputAnnotations() {
+    public List<Argument> getOutputAnnotations() {
         return outputAnnotations;
     }
 
-    public void setOutputAnnotations(List<ArgumentImpl> outputAnnotations) {
+    public void setOutputAnnotations(List<Argument> outputAnnotations) {
         this.outputAnnotations = outputAnnotations;
     }
 
@@ -662,28 +634,17 @@ public class ServiceInfoImpl implements ServiceInfo {
     }
 
     @Override
-    public List<Annotation> getAnnotations() {
-        return annotations;
-    }
-
-    public void setAnnotations(List<Annotation> annotations) {
-        this.annotations = annotations;
-    }
-
-    @Override
     public Collection<KnowledgeClass> getTargets() {
         return this.targets;
     }
-    private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Argument argument) {
-        var arg = new ServiceInfoImpl.ArgumentImpl();
-        arg.setName(argument.name());
-        arg.setDescription(argument.description());
-        arg.setOptional(argument.optional());
-        arg.setConst(argument.constant());
-        arg.setArtifact(argument.artifact());
-        for (Artifact.Type a : argument.type()) {
-            arg.getType().add(a);
-        }
-        return arg;
+
+    @Override
+    public Data.ShardingStrategy getShardingStrategy() {
+        return shardingStrategy;
     }
+
+    public void setShardingStrategy(Data.ShardingStrategy shardingStrategy) {
+        this.shardingStrategy = shardingStrategy;
+    }
+
 }

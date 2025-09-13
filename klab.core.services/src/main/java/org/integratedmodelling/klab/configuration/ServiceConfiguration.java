@@ -60,6 +60,7 @@ import org.integratedmodelling.klab.api.utils.Utils.OS;
 import org.integratedmodelling.klab.data.mediation.CurrencyServiceImpl;
 import org.integratedmodelling.klab.data.mediation.UnitServiceImpl;
 // import org.integratedmodelling.klab.runtime.language.LanguageService;
+import org.integratedmodelling.klab.extension.MavenComponentCache;
 import org.integratedmodelling.klab.runtime.language.LanguageService;
 import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
 import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
@@ -76,8 +77,7 @@ import org.integratedmodelling.klab.services.base.BaseService;
  * @version $Id: $Id
  */
 public enum ServiceConfiguration {
-
-    INSTANCE;
+  INSTANCE;
 
   private Map<Class<?>, Map<Set<Object>, Service>> services = new HashMap<>();
   private Map<String, Authority> authorities = new HashMap<>();
@@ -116,6 +116,7 @@ public enum ServiceConfiguration {
             var ret = new ObservableImpl();
             ret.setSemantics(concept);
             ret.setUrn(concept.getUrn());
+            ret.setArtifactType(Artifact.Type.forSemantics(concept.getType()));
             ret.setDescriptionType(
                 DescriptionType.forSemantics(
                     concept.getType(), concept.is(SemanticType.COUNTABLE)));
@@ -195,11 +196,11 @@ public enum ServiceConfiguration {
             return new ModelBuilderImpl(outputResourceUrn);
           }
 
-//          @Override
-//          public Data.Builder getDataBuilder(
-//              String name, Observable observable, Geometry geometry) {
-//            return new DataBuilderImpl(name, observable, geometry);
-//          }
+          //          @Override
+          //          public Data.Builder getDataBuilder(
+          //              String name, Observable observable, Geometry geometry) {
+          //            return new DataBuilderImpl(name, observable, geometry);
+          //          }
 
           @Override
           public Quantity parseQuantity(String quantityDescription) {
@@ -288,63 +289,68 @@ public enum ServiceConfiguration {
             return ret;
           }
 
-//          @Override
-//          public Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>
-//              getSpatialOffsetMapping(Geometry geometry, Data.SpaceFillingCurve spaceFillingCurve) {
-//            return switch (spaceFillingCurve) {
-//              case D1_LINEAR ->
-//                  new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
-//
-//                    final long[] l = new long[1];
-//
-//                    @Override
-//                    public Data.LongToLongArrayFunction getFirst() {
-//                      return n -> {
-//                        l[0] = n;
-//                        return l;
-//                      };
-//                    }
-//
-//                    @Override
-//                    public Data.LongArrayToLongFunction getSecond() {
-//                      return n -> n[0];
-//                    }
-//                  };
-//              case D2_XY -> {
-//                final var shape = geometry.dimension(Geometry.Dimension.Type.SPACE).getShape();
-//                final var x = shape.get(0);
-//                final var y = shape.get(1);
-//
-//                yield new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>() {
-//
-//                  final long[] l = new long[2];
-//
-//                  @Override
-//                  public Data.LongToLongArrayFunction getFirst() {
-//                    return n -> {
-//                      l[0] = n / x;
-//                      l[1] = n % x;
-//                      return l;
-//                    };
-//                  }
-//
-//                  @Override
-//                  public Data.LongArrayToLongFunction getSecond() {
-//                    return n -> n[1] * x + n[0];
-//                  }
-//                };
-//              }
-//              //                case D2_YX -> null;
-//              //                case D2_XInvY -> null;
-//              //                case D3_XYZ -> null;
-//              //                case D3_ZYX -> null;
-//              //                case D2_HILBERT -> null;
-//              //                case D3_HILBERT -> null;
-//              default ->
-//                  throw new KlabUnimplementedException(
-//                      "ServiceConfiguration::getGeometryIterator(" + spaceFillingCurve + ")");
-//            };
-//          }
+          //          @Override
+          //          public Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>
+          //              getSpatialOffsetMapping(Geometry geometry, Data.SpaceFillingCurve
+          // spaceFillingCurve) {
+          //            return switch (spaceFillingCurve) {
+          //              case D1_LINEAR ->
+          //                  new Pair<Data.LongToLongArrayFunction, Data.LongArrayToLongFunction>()
+          // {
+          //
+          //                    final long[] l = new long[1];
+          //
+          //                    @Override
+          //                    public Data.LongToLongArrayFunction getFirst() {
+          //                      return n -> {
+          //                        l[0] = n;
+          //                        return l;
+          //                      };
+          //                    }
+          //
+          //                    @Override
+          //                    public Data.LongArrayToLongFunction getSecond() {
+          //                      return n -> n[0];
+          //                    }
+          //                  };
+          //              case D2_XY -> {
+          //                final var shape =
+          // geometry.dimension(Geometry.Dimension.Type.SPACE).getShape();
+          //                final var x = shape.get(0);
+          //                final var y = shape.get(1);
+          //
+          //                yield new Pair<Data.LongToLongArrayFunction,
+          // Data.LongArrayToLongFunction>() {
+          //
+          //                  final long[] l = new long[2];
+          //
+          //                  @Override
+          //                  public Data.LongToLongArrayFunction getFirst() {
+          //                    return n -> {
+          //                      l[0] = n / x;
+          //                      l[1] = n % x;
+          //                      return l;
+          //                    };
+          //                  }
+          //
+          //                  @Override
+          //                  public Data.LongArrayToLongFunction getSecond() {
+          //                    return n -> n[1] * x + n[0];
+          //                  }
+          //                };
+          //              }
+          //              //                case D2_YX -> null;
+          //              //                case D2_XInvY -> null;
+          //              //                case D3_XYZ -> null;
+          //              //                case D3_ZYX -> null;
+          //              //                case D2_HILBERT -> null;
+          //              //                case D3_HILBERT -> null;
+          //              default ->
+          //                  throw new KlabUnimplementedException(
+          //                      "ServiceConfiguration::getGeometryIterator(" + spaceFillingCurve +
+          // ")");
+          //            };
+          //          }
 
           @Override
           public Envelope getSpatialEnvelope(

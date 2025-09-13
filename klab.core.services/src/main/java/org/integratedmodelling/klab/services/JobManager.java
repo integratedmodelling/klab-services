@@ -46,7 +46,15 @@ public class JobManager {
                 Logging.INSTANCE.error(
                     "Job " + description + " failed\n" + Utils.Exceptions.stackTrace(t));
               } else {
-                Logging.INSTANCE.info("Job " + description + " completed successfully");
+                if (t != null) {
+                  Logging.INSTANCE.info(
+                      "Job "
+                          + description
+                          + " completed exceptionally with error "
+                          + t.getMessage());
+                } else {
+                  Logging.INSTANCE.info("Job " + description + " completed successfully");
+                }
               }
               // put away result
               results.put(ret, Pair.of(o, t));

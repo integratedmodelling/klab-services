@@ -7,12 +7,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
+
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.integratedmodelling.common.data.BaseDataImpl;
@@ -496,8 +498,6 @@ public class ResourcesProviderController {
 
     if (principal instanceof EngineAuthorization authorization) {
 
-      Utils.DebugFile.println("DIO TARALLO MI HA CHIAMATO");
-
       var scope = authorization.getScope();
       if (scope instanceof ServiceUserScope serviceUserScope) {
 
@@ -525,8 +525,6 @@ public class ResourcesProviderController {
             input = BaseDataImpl.create(request.getInputData());
           }
 
-          Utils.DebugFile.println("CANAGLIA DIO MAKING REQUEST");
-
           var ret =
               serviceUserScope
                   .getJobManager()
@@ -536,12 +534,11 @@ public class ResourcesProviderController {
                           .contextualize(
                               resource,
                               DigitalTwin.createObservation(scope, observable, geometry),
+                              geometry,
                               event,
                               input,
                               scope),
                       "Resolution of " + observable);
-
-          Utils.DebugFile.println("CANAGLIA TROJA RETURNING TASK " + ret);
 
           return ret;
 

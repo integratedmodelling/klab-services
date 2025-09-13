@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge.observation.impl;
 
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -37,11 +38,14 @@ public class ObservationImpl implements Observation {
   private String urn;
   private Object value;
   private String name;
+  private Artifact.Type type = Artifact.Type.OBSERVATION;
   private double resolvedCoverage;
   private List<Long> eventTimestamps = new ArrayList<>();
   private boolean substantialQuality;
   private long transientId = Klab.getNextId();
   private List<Notification> notifications = new ArrayList<>();
+
+  //  private Data.ShardingStrategy shardingStrategy;
 
   public ObservationImpl() {}
 
@@ -102,7 +106,7 @@ public class ObservationImpl implements Observation {
 
   @Override
   public Artifact.Type getType() {
-    return observable.getArtifactType();
+    return type;
   }
 
   @Override
@@ -253,8 +257,12 @@ public class ObservationImpl implements Observation {
     this.notifications = notifications;
   }
 
+  public void setType(Artifact.Type type) {
+    this.type = type;
+  }
+
   /**
-   * Non-API: we record the fact that an observation is a quality of a substantial so that we know
+   * Non-API: we record the fact that an observation is a quality of a substantial, so that we know
    * when to initialize or check for initialization without having to interrogate the knowledge
    * graph to extract the observation's parent.
    *

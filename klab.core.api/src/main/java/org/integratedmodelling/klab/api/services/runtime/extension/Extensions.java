@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services.runtime.extension;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -94,7 +95,7 @@ public interface Extensions {
               + adapters.size()
               + " adapters, "
               + annotations.size()
-              + " annotations");
+              + " adapters");
     }
   }
 

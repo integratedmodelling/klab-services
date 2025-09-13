@@ -168,6 +168,15 @@ public @interface ResourceAdapter {
       UrnSyntax,
 
       /**
+       * The valid resource is exposed to the adapter before each contextualization. This may be a
+       * long operation, such as filling a cache, and is executed during contextualization. If the
+       * annotated method returns a boolean or a {@link Notification}, it will be used as the
+       * validation result; if a notification and a scope is provided, the notification will also be
+       * sent through the scope.
+       */
+      PreContextualization,
+
+      /**
        * The resource is being imported for the first time. A local name, resource builder, resource
        * parameters and any resource contents (as a file or directory) will be matched to the
        * parameters of the validator method, which must return the configured builder.

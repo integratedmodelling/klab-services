@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
 
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -224,8 +225,7 @@ public class TimePeriodImpl implements TimePeriod {
 
   @Override
   public Iterator<Time> iterator() {
-    // TODO Auto-generated method stub
-    return null;
+    return List.of((Time) this).iterator();
   }
 
   @Override
@@ -237,7 +237,10 @@ public class TimePeriodImpl implements TimePeriod {
   @Override
   public boolean isGeneric() {
     // TODO Auto-generated method stub
-    return false;
+    return start == null
+        || end == null
+        || start.getMilliseconds() == 0
+        || end.getMilliseconds() == Long.MAX_VALUE;
   }
 
   @Override

@@ -36,6 +36,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   private ClientDigitalTwin digitalTwin;
   private Activity activity;
   private DigitalTwin.Configuration configuration;
+  private Data.ShardingStrategy shardingStrategy;
 
   /**
    * The default client scope has the user as the embedded agent.
@@ -50,6 +51,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     super(parent, configuration.getName(), runtimeService);
     this.configuration = configuration;
     this.name = configuration.getName();
+    this.shardingStrategy = new Data.ShardingStrategy();
     resolutionConstraints.put(
         ResolutionConstraint.Type.Provenance,
         ResolutionConstraint.of(
@@ -70,6 +72,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     observer = parent.observer;
     configuration = parent.configuration;
     contextObservation = parent.contextObservation;
+    shardingStrategy = parent.shardingStrategy;
     this.activity = parent.activity;
   }
 
@@ -374,6 +377,11 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         + " ("
         + (isConnected() ? "connected" : "not connected")
         + ")";
+  }
+
+  @Override
+  public Data.ShardingStrategy getShardingStrategy(Observation observation) {
+    return shardingStrategy;
   }
 
   @Override

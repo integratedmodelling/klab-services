@@ -3,14 +3,13 @@ package org.integratedmodelling.klab.api.services.runtime;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 
 /**
  * During contextualization, any sequence of scalar operations is compiled into one of these. The
  * API is meant to be run in parallel whenever possible by mapping the computation on a {@link
- * Storage.Buffer}. Implementations may use local buffers or build parallel pipelines backed by
+ * Storage.Shard}. Implementations may use local buffers or build parallel pipelines backed by
  * Spark or other distributed computational engines. In general the computation should be compiled
  * into the fastest-executing strategy, when possible independent from the context so that it can be
  * processed remotely.

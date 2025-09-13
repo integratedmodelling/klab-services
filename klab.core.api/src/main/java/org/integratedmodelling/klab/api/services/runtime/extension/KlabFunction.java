@@ -7,6 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 
 /**
@@ -86,12 +87,12 @@ public @interface KlabFunction {
   /**
    * Tag an {@link org.integratedmodelling.klab.api.knowledge.observation.Observation}, {@link
    * org.integratedmodelling.klab.api.data.Storage} or a subclass of {@link
-   * org.integratedmodelling.klab.api.data.Storage.Buffer} to define a dependency by name and type.
+   * Storage.Shard} to define a dependency by name and type.
    * The name will become a requirement from the dependencies in the model and the type will be
    * validated. This can also be declared in the main prototype.
    */
   @Target({ElementType.PARAMETER})
-  @interface Import {
+  @interface Input {
 
     String name();
 
@@ -119,12 +120,12 @@ public @interface KlabFunction {
   /**
    * Tag an {@link org.integratedmodelling.klab.api.knowledge.observation.Observation}, {@link
    * org.integratedmodelling.klab.api.data.Storage} or a subclass of {@link
-   * org.integratedmodelling.klab.api.data.Storage.Buffer} to define an additional output by name
+   * Storage.Shard} to define an additional output by name
    * and type. The name will become a requirement from the dependencies in the model and the type
    * will be validated. This can also be declared in the main prototype.
    */
   @Target({ElementType.PARAMETER})
-  @interface Export {
+  @interface Output {
 
     String name();
 
@@ -202,13 +203,13 @@ public @interface KlabFunction {
 
   String dataflowLabel() default "";
 
-  Import[] imports() default {};
+  Input[] inputs() default {};
 
-  Export[] exports() default {};
+  Output[] outputs() default {};
 
   Argument[] parameters() default {};
 
-  Artifact.Type[] type();
+  Artifact.Type type();
 
   String unit() default "";
 
@@ -228,7 +229,7 @@ public @interface KlabFunction {
    *
    * @return
    */
-  Data.FillCurve fillingCurve() default Data.FillCurve.UNSPECIFIED;
+  Data.FillCurve fillCurve() default Data.FillCurve.UNSPECIFIED;
 
   /**
    * If splits > 1, the function may suggest a geometry size that it can handle in one request. The

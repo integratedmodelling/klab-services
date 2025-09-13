@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.components;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+
 import javassist.Modifier;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
@@ -42,7 +44,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
-import org.integratedmodelling.klab.api.lang.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -58,6 +59,7 @@ import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdap
 import org.integratedmodelling.klab.api.services.resources.impl.ParameterImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.*;
+import org.integratedmodelling.klab.common.data.Level;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.extension.KlabComponent;
 import org.integratedmodelling.klab.extension.MavenComponentCache;
@@ -1053,12 +1055,12 @@ public class ComponentRegistry {
     //      var arg = createArgument(argument);
     //      ret.getArguments().put(arg.getName(), arg);
     //    }
-
-    AnnotationImpl storageAnnotation = null;
-
-    if (storageAnnotation != null) {
-      ret.getAnnotations().add(storageAnnotation);
-    }
+    //
+    //    AnnotationImpl storageAnnotation = null;
+    //
+    //    if (storageAnnotation != null) {
+    //      ret.getAnnotations().add(storageAnnotation);
+    //    }
 
     return ret;
   }
@@ -1077,39 +1079,26 @@ public class ComponentRegistry {
     ret.setReentrant(annotation.reentrant());
     ret.setFunctionType(ServiceInfo.FunctionType.FUNCTION);
 
-    for (Artifact.Type a : annotation.type()) {
-      ret.getType().add(a);
-    }
+    var distribution = new Data.ShardingStrategy();
+    distribution.setCurve(annotation.fillCurve());
+    distribution.setMaxBufferSize(annotation.maxSize());
+    distribution.setMinSplitSize(annotation.minSizeForSplitting());
+    distribution.setSuggestedSplits(annotation.split());
+    distribution.setDataType(Storage.Type.defaultFor(annotation.type()));
+    ret.setShardingStrategy(distribution);
+    ret.getType().add(annotation.type());
 
     for (KlabFunction.Argument argument : annotation.parameters()) {
       var arg = createArgument(argument);
       ret.getArguments().put(arg.getName(), arg);
     }
-    for (KlabFunction.Export argument : annotation.exports()) {
+    for (KlabFunction.Output argument : annotation.outputs()) {
       var arg = createArgument(argument);
-      ret.getImports().add(arg);
+      ret.getInputs().add(arg);
     }
-    for (KlabFunction.Import argument : annotation.imports()) {
+    for (KlabFunction.Input argument : annotation.inputs()) {
       var arg = createArgument(argument);
-      ret.getExports().add(arg);
-    }
-
-    AnnotationImpl storageAnnotation = null;
-
-    if (annotation.fillingCurve() != null) {
-      storageAnnotation =
-          org.integratedmodelling.klab.api.lang.Annotation.of(
-              "storage", "fillcurve", annotation.fillingCurve().name());
-    }
-    if (annotation.split() > 0) {
-      if (storageAnnotation == null) {
-        storageAnnotation = org.integratedmodelling.klab.api.lang.Annotation.of("storage");
-      }
-      storageAnnotation.put("splits", annotation.split());
-    }
-
-    if (storageAnnotation != null) {
-      ret.getAnnotations().add(storageAnnotation);
+      ret.getOutputs().add(arg);
     }
 
     return ret;
@@ -1197,7 +1186,7 @@ public class ComponentRegistry {
     return arg;
   }
 
-  private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Import argument) {
+  private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Input argument) {
     var arg = new ServiceInfoImpl.ArgumentImpl();
     arg.setName(argument.name());
     arg.setDescription(argument.description());
@@ -1210,7 +1199,7 @@ public class ComponentRegistry {
     return arg;
   }
 
-  private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Export argument) {
+  private ServiceInfoImpl.ArgumentImpl createArgument(KlabFunction.Output argument) {
     var arg = new ServiceInfoImpl.ArgumentImpl();
     arg.setName(argument.name());
     arg.setDescription(argument.description());
@@ -1513,6 +1502,57 @@ public class ComponentRegistry {
     }
 
     @Override
+    public boolean validate(
+        Resource resource, Scope scope, ResourceAdapter.Validator.LifecyclePhase phase) {
+      var validator = getValidator(phase);
+      if (validator != null) {
+        var implementation = implementation(validator);
+        if (implementation != null) {
+          try {
+            var ret =
+                executeMethod(
+                    implementation,
+                    resource,
+                    null,
+                    null,
+                    null,
+                    null,
+                    Urn.of(resource.getUrn()),
+                    resource.getParameters(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    scope);
+
+            if (ret instanceof Boolean) {
+              return (Boolean) ret;
+            } else if (ret instanceof Notification notification) {
+              scope.send(notification);
+              return notification.getLevel().severity <= Notification.Level.Warning.severity;
+            }
+            return true;
+
+          } catch (Throwable e) {
+            scope.error(
+                "Validation of "
+                    + resource.getUrn()
+                    + " in phase "
+                    + phase
+                    + " failed: "
+                    + e.getMessage(),
+                e);
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    @Override
     public boolean encode(
         Resource resource,
         Geometry geometry,
@@ -1522,7 +1562,6 @@ public class ComponentRegistry {
         Observable observable,
         Urn urn,
         Parameters<String> urnParameters,
-        Data inputData,
         Scope scope) {
 
       var implementation = implementation(this.encoder);
@@ -1541,7 +1580,7 @@ public class ComponentRegistry {
                 urn,
                 urnParameters,
                 null,
-                null,
+                builder == null ? null : builder.scanner(Storage.Scanner.class),
                 null,
                 null,
                 null,
@@ -1745,13 +1784,16 @@ public class ComponentRegistry {
       Urn urn,
       Parameters<String> urnParameters,
       ServiceCall serviceCall,
-      Storage storage,
+      Storage.Scanner scanner,
       Expression expression,
       LookupTable lookupTable,
       Data inputData,
-      org.integratedmodelling.klab.api.lang.Annotation storageAnnotation,
+      Data.ShardingStrategy shardingStrategy,
       Scheduler.Event schedulerEvent,
       Scope scope) {
+
+    // TODO use the builder to match inputs/outputs to scanners. This requires the prototype for
+    // functions and adapters
 
     var arguments =
         matchArguments(
@@ -1764,11 +1806,10 @@ public class ComponentRegistry {
             urn,
             urnParameters,
             serviceCall,
-            storage,
+            scanner,
             expression,
             lookupTable,
             inputData,
-            storageAnnotation,
             schedulerEvent,
             scope);
     if (arguments == null) {
@@ -1784,7 +1825,8 @@ public class ComponentRegistry {
   }
 
   /**
-   * Painful argument matcher for method using or inferring all possible arguments
+   * Painful argument matcher for method using or inferring all possible arguments. Scanners come
+   * through the data builder.
    *
    * @param method
    * @param resource
@@ -1794,8 +1836,7 @@ public class ComponentRegistry {
    * @param observable
    * @param urn
    * @param urnParameters
-   * @param serviceCall
-   * @param storage
+   * @param serviceCall // * @param storage
    * @param expression
    * @param lookupTable
    * @param schedulerEvent
@@ -1812,11 +1853,10 @@ public class ComponentRegistry {
       Urn urn,
       Parameters<String> urnParameters,
       ServiceCall serviceCall,
-      Storage storage,
+      Storage.Scanner scanner,
       Expression expression,
       LookupTable lookupTable,
       Data inputData,
-      org.integratedmodelling.klab.api.lang.Annotation storageAnnotation,
       Scheduler.Event schedulerEvent,
       Scope scope) {
     List<Object> runArguments = new ArrayList<>();
@@ -1825,6 +1865,8 @@ public class ComponentRegistry {
       digitalTwin = contextScope.getDigitalTwin();
     }
     Scale scale = geometry instanceof Scale scale1 ? scale1 : null;
+
+    // TODO HERE match inputs to scanners through the data builder
 
     if (method != null) {
       for (var argument : method.getParameterTypes()) {
@@ -1843,65 +1885,11 @@ public class ComponentRegistry {
           runArguments.add(serviceCall);
         } else if (Parameters.class.isAssignableFrom(argument)) {
           runArguments.add(urnParameters);
-        } else if (Storage.Buffer.class.isAssignableFrom(argument)) {
-          storage =
-              digitalTwin == null
-                  ? null
-                  : digitalTwin.getStorageManager().getStorage(observation, storageAnnotation);
-          if (storage != null) {
-            var buffers =
-                storage.buffers(
-                    geometry,
-                    schedulerEvent == null ? null : schedulerEvent.getTime(),
-                    argument.asSubclass(Storage.Buffer.class));
-            if (buffers.size() != 1) {
-              throw new KlabInternalErrorException(
-                  "Wrong buffer numerosity for single-buffer parameter: review configuration");
-            }
-            runArguments.add(buffers.getFirst());
-          } else {
-            runArguments.add(null);
-          }
-
-        } else if (Storage.class.isAssignableFrom(argument)) {
-          storage =
-              digitalTwin == null
-                  ? null
-                  : digitalTwin.getStorageManager().getStorage(observation, storageAnnotation);
-          runArguments.add(storage);
-        } /*else if (LongStorage.class.isAssignableFrom(argument)) {
-            storage =
-                digitalTwin == null
-                    ? null
-                    : digitalTwin
-                        .getStateStorage()
-                        .promoteStorage(observation, storage, LongStorage.class);
-            runArguments.add(storage);
-          } else if (FloatStorage.class.isAssignableFrom(argument)) {
-            storage =
-                digitalTwin == null
-                    ? null
-                    : digitalTwin
-                        .getStateStorage()
-                        .promoteStorage(observation, storage, FloatStorage.class);
-            runArguments.add(storage);
-          } else if (BooleanStorage.class.isAssignableFrom(argument)) {
-            storage =
-                digitalTwin == null
-                    ? null
-                    : digitalTwin
-                        .getStateStorage()
-                        .promoteStorage(observation, storage, BooleanStorage.class);
-            runArguments.add(storage);
-          } else if (KeyedStorage.class.isAssignableFrom(argument)) {
-            storage =
-                digitalTwin == null
-                    ? null
-                    : digitalTwin
-                        .getStateStorage()
-                        .promoteStorage(observation, storage, KeyedStorage.class);
-            runArguments.add(storage);
-          } */ else if (Scale.class.isAssignableFrom(argument)) {
+        } else if (Storage.Shard.class.isAssignableFrom(argument)) {
+          runArguments.add(scanner == null ? null : scanner.shard());
+        } else if (Storage.Scanner.class.isAssignableFrom(argument)) {
+          runArguments.add(scanner);
+        } else if (Scale.class.isAssignableFrom(argument)) {
           if (scale == null && geometry != null) {
             scale = GeometryRepository.INSTANCE.scale(geometry);
           }

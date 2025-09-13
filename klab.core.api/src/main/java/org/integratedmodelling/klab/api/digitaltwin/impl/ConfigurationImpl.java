@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.scope.Persistence;
@@ -29,6 +30,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private boolean createWhenAbsent;
   private String serviceId;
   private String description;
+  private Data.ShardingStrategy shardingStrategy = new Data.ShardingStrategy();
 
   // for the object mapper, do not remove
   ConfigurationImpl() {}
@@ -272,6 +274,16 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
     if (descriptor.getServiceUrl() != null) {
       this.serviceUrl = descriptor.getServiceUrl();
     }
+
+  }
+
+  @Override
+  public Data.ShardingStrategy getShardingStrategy() {
+    return shardingStrategy;
+  }
+
+  public void setShardingStrategy(Data.ShardingStrategy shardingStrategy) {
+    this.shardingStrategy = shardingStrategy;
   }
 
   public void setDescription(String description) {

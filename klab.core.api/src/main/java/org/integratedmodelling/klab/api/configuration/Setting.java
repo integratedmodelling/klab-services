@@ -83,6 +83,16 @@ public enum Setting {
       "Maximum memory for the local runtime in MB",
       Integer.class,
       Product.ProductType.RUNTIME_SERVICE.defaultMaxMemoryLimitMB()),
+  USE_SHORT_FLOAT_REPRESENTATION(
+      Page.RUNTIME,
+      "If set, use short floats to save space instead of doubles, at the expense of precision",
+      Boolean.class,
+      Boolean.FALSE),
+  DO_NOT_PARALLELIZE_OBSERVATIONS(
+      Page.RUNTIME,
+      "If set, use a single data buffer for all observations, disregarding all settings",
+      Boolean.class,
+      Boolean.FALSE),
   REINITIALIZE_DATABASE(
       Page.RUNTIME,
       "Remove all digital twins and re-initialize the knowledge graph",
@@ -97,7 +107,7 @@ public enum Setting {
       Page.RUNTIME,
       "If false, no remote components will be loaded when requested, relying only on those explicitly installed",
       Boolean.class,
-      false /* TODO should be TRUE by default */),
+      true),
   MAX_RESOURCES_SERVICE_MEMORY(
       Page.RESOURCES,
       "Maximum memory for the local resources service in MB",

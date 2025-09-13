@@ -9,18 +9,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
+import org.integratedmodelling.klab.api.lang.TetraFunction;
 import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -63,20 +64,17 @@ public class SchedulerImpl implements Scheduler {
    * which triggers their usage. The cache loads actuator definitions from the knowledge graph on
    * demand and recompiles the executors if they are missing.
    */
-  private LoadingCache<Long, TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean>>
-      executors =
-          CacheBuilder.newBuilder()
-              .maximumSize(200)
-              // .expireAfterAccess(10, TimeUnit.MINUTES)
-              .build(
-                  new CacheLoader<
-                      Long, TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean>>() {
-                    public TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> load(
-                        Long key) {
-                      // TODO reconstruct the executor from actuator in the knowledge graph.
-                      return (g, e, s) -> true;
-                    }
-                  });
+  private LoadingCache<Long, TriFunction<Geometry, Event, ContextScope, Boolean>> executors =
+      CacheBuilder.newBuilder()
+          .maximumSize(200)
+          // .expireAfterAccess(10, TimeUnit.MINUTES)
+          .build(
+              new CacheLoader<Long, TriFunction<Geometry, Event, ContextScope, Boolean>>() {
+                public TriFunction<Geometry, Event, ContextScope, Boolean> load(Long key) {
+                  // TODO reconstruct the executor from actuator in the knowledge graph.
+                  return (g, e, s) -> true;
+                }
+              });
 
   public SchedulerImpl(ServiceContextScope scope, DigitalTwinImpl digitalTwin) {
     this.rootScope = scope;
@@ -124,15 +122,14 @@ public class SchedulerImpl implements Scheduler {
 
   @Override
   public void registerExecutor(
-      Observation observation,
-      TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor) {
+      Observation observation, TriFunction<Geometry, Event, ContextScope, Boolean> executor) {
     executors.put(observation.getId(), executor);
   }
 
   private Triple<Long, Long, Time.Resolution> register(Geometry geometry) {
     // TODO record frequency @ starting point and determine which events to send
     Time time = GeometryRepository.INSTANCE.scale(geometry).getTime();
-    if (time != null) {
+    if (time != null && !time.isEmpty()) {
       return notifyTime(time);
     }
     return Triple.of(0L, 0L, null);
@@ -142,7 +139,7 @@ public class SchedulerImpl implements Scheduler {
    * This is called in response to the INIT event received by any root-level observation that was
    * successfully resolved. Successive executions of the same executors will happen by directly
    * calling {@link #contextualize(Observation, Geometry, ServiceContextScope, EventImpl,
-   * DigitalTwin.Transaction)}}}
+   * DigitalTwin.Transaction)}
    *
    * @param observation
    */
@@ -265,7 +262,7 @@ public class SchedulerImpl implements Scheduler {
   }
 
   private boolean execute(
-      TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean> executor,
+      TriFunction<Geometry, Event, ContextScope, Boolean> executor,
       Observation observation,
       Geometry geometry,
       Scheduler.Event event,
@@ -275,7 +272,7 @@ public class SchedulerImpl implements Scheduler {
       if (observation.getObservable().is(SemanticType.QUALITY)) {
         var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
         if (storage != null) {
-          for (var buffer : storage.buffers(geometry, event.getTime())) {
+          for (var buffer : storage.getNativeShards(event)) {
             transaction.link(observation, buffer, GraphModel.Relationship.HAS_DATA);
           }
         }
@@ -307,7 +304,7 @@ public class SchedulerImpl implements Scheduler {
       var timestamps = new ArrayList<Long>(observation.getEventTimestamps());
       if (event.getType() == Event.Type.INITIALIZATION && observation1.isSubstantialQuality()) {
         timestamps.add(0L);
-        if (geometryTime != null) {
+        if (geometryTime != null && geometryTime.getStart() != null) {
           timestamps.add(geometryTime.getStart().getMilliseconds());
         }
       } else {
@@ -339,7 +336,7 @@ public class SchedulerImpl implements Scheduler {
       rootScope.send(
           Message.MessageClass.DigitalTwin,
           Message.MessageType.ScheduleModified,
-          timeEmitter.getSchedule());
+          TimeEmitter.getSchedule());
     }
     return Triple.of(tStart, tEnd, time.getResolution());
   }
