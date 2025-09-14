@@ -30,6 +30,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.engine.ServiceMonitor;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -40,6 +41,7 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -52,6 +54,7 @@ import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 
@@ -460,12 +463,16 @@ public abstract class BaseService implements KlabService {
   public InputStream exportAsset(
       String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope) {
 
+    var asset = resolveUrn(urn, knowledgeClass, scope);
+    if (asset instanceof Observation observation) {
+      // observation available locally - data are here, TODO must contain adapter data and service ID
+    }
     var schemata =
         ResourceTransport.INSTANCE.findExportSchemata(
             knowledgeClass, mediaType, capabilities(scope), scope);
 
-    // NO - retrieve the assed, then if the metadata contain an adapter, use that to prioritize
-    // before warning.
+    // NO - retrieve the asset, then if the metadata contain an adapter and the adapter is local,
+    // use that to prioritize before warning.
     if (schemata.isEmpty()) {
       throw new KlabAuthorizationException(
           "No authorized export schema with media type " + mediaType + " is available");
@@ -477,9 +484,11 @@ public abstract class BaseService implements KlabService {
               + " is available");
     }
     var exportSchema = schemata.getFirst();
+      // TODO if the schema is in an adapter, we must either ensure that we have the data (i.e., scope
+      // is
+      //  a context scope and the DT is local) or call the exported parametrically from a resources
+      // service.
 
-    // TODO if the schema is in an adapter, we must either ensure that we have the data (i.e., scope is
-    //  a context scope and the DT is local) or call the exported parametrically from a resources service.
 
     ServiceCall serviceCall =
         ServiceCallImpl.create(exportSchema.getSchemaId(), "MEDIA_TYPE", mediaType);
@@ -487,6 +496,18 @@ public abstract class BaseService implements KlabService {
     serviceCall.getParameters().putUnnamed(this);
     var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
     return languageService.execute(serviceCall, scope, InputStream.class);
+  }
+
+  private RuntimeAsset resolveUrn(
+      String urn, KlabAsset.KnowledgeClass knowledgeClass, Scope scope) {
+    if (knowledgeClass == KlabAsset.KnowledgeClass.OBSERVATION) {
+      if (scope instanceof ServiceContextScope serviceContextScope
+          && urn.startsWith(serviceContextScope.getId())) {
+        long id = Long.parseLong(urn.substring(serviceContextScope.getId().length() + 1));
+        return serviceContextScope.getObservation(id);
+      }
+    }
+    return null;
   }
 
   @Override

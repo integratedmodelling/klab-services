@@ -22,7 +22,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 
-// TODO this will become the next Storage implementation
 public class StorageImpl implements Storage {
 
   private final Observation observation;
@@ -30,6 +29,11 @@ public class StorageImpl implements Storage {
   private final Data.ShardingStrategy nativeShardingStrategy;
   private final StorageManagerImpl storageManager;
 
+  /**
+   * Used as a key for the geometry-aware shard cache. In all current implementations, the key will
+   * be a single long for time, but this future-proofs the implementation for more dimensions in the
+   * geometry.
+   */
   private static class ComparableLongList extends ArrayList<Long>
       implements Comparable<ComparableLongList> {
     @Serial private static final long serialVersionUID = 1L;
@@ -187,14 +191,10 @@ public class StorageImpl implements Storage {
       Class<T> scannerClass,
       boolean readOnly) {
     if (this.nativeShardingStrategy.equals(shardingStrategy)) {
-      return getNativeShards(locator).stream()
-          .map(shard -> (T) shard.getNativeScanner())
-          .toList();
+      return getNativeShards(locator).stream().map(shard -> (T) shard.getNativeScanner()).toList();
     }
     return remapScanners(
-        getNativeShards(locator).stream()
-            .map(shard -> shard.getNativeScanner())
-            .toList(),
+        getNativeShards(locator).stream().map(shard -> shard.getNativeScanner()).toList(),
         shardingStrategy,
         scannerClass);
   }

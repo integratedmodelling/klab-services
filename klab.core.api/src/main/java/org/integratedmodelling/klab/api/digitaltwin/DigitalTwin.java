@@ -166,7 +166,7 @@ public interface DigitalTwin extends RuntimeAsset {
   /**
    * An executor is a runnable operation linked to an observation, compiled from an actuator in the
    * dataflow. It can be serialized in the KnowledgeGraph as a sequence of {@link ServiceCall}s and
-   * reconstructed from them. Executors, like actuators, may cover partial geometries so more than
+   * reconstructed from them. Executors, like actuators, may cover partial geometries, so more than
    * one can coexist for the same observation.
    */
   interface Executor {
