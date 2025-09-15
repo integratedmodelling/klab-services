@@ -62,7 +62,6 @@ public interface UIView {
      */
     void cleanWorkspace();
 
-
     /**
      * Compile all notifications that have the UI.Interactive.DISPLAY tag into the minimum number of alerts
      * and display them with priority depending on severity. Return the same resource set or a modified one

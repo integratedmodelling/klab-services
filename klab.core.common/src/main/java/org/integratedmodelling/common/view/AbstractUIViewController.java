@@ -5,16 +5,16 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.*;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
+import org.integratedmodelling.klab.api.view.modeler.visualization.Visualization;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.core.annotation.MergedAnnotations;
 
 import java.awt.*;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -27,8 +27,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class AbstractUIViewController<T extends View> implements ViewController<T> {
 
   UIController controller;
-  private AtomicReference<T> view = new AtomicReference<>();
-  private Set<Class<? extends PanelView<?>>> panelViewImplementations = new HashSet<>();
+  private final AtomicReference<T> view = new AtomicReference<>();
+  private final Set<Class<? extends PanelView<?>>> panelViewImplementations = new HashSet<>();
+
 
   protected AbstractUIViewController(UIController controller) {
     this.controller = controller;
@@ -48,6 +49,7 @@ public abstract class AbstractUIViewController<T extends View> implements ViewCo
   }
 
   public void registerView(T view) {
+
     this.view.set(view);
     // schedule a one-time task waiting a couple second, then check with the controller for pending
     // events accumulated before the view was available.
@@ -57,6 +59,8 @@ public abstract class AbstractUIViewController<T extends View> implements ViewCo
             exec.schedule(this::checkPendingEvents, 2, TimeUnit.SECONDS);
       }
     }
+    /* register any visualization methods */
+
   }
 
   @Override

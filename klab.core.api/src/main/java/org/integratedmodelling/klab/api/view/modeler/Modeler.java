@@ -15,8 +15,10 @@ import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
@@ -40,7 +42,7 @@ public interface Modeler extends UIController {
 
     final Class<?>[] payloadClass;
 
-    private Option(Class<?>... payloadClass) {
+    Option(Class<?>... payloadClass) {
       this.payloadClass = payloadClass;
     }
   }
@@ -63,8 +65,6 @@ public interface Modeler extends UIController {
    * @return the available distribution or null
    */
   Distribution getDistribution();
-
-  URL serviceUrl(String serviceId);
 
   /**
    * Set any of the options above with passed payload, which should be validated before use.
@@ -93,6 +93,18 @@ public interface Modeler extends UIController {
   CompletableFuture<Observation> observe(Object asset, boolean adding);
 
   /**
+   * Find an appropriate visualization method for the passed asset and media type. Return the result
+   * of visualizing or null if a method cannot be found or has failed.
+   *
+   * @param asset
+   * @param mediaType
+   * @param visualizationOptions
+   * @return
+   */
+  InputStream visualize(
+      Object asset, String mediaType, Map<String, Object> visualizationOptions);
+
+  /**
    * Return all the open sessions for the current user.
    *
    * @return
@@ -105,13 +117,6 @@ public interface Modeler extends UIController {
    * @return
    */
   List<ContextScope> getOpenContexts();
-
-//  /**
-//   * Return the current session, or null if none is current.
-//   *
-//   * @return
-//   */
-//  SessionScope getCurrentSession();
 
   /**
    * Return the current context scope if set, or create a default session and a default digital twin
@@ -127,38 +132,6 @@ public interface Modeler extends UIController {
    * @return
    */
   ContextScope getCurrentContext();
-
-//  /**
-//   * Create a new session in the current runtime service and make it current.
-//   *
-//   * @param sessionName
-//   * @return
-//   */
-//  SessionScope openNewSession(String sessionName);
-
-//  /**
-//   * Create a new context and make it current. Throw an exception if there is no current session.
-//   *
-//   * @param configuration
-//   * @return
-//   */
-//  ContextScope openNewContext(DigitalTwin.Configuration configuration);
-
-//  /**
-//   * Make the passed session the current one.
-//   *
-//   * @param session
-//   */
-//  void setCurrentSession(SessionScope session);
-
-//  /**
-//   * Set the passed service as the current one. The state of the modeler will change according to
-//   * the type of service selected, modifying the sessions/contexts if the service is a runtime, the
-//   * workspaces if a resources service, etc.
-//   *
-//   * @param service
-//   */
-//  void setCurrentService(KlabService service);
 
   /**
    * Return the innermost current scope available.

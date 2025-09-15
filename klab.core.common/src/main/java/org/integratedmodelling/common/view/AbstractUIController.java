@@ -4,10 +4,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -21,11 +18,13 @@ import org.integratedmodelling.klab.api.view.annotations.UIPanelController;
 import org.integratedmodelling.klab.api.view.annotations.UIViewController;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
+import org.integratedmodelling.klab.api.view.modeler.visualization.Visualization;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.springframework.core.annotation.AnnotationUtils;
 
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.List;
@@ -54,6 +53,25 @@ public abstract class AbstractUIController implements UIController {
   private final Map<UIReactor.Type, Object> views = new HashMap<>();
   private final Map<Object, PanelController<?, ?>> panelControllers = new HashMap<>();
   private Engine engine;
+  private final List<VisualizationDescriptor> visualizationDescriptors =
+      Collections.synchronizedList(new ArrayList<>());
+
+  private class VisualizationDescriptor {
+
+    private final Object reactor;
+    private final Method method;
+    private Visualization visualization;
+
+    VisualizationDescriptor(Visualization visualization, Object reactor, Method method) {
+      this.visualization = visualization;
+      this.reactor = reactor;
+      this.method = method;
+    }
+
+    public boolean appliesTo(Object asset) {
+      return false;
+    }
+  }
 
   private class EventReactor {
 
@@ -413,6 +431,12 @@ public abstract class AbstractUIController implements UIController {
         // TODO update action graph
 
       }
+      var visualizationHandlerDefinition =
+          AnnotationUtils.findAnnotation(method, Visualization.class);
+      if (visualizationHandlerDefinition != null) {
+        visualizationDescriptors.add(
+            new VisualizationDescriptor(visualizationHandlerDefinition, reactor, method));
+      }
     }
   }
 
@@ -637,6 +661,18 @@ public abstract class AbstractUIController implements UIController {
     if (service != null) {
       return service.addCredentials(host, credentials, engine().getOwner());
     }
+    return null;
+  }
+
+  public InputStream visualize(
+      Object asset, String mediaType, Map<String, Object> visualizationOptions) {
+    for (var visualization : visualizationDescriptors) {
+      if (visualization.appliesTo(asset)) {
+        // TODO check if the media type is supported
+        // TODO try this out
+      }
+    }
+
     return null;
   }
 }
