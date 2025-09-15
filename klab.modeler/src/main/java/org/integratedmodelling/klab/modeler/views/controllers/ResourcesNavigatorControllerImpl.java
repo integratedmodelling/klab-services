@@ -281,11 +281,11 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
       }
     }
 
-    // record service URL and ID in each root asset's metadata
-    for (var asset : assetMap.values()) {
-      asset.getMetadata().put(Metadata.KLAB_SERVICE_ID, service.serviceId());
-      asset.getMetadata().put(Metadata.KLAB_SERVICE_URL, service.getUrl());
-    }
+//    // record service URL and ID in each root asset's metadata
+//    for (var asset : assetMap.values()) {
+//      asset.getMetadata().put(Metadata.KLAB_SERVICE_ID, service.serviceId());
+//      asset.getMetadata().put(Metadata.KLAB_SERVICE_URL, service.getUrl());
+//    }
   }
 
   @Override

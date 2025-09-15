@@ -349,6 +349,7 @@ public class JacksonConfiguration {
           ResolutionConstraint.class,
           KimObservationStrategy.Operation.class,
           RuntimeAsset.class,
+          Observation.ContextualizationData.class,
           KimObservationStrategy.Filter.class,
           ObservationStrategy.class,
           ObservationStrategy.Operation.class,

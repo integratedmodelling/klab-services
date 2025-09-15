@@ -463,10 +463,6 @@ public abstract class BaseService implements KlabService {
   public InputStream exportAsset(
       String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope) {
 
-    var asset = resolveUrn(urn, knowledgeClass, scope);
-    if (asset instanceof Observation observation) {
-      // observation available locally - data are here, TODO must contain adapter data and service ID
-    }
     var schemata =
         ResourceTransport.INSTANCE.findExportSchemata(
             knowledgeClass, mediaType, capabilities(scope), scope);
@@ -484,11 +480,10 @@ public abstract class BaseService implements KlabService {
               + " is available");
     }
     var exportSchema = schemata.getFirst();
-      // TODO if the schema is in an adapter, we must either ensure that we have the data (i.e., scope
-      // is
-      //  a context scope and the DT is local) or call the exported parametrically from a resources
-      // service.
-
+    // TODO if the schema is in an adapter, we must either ensure that we have the data (i.e., scope
+    // is
+    //  a context scope and the DT is local) or call the exported parametrically from a resources
+    // service.
 
     ServiceCall serviceCall =
         ServiceCallImpl.create(exportSchema.getSchemaId(), "MEDIA_TYPE", mediaType);
@@ -498,7 +493,7 @@ public abstract class BaseService implements KlabService {
     return languageService.execute(serviceCall, scope, InputStream.class);
   }
 
-  private RuntimeAsset resolveUrn(
+  public RuntimeAsset resolveUrn(
       String urn, KlabAsset.KnowledgeClass knowledgeClass, Scope scope) {
     if (knowledgeClass == KlabAsset.KnowledgeClass.OBSERVATION) {
       if (scope instanceof ServiceContextScope serviceContextScope

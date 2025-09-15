@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -54,14 +55,14 @@ public abstract class AbstractResourceContextualizer {
 
   public boolean contextualize(Storage.Scanner scanner, Scheduler.Event event) {
 
+    if (observation.getContextualizationData()
+        instanceof ObservationImpl.ContextualizationDataImpl contextualizationData) {
+      contextualizationData.setAdapterId(resource.getAdapterType());
+      contextualizationData.getParameters().putAll(resource.getParameters());
+    }
+
     try {
       var builder = getData(scanner, event, scope);
-      var adapters = observation.getMetadata().get(Metadata.KLAB_ADAPTER_URNS, String.class);
-      adapters =
-          adapters == null || adapters.isEmpty()
-              ? resource.getAdapterType()
-              : (adapters + "," + resource.getAdapterType());
-      observation.getMetadata().put(Metadata.KLAB_ADAPTER_URNS, adapters);
 
       // TODO the shards have been filled. Update shard data in the transaction for KG update
       if (scanner != null) {

@@ -44,9 +44,9 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
-import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.runtime.storage.ShardImpl;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.neo4j.cypherdsl.core.*;
 import org.neo4j.driver.*;
 import org.neo4j.driver.exceptions.TransientException;
@@ -432,6 +432,19 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setId(node.get("id").asLong());
         instance.setEventTimestamps(node.get("eventTimestamps").asList(value -> value.asLong()));
         instance.setSubstantialQuality(node.get("substantial").asBoolean(false));
+
+        var cData = new ObservationImpl.ContextualizationDataImpl();
+        var service = scope.getService(RuntimeService.class);
+        cData.setServiceUrl(service.getUrl());
+        cData.setServiceId(serviceId);
+        cData.setAdapterId(
+            node.get("adapterId").isNull() ? null : node.get("adapterId").asString());
+        if (!node.get("adapterParameters").isNull()) {
+          var params =
+              Utils.Json.parseObject(node.get("adapterParameters").asString(), Parameters.class);
+          cData.getParameters().putAll(params);
+        }
+        instance.setContextualizationData(cData);
 
         var gResult =
             query(

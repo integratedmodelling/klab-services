@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -52,10 +53,15 @@ public class WrappingDataBuilder extends ScannerAdapter implements Data.Builder 
     var reasoner = scope.getService(Reasoner.class);
     for (var child : data.children()) {
       var observable = reasoner.resolveObservable(child.semantics());
-      child.metadata().put(Metadata.KLAB_ADAPTER_URNS, adapterId);
       var observation =
           DigitalTwin.createObservation(
               scope, child.name(), observable, child.geometry(), child.metadata());
+      if (observation.getContextualizationData()
+          instanceof ObservationImpl.ContextualizationDataImpl contextualizationData) {
+        contextualizationData.setAdapterId(adapterId);
+        // TODO may need more
+      }
+
       ret.add(new WrappingDataBuilder(child, observation, event, null, adapterId, scope));
     }
 

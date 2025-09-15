@@ -440,6 +440,20 @@ public class RuntimeService extends BaseService
         }
       }
 
+      /* adjourn contextualization data with our service coordinates */
+      ObservationImpl.ContextualizationDataImpl contextualizationData =
+          observation.getContextualizationData()
+                  instanceof ObservationImpl.ContextualizationDataImpl cd
+              ? cd
+              : new ObservationImpl.ContextualizationDataImpl();
+
+      contextualizationData.setServiceId(serviceId());
+      contextualizationData.setServiceUrl(getUrl());
+      if (observation.getContextualizationData() == null
+          && observation instanceof ObservationImpl observationImpl) {
+        observationImpl.setContextualizationData(contextualizationData);
+      }
+
       var agent =
           serviceContextScope.getConstraint(ResolutionConstraint.Type.Provenance, Agent.class);
       var storedAgent =
@@ -457,7 +471,7 @@ public class RuntimeService extends BaseService
 
       var runningScope = contextScope.executing(resolution);
       return resolver
-          /* resolve asynchronously */
+          /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
           .resolve(observation, contextScope)
           /* then compile the dataflow */
           .thenApply(
@@ -652,7 +666,6 @@ public class RuntimeService extends BaseService
                     Notification.error(
                         "Resource " + resource.getResourceUrn() + " is not available"));
               }
-
             }
           }
         }

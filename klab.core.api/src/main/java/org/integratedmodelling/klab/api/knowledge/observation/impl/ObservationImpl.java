@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge.observation.impl;
 
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -15,7 +16,9 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.Serial;
+import java.net.URL;
 import java.util.*;
+import java.util.HashMap;
 
 /**
  * A "naked" observation only has an observable + metadata and provenance info. Additional metadata
@@ -25,11 +28,6 @@ import java.util.*;
 public class ObservationImpl implements Observation {
 
   @Serial private static final long serialVersionUID = 8993700853991252827L;
-
-  // Keys for metadata to track provenance, execution and debugging. If they start with `internal.`
-  // they should not be shown in visualization. These apply to activities as well.
-  public static final String ACTIVITY_TRANSIENT_ID_KEY = "internal.activity.transient.id";
-  public static final String IS_SUBMITTED_KEY = "internal.observation.is.submitted";
 
   private Observable observable;
   private Geometry geometry;
@@ -44,8 +42,61 @@ public class ObservationImpl implements Observation {
   private boolean substantialQuality;
   private long transientId = Klab.getNextId();
   private List<Notification> notifications = new ArrayList<>();
+  private ContextualizationData contextualizationData;
 
-  //  private Data.ShardingStrategy shardingStrategy;
+  public static class ContextualizationDataImpl implements ContextualizationData {
+
+    private Data data;
+    private String serviceId;
+    private String adapterId;
+    private Parameters<String> parameters = Parameters.create();
+    private URL serviceUrl;
+
+    @Override
+    public Data getData() {
+      return this.data;
+    }
+
+    @Override
+    public String getServiceId() {
+      return this.serviceId;
+    }
+
+    @Override
+    public String getAdapterId() {
+      return this.adapterId;
+    }
+
+    @Override
+    public Parameters<String> getParameters() {
+      return this.parameters;
+    }
+
+    public void setData(Data data) {
+      this.data = data;
+    }
+
+    public void setServiceId(String serviceId) {
+      this.serviceId = serviceId;
+    }
+
+    public void setAdapterId(String adapterId) {
+      this.adapterId = adapterId;
+    }
+
+    public void setParameters(Parameters<String> parameters) {
+      this.parameters = parameters;
+    }
+
+    @Override
+    public URL getServiceUrl() {
+      return serviceUrl;
+    }
+
+    public void setServiceUrl(URL serviceUrl) {
+      this.serviceUrl = serviceUrl;
+    }
+  }
 
   public ObservationImpl() {}
 
@@ -221,6 +272,15 @@ public class ObservationImpl implements Observation {
   @Override
   public List<Long> getEventTimestamps() {
     return eventTimestamps;
+  }
+
+  @Override
+  public ContextualizationData getContextualizationData() {
+    return contextualizationData;
+  }
+
+  public void setContextualizationData(ContextualizationData contextualizationData) {
+    this.contextualizationData = contextualizationData;
   }
 
   public void setEventTimestamps(List<Long> eventTimestamps) {

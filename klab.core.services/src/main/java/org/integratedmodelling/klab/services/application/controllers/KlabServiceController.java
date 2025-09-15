@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
@@ -92,12 +93,25 @@ public class KlabServiceController {
     if (principal instanceof EngineAuthorization authorization) {
 
       var scope = authorization.getScope();
-      // retrieve schema. TODO not handling authorization yet
 
       var stream = instance.klabService().exportAsset(urn, knowledgeClass, mediaType, scope);
       if (stream == null) {
-        throw new KlabResourceAccessException(
-            "Service cannot stream the asset identified by " + urn);
+
+        // see if we have the referenced asset. In that case we can check for specific export
+        // schemata based on identity, geometry and metadata before we give up.
+        var asset = instance.klabService().resolveUrn(urn, knowledgeClass, scope);
+        if (asset instanceof Observation observation
+            && instance
+                .klabService()
+                .serviceId()
+                .equals(observation.getContextualizationData().getServiceId())) {
+          // observation available in local storage - data are here, find export based on geometry
+
+        } else {
+
+          throw new KlabResourceAccessException(
+              "Service cannot stream the asset identified by " + urn);
+        }
       }
 
       try {

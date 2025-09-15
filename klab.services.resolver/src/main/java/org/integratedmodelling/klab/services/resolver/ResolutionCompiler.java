@@ -74,7 +74,6 @@ public class ResolutionCompiler {
     if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
       return ResolutionGraph.empty();
     }
-
     var scale = GeometryRepository.INSTANCE.scale(resolutionGeometry, scope);
     Coverage coverage = Coverage.create(scale, 0.0);
     for (var resolvable : parentGraph.getResolving(observation.getObservable(), scale)) {
@@ -99,6 +98,12 @@ public class ResolutionCompiler {
         scope.withResolutionConstraints(
             ResolutionConstraint.of(
                 ResolutionConstraint.Type.Provenance, Agent.create(AgentImpl.KLAB_AGENT_NAME)));
+
+    if (observation.getContextualizationData().getData() != null) {
+      // TODO compile data in (inline contextualizer?), return
+    } else if (observation.getContextualizationData().getAdapterId() != null) {
+      // TODO validate and compile adapter call in (resource?), return
+    }
 
     List<ResolutionGraph> strategyGraphs = new ArrayList<>();
     for (ObservationStrategy strategy :
@@ -219,8 +224,8 @@ public class ResolutionCompiler {
 
   /**
    * TODO the resolution must also check any geometry constraints that come with the
-   *  contextualizables, taken from function and adapter specs. These probably should
-   *  come along with the ResourceSet results.
+   * contextualizables, taken from function and adapter specs. These probably should come along with
+   * the ResourceSet results.
    *
    * @param model
    * @param scaleToCover
@@ -244,7 +249,8 @@ public class ResolutionCompiler {
     var runtime = scope.getService(RuntimeService.class);
     ResourceSet requirements = runtime.resolveContextualizables(model.getComputation(), scope);
 
-    // TODO filter the results to accommodate constraints w.r.t. the geometry and (possibly) the semantics.
+    // TODO filter the results to accommodate constraints w.r.t. the geometry and (possibly) the
+    // semantics.
 
     if (requirements.isEmpty()) {
       return ResolutionGraph.empty();
@@ -261,7 +267,8 @@ public class ResolutionCompiler {
       var dependencyResolution = resolve(dependency, scaleToCover, ret, scope);
 
       // FIXME if the dep is on a collective, the geom of the obs will be the observer's and this
-      //  will be irrelevant 00 FIXME HERE - dependencyResolution.targetCOverage merges to insufficient the FIRST time only
+      //  will be irrelevant 00 FIXME HERE - dependencyResolution.targetCOverage merges to
+      // insufficient the FIRST time only
       var cov = ret.checkCoverage(dependencyResolution);
       if (!cov.isRelevant()) {
         if (dependency.isOptional()) {

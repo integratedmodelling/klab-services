@@ -97,6 +97,13 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           if (observation instanceof ObservationImpl observation1) {
             ret.put("substantial", observation1.isSubstantialQuality());
           }
+          if (observation.getContextualizationData()
+              instanceof ObservationImpl.ContextualizationDataImpl data) {
+            ret.put("adapterId", data.getAdapterId());
+            ret.put(
+                "adapterParameters",
+                data.getParameters() == null ? null : Utils.Json.asString(data.getParameters()));
+          }
         }
         case Agent agent -> {
           ret.putAll(agent.getMetadata());

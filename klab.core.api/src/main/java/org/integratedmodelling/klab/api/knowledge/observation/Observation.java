@@ -15,6 +15,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -24,6 +25,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
+import java.net.URL;
 import java.util.List;
 
 /**
@@ -51,6 +53,50 @@ import java.util.List;
 public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAsset {
 
   long UNASSIGNED_ID = -1;
+
+  /**
+   * In resolved observations, reports adapter and its parameters, if any, plus the service ID where
+   * the observation is hosted. Unresolved observations may provide contextualization data if they
+   * have been computed already outside the digital twin, so that the resolver can validate the
+   * source and compile it.
+   */
+  interface ContextualizationData {
+    /**
+     * This is non-null if there is inline content. Must fit the observation's geometry.
+     *
+     * @return
+     */
+    Data getData();
+
+    /**
+     * The URL of the service where the observation is hosted. Null in non-resolved observations at
+     * client side.
+     *
+     * @return
+     */
+    URL getServiceUrl();
+
+    /**
+     * The service ID where the observation is hosted. Null in non-resolved observations.
+     *
+     * @return
+     */
+    String getServiceId();
+
+    /**
+     * The ID of the adapter that contextualized the observation, if any.
+     *
+     * @return
+     */
+    String getAdapterId();
+
+    /**
+     * The parameters for the adapter that contextualized the observation, if any.
+     *
+     * @return
+     */
+    Parameters<String> getParameters();
+  }
 
   /**
    * The role played by an observation in a dependency hierarchy. This depends solely on the
@@ -135,15 +181,16 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
    */
   List<Long> getEventTimestamps();
 
-//  /**
-//   * Once contextualized, quality observations will have a distribution strategy that details the
-//   * native representation in the storage. That will describe the architecture of the buffers stored
-//   * in the knowledge graph and covering the geometry of the observation.
-//   *
-//   * @return a non-null distribution strategy for contextualized quality observations; null
-//   *     otherwise.
-//   */
-//  Data.ShardingStrategy getShardingStrategy();
+  /**
+   * In resolved observations, reports adapter and its parameters, if any, plus the service ID where
+   * the observation is hosted. Unresolved observations may provide contextualization data if they
+   * have been computed already outside the digital twin. If an observation with contextualization
+   * data is submitted, the resolver is obliged to validate the source and compile it.
+   *
+   * @return contextualization data or null. If the observation comes from a service, this is never
+   *     null.
+   */
+  ContextualizationData getContextualizationData();
 
   /**
    * After resolution, this will report the 0-1 coverage resolved. Before resolution this will be 0.
