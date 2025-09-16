@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resolver;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -15,6 +16,7 @@ import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -439,6 +441,12 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     throw new KlabIllegalArgumentException("unexpected scope class");
+  }
+
+  @Override
+  public <T extends Serializable> T retrieveAsset(String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
+    // TODO
+    return null;
   }
 
   public static ResolutionGraph getResolutionGraph(ContextScope scope) {

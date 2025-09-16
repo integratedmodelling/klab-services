@@ -493,8 +493,7 @@ public abstract class BaseService implements KlabService {
     return languageService.execute(serviceCall, scope, InputStream.class);
   }
 
-  public RuntimeAsset resolveUrn(
-      String urn, KlabAsset.KnowledgeClass knowledgeClass, Scope scope) {
+  public RuntimeAsset resolveUrn(String urn, KlabAsset.KnowledgeClass knowledgeClass, Scope scope) {
     if (knowledgeClass == KlabAsset.KnowledgeClass.OBSERVATION) {
       if (scope instanceof ServiceContextScope serviceContextScope
           && urn.startsWith(serviceContextScope.getId())) {
@@ -552,4 +551,6 @@ public abstract class BaseService implements KlabService {
           default -> throw new KlabIllegalStateException("Unknown identity type: " + identity);
         };
   }
+
+
 }

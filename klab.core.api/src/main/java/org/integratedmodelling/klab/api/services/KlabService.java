@@ -4,9 +4,9 @@ import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCre
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 /**
  * Services may be locally implemented or clients to remote services: each service implementation
@@ -401,6 +400,22 @@ public interface KlabService extends Service {
    */
   ExternalAuthenticationCredentials.CredentialInfo addCredentials(
       String host, ExternalAuthenticationCredentials credentials, Scope scope);
+
+  /**
+   * Retrieve a specific asset under the purview of this service. The URN must identify a
+   * first-class asset such as an observation or a namespace, expecting it to be hosted on this
+   * service. The asset class may refer to descriptors or other intems related to it, e.g. metadata,
+   * a color map, or other information that can be unambiguously obtained about the asset.
+   *
+   * @param <T>
+   * @param urn
+   * @param locator may be null if not relevant to the asset being extracted or documented
+   * @param assetClass
+   * @param scope
+   * @return
+   */
+  <T extends Serializable> T retrieveAsset(
+      String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope);
 
   /**
    * This will find any export schema installed at service side to honor the request.

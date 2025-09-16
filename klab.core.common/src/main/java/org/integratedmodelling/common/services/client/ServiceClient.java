@@ -3,6 +3,7 @@ package org.integratedmodelling.common.services.client;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
@@ -21,6 +22,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -508,5 +510,11 @@ public abstract class ServiceClient implements KlabService {
       }
     }
     return connectionAttempted.get();
+  }
+
+  @Override
+  public <T extends Serializable> T retrieveAsset(String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
+    // TODO
+    return null;
   }
 }
