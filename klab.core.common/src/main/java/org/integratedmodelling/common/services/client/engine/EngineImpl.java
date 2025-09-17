@@ -11,6 +11,7 @@ import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
 import org.integratedmodelling.common.distribution.DistributionImpl;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
+import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.Version;
@@ -156,58 +157,65 @@ public class EngineImpl implements Engine, PropertyHolder {
 
   @Override
   public UserScope authenticate() {
+    return authenticate(null);
+  }
 
-    if (this.defaultUser == null) {
-
-      this.authData = Authentication.INSTANCE.authenticate(settings);
-
-      /*
-       * If user is federated, we don't start the local broker. Otherwise, we set up a local
-       * federated identity and tell the runtime service to create an embedded broker on the default
-       * URL and port.
-       *
-       * FIXME check if this still applies (federation is a group)
-       */
-      this.federationData =
-          authData
-              .getFirst()
-              .getData()
-              .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
-
-      if (federationData == null || federationData.getBroker() == null) {
-        var id = federationData == null ? null : federationData.getId();
-        if (id == null) {
-          id = Federation.LOCAL_FEDERATION_ID;
-        }
-        federationData = new Federation(id, Channel.LOCAL_BROKER_URL + Channel.LOCAL_BROKER_PORT);
-      }
-
-      /* federation must be already established at this point */
-      this.defaultUser =
-          new ClientUserScope((UserIdentity) authData.getFirst(), this) {
-            @Override
-            public <T extends KlabService> T getService(
-                Class<T> serviceClass, Predicate<T>... selectors) {
-              return (T) serviceMonitor.getService(serviceClass, selectors);
-            }
-
-            @Override
-            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-              return serviceMonitor.getServices(serviceClass);
-            }
-          };
-
-      this.users.add(this.defaultUser);
-
-      this.serviceMonitor =
-          new ServiceMonitor(
-              authData.getFirst(),
-              settings,
-              true,
-              authData.getSecond(),
-              this::notifyLocalService,
-              this::notifyLocalEngine);
+  @Override
+  public UserScope authenticate(KlabCertificate certificate) {
+    if (this.defaultUser != null) {
+      return this.defaultUser;
     }
+
+    this.authData = certificate == null
+            ? Authentication.INSTANCE.authenticate(settings)
+            : Authentication.INSTANCE.authenticate(certificate, settings);
+
+    /*
+     * If user is federated, we don't start the local broker. Otherwise, we set up a local
+     * federated identity and tell the runtime service to create an embedded broker on the default
+     * URL and port.
+     *
+     * FIXME check if this still applies (federation is a group)
+     */
+    this.federationData =
+            authData
+                    .getFirst()
+                    .getData()
+                    .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+
+    if (federationData == null || federationData.getBroker() == null) {
+      var id = federationData == null ? null : federationData.getId();
+      if (id == null) {
+        id = Federation.LOCAL_FEDERATION_ID;
+      }
+      federationData = new Federation(id, Channel.LOCAL_BROKER_URL + Channel.LOCAL_BROKER_PORT);
+    }
+
+    /* federation must be already established at this point */
+    this.defaultUser =
+            new ClientUserScope((UserIdentity) authData.getFirst(), this) {
+              @Override
+              public <T extends KlabService> T getService(
+                      Class<T> serviceClass, Predicate<T>... selectors) {
+                return (T) serviceMonitor.getService(serviceClass, selectors);
+              }
+
+              @Override
+              public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+                return serviceMonitor.getServices(serviceClass);
+              }
+            };
+
+    this.users.add(this.defaultUser);
+
+    this.serviceMonitor =
+            new ServiceMonitor(
+                    authData.getFirst(),
+                    settings,
+                    true,
+                    authData.getSecond(),
+                    this::notifyLocalService,
+                    this::notifyLocalEngine);
 
     return this.defaultUser;
   }

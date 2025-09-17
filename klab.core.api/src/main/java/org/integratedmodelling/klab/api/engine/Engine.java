@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.engine;
 
+import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -131,6 +132,8 @@ public interface Engine /*extends KlabService*/ {
    * @return
    */
   UserScope authenticate();
+
+  UserScope authenticate(KlabCertificate certificate);
 
   /**
    * The engine has booted successfully and it's available for use.
