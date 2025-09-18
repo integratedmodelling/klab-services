@@ -242,6 +242,7 @@ public abstract class ServiceInstance<T extends BaseService> {
                     s.getUrls().getFirst(),
                     new ServiceIdentityImpl(
                         s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
+                    this.klabService(),
                     SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
@@ -253,6 +254,7 @@ public abstract class ServiceInstance<T extends BaseService> {
                     s.getUrls().getFirst(),
                     new ServiceIdentityImpl(
                         s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
+                    this.klabService(),
                     SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
@@ -264,6 +266,7 @@ public abstract class ServiceInstance<T extends BaseService> {
                     s.getUrls().getFirst(),
                     new ServiceIdentityImpl(
                         s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
+                    this.klabService(),
                     SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
@@ -275,6 +278,7 @@ public abstract class ServiceInstance<T extends BaseService> {
                     s.getUrls().getFirst(),
                     new ServiceIdentityImpl(
                         s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
+                    this.klabService(),
                     SettingsImpl.forService(serviceType()));
             currentServices
                 .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
