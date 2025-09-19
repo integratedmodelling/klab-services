@@ -2,7 +2,9 @@ package org.integratedmodelling.klab.api.view.modeler;
 
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -102,7 +104,10 @@ public interface Modeler extends UIController {
    * @return
    */
   InputStream visualize(
-      Object asset, String mediaType, Map<String, Object> visualizationOptions);
+      KlabAsset asset,
+      Scheduler.Event event,
+      String mediaType,
+      Map<String, Object> visualizationOptions);
 
   /**
    * Return all the open sessions for the current user.

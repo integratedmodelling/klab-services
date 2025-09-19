@@ -3,11 +3,15 @@ package org.integratedmodelling.common.view;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -19,11 +23,14 @@ import org.integratedmodelling.klab.api.view.annotations.UIViewController;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.view.modeler.visualization.Visualization;
+import org.integratedmodelling.klab.common.data.ExportFileCache;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.springframework.core.annotation.AnnotationUtils;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -56,18 +63,8 @@ public abstract class AbstractUIController implements UIController {
   private final List<VisualizationDescriptor> visualizationDescriptors =
       Collections.synchronizedList(new ArrayList<>());
 
-  private class VisualizationDescriptor {
-
-    private final Object reactor;
-    private final Method method;
-    private Visualization visualization;
-
-    VisualizationDescriptor(Visualization visualization, Object reactor, Method method) {
-      this.visualization = visualization;
-      this.reactor = reactor;
-      this.method = method;
-    }
-
+  private record VisualizationDescriptor(
+      Visualization visualization, Object reactor, Method method) {
     public boolean appliesTo(Object asset) {
       return false;
     }
@@ -665,14 +662,62 @@ public abstract class AbstractUIController implements UIController {
   }
 
   public InputStream visualize(
-      Object asset, String mediaType, Map<String, Object> visualizationOptions) {
-    for (var visualization : visualizationDescriptors) {
+      KlabAsset asset,
+      Scheduler.Event event,
+      String mediaType,
+      Map<String, Object> visualizationOptions) {
+
+    var service = getServiceHosting(asset);
+    if (service == null) {
+      return null;
+    }
+
+    for (var visualization :
+        visualizationDescriptors.stream()
+            .filter(v -> v.visualization().provides().equals(mediaType))
+            .toList()) {
       if (visualization.appliesTo(asset)) {
-        // TODO check if the media type is supported
-        // TODO try this out
+        // retrieve a cached file if possible, otherwise export the asset and cache it.
+
+        File cachedFile = null;
+        if (visualization.visualization.requires() == null) {
+          cachedFile =
+              ExportFileCache./* TODO with extension.... */ temporary()
+                  .get(
+                      asset.getUrn(),
+                      event,
+                      visualization.visualization.requires(),
+                      () ->
+                          service.exportAsset(
+                              asset.getUrn(),
+                              KlabAsset.classify(asset),
+                              visualization.visualization.requires(),
+                              scope()));
+        }
+
+        // TODO invoke the visualization handler and return the result, turning it into a
+        //  InputStream if needed.
+//          Utils.Java.runWithMatchedParameters();
+
       }
     }
 
     return null;
+  }
+
+  public KlabService getServiceHosting(Object asset) {
+    return switch (asset) {
+      case Observation observation ->
+          observation.getContextualizationData() == null
+              ? null
+              : scope()
+                  .getService(
+                      RuntimeService.class,
+                      s ->
+                          s.serviceId()
+                              .equals(observation.getContextualizationData().getServiceId()));
+      // TODO everything else
+      default -> null;
+    };
   }
 }

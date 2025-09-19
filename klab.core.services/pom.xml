@@ -135,44 +135,11 @@
             <version>2.11.5</version>
         </dependency>
 
-        <!-- file cache -->
-        <!--        <dependency>
-                    <groupId>org.ehcache</groupId>
-                    <artifactId>ehcache</artifactId>
-                    <version>3.11.1</version>
-                </dependency>-->
-        <dependency>
-            <groupId>org.ehcache</groupId>
-            <artifactId>ehcache</artifactId>
-            <version>3.11.1</version>
-            <classifier>jakarta</classifier>
-
-            <exclusions>
-                <exclusion>
-                    <groupId>org.glassfish.jaxb</groupId>
-                    <artifactId>jaxb-runtime</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-            <version>[3,3.1)</version>
-        </dependency>
-
-
         <!-- this is to build the Java actor code -->
         <dependency>
             <groupId>com.palantir.javapoet</groupId>
             <artifactId>javapoet</artifactId>
             <version>0.5.0</version>
-        </dependency>
-
-        <!-- lightweights template engine for generated Groovy classes and more -->
-        <dependency>
-            <groupId>gg.jte</groupId>
-            <artifactId>jte</artifactId>
-            <version>3.1.16</version>
         </dependency>
 
         <dependency>

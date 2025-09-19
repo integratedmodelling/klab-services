@@ -99,10 +99,12 @@ public class ResolutionCompiler {
             ResolutionConstraint.of(
                 ResolutionConstraint.Type.Provenance, Agent.create(AgentImpl.KLAB_AGENT_NAME)));
 
-    if (observation.getContextualizationData().getData() != null) {
-      // TODO compile data in (inline contextualizer?), return
-    } else if (observation.getContextualizationData().getAdapterId() != null) {
-      // TODO validate and compile adapter call in (resource?), return
+    if (observation.getContextualizationData() != null) {
+      if (observation.getContextualizationData().getData() != null) {
+        // TODO compile data in (inline contextualizer?), return
+      } else if (observation.getContextualizationData().getAdapterId() != null) {
+        // TODO validate and compile adapter call in (resource?), return
+      }
     }
 
     List<ResolutionGraph> strategyGraphs = new ArrayList<>();

@@ -1,8 +1,7 @@
-package org.integratedmodelling.klab.runtime.storage;
+package org.integratedmodelling.klab.common.data;
 
 import org.ehcache.Cache;
 import org.ehcache.PersistentCacheManager;
-import org.ehcache.config.EvictionAdvisor;
 import org.ehcache.config.builders.CacheConfigurationBuilder;
 import org.ehcache.config.builders.CacheManagerBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
@@ -10,17 +9,18 @@ import org.ehcache.config.units.MemoryUnit;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.utils.Utils;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
+import java.net.URL;
 import java.util.function.Supplier;
 
 /**
- * Persistent, configurable file cache for export files, which are created in a given directory on
+ * Persistent, configurable file cache for exported files, which are created in a given directory on
  * the filesystem and not managed except for insertion and deletion. The key contains the URN of the
  * observation (or other object), a Scheduler.Event time or URN, and the media type.
+ *
+ * <p>Can be used at client side or server side as needed.
  */
 public class ExportFileCache implements Closeable {
 
@@ -28,6 +28,15 @@ public class ExportFileCache implements Closeable {
   private boolean offline;
   private PersistentCacheManager persistentCacheManager;
   private Cache<Key, File> cache;
+  private String fileExtension = "dat";
+
+  private ExportFileCache(ExportFileCache exportFileCache) {
+    offline = exportFileCache.offline;
+    maxOccupancy = exportFileCache.maxOccupancy;
+    persistentCacheManager = exportFileCache.persistentCacheManager;
+    cache = exportFileCache.cache;
+    fileExtension = exportFileCache.fileExtension;
+  }
 
   @Override
   public void close() throws IOException {
@@ -36,10 +45,32 @@ public class ExportFileCache implements Closeable {
     }
   }
 
+  public void setFileExtension(String fileExtension) {
+    this.fileExtension = fileExtension;
+  }
+
+  /**
+   * Create a temporary version that forces the file extension to the passed one.
+   *
+   * @param fileExtension
+   * @return
+   */
+  public ExportFileCache withExtension(String fileExtension) {
+    var ret = new ExportFileCache(this);
+    ret.fileExtension = fileExtension;
+    return ret;
+  }
+
+  private File getTemporaryFile() {
+      // TODO
+    return null;
+  }
+
   public static class Key implements Serializable {
     private String urn;
-    private String locator; // stringified long or event URN
+    private String locator; // stringified long (possibly array) or event URN
     private String mediaType;
+    private String hash; // if used, hash of the file content to verify integrity and currency
 
     public String getUrn() {
       return urn;
@@ -63,6 +94,14 @@ public class ExportFileCache implements Closeable {
 
     public void setMediaType(String mediaType) {
       this.mediaType = mediaType;
+    }
+
+    public String getHash() {
+      return hash;
+    }
+
+    public void setHash(String hash) {
+      this.hash = hash;
     }
   }
 
@@ -98,13 +137,30 @@ public class ExportFileCache implements Closeable {
   }
 
   public File get(
-      String urn, Scheduler.Event event, String mediaType, Supplier<File> computeIfAbsent) {
+      String urn, Scheduler.Event event, String mediaType, Supplier<?> computeIfAbsent) {
     if (offline) {
-      return computeIfAbsent.get();
+      return toFile(computeIfAbsent);
     }
     // create key
+    // return null if content is null
     // retrieve or add
+
     return null;
+  }
+
+  public File toFile(Supplier<?> computeIfAbsent) {
+
+    var input = computeIfAbsent.get();
+    if (input instanceof File) {
+      return (File) input;
+    } else if (input instanceof InputStream inputStream) {
+    } else if (input instanceof URL url) {
+    } else if (input instanceof String string) {
+      return Utils.Files.writeStringToFile(string, getTemporaryFile());
+    }
+
+    /* TODO inputstream, String, etc. */
+    throw new IllegalArgumentException("Input cannot be converted to a file");
   }
 
   public static ExportFileCache temporary() {
