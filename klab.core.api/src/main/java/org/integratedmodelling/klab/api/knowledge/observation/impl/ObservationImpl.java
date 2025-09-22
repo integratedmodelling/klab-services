@@ -41,8 +41,10 @@ public class ObservationImpl implements Observation {
   private List<Long> eventTimestamps = new ArrayList<>();
   private boolean substantialQuality;
   private long transientId = Klab.getNextId();
+  private long parentTransientId = 0;
   private List<Notification> notifications = new ArrayList<>();
   private ContextualizationData contextualizationData;
+  private int childrenCount;
 
   public static class ContextualizationDataImpl implements ContextualizationData {
 
@@ -95,6 +97,18 @@ public class ObservationImpl implements Observation {
 
     public void setServiceUrl(URL serviceUrl) {
       this.serviceUrl = serviceUrl;
+    }
+
+    @Override
+    public String toString() {
+      return "ContextualizationDataImpl{"
+          + "serviceId='"
+          + serviceId
+          + '\''
+          + ", adapterId='"
+          + adapterId
+          + '\''
+          + '}';
     }
   }
 
@@ -305,7 +319,8 @@ public class ObservationImpl implements Observation {
         + urn
         + "#"
         + (geometry == null ? "0" : geometry.size())
-        + "]";
+        + "]"
+        + (contextualizationData == null ? "X" : "*");
   }
 
   @Override
@@ -334,5 +349,23 @@ public class ObservationImpl implements Observation {
 
   public void setSubstantialQuality(boolean substantialQuality) {
     this.substantialQuality = substantialQuality;
+  }
+
+  @Override
+  public int getChildrenCount() {
+    return childrenCount;
+  }
+
+  public void setChildrenCount(int childrenCount) {
+    this.childrenCount = childrenCount;
+  }
+
+  @Override
+  public long getParentTransientId() {
+    return parentTransientId;
+  }
+
+  public void setParentTransientId(long parentTransientId) {
+    this.parentTransientId = parentTransientId;
   }
 }

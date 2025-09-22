@@ -6,54 +6,64 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 
 public abstract class ProvenanceNodeImpl implements Provenance.Node {
 
-    private long id;
-    private String name;
-    private boolean empty;
-    private Metadata metadata = Metadata.create();
-    private long transientId = Klab.getNextId();
+  private long id;
+  private String name;
+  private boolean empty;
+  private Metadata metadata = Metadata.create();
+  private long transientId = Klab.getNextId();
+  private long parentTransientId;
 
-    @Override
-    public long getId() {
-        return id;
-    }
+  @Override
+  public long getId() {
+    return id;
+  }
 
-    public void setId(long id) {
-        this.id = id;
-    }
+  public void setId(long id) {
+    this.id = id;
+  }
 
-    @Override
-    public boolean isEmpty() {
-        return empty;
-    }
+  @Override
+  public boolean isEmpty() {
+    return empty;
+  }
 
-    public void setEmpty(boolean empty) {
-        this.empty = empty;
-    }
+  public void setEmpty(boolean empty) {
+    this.empty = empty;
+  }
 
-    @Override
-    public String getName() {
-        return name;
-    }
+  @Override
+  public String getName() {
+    return name;
+  }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+  public void setName(String name) {
+    this.name = name;
+  }
 
-    @Override
-    public long getTransientId() {
-        return transientId;
-    }
+  @Override
+  public long getTransientId() {
+    return transientId;
+  }
 
-    public void setTransientId(long transientId) {
-        this.transientId = transientId;
-    }
+  public void setTransientId(long transientId) {
+    this.transientId = transientId;
+  }
 
-    @Override
-    public Metadata getMetadata() {
-        return metadata;
-    }
+  @Override
+  public Metadata getMetadata() {
+    return metadata;
+  }
 
-    public void setMetadata(Metadata metadata) {
-        this.metadata = metadata;
-    }
+  public void setMetadata(Metadata metadata) {
+    this.metadata = metadata;
+  }
+
+  @Override
+  public long getParentTransientId() {
+    return parentTransientId;
+  }
+
+  public void setParentTransientId(long parentTransientId) {
+    this.parentTransientId = parentTransientId;
+  }
 }

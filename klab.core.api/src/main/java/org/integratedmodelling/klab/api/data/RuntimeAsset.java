@@ -111,6 +111,23 @@ public interface RuntimeAsset {
    */
   long getTransientId();
 
+  /**
+   * When a new child is added, this is increased. Only meaningful during contextualization - always
+   * use the knowledge graph for any other purpose. This may report -1, meaning "unknown".
+   *
+   * @return
+   */
+  int getChildrenCount();
+
+  /**
+   * Get the transient ID of the parent asset if any exists, 0 otherwise. Used to reconstruct a
+   * client-side knowledge graph without having to wait for finalization of the operations that
+   * created the asset.
+   *
+   * @return
+   */
+  long getParentTransientId();
+
   Type classify();
 
   class ContextAsset implements RuntimeAsset {
@@ -123,6 +140,16 @@ public interface RuntimeAsset {
     @Override
     public long getTransientId() {
       return -1000;
+    }
+
+    @Override
+    public int getChildrenCount() {
+      return -1;
+    }
+
+    @Override
+    public long getParentTransientId() {
+      return 0;
     }
 
     @Override
@@ -144,6 +171,16 @@ public interface RuntimeAsset {
     }
 
     @Override
+    public int getChildrenCount() {
+      return -1;
+    }
+
+    @Override
+    public long getParentTransientId() {
+      return -1000;
+    }
+
+    @Override
     public Type classify() {
       return Type.PROVENANCE;
     }
@@ -159,6 +196,16 @@ public interface RuntimeAsset {
     @Override
     public long getTransientId() {
       return -1002;
+    }
+
+    @Override
+    public int getChildrenCount() {
+      return -1;
+    }
+
+    @Override
+    public long getParentTransientId() {
+      return -1000;
     }
 
     @Override

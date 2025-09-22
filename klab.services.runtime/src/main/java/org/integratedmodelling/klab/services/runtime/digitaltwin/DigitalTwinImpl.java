@@ -44,6 +44,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   private final Scheduler scheduler;
   private Configuration configuration;
   private long transientId = Klab.getNextId();
+  private long parentTransientId = -1000;
 
   @Override
   public long getId() {
@@ -55,8 +56,22 @@ public class DigitalTwinImpl implements DigitalTwin {
     return transientId;
   }
 
+  @Override
+  public int getChildrenCount() {
+    return -1; // TODO should implement so that we have a main obs count
+  }
+
   public void setTransientId(long transientId) {
     this.transientId = transientId;
+  }
+
+  @Override
+  public long getParentTransientId() {
+    return parentTransientId;
+  }
+
+  public void setParentTransientId(long parentTransientId) {
+    this.parentTransientId = parentTransientId;
   }
 
   @Override
@@ -151,6 +166,13 @@ public class DigitalTwinImpl implements DigitalTwin {
       graph.addVertex(source);
       graph.addVertex(destination);
       graph.addEdge(source, destination, new RelationshipEdge(relationship, data));
+      // TODO do this for all others as well
+      if (source instanceof ObservationImpl sourceObs
+          && destination instanceof ObservationImpl targetObs
+          && relationship == GraphModel.Relationship.HAS_CHILD) {
+        sourceObs.setChildrenCount(sourceObs.getChildrenCount() + 1);
+        targetObs.setParentTransientId(sourceObs.getTransientId());
+      }
     }
 
     @Override

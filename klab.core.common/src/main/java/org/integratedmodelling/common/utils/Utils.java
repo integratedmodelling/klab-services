@@ -136,7 +136,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
           yield ret;
         }
-//        case ServiceInfo info -> info.getAnnotations();
+        //        case ServiceInfo info -> info.getAnnotations();
         default -> new ArrayList<>();
       };
     }
@@ -2111,6 +2111,11 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       return ret;
     }
 
+    public static <T> T chooseOne(Collection<T> collection) {
+      var idx = ThreadLocalRandom.current().nextInt(0, collection.size());
+      return collection.stream().skip(idx).findFirst().orElse(null);
+    }
+
     public static <T> List<T> flatList(List<List<T>> lists) {
       List<T> ret = new ArrayList<>();
       for (List<T> list : lists) {
@@ -2544,6 +2549,200 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
      */
     public static boolean matches(String string, String pattern) {
       return new WildcardMatcher().match(string, pattern);
+    }
+  }
+
+  /**
+   * jja Popular nouns modified by the given adjective, per Google Books Ngrams gradual → increase
+   * jjb Popular adjectives used to modify the given noun, per Google Books Ngrams beach → sandy syn
+   * Synonyms (words contained within the same WordNet synset) ocean → sea trg "Triggers" (words
+   * that are statistically associated with the query word in the same piece of text.) cow → milking
+   * ant Antonyms (per WordNet) late → early spc "Kind of" (direct hypernyms, per WordNet) gondola →
+   * boat gen "More general than" (direct hyponyms, per WordNet) boat → gondola com "Comprises"
+   * (direct holonyms, per WordNet) car → accelerator par "Part of" (direct meronyms, per WordNet)
+   * trunk → tree bga Frequent followers (w′ such that P(w′|w) ≥ 0.001, per Google Books Ngrams)
+   * wreak → havoc bgb Frequent predecessors (w′ such that P(w|w′) ≥ 0.001, per Google Books Ngrams)
+   * havoc → wreak hom Homophones (sound-alike words) course → coarse cns Consonant match sample →
+   * simple
+   */
+  public static class Words {
+
+    public enum Relation {
+      NounsModifiedByAdjective("jja"),
+      AdjectivesUsedToModifyNoun("jjb"),
+      Synonyms("syn"),
+      Antonyms("ant"),
+      Triggers("trg"),
+      KindOf("spc"),
+      PartOf("par"),
+      MoreGeneralThan("gen"),
+      Comprises("com"),
+      FrequentFollowers("bga"),
+      FrequentPredecessors("bgb"),
+      Homophones("hom"),
+      ConsonantMatch("cns");
+
+      public String code;
+
+      Relation(String code) {
+        this.code = code;
+      }
+    }
+
+    /**
+     * Returns a list of similar words to the word/phrase supplied.
+     *
+     * @param word A word of phrase.
+     * @return A list of similar words.
+     */
+    public static List<String> findSimilar(String word) {
+      String s = word.replaceAll(" ", "+");
+      return getJSON("http://api.datamuse.com/words?rd=" + s);
+    }
+
+    /**
+     * Returns a list of similar words to the word/phrase supplied beginning with the specified
+     * letter(s).
+     *
+     * @param word A word or phrase.
+     * @param startLetter The letter(s) the similar words should begin with.
+     * @return A list of similar words.
+     */
+    public static List<String> findSimilarStartsWith(String word, String startLetter) {
+      String s = word.replaceAll(" ", "+");
+      return getJSON("http://api.datamuse.com/words?rd=" + s + "&sp=" + startLetter + "*");
+    }
+
+    /**
+     * Returns a list of similar words to the word/phrase supplied ending with the specified
+     * letter(s).
+     *
+     * @param word A word or phrase.
+     * @param endLetter The letter(s) the similar words should end with.
+     * @return A list of similar words.
+     */
+    public static List<String> findSimilarEndsWith(String word, String endLetter) {
+      String s = word.replaceAll(" ", "+");
+      return getJSON("http://api.datamuse.com/words?rd=" + s + "&sp=*" + endLetter);
+    }
+
+    public static List<String> findRelated(String word, Relation relation) {
+      return getJSON("http://api.datamuse.com/words?rel_" + relation.code + "=" + word);
+    }
+
+    /**
+     * Returns a list of words beginning and ending with the specified letters and with the
+     * specified number of letters in between.
+     *
+     * @param startLetter The letter(s) the similar words should start with.
+     * @param endLetter The letter(s) the similar words should end with.
+     * @param numberMissing The number of letters between the start and end letters
+     * @return A list of matching words.
+     */
+    public static List<String> wordsStartingWithEndingWith(
+        String startLetter, String endLetter, int numberMissing) {
+      StringBuilder sb = new StringBuilder();
+      for (int i = 0; i < numberMissing; i++) {
+        sb.append("?");
+      }
+      return getJSON("http://api.datamuse.com/words?sp=" + startLetter + sb + endLetter);
+    }
+
+    /**
+     * Returns a list of words beginning and ending with the specified letters and with an
+     * unspecified number of letters in between.
+     *
+     * @param startLetter The letter(s) the similar words should start with.
+     * @param endLetter The letter(s) the similar words should end with.
+     * @return A list of matching words.
+     */
+    public static List<String> wordsStartingWithEndingWith(String startLetter, String endLetter) {
+      return getJSON("http://api.datamuse.com/words?sp=" + startLetter + "*" + endLetter);
+    }
+
+    /**
+     * Find words which sound the same as the specified word/phrase when spoken.
+     *
+     * @param word A word or phrase.
+     * @return A list of words/phrases which sound similiar when spoken.
+     */
+    public static List<String> soundsSimilar(String word) {
+      String s = word.replaceAll(" ", "+");
+      return getJSON("http://api.datamuse.com/words?sl=" + s);
+    }
+
+    /**
+     * Find words which are spelt the same as the specified word/phrase.
+     *
+     * @param word A word or phrase.
+     * @return A list of words/phrases which are spelt similar.
+     */
+    public static List<String> speltSimilar(String word) {
+      String s = word.replaceAll(" ", "+");
+      return getJSON("http://api.datamuse.com/words?sp=" + s);
+    }
+
+    /**
+     * Returns suggestions for what the user may be typing based on what they have typed so far.
+     * Useful for autocomplete on forms.
+     *
+     * @param word The current word or phrase.
+     * @return Suggestions of what the user may be typing.
+     */
+    public static List<String> prefixHintSuggestions(String word) {
+      String s = word.replaceAll(" ", "+");
+      return getJSON("http://api.datamuse.com/sug?s=" + s);
+    }
+
+    public static void main(String[] dio) {
+      for (int i = 0; i < 30; i++) {
+        System.out.println(
+            Strings.capitalize(
+                makeUpName("elephant", "intelligence", "planet", "sausage", "cucumber")));
+      }
+    }
+
+    public static String makeUpName(String... names) {
+      var list = Collections.flatCollection(names);
+      var orig = Collections.chooseOne(list);
+      var related = findRelated(orig, Relation.KindOf);
+      if (related.isEmpty()) {
+        related = findRelated(orig, Relation.MoreGeneralThan);
+      }
+      var main = related.isEmpty() ? orig : Collections.chooseOne(related);
+      var adje = findRelated(main, Relation.AdjectivesUsedToModifyNoun);
+      return ((adje == null || adje.isEmpty()) ? "" : (Collections.chooseOne(adje) + " ")) + main;
+    }
+
+    /**
+     * Query a URL for their source code.
+     *
+     * @param url The page's URL.
+     * @return The source code.
+     */
+    private static List<String> getJSON(String url) {
+      URL datamuse;
+      URLConnection dc;
+      StringBuilder s = null;
+      try {
+        datamuse = new URL(url);
+        dc = datamuse.openConnection();
+        BufferedReader in = new BufferedReader(new InputStreamReader(dc.getInputStream(), "UTF-8"));
+        String inputLine;
+        s = new StringBuilder();
+        while ((inputLine = in.readLine()) != null) s.append(inputLine);
+        in.close();
+      } catch (Throwable e) {
+        s = null;
+      }
+      if (s == null || s.isEmpty()) return null;
+      List<String> ret = new ArrayList<>();
+      for (var o : Json.parseObject(s.toString(), List.class)) {
+        if (o instanceof Map<?, ?> map && ((Map<?, ?>) o).containsKey("word")) {
+          ret.add(map.get("word").toString());
+        }
+      }
+      return ret;
     }
   }
 

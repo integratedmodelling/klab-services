@@ -234,8 +234,17 @@ public class CompiledDataflow {
     if (actuator.getId() < 0 && actuator instanceof ActuatorImpl actuator1) {
       var ret =
           DigitalTwin.createObservation(
-              scope, actuator.getObservable(), actuator1.getResolvedGeometry(), actuator.getName());
-      //      scope.registerObservation(ret);
+              scope,
+              actuator.getObservable(),
+              actuator1.getResolvedGeometry(),
+              actuator.getName(),
+              scope.getContextObservation());
+      if (ret instanceof ObservationImpl obs) {
+        var data = new ObservationImpl.ContextualizationDataImpl();
+        data.setServiceUrl(runtimeService.getUrl());
+        data.setServiceId(runtimeService.serviceId());
+        obs.setContextualizationData(data);
+      }
       return ret;
     }
     return scope.getObservation(actuator.getId());

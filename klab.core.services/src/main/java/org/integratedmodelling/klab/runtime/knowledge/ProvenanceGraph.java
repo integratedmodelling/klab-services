@@ -27,6 +27,16 @@ public class ProvenanceGraph implements Provenance {
     return transientId;
   }
 
+  @Override
+  public int getChildrenCount() {
+    return -1;
+  }
+
+  @Override
+  public long getParentTransientId() {
+    return -1000;
+  }
+
   public void setTransientId(long transientId) {
     this.transientId = transientId;
   }

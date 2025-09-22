@@ -63,64 +63,57 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
    *
    * @param graph
    */
-  public void ingest(GraphModel.KnowledgeGraph graph) {
+  public void ingest(Graph<RuntimeAsset, ClientKnowledgeGraph.Relationship> graph) {
 
-    for (var nodeId : graph.getNodes().keySet()) {
-
-      var node = graph.getNodes().get(nodeId);
-      var asset = node.getAsset();
-
-      if (asset.getId() == RuntimeAsset.CONTEXT_ASSET.getId()) {
-        asset = RuntimeAsset.CONTEXT_ASSET;
-      } else if (asset.getId() == RuntimeAsset.PROVENANCE_ASSET.getId()) {
-        asset = RuntimeAsset.PROVENANCE_ASSET;
-      } else if (asset.getId() == RuntimeAsset.DATAFLOW_ASSET.getId()) {
-        asset = RuntimeAsset.DATAFLOW_ASSET;
-      }
-
-      var id = Long.parseLong(nodeId);
-      if (!catalog.containsKey(id)) {
-        catalog.put(id, asset);
-        this.graph.addVertex(asset);
-      }
-    }
-    for (var edge : graph.getEdges()) {
-      long source = Long.parseLong(edge.getSource());
-      long target = Long.parseLong(edge.getTarget());
-      // TODO edge metadata
-      this.graph.addEdge(
-          catalog.get(source),
-          catalog.get(target),
-          new Relationship(GraphModel.Relationship.valueOf(edge.getLabel()), edge.getMetadata()));
-    }
+    graph
+        .vertexSet()
+        .forEach(
+            asset -> {
+              this.graph.addVertex(asset);
+              catalog.put(asset.getId(), asset);
+              if (asset.getParentTransientId() <= 0) {
+                this.graph.addEdge(
+                    RuntimeAsset.CONTEXT_ASSET,
+                    asset,
+                    new Relationship(GraphModel.Relationship.HAS_CHILD, Map.of()));
+              }
+            });
+    graph
+        .edgeSet()
+        .forEach(
+            e -> {
+              var source = graph.getEdgeSource(e);
+              var target = graph.getEdgeTarget(e);
+              this.graph.addEdge(source, target, new Relationship(e.relationship, e.metadata));
+            });
   }
 
   public Graph<RuntimeAsset, Relationship> getGraph() {
     return graph;
   }
 
-  public void update(RuntimeAsset asset, Message.MessageType messageType) {
-    // TODO set metadata according to type. Differently from server-side KG, we also get
-    //  observations that are in error or before contextualization.
-    if (!catalog.containsKey(asset.getId())) {
-      catalog.put(asset.getId(), asset);
-      this.graph.addVertex(asset);
-    } else {
-      // switch to the actual object for indexing in the graph
-      asset = catalog.get(asset.getId());
-    }
-    var status =
-        switch (messageType) {
-          case ContextualizationStarted -> RuntimeAsset.Status.UNRESOLVED;
-          case ContextualizationAborted -> RuntimeAsset.Status.CORRUPTED;
-          case ContextualizationSuccessful -> RuntimeAsset.Status.CONTEXTUALIZED;
-          default -> throw new IllegalStateException("Unexpected value: " + messageType);
-        };
-
-    if (asset instanceof Knowledge knowledge) {
-      knowledge.getMetadata().put("status", status);
-    }
-  }
+  //  public void update(RuntimeAsset asset, Message.MessageType messageType) {
+  //    // TODO set metadata according to type. Differently from server-side KG, we also get
+  //    //  observations that are in error or before contextualization.
+  //    if (!catalog.containsKey(asset.getId())) {
+  //      catalog.put(asset.getId(), asset);
+  //      this.graph.addVertex(asset);
+  //    } else {
+  //      // switch to the actual object for indexing in the graph
+  //      asset = catalog.get(asset.getId());
+  //    }
+  //    var status =
+  //        switch (messageType) {
+  //          case ContextualizationStarted -> RuntimeAsset.Status.UNRESOLVED;
+  //          case ContextualizationAborted -> RuntimeAsset.Status.CORRUPTED;
+  //          case ContextualizationSuccessful -> RuntimeAsset.Status.CONTEXTUALIZED;
+  //          default -> throw new IllegalStateException("Unexpected value: " + messageType);
+  //        };
+  //
+  //    if (asset instanceof Knowledge knowledge) {
+  //      knowledge.getMetadata().put("status", status);
+  //    }
+  //  }
 
   /**
    * Retrieve asset by URN

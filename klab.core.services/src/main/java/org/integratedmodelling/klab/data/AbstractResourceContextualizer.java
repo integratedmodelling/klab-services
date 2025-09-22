@@ -74,6 +74,9 @@ public abstract class AbstractResourceContextualizer {
         // scope contextualized to the collective observation
         var observationScope = scope.within(observation);
         List<Callable<Observation>> tasks = new ArrayList<>();
+        if (observation instanceof ObservationImpl observationImpl) {
+          observationImpl.setChildrenCount(builder.getObjects().size());
+        }
         for (var instance : builder.getObjects()) {
           var child = instance.getObservation();
           if (child != null) {

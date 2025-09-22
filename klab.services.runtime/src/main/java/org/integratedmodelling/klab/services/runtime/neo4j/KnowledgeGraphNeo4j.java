@@ -136,6 +136,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     private Parameters<String> properties = Parameters.create();
     private GraphModel.Relationship type;
     private long transientId = Klab.getNextId();
+    private long parentTransientId;
+    private int childrenCount = 0;
 
     @Override
     public GraphModel.Relationship type() {
@@ -182,8 +184,26 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       return transientId;
     }
 
+    @Override
+    public int getChildrenCount() {
+      return childrenCount;
+    }
+
+    public void setChildrenCount(int childrenCount) {
+      this.childrenCount = childrenCount;
+    }
+
     public void setTransientId(long transientId) {
       this.transientId = transientId;
+    }
+
+    @Override
+    public long getParentTransientId() {
+      return parentTransientId;
+    }
+
+    public void setParentTransientId(long parentTransientId) {
+      this.parentTransientId = parentTransientId;
     }
   }
 

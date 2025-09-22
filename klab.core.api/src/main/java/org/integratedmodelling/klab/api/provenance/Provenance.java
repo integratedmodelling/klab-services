@@ -29,14 +29,14 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 
 /**
- * Provenance in k.LAB aligns with the Open Provenance Model (OPM), described in detail at
- * <a href="https://openprovenance.org">https://openprovenance.org</a> and the
- * correspondent W3C documents. The internal representation is more packed than the standard OPM graph, for
- * ease of implementation and use, and can be expanded into it when exporting the graph.
- * <p>
- * A provenance graph exists in each {@link org.integratedmodelling.klab.api.scope.ContextScope} and can be
- * iterated to produce the exact sequence of activities that incarnated it. Ideally all resources should also
- * come with a provenance graph, and the provenance of each resource used in a
+ * Provenance in k.LAB aligns with the Open Provenance Model (OPM), described in detail at <a
+ * href="https://openprovenance.org">https://openprovenance.org</a> and the correspondent W3C
+ * documents. The internal representation is more packed than the standard OPM graph, for ease of
+ * implementation and use, and can be expanded into it when exporting the graph.
+ *
+ * <p>A provenance graph exists in each {@link org.integratedmodelling.klab.api.scope.ContextScope}
+ * and can be iterated to produce the exact sequence of activities that incarnated it. Ideally all
+ * resources should also come with a provenance graph, and the provenance of each resource used in a
  * {@link org.integratedmodelling.klab.api.services.runtime.Dataflow} should be part of the graph.
  *
  * @author Ferd
@@ -44,178 +44,184 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
  */
 public interface Provenance extends RuntimeAsset, Iterable<Activity> {
 
-    default RuntimeAsset.Type classify() {
-        return Type.PROVENANCE;
-    }
+  default RuntimeAsset.Type classify() {
+    return Type.PROVENANCE;
+  }
 
+  /**
+   * The generic provenance node.
+   *
+   * @author Ferd
+   */
+  interface Node extends RuntimeAsset {
 
     /**
-     * The generic provenance node.
+     * Name is not unique and is just for human consumption. The internal identification of each
+     * node is the provenance graph's problem.
      *
-     * @author Ferd
+     * @return
      */
-    interface Node extends RuntimeAsset {
-
-        /**
-         * Name is not unique and is just for human consumption. The internal identification of each node is
-         * the provenance graph's problem.
-         *
-         * @return
-         */
-        String getName();
-
-        /**
-         * All nodes can carry POD metadata
-         *
-         * @return
-         */
-        Metadata getMetadata();
-
-        /**
-         * Dataflows that end in disappointment produce empty nodes.
-         *
-         * @return true if empty
-         */
-        boolean isEmpty();
-    }
+    String getName();
 
     /**
-     * True if there's nothing to see.
+     * All nodes can carry POD metadata
+     *
+     * @return
+     */
+    Metadata getMetadata();
+
+    /**
+     * Dataflows that end in disappointment produce empty nodes.
      *
      * @return true if empty
      */
     boolean isEmpty();
+  }
 
-    /**
-     * Return all the primary actions in chronological order.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    List<Activity> getPrimaryActions();
+  /**
+   * True if there's nothing to see.
+   *
+   * @return true if empty
+   */
+  boolean isEmpty();
 
-    /**
-     * Return all artifacts.
-     *
-     * @return a {@link java.util.Collection} object.
-     */
-    Collection<Artifact> getArtifacts();
+  /**
+   * Return all the primary actions in chronological order.
+   *
+   * @return a {@link java.util.List} object.
+   */
+  List<Activity> getPrimaryActions();
 
-    /**
-     * Get the activity that caused the instantiation of the passed node, or null (should be null only for one
-     * "init" activity, or it could be self).
-     *
-     * @param node
-     * @return
-     */
-    Activity getCause(Node node);
+  /**
+   * Return all artifacts.
+   *
+   * @return a {@link java.util.Collection} object.
+   */
+  Collection<Artifact> getArtifacts();
 
-    /**
-     * Find the agent that is responsible for the passed node.
-     *
-     * @param node
-     * @return
-     */
-    Agent getAgent(Node node);
+  /**
+   * Get the activity that caused the instantiation of the passed node, or null (should be null only
+   * for one "init" activity, or it could be self).
+   *
+   * @param node
+   * @return
+   */
+  Activity getCause(Node node);
 
-    /**
-     * Collect all objects of a given class encountered in the provenance graph.
-     *
-     * @param <T>
-     * @param cls
-     * @return
-     */
-    <T> Collection<T> collect(Class<? extends T> cls);
+  /**
+   * Find the agent that is responsible for the passed node.
+   *
+   * @param node
+   * @return
+   */
+  Agent getAgent(Node node);
 
-    static Provenance empty() {
-        return new Provenance() {
+  /**
+   * Collect all objects of a given class encountered in the provenance graph.
+   *
+   * @param <T>
+   * @param cls
+   * @return
+   */
+  <T> Collection<T> collect(Class<? extends T> cls);
 
-            @Override
-            public long getId() {
-                return 0;
-            }
+  static Provenance empty() {
+    return new Provenance() {
 
-            @Override
-            public long getTransientId() {
-                return 0;
-            }
+      @Override
+      public long getId() {
+        return 0;
+      }
 
-            @Override
-            public Iterator<Activity> iterator() {
-                return new ArrayList<Activity>().iterator();
-            }
+      @Override
+      public long getTransientId() {
+        return 0;
+      }
 
-            @Override
-            public boolean isEmpty() {
-                return true;
-            }
-
-            @Override
-            public List<Activity> getPrimaryActions() {
-                return Collections.emptyList();
-            }
-
-            @Override
-            public Collection<Artifact> getArtifacts() {
-                return Collections.emptyList();
-            }
-
-            @Override
-            public Activity getCause(Node node) {
-                return null;
-            }
-
-            @Override
-            public Agent getAgent(Node node) {
-                return null;
-            }
-
-            @Override
-            public <T> Collection<T> collect(Class<? extends T> cls) {
-                return Collections.emptyList();
-            }
-
-        };
-    }
-
-    /**
-     * An agent must be defined in resolution constraints during resolution. This extracts it and returns it,
-     * If the agent is not defined, null is returned and the user agent should be assumed.
-     *
-     * @param scope
-     * @return
-     */
-    static Agent getAgent(ContextScope scope) {
-        for (var constraint : scope.getResolutionConstraints()) {
-            if (constraint.getType() == ResolutionConstraint.Type.Provenance) {
-                for (var node : constraint.payload(Provenance.Node.class)) {
-                    if (node instanceof Agent agent) {
-                        return agent;
-                    }
-                }
-            }
+        @Override
+        public int getChildrenCount() {
+            return 0;
         }
-        return null;
-    }
 
-    /**
-     * An activity must be defined in resolution constraints during resolution. This extracts it and returns
-     * it. If no activity is defined, a default activity can be created according to context.
-     *
-     * @param scope
-     * @return
-     */
-    static Activity getActivity(ContextScope scope) {
-        for (var constraint : scope.getResolutionConstraints()) {
-            if (constraint.getType() == ResolutionConstraint.Type.Provenance) {
-                for (var node : constraint.payload(Provenance.Node.class)) {
-                    if (node instanceof Activity activity) {
-                        return activity;
-                    }
-                }
-            }
+        @Override
+      public long getParentTransientId() {
+        return -1000;
+      }
+
+      @Override
+      public Iterator<Activity> iterator() {
+        return new ArrayList<Activity>().iterator();
+      }
+
+      @Override
+      public boolean isEmpty() {
+        return true;
+      }
+
+      @Override
+      public List<Activity> getPrimaryActions() {
+        return Collections.emptyList();
+      }
+
+      @Override
+      public Collection<Artifact> getArtifacts() {
+        return Collections.emptyList();
+      }
+
+      @Override
+      public Activity getCause(Node node) {
+        return null;
+      }
+
+      @Override
+      public Agent getAgent(Node node) {
+        return null;
+      }
+
+      @Override
+      public <T> Collection<T> collect(Class<? extends T> cls) {
+        return Collections.emptyList();
+      }
+    };
+  }
+
+  /**
+   * An agent must be defined in resolution constraints during resolution. This extracts it and
+   * returns it, If the agent is not defined, null is returned and the user agent should be assumed.
+   *
+   * @param scope
+   * @return
+   */
+  static Agent getAgent(ContextScope scope) {
+    for (var constraint : scope.getResolutionConstraints()) {
+      if (constraint.getType() == ResolutionConstraint.Type.Provenance) {
+        for (var node : constraint.payload(Provenance.Node.class)) {
+          if (node instanceof Agent agent) {
+            return agent;
+          }
         }
-        return null;
+      }
     }
+    return null;
+  }
 
-
+  /**
+   * An activity must be defined in resolution constraints during resolution. This extracts it and
+   * returns it. If no activity is defined, a default activity can be created according to context.
+   *
+   * @param scope
+   * @return
+   */
+  static Activity getActivity(ContextScope scope) {
+    for (var constraint : scope.getResolutionConstraints()) {
+      if (constraint.getType() == ResolutionConstraint.Type.Provenance) {
+        for (var node : constraint.payload(Provenance.Node.class)) {
+          if (node instanceof Activity activity) {
+            return activity;
+          }
+        }
+      }
+    }
+    return null;
+  }
 }

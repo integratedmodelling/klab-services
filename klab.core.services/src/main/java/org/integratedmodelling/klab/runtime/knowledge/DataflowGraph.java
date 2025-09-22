@@ -19,50 +19,60 @@ import java.util.List;
  */
 public class DataflowGraph implements Dataflow {
 
-    private final KnowledgeGraph database;
-    private final ContextScope scope;
-    private long transientId = Klab.getNextId();
+  private final KnowledgeGraph database;
+  private final ContextScope scope;
+  private long transientId = Klab.getNextId();
 
-    public DataflowGraph(KnowledgeGraph database, ContextScope contextScope) {
-        this.database = database;
-        this.scope = contextScope;
-    }
+  public DataflowGraph(KnowledgeGraph database, ContextScope contextScope) {
+    this.database = database;
+    this.scope = contextScope;
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return false;
+  }
+
+  @Override
+  public ResourceSet getRequirements() {
+    return null;
+  }
+
+  @Override
+  public long getParentTransientId() {
+    return -1000;
+  }
+
+  @Override
+  public Geometry getCoverage() {
+    return null;
+  }
+
+  @Override
+  public List<Actuator> getComputation() {
+    return List.of();
+  }
+
+  @Override
+  public long getTransientId() {
+    return transientId;
+  }
 
     @Override
-    public boolean isEmpty() {
-        return false;
-    }
-
-    @Override
-    public ResourceSet getRequirements() {
-        return null;
-    }
-
-    @Override
-    public Geometry getCoverage() {
-        return null;
-    }
-
-    @Override
-    public List<Actuator> getComputation() {
-        return List.of();
-    }
-
-    @Override
-    public long getTransientId() {
-        return transientId;
+    public int getChildrenCount() {
+        return -1;
     }
 
     public void setTransientId(long transientId) {
-        this.transientId = transientId;
-    }
+    this.transientId = transientId;
+  }
 
-    public DataflowImpl adapt() {
-        return null;
-    }
+  public DataflowImpl adapt() {
+    return null;
+  }
 
-    @Override
-    public long getId() {
-        return 0;
-    }
+  @Override
+  public long getId() {
+    return 0;
+  }
 }

@@ -28,6 +28,7 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
   private String urn;
   private String observationUrn;
   private String triggeringActivityUrn;
+  private int childrenCount = 0;
 
   @Override
   public long getStart() {
@@ -36,6 +37,15 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
   public void setStart(long start) {
     this.start = start;
+  }
+
+  @Override
+  public int getChildrenCount() {
+    return childrenCount;
+  }
+
+  public void setChildrenCount(int childrenCount) {
+    this.childrenCount = childrenCount;
   }
 
   @Override

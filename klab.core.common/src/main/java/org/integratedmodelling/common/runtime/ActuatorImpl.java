@@ -32,6 +32,8 @@ public class ActuatorImpl implements Actuator {
   private List<Annotation> annotations = new ArrayList<>();
   private long transientId = Klab.getNextId();
   private Data.ShardingStrategy shardingStrategy;
+  private long parentTransientId;
+  private int childrenCount = 0;
 
   @Override
   public String getName() {
@@ -169,5 +171,23 @@ public class ActuatorImpl implements Actuator {
   @Override
   public String toString() {
     return "A(" + this.getId() + ", " + this.observable + ")";
+  }
+
+  @Override
+  public long getParentTransientId() {
+    return parentTransientId;
+  }
+
+  @Override
+  public int getChildrenCount() {
+    return childrenCount;
+  }
+
+  public void setChildrenCount(int childrenCount) {
+    this.childrenCount = childrenCount;
+  }
+
+  public void setParentTransientId(long parentTransientId) {
+    this.parentTransientId = parentTransientId;
   }
 }

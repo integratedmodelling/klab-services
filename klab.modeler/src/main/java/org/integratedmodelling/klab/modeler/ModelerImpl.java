@@ -1,8 +1,6 @@
 package org.integratedmodelling.klab.modeler;
 
 import java.io.File;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -11,7 +9,6 @@ import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
-import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
@@ -21,7 +18,6 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -49,8 +45,6 @@ import org.integratedmodelling.klab.modeler.model.NavigableKlabStatement;
 import org.integratedmodelling.klab.modeler.model.NavigableProject;
 import org.integratedmodelling.klab.modeler.panels.controllers.DocumentEditorControllerImpl;
 import org.integratedmodelling.klab.modeler.views.controllers.*;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 /**
  * A {@link UIController} specialized to provide and orchestrate the views and panels that compose
@@ -334,7 +328,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             });
   }
 
-
   //  @Override
   public ContextScope openNewContext(DigitalTwin.Configuration configuration) {
     var runtimeService = user().getService(RuntimeService.class);
@@ -371,8 +364,18 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       throw new KlabAuthorizationException("Cannot make observations with an invalid user");
     }
     if (currentContext == null) {
-      currentContext =
-          openNewContext(defaultDigitalTwinConfiguration("Digital Twin " + (++contextCount)));
+      var name =
+          // TODO revise, but it's more fun than enumerating DTs
+          Utils.Strings.capitalize(
+              Utils.Words.makeUpName(
+                  "elephant",
+                  "intelligence",
+                  "code",
+                  "planet",
+                  "environment",
+                  "sausage",
+                  "cucumber"));
+      currentContext = openNewContext(defaultDigitalTwinConfiguration(name));
     }
 
     if (currentContext == null) {

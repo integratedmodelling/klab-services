@@ -4,4 +4,8 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Plan;
 
 public class PlanImpl extends ProvenanceNodeImpl implements Plan {
+    @Override
+    public int getChildrenCount() {
+    return 0;
+    }
 }
