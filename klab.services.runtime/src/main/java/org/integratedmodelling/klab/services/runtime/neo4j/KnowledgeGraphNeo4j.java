@@ -406,7 +406,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
    * @param <T>
    * @return
    */
-  protected <T> List<T> adapt(EagerResult query, Class<T> cls, Scope scope) {
+  protected <T> List<T> adapt(EagerResult query, Class<T> requiredClass, Scope scope) {
 
     List<T> ret = new ArrayList<>();
 
@@ -421,6 +421,28 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       if (node == null) {
         continue;
+      }
+
+      var cls = requiredClass;
+      if (cls == RuntimeAsset.class) {
+        var label = node.asNode().labels().iterator().next();
+        if (label != null) {
+          cls =
+              switch (label) {
+                case "Observation" -> (Class<T>) Observation.class;
+                case "Agent" -> (Class<T>) Agent.class;
+                case "Plan" -> (Class<T>) Plan.class;
+                case "Actuator" -> (Class<T>) Actuator.class;
+                case "Geometry" -> (Class<T>) Geometry.class;
+                case "Activity" -> (Class<T>) Activity.class;
+                case "Context" -> (Class<T>) ContextScope.class;
+                case "Data" -> (Class<T>) Storage.Shard.class;
+                default -> null;
+              };
+        }
+        if (cls == null) {
+          continue;
+        }
       }
 
       if (Map.class.isAssignableFrom(cls)) {
@@ -922,6 +944,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         case ACTIVITY -> "Activity";
         case OBSERVATION -> "Observation";
         case DATA -> "Data";
+        case ANY -> null;
         default ->
             throw new KlabInternalErrorException("Cannot find a KG node label for " + assetType);
       };
@@ -1336,7 +1359,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           return null;
         }
         var known = getQueryNode(asset);
-        var unknown = Cypher.node(getLabel(KnowledgeGraphQuery.AssetType.classify(resultClass)));
+        var label = getLabel(KnowledgeGraphQuery.AssetType.classify(resultClass));
+        var unknown = label == null ? Cypher.anyNode() : Cypher.node(label);
         List<PatternElement> restrictions = new ArrayList<>();
         for (var restriction : query.getAssetQueryCriteria()) {
           // TODO add query criteria for the unknown node (where() in search)
@@ -1403,11 +1427,16 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   private Node getQueryNode(KnowledgeGraphQuery.Asset asset) {
 
+    if (asset.getType() == KnowledgeGraphQuery.AssetType.ANY) {
+      return Cypher.anyNode();
+    }
+
     var searchField =
         switch (asset.getType()) {
           case SCOPE, ACTUATOR, PROVENANCE, DATAFLOW, DATA -> "id";
           case LINK -> null;
           case ACTIVITY, OBSERVATION, SEMANTICS, OBSERVABLE -> "urn";
+          default -> throw new KlabInternalErrorException("Unexpected value: " + asset.getType());
         };
     var searchValue =
         switch (asset.getType()) {

@@ -41,10 +41,13 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
     NOT
   }
 
-  /* we can only store assets that can be serialized. The others get to the server in other ways and
-   * we use this enum to tag source and destination specified through their URNs and/or type when not included in the query. We also use this to encode the result class we expect.
+  /**
+   * We can only store assets that can be serialized. The others get to the server in other ways and
+   * we use this enum to tag source and destination specified through their URNs and/or type when
+   * not included in the query. We also use this to encode the result class we expect.
    */
   public enum AssetType {
+    ANY,
     SCOPE,
     DATAFLOW,
     PROVENANCE,
@@ -121,6 +124,9 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
       if (Storage.Shard.class.isAssignableFrom(asset)) {
         return AssetType.DATA;
       }
+      if (RuntimeAsset.class.isAssignableFrom(asset)) {
+        return AssetType.ANY;
+      }
       throw new KlabIllegalArgumentException("Can't make a query with a " + asset + " target");
     }
 
@@ -136,6 +142,7 @@ public class KnowledgeGraphQuery<T extends RuntimeAsset> implements KnowledgeGra
         case OBSERVABLE -> Observable.class;
         case DATA -> Storage.Shard.class;
         case LINK -> KnowledgeGraph.Link.class;
+        case ANY -> RuntimeAsset.class;
       };
     }
   }
