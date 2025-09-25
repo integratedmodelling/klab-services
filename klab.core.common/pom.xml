@@ -51,6 +51,13 @@
     </properties>
     <dependencies>
 
+        <!-- media type/file extensions and file introspection -->
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>2.9.0</version>
+        </dependency>
+
         <!-- file cache -->
         <dependency>
             <groupId>org.ehcache</groupId>

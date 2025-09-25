@@ -13,6 +13,8 @@ import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.function.Supplier;
 
 /**
@@ -22,13 +24,16 @@ import java.util.function.Supplier;
  *
  * <p>Can be used at client side or server side as needed.
  */
-public class ExportFileCache implements Closeable {
+public class ExportFileCache {
 
+  private static final int DEFAULT_MAX_OCCUPANCY_MB = 1024;
   private final int maxOccupancy;
   private boolean offline;
   private PersistentCacheManager persistentCacheManager;
   private Cache<Key, File> cache;
   private String fileExtension = "dat";
+
+  private static ExportFileCache _temporary;
 
   private ExportFileCache(ExportFileCache exportFileCache) {
     offline = exportFileCache.offline;
@@ -36,9 +41,16 @@ public class ExportFileCache implements Closeable {
     persistentCacheManager = exportFileCache.persistentCacheManager;
     cache = exportFileCache.cache;
     fileExtension = exportFileCache.fileExtension;
+  Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      try {
+          close();
+      } catch (IOException e) {
+          Logging.INSTANCE.error("Error closing export file cache", e);
+      }
+  }));
   }
 
-  @Override
+//  @Override
   public void close() throws IOException {
     if (!offline) {
       persistentCacheManager.close();
@@ -62,7 +74,7 @@ public class ExportFileCache implements Closeable {
   }
 
   private File getTemporaryFile() {
-      // TODO
+    // TODO
     return null;
   }
 
@@ -108,6 +120,13 @@ public class ExportFileCache implements Closeable {
   public ExportFileCache(File directory, String name, int maxMbOccupancy) {
 
     this.maxOccupancy = maxMbOccupancy;
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        try {
+            close();
+        } catch (IOException e) {
+            Logging.INSTANCE.error("Error closing export file cache", e);
+        }
+    }));
 
     // configure eviction policy
     var configuration =
@@ -164,7 +183,16 @@ public class ExportFileCache implements Closeable {
   }
 
   public static ExportFileCache temporary() {
-    return null;
+    if (_temporary == null) {
+      Path tdir = null;
+      try {
+        tdir = Files.createTempDirectory("kexport");
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      _temporary = new ExportFileCache(tdir.toFile(), "temporary", DEFAULT_MAX_OCCUPANCY_MB);
+    }
+    return _temporary;
   }
 
   public static ExportFileCache user(UserScope scope) {

@@ -259,6 +259,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           transaction.commit();
           return; // Success
         } catch (TransientException e) {
+          Logging.INSTANCE.error("DIO PORCO transaction commit failed");
           retryCount++;
           if (retryCount >= maxRetries) {
             throw e; // Re-throw after max retries

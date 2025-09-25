@@ -1,5 +1,8 @@
 package org.integratedmodelling.common.view;
 
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -66,7 +69,8 @@ public abstract class AbstractUIController implements UIController {
   private record VisualizationDescriptor(
       Visualization visualization, Object reactor, Method method) {
     public boolean appliesTo(Object asset) {
-      return false;
+      // TODO check geometry and semantics from the descriptor as applicable
+      return true;
     }
   }
 
@@ -227,48 +231,9 @@ public abstract class AbstractUIController implements UIController {
 
     switch (message.getMessageClass()) {
       case Void -> {}
-      //      case UserInterface -> {
-      //        // shouldn't happen
-      //      }
       case UserContextChange -> {}
       case UserContextDefinition -> {}
-      case ServiceLifecycle -> {
-        switch (message.getMessageType()) {
-          //                              case ServiceUnavailable -> dispatch(this,
-          //           UIReactor.UIEvent.ServiceUnavailable,
-          //                                      message.getPayload(Object.class));
-          //                              case ServiceAvailable ->  dispatch(this,
-          //           UIReactor.UIEvent.ServiceAvailable,
-          //                                      message.getPayload(Object.class));
-          //                              case ServiceInitializing -> dispatch(this,
-          //           UIReactor.UIEvent.ServiceStarting,
-          //                                      message.getPayload(Object.class));
-          //          case ServiceStatus -> {
-          //            dispatch(
-          //                this,
-          //                UIReactor.UIEvent.ServiceStatus,
-          //                message.getPayload(KlabService.ServiceStatus.class));
-          //          }
-          default -> {}
-        }
-      }
-      //      case EngineLifecycle -> {
-      //        // TODO engine ready event and status
-      //        switch (message.getMessageType()) {
-      ////          case ServiceStatus -> {
-      ////            dispatch(
-      ////                this,
-      ////                UIReactor.UIEvent.ServiceStatus,
-      ////                message.getPayload(KlabService.ServiceStatus.class));
-      ////          }
-      //          }
-      ////          case UsingDistribution -> {
-      ////            dispatch(this, UIEvent.DistributionAvailable,
-      // message.getPayload(Distribution.class));
-      ////          }
-      //          default -> {}
-      //        }
-      //      }
+      case ServiceLifecycle -> {}
       case KimLifecycle -> {}
       case ResourceLifecycle -> {
         if (message.is(Message.MessageType.WorkspaceChanged)) {
@@ -276,13 +241,6 @@ public abstract class AbstractUIController implements UIController {
         }
       }
       case ProjectLifecycle -> {}
-      //      case Authorization -> {
-      //        if (message.is(Message.MessageType.UserAuthorized)) {
-      //          dispatch(
-      //              this, UIReactor.UIEvent.UserAuthenticated,
-      // message.getPayload(UserIdentity.class));
-      //        }
-      //      }
       case TaskLifecycle -> {}
       case DigitalTwin -> {}
       case SessionLifecycle -> {}
@@ -293,20 +251,9 @@ public abstract class AbstractUIController implements UIController {
       case Run -> {}
       case ViewActor -> {}
       case ActorCommunication -> {}
-      case KnowledgeLifecycle -> {
-        //                if (message.is(Message.MessageType.LogicalValidation)) {
-        //                    dispatch(this, UIEvent.LogicalValidation,
-        // message.getPayload(ResourceSet.class));
-        //                }
-      }
+      case KnowledgeLifecycle -> {}
     }
   }
-
-  //    private void recomputeStatus(Message message) {
-  //        if (engine instanceof EngineImpl engineImpl) {
-  //            engineImpl.updateStatus(message);
-  //        }
-  //    }
 
   @Override
   public void dispatch(UIReactor sender, UIReactor.UIEvent event, Object... payload) {
@@ -678,11 +625,20 @@ public abstract class AbstractUIController implements UIController {
             .toList()) {
       if (visualization.appliesTo(asset)) {
         // retrieve a cached file if possible, otherwise export the asset and cache it.
-
         File cachedFile = null;
-        if (visualization.visualization.requires() == null) {
+        if (visualization.visualization.requires() != null) {
+
+          var extension = "dat";
+          try {
+            var type =
+                MimeTypes.getDefaultMimeTypes().forName(visualization.visualization.requires());
+            extension = type.getExtension();
+          } catch (MimeTypeException e) {
+            // just leave "dat" in
+          }
           cachedFile =
-              ExportFileCache./* TODO with extension.... */ temporary()
+              ExportFileCache.temporary()
+                  .withExtension(extension)
                   .get(
                       asset.getUrn(),
                       event,
@@ -697,7 +653,7 @@ public abstract class AbstractUIController implements UIController {
 
         // TODO invoke the visualization handler and return the result, turning it into a
         //  InputStream if needed.
-//          Utils.Java.runWithMatchedParameters();
+        //          Utils.Java.runWithMatchedParameters();
 
       }
     }
