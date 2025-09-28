@@ -438,6 +438,11 @@ public class SchedulerImpl implements Scheduler {
     }
 
     @Override
+    public String toKey() {
+      return start + "-" + end;
+    }
+
+    @Override
     public Observation getEvent() {
       return event;
     }

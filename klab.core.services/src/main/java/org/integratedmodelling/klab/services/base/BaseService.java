@@ -31,6 +31,7 @@ import org.integratedmodelling.common.services.client.engine.ServiceMonitor;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -463,12 +464,21 @@ public abstract class BaseService implements KlabService {
   public InputStream exportAsset(
       String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope) {
 
+    // First retrieve the asset, then if the metadata contain an adapter and the adapter is local,
+    // use that to prioritize before warning.
+    var asset = resolveUrn(urn, knowledgeClass, scope);
+    if (asset instanceof Observation observation) {
+      var adapterId = observation.getContextualizationData().getAdapterId();
+      if (adapterId != null) {
+        var adapter = getComponentRegistry().getAdapter(adapterId, Version.ANY_VERSION, scope);
+        if (adapter != null) {}
+      }
+    }
+
     var schemata =
         ResourceTransport.INSTANCE.findExportSchemata(
             knowledgeClass, mediaType, capabilities(scope), scope);
 
-    // NO - retrieve the asset, then if the metadata contain an adapter and the adapter is local,
-    // use that to prioritize before warning.
     if (schemata.isEmpty()) {
       throw new KlabAuthorizationException(
           "No authorized export schema with media type " + mediaType + " is available");
@@ -551,6 +561,4 @@ public abstract class BaseService implements KlabService {
           default -> throw new KlabIllegalStateException("Unknown identity type: " + identity);
         };
   }
-
-
 }

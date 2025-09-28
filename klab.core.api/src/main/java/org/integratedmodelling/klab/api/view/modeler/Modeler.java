@@ -107,6 +107,7 @@ public interface Modeler extends UIController {
       KlabAsset asset,
       Scheduler.Event event,
       String mediaType,
+      ContextScope contextScope,
       Map<String, Object> visualizationOptions);
 
   /**

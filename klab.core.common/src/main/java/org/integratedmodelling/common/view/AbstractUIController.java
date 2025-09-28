@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -612,6 +613,7 @@ public abstract class AbstractUIController implements UIController {
       KlabAsset asset,
       Scheduler.Event event,
       String mediaType,
+      ContextScope contextScope,
       Map<String, Object> visualizationOptions) {
 
     var service = getServiceHosting(asset);
@@ -648,7 +650,7 @@ public abstract class AbstractUIController implements UIController {
                               asset.getUrn(),
                               KlabAsset.classify(asset),
                               visualization.visualization.requires(),
-                              scope()));
+                              contextScope));
         }
 
         // TODO invoke the visualization handler and return the result, turning it into a

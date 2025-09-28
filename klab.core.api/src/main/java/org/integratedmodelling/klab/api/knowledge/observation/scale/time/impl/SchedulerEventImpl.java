@@ -24,6 +24,12 @@ public class SchedulerEventImpl implements Scheduler.Event, Serializable {
   }
 
   @Override
+  public String toKey() {
+    // TODO this also depends on the geometry of reference, which may have other dimensions
+    return time.getMillis() + "";
+  }
+
+  @Override
   public Observation getEvent() {
     return null;
   }

@@ -22,6 +22,7 @@ import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import net.lingala.zip4j.model.LocalFileHeader;
 import net.lingala.zip4j.model.ZipParameters;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.CheckoutConflictException;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -1445,6 +1446,16 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     public static boolean deleteQuietly(File pdir) {
       return FileUtils.deleteQuietly(pdir);
+    }
+
+    public static boolean copy(InputStream source, File destination) {
+      try (var output = new FileOutputStream(destination)) {
+        IOUtils.copy(source, output);
+      } catch (IOException e) {
+        Logging.INSTANCE.error(e);
+        return false;
+      }
+      return true;
     }
 
     public static boolean copy(File source, File destination) {

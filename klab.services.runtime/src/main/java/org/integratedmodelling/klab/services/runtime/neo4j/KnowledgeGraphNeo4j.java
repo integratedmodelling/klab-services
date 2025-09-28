@@ -240,6 +240,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     @Override
     public void close() throws IOException {
+//      Utils.DebugFile.println("TRANSACTION " + hashCode() + " CLOSED");
+
       // update time of last successful operation
       var props = Map.of("lastUpdate", System.currentTimeMillis());
       query(
@@ -254,11 +256,17 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       int maxRetries = 3;
       int retryCount = 0;
 
+      if (!transaction.isOpen()) {
+        // happens with hierarchical transactions after exception in contextualization.
+        // FIXME - shouldn't happen, investigate. The exception rolls it back but then the commit is
+        //  attempted anyway. Probably linked to parallel execution of contextualizers.
+        return;
+      }
       while (retryCount < maxRetries) {
         try {
           transaction.commit();
           return; // Success
-        } catch (TransientException e) {
+        } catch (Throwable e) {
           Logging.INSTANCE.error("DIO PORCO transaction commit failed");
           retryCount++;
           if (retryCount >= maxRetries) {
@@ -279,7 +287,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   @Override
   public Transaction createTransaction() {
-    return new TransactionImpl();
+    var ret = new TransactionImpl();
+//    Utils.DebugFile.println("TRANSACTION " + ret.hashCode() + " CREATED");
+    return ret;
   }
 
   protected synchronized EagerResult query(

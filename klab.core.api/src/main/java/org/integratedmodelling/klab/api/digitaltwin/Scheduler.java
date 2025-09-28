@@ -98,6 +98,13 @@ public interface Scheduler {
     Type getType();
 
     /**
+     * Return a unique, sortable key from this event's located position in the overall geometry.
+     *
+     * @return
+     */
+    String toKey();
+
+    /**
      * Not null only when an event observation was posted after resolution.
      *
      * @return

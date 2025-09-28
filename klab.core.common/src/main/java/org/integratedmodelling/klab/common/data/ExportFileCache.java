@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.common.data;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.ehcache.Cache;
 import org.ehcache.PersistentCacheManager;
 import org.ehcache.config.builders.CacheConfigurationBuilder;
@@ -8,6 +10,7 @@ import org.ehcache.config.builders.ResourcePoolsBuilder;
 import org.ehcache.config.units.MemoryUnit;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -28,6 +31,7 @@ public class ExportFileCache {
 
   private static final int DEFAULT_MAX_OCCUPANCY_MB = 1024;
   private final int maxOccupancy;
+  private final File directory;
   private boolean offline;
   private PersistentCacheManager persistentCacheManager;
   private Cache<Key, File> cache;
@@ -36,21 +40,25 @@ public class ExportFileCache {
   private static ExportFileCache _temporary;
 
   private ExportFileCache(ExportFileCache exportFileCache) {
+    directory = exportFileCache.directory;
     offline = exportFileCache.offline;
     maxOccupancy = exportFileCache.maxOccupancy;
     persistentCacheManager = exportFileCache.persistentCacheManager;
     cache = exportFileCache.cache;
     fileExtension = exportFileCache.fileExtension;
-  Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      try {
-          close();
-      } catch (IOException e) {
-          Logging.INSTANCE.error("Error closing export file cache", e);
-      }
-  }));
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  try {
+                    close();
+                  } catch (IOException e) {
+                    Logging.INSTANCE.error("Error closing export file cache", e);
+                  }
+                }));
   }
 
-//  @Override
+  //  @Override
   public void close() throws IOException {
     if (!offline) {
       persistentCacheManager.close();
@@ -74,8 +82,11 @@ public class ExportFileCache {
   }
 
   private File getTemporaryFile() {
-    // TODO
-    return null;
+    try {
+      return Files.createTempFile(directory.toPath(), "klab", "." + fileExtension).toFile();
+    } catch (IOException e) {
+      throw new KlabIOException(e);
+    }
   }
 
   public static class Key implements Serializable {
@@ -118,15 +129,18 @@ public class ExportFileCache {
   }
 
   public ExportFileCache(File directory, String name, int maxMbOccupancy) {
-
+    this.directory = directory;
     this.maxOccupancy = maxMbOccupancy;
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-        try {
-            close();
-        } catch (IOException e) {
-            Logging.INSTANCE.error("Error closing export file cache", e);
-        }
-    }));
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  try {
+                    close();
+                  } catch (IOException e) {
+                    Logging.INSTANCE.error("Error closing export file cache", e);
+                  }
+                }));
 
     // configure eviction policy
     var configuration =
@@ -157,14 +171,25 @@ public class ExportFileCache {
 
   public File get(
       String urn, Scheduler.Event event, String mediaType, Supplier<?> computeIfAbsent) {
+
     if (offline) {
       return toFile(computeIfAbsent);
     }
-    // create key
-    // return null if content is null
-    // retrieve or add
 
-    return null;
+    var key = new Key();
+    key.setUrn(urn);
+    if (event != null) {
+      // FIXME null event shouldn't be supported but we ignore it for now
+      key.setLocator(event.toKey());
+    }
+    key.setMediaType(mediaType);
+
+    if (this.cache.containsKey(key)) {
+      return this.cache.get(key);
+    }
+    var file = toFile(computeIfAbsent);
+    cache.put(key, file);
+    return file;
   }
 
   public File toFile(Supplier<?> computeIfAbsent) {
@@ -173,12 +198,21 @@ public class ExportFileCache {
     if (input instanceof File) {
       return (File) input;
     } else if (input instanceof InputStream inputStream) {
+      var ret = getTemporaryFile();
+      try {
+        FileUtils.copyInputStreamToFile(inputStream, ret);
+      } catch (IOException e) {
+        throw new KlabIOException(e);
+      }
+      return ret;
     } else if (input instanceof URL url) {
+      var ret = getTemporaryFile();
+      Utils.URLs.copy(url, ret);
+      return ret;
     } else if (input instanceof String string) {
       return Utils.Files.writeStringToFile(string, getTemporaryFile());
     }
 
-    /* TODO inputstream, String, etc. */
     throw new IllegalArgumentException("Input cannot be converted to a file");
   }
 
