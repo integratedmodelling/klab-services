@@ -239,8 +239,8 @@ public class KlabScopeController {
       var sessionScope = authorization.getScope(SessionScope.class);
 
       if (sessionScope != null) {
-
-        var userScope = sessionScope.getParentScope(Scope.Type.USER, UserScope.class);
+        // var userScope = authorization.getScope(UserScope.class);
+        var userScope = instance.klabService().getScopeManager().getScope(authorization, UserScope.class, null);
         var identity = sessionScope.getIdentity();
         var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
 
