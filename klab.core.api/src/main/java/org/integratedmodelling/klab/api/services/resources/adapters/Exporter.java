@@ -33,6 +33,10 @@ public @interface Exporter {
   /// (e.g. <code>component.jar</code>).
   String schema();
 
+  ///  A geometry specification that the data must be compatible with. Default applies to any
+  /// geometry.
+  String geometry() default "";
+
   KlabAsset.KnowledgeClass knowledgeClass();
 
   /// If specified, these define the schema's properties which will be passed as a
