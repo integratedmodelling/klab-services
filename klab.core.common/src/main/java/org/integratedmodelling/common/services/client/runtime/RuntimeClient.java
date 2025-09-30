@@ -190,11 +190,25 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     request.getRuntimeServices().add(getUrl());
 
-    if (isLocal()
-        && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient
-        && reasonerClient.isLocal()) {
-      request.getReasonerServices().add(reasonerClient.getUrl());
+    if (isLocal()) {
+      if (scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient && reasonerClient.isLocal()) {
+        request.getReasonerServices().add(reasonerClient.getUrl());
+      }
+    } else {
+      for (var service : scope.getServices(Reasoner.class)) {
+        if (service instanceof ServiceClient reasonerClient) {
+          // we only send a local URL if we're local ourselves
+          if (!reasonerClient.isLocal()) {
+            request.getReasonerServices().add(reasonerClient.getUrl());
+          }
+        }
+      }
     }
+//    if (isLocal()
+//        && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient
+//        && reasonerClient.isLocal()) {
+//      request.getReasonerServices().add(reasonerClient.getUrl());
+//    }
 
     var ret =
         client

@@ -159,11 +159,26 @@ public class ResolverClient extends ServiceClient implements Resolver {
       }
     }
 
-    if (isLocal()
-        && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient
-        && reasonerClient.isLocal()) {
-      request.getReasonerServices().add(reasonerClient.getUrl());
+    if (isLocal()) {
+      if (scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient && reasonerClient.isLocal()) {
+        request.getReasonerServices().add(reasonerClient.getUrl());
+      }
+    } else {
+      for (var service : scope.getServices(Reasoner.class)) {
+        if (service instanceof ServiceClient reasonerClient) {
+          // we only send a local URL if we're local ourselves
+          if (!reasonerClient.isLocal()) {
+            request.getReasonerServices().add(reasonerClient.getUrl());
+          }
+        }
+      }
     }
+
+//    if (isLocal()
+//        && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient
+//        && reasonerClient.isLocal()) {
+//      request.getReasonerServices().add(reasonerClient.getUrl());
+//    }
 
     if (hasMessaging) {
       // TODO setup desired request. This will send no header and use the defaults.
@@ -236,11 +251,25 @@ public class ResolverClient extends ServiceClient implements Resolver {
       }
     }
 
-    if (isLocal()
-        && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient
-        && reasonerClient.isLocal()) {
-      request.getReasonerServices().add(reasonerClient.getUrl());
+    if (isLocal()) {
+      if (scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient && reasonerClient.isLocal()) {
+        request.getReasonerServices().add(reasonerClient.getUrl());
+      }
+    } else {
+      for (var service : scope.getServices(Reasoner.class)) {
+        if (service instanceof ServiceClient reasonerClient) {
+          // we only send a local URL if we're local ourselves
+          if (!reasonerClient.isLocal()) {
+            request.getReasonerServices().add(reasonerClient.getUrl());
+          }
+        }
+      }
     }
+//    if (isLocal()
+//        && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient
+//        && reasonerClient.isLocal()) {
+//      request.getReasonerServices().add(reasonerClient.getUrl());
+//    }
 
     if (getOwnerService() != null) {
       switch (getOwnerService()) {
