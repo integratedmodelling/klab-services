@@ -108,11 +108,20 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
       }
     }
 
-    if (isLocal()
-        && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient
-        && reasonerClient.isLocal()) {
-      request.getReasonerServices().add(reasonerClient.getUrl());
+    for (var service : scope.getServices(Reasoner.class)) {
+      if (service instanceof ServiceClient serviceClient) {
+        // we only send a local URL if we're local ourselves
+        if (!serviceClient.isLocal() || (serviceClient.isLocal() && isLocal())) {
+          request.getReasonerServices().add(serviceClient.getUrl());
+        }
+      }
     }
+
+//    if (isLocal()
+//        && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient
+//        && reasonerClient.isLocal()) {
+//      request.getReasonerServices().add(reasonerClient.getUrl());
+//    }
 
     if (hasMessaging) {
       // TODO setup desired request. This will send no header and use the defaults.
