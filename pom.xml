@@ -213,6 +213,17 @@
 
     <pluginRepositories>
         <pluginRepository>
+            <name>Central Portal Snapshots</name>
+            <id>central-portal-snapshots</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+            <releases>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </pluginRepository>
+        <pluginRepository>
             <id>sonatype-nexus-snapshots</id>
             <name>Maven Central snapshots</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
