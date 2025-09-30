@@ -488,7 +488,7 @@ public class ScaleImpl implements Scale {
      */
     /*if (dimension instanceof Offset offset) {
       // TODO
-    } else */if (dimension instanceof Extent extent) {
+    } else */ if (dimension instanceof Extent extent) {
       Extent<?> mine = extent(extent.getType());
       if (mine != null) {
         return with(mine.at(extent));
@@ -673,6 +673,11 @@ public class ScaleImpl implements Scale {
     }
 
     @Override
+    public boolean isDimensionallyCompatible(Geometry other) {
+      return ScaleImpl.this.isDimensionallyCompatible(other);
+    }
+
+    @Override
     public Metadata getMetadata() {
       return ScaleImpl.this.getMetadata();
     }
@@ -713,6 +718,11 @@ public class ScaleImpl implements Scale {
     }
 
     @Override
+    public Geometry dimensionsOnly() {
+      return ScaleImpl.this.dimensionsOnly();
+    }
+
+    @Override
     public Scale collapse(Type... dimensions) {
       return ScaleImpl.this.collapse(dimensions);
     }
@@ -741,6 +751,16 @@ public class ScaleImpl implements Scale {
   }
 
   @Override
+  public Geometry dimensionsOnly() {
+    return as(Geometry.class).dimensionsOnly();
+  }
+
+  @Override
+  public boolean isDimensionallyCompatible(Geometry other) {
+    return as(Geometry.class).isDimensionallyCompatible(other);
+  }
+
+  @Override
   public Metadata getMetadata() {
     return metadata;
   }
@@ -748,10 +768,4 @@ public class ScaleImpl implements Scale {
   public void setMetadata(Metadata metadata) {
     this.metadata = metadata;
   }
-
-//  public NDCursor cursor() {
-//    var ret = new NDCursor();
-//    ret.defineDimensions(Arrays.stream(extents).map(e -> e.size()).toList());
-//    return ret;
-//  }
 }

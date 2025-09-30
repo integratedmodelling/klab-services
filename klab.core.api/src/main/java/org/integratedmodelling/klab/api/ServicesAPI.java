@@ -34,18 +34,18 @@ public interface ServicesAPI {
    */
   String SERVER_KEY_HEADER = "server-key";
 
-//  /**
-//   * Response header for the URN of a AMQP messaging service, returned along with the {@link
-//   * RUNTIME#CREATE_SESSION} response when messaging is available.
-//   *
-//   * @deprecated federation data should come with groups that come with the JWT header
-//   */
-//  @Deprecated String MESSAGING_URL_HEADER = "messaging-urn";
-//
-//  /*
-//   * @deprecated federation data should come with groups that come with the JWT header
-//   */
-//  @Deprecated String FEDERATION_ID_HEADER = "federation-id";
+  //  /**
+  //   * Response header for the URN of a AMQP messaging service, returned along with the {@link
+  //   * RUNTIME#CREATE_SESSION} response when messaging is available.
+  //   *
+  //   * @deprecated federation data should come with groups that come with the JWT header
+  //   */
+  //  @Deprecated String MESSAGING_URL_HEADER = "messaging-urn";
+  //
+  //  /*
+  //   * @deprecated federation data should come with groups that come with the JWT header
+  //   */
+  //  @Deprecated String FEDERATION_ID_HEADER = "federation-id";
 
   /**
    * Header used to both request and confirm the set of messaging queues wanted or offered for
@@ -180,9 +180,7 @@ public interface ServicesAPI {
      */
     String AUTHENTICATE_SERVICE = SERVICE_BASE + AUTH_BASE;
 
-    /**
-     * Called from services to have information about the user
-     */
+    /** Called from services to have information about the user */
     String USER_BASE_ID_SERVICES = API_BASE + "/users/services/{id}";
   }
 
@@ -419,6 +417,8 @@ public interface ServicesAPI {
     String RETRIEVE_RESOURCE = "/retrieveResource";
     String RETRIEVE_WORKSPACE = "/retrieveWorkspace/{urn}";
     String RESOLVE_SERVICE_CALL = "/resolveServiceCall/{name}";
+    String RESOLVE_EXPORT_SCHEMA = "/resolveExportSchema/{mediaType}";
+    String RESOLVE_IMPORT_SCHEMA = "/resolveImportSchema/{mediaType}";
     String RESOURCE_INFO = "/resourceInfo/{urn}";
     String RETRIEVE_OBSERVABLE = "/retrieveObservable";
     String DESCRIBE_CONCEPT = "/describeConcept/{conceptUrn}";

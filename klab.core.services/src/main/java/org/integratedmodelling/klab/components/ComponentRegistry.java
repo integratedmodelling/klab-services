@@ -949,7 +949,11 @@ public class ComponentRegistry {
       final String mediaType = "application/java-archive";
       var schemata =
           ResourceTransport.INSTANCE.findExportSchemata(
-              KlabAsset.KnowledgeClass.COMPONENT, mediaType, service.capabilities(scope), scope);
+              KlabAsset.KnowledgeClass.COMPONENT,
+              mediaType,
+              null,
+              service.capabilities(scope),
+              scope);
       if (schemata.isEmpty()) {
         throw new KlabAuthorizationException(
             "No authorized export schema with media type " + mediaType + " is available");

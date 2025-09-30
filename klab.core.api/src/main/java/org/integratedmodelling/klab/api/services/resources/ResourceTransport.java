@@ -3,12 +3,14 @@ package org.integratedmodelling.klab.api.services.resources;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.AuthenticatedIdentity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.File;
@@ -325,12 +327,15 @@ public enum ResourceTransport {
    */
   public List<Schema> findImportSchemata(
       String schemaId, String mediaType, AuthenticatedIdentity identity) {
-    return findSchemata(importSchemata, schemaId, mediaType, identity);
+    return findSchemata(importSchemata, schemaId, mediaType, null, identity);
   }
 
   /**
    * Find the export schemata applicable to the passed media type and identity. TODO use scope for
    * permissions
+   *
+   * <p>TODO if schema isn't found locally, it should be looked up in a component through the
+   * resources service.
    *
    * @param knowledgeClass
    * @param mediaType
@@ -339,6 +344,7 @@ public enum ResourceTransport {
   public List<Schema> findExportSchemata(
       KlabAsset.KnowledgeClass knowledgeClass,
       String mediaType,
+      Geometry geometry,
       KlabService.ServiceCapabilities serviceCapabilities,
       Scope scope) {
 
@@ -351,6 +357,15 @@ public enum ResourceTransport {
         }
       }
     }
+
+    if (ret.isEmpty()) {
+      // TODO use all services!
+      // TODO only search if not searched before or services have changed
+      var result =
+          scope.getService(ResourcesService.class).resolveExportSchema(mediaType, geometry, scope);
+      if (!result.isEmpty()) {}
+    }
+
     return ret;
   }
 
@@ -359,6 +374,7 @@ public enum ResourceTransport {
       Map<String, List<Schema>> schemata,
       String schemaId,
       String mediaType,
+      Geometry geometry,
       AuthenticatedIdentity identity) {
 
     List<Schema> ret = new ArrayList<>();

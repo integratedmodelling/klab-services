@@ -46,7 +46,6 @@ public class ComponentIOLibrary {
 
     String manifestPath = "META-INF/MANIFEST.MF";
 
-
     try {
       ZipFile zipFile = new ZipFile(file.getAbsolutePath());
       ZipEntry entry = zipFile.getEntry(manifestPath);

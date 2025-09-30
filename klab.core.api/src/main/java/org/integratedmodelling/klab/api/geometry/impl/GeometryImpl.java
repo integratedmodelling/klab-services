@@ -101,17 +101,7 @@ public class GeometryImpl implements Geometry {
 
   public static final String PARAMETER_TIME_COVERAGE_END = "coverageend";
 
-  private static String encodeDimension(Dimension dim, Encoder... encoders) {
-
-    Map<String, Encoder> encoderMap = new LinkedHashMap<>();
-    if (encoders != null) {
-      for (var encoder : encoders) {
-        if (encoder.dimension() == dim.getType()) {
-          encoderMap.put(encoder.key(), encoder);
-        }
-      }
-    }
-
+  private static String encodeBaseDimension(Dimension dim) {
     String ret = "";
     ret +=
         dim.getType() == Dimension.Type.SPACE
@@ -124,6 +114,22 @@ public class GeometryImpl implements Geometry {
                     : (dim.isRegular() ? "T" : "t"))
                 : /* TODO others */ "");
     ret += dim.getDimensionality();
+    return ret;
+  }
+
+  private static String encodeDimension(Dimension dim, Encoder... encoders) {
+
+    Map<String, Encoder> encoderMap = new LinkedHashMap<>();
+    if (encoders != null) {
+      for (var encoder : encoders) {
+        if (encoder.dimension() == dim.getType()) {
+          encoderMap.put(encoder.key(), encoder);
+        }
+      }
+    }
+
+    String ret = encodeBaseDimension(dim);
+
     if (dim.getShape() != null && !isUndefined(dim.getShape())) {
       ret += "(";
       for (int i = 0; i < dim.getShape().size(); i++) {
@@ -521,6 +527,25 @@ public class GeometryImpl implements Geometry {
   @Override
   public boolean isUniversal() {
     return universal;
+  }
+
+  @Override
+  public boolean isDimensionallyCompatible(Geometry other) {
+    for (var dimension : other.getDimensions()) {
+      var myDimension = this.dimension(dimension.getType());
+      if (myDimension != null) {
+        if (myDimension.getDimensionality() != dimension.getDimensionality()) {
+          return false;
+        }
+        if (myDimension.isRegular() != dimension.isRegular()) {
+          return false;
+        }
+        if (dimension.isGeneric() && !myDimension.isGeneric()) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   public void setUniversal(boolean universal) {
@@ -1307,6 +1332,15 @@ public class GeometryImpl implements Geometry {
     }
     time.getParameters().put(PARAMETER_TIME_START, value);
     return this;
+  }
+
+  @Override
+  public Geometry dimensionsOnly() {
+    StringBuilder sb = new StringBuilder();
+    for (var dim : dimensions) {
+      sb.append(encodeBaseDimension(dim));
+    }
+    return Geometry.create(sb.toString());
   }
 
   public GeometryImpl withTemporalTransitions(long[] transitionPoints) {

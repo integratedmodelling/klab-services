@@ -36,6 +36,7 @@ public class ExportFileCache {
   private PersistentCacheManager persistentCacheManager;
   private Cache<Key, File> cache;
   private String fileExtension = "dat";
+  private final Object initLock = new Object();
 
   private static ExportFileCache _temporary;
 
@@ -46,19 +47,8 @@ public class ExportFileCache {
     persistentCacheManager = exportFileCache.persistentCacheManager;
     cache = exportFileCache.cache;
     fileExtension = exportFileCache.fileExtension;
-    Runtime.getRuntime()
-        .addShutdownHook(
-            new Thread(
-                () -> {
-                  try {
-                    close();
-                  } catch (IOException e) {
-                    Logging.INSTANCE.error("Error closing export file cache", e);
-                  }
-                }));
   }
 
-  //  @Override
   public void close() throws IOException {
     if (!offline) {
       persistentCacheManager.close();

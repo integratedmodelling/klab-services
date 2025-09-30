@@ -449,6 +449,18 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
+  public ResourceSet resolveImportSchema(String mediaType, Geometry geometry, Scope scope) {
+    // TODO
+    return null;
+  }
+
+  @Override
+  public ResourceSet resolveExportSchema(String mediaType, Geometry geometry, Scope scope) {
+    // TODO
+    return null;
+  }
+
+  @Override
   public ResourceSet resolveServiceCall(String name, Version version, Scope scope) {
 
     ResourceSet ret = new ResourceSet();
@@ -1755,7 +1767,8 @@ public class ResourcesProvider extends BaseService
   }
 
   @Override
-  public <T extends Serializable> T retrieveAsset(String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
+  public <T extends Serializable> T retrieveAsset(
+      String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
     // TODO
     return null;
   }

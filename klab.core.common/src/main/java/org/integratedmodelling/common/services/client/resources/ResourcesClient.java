@@ -406,6 +406,32 @@ public class ResourcesClient extends ServiceClient
   }
 
   @Override
+  public ResourceSet resolveImportSchema(String mediaType, Geometry geometry, Scope scope) {
+    return client
+        .withScope(scope)
+        .get(
+            ServicesAPI.RESOURCES.RESOLVE_IMPORT_SCHEMA,
+            ResourceSet.class,
+            "mediaType",
+            mediaType,
+            "geometry",
+            (geometry == null ? null : geometry.encode()));
+  }
+
+  @Override
+  public ResourceSet resolveExportSchema(String mediaType, Geometry geometry, Scope scope) {
+    return client
+        .withScope(scope)
+        .get(
+            ServicesAPI.RESOURCES.RESOLVE_EXPORT_SCHEMA,
+            ResourceSet.class,
+            "mediaType",
+            mediaType,
+            "geometry",
+            (geometry == null ? null : geometry.encode()));
+  }
+
+  @Override
   public ResourceSet resolveResource(List<String> urns, Scope scope) {
     return client
         .withScope(scope)

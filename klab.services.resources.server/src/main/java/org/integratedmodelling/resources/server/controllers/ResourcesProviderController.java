@@ -391,6 +391,66 @@ public class ResourcesProviderController {
   }
 
   @Operation(
+      summary = "Resolve components providing an export schema",
+      description =
+          "Resolve a components providing an export schema for a specified media type and optional geometry")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Service call resolved successfully"),
+    @ApiResponse(responseCode = "404", description = "Service call not found"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+    @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_EXPORT_SCHEMA)
+  public @ResponseBody ResourceSet resolveExportSchema(
+      @Parameter(description = "Name of the service call") @PathVariable("mediaType")
+          String mediaType,
+      @Parameter(description = "Optional version of the service call")
+          @PathVariable(value = "geometry", required = false)
+          String geometry,
+      Principal principal) {
+    Geometry g =
+        geometry == null ? null : GeometryRepository.INSTANCE.get(geometry, Geometry.class);
+    return resourcesServer
+        .klabService()
+        .resolveExportSchema(
+            mediaType,
+            g,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
+
+  @Operation(
+      summary = "Resolve components providing an import schema",
+      description =
+          "Resolve a components providing an import schema for a specified media type and optional geometry")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Service call resolved successfully"),
+    @ApiResponse(responseCode = "404", description = "Service call not found"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+    @ApiResponse(responseCode = "403", description = "Forbidden")
+  })
+  @GetMapping(ServicesAPI.RESOURCES.RESOLVE_IMPORT_SCHEMA)
+  public @ResponseBody ResourceSet resolveImportSchema(
+      @Parameter(description = "Name of the service call") @PathVariable("mediaType")
+          String mediaType,
+      @Parameter(description = "Optional version of the service call")
+          @PathVariable(value = "geometry", required = false)
+          String geometry,
+      Principal principal) {
+    Geometry g =
+        geometry == null ? null : GeometryRepository.INSTANCE.get(geometry, Geometry.class);
+    return resourcesServer
+        .klabService()
+        .resolveImportSchema(
+            mediaType,
+            g,
+            principal instanceof EngineAuthorization authorization
+                ? authorization.getScope()
+                : null);
+  }
+
+  @Operation(
       summary = "Get resource info",
       description = "Get information about a k.LAB resource by its URN")
   @ApiResponses({

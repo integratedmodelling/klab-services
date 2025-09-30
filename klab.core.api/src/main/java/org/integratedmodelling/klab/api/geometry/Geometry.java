@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.api.geometry;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
@@ -355,6 +354,17 @@ public interface Geometry extends Serializable, Locator {
   boolean isUniversal();
 
   /**
+   * True if this geometry is dimensionally compatible with the argument. Only the main dimensions
+   * and their dimensionality should be compared, with generic dimensions in the argument being
+   * compatible with any other, and any concrete dimension having to match exactly. The absence of a
+   * dimension is acceptable only if this geometry has it and the argument doesn't.
+   *
+   * @param other
+   * @return
+   */
+  boolean isDimensionallyCompatible(Geometry other);
+
+  /**
    * Metadata are normally empty. They are provided for special purposes, such as tracking
    * provenance after splitting and merging.
    *
@@ -445,6 +455,15 @@ public interface Geometry extends Serializable, Locator {
    * @return
    */
   List<Geometry> split(int suggestedSplits);
+
+  /**
+   * Return a simple geometry containing only the main dimension identifiers and the dimensionality.
+   * Used to assess compatibility when filtering contextualizers, exporters and the like w.r.t.
+   * observations.
+   *
+   * @return
+   */
+  Geometry dimensionsOnly();
 
   /**
    * Merge back the geometries into one that will maintain the merged geometries and can remap

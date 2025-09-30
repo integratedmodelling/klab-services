@@ -36,6 +36,7 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -466,8 +467,10 @@ public abstract class BaseService implements KlabService {
 
     // First retrieve the asset, then if the metadata contain an adapter and the adapter is local,
     // use that to prioritize before warning.
+    Geometry geometry = null;
     var asset = resolveUrn(urn, knowledgeClass, scope);
     if (asset instanceof Observation observation) {
+      geometry = observation.getGeometry().dimensionsOnly();
       var adapterId = observation.getContextualizationData().getAdapterId();
       if (adapterId != null) {
         var adapter = getComponentRegistry().getAdapter(adapterId, Version.ANY_VERSION, scope);
@@ -477,7 +480,7 @@ public abstract class BaseService implements KlabService {
 
     var schemata =
         ResourceTransport.INSTANCE.findExportSchemata(
-            knowledgeClass, mediaType, capabilities(scope), scope);
+            knowledgeClass, mediaType, geometry, capabilities(scope), scope);
 
     if (schemata.isEmpty()) {
       throw new KlabAuthorizationException(

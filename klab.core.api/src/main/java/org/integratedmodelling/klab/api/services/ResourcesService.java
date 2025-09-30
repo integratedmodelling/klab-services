@@ -216,6 +216,26 @@ public interface ResourcesService extends KlabService {
   ResourceSet resolveResourceAdapter(String urn, Scope scope);
 
   /**
+   * Resolve an importer for a given media type and geometry to components providing it
+   *
+   * @param mediaType
+   * @param geometry
+   * @param scope
+   * @return
+   */
+  ResourceSet resolveImportSchema(String mediaType, Geometry geometry, Scope scope);
+
+  /**
+   * Resolve an exporter for a given media type and geometry to components providing it
+   *
+   * @param mediaType
+   * @param geometry
+   * @param scope
+   * @return
+   */
+  ResourceSet resolveExportSchema(String mediaType, Geometry geometry, Scope scope);
+
+  /**
    * Resolve a component (and possibly its dependencies) that provides the passed service call.
    *
    * @param name URN of the service call

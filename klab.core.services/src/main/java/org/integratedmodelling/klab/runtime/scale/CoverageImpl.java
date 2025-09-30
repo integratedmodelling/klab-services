@@ -459,6 +459,11 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
   }
 
   @Override
+  public Geometry dimensionsOnly() {
+    return as(Geometry.class).dimensionsOnly();
+  }
+
+  @Override
   public boolean isComplete() {
     return coverage >= minRequiredCoverage;
   }
