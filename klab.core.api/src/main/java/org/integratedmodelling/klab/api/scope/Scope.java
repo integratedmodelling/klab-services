@@ -78,13 +78,13 @@ public interface Scope extends Channel {
     }
   }
 
-//  /**
-//   * The expiration type for the scope. The details (e.g. the idle time) depend on service
-//   * configuration.
-//   *
-//   * @return
-//   */
-//  Persistence getPersistence();
+  //  /**
+  //   * The expiration type for the scope. The details (e.g. the idle time) depend on service
+  //   * configuration.
+  //   *
+  //   * @return
+  //   */
+  //  Persistence getPersistence();
 
   /**
    * All scope except a {@link UserScope} have a non-null parent scope. A {@link ContextScope} is
@@ -135,7 +135,8 @@ public interface Scope extends Channel {
 
   /**
    * Retrieve all the currently available services corresponding to the passed class, including the
-   * default one returned by {@link #getService(Class, Predicate...)} if applicable.
+   * default one returned by {@link #getService(Class, Predicate...)} if applicable. Passing
+   * KlabService.class as a parameter should always return all services.
    *
    * @param <T>
    * @param serviceClass

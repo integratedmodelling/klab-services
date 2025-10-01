@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /** Client-side session scope */
-public abstract class ClientSessionScope extends ClientUserScope implements SessionScope {
+public class ClientSessionScope extends ClientUserScope implements SessionScope {
 
   protected final RuntimeService runtimeService;
   protected String name;
@@ -26,11 +26,27 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
   public ClientSessionScope(
       ClientUserScope parent, String sessionName, RuntimeService runtimeService) {
     // FIXME use a copy constructor that inherits the environment from the parent
-    super(parent.getUser(), parent.engine);
+    super(parent.getUser(), parent.getEngine());
     this.runtimeService = runtimeService;
     this.name = sessionName;
     this.parentScope = parent;
     setId(null);
+  }
+
+  @Override
+  public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+    if (RuntimeService.class.isAssignableFrom(serviceClass)) {
+      return List.of((T) runtimeService);
+    }
+    return super.getServices(serviceClass);
+  }
+
+  @Override
+  public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
+    if (RuntimeService.class.isAssignableFrom(serviceClass)) {
+      return (T) runtimeService;
+    }
+    return super.getService(serviceClass, selectors);
   }
 
   /**
@@ -83,27 +99,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
      * Registration with the runtime succeeded. Return a peer scope locked to the runtime service
      * that hosts it.
      */
-    var ret =
-        new ClientContextScope(this, runtime, configuration.validate(this)) {
-
-          @Override
-          public <T extends KlabService> T getService(
-              Class<T> serviceClass, Predicate<T>... selectors) {
-            if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-              return (T) runtime;
-            }
-            return ClientSessionScope.this.getService(serviceClass, selectors);
-          }
-
-          @Override
-          public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-            if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-              return List.of((T) runtime);
-            }
-            return ClientSessionScope.this.getServices(serviceClass);
-          }
-        };
-
+    var ret = new ClientContextScope(this, runtime, configuration.validate(this));
     var id = runtime.registerNewContext(ret, userScope);
 
     if (id != null) {

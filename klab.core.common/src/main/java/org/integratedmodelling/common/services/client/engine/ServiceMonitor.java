@@ -43,6 +43,7 @@ public class ServiceMonitor {
   List<BiConsumer<KlabService, KlabService.ServiceStatus>> serviceConsumers = new ArrayList<>();
   List<Consumer<Engine.Status>> engineConsumers = new ArrayList<>();
   EngineStatusImpl lastRecordedStatus = EngineStatusImpl.inop();
+  boolean firstTimeOnline = false;
 
   @SuppressWarnings("unchecked")
   public ServiceMonitor(

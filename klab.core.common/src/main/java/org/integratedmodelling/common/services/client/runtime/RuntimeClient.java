@@ -323,7 +323,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
       configuration.defineFromExisting(descriptor);
 
       ret =
-          new ClientContextScope(sessionScope, this, configuration) {
+          new ClientContextScope(sessionScope, this, configuration)/* {
             @Override
             public <T extends KlabService> T getService(
                 Class<T> serviceClass, Predicate<T>... selectors) {
@@ -338,7 +338,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
                   ? List.of((T) service)
                   : userScope.getServices(serviceClass);
             }
-          };
+          }*/;
       ret.setId(descriptor.getId());
       ret.createDigitalTwin(descriptor.getId());
       return ret;

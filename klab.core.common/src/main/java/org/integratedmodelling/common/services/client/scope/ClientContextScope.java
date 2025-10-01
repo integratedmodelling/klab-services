@@ -27,7 +27,7 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 
-public abstract class ClientContextScope extends ClientSessionScope implements ContextScope {
+public class ClientContextScope extends ClientSessionScope implements ContextScope {
 
   private Observation observer;
   private Observation contextObservation;
@@ -99,20 +99,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
   }
 
   protected ClientContextScope childContext(final ClientContextScope parent) {
-    var ret =
-        new ClientContextScope(parent) {
-
-          @Override
-          public <T extends KlabService> T getService(
-              Class<T> serviceClass, Predicate<T>... selectors) {
-            return parent.getService(serviceClass, selectors);
-          }
-
-          @Override
-          public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-            return parent.getServices(serviceClass);
-          }
-        };
+    var ret = new ClientContextScope(parent);
     ret.copyMessagingSetup(parent);
     return ret;
   }

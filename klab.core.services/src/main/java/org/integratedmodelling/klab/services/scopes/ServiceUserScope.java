@@ -11,6 +11,7 @@ import java.util.function.Predicate;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
+import org.integratedmodelling.common.authentication.scope.AbstractServiceScope;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -46,8 +47,7 @@ import org.integratedmodelling.klab.services.base.BaseService;
  *
  * @author Ferd
  */
-public class ServiceUserScope extends AbstractReactiveScopeImpl
-    implements UserScope, ServiceSideScope {
+public class ServiceUserScope extends AbstractServiceScope implements UserScope, ServiceSideScope {
 
   // the data hash is the SAME OBJECT throughout the child hierarchy
   protected Parameters<String> data;
@@ -58,7 +58,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   private String id;
   private boolean local;
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-  protected Map<KlabService.Type, List<? extends KlabService>> serviceMap = new HashMap<>();
   private boolean messagingChecked = false;
   private JobManager jobManager;
 
@@ -126,8 +125,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     // ensure any virtual defined for this scope is called.
     final ServiceUserScope originalScope = this;
 
-    var ret =
-        new ServiceUserScope(this) {
+    var ret = new ServiceUserScope(this) /* {
           @Override
           public <T extends KlabService> T getService(
               Class<T> serviceClass, Predicate<T>... selectors) {
@@ -138,7 +136,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
           public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
             return originalScope.getServices(serviceClass);
           }
-        };
+        }*/;
     ret.copyInfo(this);
     return ret;
   }
@@ -231,14 +229,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   }
 
   @Override
-  public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-    return (Collection<T>)
-        serviceMap.get(KlabService.Type.classify(serviceClass)).stream()
-            .filter(s -> s.status().isOperational())
-            .toList();
-  }
-
-  @Override
   public boolean hasErrors() {
     // TODO Auto-generated method stub
     return false;
@@ -262,31 +252,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   @Override
   public void setData(String key, Object value) {
     this.data.put(key, value);
-  }
-
-  @Override
-  public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
-
-    var services = getServices(serviceClass);
-
-    if (selectors == null || selectors.length == 0) {
-      if (services.isEmpty()) {
-        throw new KlabServiceAccessException(
-            "No suitable service for request of " + serviceClass.getSimpleName());
-      }
-      return (T) services.iterator().next();
-    }
-
-    for (var selector : selectors) {
-      var ret =
-          services.stream().filter(serviceClient -> selector.test((T) serviceClient)).toList();
-      if (!ret.isEmpty()) {
-        return (T) ret.getFirst();
-      }
-    }
-
-    throw new KlabServiceAccessException(
-        "No suitable service for request of " + serviceClass.getSimpleName());
   }
 
   public void stop() {

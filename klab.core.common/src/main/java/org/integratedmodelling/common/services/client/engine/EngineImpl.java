@@ -48,6 +48,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   private Federation federationData;
   private Consumer<Status> engineStatusMonitor;
   private BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor;
+  private boolean firstTimeOnline = false;
 
   public EngineImpl(
       Consumer<Status> engineStatusMonitor,
@@ -77,6 +78,10 @@ public class EngineImpl implements Engine, PropertyHolder {
     // TODO -- no handling for now; the downloaded distro should carry the latest version available
 
     this.distributionStatus = status;
+  }
+
+  public ServiceMonitor getServiceMonitor() {
+    return serviceMonitor;
   }
 
   @Override
@@ -146,6 +151,16 @@ public class EngineImpl implements Engine, PropertyHolder {
     if (engineStatusMonitor != null) {
       engineStatusMonitor.accept(status);
     }
+    if (!firstTimeOnline && status.isOperational()) {
+      // advertise the user scope to all online services
+      notifyScopeToServices();
+    }
+  }
+
+  private void notifyScopeToServices() {
+    for (var service : getUser().getServices(KlabService.class)) {
+      System.out.println("DIO PORCELLOTTO " + service.getClass().getName());
+    }
   }
 
   private void notifyLocalService(
@@ -166,7 +181,8 @@ public class EngineImpl implements Engine, PropertyHolder {
       return this.defaultUser;
     }
 
-    this.authData = certificate == null
+    this.authData =
+        certificate == null
             ? Authentication.INSTANCE.authenticate(settings)
             : Authentication.INSTANCE.authenticate(certificate, settings);
 
@@ -178,10 +194,7 @@ public class EngineImpl implements Engine, PropertyHolder {
      * FIXME check if this still applies (federation is a group)
      */
     this.federationData =
-            authData
-                    .getFirst()
-                    .getData()
-                    .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+        authData.getFirst().getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
 
     if (federationData == null || federationData.getBroker() == null) {
       var id = federationData == null ? null : federationData.getId();
@@ -192,30 +205,28 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
 
     /* federation must be already established at this point */
-    this.defaultUser =
-            new ClientUserScope((UserIdentity) authData.getFirst(), this) {
-              @Override
-              public <T extends KlabService> T getService(
-                      Class<T> serviceClass, Predicate<T>... selectors) {
-                return (T) serviceMonitor.getService(serviceClass, selectors);
-              }
+    this.defaultUser = new ClientUserScope((UserIdentity) authData.getFirst(), this) /* {
+          @Override
+          public <T extends KlabService> T getService(
+              Class<T> serviceClass, Predicate<T>... selectors) {
+            return (T) serviceMonitor.getService(serviceClass, selectors);
+          }
 
-              @Override
-              public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-                return serviceMonitor.getServices(serviceClass);
-              }
-            };
+          @Override
+          public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+            return serviceMonitor.getServices(serviceClass);
+          }
+        }*/;
 
     this.users.add(this.defaultUser);
-
     this.serviceMonitor =
-            new ServiceMonitor(
-                    authData.getFirst(),
-                    settings,
-                    true,
-                    authData.getSecond(),
-                    this::notifyLocalService,
-                    this::notifyLocalEngine);
+        new ServiceMonitor(
+            authData.getFirst(),
+            settings,
+            true,
+            authData.getSecond(),
+            this::notifyLocalService,
+            this::notifyLocalEngine);
 
     return this.defaultUser;
   }

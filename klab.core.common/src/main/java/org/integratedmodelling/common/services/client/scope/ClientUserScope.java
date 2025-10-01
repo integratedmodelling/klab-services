@@ -7,6 +7,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
+import org.integratedmodelling.common.authentication.scope.AbstractClientScope;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -37,9 +38,8 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
  *
  * @author Ferd
  */
-public abstract class ClientUserScope extends AbstractReactiveScopeImpl implements UserScope {
+public class ClientUserScope extends AbstractClientScope implements UserScope {
 
-  protected final EngineImpl engine;
   private Federation federation;
   // the data hash is the SAME OBJECT throughout the child
   protected Parameters<String> data;
@@ -55,11 +55,10 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
   public ClientUserScope(UserIdentity user, EngineImpl engine) {
-    super(user, true, true);
+    super(user, true, true, engine);
     this.user = user;
     this.data = Parameters.create();
     this.id = user.getId();
-    this.engine = engine;
     if (user.getData().containsKey(UserIdentity.FEDERATION_DATA_PROPERTY)) {
       this.federation = user.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
     }
@@ -113,8 +112,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
       return existing;
     }
 
-    var ret =
-        new ClientSessionScope(this, sessionId, hostService) {
+    var ret = new ClientSessionScope(this, sessionId, hostService) /* {
 
           @Override
           public <T extends KlabService> T getService(
@@ -132,7 +130,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
             }
             return ClientUserScope.this.getServices(serviceClass);
           }
-        }.withId(sessionId);
+        }*/.withId(sessionId);
 
     var id = hostService.registerNewSession(ret, this, null);
 

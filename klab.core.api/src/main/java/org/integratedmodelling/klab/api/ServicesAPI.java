@@ -34,19 +34,6 @@ public interface ServicesAPI {
    */
   String SERVER_KEY_HEADER = "server-key";
 
-  //  /**
-  //   * Response header for the URN of a AMQP messaging service, returned along with the {@link
-  //   * RUNTIME#CREATE_SESSION} response when messaging is available.
-  //   *
-  //   * @deprecated federation data should come with groups that come with the JWT header
-  //   */
-  //  @Deprecated String MESSAGING_URL_HEADER = "messaging-urn";
-  //
-  //  /*
-  //   * @deprecated federation data should come with groups that come with the JWT header
-  //   */
-  //  @Deprecated String FEDERATION_ID_HEADER = "federation-id";
-
   /**
    * Header used to both request and confirm the set of messaging queues wanted or offered for
    * communication with the digital twin. The value list must conform to the names of the {@link

@@ -513,7 +513,8 @@ public abstract class ServiceClient implements KlabService {
   }
 
   @Override
-  public <T extends Serializable> T retrieveAsset(String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
+  public <T extends Serializable> T retrieveAsset(
+      String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
     // TODO
     return null;
   }

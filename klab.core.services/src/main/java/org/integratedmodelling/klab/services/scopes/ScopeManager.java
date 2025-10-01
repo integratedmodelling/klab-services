@@ -95,7 +95,7 @@ public class ScopeManager {
        * That can be done directly in the overloaded functions below.
        */
       ret =
-          new ServiceUserScope(user, service) {
+          new ServiceUserScope(user, service)/* {
 
             @Override
             public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
@@ -109,7 +109,7 @@ public class ScopeManager {
               // TODO filter by permission
               return service.serviceScope().getService(serviceClass, selectors);
             }
-          };
+          }*/;
 
       File userBehavior =
           new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + "user.kactors");
