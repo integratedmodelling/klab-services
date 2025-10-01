@@ -39,6 +39,7 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
@@ -56,8 +57,7 @@ public abstract class AbstractUIController implements UIController {
   private Set<UIReactor.UIEvent> relevantEvents = EnumSet.noneOf(UIReactor.UIEvent.class);
 
   /** Reactors to each event are registered here */
-  private final Map<UIReactor.UIEvent, List<EventReactor>> reactors =
-      Collections.synchronizedMap(new HashMap<>());
+  private final Map<UIReactor.UIEvent, List<EventReactor>> reactors = new ConcurrentHashMap<>();
 
   private final List<Pair<UIPanelController, Class<? extends PanelController<?, ?>>>>
       panelControllerClasses = Collections.synchronizedList(new ArrayList<>());

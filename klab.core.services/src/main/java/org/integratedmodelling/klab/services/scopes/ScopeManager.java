@@ -31,6 +31,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -51,9 +52,9 @@ public class ScopeManager {
    * scope graph, using only the IDs. Scopes may persist in services that allow that, and that is
    * managed externally by recreating the scopes and their content upon request.
    */
-  private Map<String, ServiceUserScope> scopes = Collections.synchronizedMap(new HashMap<>());
+  private final Map<String, ServiceUserScope> scopes = new ConcurrentHashMap<>();
 
-  private Map<String, Long> idleScopeTime = Collections.synchronizedMap(new HashMap<>());
+  private Map<String, Long> idleScopeTime = new ConcurrentHashMap<>();
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
   public ScopeManager(KlabService service) {
@@ -94,8 +95,7 @@ public class ScopeManager {
        * from the service scope. TODO we should filter them by permission vs. the user identity!
        * That can be done directly in the overloaded functions below.
        */
-      ret =
-          new ServiceUserScope(user, service)/* {
+      ret = new ServiceUserScope(user, service) /* {
 
             @Override
             public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {

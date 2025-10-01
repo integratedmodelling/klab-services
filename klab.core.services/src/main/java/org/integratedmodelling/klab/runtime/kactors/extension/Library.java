@@ -15,7 +15,7 @@
 //
 //    private String name;
 //    private Class<?> cls;
-//    private Map<String, CallDescriptor> methods = Collections.synchronizedMap(new HashMap<>());
+//    private Map<String, CallDescriptor> methods = new ConcurrentHashMap();
 //    private Set<KActorsBehavior.Type> defaulted = new HashSet<>();
 //
 //    public class CallDescriptor {

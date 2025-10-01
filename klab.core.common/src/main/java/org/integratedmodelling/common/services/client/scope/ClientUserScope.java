@@ -2,6 +2,7 @@ package org.integratedmodelling.common.services.client.scope;
 
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiConsumer;
@@ -49,7 +50,7 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
   private String id;
   protected Type type;
   private Map<Long, Pair<Message, BiConsumer<Message, Message>>> responseHandlers =
-      Collections.synchronizedMap(new HashMap<>());
+      new ConcurrentHashMap<>();
   private String hostServiceId;
 
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);

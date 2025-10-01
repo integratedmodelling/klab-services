@@ -37,6 +37,7 @@ import org.semanticweb.owlapi.model.*;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -71,7 +72,7 @@ public class Ontology {
   Set<String> opropertyIDs = new HashSet<>();
   Set<String> dpropertyIDs = new HashSet<>();
   Set<String> apropertyIDs = new HashSet<>();
-  Map<String, String> definitionIds = Collections.synchronizedMap(new HashMap<>());
+  Map<String, String> definitionIds = new ConcurrentHashMap<>();
 
   private String resourceUrl;
   private boolean isInternal = false;

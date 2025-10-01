@@ -1,6 +1,8 @@
 package org.integratedmodelling.common.services.client.scope;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -18,7 +20,7 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 public enum ClientScopeManager {
   INSTANCE;
 
-  private Map<String, ClientSessionScope> scopes = Collections.synchronizedMap(new HashMap<>());
+  private Map<String, ClientSessionScope> scopes = new ConcurrentHashMap<>();
 
   /**
    * Get an existing scope, interrogating the runtime if we don't have it cached.

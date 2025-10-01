@@ -17,6 +17,7 @@ import tech.units.indriya.format.SimpleUnitFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class UnitServiceImpl implements UnitService {
 
@@ -34,7 +35,7 @@ public class UnitServiceImpl implements UnitService {
     }
   }
 
-  private Map<String, javax.measure.Unit<?>> units = Collections.synchronizedMap(new HashMap<>());
+  private Map<String, javax.measure.Unit<?>> units = new ConcurrentHashMap<>();
   private SimpleUnitFormat formatter;
 
   public UnitServiceImpl() {

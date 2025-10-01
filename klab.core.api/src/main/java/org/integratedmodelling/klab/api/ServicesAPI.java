@@ -53,6 +53,15 @@ public interface ServicesAPI {
   String URN_PARAMETER = "{urn}";
 
   /**
+   * Sent to all services by the engine implementation upon authentication of a user scope after
+   * successful service connection. Contains details of all services known to the scope. The service
+   * will create a peer user scope, refreshing the JWT access token in case it exists, ensure that
+   * it can access them, and store clients for all new services for fast access through peer scopes
+   * in successive calls.
+   */
+  String NOTIFY_USER_SCOPE = "/notifyUserScope";
+
+  /**
    * Create a session scope, return the scope ID unless a sessionId is passed as a parameter (which
    * should only be done by "master" services when they need a peer in another service). The
    * original session and context/observation scopes should normally be created in the runtime.

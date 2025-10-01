@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.net.URL;
 import java.security.Principal;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.integratedmodelling.common.authentication.Authentication;
@@ -44,9 +45,10 @@ public class KlabScopeController {
 
   @Autowired ServiceNetworkedInstance<?> instance;
 
-  // TODO we should have a map of top-level service clients per URL, and create children with the
-  //  identity we need upon connection.
-  Map<URL, ServiceClient> serviceClientMap = Collections.synchronizedMap(new HashMap<>());
+  @PostMapping(ServicesAPI.CREATE_SESSION)
+  public boolean notifyUserScope() {
+    return false;
+  }
 
   /**
    * Create a session with the passed name. If a broker is available, also setup messaging and any
@@ -240,7 +242,8 @@ public class KlabScopeController {
 
       if (sessionScope != null) {
         // var userScope = authorization.getScope(UserScope.class);
-        var userScope = instance.klabService().getScopeManager().getScope(authorization, UserScope.class, null);
+        var userScope =
+            instance.klabService().getScopeManager().getScope(authorization, UserScope.class, null);
         var identity = userScope.getIdentity();
         var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
 

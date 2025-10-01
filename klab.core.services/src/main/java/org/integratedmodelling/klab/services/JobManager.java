@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -23,10 +24,10 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class JobManager {
 
-  private Map<Long, CompletableFuture<?>> jobs = Collections.synchronizedMap(new HashMap<>());
-  private Cache<Long, Pair<Object, Throwable>> results =
+  private final Map<Long, CompletableFuture<?>> jobs = new ConcurrentHashMap<>();
+  private final Cache<Long, Pair<Object, Throwable>> results =
       CacheBuilder.newBuilder().maximumSize(400).build();
-  private AtomicLong nextId = new AtomicLong(0L);
+  private final AtomicLong nextId = new AtomicLong(0L);
 
   /**
    * Submission of a completable future adds a stage that offloads the result (whether an object or

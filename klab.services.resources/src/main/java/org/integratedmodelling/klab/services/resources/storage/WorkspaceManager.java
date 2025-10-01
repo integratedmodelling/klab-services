@@ -9,6 +9,7 @@ import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -91,8 +92,8 @@ public class WorkspaceManager {
   // one
   // user at
   // a time, while inhibiting file change logging in project storage
-  private Map<String, String> projectLocks = Collections.synchronizedMap(new HashMap<>());
-  private AtomicBoolean loading = new AtomicBoolean(false);
+  private final Map<String, String> projectLocks = new ConcurrentHashMap<>();
+  private final AtomicBoolean loading = new AtomicBoolean(false);
   private List<Pair<ProjectStorage, Project>> _projectLoadOrder;
   private List<KimOntology> _ontologyOrder;
   private Map<String, KimOntology> _ontologyMap;

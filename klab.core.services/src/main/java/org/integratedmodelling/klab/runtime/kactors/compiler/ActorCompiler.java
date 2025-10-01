@@ -7,13 +7,12 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public enum ActorCompiler {
-
   INSTANCE;
 
-  private Map<String, Class<? extends ActorBase>> compiledActorClasses =
-      Collections.synchronizedMap(new HashMap<>());
+  private Map<String, Class<? extends ActorBase>> compiledActorClasses = new ConcurrentHashMap<>();
 
   public ActorBase compile(String urn, Scope scope) {
 
@@ -27,13 +26,11 @@ public enum ActorCompiler {
       if (behavior != null) {
         compiledActorClass = compileBehavior(behavior);
       }
-
     }
 
     ActorBase ret = null;
-    if (compiledActorClass != null) {
+    if (compiledActorClass != null) {}
 
-    }
     return ret;
   }
 

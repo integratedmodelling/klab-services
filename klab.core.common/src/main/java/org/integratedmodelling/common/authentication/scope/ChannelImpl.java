@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.authentication.scope;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -38,7 +39,7 @@ public abstract class ChannelImpl implements Channel {
   private AtomicBoolean interrupted = new AtomicBoolean(false);
   private final AtomicBoolean errors = new AtomicBoolean(false);
   private final Map<Message.Queue, Map<String, BiConsumer<Channel, Message>>> messageListeners =
-      Collections.synchronizedMap(new HashMap<>());
+      new ConcurrentHashMap<>();
 
   //  private Multimap<Pair<Message.MessageClass, Message.MessageType>, EventMatcher> eventMatchers;
 
@@ -56,8 +57,7 @@ public abstract class ChannelImpl implements Channel {
   }
 
   protected Map<String, BiConsumer<Channel, Message>> getListeners(Message.Queue queue) {
-    return this.messageListeners.computeIfAbsent(
-        queue, q -> Collections.synchronizedMap(new HashMap<>()));
+    return this.messageListeners.computeIfAbsent(queue, q -> new ConcurrentHashMap<>());
   }
 
   @Deprecated

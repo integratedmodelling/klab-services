@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The core workspace only contains OWL ontologies and is currently read from the classpath.
@@ -30,12 +31,10 @@ import java.util.*;
  */
 public class CoreOntology {
 
-  private File root;
-  private Map<SemanticType, Concept> worldviewCoreConcepts =
-      Collections.synchronizedMap(new HashMap<>());
-  private OWL owl;
-  private static Map<SemanticType, String> coreConceptIds =
-      Collections.synchronizedMap(new HashMap<>());
+  private final File root;
+  private final Map<SemanticType, Concept> worldviewCoreConcepts = new ConcurrentHashMap<>();
+  private final OWL owl;
+  private static final Map<SemanticType, String> coreConceptIds = new ConcurrentHashMap<>();
 
   // TODO this should be read from the core namespace; having them all defined through the worldview
   // must be

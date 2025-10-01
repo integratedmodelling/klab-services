@@ -140,20 +140,20 @@
 //  // protected String appId;
 //  // @Deprecated
 //  // protected IActorIdentity<KlabMessage> identity;
-//  protected Map<Long, MatchActions> listeners = Collections.synchronizedMap(new HashMap<>());
+//  protected Map<Long, MatchActions> listeners = new ConcurrentHashMap();
 //  protected Map<String, MatchActions> componentFireListeners =
-//      Collections.synchronizedMap(new HashMap<>());
+//      new ConcurrentHashMap();
 //  private AtomicLong nextId = new AtomicLong(0);
-//  private Map<String, Long> actionBindings = Collections.synchronizedMap(new HashMap<>());
-//  private Map<String, Ref> receivers = Collections.synchronizedMap(new HashMap<>());
-//  private Map<String, List<Ref>> childInstances = Collections.synchronizedMap(new HashMap<>());
+//  private Map<String, Long> actionBindings = new ConcurrentHashMap();
+//  private Map<String, Ref> receivers = new ConcurrentHashMap();
+//  private Map<String, List<Ref>> childInstances = new ConcurrentHashMap();
 //  // set to the environment that comes in with the Load message and never reset
 //  // private Map<String, Object> globalState = new HashMap<>();
 //  /*
 //   * Java objects created by calling a constructor in set statements. Messages will be sent using
 //   * reflection.
 //   */
-//  private Map<String, Object> javaReactors = Collections.synchronizedMap(new HashMap<>());
+//  private Map<String, Object> javaReactors = new ConcurrentHashMap();
 //  // @Deprecated
 //  // private List<Ref> componentActors = Collections.synchronizedList(new
 //  // ArrayList<>());
@@ -175,14 +175,14 @@
 //   * if we pre-build actions or we run repeatedly we cache them here. Important that their run()
 //   * method is reentrant.
 //   */
-//  protected Map<String, ActionExecutor> actionCache = Collections.synchronizedMap(new HashMap<>());
+//  protected Map<String, ActionExecutor> actionCache = new ConcurrentHashMap();
 //
 //  /*
 //   * actions that were created from system actions rather than actual actors, here so we can talk
 //   * to them from k.Actors
 //   */
 //  private Map<String, ActionExecutor.Actor> localActionExecutors =
-//      Collections.synchronizedMap(new HashMap<>());
+//      new ConcurrentHashMap();
 //
 //  /**
 //   * Top-level. TODO pass arguments and whatever else needs to be defined in the root scope.
