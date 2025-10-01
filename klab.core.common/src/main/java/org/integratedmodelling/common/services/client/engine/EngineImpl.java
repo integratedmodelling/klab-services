@@ -4,12 +4,12 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
 import org.integratedmodelling.common.distribution.DistributionImpl;
+import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -153,13 +154,29 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
     if (!firstTimeOnline && status.isOperational()) {
       // advertise the user scope to all online services
-      notifyScopeToServices();
+      notifyScopeToServices(defaultUser);
     }
   }
 
-  private void notifyScopeToServices() {
+  private void notifyScopeToServices(UserScope userScope) {
+
+    var request = new UserScopeNotification();
+
+    // TODO mixed aux info
+    request.setEmailAddress(userScope.getUser().getEmailAddress());
+
+    for (var service : userScope.getServices(KlabService.class)) {
+      var serviceInfo = new UserScopeNotification.ServiceInfo();
+      serviceInfo.setId(service.serviceId());
+      serviceInfo.setUrl(service.getUrl());
+      serviceInfo.setType(KlabService.Type.classify(service));
+      request.getServices().add(serviceInfo);
+    }
+
     for (var service : getUser().getServices(KlabService.class)) {
-      System.out.println("DIO PORCELLOTTO " + service.getClass().getName());
+      if (service instanceof ServiceClient serviceClient) {
+        Thread.ofVirtual().start(() -> serviceClient.notifyScope(request));
+      }
     }
   }
 

@@ -14,6 +14,7 @@ import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -41,6 +42,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -384,20 +386,24 @@ public abstract class ServiceClient implements KlabService {
 
   @Override
   public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
-    return client.get(
-        ServicesAPI.RESOURCES.RESOURCE_RIGHTS, ResourcePrivileges.class, "urn", resourceUrn);
+    return client
+        .withScope(scope)
+        .get(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, ResourcePrivileges.class, "urn", resourceUrn);
   }
 
   @Override
   public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
-    return client.put(
-        ServicesAPI.RESOURCES.RESOURCE_RIGHTS, resourcePrivileges, "urn", resourceUrn);
+    return client
+        .withScope(scope)
+        .put(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, resourcePrivileges, "urn", resourceUrn);
   }
 
   @Override
   public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
-    return client.getCollection(
-        ServicesAPI.ADMIN.CREDENTIALS, ExternalAuthenticationCredentials.CredentialInfo.class);
+    return client
+        .withScope(scope)
+        .getCollection(
+            ServicesAPI.ADMIN.CREDENTIALS, ExternalAuthenticationCredentials.CredentialInfo.class);
   }
 
   @Override
@@ -406,10 +412,12 @@ public abstract class ServiceClient implements KlabService {
     var request = new CredentialsRequest();
     request.setHost(host);
     request.setCredentials(credentials);
-    return client.post(
-        ServicesAPI.ADMIN.CREDENTIALS,
-        request,
-        ExternalAuthenticationCredentials.CredentialInfo.class);
+    return client
+        .withScope(scope)
+        .post(
+            ServicesAPI.ADMIN.CREDENTIALS,
+            request,
+            ExternalAuthenticationCredentials.CredentialInfo.class);
   }
 
   // util to retrieve the queue names from the header
@@ -517,5 +525,21 @@ public abstract class ServiceClient implements KlabService {
       String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
     // TODO
     return null;
+  }
+
+  /**
+   * Advertise the scope to the remote service. If the remote service is not OK with them,
+   * deactivate.
+   *
+   * @param request
+   */
+  public void notifyScope(UserScopeNotification request) {
+    if (!client.post(ServicesAPI.NOTIFY_USER_SCOPE, request, Boolean.class)) {
+      Logging.INSTANCE.error(
+          "Failed to notify remote service of new user scope: deactivating service client");
+      // TODO deactivate (operational should return false)
+    } else {
+      Logging.INSTANCE.info("Successfully notified remote service of new user scope");
+    }
   }
 }

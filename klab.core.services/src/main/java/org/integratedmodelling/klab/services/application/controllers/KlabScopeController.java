@@ -31,6 +31,8 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
+import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
+import org.integratedmodelling.klab.services.ServiceCatalog;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -45,8 +47,17 @@ public class KlabScopeController {
 
   @Autowired ServiceNetworkedInstance<?> instance;
 
-  @PostMapping(ServicesAPI.CREATE_SESSION)
-  public boolean notifyUserScope() {
+  @PostMapping(ServicesAPI.NOTIFY_USER_SCOPE)
+  public boolean notifyUserScope(@RequestBody UserScopeNotification request, Principal principal) {
+
+    if (principal instanceof EngineAuthorization authorization) {
+
+      var userScope = authorization.getScope(ServiceUserScope.class);
+      if (userScope == null) {
+        return false;
+      }
+      return ServiceCatalog.INSTANCE.setupUserScope(userScope, request, instance.klabService());
+    }
     return false;
   }
 
