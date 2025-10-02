@@ -6,21 +6,17 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Predicate;
-
-import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
-import org.integratedmodelling.common.authentication.scope.AbstractServiceScope;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -28,7 +24,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -36,18 +31,19 @@ import org.integratedmodelling.klab.services.base.BaseService;
 /**
  * Service-side user scope and parent class for other scopes, created and maintained on request upon
  * authentication. The services exposed are the ones authorized passed explicitly from the client
- * side after authentication, except for the service hosting the scope, which is the one and only
- * provided for its class. In this implementation (currently) the only scope that has services is
- * the context scope, and the other scopes have empty service maps. The {@link ScopeManager}
- * contains the logic.
+ * side after authentication, except for the service hosting the scope, which is directly provided
+ * for its class. Contains an explicit service hash negotiated in each service after authentication
+ * using a specific API call.
  *
  * <p>Relies on external instrumentation after creation.
  *
- * <p>Maintained by the {@link ScopeManager}
+ * <p>Maintained by the {@link ScopeManager} and instrumented by {@link
+ * org.integratedmodelling.klab.services.ServiceCatalog}.
  *
  * @author Ferd
  */
-public class ServiceUserScope extends AbstractServiceScope implements UserScope, ServiceSideScope {
+public class ServiceUserScope extends AbstractReactiveScopeImpl
+    implements UserScope, ServiceSideScope {
 
   // the data hash is the SAME OBJECT throughout the child hierarchy
   protected Parameters<String> data;
@@ -60,6 +56,49 @@ public class ServiceUserScope extends AbstractServiceScope implements UserScope,
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
   private boolean messagingChecked = false;
   private JobManager jobManager;
+
+  protected Map<KlabService.Type, List<? extends KlabService>> serviceMap = new HashMap<>();
+
+  @Override
+  public final <T extends KlabService> T getService(
+      Class<T> serviceClass, Predicate<T>... selectors) {
+
+    var services = getServices(serviceClass);
+
+    if (selectors == null || selectors.length == 0) {
+      if (services.isEmpty()) {
+        throw new KlabServiceAccessException(
+            "No suitable service for request of " + serviceClass.getSimpleName());
+      }
+      return (T) services.iterator().next();
+    }
+
+    for (var selector : selectors) {
+      var ret =
+          services.stream().filter(serviceClient -> selector.test((T) serviceClient)).toList();
+      if (!ret.isEmpty()) {
+        return (T) ret.getFirst();
+      }
+    }
+
+    throw new KlabServiceAccessException(
+        "No suitable service for request of " + serviceClass.getSimpleName());
+  }
+
+  @Override
+  public final <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+    if (serviceClass.equals(KlabService.class)) {
+      var ret = new ArrayList<T>();
+      for (var services : serviceMap.values()) {
+        ret.addAll(services.stream().map(s -> (T) s).toList());
+      }
+      return ret;
+    }
+    return (Collection<T>)
+        serviceMap.get(KlabService.Type.classify(serviceClass)).stream()
+            .filter(s -> s.status().isOperational())
+            .toList();
+  }
 
   // if the next two are filled in, the payloads of any message generated will be collected in the
   // list
@@ -433,4 +472,12 @@ public class ServiceUserScope extends AbstractServiceScope implements UserScope,
     }
     return true;
   }
+
+  public boolean validateServices() {
+    // TODO check that all essential services are available and online, waiting a bit for connection
+    //  if necessary
+    return false;
+  }
+
+  public void addService(KlabService klabService) {}
 }

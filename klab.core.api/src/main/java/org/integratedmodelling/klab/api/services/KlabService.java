@@ -190,10 +190,10 @@ public interface KlabService extends Service {
 
     Metadata getMetadata();
 
-    static ServiceStatus offline(Type serviceType, String s) {
+    static ServiceStatus offline(Type serviceType, String serviceId) {
       var ret = new ServiceStatusImpl();
       ret.setServiceType(serviceType);
-      ret.setServiceId(s);
+      ret.setServiceId(serviceId);
       return ret;
     }
 

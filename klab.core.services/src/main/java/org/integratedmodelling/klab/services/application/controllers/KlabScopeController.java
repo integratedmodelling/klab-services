@@ -2,16 +2,12 @@ package org.integratedmodelling.klab.services.application.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
-
-import java.net.URL;
 import java.security.Principal;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-
-import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.ServiceClientCatalog;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.services.client.resolver.ResolverClient;
@@ -21,18 +17,15 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
-import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
-import org.integratedmodelling.klab.services.ServiceCatalog;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -56,9 +49,31 @@ public class KlabScopeController {
       if (userScope == null) {
         return false;
       }
-      return ServiceCatalog.INSTANCE.setupUserScope(userScope, request, instance.klabService());
+      return setupUserScope(userScope, request, instance.klabService());
     }
     return false;
+  }
+
+  /**
+   * Ensure we have clients for all services in the request; if so, create personalized clients for
+   * the user scope and set the clients in it. If any service has the same ID of the embedding
+   * service, use that instead of creating a client. Return true if all clients were set up
+   * correctly.
+   *
+   * @param userScope
+   * @param request
+   * @return
+   */
+  public boolean setupUserScope(
+      ServiceUserScope userScope, UserScopeNotification request, KlabService ownerService) {
+    for (var serviceInfo : request.getServices()) {
+      var service = ServiceClientCatalog.INSTANCE.getService(serviceInfo, ownerService, userScope);
+      if (service == null) {
+        return false;
+      }
+      userScope.addService(service);
+    }
+    return userScope.validateServices();
   }
 
   /**

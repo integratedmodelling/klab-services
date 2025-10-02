@@ -5,9 +5,11 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.JobStatus;
@@ -23,7 +25,12 @@ import java.util.function.Predicate;
 /**
  * The service-side {@link SessionScope}. One of these will be created by {@link ServiceUserScope}
  * at each new session, script, application or test case run. Relies on external instrumentation
- * after creation.
+ * after creation. The derived scopes will use the same services, except for the (fixed) * runtime
+ * that hosts them. Other possible runtimes remain available to context and session scopes * using
+ * <code>super.getServices()</code>.
+ *
+ * <p>Instrumented by {@link KlabService#registerNewSession(SessionScope, UserScope,
+ * KActorsBehavior)}, {@link KlabService#registerNewContext(ContextScope, UserScope)}.
  *
  * <p>Maintained by the {@link ScopeManager}
  */
@@ -80,7 +87,6 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
   public String getName() {
     return this.name;
   }
-
 
   @Override
   public void close() {

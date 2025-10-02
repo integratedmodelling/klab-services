@@ -127,12 +127,6 @@ public abstract class ServiceClient implements KlabService {
     }
   }
 
-  protected ServiceClient(URL url, Settings settings) {
-    this.url = url;
-    this.settings = settings;
-    connect();
-  }
-
   /**
    * Read status from arbitrary service. Uses own client, no authentication needed, also used as
    * first "ping" to ensure the URL is responding.
@@ -211,11 +205,6 @@ public abstract class ServiceClient implements KlabService {
 
     this.scope =
         new AbstractServiceDelegatingScope(channel) {
-
-          @Override
-          public UserScope createUser(String username, String password) {
-            return null;
-          }
 
           @Override
           public <T extends KlabService> T getService(

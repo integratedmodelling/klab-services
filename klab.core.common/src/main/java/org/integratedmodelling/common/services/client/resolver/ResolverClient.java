@@ -55,10 +55,6 @@ public class ResolverClient extends ServiceClient implements Resolver {
     super(Type.RESOLVER, url, identity, settings, connect);
   }
 
-  public ResolverClient(URL url, Settings settings) {
-    super(url, settings);
-  }
-
   @Override
   public Capabilities capabilities(Scope scope) {
     if (this.capabilities == null) {

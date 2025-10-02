@@ -294,11 +294,6 @@ public abstract class ServiceInstance<T extends BaseService> {
         }) {
 
       @Override
-      public UserScope createUser(String username, String password) {
-        throw new KlabIllegalStateException("Service scope does not support user creation");
-      }
-
-      @Override
       public Locality getLocality() {
         return Locality.EMBEDDED;
       }
@@ -406,8 +401,8 @@ public abstract class ServiceInstance<T extends BaseService> {
       for (var serviceType : allServices) {
         var services = currentServices.computeIfAbsent(serviceType, t -> new LinkedHashSet<>());
 
-        boolean anyAvailable = !services.isEmpty() &&
-                services.stream().anyMatch(s -> s.status().isAvailable());
+        boolean anyAvailable =
+            !services.isEmpty() && services.stream().anyMatch(s -> s.status().isAvailable());
 
         if (essentials.contains(serviceType) && !anyAvailable) {
           okEssentials = false;
@@ -450,19 +445,19 @@ public abstract class ServiceInstance<T extends BaseService> {
 
         // register remote components and adapters with our component registry avoiding clients
         for (var service : klabService().serviceScope().getServices(ResourcesService.class)) {
-//          System.out.println("type to register service "+service.serviceName());
+          //          System.out.println("type to register service "+service.serviceName());
           klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
         }
         for (var service : klabService().serviceScope().getServices(Reasoner.class)) {
-//          System.out.println("type to register service "+service.serviceName());
+          //          System.out.println("type to register service "+service.serviceName());
           klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
         }
         for (var service : klabService().serviceScope().getServices(Resolver.class)) {
-//          System.out.println("type to register service "+service.serviceName());
+          //          System.out.println("type to register service "+service.serviceName());
           klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
         }
         for (var service : klabService().serviceScope().getServices(RuntimeService.class)) {
-//          System.out.println("type to register service "+service.serviceName());
+          //          System.out.println("type to register service "+service.serviceName());
           klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
         }
         setBusy(false);

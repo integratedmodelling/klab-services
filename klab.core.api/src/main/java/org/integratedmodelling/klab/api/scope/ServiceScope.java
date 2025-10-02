@@ -4,82 +4,67 @@ import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.services.KlabService;
 
 /**
- * A service scope is obtained upon authentication of a service. It is a top-level scope akin to a UserScope
- * for the partner identity running a service. All operations in a service should have access to the scope.
- * <p>
- * A ServiceScope is not expected to have children; a service's implementation <em>may</em> choose to make
- * {@link UserScope}s for its maintained users depend on it, which is entirely optional as long as the service
- * scope is accessible from the context.
+ * A service scope is obtained upon authentication of a service. It is a top-level scope akin to a
+ * UserScope for the partner identity running a service, enabling access to any service-level other
+ * services needed outside of user scopes. Messaging in the service scope should bridge to the
+ * logging service, optionally also enabling remote messaging to service client scopes at the
+ * discretion of the implementation.
  *
  * @author ferd
  */
 public interface ServiceScope extends Scope {
 
-    enum Locality {
-
-        /**
-         * Service is not REST-enabled and runs as an application in the same JVM, only to be used by code
-         * that owns the pointer to the {@link KlabService}.
-         */
-        EMBEDDED,
-        /**
-         * Service runs on a machine as a REST-enabled application and will only accept requests from clients
-         * that use a service secret, available only on the shared filesystem, with their authorization
-         * token.
-         */
-        LOCALHOST,
-
-        /**
-         * Service is a REST application that can serve clients located on the local network only.
-         */
-        LAN,
-        /**
-         * Service is a REST application that has been authorized by a k.LAB hub and is available for
-         * authorized k.LAB users from remote clients.
-         */
-        WAN
-    }
-
-    default Type getType() {
-        return Type.SERVICE;
-    }
-    /**
-     * Create a user scope for authenticated users. Service must be able to authenticate the user through the
-     * authenticating hub. The user scope, in addition to offering all functionalities if this service is an
-     * engine, must be able to coordinate with any sub-scopes coming from _other_ services and created on
-     * demand.
-     *
-     * @param username
-     * @param password
-     * @return
-     */
-    UserScope createUser(String username, String password);
+  enum Locality {
 
     /**
-     * Locality reflects which clients can use the service.
-     *
-     * @return
+     * Service is not REST-enabled and runs as an application in the same JVM, only to be used by
+     * code that owns the pointer to the {@link KlabService}.
      */
-    Locality getLocality();
-
+    EMBEDDED,
     /**
-     * Availability is a long-term status: if this returns false, the service should not be used and any
-     * endpoints should redirect to a maintenance mode response. If it returns true, service calls may be
-     * made.
-     *
-     * @return
+     * Service runs on a machine as a REST-enabled application and will only accept requests from
+     * clients that use a service secret, available only on the shared filesystem, with their
+     * authorization token.
      */
-    boolean isAvailable();
+    LOCALHOST,
 
+    /** Service is a REST application that can serve clients located on the local network only. */
+    LAN,
     /**
-     * Busy is a temporary status that can always happen and it means that service calls may be made but may
-     * be slower to respond or fail. If this returns true before serving a request, the service should wait
-     * until this status changes or a reasonable timeout expires. If the service becomes not busy, the request
-     * should be served normally; if a timeout happens, the response should be the same as when
-     * {@link #isAvailable()} returns false.
-     *
-     * @return
+     * Service is a REST application that has been authorized by a k.LAB hub and is available for
+     * authorized k.LAB users from remote clients.
      */
-    boolean isBusy();
+    WAN
+  }
 
+  default Type getType() {
+    return Type.SERVICE;
+  }
+
+  /**
+   * Locality reflects which clients can use the service.
+   *
+   * @return
+   */
+  Locality getLocality();
+
+  /**
+   * Availability is a long-term status: if this returns false, the service should not be used and
+   * any endpoints should redirect to a maintenance mode response. If it returns true, service calls
+   * may be made.
+   *
+   * @return
+   */
+  boolean isAvailable();
+
+  /**
+   * Busy is a temporary status that can always happen and it means that service calls may be made
+   * but may be slower to respond or fail. If this returns true before serving a request, the
+   * service should wait until this status changes or a reasonable timeout expires. If the service
+   * becomes not busy, the request should be served normally; if a timeout happens, the response
+   * should be the same as when {@link #isAvailable()} returns false.
+   *
+   * @return
+   */
+  boolean isBusy();
 }

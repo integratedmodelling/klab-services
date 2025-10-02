@@ -1731,6 +1731,28 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       }
       return ret;
     }
+
+    /**
+     * Get a non-authenticated client for a URL, storing only the service ID and meant to be
+     * specialized with authentication in a child client. This can only be used to connect to public
+     * endpoints, such as status.
+     */
+    public static Client getServiceClient(URL url, String serviceId) {
+
+      var client =
+          HttpClient.newBuilder()
+              .version(HttpClient.Version.HTTP_1_1)
+              .connectTimeout(Duration.ofSeconds(10))
+              .build();
+      var ret = new Http.Client();
+      ret.client = client;
+      try {
+        ret.uri = url.toURI();
+      } catch (URISyntaxException e) {
+        throw new KlabInternalErrorException(e);
+      }
+      return ret;
+    }
   }
 
   public static class Json {
