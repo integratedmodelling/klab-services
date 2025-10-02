@@ -168,38 +168,6 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     return client.post(ServicesAPI.REASONER.RESOLVE_OBSERVABLE, definition, Observable.class);
   }
 
-  //    @Override
-  //    public Concept declareConcept(KimConcept conceptDeclaration) {
-  //        DeclarationRequest request = new DeclarationRequest();
-  //        request.setConceptDeclaration(conceptDeclaration);
-  //        return client.post(ServicesAPI.REASONER.DECLARE_CONCEPT, request, Concept.class);
-  //    }
-  //
-  //    @Override
-  //    public Observable declareObservable(KimObservable observableDeclaration) {
-  //        DeclarationRequest request = new DeclarationRequest();
-  //        request.setObservableDeclaration(observableDeclaration);
-  //        return client.post(ServicesAPI.REASONER.DECLARE_OBSERVABLE, request, Observable.class);
-  //    }
-  //
-  //    @Override
-  //    public Concept declareConcept(KimConcept conceptDeclaration,
-  //                                  Map<String, Object> patternVariables) {
-  //        DeclarationRequest request = new DeclarationRequest();
-  //        request.setConceptDeclaration(conceptDeclaration);
-  //        request.getPatternVariables().putAll(patternVariables);
-  //        return client.post(ServicesAPI.REASONER.DECLARE_CONCEPT, request, Concept.class);
-  //    }
-  //
-  //    @Override
-  //    public Observable declareObservable(KimObservable observableDeclaration,
-  //                                        Map<String, Object> patternVariables) {
-  //        DeclarationRequest request = new DeclarationRequest();
-  //        request.setObservableDeclaration(observableDeclaration);
-  //        request.getPatternVariables().putAll(patternVariables);
-  //        return client.post(ServicesAPI.REASONER.DECLARE_OBSERVABLE, request, Observable.class);
-  //    }
-
   @Override
   public boolean is(Semantics conceptImpl, Semantics other) {
     return client.post(
@@ -222,12 +190,6 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
   public Collection<Concept> parents(Semantics target) {
     return client.postCollection(ServicesAPI.REASONER.PARENTS, target.asConcept(), Concept.class);
   }
-
-  //  @Override
-  //  public Builder observableBuilder(Observable observableImpl) {
-  //    // TODO Auto-generated method stub
-  //    return null;
-  //  }
 
   @Override
   public Concept parent(Semantics target) {

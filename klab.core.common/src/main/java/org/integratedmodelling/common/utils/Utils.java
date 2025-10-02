@@ -52,6 +52,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -761,6 +762,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       public Client withAutorization(String authorization) {
         var ret = new Client(this);
         ret.headers.put(HttpHeaders.AUTHORIZATION, authorization);
+        return ret;
+      }
+
+      public Client withIdentity(UserIdentity identity) {
+        var ret = new Client(this);
+        this.authorization = identity.getId();
         return ret;
       }
 

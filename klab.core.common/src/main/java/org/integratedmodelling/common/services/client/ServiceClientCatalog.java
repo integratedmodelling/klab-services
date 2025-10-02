@@ -3,22 +3,17 @@ package org.integratedmodelling.common.services.client;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 
-import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
-import org.integratedmodelling.common.authentication.scope.ChannelImpl;
-import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
 
 /**
@@ -40,7 +35,7 @@ public enum ServiceClientCatalog {
    * signs the service requests. For each of these, a polling task is scheduled to keep the status
    * up to date.
    */
-  class ServiceMonitor {
+  public class ServiceMonitor {
     private final Utils.Http.Client client;
     private final URL url;
     private final String serverId;
@@ -49,6 +44,7 @@ public enum ServiceClientCatalog {
     private final AtomicReference<KlabService.ServiceStatus> status;
     private final boolean local;
     private ScheduledFuture<?> schedule;
+    private AtomicInteger refCount = new AtomicInteger(0);
 
     public Utils.Http.Client getClient() {
       return client;
@@ -89,6 +85,18 @@ public enum ServiceClientCatalog {
       this.status = status;
       this.local = Utils.URLs.isLocalHost(url);
       Thread.ofVirtual().start(() -> connect());
+    }
+
+    public void registerClient() {
+      refCount.incrementAndGet();
+    }
+
+    public int release() {
+      var ret = refCount.decrementAndGet();
+      if (ret == 0) {
+        close();
+      }
+      return 0;
     }
 
     void connect() {
@@ -191,8 +199,25 @@ public enum ServiceClientCatalog {
       //        this.connectionAttempted.set(true);
     }
 
-    void close() {
+    void readStatus() {
+      var status =
+          client.get(ServicesAPI.STATUS, ServiceStatusImpl.class, Notification.Mode.Silent);
+      if (status != null) {
+        this.status.set(status);
+      } else {
+        this.status.set(KlabService.ServiceStatus.offline(type, serverId));
+      }
+    }
+
+    // TODO this should be called internally when the reference count drops to zero. Service
+    //  clients should decrement the ref count
+    private void close() {
       this.schedule.cancel(true);
+      serviceClients.remove(serverId);
+    }
+
+    public boolean isLocal() {
+      return local;
     }
   }
 
