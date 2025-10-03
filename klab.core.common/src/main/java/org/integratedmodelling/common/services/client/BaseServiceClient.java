@@ -1,41 +1,67 @@
 package org.integratedmodelling.common.services.client;
 
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.authentication.scope.ChannelImpl;
+import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
+import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.identities.PartnerIdentity;
+import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URL;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 public abstract class BaseServiceClient implements KlabService {
 
-  protected final UserScope userScope;
+  protected final Scope userScope;
   private final ServiceClientCatalog.ServiceMonitor monitor;
   protected final Utils.Http.Client client;
   private final ServiceScope serviceScope;
+  protected final Settings settings;
 
-  public BaseServiceClient(ServiceClientCatalog.ServiceMonitor monitor, UserScope userScope) {
+  List<BiConsumer<ServiceStatus, Boolean>> statusListeners = new ArrayList<>();
+
+  public BaseServiceClient(
+      ServiceClientCatalog.ServiceMonitor monitor,
+      Scope scope,
+      Settings settings,
+      BiConsumer<ServiceStatus, Boolean>... statusListeners) {
     this.monitor = monitor;
-    this.userScope = userScope;
-    this.client = monitor.getClient().withIdentity(userScope.getUser());
-    this.monitor.registerClient();
+    this.userScope = scope;
+    this.client = monitor.getClient().withIdentity(scope.getIdentity());
+    this.settings = settings;
+    this.monitor.registerClient(this);
     this.serviceScope =
-        new AbstractServiceDelegatingScope(userScope) {
+        new AbstractServiceDelegatingScope(scope) {
           @Override
           public <T extends KlabService> T getService(
               Class<T> serviceClass, Predicate<T>... selectors) {
@@ -49,6 +75,14 @@ public abstract class BaseServiceClient implements KlabService {
                 "Service clients don't hold other services in their scopes");
           }
         };
+
+    var secret = Configuration.INSTANCE.getServiceSecret(monitor.getType());
+    if (secret != null && monitor.isLocal()) {
+      client.setHeader(ServicesAPI.SERVER_KEY_HEADER, secret);
+    }
+    if (statusListeners != null) {
+      this.statusListeners.addAll(List.of(statusListeners));
+    }
   }
 
   @Override
@@ -68,12 +102,12 @@ public abstract class BaseServiceClient implements KlabService {
 
   @Override
   public String serviceId() {
-    return monitor.getServerId();
+    return monitor.getServiceId();
   }
 
   @Override
   public Settings settings() {
-    return null;
+    return settings;
   }
 
   @Override
@@ -81,9 +115,13 @@ public abstract class BaseServiceClient implements KlabService {
     return serviceScope;
   }
 
+  public boolean isLocal() {
+    return monitor.isLocal();
+  }
+
   @Override
   public boolean shutdown() {
-    int refCount = monitor.release();
+    int refCount = monitor.release(this);
     if (refCount == 0 && monitor.isLocal()) {
       // TODO invoke shutdown on the server
     }
@@ -103,23 +141,38 @@ public abstract class BaseServiceClient implements KlabService {
 
   @Override
   public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
-    return null;
+    return client
+        .withScope(scope)
+        .get(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, ResourcePrivileges.class, "urn", resourceUrn);
   }
 
   @Override
   public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
-    return false;
+    return client
+        .withScope(scope)
+        .put(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, resourcePrivileges, "urn", resourceUrn);
   }
 
   @Override
   public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
-    return List.of();
+    return client
+        .withScope(scope)
+        .getCollection(
+            ServicesAPI.ADMIN.CREDENTIALS, ExternalAuthenticationCredentials.CredentialInfo.class);
   }
 
   @Override
   public ExternalAuthenticationCredentials.CredentialInfo addCredentials(
       String host, ExternalAuthenticationCredentials credentials, Scope scope) {
-    return null;
+    var request = new CredentialsRequest();
+    request.setHost(host);
+    request.setCredentials(credentials);
+    return client
+        .withScope(scope)
+        .post(
+            ServicesAPI.ADMIN.CREDENTIALS,
+            request,
+            ExternalAuthenticationCredentials.CredentialInfo.class);
   }
 
   @Override
@@ -131,7 +184,16 @@ public abstract class BaseServiceClient implements KlabService {
   @Override
   public InputStream exportAsset(
       String urn, KlabAsset.KnowledgeClass knowledgeClass, String mediaType, Scope scope) {
-    return null;
+    try {
+      var file =
+          client
+              .withScope(scope)
+              .accepting(List.of(mediaType))
+              .download(ServicesAPI.EXPORT, "urn", urn, "class", knowledgeClass.name());
+      return new FileInputStream(file);
+    } catch (FileNotFoundException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -140,6 +202,80 @@ public abstract class BaseServiceClient implements KlabService {
       ResourceTransport.Schema.Asset assetCoordinates,
       String suggestedUrn,
       Scope scope) {
+
+    if (schema.getType() == ResourceTransport.Schema.Type.PROPERTIES) {
+      return client
+          .withScope(scope)
+          .postAsync(
+              ServicesAPI.IMPORT,
+              assetCoordinates.getProperties(),
+              ResourceSet.class,
+              "schema",
+              schema.getSchemaId(),
+              "urn",
+              suggestedUrn == null ? Urn.UNDEFINED_URN : suggestedUrn);
+    } else if (schema.getType() == ResourceTransport.Schema.Type.STREAM) {
+      var file = assetCoordinates.getFile();
+      if (file == null && assetCoordinates.getUrl() != null) {
+        file = Utils.URLs.getFileForURL(assetCoordinates.getUrl());
+      }
+
+      if (file != null && file.exists()) {
+
+        if (schema.getMediaTypes().isEmpty()) {
+          throw new KlabInternalErrorException(
+              "Cannot import a binary asset with a schema that " + "does not specify a media type");
+        }
+
+        return client
+            .withScope(scope)
+            .providing(schema.getMediaTypes())
+            .uploadAsync(
+                ServicesAPI.IMPORT,
+                assetCoordinates.getFile(),
+                ResourceSet.class,
+                "schema",
+                schema.getSchemaId(),
+                "urn",
+                suggestedUrn);
+      }
+    }
+
     return null;
+  }
+
+  protected <T extends ServiceCapabilities> T getCapabilities(Scope scope, Class<T> tClass) {
+    try {
+      return client
+          .withScope(scope)
+          .get(ServicesAPI.CAPABILITIES, tClass, Notification.Mode.Silent);
+    } catch (Throwable t) {
+      // not ready yet
+      return null;
+    }
+  }
+
+  public void addListener(BiConsumer<ServiceStatus, Boolean> listener) {
+    statusListeners.add(listener);
+  }
+
+  /**
+   * Advertise the scope to the remote service. If the remote service is not OK with them,
+   * deactivate.
+   *
+   * @param request
+   */
+  public void notifyScope(UserScopeNotification request) {
+    if (!client.post(ServicesAPI.NOTIFY_USER_SCOPE, request, Boolean.class)) {
+      Logging.INSTANCE.error(
+          "Failed to notify remote service of new user scope: deactivating service client");
+      // TODO deactivate (operational should return false)
+    } else {
+      Logging.INSTANCE.info("Successfully notified remote service of new user scope");
+    }
+  }
+
+  public boolean isAlive() {
+    return client.isAlive();
   }
 }

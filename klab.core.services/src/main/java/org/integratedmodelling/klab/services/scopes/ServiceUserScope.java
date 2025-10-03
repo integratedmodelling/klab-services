@@ -8,7 +8,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
-import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -38,7 +38,7 @@ import org.integratedmodelling.klab.services.base.BaseService;
  * <p>Relies on external instrumentation after creation.
  *
  * <p>Maintained by the {@link ScopeManager} and instrumented by {@link
- * org.integratedmodelling.klab.services.ServiceCatalog}.
+ * org.integratedmodelling.common.services.client.ServiceClientCatalog}.
  *
  * @author Ferd
  */
@@ -430,48 +430,48 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   public List<SessionScope> getActiveSessions() {
     return List.of();
   }
-
-  /**
-   * Call tryConnection() on all services; return true if the tryConnection tasks terminated within
-   * the given timeout.
-   *
-   * @param i
-   * @param timeUnit
-   * @return
-   */
-  public boolean ensureServiceConnection(int i, TimeUnit timeUnit) {
-
-    List<ServiceClient> clients = new ArrayList<>();
-    for (var type : KlabService.Type.operationCritical()) {
-      for (var service : getServices(type.classify())) {
-        if (service instanceof ServiceClient client) {
-          clients.add(client);
-        }
-      }
-    }
-
-    if (clients.isEmpty()) {
-      return true;
-    }
-
-    var executorService = Executors.newVirtualThreadPerTaskExecutor();
-    try {
-      executorService.invokeAll(
-          clients.stream()
-              .map(client -> (Callable<Boolean>) () -> client.tryConnection(i, timeUnit))
-              .toList());
-      executorService.shutdown();
-      if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
-        executorService.shutdownNow();
-        return false;
-      }
-    } catch (InterruptedException ie) {
-      executorService.shutdownNow();
-      Thread.currentThread().interrupt();
-      return false;
-    }
-    return true;
-  }
+//
+//  /**
+//   * Call tryConnection() on all services; return true if the tryConnection tasks terminated within
+//   * the given timeout.
+//   *
+//   * @param i
+//   * @param timeUnit
+//   * @return
+//   */
+//  public boolean ensureServiceConnection(int i, TimeUnit timeUnit) {
+//
+//    List<BaseServiceClient> clients = new ArrayList<>();
+//    for (var type : KlabService.Type.operationCritical()) {
+//      for (var service : getServices(type.classify())) {
+//        if (service instanceof BaseServiceClient client) {
+//          clients.add(client);
+//        }
+//      }
+//    }
+//
+//    if (clients.isEmpty()) {
+//      return true;
+//    }
+//
+//    var executorService = Executors.newVirtualThreadPerTaskExecutor();
+//    try {
+//      executorService.invokeAll(
+//          clients.stream()
+//              .map(client -> (Callable<Boolean>) () -> client.tryConnection(i, timeUnit))
+//              .toList());
+//      executorService.shutdown();
+//      if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+//        executorService.shutdownNow();
+//        return false;
+//      }
+//    } catch (InterruptedException ie) {
+//      executorService.shutdownNow();
+//      Thread.currentThread().interrupt();
+//      return false;
+//    }
+//    return true;
+//  }
 
   public boolean validateServices() {
     // TODO check that all essential services are available and online, waiting a bit for connection

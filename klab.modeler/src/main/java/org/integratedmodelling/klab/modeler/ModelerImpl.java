@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
@@ -573,10 +573,10 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   public CompletableFuture<Boolean> shutdownLocalServices() {
 
-    List<ServiceClient> services = new ArrayList<>();
+    List<BaseServiceClient> services = new ArrayList<>();
     for (var serviceType : List.of(KlabService.Type.RESOURCES)) {
       for (var service : engine().getOwner().getServices(serviceType.classify())) {
-        if (service instanceof ServiceClient serviceClient && serviceClient.isLocal()) {
+        if (service instanceof BaseServiceClient serviceClient && serviceClient.isLocal()) {
           services.add(serviceClient);
         }
       }
@@ -596,7 +596,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
               int n = 0;
               for (var client : services) {
-                if (!client.getHttpClient().isAlive()) {
+                if (!client.isAlive()) {
                   n++;
                 }
               }

@@ -1656,7 +1656,7 @@ public class ResourcesProvider extends BaseService
       }
 
       // Necessary to ensure that service clients are operational
-      serviceContextScope.ensureServiceConnection(1, TimeUnit.SECONDS);
+//      serviceContextScope.ensureServiceConnection(1, TimeUnit.SECONDS);
 
       /*
        * The resolver needs a digital twin client installed to find existing observations through the

@@ -127,7 +127,7 @@ public abstract class BaseService implements KlabService {
     componentRegister = new ComponentRegistry(this, options);
     serviceMonitor =
         new ServiceMonitor(
-            scope.getIdentity(),
+            scope,
             settingsForSlaveServices,
             Utils.URLs.isLocalHost(this.url),
             List.of(),

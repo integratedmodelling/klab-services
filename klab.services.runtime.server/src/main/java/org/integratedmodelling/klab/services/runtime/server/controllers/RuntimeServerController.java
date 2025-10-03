@@ -14,11 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
-import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
-import org.integratedmodelling.common.services.client.resolver.ResolverClient;
-import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
-import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -156,51 +152,51 @@ public class RuntimeServerController {
             .build();
       }
 
-      // FIXME see if we can/should cache all these clients
-      List<Reasoner> reasoners =
-          new ArrayList<>(
-              request.getReasonerServices().stream()
-                  .map(
-                      url ->
-                          new ReasonerClient(
-                              url,
-                              userScope.getUser(),
-                              runtimeService.klabService(),
-                              SettingsImpl.forSlaveServices(
-                                  KlabService.Type.REASONER,
-                                  runtimeService.klabService().settings())))
-                  .toList());
-      List<RuntimeService> runtimes = List.of(runtimeService.klabService());
-      List<ResourcesService> resources =
-          new ArrayList<>(
-              request.getResourceServices().stream()
-                  .map(
-                      url ->
-                          new ResourcesClient(
-                              url,
-                              userScope.getUser(),
-                              runtimeService.klabService(),
-                              SettingsImpl.forSlaveServices(
-                                  KlabService.Type.RESOURCES,
-                                  runtimeService.klabService().settings())))
-                  .toList());
-      List<Resolver> resolvers =
-          new ArrayList<>(
-              request.getResolverServices().stream()
-                  .map(
-                      url ->
-                          new ResolverClient(
-                              url,
-                              userScope.getUser(),
-                              runtimeService.klabService(),
-                              SettingsImpl.forSlaveServices(
-                                  KlabService.Type.RESOLVER,
-                                  runtimeService.klabService().settings())))
-                  .toList());
+//      // FIXME see if we can/should cache all these clients
+//      List<Reasoner> reasoners =
+//          new ArrayList<>(
+//              request.getReasonerServices().stream()
+//                  .map(
+//                      url ->
+//                          new ReasonerClient(
+//                              url,
+//                              userScope.getUser(),
+//                              runtimeService.klabService(),
+//                              SettingsImpl.forSlaveServices(
+//                                  KlabService.Type.REASONER,
+//                                  runtimeService.klabService().settings())))
+//                  .toList());
+//      List<RuntimeService> runtimes = List.of(runtimeService.klabService());
+//      List<ResourcesService> resources =
+//          new ArrayList<>(
+//              request.getResourceServices().stream()
+//                  .map(
+//                      url ->
+//                          new ResourcesClient(
+//                              url,
+//                              userScope.getUser(),
+//                              runtimeService.klabService(),
+//                              SettingsImpl.forSlaveServices(
+//                                  KlabService.Type.RESOURCES,
+//                                  runtimeService.klabService().settings())))
+//                  .toList());
+//      List<Resolver> resolvers =
+//          new ArrayList<>(
+//              request.getResolverServices().stream()
+//                  .map(
+//                      url ->
+//                          new ResolverClient(
+//                              url,
+//                              userScope.getUser(),
+//                              runtimeService.klabService(),
+//                              SettingsImpl.forSlaveServices(
+//                                  KlabService.Type.RESOLVER,
+//                                  runtimeService.klabService().settings())))
+//                  .toList());
 
       if (ret instanceof ServiceContextScope serviceContextScope) {
         serviceContextScope.setHostServiceId(runtimeService.klabService().serviceId());
-        serviceContextScope.setServices(resources, resolvers, reasoners, runtimes);
+//        serviceContextScope.setServices(resources, resolvers, reasoners, runtimes);
       }
 
       return ret.getConfiguration();

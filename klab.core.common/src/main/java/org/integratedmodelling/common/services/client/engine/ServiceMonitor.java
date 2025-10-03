@@ -7,24 +7,20 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-
 import org.integratedmodelling.common.distribution.DistributionImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
-import org.integratedmodelling.common.services.client.ServiceClient;
-import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
-import org.integratedmodelling.common.services.client.resolver.ResolverClient;
-import org.integratedmodelling.common.services.client.resources.ResourcesClient;
-import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
-import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.common.services.client.BaseServiceClient;
+import org.integratedmodelling.common.services.client.ServiceClientCatalog;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
-import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -38,7 +34,7 @@ import org.integratedmodelling.klab.rest.ServiceReference;
  */
 public class ServiceMonitor {
 
-  Map<ServiceClient, KlabService.ServiceStatus> clients =
+  Map<BaseServiceClient, KlabService.ServiceStatus> clients =
       Collections.synchronizedMap(new LinkedHashMap<>());
   List<BiConsumer<KlabService, KlabService.ServiceStatus>> serviceConsumers = new ArrayList<>();
   List<Consumer<Engine.Status>> engineConsumers = new ArrayList<>();
@@ -47,7 +43,7 @@ public class ServiceMonitor {
 
   @SuppressWarnings("unchecked")
   public ServiceMonitor(
-      Identity identity,
+      Scope user,
       Settings settings,
       boolean useLocalServices,
       List<ServiceReference> services,
@@ -71,13 +67,25 @@ public class ServiceMonitor {
               KlabService.Type.RUNTIME)) {
         var service =
             switch (type) {
-              case REASONER -> ReasonerClient.createLocalOffline(identity, settings);
-              case RESOURCES -> ResourcesClient.createLocalOffline(identity, settings);
-              case RESOLVER -> ResolverClient.createLocalOffline(identity, settings);
-              case RUNTIME -> RuntimeClient.createLocalOffline(identity, settings);
+              case REASONER ->
+                  ServiceClientCatalog.INSTANCE.getService(
+                      type.localServiceUrl(), settings, user, Reasoner.class);
+              //                ReasonerClient.createLocalOffline(identity, settings);
+              case RESOURCES ->
+                  ServiceClientCatalog.INSTANCE.getService(
+                      type.localServiceUrl(), settings, user, ResourcesService.class);
+              // ResourcesClient.createLocalOffline(identity, settings);
+              case RESOLVER ->
+                  ServiceClientCatalog.INSTANCE.getService(
+                      type.localServiceUrl(), settings, user, Resolver.class);
+              // ResolverClient.createLocalOffline(identity, settings);
+              case RUNTIME ->
+                  ServiceClientCatalog.INSTANCE.getService(
+                      type.localServiceUrl(), settings, user, RuntimeService.class);
+              // RuntimeClient.createLocalOffline(identity, settings);
               default -> throw new KlabIllegalStateException("Can't happen");
             };
-        clients.put(service, service.status());
+        clients.put((BaseServiceClient) service, service.status());
       }
 
       var localOnly = settings.get(Setting.LOCAL_ONLY, Boolean.class);
@@ -88,31 +96,40 @@ public class ServiceMonitor {
             var client =
                 switch (service.getIdentityType()) {
                   case REASONER ->
-                      ReasonerClient.createOffline(
-                          service.getUrls().getFirst(), identity, settings);
+                      ServiceClientCatalog.INSTANCE.getService(
+                          service.getUrls().getFirst(), settings, user, Reasoner.class);
+                  //                      ReasonerClient.createOffline(
+                  //                          service.getUrls().getFirst(), identity, settings);
                   case RESOURCES ->
-                      ResourcesClient.createOffline(
-                          service.getUrls().getFirst(), identity, settings);
+                      ServiceClientCatalog.INSTANCE.getService(
+                          service.getUrls().getFirst(), settings, user, ResourcesService.class);
+                  //                      ResourcesClient.createOffline(
+                  //                          service.getUrls().getFirst(), identity, settings);
                   case RESOLVER ->
-                      ResolverClient.createOffline(
-                          service.getUrls().getFirst(), identity, settings);
+                      ServiceClientCatalog.INSTANCE.getService(
+                          service.getUrls().getFirst(), settings, user, Resolver.class);
+                  //                      ResolverClient.createOffline(
+                  //                          service.getUrls().getFirst(), identity, settings);
                   case RUNTIME ->
-                      RuntimeClient.createOffline(service.getUrls().getFirst(), identity, settings);
+                      ServiceClientCatalog.INSTANCE.getService(
+                          service.getUrls().getFirst(), settings, user, RuntimeService.class);
+                  //                      RuntimeClient.createOffline(service.getUrls().getFirst(),
+                  // identity, settings);
                   default -> throw new KlabIllegalStateException("Can't happen");
                 };
-            clients.put(client, client.status());
+            clients.put((BaseServiceClient) client, client.status());
           }
         }
       }
 
       for (var client : clients.keySet()) {
-        client.connect((status, message) -> handleStatus(client, status, message));
+        client.addListener((status, message) -> handleStatus(client, status, message));
       }
     }
   }
 
   private void handleStatus(
-      ServiceClient service, KlabService.ServiceStatus status, Boolean statusChanged) {
+      BaseServiceClient service, KlabService.ServiceStatus status, Boolean statusChanged) {
     clients.put(service, status);
     for (var serviceListener : serviceConsumers) {
       serviceListener.accept(service, status);

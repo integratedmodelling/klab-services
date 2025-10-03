@@ -4,19 +4,18 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
 import org.integratedmodelling.common.distribution.DistributionImpl;
-import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.engine.distribution.impl.AbstractDistributionImpl;
@@ -174,7 +173,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
 
     for (var service : getUser().getServices(KlabService.class)) {
-      if (service instanceof ServiceClient serviceClient) {
+      if (service instanceof BaseServiceClient serviceClient) {
         Thread.ofVirtual().start(() -> serviceClient.notifyScope(request));
       }
     }
@@ -238,7 +237,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     this.users.add(this.defaultUser);
     this.serviceMonitor =
         new ServiceMonitor(
-            authData.getFirst(),
+            this.defaultUser,
             settings,
             true,
             authData.getSecond(),

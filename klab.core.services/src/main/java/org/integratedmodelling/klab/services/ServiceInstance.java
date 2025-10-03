@@ -17,22 +17,19 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.client.ServiceClientCatalog;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
-import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
-import org.integratedmodelling.common.services.client.resolver.ResolverClient;
-import org.integratedmodelling.common.services.client.resources.ResourcesClient;
-import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.common.data.Instance;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -143,28 +140,32 @@ public abstract class ServiceInstance<T extends BaseService> {
     return switch (serviceType) {
       case REASONER ->
           (T)
-              new ReasonerClient(
+              ServiceClientCatalog.INSTANCE.getService(
                   url,
-                  identity,
-                  SettingsImpl.forSlaveServices(KlabService.Type.REASONER, service.settings()));
+                  SettingsImpl.forSlaveServices(KlabService.Type.REASONER, service.settings()),
+                  scope,
+                  Reasoner.class);
       case RESOURCES ->
           (T)
-              new ResourcesClient(
+              ServiceClientCatalog.INSTANCE.getService(
                   url,
-                  identity,
-                  SettingsImpl.forSlaveServices(KlabService.Type.RESOURCES, service.settings()));
+                  SettingsImpl.forSlaveServices(KlabService.Type.RESOURCES, service.settings()),
+                  scope,
+                  ResourcesService.class);
       case RESOLVER ->
           (T)
-              new ResolverClient(
+              ServiceClientCatalog.INSTANCE.getService(
                   url,
-                  identity,
-                  SettingsImpl.forSlaveServices(KlabService.Type.RESOLVER, service.settings()));
+                  SettingsImpl.forSlaveServices(KlabService.Type.RESOLVER, service.settings()),
+                  scope,
+                  Resolver.class);
       case RUNTIME ->
           (T)
-              new RuntimeClient(
+              ServiceClientCatalog.INSTANCE.getService(
                   url,
-                  identity,
-                  SettingsImpl.forSlaveServices(KlabService.Type.RUNTIME, service.settings()));
+                  SettingsImpl.forSlaveServices(KlabService.Type.RUNTIME, service.settings()),
+                  scope,
+                  RuntimeService.class);
       default -> throw new IllegalStateException("Unexpected value: " + serviceType);
     };
   }
@@ -194,6 +195,44 @@ public abstract class ServiceInstance<T extends BaseService> {
       }
     }
     return false;
+  }
+
+  class InstanceServiceScope extends AbstractServiceDelegatingScope {
+
+    public InstanceServiceScope(Channel messageBus) {
+      super(messageBus);
+    }
+
+    @Override
+    public Locality getLocality() {
+      return Locality.EMBEDDED;
+    }
+
+    @Override
+    public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
+      var stream =
+          currentServices
+              .computeIfAbsent(KlabService.Type.classify(serviceClass), s -> new LinkedHashSet<>())
+              .stream();
+      if (selectors != null) {
+        for (var selector : selectors) {
+          stream = stream.filter(s -> selector.test((T) s));
+        }
+      }
+      var ret = stream.toList();
+      if (ret.isEmpty()) {
+        throw new KlabServiceAccessException(
+            "Service not available: " + serviceClass.getName() + " in " + service.serviceType());
+      }
+      return /*ret.isEmpty() ? null : */ (T) ret.getFirst();
+    }
+
+    @Override
+    public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+      return (Collection<T>)
+          currentServices.computeIfAbsent(
+              KlabService.Type.classify(serviceClass), k -> new LinkedHashSet<>());
+    }
   }
 
   protected ServiceStartupOptions getStartupOptions() {
@@ -231,101 +270,69 @@ public abstract class ServiceInstance<T extends BaseService> {
         throw new KlabIllegalArgumentException(e);
       }
     }
+
     // local services (user-level certificate) only see other local services
     boolean iAmLocal = !this.identity.getFirst().is(Identity.Type.SERVICE);
     if (!iAmLocal) {
-      for (ServiceReference s : this.identity.getSecond()) {
-        switch (s.getIdentityType()) {
-          case KlabService.Type.REASONER -> {
-            ReasonerClient reasoner =
-                new ReasonerClient(
-                    s.getUrls().getFirst(),
-                    new ServiceIdentityImpl(
-                        s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
-                    SettingsImpl.forService(serviceType()));
-            currentServices
-                .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
-                .add(reasoner);
-          }
-          case KlabService.Type.RUNTIME -> {
-            RuntimeClient runtime =
-                new RuntimeClient(
-                    s.getUrls().getFirst(),
-                    new ServiceIdentityImpl(
-                        s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
-                    SettingsImpl.forService(serviceType()));
-            currentServices
-                .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
-                .add(runtime);
-          }
-          case KlabService.Type.RESOURCES -> {
-            ResourcesClient resources =
-                new ResourcesClient(
-                    s.getUrls().getFirst(),
-                    new ServiceIdentityImpl(
-                        s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
-                    SettingsImpl.forService(serviceType()));
-            currentServices
-                .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
-                .add(resources);
-          }
-          case KlabService.Type.RESOLVER -> {
-            ResolverClient resolver =
-                new ResolverClient(
-                    s.getUrls().getFirst(),
-                    new ServiceIdentityImpl(
-                        s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl),
-                    SettingsImpl.forService(serviceType()));
-            currentServices
-                .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
-                .add(resolver);
-          }
-          default -> {}
-        }
+      for (ServiceReference s :
+          this.identity.getSecond().stream()
+              .filter(sr -> KlabService.Type.operationCritical().contains(sr.getIdentityType()))
+              .toList()) {
+
+        var serviceIdentity =
+            new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl);
+
+        var scope =
+            new InstanceServiceScope(
+                new ChannelImpl(serviceIdentity) {
+                  @Override
+                  public String getDispatchId() {
+                    return service.serviceId();
+                  }
+                });
+
+        var client =
+            switch (s.getIdentityType()) {
+              case KlabService.Type.REASONER ->
+                  ServiceClientCatalog.INSTANCE.getService(
+                      s.getUrls().getFirst(),
+                      SettingsImpl.forService(serviceType()),
+                      scope,
+                      Reasoner.class);
+              case KlabService.Type.RUNTIME ->
+                  ServiceClientCatalog.INSTANCE.getService(
+                      s.getUrls().getFirst(),
+                      SettingsImpl.forService(serviceType()),
+                      scope,
+                      RuntimeService.class);
+              case KlabService.Type.RESOURCES ->
+                  ServiceClientCatalog.INSTANCE.getService(
+                      s.getUrls().getFirst(),
+                      SettingsImpl.forService(serviceType()),
+                      scope,
+                      ResourcesService.class);
+              case KlabService.Type.RESOLVER ->
+                  ServiceClientCatalog.INSTANCE.getService(
+                      s.getUrls().getFirst(),
+                      SettingsImpl.forService(serviceType()),
+                      scope,
+                      Resolver.class);
+              default ->
+                  throw new IllegalStateException("Unexpected value: " + s.getIdentityType());
+            };
+        currentServices
+            .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
+            .add(client);
       }
     }
 
-    return new AbstractServiceDelegatingScope(
+    return new InstanceServiceScope(
         new ChannelImpl(identity.getFirst()) {
           @Override
           public String getDispatchId() {
             return service.serviceId();
           }
-        }) {
-
-      @Override
-      public Locality getLocality() {
-        return Locality.EMBEDDED;
-      }
-
-      @Override
-      public <T extends KlabService> T getService(
-          Class<T> serviceClass, Predicate<T>... selectors) {
-        var stream =
-            currentServices
-                .computeIfAbsent(
-                    KlabService.Type.classify(serviceClass), s -> new LinkedHashSet<>())
-                .stream();
-        if (selectors != null) {
-          for (var selector : selectors) {
-            stream = stream.filter(s -> selector.test((T) s));
-          }
-        }
-        var ret = stream.toList();
-        if (ret.isEmpty()) {
-          throw new KlabServiceAccessException(
-              "Service not available: " + serviceClass.getName() + " in " + service.serviceType());
-        }
-        return /*ret.isEmpty() ? null : */ (T) ret.getFirst();
-      }
-
-      @Override
-      public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-        return (Collection<T>)
-            currentServices.computeIfAbsent(
-                KlabService.Type.classify(serviceClass), k -> new LinkedHashSet<>());
-      }
-    };
+        });
   }
 
   public boolean start(ServiceStartupOptions options) {

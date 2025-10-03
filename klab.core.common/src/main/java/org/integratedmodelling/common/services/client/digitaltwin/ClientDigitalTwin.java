@@ -3,7 +3,7 @@ package org.integratedmodelling.common.services.client.digitaltwin;
 import java.util.*;
 import java.util.function.Consumer;
 
-import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
+import org.integratedmodelling.common.services.client.RuntimeClient;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;

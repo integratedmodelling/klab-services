@@ -3,7 +3,7 @@ package org.integratedmodelling.cli.views;
 import java.io.PrintWriter;
 import java.util.concurrent.atomic.AtomicReference;
 import org.integratedmodelling.cli.KlabCLI;
-import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -135,7 +135,7 @@ public class CLIServicesView extends CLIView implements Runnable, ServicesView {
                   + " "
                   + " ["
                   + (service.status().isAvailable() ? "available" : "not available")
-                  + (service instanceof ServiceClient client && client.isLocal()
+                  + (service instanceof BaseServiceClient client && client.isLocal()
                       ? "," + "local"
                       : "")
                   + "] "

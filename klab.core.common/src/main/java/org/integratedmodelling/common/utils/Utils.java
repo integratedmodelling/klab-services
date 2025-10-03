@@ -52,6 +52,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.*;
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -765,7 +766,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         return ret;
       }
 
-      public Client withIdentity(UserIdentity identity) {
+      public Client withIdentity(Identity identity) {
         var ret = new Client(this);
         this.authorization = identity.getId();
         return ret;
@@ -1744,7 +1745,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
      * specialized with authentication in a child client. This can only be used to connect to public
      * endpoints, such as status.
      */
-    public static Client getServiceClient(URL url, String serviceId) {
+    public static Client getServiceClient(URL url) {
 
       var client =
           HttpClient.newBuilder()

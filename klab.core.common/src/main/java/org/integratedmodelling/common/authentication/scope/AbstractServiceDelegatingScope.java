@@ -45,5 +45,4 @@ public abstract class AbstractServiceDelegatingScope extends AbstractDelegatingS
     public void setAtomicOperationMode(boolean atomicOperationMode) {
         this.atomicOperationMode.set(atomicOperationMode);
     }
-
 }

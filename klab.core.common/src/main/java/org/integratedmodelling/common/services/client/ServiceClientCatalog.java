@@ -5,11 +5,14 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.configuration.Setting;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
@@ -38,13 +41,14 @@ public enum ServiceClientCatalog {
   public class ServiceMonitor {
     private final Utils.Http.Client client;
     private final URL url;
-    private final String serverId;
+    private String serverId;
     private final String ownerServiceId; // null in clients that are not owned by a service
     private final KlabService.Type type;
     private final AtomicReference<KlabService.ServiceStatus> status;
     private final boolean local;
     private ScheduledFuture<?> schedule;
-    private AtomicInteger refCount = new AtomicInteger(0);
+
+    private Set<BaseServiceClient> registeredClients = new HashSet<>();
 
     public Utils.Http.Client getClient() {
       return client;
@@ -54,7 +58,7 @@ public enum ServiceClientCatalog {
       return url;
     }
 
-    public String getServerId() {
+    public String getServiceId() {
       return serverId;
     }
 
@@ -71,13 +75,13 @@ public enum ServiceClientCatalog {
     }
 
     public ServiceMonitor(
-        Utils.Http.Client client,
-        URL url,
-        String serverId,
-        String ownerServiceId, // null in clients that are not owned by a service
-        KlabService.Type type,
+        URL url, // never null
+        String serverId, // null if unknown
+        String
+            ownerServiceId, // null in clients that are not owned by a service; validated otherwise
+        KlabService.Type type, // if not null, will be validated
         AtomicReference<KlabService.ServiceStatus> status) {
-      this.client = client;
+      this.client = Utils.Http.getServiceClient(url);
       this.url = url;
       this.serverId = serverId;
       this.ownerServiceId = ownerServiceId;
@@ -87,16 +91,16 @@ public enum ServiceClientCatalog {
       Thread.ofVirtual().start(() -> connect());
     }
 
-    public void registerClient() {
-      refCount.incrementAndGet();
+    public void registerClient(BaseServiceClient client) {
+      registeredClients.add(client);
     }
 
-    public int release() {
-      var ret = refCount.decrementAndGet();
-      if (ret == 0) {
+    public int release(BaseServiceClient client) {
+      registeredClients.remove(client);
+      if (registeredClients.isEmpty()) {
         close();
       }
-      return 0;
+      return registeredClients.size();
     }
 
     void connect() {
@@ -113,90 +117,32 @@ public enum ServiceClientCatalog {
       //        if (settings != null && "off".equals(settings.get(Setting.POLLING, String.class))) {
       //            return;
       //        }
-      //
-      //        //    if (this.shutdown.get()) {
-      //        //      //      scope.send(
-      //        //      //          Message.MessageClass.ServiceLifecycle,
-      //        //      //          Message.MessageType.ServiceStatus,
-      //        //      //          ServiceStatus.offline(serviceType, this.serviceId()));
-      //        //      return;
-      //        //    }
-      //
-      //        try {
-      //
-      //            //      var connectedBeforeChecking = connected.get();
-      //            var statusBeforeChecking = status.get();
-      //
-      //      /*
-      //      TODO check for changes of status and send messages over
-      //       */
-      //            try {
-      //                var currentServiceStatus = readServiceStatus(this.url, scope);
-      //                if (currentServiceStatus == null) {
-      //                    connected.set(false);
-      //                    shutdown.set(false);
-      //                    status.set(
-      //                            KlabService.ServiceStatus.offline(
-      //                                    serviceType,
-      //                                    this.capabilities == null ? null :
-      // this.capabilities.getServiceId()));
-      //                } else {
-      //                    status.set(currentServiceStatus);
-      //                    connected.set(true);
-      //          /*
-      //          System.out.println("Service " + currentServiceStatus.getServiceType()
-      //                  + " with id "+currentServiceStatus.getServiceId() + " is "
-      //                  + ((currentServiceStatus.isAvailable()) ? "online" : "offline"));
-      //
-      //           */
-      //                    if (this.capabilities == null) {
-      //                        this.capabilities = capabilities(scope);
-      //                        if (this.capabilities != null) {
-      //                            this.serviceId = capabilities.getServiceId();
-      //                        }
-      //                    }
-      //                }
-      //
-      //                ((ServiceStatusImpl) status.get()).setShutdown(this.shutdown.get());
-      //
-      //            } finally {
-      //
-      //                boolean statusHasChanged =
-      //                        (statusBeforeChecking == null && status.get() != null)
-      //                                || (statusBeforeChecking != null && status.get() == null)
-      //                                || (status.get() != null
-      //                                && statusBeforeChecking != null
-      //                                && status.get().hasChangedComparedTo(statusBeforeChecking));
-      //
-      //                if (connected.get()) {
-      //
-      //                    // see if we have a local service and change the token
-      //                    if ((token == null || token.isEmpty()) &&
-      // Utils.URLs.isLocalHost(getUrl())) {
-      //                        // may have gotten lost if the service was starting when we booted
-      //                        var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
-      //                        if (secret != null) {
-      //                            token = secret;
-      //                            client.setAuthorization(token);
-      //                            local = true;
-      //                        }
-      //                    }
-      //                }
-      //
-      //                if (statusHasChanged) {
-      //                    this.capabilities = capabilities(scope);
-      //                }
-      //
-      //                for (var listener : statusListeners) {
-      //                    listener.accept(status.get(), statusHasChanged);
-      //                }
-      //            }
-      //
-      //        } catch (Throwable t) {
-      //            scope.error(t);
-      //        }
-      //
-      //        this.connectionAttempted.set(true);
+
+      var statusBeforeChecking = status.get();
+      try {
+        readStatus();
+      } finally {
+
+        boolean statusHasChanged =
+            (statusBeforeChecking == null && status.get() != null)
+                || (statusBeforeChecking != null && status.get() == null)
+                || (status.get() != null
+                    && statusBeforeChecking != null
+                    && status.get().hasChangedComparedTo(statusBeforeChecking));
+
+        if (statusHasChanged) {
+          if (serverId == null && status.get().getServiceId() != null) {
+            serverId = status.get().getServiceId();
+            serviceClients.put(serverId, this);
+          }
+
+          for (var client : registeredClients) {
+            for (var listener : client.statusListeners) {
+              listener.accept(status.get(), statusHasChanged);
+            }
+          }
+        }
+      }
     }
 
     void readStatus() {
@@ -223,30 +169,50 @@ public enum ServiceClientCatalog {
 
   private final Map<String, ServiceMonitor> serviceClients = new ConcurrentHashMap<>();
 
-  public ServiceClient getService(
+  public BaseServiceClient getService(
       UserScopeNotification.ServiceInfo request, KlabService ownerService, UserScope userScope) {
     var monitor =
         serviceClients.computeIfAbsent(
             request.getId(), id -> createServiceMonitor(request, ownerService));
     return switch (request.getType()) {
-      case REASONER -> null;
-      case RESOURCES -> null;
-      case RESOLVER -> null;
-      case RUNTIME -> null;
+      case REASONER -> new ReasonerClient(monitor, userScope, null);
+      case RESOURCES -> new ResourcesClient(monitor, userScope, null);
+      case RESOLVER -> new ResolverClient(monitor, userScope, null);
+      case RUNTIME -> new RuntimeClient(monitor, userScope, null);
       default ->
           throw new KlabIllegalStateException(
               "Wrong service type in UserScopeNotification.ServiceInfo request");
     };
   }
 
+  public <T extends KlabService> T getService(
+      URL serviceUrl,
+      Settings settings,
+      Scope userScope,
+      Class<T> serviceClass,
+      BiConsumer<KlabService.ServiceStatus, Boolean>... statusListeners) {
+    var request = new UserScopeNotification.ServiceInfo();
+    request.setUrl(serviceUrl);
+    request.setType(KlabService.Type.classify(serviceClass));
+    var monitor = createServiceMonitor(request, null);
+    return (T)
+        switch (request.getType()) {
+          case REASONER -> new ReasonerClient(monitor, userScope, settings, statusListeners);
+          case RESOURCES -> new ResourcesClient(monitor, userScope, settings, statusListeners);
+          case RESOLVER -> new ResolverClient(monitor, userScope, settings, statusListeners);
+          case RUNTIME -> new RuntimeClient(monitor, userScope, settings, statusListeners);
+          default ->
+              throw new KlabIllegalStateException(
+                  "Wrong service type in UserScopeNotification.ServiceInfo request");
+        };
+  }
+
   private ServiceMonitor createServiceMonitor(
       UserScopeNotification.ServiceInfo request, KlabService ownerService) {
-    var client = Utils.Http.getServiceClient(request.getUrl(), request.getId());
     return new ServiceMonitor(
-        client,
         request.getUrl(),
         request.getId(),
-        ownerService.serviceId(),
+        ownerService == null ? null : ownerService.serviceId(),
         request.getType(),
         new AtomicReference<>(
             KlabService.ServiceStatus.offline(request.getType(), request.getId())));

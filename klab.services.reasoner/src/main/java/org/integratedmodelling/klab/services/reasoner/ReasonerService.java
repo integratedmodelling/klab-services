@@ -20,6 +20,7 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
+import org.integratedmodelling.common.services.client.ServiceClientCatalog;
 import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.lang.AnnotationImpl;
@@ -28,7 +29,6 @@ import org.integratedmodelling.common.lang.kim.KimConceptImpl;
 import org.integratedmodelling.common.lang.kim.KimObservableImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
-import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -1497,8 +1497,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
               services.computeIfAbsent(
                   changes.getServices().get(resource.getServiceId()),
                   url ->
-                      new ResourcesClient(
-                          url, scope.getIdentity(), this, settingsForSlaveServices));
+                      ServiceClientCatalog.INSTANCE.getService(
+                          url, settingsForSlaveServices, scope, ResourcesService.class));
         }
 
         var notifications = new ArrayList<Notification>();
@@ -1524,8 +1524,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
               services.computeIfAbsent(
                   changes.getServices().get(resource.getServiceId()),
                   url ->
-                      new ResourcesClient(
-                          url, scope.getIdentity(), this, settingsForSlaveServices));
+                      ServiceClientCatalog.INSTANCE.getService(
+                          url, settingsForSlaveServices, scope, ResourcesService.class));
         }
 
         var notifications = new ArrayList<Notification>();
@@ -3041,8 +3041,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             "resolver: context scope has no ID, cannot register " + "a scope autonomously");
       }
 
-      // Necessary to ensure that service clients are operational
-      serviceContextScope.ensureServiceConnection(1, TimeUnit.SECONDS);
+      //      // Necessary to ensure that service clients are operational
+      //      serviceContextScope.ensureServiceConnection(1, TimeUnit.SECONDS);
 
       /*
        * The resolver needs a digital twin client installed to find existing observations through the
@@ -3064,7 +3064,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
-  public <T extends Serializable> T retrieveAsset(String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
+  public <T extends Serializable> T retrieveAsset(
+      String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
     // TODO
     return null;
   }
