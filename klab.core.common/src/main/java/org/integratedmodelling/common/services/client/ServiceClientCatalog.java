@@ -118,6 +118,11 @@ public enum ServiceClientCatalog {
       //            return;
       //        }
 
+      if (!client.isAlive()) {
+        this.status.set(KlabService.ServiceStatus.offline(type, serverId));
+        return;
+      }
+
       var statusBeforeChecking = status.get();
       try {
         readStatus();
