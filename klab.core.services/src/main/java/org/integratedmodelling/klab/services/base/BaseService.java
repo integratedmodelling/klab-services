@@ -83,7 +83,7 @@ public abstract class BaseService implements KlabService {
   private ComponentRegistry componentRegister;
   private String instanceKey = Utils.Names.newName();
   private long bootTime = System.currentTimeMillis();
-  private ServiceMonitor serviceMonitor;
+//  private ServiceMonitor serviceMonitor;
 
   protected Settings settings;
   protected Settings settingsForSlaveServices;
@@ -125,19 +125,19 @@ public abstract class BaseService implements KlabService {
     }
     createServiceSecret();
     componentRegister = new ComponentRegistry(this, options);
-    serviceMonitor =
-        new ServiceMonitor(
-            scope,
-            settingsForSlaveServices,
-            Utils.URLs.isLocalHost(this.url),
-            List.of(),
-            this::notifyLocalService,
-            this::notifyLocalEngine);
+//    serviceMonitor =
+//        new ServiceMonitor(
+//            scope,
+//            settingsForSlaveServices,
+//            Utils.URLs.isLocalHost(this.url),
+//            List.of(),
+//            this::notifyLocalService,
+//            this::notifyLocalEngine);
   }
 
-  private void notifyLocalEngine(Engine.Status status) {}
-
-  private void notifyLocalService(KlabService service, ServiceStatus status) {}
+//  private void notifyLocalEngine(Engine.Status status) {}
+//
+//  private void notifyLocalService(KlabService service, ServiceStatus status) {}
 
   public ComponentRegistry getComponentRegistry() {
     return componentRegister;

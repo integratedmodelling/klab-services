@@ -3,10 +3,8 @@ package org.integratedmodelling.common.services.client;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
-
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.configuration.Setting;
@@ -38,7 +36,7 @@ public enum ServiceClientCatalog {
    * signs the service requests. For each of these, a polling task is scheduled to keep the status
    * up to date.
    */
-  public class ServiceMonitor {
+  public class ClientMonitor {
     private final Utils.Http.Client client;
     private final URL url;
     private String serverId;
@@ -74,7 +72,7 @@ public enum ServiceClientCatalog {
       return status;
     }
 
-    public ServiceMonitor(
+    public ClientMonitor(
         URL url, // never null
         String serverId, // null if unknown
         String
@@ -172,7 +170,7 @@ public enum ServiceClientCatalog {
     }
   }
 
-  private final Map<String, ServiceMonitor> serviceClients = new ConcurrentHashMap<>();
+  private final Map<String, ClientMonitor> serviceClients = new ConcurrentHashMap<>();
 
   public BaseServiceClient getService(
       UserScopeNotification.ServiceInfo request, KlabService ownerService, UserScope userScope) {
@@ -200,7 +198,7 @@ public enum ServiceClientCatalog {
     request.setUrl(serviceUrl);
     request.setType(KlabService.Type.classify(serviceClass));
     var monitor = createServiceMonitor(request, null);
-    return (T)
+    return serviceClass.cast(
         switch (request.getType()) {
           case REASONER -> new ReasonerClient(monitor, userScope, settings, statusListeners);
           case RESOURCES -> new ResourcesClient(monitor, userScope, settings, statusListeners);
@@ -209,12 +207,12 @@ public enum ServiceClientCatalog {
           default ->
               throw new KlabIllegalStateException(
                   "Wrong service type in UserScopeNotification.ServiceInfo request");
-        };
+        });
   }
 
-  private ServiceMonitor createServiceMonitor(
+  private ClientMonitor createServiceMonitor(
       UserScopeNotification.ServiceInfo request, KlabService ownerService) {
-    return new ServiceMonitor(
+    return new ClientMonitor(
         request.getUrl(),
         request.getId(),
         ownerService == null ? null : ownerService.serviceId(),

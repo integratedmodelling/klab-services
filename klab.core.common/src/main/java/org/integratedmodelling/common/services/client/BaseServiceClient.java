@@ -1,10 +1,7 @@
 package org.integratedmodelling.common.services.client;
 
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
-import org.integratedmodelling.common.authentication.scope.ChannelImpl;
-import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -15,17 +12,13 @@ import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.identities.PartnerIdentity;
-import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
 
@@ -36,14 +29,13 @@ import java.io.Serializable;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 public abstract class BaseServiceClient implements KlabService {
 
   protected final Scope userScope;
-  private final ServiceClientCatalog.ServiceMonitor monitor;
+  private final ServiceClientCatalog.ClientMonitor monitor;
   protected final Utils.Http.Client client;
   private final ServiceScope serviceScope;
   protected final Settings settings;
@@ -51,7 +43,7 @@ public abstract class BaseServiceClient implements KlabService {
   List<BiConsumer<ServiceStatus, Boolean>> statusListeners = new ArrayList<>();
 
   public BaseServiceClient(
-      ServiceClientCatalog.ServiceMonitor monitor,
+      ServiceClientCatalog.ClientMonitor monitor,
       Scope scope,
       Settings settings,
       BiConsumer<ServiceStatus, Boolean>... statusListeners) {

@@ -29,20 +29,19 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.common.data.Instance;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.base.BaseService;
 
 /**
  * This class is a wrapper for a {@link KlabService} whose main purpose is to provide it with a
- * {@link ServiceScope} to run under. The default service scope is produced using a k.LAB user
- * certificate, so it's a promoted user scope that can only run a local service (along with other
- * services that may come from the network). If the user certificate isn't available, the service
- * will operate in anonymous mode and only clients for local services can fulfill its service
- * dependencies.
+ * {@link ServiceScope} to run under. If the service runs locally under a user scope, the default
+ * service scope is produced using a k.LAB user certificate, so it's a promoted user scope that can
+ * only run a local service (along with other services that may come from the network). If the user
+ * certificate isn't available, the service will operate in anonymous mode and only clients for
+ * local services can fulfill its service dependencies.
  *
- * <p>Service initialization only happens after all needed services are available. The instance
+ * <p>Service initialization only happens after all necessary services are available. The instance
  * automatically waits for them to come online if they're configured in any way. Implementations may
  * call {@link #waitOnline(int)} to block sensibly until the service is fully initialized and ready
  * to use.

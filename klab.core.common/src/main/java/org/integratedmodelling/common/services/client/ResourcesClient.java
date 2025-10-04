@@ -13,24 +13,20 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import javax.annotation.Nullable;
-import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+
 import org.integratedmodelling.common.data.BaseDataImpl;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.resources.ProjectRequest;
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.*;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -49,10 +45,7 @@ import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequ
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
-import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
-import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.common.data.ResourceContextualizationRequest;
 
@@ -87,7 +80,7 @@ public class ResourcesClient extends BaseServiceClient
               });
 
   public ResourcesClient(
-      ServiceClientCatalog.ServiceMonitor monitor,
+      ServiceClientCatalog.ClientMonitor monitor,
       Scope userScope,
       Settings settings,
       BiConsumer<ServiceStatus, Boolean>... statusListeners) {

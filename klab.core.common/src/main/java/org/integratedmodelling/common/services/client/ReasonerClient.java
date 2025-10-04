@@ -5,26 +5,20 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import java.io.File;
-import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
-import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
-import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Settings;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
@@ -33,9 +27,6 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearch
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 
 /**
  * TODO the reasoner client should cache a configurable amount of info so to minimize the likely
@@ -76,7 +67,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
               });
 
   ReasonerClient(
-      ServiceClientCatalog.ServiceMonitor monitor,
+      ServiceClientCatalog.ClientMonitor monitor,
       Scope userScope,
       Settings settings,
       BiConsumer<ServiceStatus, Boolean>... statusListeners) {

@@ -1,32 +1,24 @@
 package org.integratedmodelling.common.services.client;
 
-import java.net.URL;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
-import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
-import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
-import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.configuration.Settings;
-import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.runtime.*;
-import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 
 public class ResolverClient extends BaseServiceClient implements Resolver {
 
   private Capabilities capabilities;
 
   public ResolverClient(
-      ServiceClientCatalog.ServiceMonitor monitor,
+      ServiceClientCatalog.ClientMonitor monitor,
       Scope userScope,
       Settings settings,
       BiConsumer<ServiceStatus, Boolean>... statusListeners) {

@@ -22,7 +22,6 @@ import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.runtime.*;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -33,7 +32,7 @@ public class RuntimeClient extends BaseServiceClient
   private Capabilities capabilities = null;
 
   public RuntimeClient(
-      ServiceClientCatalog.ServiceMonitor monitor,
+      ServiceClientCatalog.ClientMonitor monitor,
       Scope userScope,
       Settings settings,
       BiConsumer<KlabService.ServiceStatus, Boolean>... statusListeners) {
