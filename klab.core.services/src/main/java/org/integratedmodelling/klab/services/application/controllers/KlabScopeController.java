@@ -6,6 +6,7 @@ import java.security.Principal;
 import java.util.*;
 
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.services.client.ServiceClientCatalog;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
@@ -73,6 +74,10 @@ public class KlabScopeController {
    * Create a session with the passed name. If a broker is available, also setup messaging and any
    * messaging queues requested with the call, defaulting as per implementation.
    *
+   * <p>TODO the scope header ID must add the server ID. This way we can reconstruct the scope on
+   * first reference by locating and asking the runtime for the context info with the service IDs,
+   * which has been advertised at authentication.
+   *
    * <p>If an ID is passed, the scope will mirror a remote one and the return value should be the
    * same ID in case of success.
    *
@@ -127,17 +132,16 @@ public class KlabScopeController {
         var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
         var id = instance.klabService().declareSessionScope(ret, userScope, behavior);
         if (federation != null) {
-          ServiceSessionScope serviceSessionScope = (ServiceSessionScope) ret;
           if (queuesHeader == null) {
-            queuesHeader = serviceSessionScope.defaultQueues();
+            queuesHeader = ret.defaultQueues();
           }
 
-          var implementedQueues = serviceSessionScope.setupMessaging(federation, id, queuesHeader);
+          var implementedQueues = ret.setupMessaging(federation, id, queuesHeader);
 
           Logging.INSTANCE.info(
               "Queues set up for session " + id + ": " + implementedQueues + " on session scope");
 
-          if (!serviceSessionScope.initializeAgents(id)) {
+          if (!ret.initializeAgents(id)) {
             Logging.INSTANCE.warn("agent initialization failed in session creation");
           }
           response.setHeader(
