@@ -5145,6 +5145,18 @@ public class Utils {
       return ret;
     }
 
+    public static <T> Collection<T> union(Collection<T>... collections) {
+      Collection<T> ret = new HashSet<>();
+      if (collections != null) {
+        for (Collection<T> collection : collections) {
+          if (collection != null) {
+            ret.addAll(collection);
+          }
+        }
+      }
+      return ret;
+    }
+
     public static <T> List<T> arrayToList(T[] objects) {
       List<T> ret = new ArrayList<>();
       if (objects != null) {

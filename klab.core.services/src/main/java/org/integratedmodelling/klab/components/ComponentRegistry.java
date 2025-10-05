@@ -125,23 +125,23 @@ public class ComponentRegistry {
     this.service = service;
   }
 
-  /**
-   * Call passing the capabilities of any service whose components we want to index.
-   *
-   * @param capabilities
-   */
-  public void registerService(KlabService.ServiceCapabilities capabilities) {
-    if (capabilities != null) {
-      for (var component : capabilities.getComponents()) {
-        for (var adapter : component.adapters()) {
-          this.adapterDescriptorFinder.put(adapter.getName(), adapter);
-        }
-      }
-    } else {
-      throw new KlabServiceAccessException(
-          "The service capabilities are not available. Is the service online?");
-    }
-  }
+//  /**
+//   * Call passing the capabilities of any service whose components we want to index.
+//   *
+//   * @param capabilities
+//   */
+//  public void registerService(KlabService.ServiceCapabilities capabilities) {
+//    if (capabilities != null) {
+//      for (var component : capabilities.getComponents()) {
+//        for (var adapter : component.adapters()) {
+//          this.adapterDescriptorFinder.put(adapter.getName(), adapter);
+//        }
+//      }
+//    } else {
+//      throw new KlabServiceAccessException(
+//          "The service capabilities are not available. Is the service online?");
+//    }
+//  }
 
   public MavenComponentCache getComponentCache() {
     return this.cache;

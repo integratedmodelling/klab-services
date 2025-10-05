@@ -294,13 +294,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public void initializeService() {
 
     Logging.INSTANCE.setSystemIdentifier("Reasoner service: ");
-
-    //    serviceScope()
-    //        .send(
-    //            Message.MessageClass.ServiceLifecycle,
-    //            Message.MessageType.ServiceInitializing,
-    //            capabilities(serviceScope()));
-
     for (ProjectConfiguration authority : configuration.getAuthorities()) {
       loadAuthority(authority);
     }
@@ -351,15 +344,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
       }
     }
-
-    // TODO keep logical notifications around for the capabilities, or have a separate status call
-    // for
-    //  notifications.
-    //    serviceScope()
-    //        .send(
-    //            Message.MessageClass.ServiceLifecycle,
-    //            Message.MessageType.ServiceAvailable,
-    //            capabilities(serviceScope()));
   }
 
   @Override
@@ -1436,7 +1420,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     scope = getScopeManager().collectMessagePayload(scope, Notification.class, ret);
 
-    if (worldview.isEmpty()) {
+    if (worldview == null || worldview.isEmpty()) {
       return ResourceSet.empty();
     }
 

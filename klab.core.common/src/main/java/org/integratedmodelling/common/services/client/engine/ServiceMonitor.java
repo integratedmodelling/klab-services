@@ -70,19 +70,15 @@ public class ServiceMonitor {
               case REASONER ->
                   ServiceClientCatalog.INSTANCE.getService(
                       type.localServiceUrl(), settings, user, Reasoner.class);
-              //                ReasonerClient.createLocalOffline(identity, settings);
               case RESOURCES ->
                   ServiceClientCatalog.INSTANCE.getService(
                       type.localServiceUrl(), settings, user, ResourcesService.class);
-              // ResourcesClient.createLocalOffline(identity, settings);
               case RESOLVER ->
                   ServiceClientCatalog.INSTANCE.getService(
                       type.localServiceUrl(), settings, user, Resolver.class);
-              // ResolverClient.createLocalOffline(identity, settings);
               case RUNTIME ->
                   ServiceClientCatalog.INSTANCE.getService(
                       type.localServiceUrl(), settings, user, RuntimeService.class);
-              // RuntimeClient.createLocalOffline(identity, settings);
               default -> throw new KlabIllegalStateException("Can't happen");
             };
         clients.put((BaseServiceClient) service, service.status());
@@ -98,23 +94,15 @@ public class ServiceMonitor {
                   case REASONER ->
                       ServiceClientCatalog.INSTANCE.getService(
                           service.getUrls().getFirst(), settings, user, Reasoner.class);
-                  //                      ReasonerClient.createOffline(
-                  //                          service.getUrls().getFirst(), identity, settings);
                   case RESOURCES ->
                       ServiceClientCatalog.INSTANCE.getService(
                           service.getUrls().getFirst(), settings, user, ResourcesService.class);
-                  //                      ResourcesClient.createOffline(
-                  //                          service.getUrls().getFirst(), identity, settings);
                   case RESOLVER ->
                       ServiceClientCatalog.INSTANCE.getService(
                           service.getUrls().getFirst(), settings, user, Resolver.class);
-                  //                      ResolverClient.createOffline(
-                  //                          service.getUrls().getFirst(), identity, settings);
                   case RUNTIME ->
                       ServiceClientCatalog.INSTANCE.getService(
                           service.getUrls().getFirst(), settings, user, RuntimeService.class);
-                  //                      RuntimeClient.createOffline(service.getUrls().getFirst(),
-                  // identity, settings);
                   default -> throw new KlabIllegalStateException("Can't happen");
                 };
             clients.put((BaseServiceClient) client, client.status());

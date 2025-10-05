@@ -476,7 +476,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   public boolean validateServices() {
     // TODO check that all essential services are available and online, waiting a bit for connection
     //  if necessary
-    return false;
+    return true;
   }
 
   public void addService(KlabService klabService) {}

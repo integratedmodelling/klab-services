@@ -97,8 +97,6 @@ public class EngineAuthorization extends AbstractAuthenticationToken
   public EngineAuthorization(
       String partnerId,
       String username,
-//      String brokerUrl,
-//      String federationId,
       String token,
       Collection<Group> groups,
       Collection<Role> roles) {
@@ -106,14 +104,8 @@ public class EngineAuthorization extends AbstractAuthenticationToken
     this.partnerId = new Credentials(partnerId);
     this.username = new Credentials(username);
     this.tokenString = new Credentials(token);
-//    this.brokerUrl = brokerUrl;
-//    this.federationId = federationId;
     this.groups = groups;
     expiration = Instant.now().plusSeconds(TOKEN_TTL_SECONDS);
-
-    /*
-    TODO set the identity! This will generate an NPE
-     */
 
     // convenience code: mimic what the parent constructor did, but with the <Role>
     // generic type.

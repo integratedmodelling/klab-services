@@ -1,8 +1,5 @@
 package org.integratedmodelling.klab.services;
 
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -11,6 +8,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+
+import com.google.common.collect.Sets;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.ServiceIdentityImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
@@ -20,8 +19,6 @@ import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.ServiceClientCatalog;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.PartnerIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -70,8 +67,7 @@ public abstract class ServiceInstance<T extends BaseService> {
   private T service;
   private AbstractServiceDelegatingScope serviceScope;
   ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
-  Map<KlabService.Type, Set<KlabService>> currentServices = new HashMap<>();
+  private Map<KlabService.Type, Set<KlabService>> services = new HashMap<>();
 
   private long bootTime;
   private Pair<Identity, List<ServiceReference>> identity;
@@ -111,63 +107,66 @@ public abstract class ServiceInstance<T extends BaseService> {
   protected abstract T createPrimaryService(
       AbstractServiceDelegatingScope serviceScope, ServiceStartupOptions options);
 
-  /**
-   * Called only if the service(s) specified in the certificate are unavailable or missing. This
-   * will be called for all service types as long as the service is not available, with a
-   * configurable interval. The default implementation launches a thread waiting for a service to
-   * become available locally and keeps track of the online status of the overall service resulting
-   * from the availability.
-   *
-   * <p>For essential services, this will be called every X minutes for as long as at least one
-   * instance of the service is missing. Non-essential services will only get one call with
-   * timeUnavailable == 0.
-   *
-   * @param serviceType
-   * @param timeUnavailable time since noticing the unavailability for the first time, in seconds.
-   *     The first call will always get 0 here.
-   * @return
-   */
-  protected KlabService createDefaultService(
-      KlabService.Type serviceType, Scope scope, long timeUnavailable) {
-    return createLocalServiceClient(
-        serviceType, serviceType.localServiceUrl(), scope, serviceScope.getIdentity());
-  }
-
-  private <T extends KlabService> T createLocalServiceClient(
-      KlabService.Type serviceType, URL url, Scope scope, Identity identity) {
-
-    return switch (serviceType) {
-      case REASONER ->
-          (T)
-              ServiceClientCatalog.INSTANCE.getService(
-                  url,
-                  SettingsImpl.forSlaveServices(KlabService.Type.REASONER, service.settings()),
-                  scope,
-                  Reasoner.class);
-      case RESOURCES ->
-          (T)
-              ServiceClientCatalog.INSTANCE.getService(
-                  url,
-                  SettingsImpl.forSlaveServices(KlabService.Type.RESOURCES, service.settings()),
-                  scope,
-                  ResourcesService.class);
-      case RESOLVER ->
-          (T)
-              ServiceClientCatalog.INSTANCE.getService(
-                  url,
-                  SettingsImpl.forSlaveServices(KlabService.Type.RESOLVER, service.settings()),
-                  scope,
-                  Resolver.class);
-      case RUNTIME ->
-          (T)
-              ServiceClientCatalog.INSTANCE.getService(
-                  url,
-                  SettingsImpl.forSlaveServices(KlabService.Type.RUNTIME, service.settings()),
-                  scope,
-                  RuntimeService.class);
-      default -> throw new IllegalStateException("Unexpected value: " + serviceType);
-    };
-  }
+  //  /**
+  //   * Called only if the service(s) specified in the certificate are unavailable or missing. This
+  //   * will be called for all service types as long as the service is not available, with a
+  //   * configurable interval. The default implementation launches a thread waiting for a service
+  // to
+  //   * become available locally and keeps track of the online status of the overall service
+  // resulting
+  //   * from the availability.
+  //   *
+  //   * <p>For essential services, this will be called every X minutes for as long as at least one
+  //   * instance of the service is missing. Non-essential services will only get one call with
+  //   * timeUnavailable == 0.
+  //   *
+  //   * @param serviceType
+  //   * @param timeUnavailable time since noticing the unavailability for the first time, in
+  // seconds.
+  //   *     The first call will always get 0 here.
+  //   * @return
+  //   */
+  //  protected KlabService createDefaultService(
+  //      KlabService.Type serviceType, Scope scope, long timeUnavailable) {
+  //    return createLocalServiceClient(
+  //        serviceType, serviceType.localServiceUrl(), scope, serviceScope.getIdentity());
+  //  }
+  //
+  //  private <T extends KlabService> T createLocalServiceClient(
+  //      KlabService.Type serviceType, URL url, Scope scope, Identity identity) {
+  //
+  //    return switch (serviceType) {
+  //      case REASONER ->
+  //          (T)
+  //              ServiceClientCatalog.INSTANCE.getService(
+  //                  url,
+  //                  SettingsImpl.forSlaveServices(KlabService.Type.REASONER, service.settings()),
+  //                  scope,
+  //                  Reasoner.class);
+  //      case RESOURCES ->
+  //          (T)
+  //              ServiceClientCatalog.INSTANCE.getService(
+  //                  url,
+  //                  SettingsImpl.forSlaveServices(KlabService.Type.RESOURCES, service.settings()),
+  //                  scope,
+  //                  ResourcesService.class);
+  //      case RESOLVER ->
+  //          (T)
+  //              ServiceClientCatalog.INSTANCE.getService(
+  //                  url,
+  //                  SettingsImpl.forSlaveServices(KlabService.Type.RESOLVER, service.settings()),
+  //                  scope,
+  //                  Resolver.class);
+  //      case RUNTIME ->
+  //          (T)
+  //              ServiceClientCatalog.INSTANCE.getService(
+  //                  url,
+  //                  SettingsImpl.forSlaveServices(KlabService.Type.RUNTIME, service.settings()),
+  //                  scope,
+  //                  RuntimeService.class);
+  //      default -> throw new IllegalStateException("Unexpected value: " + serviceType);
+  //    };
+  //  }
 
   /**
    * Wait for available (online) status until the passed timeout. If the service hasn't been
@@ -209,28 +208,22 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     @Override
     public <T extends KlabService> T getService(Class<T> serviceClass, Predicate<T>... selectors) {
-      var stream =
-          currentServices
-              .computeIfAbsent(KlabService.Type.classify(serviceClass), s -> new LinkedHashSet<>())
-              .stream();
-      if (selectors != null) {
-        for (var selector : selectors) {
-          stream = stream.filter(s -> selector.test((T) s));
-        }
+      if (serviceClass.isAssignableFrom(klabService().getClass())) {
+        return serviceClass.cast(klabService());
       }
-      var ret = stream.toList();
-      if (ret.isEmpty()) {
-        throw new KlabServiceAccessException(
-            "Service not available: " + serviceClass.getName() + " in " + service.serviceType());
-      }
-      return /*ret.isEmpty() ? null : */ (T) ret.getFirst();
+
+      var available =
+          services.getOrDefault(KlabService.Type.classify(serviceClass), Set.of()).stream()
+              .filter(s -> s.status().isAvailable())
+              .findFirst()
+              .orElse(null);
+
+      return serviceClass.cast(available);
     }
 
     @Override
     public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-      return (Collection<T>)
-          currentServices.computeIfAbsent(
-              KlabService.Type.classify(serviceClass), k -> new LinkedHashSet<>());
+      return List.of(getService(serviceClass));
     }
   }
 
@@ -245,8 +238,7 @@ public abstract class ServiceInstance<T extends BaseService> {
    * @return
    */
   protected Pair<Identity, List<ServiceReference>> authenticateService() {
-    var ret = Authentication.INSTANCE.authenticate(SettingsImpl.forService(serviceType()));
-    return ret;
+    return Authentication.INSTANCE.authenticate(SettingsImpl.forService(serviceType()));
   }
 
   /**
@@ -260,26 +252,52 @@ public abstract class ServiceInstance<T extends BaseService> {
     this.identity = authenticateService();
     AtomicReference<String> token = new AtomicReference<>();
     URL hubUrl = null;
+    PartnerIdentity partnerIdentity = null;
     if (identity.getFirst() instanceof PartnerIdentity) {
-      PartnerIdentity pi = (PartnerIdentity) identity.getFirst();
-      token.set(pi.getToken());
-      try {
-        hubUrl = new URI(pi.getAuthenticatingHub()).toURL();
-      } catch (MalformedURLException | URISyntaxException e) {
-        throw new KlabIllegalArgumentException(e);
-      }
+      partnerIdentity = (PartnerIdentity) identity.getFirst();
     }
 
+    var ret =
+        new InstanceServiceScope(
+            new ChannelImpl(identity.getFirst()) {
+              @Override
+              public String getDispatchId() {
+                return service.serviceId();
+              }
+            });
+
     // local services (user-level certificate) only see other local services
-    boolean iAmLocal = !this.identity.getFirst().is(Identity.Type.SERVICE);
-    if (!iAmLocal) {
-      for (ServiceReference s :
+    boolean iAmLocal =
+        !this.identity.getFirst().is(Identity.Type.SERVICE) && partnerIdentity == null;
+
+    if (iAmLocal) {
+      setupLocalServices(ret);
+    } else {
+      setupRemoteServices(
           this.identity.getSecond().stream()
               .filter(sr -> KlabService.Type.operationCritical().contains(sr.getIdentityType()))
-              .toList()) {
+              .toList(),
+          partnerIdentity);
+    }
+
+    return ret;
+  }
+
+  private void setupRemoteServices(List<ServiceReference> list, PartnerIdentity partnerIdentity) {
+
+    for (var s : list) {
+
+      if (getEssentialServices().contains(s.getIdentityType())
+          || getOperationalServices().contains(s.getIdentityType())) {
 
         var serviceIdentity =
-            new ServiceIdentityImpl(s.getId(), s.getId(), null, s.getUrls(), token.get(), hubUrl);
+            new ServiceIdentityImpl(
+                s.getId(),
+                s.getId(),
+                new Date(),
+                s.getUrls(),
+                partnerIdentity.getToken(),
+                Utils.URLs.newURL(partnerIdentity.getAuthenticatingHub()));
 
         var scope =
             new InstanceServiceScope(
@@ -291,47 +309,31 @@ public abstract class ServiceInstance<T extends BaseService> {
                 });
 
         var client =
-            switch (s.getIdentityType()) {
-              case KlabService.Type.REASONER ->
-                  ServiceClientCatalog.INSTANCE.getService(
-                      s.getUrls().getFirst(),
-                      SettingsImpl.forService(serviceType()),
-                      scope,
-                      Reasoner.class);
-              case KlabService.Type.RUNTIME ->
-                  ServiceClientCatalog.INSTANCE.getService(
-                      s.getUrls().getFirst(),
-                      SettingsImpl.forService(serviceType()),
-                      scope,
-                      RuntimeService.class);
-              case KlabService.Type.RESOURCES ->
-                  ServiceClientCatalog.INSTANCE.getService(
-                      s.getUrls().getFirst(),
-                      SettingsImpl.forService(serviceType()),
-                      scope,
-                      ResourcesService.class);
-              case KlabService.Type.RESOLVER ->
-                  ServiceClientCatalog.INSTANCE.getService(
-                      s.getUrls().getFirst(),
-                      SettingsImpl.forService(serviceType()),
-                      scope,
-                      Resolver.class);
-              default ->
-                  throw new IllegalStateException("Unexpected value: " + s.getIdentityType());
-            };
-        currentServices
-            .computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>())
-            .add(client);
+            ServiceClientCatalog.INSTANCE.getService(
+                s.getUrls().getFirst(),
+                SettingsImpl.forService(s.getIdentityType()),
+                scope,
+                s.getIdentityType().classify());
+
+        this.services.computeIfAbsent(s.getIdentityType(), k -> new LinkedHashSet<>()).add(client);
       }
     }
+  }
 
-    return new InstanceServiceScope(
-        new ChannelImpl(identity.getFirst()) {
-          @Override
-          public String getDispatchId() {
-            return service.serviceId();
-          }
-        });
+  private void setupLocalServices(Scope scope) {
+
+    for (var serviceType :
+        Utils.Collections.union(getEssentialServices(), getOperationalServices())) {
+
+      var client =
+          ServiceClientCatalog.INSTANCE.getService(
+              serviceType.localServiceUrl(),
+              SettingsImpl.forService(serviceType),
+              scope,
+              serviceType.classify());
+
+      this.services.computeIfAbsent(serviceType, k -> new LinkedHashSet<>()).add(client);
+    }
   }
 
   public boolean start(ServiceStartupOptions options) {
@@ -340,9 +342,6 @@ public abstract class ServiceInstance<T extends BaseService> {
     this.serviceScope = createServiceScope();
     this.service = createPrimaryService(serviceScope, options);
     this.service.setIdentity(identity.getFirst());
-    this.currentServices
-        .computeIfAbsent(KlabService.Type.classify(this.service), k -> new LinkedHashSet<>())
-        .add(this.service);
     bootTime = System.currentTimeMillis();
     serviceScope.setStatus(Scope.Status.STARTED);
     serviceScope.setMaintenanceMode(true);
@@ -358,15 +357,7 @@ public abstract class ServiceInstance<T extends BaseService> {
     }
   }
 
-  private void registerService(KlabService service) {
-    currentServices
-        .computeIfAbsent(KlabService.Type.classify(service), k -> new LinkedHashSet<>())
-        .add(service);
-  }
-
   private void timedTasks() {
-
-    boolean iAmLocal = !this.identity.getFirst().is(Identity.Type.SERVICE);
 
     try {
 
@@ -375,45 +366,22 @@ public abstract class ServiceInstance<T extends BaseService> {
       there's a change in online status, report it through the service scope
        */
 
-      var essentials = getEssentialServices();
-      var operational = getOperationalServices();
-      var allServices = EnumSet.noneOf(KlabService.Type.class);
-      allServices.addAll(essentials);
-      allServices.addAll(operational);
-
-      boolean wasAvailable = serviceScope.isAvailable();
-
-      // create all clients that we may need and know how to create
-      for (var serviceType : allServices) {
-        var services = currentServices.computeIfAbsent(serviceType, k -> new LinkedHashSet<>());
-        if (services.isEmpty() && iAmLocal) {
-          Logging.INSTANCE.info(
-              "Service is starting in local mode: creating client for local "
-                  + serviceType.name().toLowerCase());
-          var service =
-              this.createDefaultService(
-                  serviceType, serviceScope, (System.currentTimeMillis() - bootTime) / 1000);
-          if (service != null) {
-            registerService(service);
-          }
-        }
-      }
-      //      }
-
       // now check if they're OK
       boolean okEssentials = true;
       boolean okOperationals = true;
 
-      for (var serviceType : allServices) {
-        var services = currentServices.computeIfAbsent(serviceType, t -> new LinkedHashSet<>());
+      for (var serviceType :
+          Utils.Collections.union(getOperationalServices(), getEssentialServices())) {
+
+        var available = services.computeIfAbsent(serviceType, t -> new LinkedHashSet<>());
 
         boolean anyAvailable =
-            !services.isEmpty() && services.stream().anyMatch(s -> s.status().isAvailable());
+            !available.isEmpty() && available.stream().anyMatch(s -> s.status().isAvailable());
 
-        if (essentials.contains(serviceType) && !anyAvailable) {
+        if (getEssentialServices().contains(serviceType) && !anyAvailable) {
           okEssentials = false;
         }
-        if (operational.contains(serviceType) && !anyAvailable) {
+        if (getOperationalServices().contains(serviceType) && !anyAvailable) {
           okOperationals = false;
         }
 
@@ -449,30 +417,30 @@ public abstract class ServiceInstance<T extends BaseService> {
         operationalized.set(true);
         klabService().setOperational(klabService().operationalizeService());
 
-        // register remote components and adapters with our component registry avoiding clients
-        for (var service : klabService().serviceScope().getServices(ResourcesService.class)) {
-          //          System.out.println("type to register service "+service.serviceName());
-          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
-        }
-        for (var service : klabService().serviceScope().getServices(Reasoner.class)) {
-          //          System.out.println("type to register service "+service.serviceName());
-          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
-        }
-        for (var service : klabService().serviceScope().getServices(Resolver.class)) {
-          //          System.out.println("type to register service "+service.serviceName());
-          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
-        }
-        for (var service : klabService().serviceScope().getServices(RuntimeService.class)) {
-          //          System.out.println("type to register service "+service.serviceName());
-          klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
-        }
+        //        // register remote components and adapters with our component registry avoiding
+        // clients
+        //        for (var service :
+        // klabService().serviceScope().getServices(ResourcesService.class)) {
+        //
+        // klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+        //        }
+        //        for (var service : klabService().serviceScope().getServices(Reasoner.class)) {
+        //
+        // klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+        //        }
+        //        for (var service : klabService().serviceScope().getServices(Resolver.class)) {
+        //
+        // klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+        //        }
+        //        for (var service : klabService().serviceScope().getServices(RuntimeService.class))
+        // {
+        //
+        // klabService().getComponentRegistry().registerService(service.capabilities(serviceScope));
+        //        }
         setBusy(false);
       }
     } catch (Throwable t) {
-      if (this.klabService().status().getServiceType() == KlabService.Type.RESOURCES) {
-        Logging.INSTANCE.error(
-            "Exception during scheduled tasks: " + Utils.Exceptions.stackTrace(t));
-      }
+      Logging.INSTANCE.error("Exception during scheduled tasks: " + Utils.Exceptions.stackTrace(t));
     }
   }
 

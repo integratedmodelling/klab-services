@@ -237,10 +237,7 @@ public class ServiceAuthorizationManager {
    * roles. Otherwise the hub makes the decision and the JWT is parsed to obtain username, groups
    * and roles as expected.
    */
-  public EngineAuthorization validateToken(
-      String token,
-      String serverKey,
-      String scopeHeader /*, String brokerUrl, String federationId*/) {
+  public EngineAuthorization validateToken(String token, String serverKey, String scopeHeader) {
 
     EngineAuthorization ret = null;
 
@@ -349,7 +346,6 @@ public class ServiceAuthorizationManager {
           EnumSet.of(
               Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER, Role.ROLE_DATA_MANAGER));
       ret.setAuthenticated(true);
-      // ret.setTokenString(serverKey);
 
       var owner = klabService.get().getServiceOwner();
       if (owner instanceof UserIdentity user && "anonymous".equals(ret.getUsername())) {
@@ -361,9 +357,6 @@ public class ServiceAuthorizationManager {
 
     /** User scope is created anyway. */
     Scope scope = klabService.get().klabService().getScopeManager().getOrCreateUserScope(ret);
-    if (scope == null) {
-      System.out.println("DIO DIO");
-    }
     Scope resolvedScope;
     if (scopeHeader == null) {
       resolvedScope = scope;

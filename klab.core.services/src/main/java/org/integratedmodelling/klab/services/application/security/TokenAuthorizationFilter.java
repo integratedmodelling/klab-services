@@ -30,14 +30,11 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
     String tokenString = req.getHeader(HttpHeaders.AUTHORIZATION);
     String observerToken = req.getHeader(ServicesAPI.SCOPE_HEADER);
     String serverKey = req.getHeader(ServicesAPI.SERVER_KEY_HEADER);
-//    String brokerUrl = req.getHeader(ServicesAPI.MESSAGING_URL_HEADER);
-//    String federationId = req.getHeader(ServicesAPI.FEDERATION_ID_HEADER);
 
     if (tokenString != null) {
       try {
         EngineAuthorization token =
-            authorizationManager.validateToken(
-                tokenString, serverKey, observerToken/*, brokerUrl, federationId*/);
+            authorizationManager.validateToken(tokenString, serverKey, observerToken);
         if (token != null && token.isAuthenticated()) {
           SecurityContextHolder.getContext().setAuthentication(token);
         }

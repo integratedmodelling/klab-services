@@ -628,7 +628,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       private String forcedAcceptHeader = null;
       private String forcedContentHeader = null;
       private int timeoutSeconds = 10;
-      private String AUTHENTICATION_HEADER = "Authentication";
+      private static final String AUTHENTICATION_HEADER = "Authentication";
 
       public void setAuthorization(String token) {
         this.authorization = token;
@@ -754,21 +754,22 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         return ret;
       }
 
-      /**
-       * Localize the scope for communication when the scope itself is not available but its ID is.
-       *
-       * @param authorization
-       * @return
-       */
-      public Client withAutorization(String authorization) {
-        var ret = new Client(this);
-        ret.headers.put(HttpHeaders.AUTHORIZATION, authorization);
-        return ret;
-      }
+      //      /**
+      //       * Localize the scope for communication when the scope itself is not available but its
+      // ID is.
+      //       *
+      //       * @param authorization
+      //       * @return
+      //       */
+      //      public Client withAutorization(String authorization) {
+      //        var ret = new Client(this);
+      //        ret.headers.put(HttpHeaders.AUTHORIZATION, authorization);
+      //        return ret;
+      //      }
 
       public Client withIdentity(Identity identity) {
         var ret = new Client(this);
-        this.authorization = identity.getId();
+        ret.authorization = identity.getId();
         return ret;
       }
 

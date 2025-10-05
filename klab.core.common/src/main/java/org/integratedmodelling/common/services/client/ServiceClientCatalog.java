@@ -191,7 +191,7 @@ public enum ServiceClientCatalog {
   public <T extends KlabService> T getService(
       URL serviceUrl,
       Settings settings,
-      Scope userScope,
+      Scope scope,
       Class<T> serviceClass,
       BiConsumer<KlabService.ServiceStatus, Boolean>... statusListeners) {
     var request = new UserScopeNotification.ServiceInfo();
@@ -200,10 +200,10 @@ public enum ServiceClientCatalog {
     var monitor = createServiceMonitor(request, null);
     return serviceClass.cast(
         switch (request.getType()) {
-          case REASONER -> new ReasonerClient(monitor, userScope, settings, statusListeners);
-          case RESOURCES -> new ResourcesClient(monitor, userScope, settings, statusListeners);
-          case RESOLVER -> new ResolverClient(monitor, userScope, settings, statusListeners);
-          case RUNTIME -> new RuntimeClient(monitor, userScope, settings, statusListeners);
+          case REASONER -> new ReasonerClient(monitor, scope, settings, statusListeners);
+          case RESOURCES -> new ResourcesClient(monitor, scope, settings, statusListeners);
+          case RESOLVER -> new ResolverClient(monitor, scope, settings, statusListeners);
+          case RUNTIME -> new RuntimeClient(monitor, scope, settings, statusListeners);
           default ->
               throw new KlabIllegalStateException(
                   "Wrong service type in UserScopeNotification.ServiceInfo request");
