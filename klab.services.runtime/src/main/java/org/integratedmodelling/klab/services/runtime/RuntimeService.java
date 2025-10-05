@@ -227,7 +227,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public String registerNewSession(
+  public String declareSessionScope(
       SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
 
     var sessionId = sessionScope.getId();
@@ -252,7 +252,7 @@ public class RuntimeService extends BaseService
                       if (!serviceSessionScope
                           .getId()
                           .equals(
-                              service.registerNewSession(
+                              service.declareSessionScope(
                                   serviceSessionScope, userScope, behavior))) {
                         fail.set(true);
                       }
@@ -278,7 +278,7 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public String registerNewContext(ContextScope contextScope, UserScope userScope) {
+  public String declareContextScope(ContextScope contextScope, UserScope userScope) {
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
@@ -312,7 +312,7 @@ public class RuntimeService extends BaseService
                       if (service.status().isAvailable()
                           && !serviceContextScope
                               .getId()
-                              .equals(service.registerNewContext(serviceContextScope, userScope))) {
+                              .equals(service.declareContextScope(serviceContextScope, userScope))) {
                         fail.set(true);
                       }
                     }
@@ -705,7 +705,7 @@ public class RuntimeService extends BaseService
       session = userScope.getUserSession(this);
     }
     var ret = new ServiceContextScope((ServiceSessionScope) session, configuration);
-    registerNewContext(ret, userScope);
+    declareContextScope(ret, userScope);
     return ret;
   }
 

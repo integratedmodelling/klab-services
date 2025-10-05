@@ -95,22 +95,7 @@ public class ScopeManager {
        * from the service scope. TODO we should filter them by permission vs. the user identity!
        * That can be done directly in the overloaded functions below.
        */
-      ret = new ServiceUserScope(user, service) /* {
-
-            @Override
-            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-              // TODO filter by permission
-              return service.serviceScope().getServices(serviceClass);
-            }
-
-            @Override
-            public <T extends KlabService> T getService(
-                Class<T> serviceClass, Predicate<T>... selectors) {
-              // TODO filter by permission
-              return service.serviceScope().getService(serviceClass, selectors);
-            }
-          }*/;
-
+      ret = new ServiceUserScope(user, service);
       File userBehavior =
           new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + "user.kactors");
       if (userBehavior.isFile() && userBehavior.canRead()) {
@@ -328,7 +313,7 @@ public class ScopeManager {
                   federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
                       ? userScope.getUser().getUsername()
                       : federation.getId());
-          service.registerNewSession((SessionScope) ret, userScope, null);
+          //          service.registerNewSession((SessionScope) ret, userScope, null);
           return (T) ret;
         }
       }

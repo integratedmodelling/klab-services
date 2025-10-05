@@ -343,7 +343,7 @@ public interface KlabService extends Service {
    *     be the default user or federation session.
    * @return the ID of the new session created at server side, or null in case of failure.
    */
-  String registerNewSession(
+  String declareSessionScope(
       SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior);
 
   /**
@@ -359,7 +359,7 @@ public interface KlabService extends Service {
    * @param userScope used to set up federated behavior
    * @return the ID of the new context scope created at server side, or null in case of failure.
    */
-  String registerNewContext(ContextScope contextScope, UserScope userScope);
+  String declareContextScope(ContextScope contextScope, UserScope userScope);
 
   /**
    * Get the access rights for the passed resource. If the resource does not exist or is

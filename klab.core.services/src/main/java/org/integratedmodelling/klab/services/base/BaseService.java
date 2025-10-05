@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.configuration.Setting;
@@ -33,6 +34,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -43,6 +45,7 @@ import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Language;
@@ -55,6 +58,7 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 
@@ -84,7 +88,7 @@ public abstract class BaseService implements KlabService {
   //  private ServiceMonitor serviceMonitor;
   protected Settings settings;
   protected Settings settingsForSlaveServices;
-//  private StampedLock lockFile;
+  //  private StampedLock lockFile;
   private Identity identity;
 
   protected BaseService(
@@ -548,5 +552,51 @@ public abstract class BaseService implements KlabService {
           case PartnerIdentity partner -> partner.getId();
           default -> throw new KlabIllegalStateException("Unknown identity type: " + identity);
         };
+  }
+
+  @Override
+  public String declareSessionScope(
+      SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
+
+    if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
+
+      if (sessionScope.getId() == null) {
+        throw new KlabIllegalArgumentException(
+            "resolver: session scope has no ID, cannot register " + "a scope autonomously");
+      }
+      getScopeManager().registerScope(serviceSessionScope);
+      return serviceSessionScope.getId();
+    }
+
+    throw new KlabIllegalArgumentException("unexpected scope class");
+  }
+
+  @Override
+  public String declareContextScope(ContextScope contextScope, UserScope userScope) {
+
+    if (contextScope instanceof ServiceContextScope serviceContextScope) {
+
+      if (contextScope.getId() == null) {
+        throw new KlabIllegalArgumentException(
+            "resolver: context scope has no ID, cannot register " + "a scope autonomously");
+      }
+
+      /*
+       * The resolver needs a digital twin client installed to find existing observations through the
+       * service-level context scope.
+       */
+      if (contextScope.getHostServiceId() != null) {
+        serviceContextScope.setDigitalTwin(
+            new ClientDigitalTwin(contextScope, serviceContextScope.getId()));
+      } else {
+        scope.warn(
+            "Registering context scope without service ID: digital twin will be inoperative");
+      }
+
+      getScopeManager().registerScope(serviceContextScope);
+      return serviceContextScope.getId();
+    }
+
+    throw new KlabIllegalArgumentException("unexpected scope class");
   }
 }

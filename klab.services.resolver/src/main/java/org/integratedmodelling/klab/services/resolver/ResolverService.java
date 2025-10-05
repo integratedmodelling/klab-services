@@ -373,78 +373,9 @@ public class ResolverService extends BaseService implements Resolver {
         + contextualizable.encode(Language.KOBSERVATION);
   }
 
-  /**
-   * Replicate a remote scope in the scope manager. This should be called by the runtime service
-   * after creating it so if the scope has no ID we issue an error, as we do not create independent
-   * scopes.
-   *
-   * @param sessionScope a client scope that should record the ID for future communication. If the
-   *     ID is null, the call has failed.
-   * @return
-   */
   @Override
-  public String registerNewSession(
-      SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
-
-    if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
-
-      if (sessionScope.getId() == null) {
-        throw new KlabIllegalArgumentException(
-            "resolver: session scope has no ID, cannot register " + "a scope autonomously");
-      }
-
-      getScopeManager().registerScope(serviceSessionScope);
-      return serviceSessionScope.getId();
-    }
-
-    throw new KlabIllegalArgumentException("unexpected scope class");
-  }
-
-  /**
-   * Replicate a remote scope in the scope manager. This should be called by the runtime service
-   * after creating it so if the scope has no ID we issue an error, as we do not create independent
-   * scopes.
-   *
-   * @param contextScope a client scope that should record the ID for future communication. If the
-   *     ID is null, the call has failed.
-   * @return
-   */
-  @Override
-  public String registerNewContext(ContextScope contextScope, UserScope userScope) {
-
-    contextScope.getData().put(RESOLUTION_GRAPH_KEY, ResolutionGraph.create(contextScope));
-
-    if (contextScope instanceof ServiceContextScope serviceContextScope) {
-
-      if (contextScope.getId() == null) {
-        throw new KlabIllegalArgumentException(
-            "resolver: context scope has no ID, cannot register " + "a scope autonomously");
-      }
-
-      // Necessary to ensure that service clients are operational
-//      serviceContextScope.ensureServiceConnection(1, TimeUnit.SECONDS);
-
-      /*
-       * The resolver needs a digital twin client installed to find existing observations through the
-       * service-level context scope.
-       */
-      if (contextScope.getHostServiceId() != null) {
-        serviceContextScope.setDigitalTwin(
-            new ClientDigitalTwin(contextScope, serviceContextScope.getId()));
-      } else {
-        scope.warn(
-            "Registering context scope without service ID: digital twin will be inoperative");
-      }
-
-      getScopeManager().registerScope(serviceContextScope);
-      return serviceContextScope.getId();
-    }
-
-    throw new KlabIllegalArgumentException("unexpected scope class");
-  }
-
-  @Override
-  public <T extends Serializable> T retrieveAsset(String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
+  public <T extends Serializable> T retrieveAsset(
+      String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
     // TODO
     return null;
   }

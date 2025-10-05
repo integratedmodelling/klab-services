@@ -4,14 +4,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.ServiceClientCatalog;
-import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -112,102 +110,16 @@ public class KlabScopeController {
             return existing.getId();
           }
         }
-
-        // must use the runtime in the request; a request without a runtime is illegal
-        var identity = userScope.getIdentity();
-        //        List<RuntimeService> runtimes =
-        //            instance.klabService() instanceof RuntimeService r
-        //                ? new ArrayList<>(List.of(r))
-        //                : new ArrayList<>(
-        //                    request.getRuntimeServices().stream()
-        //                        .map(
-        //                            url ->
-        //                                new RuntimeClient(
-        //                                    url,
-        //                                    identity,
-        //                                    instance.klabService(),
-        //                                    SettingsImpl.forSlaveServices(
-        //                                        KlabService.Type.RUNTIME,
-        //                                        instance.klabService().settings())))
-        //                        .toList());
-        //
-        //        if (runtimes.isEmpty()) {
-        //          throw new KlabAuthorizationException("No valid runtime service found in session
-        // request");
-        //        }
-
-        var ret =
-            //            request.getBehaviorUrn() == null
-            //                ? userScope.getUserSession(runtimes.getFirst())
-            /*:*/ new ServiceSessionScope(userScope);
-
-        ((ServiceSessionScope) ret).setId(request.getConfiguration().getId());
-        ((ServiceSessionScope) ret).setName(request.getConfiguration().getName());
-
-        //        // FIXME see if we can/should cache all these clients - they may get a lot of
-        // concurrent use
-        //        List<Reasoner> reasoners =
-        //            instance.klabService() instanceof Reasoner r
-        //                ? new ArrayList<>(List.of(r))
-        //                : new ArrayList<>(
-        //                    request.getReasonerServices().stream()
-        //                        .map(
-        //                            url ->
-        //                                new ReasonerClient(
-        //                                    url,
-        //                                    identity,
-        //                                    instance.klabService(),
-        //                                    SettingsImpl.forSlaveServices(
-        //                                        KlabService.Type.REASONER,
-        //                                        instance.klabService().settings())))
-        //                        .toList());
-        //        List<ResourcesService> resources =
-        //            instance.klabService() instanceof ResourcesService r
-        //                ? new ArrayList<>(List.of(r))
-        //                : new ArrayList<>(
-        //                    request.getResourceServices().stream()
-        //                        .map(
-        //                            url ->
-        //                                new ResourcesClient(
-        //                                    url,
-        //                                    identity,
-        //                                    instance.klabService(),
-        //                                    SettingsImpl.forSlaveServices(
-        //                                        KlabService.Type.RESOURCES,
-        //                                        instance.klabService().settings())))
-        //                        .toList());
-        //        List<Resolver> resolvers =
-        //            instance.klabService() instanceof Resolver r
-        //                ? new ArrayList<>(List.of(r))
-        //                : new ArrayList<>(
-        //                    request.getResolverServices().stream()
-        //                        .map(
-        //                            url ->
-        //                                new ResolverClient(
-        //                                    url,
-        //                                    identity,
-        //                                    instance.klabService(),
-        //                                    SettingsImpl.forSlaveServices(
-        //                                        KlabService.Type.RESOLVER,
-        //                                        instance.klabService().settings())))
-        //                        .toList());
-        //
-        //        if (request.getReasonerServices().isEmpty()) {
-        //
-        // reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));
-        //        }
+        var ret = new ServiceSessionScope(userScope);
+        ret.setId(request.getConfiguration().getId());
+        ret.setName(request.getConfiguration().getName());
 
         KActorsBehavior behavior = null;
         if (request.getBehaviorUrn() != null) {
           // TODO resolve the behavior with all resources services
         }
-
-        // TODO check presence and availability of all services and fail if no response
-
-        //        ((ServiceSessionScope) ret).setServices(resources, resolvers, reasoners,
-        // runtimes);
         var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
-        var id = instance.klabService().registerNewSession(ret, userScope, behavior);
+        var id = instance.klabService().declareSessionScope(ret, userScope, behavior);
         if (federation != null) {
           ServiceSessionScope serviceSessionScope = (ServiceSessionScope) ret;
           if (queuesHeader == null) {
@@ -279,117 +191,20 @@ public class KlabScopeController {
           //  a DT could also be created in other ways at production.
           identity.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federation);
         }
-        //        List<Reasoner> reasoners =
-        //            instance.klabService() instanceof Reasoner r
-        //                ? new ArrayList<>(List.of(r))
-        //                : new ArrayList<>(
-        //                    request.getReasonerServices().stream()
-        //                        .map(
-        //                            url ->
-        //                                new ReasonerClient(
-        //                                    url,
-        //                                    identity,
-        //                                    instance.klabService(),
-        //                                    SettingsImpl.forSlaveServices(
-        //                                        KlabService.Type.REASONER,
-        //                                        instance.klabService().settings())))
-        //                        .toList());
-        //        List<RuntimeService> runtimes =
-        //            instance.klabService() instanceof RuntimeService r
-        //                ? new ArrayList<>(List.of(r))
-        //                : new ArrayList<>(
-        //                    request.getRuntimeServices().stream()
-        //                        .map(
-        //                            url ->
-        //                                new RuntimeClient(
-        //                                    url,
-        //                                    identity,
-        //                                    instance.klabService(),
-        //                                    SettingsImpl.forSlaveServices(
-        //                                        KlabService.Type.RUNTIME,
-        //                                        instance.klabService().settings())))
-        //                        .toList());
-        //        List<ResourcesService> resources =
-        //            instance.klabService() instanceof ResourcesService r
-        //                ? new ArrayList<>(List.of(r))
-        //                : new ArrayList<>(
-        //                    request.getResourceServices().stream()
-        //                        .map(
-        //                            url ->
-        //                                new ResourcesClient(
-        //                                    url,
-        //                                    identity,
-        //                                    instance.klabService(),
-        //                                    SettingsImpl.forSlaveServices(
-        //                                        KlabService.Type.RESOURCES,
-        //                                        instance.klabService().settings())))
-        //                        .toList());
-        //        List<Resolver> resolvers =
-        //            instance.klabService() instanceof Resolver r
-        //                ? new ArrayList<>(List.of(r))
-        //                : new ArrayList<>(
-        //                    request.getResolverServices().stream()
-        //                        .map(
-        //                            url ->
-        //                                new ResolverClient(
-        //                                    url,
-        //                                    identity,
-        //                                    instance.klabService(),
-        //                                    SettingsImpl.forSlaveServices(
-        //                                        KlabService.Type.RESOLVER,
-        //                                        instance.klabService().settings())))
-        //                        .toList());
-        //
-        //        if (request.getReasonerServices().isEmpty()) {
-        //
-        // reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));
-        //        }
-
-        if (sessionScope instanceof ServiceSessionScope serviceSessionScope
-            && sessionScope.getServices(RuntimeService.class).isEmpty()) {
-          /* this signals that the session scope was generated ad-hoc for this request, and we need
-             to give it the same services or the clients it will define for the context at the next
-             call will fail.
-          */
-          serviceSessionScope.setHostServiceId(serviceIdHeader);
-          //          serviceSessionScope.setServices(resources, resolvers, reasoners, runtimes);
-          //          /*
-          //          Give all services a few milliseconds to ensure that they've connected
-          //           */
-          //          var allServices =
-          //              Utils.Collections.join(KlabService.class, resources, resolvers, reasoners,
-          // runtimes);
-          //          Utils.Java.distributeComputation(
-          //              allServices,
-          //              s -> {
-          //                if (s instanceof ServiceClient serviceClient) {
-          //                  serviceClient.tryConnection(500, TimeUnit.MILLISECONDS);
-          //                }
-          //              });
-        }
 
         var ret = sessionScope.createContext(request.getConfiguration());
 
         if (ret instanceof ServiceContextScope serviceContextScope) {
-
           serviceContextScope.setHostServiceId(serviceIdHeader);
-          //          serviceContextScope.setServices(resources, resolvers, reasoners, runtimes);
           if (contextId != null) {
-            // slave mode: session ID is provided by a calling service. The service's
-            // registerSession should check that.
             serviceContextScope.setId(contextId);
           }
-
-          // TODO check presence and availability of all services and fail if no response
-
           if (queuesHeader == null || queuesHeader.isEmpty()) {
             queuesHeader = serviceContextScope.defaultQueues();
           }
 
-          var id = instance.klabService().registerNewContext(ret, userScope);
-
+          var id = instance.klabService().declareContextScope(ret, userScope);
           var queuesAvailable = serviceContextScope.setupQueues(queuesHeader);
-
           Logging.INSTANCE.info("Queues set up for digital twin " + id + ": " + queuesAvailable);
 
           if (!serviceContextScope.initializeAgents(id)) {

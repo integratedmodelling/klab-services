@@ -198,6 +198,8 @@ public interface RuntimeService extends KlabService {
    * services.
    *
    * @return the context scope that represents the connected context, or null
+   * @deprecated the normal {@link #declareContextScope(ContextScope, UserScope)} should be used
+   *     after creating the scope using the configuration.
    */
   ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope);
 

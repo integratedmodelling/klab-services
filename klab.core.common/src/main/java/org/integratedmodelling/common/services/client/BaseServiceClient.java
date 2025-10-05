@@ -3,12 +3,14 @@ package org.integratedmodelling.common.services.client;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
+import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -20,6 +22,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
 
 import java.io.FileInputStream;
@@ -121,14 +124,42 @@ public abstract class BaseServiceClient implements KlabService {
   }
 
   @Override
-  public String registerNewSession(
+  public String declareSessionScope(
       SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
-    return "";
+
+    ScopeRequest request = new ScopeRequest();
+    request.setConfiguration(
+        DigitalTwin.Configuration.builder()
+            .id(sessionScope.getId())
+            .name(sessionScope.getName())
+            .build());
+    request
+        .getServiceIds()
+        .addAll(
+            sessionScope.getServices(KlabService.class).stream()
+                .map(KlabService::serviceId)
+                .toList());
+
+    return client.withScope(userScope).post(ServicesAPI.CREATE_SESSION, request, String.class);
   }
 
   @Override
-  public String registerNewContext(ContextScope contextScope, UserScope userScope) {
-    return "";
+  public String declareContextScope(ContextScope contextScope, UserScope userScope) {
+
+    ScopeRequest request = new ScopeRequest();
+    request.setConfiguration(
+        DigitalTwin.Configuration.builder()
+            .id(contextScope.getId())
+            .name(contextScope.getName())
+            .build());
+    request
+        .getServiceIds()
+        .addAll(
+            contextScope.getServices(KlabService.class).stream()
+                .map(KlabService::serviceId)
+                .toList());
+
+    return client.withScope(userScope).post(ServicesAPI.CREATE_CONTEXT, request, String.class);
   }
 
   @Override

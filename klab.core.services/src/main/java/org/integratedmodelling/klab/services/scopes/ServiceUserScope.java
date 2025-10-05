@@ -57,7 +57,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   private boolean messagingChecked = false;
   private JobManager jobManager;
 
-  protected Map<KlabService.Type, List<? extends KlabService>> serviceMap = new HashMap<>();
+  protected Map<KlabService.Type, List<KlabService>> serviceMap = new HashMap<>();
 
   @Override
   public final <T extends KlabService> T getService(
@@ -145,7 +145,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     this.data = parent.data;
     this.roles = parent.roles;
     this.local = parent.local;
-    this.serviceMap.putAll(parent.serviceMap);
     this.id = parent.id;
     this.jobManager = parent.jobManager;
   }
@@ -243,10 +242,12 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
       List<RuntimeService> runtimes) {
 
     serviceMap.clear();
-    serviceMap.put(KlabService.Type.REASONER, reasoners);
-    serviceMap.put(KlabService.Type.RESOLVER, resolvers);
-    serviceMap.put(KlabService.Type.RESOURCES, resources);
-    serviceMap.put(KlabService.Type.RUNTIME, runtimes);
+    serviceMap.computeIfAbsent(KlabService.Type.REASONER, t -> new ArrayList<>()).addAll(reasoners);
+    serviceMap.computeIfAbsent(KlabService.Type.RESOLVER, t -> new ArrayList<>()).addAll(resolvers);
+    serviceMap
+        .computeIfAbsent(KlabService.Type.RESOURCES, t -> new ArrayList<>())
+        .addAll(resources);
+    serviceMap.computeIfAbsent(KlabService.Type.RUNTIME, t -> new ArrayList<>()).addAll(runtimes);
   }
 
   @Override
@@ -430,48 +431,50 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   public List<SessionScope> getActiveSessions() {
     return List.of();
   }
-//
-//  /**
-//   * Call tryConnection() on all services; return true if the tryConnection tasks terminated within
-//   * the given timeout.
-//   *
-//   * @param i
-//   * @param timeUnit
-//   * @return
-//   */
-//  public boolean ensureServiceConnection(int i, TimeUnit timeUnit) {
-//
-//    List<BaseServiceClient> clients = new ArrayList<>();
-//    for (var type : KlabService.Type.operationCritical()) {
-//      for (var service : getServices(type.classify())) {
-//        if (service instanceof BaseServiceClient client) {
-//          clients.add(client);
-//        }
-//      }
-//    }
-//
-//    if (clients.isEmpty()) {
-//      return true;
-//    }
-//
-//    var executorService = Executors.newVirtualThreadPerTaskExecutor();
-//    try {
-//      executorService.invokeAll(
-//          clients.stream()
-//              .map(client -> (Callable<Boolean>) () -> client.tryConnection(i, timeUnit))
-//              .toList());
-//      executorService.shutdown();
-//      if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
-//        executorService.shutdownNow();
-//        return false;
-//      }
-//    } catch (InterruptedException ie) {
-//      executorService.shutdownNow();
-//      Thread.currentThread().interrupt();
-//      return false;
-//    }
-//    return true;
-//  }
+
+  //
+  //  /**
+  //   * Call tryConnection() on all services; return true if the tryConnection tasks terminated
+  // within
+  //   * the given timeout.
+  //   *
+  //   * @param i
+  //   * @param timeUnit
+  //   * @return
+  //   */
+  //  public boolean ensureServiceConnection(int i, TimeUnit timeUnit) {
+  //
+  //    List<BaseServiceClient> clients = new ArrayList<>();
+  //    for (var type : KlabService.Type.operationCritical()) {
+  //      for (var service : getServices(type.classify())) {
+  //        if (service instanceof BaseServiceClient client) {
+  //          clients.add(client);
+  //        }
+  //      }
+  //    }
+  //
+  //    if (clients.isEmpty()) {
+  //      return true;
+  //    }
+  //
+  //    var executorService = Executors.newVirtualThreadPerTaskExecutor();
+  //    try {
+  //      executorService.invokeAll(
+  //          clients.stream()
+  //              .map(client -> (Callable<Boolean>) () -> client.tryConnection(i, timeUnit))
+  //              .toList());
+  //      executorService.shutdown();
+  //      if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+  //        executorService.shutdownNow();
+  //        return false;
+  //      }
+  //    } catch (InterruptedException ie) {
+  //      executorService.shutdownNow();
+  //      Thread.currentThread().interrupt();
+  //      return false;
+  //    }
+  //    return true;
+  //  }
 
   public boolean validateServices() {
     // TODO check that all essential services are available and online, waiting a bit for connection
@@ -479,5 +482,10 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     return true;
   }
 
-  public void addService(KlabService klabService) {}
+  public void addService(KlabService klabService) {
+    serviceMap
+        .computeIfAbsent(
+            KlabService.Type.classify(klabService), type -> new ArrayList<KlabService>())
+        .add(klabService);
+  }
 }

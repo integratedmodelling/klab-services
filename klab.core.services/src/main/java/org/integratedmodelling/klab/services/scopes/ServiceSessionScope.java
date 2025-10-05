@@ -4,23 +4,16 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.objects.JobStatus;
-import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.base.BaseService;
 
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.function.Predicate;
 
 /**
  * The service-side {@link SessionScope}. One of these will be created by {@link ServiceUserScope}
@@ -29,8 +22,8 @@ import java.util.function.Predicate;
  * that hosts them. Other possible runtimes remain available to context and session scopes * using
  * <code>super.getServices()</code>.
  *
- * <p>Instrumented by {@link KlabService#registerNewSession(SessionScope, UserScope,
- * KActorsBehavior)}, {@link KlabService#registerNewContext(ContextScope, UserScope)}.
+ * <p>Instrumented by {@link KlabService#declareSessionScope(SessionScope, UserScope,
+ * KActorsBehavior)}, {@link KlabService#declareContextScope(ContextScope, UserScope)}.
  *
  * <p>Maintained by the {@link ScopeManager}
  */
@@ -47,6 +40,7 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     super(parent);
     this.data = Parameters.create();
     this.data.putAll(parent.data);
+
   }
 
   @Override

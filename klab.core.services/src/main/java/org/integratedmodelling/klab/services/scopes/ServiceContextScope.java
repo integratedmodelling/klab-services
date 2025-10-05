@@ -8,7 +8,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Predicate;
 
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
@@ -20,8 +19,6 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
-import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -31,7 +28,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -47,7 +43,7 @@ import org.ojalgo.concurrent.Parallelism;
  * through the services chosen by the session scope. Uses agents as needed. Relies on external
  * instrumentation after creation.
  *
- * <p>Instrumented by {@link KlabService#registerNewContext(ContextScope, UserScope)}.
+ * <p>Instrumented by {@link KlabService#declareContextScope(ContextScope, UserScope)}.
  *
  * <p>Maintained by the {@link ScopeManager}
  */
@@ -93,8 +89,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.contextObservation = parent.contextObservation;
     this.digitalTwin = parent.digitalTwin;
     this.observationCache = parent.observationCache;
+    this.serviceMap.putAll(parent.serviceMap);
     this.resolutionConstraints.putAll(parent.resolutionConstraints);
-    //    this.currentOperation = parent.currentOperation;
     this.resolutionCache = parent.resolutionCache;
     this.nextResolutionId = parent.nextResolutionId;
     this.currentActivity = parent.currentActivity;

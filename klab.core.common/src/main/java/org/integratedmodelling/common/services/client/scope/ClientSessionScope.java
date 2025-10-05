@@ -4,8 +4,6 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
-import org.integratedmodelling.klab.api.identities.Federation;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -100,7 +98,7 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
      * that hosts it.
      */
     var ret = new ClientContextScope(this, runtime, configuration.validate(this));
-    var id = runtime.registerNewContext(ret, userScope);
+    var id = runtime.declareContextScope(ret, userScope);
 
     if (id != null) {
       ret.setId(id);

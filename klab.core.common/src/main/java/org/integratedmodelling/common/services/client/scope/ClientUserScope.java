@@ -6,15 +6,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
 
 import org.integratedmodelling.common.authentication.scope.AbstractClientScope;
-import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.services.client.engine.EngineImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -113,27 +110,9 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
       return existing;
     }
 
-    var ret = new ClientSessionScope(this, sessionId, hostService) /* {
+    var ret = new ClientSessionScope(this, sessionId, hostService).withId(sessionId);
 
-          @Override
-          public <T extends KlabService> T getService(
-              Class<T> serviceClass, Predicate<T>... selectors) {
-            if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-              return (T) hostService;
-            }
-            return ClientUserScope.this.getService(serviceClass, selectors);
-          }
-
-          @Override
-          public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-            if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-              return List.of((T) hostService);
-            }
-            return ClientUserScope.this.getServices(serviceClass);
-          }
-        }*/.withId(sessionId);
-
-    var id = hostService.registerNewSession(ret, this, null);
+    var id = hostService.declareSessionScope(ret, this, null);
 
     if (id != null) {
       // should be the same
