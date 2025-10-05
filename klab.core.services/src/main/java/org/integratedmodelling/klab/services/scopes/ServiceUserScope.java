@@ -12,6 +12,7 @@ import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -225,37 +226,39 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     return ret;
   }
 
-  /**
-   * Must be called with clients for all services accessible from the client's environment, plus the
-   * singleton of the hosting service. If this is called on a scope with non-empty services, the
-   * scope will use these services instead of the default.
-   *
-   * @param resources
-   * @param resolvers
-   * @param reasoners
-   * @param runtimes
-   */
-  public void setServices(
-      List<ResourcesService> resources,
-      List<Resolver> resolvers,
-      List<Reasoner> reasoners,
-      List<RuntimeService> runtimes) {
-
-    serviceMap.clear();
-    serviceMap.computeIfAbsent(KlabService.Type.REASONER, t -> new ArrayList<>()).addAll(reasoners);
-    serviceMap.computeIfAbsent(KlabService.Type.RESOLVER, t -> new ArrayList<>()).addAll(resolvers);
-    serviceMap
-        .computeIfAbsent(KlabService.Type.RESOURCES, t -> new ArrayList<>())
-        .addAll(resources);
-    serviceMap.computeIfAbsent(KlabService.Type.RUNTIME, t -> new ArrayList<>()).addAll(runtimes);
-  }
+  //  /**
+  //   * Must be called with clients for all services accessible from the client's environment, plus
+  // the
+  //   * singleton of the hosting service. If this is called on a scope with non-empty services, the
+  //   * scope will use these services instead of the default.
+  //   *
+  //   * @param resources
+  //   * @param resolvers
+  //   * @param reasoners
+  //   * @param runtimes
+  //   */
+  //  public void setServices(
+  //      List<ResourcesService> resources,
+  //      List<Resolver> resolvers,
+  //      List<Reasoner> reasoners,
+  //      List<RuntimeService> runtimes) {
+  //
+  //    serviceMap.clear();
+  //    serviceMap.computeIfAbsent(KlabService.Type.REASONER, t -> new
+  // ArrayList<>()).addAll(reasoners);
+  //    serviceMap.computeIfAbsent(KlabService.Type.RESOLVER, t -> new
+  // ArrayList<>()).addAll(resolvers);
+  //    serviceMap
+  //        .computeIfAbsent(KlabService.Type.RESOURCES, t -> new ArrayList<>())
+  //        .addAll(resources);
+  //    serviceMap.computeIfAbsent(KlabService.Type.RUNTIME, t -> new
+  // ArrayList<>()).addAll(runtimes);
+  //  }
 
   @Override
   public SessionScope run(String behaviorName, RuntimeService host) {
-
-    SessionScope ret = null; // getUserSession();
-    // TODO add the behavior info
-    return ret;
+    throw new KlabIllegalStateException(
+        "Sessions at service side must be created through the service API");
   }
 
   @Override
@@ -484,8 +487,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
   public void addService(KlabService klabService) {
     serviceMap
-        .computeIfAbsent(
-            KlabService.Type.classify(klabService), type -> new ArrayList<KlabService>())
+        .computeIfAbsent(KlabService.Type.classify(klabService), type -> new ArrayList<>())
         .add(klabService);
   }
 }

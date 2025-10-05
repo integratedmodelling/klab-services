@@ -4,7 +4,9 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Request for a scope made by the client. The request endpoint specifies which kind of scope is
@@ -15,7 +17,7 @@ import java.util.List;
 public class ScopeRequest {
 
   private DigitalTwin.Configuration configuration;
-  private List<String> serviceIds = new ArrayList<>();
+  private Set<String> serviceIds = new HashSet<>();
   private String behaviorUrn;
 
   public DigitalTwin.Configuration getConfiguration() {
@@ -34,11 +36,11 @@ public class ScopeRequest {
     this.configuration = configuration;
   }
 
-  public List<String> getServiceIds() {
+  public Set<String> getServiceIds() {
     return serviceIds;
   }
 
-  public void setServiceIds(List<String> serviceIds) {
+  public void setServiceIds(Set<String> serviceIds) {
     this.serviceIds = serviceIds;
   }
 }

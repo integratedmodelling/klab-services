@@ -40,7 +40,7 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     super(parent);
     this.data = Parameters.create();
     this.data.putAll(parent.data);
-
+    
   }
 
   @Override
@@ -66,15 +66,16 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
   @Override
   public ContextScope createContext(DigitalTwin.Configuration configuration) {
-
-    final ServiceContextScope ret = new ServiceContextScope(this, configuration);
-    ret.setServices(
-        new ArrayList<ResourcesService>(getServices(ResourcesService.class)),
-        new ArrayList<>(getServices(Resolver.class)),
-        new ArrayList<>(getServices(Reasoner.class)),
-        new ArrayList<>(getServices(RuntimeService.class)));
-
-    return ret;
+      throw new KlabIllegalStateException("Contexts at service side must be created through the API");
+    //
+    //    final ServiceContextScope ret = new ServiceContextScope(this, configuration);
+    //    ret.setServices(
+    //        new ArrayList<ResourcesService>(getServices(ResourcesService.class)),
+    //        new ArrayList<>(getServices(Resolver.class)),
+    //        new ArrayList<>(getServices(Reasoner.class)),
+    //        new ArrayList<>(getServices(RuntimeService.class)));
+    //
+    //    return ret;
   }
 
   @Override

@@ -110,9 +110,15 @@ public class KlabScopeController {
             return existing.getId();
           }
         }
+
         var ret = new ServiceSessionScope(userScope);
         ret.setId(request.getConfiguration().getId());
         ret.setName(request.getConfiguration().getName());
+        for (var service : userScope.getServices(KlabService.class)) {
+          if (request.getServiceIds().contains(service.serviceId())) {
+            ret.addService(service);
+          }
+        }
 
         KActorsBehavior behavior = null;
         if (request.getBehaviorUrn() != null) {
@@ -192,22 +198,28 @@ public class KlabScopeController {
           identity.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, federation);
         }
 
-        var ret = sessionScope.createContext(request.getConfiguration());
+        if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
-        if (ret instanceof ServiceContextScope serviceContextScope) {
-          serviceContextScope.setHostServiceId(serviceIdHeader);
+          var ret = new ServiceContextScope(serviceSessionScope, request.getConfiguration());
+          for (var service : userScope.getServices(KlabService.class)) {
+            if (request.getServiceIds().contains(service.serviceId())) {
+              ret.addService(service);
+            }
+          }
+          ret.setHostServiceId(serviceIdHeader);
           if (contextId != null) {
-            serviceContextScope.setId(contextId);
+            ret.setId(contextId);
           }
           if (queuesHeader == null || queuesHeader.isEmpty()) {
-            queuesHeader = serviceContextScope.defaultQueues();
+            queuesHeader = ret.defaultQueues();
           }
 
+          // this creates the DT and registers the scope
           var id = instance.klabService().declareContextScope(ret, userScope);
-          var queuesAvailable = serviceContextScope.setupQueues(queuesHeader);
+          var queuesAvailable = ret.setupQueues(queuesHeader);
           Logging.INSTANCE.info("Queues set up for digital twin " + id + ": " + queuesAvailable);
 
-          if (!serviceContextScope.initializeAgents(id)) {
+          if (!ret.initializeAgents(id)) {
             Logging.INSTANCE.warn("agent initialization failed in context creation");
           }
 
