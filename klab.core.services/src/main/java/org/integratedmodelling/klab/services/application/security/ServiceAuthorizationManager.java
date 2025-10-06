@@ -237,7 +237,8 @@ public class ServiceAuthorizationManager {
    * roles. Otherwise the hub makes the decision and the JWT is parsed to obtain username, groups
    * and roles as expected.
    */
-  public EngineAuthorization validateToken(String token, String serverKey, String scopeHeader) {
+  public EngineAuthorization validateToken(
+      String token, String serverKey, String scopeHeader, String runtimeId) {
 
     EngineAuthorization ret = null;
 
@@ -280,9 +281,8 @@ public class ServiceAuthorizationManager {
               new EngineAuthorization(
                   hubId,
                   username,
-                  //                  brokerUrl,
-                  //                  federationId,
                   token,
+                  scopeHeader,
                   List.of(),
                   Collections.unmodifiableList(filterRoles(roleStrings)));
 
@@ -334,7 +334,7 @@ public class ServiceAuthorizationManager {
       /*
       anonymous user case also intercepts JWT token failure
        */
-      ret = new EngineAuthorization("nohub", "anonymous", null, List.of(), List.of());
+      ret = new EngineAuthorization("nohub", "anonymous", null, scopeHeader, List.of(), List.of());
       ret.setTokenString(ServicesAPI.ANONYMOUS_TOKEN);
     }
 
@@ -361,6 +361,7 @@ public class ServiceAuthorizationManager {
     if (scopeHeader == null) {
       resolvedScope = scope;
     } else {
+
       // ...then contextualized as needed
       var scopeData = ContextScope.parseScopeId(scopeHeader);
       resolvedScope =
@@ -368,8 +369,19 @@ public class ServiceAuthorizationManager {
               .get()
               .klabService()
               .getScopeManager()
-              .getScope(ret, scopeData.type().classify(), scopeData.scopeId());
+              .getScope(ret, scopeData.type().classify(), scopeData.scopeId(), runtimeId);
+
       if (resolvedScope == null && scope instanceof ServiceContextScope) {
+
+        /**
+         * We have not seen the scope before:
+         *
+         * <p>if it's a session scope, just create it from the user scope with the same ID and the
+         * runtime service indicated by runtimeId
+         *
+         * <p>if it's a context scope, create it from the session with a client DT after locating
+         * the runtime and retrieving the configuration from it.
+         */
         resolvedScope =
             klabService
                 .get()
@@ -388,7 +400,8 @@ public class ServiceAuthorizationManager {
               + scopeHeader);
     }
 
-    ret.setInfo("scopeHeader=" + scopeHeader + "; serverKey=" + serverKey);
+    ret.setInfo(
+        "scopeHeader=" + scopeHeader + "; serverKey=" + serverKey + "; runtimeId=" + runtimeId);
     ret.setScope(resolvedScope);
 
     return ret;

@@ -226,63 +226,24 @@ public class RuntimeService extends BaseService
     return ret;
   }
 
+  /**
+   * The context declaration in the runtime will create a server-side digital twin IIF the service
+   * in the scope is this service.
+   *
+   * @param contextScope a client scope that should record the ID for future communication. If the
+   *     ID is null, the call has failed.
+   * @param userScope used to set up federated behavior
+   * @return
+   */
   @Override
-  public String declareSessionScope(
-      SessionScope sessionScope, UserScope userScope, KActorsBehavior behavior) {
+  public String declareContextScope(ContextScope contextScope, SessionScope userScope) {
 
-    var sessionId = sessionScope.getId();
-    if (sessionId == null) {
-      sessionId = Utils.Names.shortUUID();
+    if (!serviceId().equals(contextScope.getHostServiceId())) {
+      return super.declareContextScope(contextScope, userScope);
     }
-
-    if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
-
-      serviceSessionScope.setId(sessionId);
-      getScopeManager().registerScope(serviceSessionScope);
-
-      // all other services need to know the session we created
-      var fail = new AtomicBoolean(false);
-      for (var serviceClass : List.of(Resolver.class, Reasoner.class, ResourcesService.class)) {
-        try {
-          Thread.ofVirtual()
-              .start(
-                  () -> {
-                    for (var service : serviceSessionScope.getServices(serviceClass)) {
-                      // if things are OK, the service repeats the ID back
-                      if (!serviceSessionScope
-                          .getId()
-                          .equals(
-                              service.declareSessionScope(
-                                  serviceSessionScope, userScope, behavior))) {
-                        fail.set(true);
-                      }
-                    }
-                  })
-              .join();
-        } catch (InterruptedException e) {
-          fail.set(true);
-        }
-      }
-
-      if (fail.get()) {
-        serviceSessionScope.send(
-            Notification.error(
-                "Error registering session with other services:" + " session is inoperative",
-                UIView.Interactivity.DISPLAY));
-        serviceSessionScope.setOperative(false);
-      }
-
-      return serviceSessionScope.getId();
-    }
-    throw new KlabIllegalArgumentException("unexpected scope class");
-  }
-
-  @Override
-  public String declareContextScope(ContextScope contextScope, UserScope userScope) {
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
-      serviceContextScope.setHostServiceId(serviceId());
       boolean isNew = serviceContextScope.getConfiguration().getId() == null;
       String scopeId =
           isNew
@@ -295,44 +256,14 @@ public class RuntimeService extends BaseService
 
       serviceContextScope.setId(scopeId);
       getScopeManager().registerScope(serviceContextScope);
+
+      /*
+       * this may take a while and it's done within a response. We should either spawn a thread (but then wait for the
+       * DT in subsequent calls) or make the context creation call asynchronous.
+       */
       serviceContextScope.setDigitalTwin(
           new DigitalTwinImpl(
               this, serviceContextScope, scopeId, userScope, getMainKnowledgeGraph()));
-
-      // all other services need to know the context we created. TODO we may also need to
-      // register with the stats services and maybe any independent authorities
-      var fail = new AtomicBoolean(false);
-      for (var serviceClass : List.of(Resolver.class, Reasoner.class, ResourcesService.class)) {
-        try {
-          Thread.ofVirtual()
-              .start(
-                  () -> {
-                    for (var service : serviceContextScope.getServices(serviceClass)) {
-                      // if things are OK, the service repeats the ID back
-                      if (service.status().isAvailable()
-                          && !serviceContextScope
-                              .getId()
-                              .equals(service.declareContextScope(serviceContextScope, userScope))) {
-                        fail.set(true);
-                      }
-                    }
-                  })
-              .join();
-        } catch (InterruptedException e) {
-          fail.set(true);
-        }
-      }
-
-      if (fail.get()) {
-        userScope.send(
-            Notification.error(
-                "Error registering context with other services: context is inoperative",
-                UIView.Interactivity.DISPLAY));
-        serviceContextScope.setOperative(false);
-        return null;
-      } else {
-        // TODO create DT configuration object and send it through the channel
-      }
 
       return serviceContextScope.getId();
     }
@@ -695,6 +626,12 @@ public class RuntimeService extends BaseService
     return scope;
   }
 
+  @Override
+  public DigitalTwin.Configuration getConfiguration(String scopeId, UserScope scope) {
+    var contextScope = getScopeManager().getScope(scopeId, ContextScope.class);
+    return contextScope == null ? null : contextScope.getConfiguration();
+  }
+
   private ContextScope reconstructContext(
       DigitalTwin.Configuration configuration, UserScope userScope) {
     // TODO find the scope in the knowledge graph. If existing, recreate the scope and the owning
@@ -705,7 +642,7 @@ public class RuntimeService extends BaseService
       session = userScope.getUserSession(this);
     }
     var ret = new ServiceContextScope((ServiceSessionScope) session, configuration);
-    declareContextScope(ret, userScope);
+    declareContextScope(ret, session);
     return ret;
   }
 
@@ -747,7 +684,8 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public <T extends Serializable> T retrieveAsset(String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
+  public <T extends Serializable> T retrieveAsset(
+      String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
     // TODO
     return null;
   }

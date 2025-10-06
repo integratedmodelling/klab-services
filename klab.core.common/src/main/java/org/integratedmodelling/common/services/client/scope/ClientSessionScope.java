@@ -28,6 +28,7 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
     this.runtimeService = runtimeService;
     this.name = sessionName;
     this.parentScope = parent;
+    this.setHostServiceId(runtimeService.serviceId());
     setId(null);
   }
 
@@ -98,7 +99,7 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
      * that hosts it.
      */
     var ret = new ClientContextScope(this, runtime, configuration.validate(this));
-    var id = runtime.declareContextScope(ret, userScope);
+    var id = runtime.declareContextScope(ret, this);
 
     if (id != null) {
       ret.setId(id);

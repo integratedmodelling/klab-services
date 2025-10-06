@@ -365,7 +365,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
     if (currentContext == null) {
       var name =
-          // TODO revise, but it's more fun than enumerating DTs
+          // TODO revise, but it's more fun than DT1, DT2 etc
           Utils.Strings.capitalize(
               Utils.Words.makeUpName(
                   "elephant",
@@ -373,6 +373,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                   "code",
                   "planet",
                   "environment",
+                  "pain",
+                  "knowledge",
+                  "suffering",
                   "sausage",
                   "cucumber"));
       currentContext = openNewContext(defaultDigitalTwinConfiguration(name));
@@ -386,18 +389,15 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
   }
 
   private DigitalTwin.Configuration defaultDigitalTwinConfiguration(String name) {
+    var runtime = user().getService(RuntimeService.class);
     return DigitalTwin.Configuration.builder()
         .name(name)
-        .serverUrl(user().getService(RuntimeService.class).getUrl())
+        .serverUrl(runtime.getUrl())
+        .serviceId(runtime.serviceId())
         .accessRights(ResourcePrivileges.create(user()))
         .persistence(Persistence.IDLE_TIMEOUT)
         .build();
   }
-
-  //  @Override
-  //  public SessionScope getCurrentSession() {
-  //    return currentSession;
-  //  }
 
   @Override
   public void setCurrentContext(ContextScope context) {
@@ -410,16 +410,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     //    }
     this.currentContext = context;
   }
-
-  //  @Override
-  //  public void setCurrentService(KlabService service) {
-  //    // TODO
-  //  }
-  //
-  //  @Override
-  //  public void setCurrentSession(SessionScope session) {
-  //    this.currentSession = session;
-  //  }
 
   @Override
   public void importProject(String workspaceName, String projectUrl, boolean overwriteExisting) {

@@ -371,6 +371,11 @@ public interface ServicesAPI {
     String CONNECT = "/connect";
 
     /**
+     * Retrieve the configuration correspondent to the passed ID. Execute in a valid session scope.
+     */
+    String GET_DIGITAL_TWIN_CONFIGURATION = "/configuration/{id}";
+
+    /**
      * PUT endpoint to ingest and start resolving an observation. Returns the observation ID that
      * can be used to follow the resolution task. Payload is a {@link
      * org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest} instance.

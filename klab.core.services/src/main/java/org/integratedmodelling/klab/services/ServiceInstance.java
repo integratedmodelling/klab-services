@@ -107,67 +107,6 @@ public abstract class ServiceInstance<T extends BaseService> {
   protected abstract T createPrimaryService(
       AbstractServiceDelegatingScope serviceScope, ServiceStartupOptions options);
 
-  //  /**
-  //   * Called only if the service(s) specified in the certificate are unavailable or missing. This
-  //   * will be called for all service types as long as the service is not available, with a
-  //   * configurable interval. The default implementation launches a thread waiting for a service
-  // to
-  //   * become available locally and keeps track of the online status of the overall service
-  // resulting
-  //   * from the availability.
-  //   *
-  //   * <p>For essential services, this will be called every X minutes for as long as at least one
-  //   * instance of the service is missing. Non-essential services will only get one call with
-  //   * timeUnavailable == 0.
-  //   *
-  //   * @param serviceType
-  //   * @param timeUnavailable time since noticing the unavailability for the first time, in
-  // seconds.
-  //   *     The first call will always get 0 here.
-  //   * @return
-  //   */
-  //  protected KlabService createDefaultService(
-  //      KlabService.Type serviceType, Scope scope, long timeUnavailable) {
-  //    return createLocalServiceClient(
-  //        serviceType, serviceType.localServiceUrl(), scope, serviceScope.getIdentity());
-  //  }
-  //
-  //  private <T extends KlabService> T createLocalServiceClient(
-  //      KlabService.Type serviceType, URL url, Scope scope, Identity identity) {
-  //
-  //    return switch (serviceType) {
-  //      case REASONER ->
-  //          (T)
-  //              ServiceClientCatalog.INSTANCE.getService(
-  //                  url,
-  //                  SettingsImpl.forSlaveServices(KlabService.Type.REASONER, service.settings()),
-  //                  scope,
-  //                  Reasoner.class);
-  //      case RESOURCES ->
-  //          (T)
-  //              ServiceClientCatalog.INSTANCE.getService(
-  //                  url,
-  //                  SettingsImpl.forSlaveServices(KlabService.Type.RESOURCES, service.settings()),
-  //                  scope,
-  //                  ResourcesService.class);
-  //      case RESOLVER ->
-  //          (T)
-  //              ServiceClientCatalog.INSTANCE.getService(
-  //                  url,
-  //                  SettingsImpl.forSlaveServices(KlabService.Type.RESOLVER, service.settings()),
-  //                  scope,
-  //                  Resolver.class);
-  //      case RUNTIME ->
-  //          (T)
-  //              ServiceClientCatalog.INSTANCE.getService(
-  //                  url,
-  //                  SettingsImpl.forSlaveServices(KlabService.Type.RUNTIME, service.settings()),
-  //                  scope,
-  //                  RuntimeService.class);
-  //      default -> throw new IllegalStateException("Unexpected value: " + serviceType);
-  //    };
-  //  }
-
   /**
    * Wait for available (online) status until the passed timeout. If the service hasn't been
    * started, this will time out without effect.

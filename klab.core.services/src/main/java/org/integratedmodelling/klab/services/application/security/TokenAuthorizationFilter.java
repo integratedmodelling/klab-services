@@ -28,13 +28,14 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
       throws IOException, ServletException {
 
     String tokenString = req.getHeader(HttpHeaders.AUTHORIZATION);
-    String observerToken = req.getHeader(ServicesAPI.SCOPE_HEADER);
+    String scopeId = req.getHeader(ServicesAPI.SCOPE_HEADER);
     String serverKey = req.getHeader(ServicesAPI.SERVER_KEY_HEADER);
+    String runtimeId = req.getHeader(ServicesAPI.SERVICE_ID_HEADER);
 
     if (tokenString != null) {
       try {
         EngineAuthorization token =
-            authorizationManager.validateToken(tokenString, serverKey, observerToken);
+            authorizationManager.validateToken(tokenString, serverKey, scopeId, runtimeId);
         if (token != null && token.isAuthenticated()) {
           SecurityContextHolder.getContext().setAuthentication(token);
         }

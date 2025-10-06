@@ -48,7 +48,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   private Federation federationData;
   private Consumer<Status> engineStatusMonitor;
   private BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor;
-  private boolean firstTimeOnline = false;
+  private boolean onlineStatusNotified = false;
 
   public EngineImpl(
       Consumer<Status> engineStatusMonitor,
@@ -151,9 +151,12 @@ public class EngineImpl implements Engine, PropertyHolder {
     if (engineStatusMonitor != null) {
       engineStatusMonitor.accept(status);
     }
-    if (!firstTimeOnline && status.isOperational()) {
+    if (!onlineStatusNotified && status.isOperational()) {
       // advertise the user scope to all online services
+      // TODO strategy is static - if we have services coming in at runtime we will need to notify
+      //  them too.
       notifyScopeToServices(defaultUser);
+      onlineStatusNotified = true;
     }
   }
 

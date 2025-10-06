@@ -281,28 +281,24 @@ public class RuntimeClient extends BaseServiceClient
       // Add the known data that are null; notify for anything that isn't and differs.
       configuration.defineFromExisting(descriptor);
 
-      ret = new ClientContextScope(sessionScope, this, configuration) /* {
-            @Override
-            public <T extends KlabService> T getService(
-                Class<T> serviceClass, Predicate<T>... selectors) {
-              return RuntimeService.class.equals(serviceClass)
-                  ? (T) service
-                  : userScope.getService(serviceClass, selectors);
-            }
-
-            @Override
-            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-              return RuntimeService.class.equals(serviceClass)
-                  ? List.of((T) service)
-                  : userScope.getServices(serviceClass);
-            }
-          }*/;
+      ret = new ClientContextScope(sessionScope, this, configuration);
       ret.setId(descriptor.getId());
       ret.createDigitalTwin(descriptor.getId());
       return ret;
     }
 
     return null;
+  }
+
+  @Override
+  public DigitalTwin.Configuration getConfiguration(String scopeId, UserScope scope) {
+    return client
+        .withScope(scope)
+        .get(
+            ServicesAPI.RUNTIME.GET_DIGITAL_TWIN_CONFIGURATION,
+            DigitalTwin.Configuration.class,
+            "id",
+            scopeId);
   }
 
   @Override

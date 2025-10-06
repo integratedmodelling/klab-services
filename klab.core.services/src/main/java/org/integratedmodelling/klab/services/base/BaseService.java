@@ -571,8 +571,17 @@ public abstract class BaseService implements KlabService {
     throw new KlabIllegalArgumentException("unexpected scope class");
   }
 
+  /**
+   * As a default, the service will create a client configuration for the digital twin. In the
+   * runtime, this will be overridden to create the actual DT.
+   *
+   * @param contextScope a client scope that should record the ID for future communication. If the
+   *     ID is null, the call has failed.
+   * @param userScope used to set up federated behavior
+   * @return
+   */
   @Override
-  public String declareContextScope(ContextScope contextScope, UserScope userScope) {
+  public String declareContextScope(ContextScope contextScope, SessionScope userScope) {
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 

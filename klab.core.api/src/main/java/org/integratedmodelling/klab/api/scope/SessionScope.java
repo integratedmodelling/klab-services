@@ -35,6 +35,13 @@ public interface SessionScope extends UserScope {
   String getId();
 
   /**
+   * The service ID of the runtime that hosts the session and the digital twins connected to it.
+   *
+   * @return
+   */
+  String getHostServiceId();
+
+  /**
    * Return all the active observation scopes. These may be the currently "alive" ones or any
    * persistent observation scope left out previously. Active means they haven't expired, not that
    * there has been any recent activity.

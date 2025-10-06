@@ -435,50 +435,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     return List.of();
   }
 
-  //
-  //  /**
-  //   * Call tryConnection() on all services; return true if the tryConnection tasks terminated
-  // within
-  //   * the given timeout.
-  //   *
-  //   * @param i
-  //   * @param timeUnit
-  //   * @return
-  //   */
-  //  public boolean ensureServiceConnection(int i, TimeUnit timeUnit) {
-  //
-  //    List<BaseServiceClient> clients = new ArrayList<>();
-  //    for (var type : KlabService.Type.operationCritical()) {
-  //      for (var service : getServices(type.classify())) {
-  //        if (service instanceof BaseServiceClient client) {
-  //          clients.add(client);
-  //        }
-  //      }
-  //    }
-  //
-  //    if (clients.isEmpty()) {
-  //      return true;
-  //    }
-  //
-  //    var executorService = Executors.newVirtualThreadPerTaskExecutor();
-  //    try {
-  //      executorService.invokeAll(
-  //          clients.stream()
-  //              .map(client -> (Callable<Boolean>) () -> client.tryConnection(i, timeUnit))
-  //              .toList());
-  //      executorService.shutdown();
-  //      if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
-  //        executorService.shutdownNow();
-  //        return false;
-  //      }
-  //    } catch (InterruptedException ie) {
-  //      executorService.shutdownNow();
-  //      Thread.currentThread().interrupt();
-  //      return false;
-  //    }
-  //    return true;
-  //  }
-
   public boolean validateServices() {
     // TODO check that all essential services are available and online, waiting a bit for connection
     //  if necessary
@@ -486,8 +442,12 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   }
 
   public void addService(KlabService klabService) {
-    serviceMap
-        .computeIfAbsent(KlabService.Type.classify(klabService), type -> new ArrayList<>())
-        .add(klabService);
+    var list =
+        serviceMap.computeIfAbsent(
+            KlabService.Type.classify(klabService), type -> new ArrayList<>());
+    // service may be there if we authenticated with a user certificate
+    if (!list.stream().anyMatch(s -> s.serviceId().equals(klabService.serviceId()))) {
+      list.add(klabService);
+    }
   }
 }

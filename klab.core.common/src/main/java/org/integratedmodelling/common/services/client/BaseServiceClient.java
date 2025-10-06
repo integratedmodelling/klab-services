@@ -144,14 +144,10 @@ public abstract class BaseServiceClient implements KlabService {
   }
 
   @Override
-  public String declareContextScope(ContextScope contextScope, UserScope userScope) {
+  public String declareContextScope(ContextScope contextScope, SessionScope userScope) {
 
     ScopeRequest request = new ScopeRequest();
-    request.setConfiguration(
-        DigitalTwin.Configuration.builder()
-            .id(contextScope.getId())
-            .name(contextScope.getName())
-            .build());
+    request.setConfiguration(contextScope.getConfiguration());
     request
         .getServiceIds()
         .addAll(

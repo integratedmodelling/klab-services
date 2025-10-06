@@ -106,10 +106,6 @@ public interface RuntimeService extends KlabService {
     }
   }
 
-  //  default String getServiceName() {
-  //    return "klab.runtime.service";
-  //  }
-
   /**
    * Submit an unresolved observation to the digital twin for inclusion in the knowledge graph in
    * the passed scope and start its resolution. The return value is a future for the resolved
@@ -194,14 +190,21 @@ public interface RuntimeService extends KlabService {
   /**
    * Establishes a connection to a specific context within the designated session scope. The call
    * passes a configuration and gets back a context, which may have been reconstructed at the
-   * service side from existing storage. The scope will later be registered with the needed
-   * services.
+   * service side from existing storage. The scope will later be registered with the services.
    *
    * @return the context scope that represents the connected context, or null
-   * @deprecated the normal {@link #declareContextScope(ContextScope, UserScope)} should be used
-   *     after creating the scope using the configuration.
    */
   ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope);
+
+  /**
+   * Retrieve the configuration of the DT identified by scopeId and hosted within a specified
+   * session scope.
+   *
+   * @param scopeId
+   * @param scope
+   * @return
+   */
+  DigitalTwin.Configuration getConfiguration(String scopeId, UserScope scope);
 
   /**
    * Release the passed session, releasing any context scopes created in it.

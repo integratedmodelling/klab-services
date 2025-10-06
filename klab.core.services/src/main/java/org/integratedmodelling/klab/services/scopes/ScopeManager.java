@@ -2,29 +2,6 @@ package org.integratedmodelling.klab.services.scopes;
 
 // import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 // import io.reacted.core.reactorsystem.ReActorSystem;
-import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.identities.Federation;
-import org.integratedmodelling.common.authentication.UserIdentityImpl;
-import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
-import org.integratedmodelling.klab.api.identities.PartnerIdentity;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.klab.rest.GroupImpl;
-import org.integratedmodelling.klab.services.JobManager;
-import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
-import org.integratedmodelling.klab.services.base.BaseService;
-import org.springframework.security.core.context.SecurityContextHolder;
-
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -35,7 +12,25 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
+import org.integratedmodelling.common.authentication.UserIdentityImpl;
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.identities.Federation;
+import org.integratedmodelling.klab.api.identities.PartnerIdentity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.integratedmodelling.klab.rest.GroupImpl;
+import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 
 /**
  * The scope manager maintains service-side scopes that are generated through the orchestrating
@@ -180,18 +175,6 @@ public class ScopeManager {
     ret = login(createUserIdentity(authorization));
 
     ret.getRoles().addAll(authorization.getRoles());
-    //    var federation = Klab.INSTANCE.getFederationData(ret.getUser());
-    //
-    //    if (authorization.isLocal()) {
-    //      ret.setLocal(true);
-    //      // setup queues in scope if user is local and messaging is configured, Queue will be
-    //      // servicetype.username.queuetype
-    //      var brokerURI = authorization.getBrokerUrl();
-    //      if (brokerURI != null) {
-    //        federation = new Federation(authorization.getFederationId(), brokerURI);
-    //        ret.setupMessaging(federation, authorization.getFederationId(), ret.defaultQueues());
-    //      }
-    //    } else {
     var federation = Klab.INSTANCE.getFederationData(ret.getUser());
     if (federation != null) {
       var brokerURI = federation.getBroker();
@@ -199,7 +182,6 @@ public class ScopeManager {
         ret.setupMessaging(federation, federation.getId(), ret.defaultQueues());
       }
     }
-    //    }
     Logging.INSTANCE.info(
         "User "
             + ret.getUser().getUsername()
@@ -273,7 +255,8 @@ public class ScopeManager {
   }
 
   /**
-   * Get the scope for the passed parameters. If the scope isn't there or has expired,
+   * Get the scope for the passed parameters. If the scope isn't there or has expired, rebuild it by
+   * locating the service
    *
    * @param authorization
    * @param scopeClass
@@ -282,41 +265,95 @@ public class ScopeManager {
    * @return
    */
   public <T extends Scope> T getScope(
-      EngineAuthorization authorization, Class<T> scopeClass, String scopeId) {
+      EngineAuthorization authorization, Class<T> scopeClass, String scopeId, String runtimeId) {
 
     var userScope = getOrCreateUserScope(authorization);
     if (scopeId == null && userScope != null && scopeClass.isAssignableFrom(userScope.getClass())) {
       return (T) userScope;
     }
 
-    if (scopeId != null) {
+    if (scopeId != null && userScope != null) {
+
       var ret = scopes.get(scopeId);
       if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
         return (T) ret;
       }
 
-      /*
-      only scope ID that we can create is a single session with the same ID of the user or federation
-       */
-      if (SessionScope.class.isAssignableFrom(scopeClass)) {
-        var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
-        var acceptedSessionId =
-            federation == null
-                ? userScope.getUser().getUsername()
-                : federation.getId().replace(".", "_");
-        if (scopeId.equals(acceptedSessionId)) {
-          ret = new ServiceSessionScope(userScope);
-          ret.setStatus(Scope.Status.WAITING);
-          ((ServiceSessionScope) ret).setId(scopeId);
-          ((ServiceSessionScope) ret)
-              .setName(
-                  federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
-                      ? userScope.getUser().getUsername()
-                      : federation.getId());
-          //          service.registerNewSession((SessionScope) ret, userScope, null);
-          return (T) ret;
+      // not available but it's an inner scope; see if we can reconstruct the scope
+      if (ContextScope.class.isAssignableFrom(scopeClass)) {
+
+        if (runtimeId == null) {
+          return null;
         }
+
+        var sessionId = scopeId.split("\\.")[0];
+        var sessionScope = getOrCreateSessionScope(sessionId, authorization, userScope, runtimeId);
+        if (sessionScope == null) {
+          return null;
+        }
+
+        // we need the original service to retrieve the configuration
+        var originalService =
+            userScope.getService(RuntimeService.class, s -> runtimeId.equals(s.serviceId()));
+
+        if (originalService != null) {
+          var configuration = originalService.getConfiguration(scopeId, userScope);
+          if (configuration != null) {
+            ret = new ServiceContextScope(sessionScope, configuration);
+            for (var service : userScope.getServices(KlabService.class)) {
+              if (service instanceof RuntimeService
+                  && runtimeId != null
+                  && !service.serviceId().equals(runtimeId)) {
+                continue;
+              }
+              ret.addService(service);
+            }
+            service.declareContextScope((ContextScope) ret, sessionScope);
+            return (T) ret;
+          }
+        }
+
+      } else if (SessionScope.class.isAssignableFrom(scopeClass)) {
+        return (T) getOrCreateSessionScope(scopeId, authorization, userScope, runtimeId);
       }
+    }
+    return null;
+  }
+
+  public ServiceSessionScope getOrCreateSessionScope(
+      String sessionId,
+      EngineAuthorization authorization,
+      ServiceUserScope userScope,
+      String runtimeId) {
+
+    var ret = getScope(sessionId, ServiceSessionScope.class);
+    if (ret != null) {
+      return ret;
+    }
+
+    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
+    var acceptedSessionId =
+        federation == null
+            ? userScope.getUser().getUsername()
+            : federation.getId().replace(".", "_");
+    if (sessionId.equals(acceptedSessionId)) {
+      ret = new ServiceSessionScope(userScope);
+      ret.setStatus(Scope.Status.WAITING);
+      ret.setId(sessionId);
+      ret.setName(
+          federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
+              ? userScope.getUser().getUsername()
+              : federation.getId());
+      for (var service : userScope.getServices(KlabService.class)) {
+        if (service instanceof RuntimeService
+            && runtimeId != null
+            && !service.serviceId().equals(runtimeId)) {
+          continue;
+        }
+        ret.addService(service);
+      }
+      service.declareSessionScope((SessionScope) ret, userScope, null);
+      return ret;
     }
     return null;
   }

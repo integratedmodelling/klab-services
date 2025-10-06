@@ -52,6 +52,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     this.configuration = configuration;
     this.name = configuration.getName();
     this.shardingStrategy = new Data.ShardingStrategy();
+    this.setHostServiceId(runtimeService.serviceId());
     resolutionConstraints.put(
         ResolutionConstraint.Type.Provenance,
         ResolutionConstraint.of(
