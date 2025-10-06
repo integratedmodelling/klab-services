@@ -304,6 +304,7 @@ public class ScopeManager {
               ret.addService(service);
             }
             ret.setId(scopeId);
+            ret.setHostServiceId(runtimeId);
             service.declareContextScope((ContextScope) ret, sessionScope);
             return (T) ret;
           }
@@ -336,6 +337,7 @@ public class ScopeManager {
       ret = new ServiceSessionScope(userScope);
       ret.setStatus(Scope.Status.WAITING);
       ret.setId(sessionId);
+      ret.setHostServiceId(runtimeId);
       ret.setName(
           federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
               ? userScope.getUser().getUsername()
