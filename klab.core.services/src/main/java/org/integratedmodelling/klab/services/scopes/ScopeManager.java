@@ -350,7 +350,7 @@ public class ScopeManager {
         }
         ret.addService(service);
       }
-      service.declareSessionScope((SessionScope) ret, userScope, null);
+      service.declareSessionScope(ret, userScope, null);
       return ret;
     }
     return null;
