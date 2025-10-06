@@ -40,7 +40,7 @@ import org.integratedmodelling.klab.services.application.security.EngineAuthoriz
 public class ScopeManager {
 
   //  private ReActorSystem actorSystem = null;
-  KlabService service;
+  private KlabService service;
 
   /**
    * Every scope managed by this service. The relationship between scopes is managed through the
@@ -300,14 +300,10 @@ public class ScopeManager {
           var configuration = originalService.getConfiguration(scopeId, userScope);
           if (configuration != null) {
             ret = new ServiceContextScope(sessionScope, configuration);
-            for (var service : userScope.getServices(KlabService.class)) {
-              if (service instanceof RuntimeService
-                  && runtimeId != null
-                  && !service.serviceId().equals(runtimeId)) {
-                continue;
-              }
+            for (var service : sessionScope.getServices(KlabService.class)) {
               ret.addService(service);
             }
+            ret.setId(scopeId);
             service.declareContextScope((ContextScope) ret, sessionScope);
             return (T) ret;
           }

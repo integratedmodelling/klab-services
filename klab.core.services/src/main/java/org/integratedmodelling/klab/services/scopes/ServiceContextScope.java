@@ -135,9 +135,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                   }
                 });
     this.nextResolutionId = new AtomicLong(-1L);
-    /*
-     * TODO choose the services if this context or user requires specific ones
-     */
   }
 
   @Override

@@ -346,7 +346,11 @@ public class ServiceAuthorizationManager {
           EnumSet.of(
               Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER, Role.ROLE_DATA_MANAGER));
       ret.setAuthenticated(true);
-
+      if (token != null) {
+        // if we don't do this, in local setting (no hub authenticating) we will get the anonymous
+        // token
+        ret.setTokenString(token);
+      }
       var owner = klabService.get().getServiceOwner();
       if (owner instanceof UserIdentity user && "anonymous".equals(ret.getUsername())) {
         ret.setUsername(user.getUsername());

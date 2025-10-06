@@ -326,6 +326,13 @@ public class ResolverService extends BaseService implements Resolver {
     return ret;
   }
 
+  @Override
+  public String declareContextScope(ContextScope contextScope, SessionScope userScope) {
+    // instrument the scope for resolving observations and keeping resolution results across calls.
+    contextScope.getData().put(RESOLUTION_GRAPH_KEY, ResolutionGraph.create(contextScope));
+    return super.declareContextScope(contextScope, userScope);
+  }
+
   private StringBuffer encodeActuator(
       Actuator actuator, int offset, Map<String, String> resources) {
     String ofs = org.integratedmodelling.common.utils.Utils.Strings.spaces(offset);
