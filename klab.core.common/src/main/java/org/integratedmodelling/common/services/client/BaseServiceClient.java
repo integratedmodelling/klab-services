@@ -1,10 +1,12 @@
 package org.integratedmodelling.common.services.client;
 
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -21,6 +23,7 @@ import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
@@ -140,11 +143,25 @@ public abstract class BaseServiceClient implements KlabService {
                 .map(KlabService::serviceId)
                 .toList());
 
-    return client.withScope(userScope).post(ServicesAPI.CREATE_SESSION, request, String.class);
+    var ret = client.withScope(userScope).post(ServicesAPI.CREATE_SESSION, request, String.class);
+
+    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
+    if (federation != null && sessionScope instanceof MessagingChannelImpl messagingChannel) {
+      var queues =
+          getQueuesFromHeader(
+              sessionScope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+      if (queues == null) {
+        // TODO error recovery
+        Logging.INSTANCE.error("no queues found in messaging header");
+      }
+      messagingChannel.setupMessaging(federation, ret, queues);
+    }
+
+    return ret;
   }
 
   @Override
-  public String declareContextScope(ContextScope contextScope, SessionScope userScope) {
+  public String declareContextScope(ContextScope contextScope, SessionScope sessionScope) {
 
     ScopeRequest request = new ScopeRequest();
     request.setConfiguration(contextScope.getConfiguration());
@@ -155,7 +172,36 @@ public abstract class BaseServiceClient implements KlabService {
                 .map(KlabService::serviceId)
                 .toList());
 
-    return client.withScope(userScope).post(ServicesAPI.CREATE_CONTEXT, request, String.class);
+    var ret =
+        client.withScope(sessionScope).post(ServicesAPI.CREATE_CONTEXT, request, String.class);
+
+    var federation = Klab.INSTANCE.getFederationData(sessionScope.getUser());
+    if (federation != null && contextScope instanceof MessagingChannelImpl messagingChannel) {
+      var queues =
+          getQueuesFromHeader(
+              contextScope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+      if (queues == null) {
+        // TODO error recovery
+        Logging.INSTANCE.error("no queues found in messaging header");
+      }
+      messagingChannel.setupMessaging(federation, ret, queues);
+    }
+
+    return ret;
+  }
+
+  protected Set<Message.Queue> getQueuesFromHeader(SessionScope scope, String responseHeader) {
+    if (responseHeader != null) {
+      var ret = EnumSet.noneOf(Message.Queue.class);
+      if (!responseHeader.isBlank()) {
+        String[] qq = responseHeader.split(", ");
+        for (var q : qq) {
+          ret.add(Message.Queue.valueOf(q));
+        }
+      }
+      return ret;
+    }
+    return scope.defaultQueues();
   }
 
   @Override
