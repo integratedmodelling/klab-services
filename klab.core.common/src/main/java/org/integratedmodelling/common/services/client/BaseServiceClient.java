@@ -9,10 +9,13 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+
+import org.glassfish.tyrus.spi.ClientContainer;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
+import org.integratedmodelling.common.services.client.scope.ClientContextScope;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -35,6 +38,8 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
+
+import javax.cache.event.CacheEntryListener;
 
 public abstract class BaseServiceClient implements KlabService {
 
@@ -161,7 +166,13 @@ public abstract class BaseServiceClient implements KlabService {
     var scopeId =
         client.withScope(sessionScope).post(ServicesAPI.CREATE_CONTEXT, request, String.class);
 
-    return scopeId == null ? null : setupMessaging(contextScope, sessionScope, scopeId);
+    if (scopeId != null) {
+      setupMessaging(contextScope, sessionScope, scopeId);
+      if (contextScope instanceof ClientContextScope clientContextScope) {
+        clientContextScope.createDigitalTwin(scopeId);
+      }
+    }
+    return scopeId;
   }
 
   private String setupMessaging(SessionScope sessionScope, UserScope userScope, String scopeId) {
