@@ -17,7 +17,7 @@ public class ResolverClient extends BaseServiceClient implements Resolver {
 
   private Capabilities capabilities;
 
-  public ResolverClient(
+  ResolverClient(
       ServiceClientCatalog.ClientMonitor monitor,
       Scope userScope,
       Settings settings,

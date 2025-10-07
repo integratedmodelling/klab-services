@@ -79,7 +79,7 @@ public class ResourcesClient extends BaseServiceClient
                 }
               });
 
-  public ResourcesClient(
+  ResourcesClient(
       ServiceClientCatalog.ClientMonitor monitor,
       Scope userScope,
       Settings settings,

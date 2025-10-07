@@ -31,7 +31,7 @@ public class RuntimeClient extends BaseServiceClient
 
   private Capabilities capabilities = null;
 
-  public RuntimeClient(
+  RuntimeClient(
       ServiceClientCatalog.ClientMonitor monitor,
       Scope userScope,
       Settings settings,
