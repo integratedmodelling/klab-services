@@ -28,6 +28,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -43,7 +44,7 @@ import org.ojalgo.concurrent.Parallelism;
  * through the services chosen by the session scope. Uses agents as needed. Relies on external
  * instrumentation after creation.
  *
- * <p>Instrumented by {@link KlabService#declareContextScope(ContextScope, UserScope)}.
+ * <p>Instrumented by {@link KlabService#declareContextScope(ContextScope, SessionScope)}.
  *
  * <p>Maintained by the {@link ScopeManager}
  */
@@ -154,16 +155,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public Observation getObserver() {
     return this.observer;
   }
-
-  //  @Override
-  //  public boolean isConsistent() {
-  //    return false;
-  //  }
-  //
-  //  @Override
-  //  public Collection<Observation> getInconsistencies(boolean dependentOnly) {
-  //    return List.of();
-  //  }
 
   @Override
   public <T extends Observation> Collection<T> getPerspectives(Observable observable) {

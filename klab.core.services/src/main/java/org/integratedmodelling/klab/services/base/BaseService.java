@@ -12,26 +12,23 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.authentication.Authentication;
-import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
-import org.integratedmodelling.common.services.client.engine.SettingsImpl;
-import org.integratedmodelling.klab.api.authentication.CRUDOperation;
-import org.integratedmodelling.klab.api.configuration.Setting;
-import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.services.client.engine.ServiceMonitor;
+import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.configuration.Setting;
+import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -55,7 +52,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
@@ -85,10 +81,8 @@ public abstract class BaseService implements KlabService {
   private ComponentRegistry componentRegister;
   private String instanceKey = Utils.Names.newName();
   private long bootTime = System.currentTimeMillis();
-  //  private ServiceMonitor serviceMonitor;
   protected Settings settings;
   protected Settings settingsForSlaveServices;
-  //  private StampedLock lockFile;
   private Identity identity;
 
   protected BaseService(
@@ -590,10 +584,7 @@ public abstract class BaseService implements KlabService {
             "resolver: context scope has no ID, cannot register " + "a scope autonomously");
       }
 
-      /*
-       * The resolver needs a digital twin client installed to find existing observations through the
-       * service-level context scope.
-       */
+      // Create a client digital twin. This is overridden in the runtime to create the actual DT.
       if (contextScope.getHostServiceId() != null) {
         serviceContextScope.setDigitalTwin(
             new ClientDigitalTwin(contextScope, serviceContextScope.getId()));

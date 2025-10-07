@@ -224,18 +224,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
 
     /* federation must be already established at this point */
-    this.defaultUser = new ClientUserScope((UserIdentity) authData.getFirst(), this) /* {
-          @Override
-          public <T extends KlabService> T getService(
-              Class<T> serviceClass, Predicate<T>... selectors) {
-            return (T) serviceMonitor.getService(serviceClass, selectors);
-          }
-
-          @Override
-          public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-            return serviceMonitor.getServices(serviceClass);
-          }
-        }*/;
+    this.defaultUser = new ClientUserScope((UserIdentity) authData.getFirst(), this);
 
     this.users.add(this.defaultUser);
     this.serviceMonitor =

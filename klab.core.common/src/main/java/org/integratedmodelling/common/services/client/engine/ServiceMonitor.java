@@ -117,7 +117,7 @@ public class ServiceMonitor {
   }
 
   private void handleStatus(
-      BaseServiceClient service, KlabService.ServiceStatus status, Boolean statusChanged) {
+          BaseServiceClient service, KlabService.ServiceStatus status, Boolean statusChanged) {
     clients.put(service, status);
     for (var serviceListener : serviceConsumers) {
       serviceListener.accept(service, status);

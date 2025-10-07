@@ -23,7 +23,7 @@ import java.util.List;
  * <code>super.getServices()</code>.
  *
  * <p>Instrumented by {@link KlabService#declareSessionScope(SessionScope, UserScope,
- * KActorsBehavior)}, {@link KlabService#declareContextScope(ContextScope, UserScope)}.
+ * KActorsBehavior)}, {@link KlabService#declareContextScope(ContextScope, SessionScope)}.
  *
  * <p>Maintained by the {@link ScopeManager}
  */
@@ -40,7 +40,6 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     super(parent);
     this.data = Parameters.create();
     this.data.putAll(parent.data);
-    
   }
 
   @Override
@@ -66,16 +65,7 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
   @Override
   public ContextScope createContext(DigitalTwin.Configuration configuration) {
-      throw new KlabIllegalStateException("Contexts at service side must be created through the API");
-    //
-    //    final ServiceContextScope ret = new ServiceContextScope(this, configuration);
-    //    ret.setServices(
-    //        new ArrayList<ResourcesService>(getServices(ResourcesService.class)),
-    //        new ArrayList<>(getServices(Resolver.class)),
-    //        new ArrayList<>(getServices(Reasoner.class)),
-    //        new ArrayList<>(getServices(RuntimeService.class)));
-    //
-    //    return ret;
+    throw new KlabIllegalStateException("Contexts at service side are created through the API");
   }
 
   @Override

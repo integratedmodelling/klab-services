@@ -8,8 +8,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
-
-import com.google.common.collect.Sets;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.ServiceIdentityImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
@@ -291,9 +289,6 @@ public abstract class ServiceInstance<T extends BaseService> {
   private void setEnvironment(ServiceStartupOptions options) {
     this.startupOptions = options;
     // TODO sync the config environment with the options
-    if (options.getDataDir() != null) {
-      //            Configuration.INSTANCE.setDataPath();
-    }
   }
 
   private void timedTasks() {

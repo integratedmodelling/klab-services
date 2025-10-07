@@ -158,8 +158,6 @@ public enum ServiceClientCatalog {
       }
     }
 
-    // TODO this should be called internally when the reference count drops to zero. Service
-    //  clients should decrement the ref count
     private void close() {
       this.schedule.cancel(true);
       serviceClients.remove(serverId);

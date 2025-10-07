@@ -2,13 +2,10 @@ package org.integratedmodelling.klab.services.scopes;
 
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
-import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
@@ -17,7 +14,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -164,18 +160,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     // ensure any virtual defined for this scope is called.
     final ServiceUserScope originalScope = this;
 
-    var ret = new ServiceUserScope(this) /* {
-          @Override
-          public <T extends KlabService> T getService(
-              Class<T> serviceClass, Predicate<T>... selectors) {
-            return originalScope.getService(serviceClass, selectors);
-          }
-
-          @Override
-          public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-            return originalScope.getServices(serviceClass);
-          }
-        }*/;
+    var ret = new ServiceUserScope(this);
     ret.copyInfo(this);
     return ret;
   }
@@ -225,35 +210,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
     return ret;
   }
-
-  //  /**
-  //   * Must be called with clients for all services accessible from the client's environment, plus
-  // the
-  //   * singleton of the hosting service. If this is called on a scope with non-empty services, the
-  //   * scope will use these services instead of the default.
-  //   *
-  //   * @param resources
-  //   * @param resolvers
-  //   * @param reasoners
-  //   * @param runtimes
-  //   */
-  //  public void setServices(
-  //      List<ResourcesService> resources,
-  //      List<Resolver> resolvers,
-  //      List<Reasoner> reasoners,
-  //      List<RuntimeService> runtimes) {
-  //
-  //    serviceMap.clear();
-  //    serviceMap.computeIfAbsent(KlabService.Type.REASONER, t -> new
-  // ArrayList<>()).addAll(reasoners);
-  //    serviceMap.computeIfAbsent(KlabService.Type.RESOLVER, t -> new
-  // ArrayList<>()).addAll(resolvers);
-  //    serviceMap
-  //        .computeIfAbsent(KlabService.Type.RESOURCES, t -> new ArrayList<>())
-  //        .addAll(resources);
-  //    serviceMap.computeIfAbsent(KlabService.Type.RUNTIME, t -> new
-  // ArrayList<>()).addAll(runtimes);
-  //  }
 
   @Override
   public SessionScope run(String behaviorName, RuntimeService host) {
@@ -343,33 +299,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   public String toString() {
     return user.toString();
   }
-
-  //  /**
-  //   * This implementation ensures that if we don't have channels set up but the service has an
-  //   * embedded broker (which means it's local and talking to local users) these get set up.
-  // Channel
-  //   * setup is only called once after the service has been initialized.
-  //   *
-  //   * @param queue
-  //   * @return
-  //   */
-  //  @Override
-  //  protected Channel getChannel(Message.Queue queue) {
-  //
-  //    if (!messagingChecked
-  //        && service instanceof BaseService baseService
-  //        && baseService.isInitialized()
-  //        && baseService.getEmbeddedBroker() != null) {
-  //      setupMessaging(
-  //          baseService.getEmbeddedBroker().getURI().toString(),
-  //          service.capabilities(this).getType().name().toLowerCase() + "." +
-  // getUser().getUsername(),
-  //          service.capabilities(this).getAvailableMessagingQueues());
-  //      messagingChecked = true;
-  //    }
-  //
-  //    return super.getChannel(queue);
-  //  }
 
   @Override
   public void event(Message message) {

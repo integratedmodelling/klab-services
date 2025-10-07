@@ -1,10 +1,18 @@
 package org.integratedmodelling.common.services.client;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
-import org.integratedmodelling.common.services.client.scope.ClientScopeManager;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -27,16 +35,6 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
-import java.util.function.Predicate;
 
 public abstract class BaseServiceClient implements KlabService {
 
@@ -143,21 +141,9 @@ public abstract class BaseServiceClient implements KlabService {
                 .map(KlabService::serviceId)
                 .toList());
 
-    var ret = client.withScope(userScope).post(ServicesAPI.CREATE_SESSION, request, String.class);
-
-    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
-    if (federation != null && sessionScope instanceof MessagingChannelImpl messagingChannel) {
-      var queues =
-          getQueuesFromHeader(
-              sessionScope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
-      if (queues == null) {
-        // TODO error recovery
-        Logging.INSTANCE.error("no queues found in messaging header");
-      }
-      messagingChannel.setupMessaging(federation, ret, queues);
-    }
-
-    return ret;
+    var scopeId =
+        client.withScope(userScope).post(ServicesAPI.CREATE_SESSION, request, String.class);
+    return scopeId == null ? null : setupMessaging(sessionScope, userScope, scopeId);
   }
 
   @Override
@@ -172,22 +158,25 @@ public abstract class BaseServiceClient implements KlabService {
                 .map(KlabService::serviceId)
                 .toList());
 
-    var ret =
+    var scopeId =
         client.withScope(sessionScope).post(ServicesAPI.CREATE_CONTEXT, request, String.class);
 
-    var federation = Klab.INSTANCE.getFederationData(sessionScope.getUser());
-    if (federation != null && contextScope instanceof MessagingChannelImpl messagingChannel) {
+    return scopeId == null ? null : setupMessaging(contextScope, sessionScope, scopeId);
+  }
+
+  private String setupMessaging(SessionScope sessionScope, UserScope userScope, String scopeId) {
+    var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
+    if (federation != null && sessionScope instanceof MessagingChannelImpl messagingChannel) {
       var queues =
           getQueuesFromHeader(
-              contextScope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+              sessionScope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
       if (queues == null) {
         // TODO error recovery
         Logging.INSTANCE.error("no queues found in messaging header");
       }
-      messagingChannel.setupMessaging(federation, ret, queues);
+      messagingChannel.setupMessaging(federation, scopeId, queues);
     }
-
-    return ret;
+    return scopeId;
   }
 
   protected Set<Message.Queue> getQueuesFromHeader(SessionScope scope, String responseHeader) {
