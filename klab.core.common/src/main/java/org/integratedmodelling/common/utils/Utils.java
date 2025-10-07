@@ -78,6 +78,17 @@ import org.springframework.web.util.UriUtils;
 
 public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
+  public static class Exceptions extends org.integratedmodelling.klab.api.utils.Utils.Exceptions {
+
+    public static void suppressAndLog(Runnable task) {
+      try {
+        task.run();
+      } catch (Throwable t) {
+        Logging.INSTANCE.error(t);
+      }
+    }
+  }
+
   public static class Dataflows {
 
     /**

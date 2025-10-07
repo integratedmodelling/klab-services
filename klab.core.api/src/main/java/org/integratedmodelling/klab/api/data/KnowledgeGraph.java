@@ -141,6 +141,13 @@ public interface KnowledgeGraph {
         RuntimeAsset destination,
         GraphModel.Relationship relationship,
         Object... additionalProperties);
+
+    /**
+     * Call this to indicate that the transaction has failed and make the DB roll back at close().
+     *
+     * @param e
+     */
+    void fail(Exception e);
   }
 
   /**

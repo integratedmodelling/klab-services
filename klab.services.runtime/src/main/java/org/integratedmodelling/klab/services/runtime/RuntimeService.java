@@ -393,6 +393,13 @@ public class RuntimeService extends BaseService
                   .getDigitalTwin()
                   .getKnowledgeGraph()
                   .requireAgent(agent.getName());
+
+      /*
+       * TODO put the master DT transaction in this; have all other transaction use a pattern
+       *  masterTransaction == null ? null : masterTransaction.getChild() and put that in the scope
+       *  as transaction(). The only commit should be at the end of submit(). Child transactions
+       *  commit nothing to the KG but do return true or false.
+       */
       var contextScope = serviceContextScope.initializeResolution();
       var resolver = scope.getService(Resolver.class);
       var resolution =

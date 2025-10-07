@@ -211,21 +211,39 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     private final org.neo4j.driver.Transaction transaction;
 
+    private boolean closed;
+
     TransactionImpl() {
       this.transaction =
           driver
-              .session()
+              .session() // new session should make this thread safe
               .beginTransaction(TransactionConfig.builder().withTimeout(Duration.ZERO).build());
     }
 
     @Override
     public void store(RuntimeAsset asset, Object... additionalProperties) {
-      KnowledgeGraphNeo4j.this.store(transaction, asset, userScope, additionalProperties);
+      if (closed) {
+        return;
+      }
+      try {
+        KnowledgeGraphNeo4j.this.store(transaction, asset, userScope, additionalProperties);
+      } catch (Exception e) {
+        closed = true;
+        Logging.INSTANCE.error(e);
+      }
     }
 
     @Override
     public void update(RuntimeAsset asset, Object... properties) {
-      KnowledgeGraphNeo4j.this.update(transaction, asset, userScope, properties);
+      if (closed) {
+        return;
+      }
+      try {
+        KnowledgeGraphNeo4j.this.update(transaction, asset, userScope, properties);
+      } catch (Exception e) {
+        closed = true;
+        Logging.INSTANCE.error(e);
+      }
     }
 
     @Override
@@ -234,17 +252,33 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         RuntimeAsset destination,
         GraphModel.Relationship relationship,
         Object... additionalProperties) {
-      KnowledgeGraphNeo4j.this.link(
-          transaction, source, destination, relationship, userScope, additionalProperties);
+      if (closed) {
+        return;
+      }
+      try {
+        KnowledgeGraphNeo4j.this.link(
+            transaction, source, destination, relationship, userScope, additionalProperties);
+      } catch (Exception e) {
+        closed = true;
+        Logging.INSTANCE.error("DIO CARAMBOLA LINK", e);
+      }
+    }
+
+    @Override
+    public void fail(Exception e) {
+      this.closed = true;
+      if (transaction.isOpen()) {
+        transaction.rollback();
+      }
     }
 
     @Override
     public void close() throws IOException {
-      //      Utils.DebugFile.println("TRANSACTION " + hashCode() + " CLOSED");
 
-      if (!transaction.isOpen()) {
+      if (this.closed) {
         return;
       }
+      this.closed = true;
 
       // update time of last successful operation
       var props = Map.of("lastUpdate", System.currentTimeMillis());
@@ -253,18 +287,17 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           Queries.UPDATE_PROPERTIES.replace("{type}", "Context"),
           Map.of("id", rootContextId, "properties", props),
           userScope);
+
       commitTransaction();
     }
 
     public void commitTransaction() {
+
       int maxRetries = 3;
       int retryCount = 0;
 
       if (!transaction.isOpen()) {
-        // happens with hierarchical transactions after exception in contextualization.
-        // FIXME - shouldn't happen, investigate. The exception rolls it back but then the commit is
-        //  attempted anyway. Probably linked to parallel execution of contextualizers.
-        // FIXME 2 - AND it doesn't help.
+        Logging.INSTANCE.warn("Transaction is not open, skipping commit. Shouldn't happen");
         return;
       }
       while (retryCount < maxRetries) {
@@ -272,7 +305,6 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           transaction.commit();
           return; // Success
         } catch (Throwable e) {
-          Logging.INSTANCE.error("DIO PORCO transaction commit failed\n" + e.getMessage(), e);
           retryCount++;
           if (retryCount >= maxRetries) {
             throw e; // Re-throw after max retries
@@ -292,9 +324,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   @Override
   public Transaction createTransaction() {
-    var ret = new TransactionImpl();
-    //    Utils.DebugFile.println("TRANSACTION " + ret.hashCode() + " CREATED");
-    return ret;
+    return new TransactionImpl();
   }
 
   protected synchronized EagerResult query(
