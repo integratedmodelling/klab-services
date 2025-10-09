@@ -8,20 +8,16 @@ import java.util.function.Consumer;
 
 public abstract class TestCaseBase extends ActorBase {
 
-    protected SessionScope scope;
+  protected SessionScope scope;
 
-    protected abstract void runTests();
+  protected abstract void runTests();
 
-    public TestCaseBase(KActorsBehavior behavior, SessionScope scope) {
-        super(behavior);
-        this.scope = scope;
-    }
+  public TestCaseBase(KActorsBehavior behavior, SessionScope scope) {
+    super(behavior);
+    this.scope = scope;
+  }
 
-    public void runTest(Consumer<TestScope> test) {
-        // TODO
-    }
-
-    public void run() {
-        runTests();
-    }
+  public void runTest(Consumer<TestScope> test) {
+    // TODO
+  }
 }

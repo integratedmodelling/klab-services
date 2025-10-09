@@ -125,12 +125,6 @@ public interface Channel {
    */
   void debug(Object... o);
 
-  //  /**
-  //   * Send
-  //   * @param status
-  //   */
-  //  void status(Scope.Status status);
-
   void event(Message message);
 
   void ui(Message message);
@@ -145,34 +139,6 @@ public interface Channel {
    * @return a consumer ID that can be used to unregister the consumer.
    */
   String onMessage(BiConsumer<Channel, Message> consumer, Message.Queue... queues);
-
-  //  /**
-  //   * Install a consumer to specific messages getting through the event queue.
-  //   *
-  //   * TODO check if we need this in the API or we should filter in other ways. This is probably
-  //   *  overkill here.
-  //   *
-  //   * @param messageClass mandatory message class
-  //   * @param messageType mandatory message type
-  //   * @param runnable code to invoke on match
-  //   * @param matchArguments optional match arguments, including a {@link
-  //   *     org.integratedmodelling.klab.api.scope.Persistence} value to define what to do after
-  // match
-  //   *     (default is {@link org.integratedmodelling.klab.api.scope.Persistence#ONE_OFF}, i.e.
-  // the
-  //   *     handler disappears after matching), or any {@link
-  // java.util.function.Predicate<Message>} to
-  //   *     apply to the message, or any other Object that will be matched to the payload using
-  //   *     equals(). If objects are passed, all the messages that use that object as a match and
-  // have
-  //   *     ONE_OFF as persistence will be removed after one of them has matched.
-  //   * @return a consumer ID that can be used to unregister the consumer.
-  //   */
-  //  String onEvent(
-  //      MessageClass messageClass,
-  //      Message.MessageType messageType,
-  //      Consumer<Message> runnable,
-  //      Object... matchArguments);
 
   /**
    * Unregister a consumer that was previously registered with {@link #onMessage(BiConsumer,
@@ -194,7 +160,8 @@ public interface Channel {
    *     or the necessary info to build one, including a {@link MessageClass} and {@IMessage.Type}
    *     along with any payload (any serializable object). Sending a {@link Notification} should
    *     automatically promote it to a suitable logging message and enforce any logging level
-   *     filtering configured.
+   *     filtering configured. If the {@link MessageClass#ActorCommunication} is passed and an agent
+   *     is embedded in the scope, the message will be sent to the agent.
    * @return the completed message that was sent, for reference, or null if sending failed
    */
   Message send(Object... message);
