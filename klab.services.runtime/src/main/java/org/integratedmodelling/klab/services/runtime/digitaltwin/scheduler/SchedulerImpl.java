@@ -488,7 +488,7 @@ public class SchedulerImpl implements Scheduler {
       if (observation != null) {
         initialize(
             observation,
-            rootScope.of(observation).executing(registration.activity()),
+            rootScope.of(observation).executing(registration.activity(), true),
             registration.activity());
       }
     }

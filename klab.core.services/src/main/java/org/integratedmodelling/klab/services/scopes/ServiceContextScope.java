@@ -79,6 +79,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   LoadingCache<Long, Observation> observationCache;
   private DigitalTwin.Transaction currentTransaction;
+  private Activity currentActivity;
 
   // This uses the SAME catalog, which should only be redefined when changing context or perspective
   private ServiceContextScope(ServiceContextScope parent) {
@@ -94,6 +95,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.resolutionCache = parent.resolutionCache;
     this.nextResolutionId = parent.nextResolutionId;
     this.currentTransaction = parent.currentTransaction;
+    this.currentActivity = parent.currentActivity;
     this.configuration = parent.configuration;
     this.shardingStrategy = parent.shardingStrategy;
   }
@@ -331,12 +333,32 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
-  public ServiceContextScope executing(Activity currentActivity) {
+  public ServiceContextScope executing(Activity currentActivity, boolean isTransaction) {
     ServiceContextScope ret = new ServiceContextScope(this);
-    ret.currentTransaction =
-        currentTransaction == null
-            ? getDigitalTwin().transaction(currentActivity, this)
-            : currentTransaction.getChild(currentActivity);
+    var parentActivity = this.currentActivity;
+    ret.currentActivity = currentActivity;
+    if (isTransaction) {
+      // create a transaction in the child scope
+      ret.currentTransaction =
+          currentTransaction == null
+              ? getDigitalTwin().transaction(currentActivity, this, parentActivity)
+              : currentTransaction.getChild(currentActivity);
+    } else {
+      // TODO VERIFY LOGIC
+      if (currentTransaction != null) {
+          currentTransaction.add(currentActivity);
+          if (parentActivity != null) {
+              currentTransaction.link(parentActivity, currentActivity, GraphModel.Relationship.TRIGGERED);
+          }
+
+      } else try (var transaction = digitalTwin.getKnowledgeGraph().createTransaction()) {
+          transaction.store(currentActivity);
+          if (parentActivity != null) {
+            transaction.link(parentActivity, currentActivity, GraphModel.Relationship.TRIGGERED);
+          }
+        } catch (Exception e) {
+        }
+    }
     return ret;
   }
 

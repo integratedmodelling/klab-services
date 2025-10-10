@@ -400,11 +400,10 @@ public class RuntimeService extends BaseService
                   .getKnowledgeGraph()
                   .requireAgent(agent.getName());
 
+
+
       /*
-       * TODO put the master DT transaction in this; have all other transaction use a pattern
-       *  masterTransaction == null ? null : masterTransaction.getChild() and put that in the scope
-       *  as transaction(). The only commit should be at the end of submit(). Child transactions
-       *  commit nothing to the KG but do return true or false.
+      FIXME this must become executing(submission, false) - initializeResolution must disappear
        */
       var contextScope = serviceContextScope.initializeResolution();
       var resolver = scope.getService(Resolver.class);
@@ -412,7 +411,7 @@ public class RuntimeService extends BaseService
           Activity.of(
               "Resolution of " + observation, Activity.Type.RESOLUTION, this, agent, contextScope);
 
-      var runningScope = contextScope.executing(resolution);
+      var runningScope = contextScope.executing(resolution, true);
       return resolver
           /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
           .resolve(observation, contextScope)
