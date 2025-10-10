@@ -35,10 +35,16 @@ import java.util.concurrent.Future;
 ///    a behavior there. The session running a test case or application has a behavior by default
 ///    and its `main` can install `when` listeners for events fired by a lower agent's main.
 ///
+/// Applications in a service's purview should be automatically available at the URL
+/// `<runtimeUrl>/<applicationUrn>.app`. The app URN should be substitutable with a
+/// resource URN containing the application's behavior (adapter TBD). It should be a
+/// universal adapter, so that only the catalog and the app ID need to be passed (the
+/// rest would be klab:app:) - maybe with the catalog using group-dependent defaults.
+///
 public class ActorBase extends GroovyObjectSupport {
 
   private final KActorsBehavior behavior;
-  private final Sinks.Many<Event> eventBus = Sinks.many().replay().all();
+  private final Sinks.Many<Event> eventBus = Sinks.many().multicast().onBackpressureBuffer();
   private CompletableFuture<ExitValue> mainTask = null;
 
   /** The value returned by a void action. */
@@ -82,6 +88,7 @@ public class ActorBase extends GroovyObjectSupport {
    *     used to ensure proper cleanup of the runtime environment.
    */
   public CompletableFuture<ExitValue> runAsync() {
+    // TODO create and start with asyncSupply
     return mainTask;
   }
 

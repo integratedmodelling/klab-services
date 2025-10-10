@@ -76,11 +76,10 @@ public interface Activity extends Provenance.Node {
 
   enum Type {
     CONTEXT_INITIALIZATION,
+    SUBMISSION,
     INITIALIZATION,
     RESOLUTION,
     CONTEXTUALIZATION,
-    INSTANTIATION,
-    EXECUTION
   }
 
   enum Outcome {
