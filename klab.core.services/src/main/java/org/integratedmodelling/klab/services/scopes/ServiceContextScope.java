@@ -29,7 +29,6 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
@@ -79,7 +78,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private int splits = -1;
 
   LoadingCache<Long, Observation> observationCache;
-  private Activity currentActivity;
+  private DigitalTwin.Transaction currentTransaction;
 
   // This uses the SAME catalog, which should only be redefined when changing context or perspective
   private ServiceContextScope(ServiceContextScope parent) {
@@ -94,7 +93,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.resolutionConstraints.putAll(parent.resolutionConstraints);
     this.resolutionCache = parent.resolutionCache;
     this.nextResolutionId = parent.nextResolutionId;
-    this.currentActivity = parent.currentActivity;
+    this.currentTransaction = parent.currentTransaction;
     this.configuration = parent.configuration;
     this.shardingStrategy = parent.shardingStrategy;
   }
@@ -147,8 +146,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
-  public Activity getCurrentActivity() {
-    return currentActivity;
+  public DigitalTwin.Transaction getCurrentTransaction() {
+    return currentTransaction;
   }
 
   @Override
@@ -334,7 +333,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   public ServiceContextScope executing(Activity currentActivity) {
     ServiceContextScope ret = new ServiceContextScope(this);
-    ret.currentActivity = currentActivity;
+    ret.currentTransaction =
+        currentTransaction == null
+            ? getDigitalTwin().transaction(currentActivity, this)
+            : currentTransaction.getChild(currentActivity);
     return ret;
   }
 

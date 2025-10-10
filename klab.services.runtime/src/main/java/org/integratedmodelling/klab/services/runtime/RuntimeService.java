@@ -320,9 +320,15 @@ public class RuntimeService extends BaseService
    *       RESOLUTION and linked to the Observations affected by a timestamped CONTEXTUALIZED link.
    * </ul>
    *
-   * TODO the observation may come with resolution informations added from the outside, in the form
-   * of metadata that point to an adapter configuration. That needs to be validated and ingested by
-   * the DT before assigning an ID and returning.
+   * TODO revise as follows:
+   *    remove the transaction from all calls - use scope.getCurrentTransaction() and close the
+   *    scope with a commit at the end.
+   *    Use one main SUBMISSION activity (w/o transaction) and implement independent child
+   *    activities for resolution and contextualization, each with an independent transaction
+   *    committed at the end.
+   *    Within scheduler.submit() the transaction used for an instantiator must allow further
+   *    contextualizations to come back into this submit() with the already transacting
+   *    scope. That requires the only transaction generation to be done by scope.executing().
    *
    * @param observation
    * @param scope
@@ -423,7 +429,7 @@ public class RuntimeService extends BaseService
                           .transaction(
                               resolution, runningScope, dataflow, observation, storedAgent);
 
-                  if (compile(observation, dataflow, runningScope, transaction)) {
+                  if (compile(observation, dataflow, runningScope)) {
                     if (transaction.commit()) {
                       // send the committed graph before submitting the observation to the
                       // scheduler,
@@ -449,34 +455,38 @@ public class RuntimeService extends BaseService
   }
 
   private boolean compile(
-      Observation rootObservation,
-      Dataflow dataflow,
-      ServiceContextScope scope,
-      DigitalTwin.Transaction transaction) {
+      Observation rootObservation, Dataflow dataflow, ServiceContextScope scope /*,
+      DigitalTwin.Transaction transaction*/) {
 
-    transaction.add(rootObservation);
-    transaction.link(
-        scope.getContextObservation() == null
-            ? scope.getDigitalTwin().getKnowledgeGraph().scope()
-            : scope.getContextObservation(),
-        rootObservation,
-        GraphModel.Relationship.HAS_CHILD);
+    scope.getCurrentTransaction().add(rootObservation);
+    scope
+        .getCurrentTransaction()
+        .link(
+            scope.getContextObservation() == null
+                ? scope.getDigitalTwin().getKnowledgeGraph().scope()
+                : scope.getContextObservation(),
+            rootObservation,
+            GraphModel.Relationship.HAS_CHILD);
 
-    transaction.link(
-        transaction.getActivity(),
-        rootObservation,
-        rootObservation.getId() < 0
-            ? GraphModel.Relationship.CREATED
-            : GraphModel.Relationship.RESOLVED);
+    scope
+        .getCurrentTransaction()
+        .link(
+            scope.getCurrentTransaction().getActivity(),
+            rootObservation,
+            rootObservation.getId() < 0
+                ? GraphModel.Relationship.CREATED
+                : GraphModel.Relationship.RESOLVED);
 
-    if (transaction instanceof DigitalTwinImpl.TransactionImpl transactionImpl) {
+    if (scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transactionImpl) {
       for (var rootActuator : dataflow.getComputation()) {
         var executionSequence = new CompiledDataflow(this, rootObservation, scope);
         if (!executionSequence.compile(rootActuator)) {
-          transaction.fail(
-              new KlabCompilationError(
-                  "Could not compile execution sequence for target observation "
-                      + rootObservation));
+          scope
+              .getCurrentTransaction()
+              .fail(
+                  new KlabCompilationError(
+                      "Could not compile execution sequence for target observation "
+                          + rootObservation));
           return false;
         }
 

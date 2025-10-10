@@ -15,7 +15,7 @@ import java.util.concurrent.Future;
 ///
 /// Guidelines for the action behavior (applies to k.Actors in general):
 ///
-/// 1. Actions may contain `return` statements or `fire` statements. The return statement
+/// 1. Actions may contain `return` statements and/or `fire` statements. The return statement
 ///    makes the action a "reactor", which will exit (removing all listeners installed in the
 ///    action) when encountered.
 /// 2. If an action ends with a `return` statement, it will exit immediately and remove all its

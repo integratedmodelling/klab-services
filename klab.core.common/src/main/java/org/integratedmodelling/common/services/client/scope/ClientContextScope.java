@@ -3,7 +3,6 @@ package org.integratedmodelling.common.services.client.scope;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Predicate;
 
 import org.integratedmodelling.common.services.client.digitaltwin.ClientDigitalTwin;
 import org.integratedmodelling.common.utils.Utils;
@@ -17,11 +16,9 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -34,7 +31,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   private Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
       new LinkedHashMap<>();
   private ClientDigitalTwin digitalTwin;
-  private Activity activity;
+  private DigitalTwin.Transaction transaction;
   private DigitalTwin.Configuration configuration;
   private Data.ShardingStrategy shardingStrategy;
 
@@ -74,7 +71,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     configuration = parent.configuration;
     contextObservation = parent.contextObservation;
     shardingStrategy = parent.shardingStrategy;
-    this.activity = parent.activity;
+    this.transaction = parent.transaction;
   }
 
   @Override
@@ -353,8 +350,8 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   }
 
   @Override
-  public Activity getCurrentActivity() {
-    return activity;
+  public DigitalTwin.Transaction getCurrentTransaction() {
+    return transaction;
   }
 
   public String toString() {

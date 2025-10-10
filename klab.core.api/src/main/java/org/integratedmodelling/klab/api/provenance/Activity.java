@@ -13,14 +13,10 @@
  */
 package org.integratedmodelling.klab.api.provenance;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -182,11 +178,11 @@ public interface Activity extends Provenance.Node {
       } else if (o instanceof Activity activity) {
         ret.setTriggeringActivityUrn(activity.getUrn());
       } else if (o instanceof ContextScope contextScope
-          && contextScope.getCurrentActivity() != null) {
+          && contextScope.getCurrentTransaction() != null) {
         ret.getMetadata()
             .put(
                 ActivityImpl.PARENT_ACTIVITY_TRANSIENT_ID_KEY,
-                contextScope.getCurrentActivity().getTransientId());
+                contextScope.getCurrentTransaction().getActivity().getTransientId());
       }
     }
     return ret;

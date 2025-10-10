@@ -237,6 +237,16 @@ public interface DigitalTwin extends RuntimeAsset {
     boolean commit();
 
     /**
+     * Obtain a child transaction for the given activity. The child transaction must be committed
+     * normally but won't cause knowledge graph updates until the root transaction is committed. If
+     * a child transaction fails, the whole transaction tree fails.
+     *
+     * @param activity
+     * @return
+     */
+    Transaction getChild(Activity activity);
+
+    /**
      * Signal compilation failure. Return a transaction that will throw the same exception at
      * commit() with as much tracking info as practical.
      *
@@ -267,7 +277,11 @@ public interface DigitalTwin extends RuntimeAsset {
 
   /**
    * Obtain a new transaction to make changes in the knowledge graph. Nothing is modified until
-   * {@link Transaction#commit()} is invoked on the returned object and returns true.
+   * {@link Transaction#commit()} is invoked on the root-level transaction and returns true.
+   *
+   * <p>NOTE: this should not be called as a rule. It should only be called within the service-side
+   * {@link ContextScope}, which will manage the transaction tree and commit after resolution and
+   * contextualization.
    *
    * @param activity
    * @param scope

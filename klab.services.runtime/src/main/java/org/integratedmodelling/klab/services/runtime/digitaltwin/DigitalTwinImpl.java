@@ -83,7 +83,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
   public class TransactionImpl implements Transaction {
 
-    private final GraphModel.KnowledgeGraph graphReference = new GraphModel.KnowledgeGraph();
+    private final GraphModel.KnowledgeGraph graphReference;
 
     static class RelationshipEdge extends DefaultEdge {
       GraphModel.Relationship relationship;
@@ -107,34 +107,36 @@ public class DigitalTwinImpl implements DigitalTwin {
     private final Activity activity;
     private final ServiceContextScope scope;
     private final List<Throwable> failures = new ArrayList<>();
-    private final Graph<RuntimeAsset, RelationshipEdge> graph =
-        new DefaultDirectedGraph<>(RelationshipEdge.class);
+    private final Graph<RuntimeAsset, RelationshipEdge> graph;
     private final Map<Observation, Executor> contextualizers = new HashMap<>();
-    private boolean primary = true; // activity isn't triggered by another
+    private TransactionImpl parent; // null in the root activity
 
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
 
+      this.graph = new DefaultDirectedGraph<>(RelationshipEdge.class);
+      this.graphReference = new GraphModel.KnowledgeGraph();
       this.activity = activity;
       this.scope = scope;
-      this.graph.addVertex(activity);
+      synchronized (graph) {
+        this.graph.addVertex(activity);
 
-      if (data != null) {
-        for (Object datum : data) {
-          if (datum instanceof Agent agent) {
-            this.graph.addVertex(agent);
-            this.graph.addEdge(
-                activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));
-          } else if (datum instanceof Activity activity1) {
-            this.graph.addVertex(activity1);
-            this.graph.addEdge(
-                activity1, activity, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
-            primary = false;
-          } else if (datum instanceof Observation observation) {
-            setTarget(observation);
-          } else if (datum instanceof Dataflow dataflow) {
-            // serialize and record the dataflow with the activity
-            if (activity instanceof ActivityImpl activity1) {
-              activity1.setDescription(Utils.Dataflows.encode(dataflow, scope));
+        if (data != null) {
+          for (Object datum : data) {
+            if (datum instanceof Agent agent) {
+              this.graph.addVertex(agent);
+              this.graph.addEdge(
+                  activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));
+            } else if (datum instanceof Activity activity1) {
+              this.graph.addVertex(activity1);
+              this.graph.addEdge(
+                  activity1, activity, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
+            } else if (datum instanceof Observation observation) {
+              setTarget(observation);
+            } else if (datum instanceof Dataflow dataflow) {
+              // serialize and record the dataflow with the activity
+              if (activity instanceof ActivityImpl activity1) {
+                activity1.setDescription(Utils.Dataflows.encode(dataflow, scope));
+              }
             }
           }
         }
@@ -142,11 +144,26 @@ public class DigitalTwinImpl implements DigitalTwin {
       scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, activity);
     }
 
+    private TransactionImpl(TransactionImpl parent, Activity activity) {
+      this.graph = parent.graph;
+      this.activity = activity;
+      this.scope = parent.scope; // TODO careful with executing() being called outside
+      this.graphReference = parent.graphReference;
+      this.parent = parent;
+      synchronized (graph) {
+        this.graph.addVertex(activity);
+        this.graph.addEdge(
+            parent.activity, activity, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
+      }
+    }
+
     public void setTarget(Observation observation) {
       this.target = observation;
-      this.graph.addVertex(observation);
-      this.graph.addEdge(
-          activity, observation, new RelationshipEdge(GraphModel.Relationship.CREATED));
+      synchronized (graph) {
+        this.graph.addVertex(observation);
+        this.graph.addEdge(
+            activity, observation, new RelationshipEdge(GraphModel.Relationship.CREATED));
+      }
     }
 
     @Override
@@ -156,7 +173,9 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public void add(RuntimeAsset asset) {
-      graph.addVertex(asset);
+      synchronized (graph) {
+        graph.addVertex(asset);
+      }
     }
 
     @Override
@@ -165,9 +184,11 @@ public class DigitalTwinImpl implements DigitalTwin {
         RuntimeAsset destination,
         GraphModel.Relationship relationship,
         Object... data) {
-      graph.addVertex(source);
-      graph.addVertex(destination);
-      graph.addEdge(source, destination, new RelationshipEdge(relationship, data));
+      synchronized (graph) {
+        graph.addVertex(source);
+        graph.addVertex(destination);
+        graph.addEdge(source, destination, new RelationshipEdge(relationship, data));
+      }
       // TODO do this for all others as well
       if (source instanceof ObservationImpl sourceObs
           && destination instanceof ObservationImpl targetObs
@@ -208,70 +229,72 @@ public class DigitalTwinImpl implements DigitalTwin {
       /*
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
        */
-      var kgTransaction = knowledgeGraph.createTransaction();
-      try (kgTransaction) {
+      if (parent == null) {
+        var kgTransaction = knowledgeGraph.createTransaction();
+        try (kgTransaction) {
 
-        Map<String, GraphModel.KnowledgeGraph.Node> nodes = new HashMap<>();
+          Map<String, GraphModel.KnowledgeGraph.Node> nodes = new HashMap<>();
 
-        for (var asset : graph.vertexSet()) {
-          if (setupForStorage(asset, trivial)) {
-            kgTransaction.store(asset);
+          for (var asset : graph.vertexSet()) {
+            if (setupForStorage(asset, trivial)) {
+              kgTransaction.store(asset);
+            }
+            if (!nodes.containsKey(asset.getId() + "")) {
+              var node = encodeRuntimeAsset(asset, nodes);
+              this.graphReference.getNodes().put(node.getLabel(), node);
+            }
           }
-          if (!nodes.containsKey(asset.getId() + "")) {
-            var node = encodeRuntimeAsset(asset, nodes);
-            this.graphReference.getNodes().put(node.getLabel(), node);
+
+          for (var asset : modified) {
+            kgTransaction.update(asset);
+            if (!nodes.containsKey(asset.getId() + "")) {
+              var node = encodeRuntimeAsset(asset, nodes);
+              // TODO set flag to indicate that the asset was modified
+              this.graphReference.getNodes().put(node.getLabel(), node);
+            }
           }
-        }
 
-        for (var asset : modified) {
-          kgTransaction.update(asset);
-          if (!nodes.containsKey(asset.getId() + "")) {
-            var node = encodeRuntimeAsset(asset, nodes);
-            // TODO set flag to indicate that the asset was modified
-            this.graphReference.getNodes().put(node.getLabel(), node);
+          for (var edge : graph.edgeSet()) {
+            var source = graph.getEdgeSource(edge);
+            var target = graph.getEdgeTarget(edge);
+            if (trivial
+                && !(target instanceof Observation)
+                && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
+              continue;
+            }
+            var relationshipData = getRelationshipData(edge);
+            kgTransaction.link(source, target, edge.relationship, relationshipData);
+            this.graphReference
+                .getEdges()
+                .add(encodeLink(source, target, edge.relationship, relationshipData));
           }
-        }
 
-        for (var edge : graph.edgeSet()) {
-          var source = graph.getEdgeSource(edge);
-          var target = graph.getEdgeTarget(edge);
-          if (trivial
-              && !(target instanceof Observation)
-              && edge.relationship != GraphModel.Relationship.HAS_CHILD) {
-            continue;
+          if (!trivial) {
+            kgTransaction.link(
+                knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD);
+            this.graphReference
+                .getEdges()
+                .add(
+                    encodeLink(
+                        knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD));
           }
-          var relationshipData = getRelationshipData(edge);
-          kgTransaction.link(source, target, edge.relationship, relationshipData);
-          this.graphReference
-              .getEdges()
-              .add(encodeLink(source, target, edge.relationship, relationshipData));
-        }
 
-        if (primary && !trivial) {
-          kgTransaction.link(
-              knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD);
-          this.graphReference
-              .getEdges()
-              .add(
-                  encodeLink(
-                      knowledgeGraph.provenance(), activity, GraphModel.Relationship.HAS_CHILD));
-        }
-
-      } catch (Exception e) {
-        scope.error(e);
-        kgTransaction.fail(e);
-        ((ActivityImpl) activity).setOutcome(Activity.Outcome.INTERNAL_FAILURE);
-        ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
-        ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(e));
-        scope.send(
-            Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, activity);
-        return false;
-      } finally {
-        // dio sanguinaccio
-        try {
-          kgTransaction.close();
-        } catch (IOException e) {
-          Logging.INSTANCE.error(e);
+        } catch (Exception e) {
+          scope.error(e);
+          kgTransaction.fail(e);
+          ((ActivityImpl) activity).setOutcome(Activity.Outcome.INTERNAL_FAILURE);
+          ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
+          ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(e));
+          scope.send(
+              Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, activity);
+          return false;
+        } finally {
+          // dio sanguinaccio
+          try {
+            kgTransaction.close();
+          } catch (IOException e) {
+            Logging.INSTANCE.error(e);
+          }
         }
       }
 
@@ -299,6 +322,11 @@ public class DigitalTwinImpl implements DigitalTwin {
       scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, activity);
 
       return true;
+    }
+
+    @Override
+    public Transaction getChild(Activity activity) {
+      return new TransactionImpl(this, activity);
     }
 
     private Object[] getRelationshipData(RelationshipEdge edge) {
@@ -372,7 +400,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     this.storageManager = new StorageManagerImpl(service, scope);
     this.scheduler = new SchedulerImpl(scope, this);
   }
-
+  
   @Override
   public Transaction transaction(Activity activity, ContextScope scope, Object... runtimeAssets) {
     return new TransactionImpl(activity, (ServiceContextScope) scope, runtimeAssets);

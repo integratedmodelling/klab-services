@@ -66,7 +66,12 @@ public interface ContextScope extends SessionScope {
    */
   URL getUrl();
 
-  Activity getCurrentActivity();
+  /**
+   * The scope may be executing a DT transaction, implementing a provenance {@link Activity}.
+   *
+   * @return the current transaction or null if none is active.
+   */
+  DigitalTwin.Transaction getCurrentTransaction();
 
   /**
    * Return the observer for this context. This should normally not be null even if the context is
