@@ -27,6 +27,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -346,12 +347,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     } else {
       // TODO VERIFY LOGIC
       if (currentTransaction != null) {
-          currentTransaction.add(currentActivity);
-          if (parentActivity != null) {
-              currentTransaction.link(parentActivity, currentActivity, GraphModel.Relationship.TRIGGERED);
-          }
+        currentTransaction.add(currentActivity);
+        if (parentActivity != null) {
+          currentTransaction.link(
+              parentActivity, currentActivity, GraphModel.Relationship.TRIGGERED);
+        }
 
-      } else try (var transaction = digitalTwin.getKnowledgeGraph().createTransaction()) {
+      } else
+        try (var transaction = digitalTwin.getKnowledgeGraph().createTransaction()) {
           transaction.store(currentActivity);
           if (parentActivity != null) {
             transaction.link(parentActivity, currentActivity, GraphModel.Relationship.TRIGGERED);
@@ -359,6 +362,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         } catch (Exception e) {
         }
     }
+
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, currentActivity);
+
     return ret;
   }
 
@@ -617,10 +623,56 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return shardingStrategy;
   }
 
-  public ServiceContextScope initializeResolution() {
-    ServiceContextScope ret = new ServiceContextScope(this);
-    ret.nextResolutionId.set(-1L);
-    ret.resolutionCache.clear();
+  /**
+   * Create a scope tuned on a submission and ready for resolution and contextualization. If this is
+   * a root-level submission, initialize the resolution cache and counters.
+   *
+   * @param submission
+   * @return
+   */
+  public ServiceContextScope initializeResolution(Activity submission) {
+    var ret = executing(submission, false);
+    if (this.currentTransaction == null && this.currentActivity == null) {
+      ret.nextResolutionId.set(-1L);
+      ret.resolutionCache.clear();
+    }
     return ret;
+  }
+
+  public boolean commit() {
+    var ret = this.currentTransaction != null && this.currentTransaction.commit();
+    if (getActivity() instanceof ActivityImpl activity) {
+      activity.setOutcome(Activity.Outcome.SUCCESS);
+    }
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
+    return ret;
+  }
+
+  public GraphModel.KnowledgeGraph getResolvedGraph() {
+    return this.currentTransaction.getGraph();
+  }
+
+  public Activity getActivity() {
+    return currentTransaction == null ? currentActivity : currentTransaction.getActivity();
+  }
+
+  public void contextualize(Observation observation) {
+    this.digitalTwin.getScheduler().submit(observation, this);
+  }
+
+  public void fail(Throwable t) {
+    this.currentTransaction.fail(t);
+    if (getActivity() instanceof ActivityImpl activity) {
+      activity.setOutcome(Activity.Outcome.INTERNAL_FAILURE);
+    }
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
+  }
+
+  public void fail() {
+    if (getActivity() instanceof ActivityImpl activity) {
+      activity.setOutcome(Activity.Outcome.FAILURE);
+    }
+    this.currentTransaction.fail(null);
+    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
   }
 }

@@ -10,7 +10,7 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
   // this is to reconstruct the activity tree at client side, as triggering activity is not enough
   // for that. Parent activity depends on resolution and contextualization dynamics.
-  public static final String PARENT_ACTIVITY_TRANSIENT_ID_KEY = "internal.parent.task.transient.id";
+//  public static final String PARENT_ACTIVITY_TRANSIENT_ID_KEY = "internal.parent.task.transient.id";
 
   private long start;
   private long end;
@@ -183,17 +183,15 @@ public class ActivityImpl extends ProvenanceNodeImpl implements Activity {
 
   @Override
   public String toString() {
-    return "ActivityImpl{"
-        + "type="
+    return "A["
+        + getTransientId()
+        + "]{"
         + type
-        + ", urn='"
-        + urn
-        + '\''
-        + ", outcome="
-        + outcome
-        + ", description='"
+        + " '"
         + description
-        + '\''
-        + '}';
+        + "'"
+        + (getParentTransientId() > 0 ? (" <- " + getParentTransientId()) : "")
+        + "}: "
+        + outcome;
   }
 }

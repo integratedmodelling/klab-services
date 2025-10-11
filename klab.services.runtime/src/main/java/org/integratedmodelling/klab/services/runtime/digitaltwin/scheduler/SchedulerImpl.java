@@ -92,32 +92,34 @@ public class SchedulerImpl implements Scheduler {
   }
 
   @Override
-  public void submit(Observation observation, Activity triggeringActivity) {
+  public void submit(Observation observation, ContextScope scope) {
 
     // TODO we should not register observations that are unaffected by others unless they're events
-
     if (observation.isEmpty()) {
       return;
     }
 
-    var timeData = register(observation.getGeometry());
-    var registration =
-        new Registration(
-            observation.getId(),
-            SemanticType.fundamentalType(observation.getObservable().getSemantics().getType()),
-            timeData.getFirst(),
-            timeData.getSecond(),
-            timeData.getThird(),
-            triggeringActivity);
-    if (observation.getObservable().is(SemanticType.EVENT)) {
-      // EVENT! Post iy
-    } else if (observation.getObservable().is(SemanticType.PROCESS)) {
-      // PROCESS! Time events will affect it
+    if (scope instanceof ServiceContextScope serviceContextScope) {
+
+      var timeData = register(observation.getGeometry());
+      var registration =
+          new Registration(
+              observation.getId(),
+              SemanticType.fundamentalType(observation.getObservable().getSemantics().getType()),
+              timeData.getFirst(),
+              timeData.getSecond(),
+              timeData.getThird(),
+              serviceContextScope.getActivity());
+      if (observation.getObservable().is(SemanticType.EVENT)) {
+        // EVENT! Post iy
+      } else if (observation.getObservable().is(SemanticType.PROCESS)) {
+        // PROCESS! Time events will affect it
+      }
+      processor
+          .asFlux()
+          .filterWhen(event -> Mono.just(checkApplies(registration, event)))
+          .subscribe(e -> handleEvent(registration, e));
     }
-    processor
-        .asFlux()
-        .filterWhen(event -> Mono.just(checkApplies(registration, event)))
-        .subscribe(e -> handleEvent(registration, e));
   }
 
   @Override
@@ -138,33 +140,31 @@ public class SchedulerImpl implements Scheduler {
   /**
    * This is called in response to the INIT event received by any root-level observation that was
    * successfully resolved. Successive executions of the same executors will happen by directly
-   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope, EventImpl,
-   * DigitalTwin.Transaction)}
+   * calling {@link #contextualize(Observation, Geometry, ServiceContextScope, EventImpl)}
    *
    * @param observation
    */
-  private void initialize(
-      Observation observation, ServiceContextScope scope, Activity triggeringResolution) {
+  private void initialize(Observation observation, ServiceContextScope scope) {
     var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry());
-    var transaction =
-        scope
-            .getDigitalTwin()
-            .transaction(
-                Activity.of(
-                    Activity.Type.INITIALIZATION,
-                    observation,
-                    triggeringResolution,
-                    scope,
-                    "Initialization of " + observation),
-                scope,
-                triggeringResolution);
+    //    var transaction =
+    //        scope
+    //            .getDigitalTwin()
+    //            .transaction(
+    //                Activity.of(
+    //                    Activity.Type.INITIALIZATION,
+    //                    observation,
+    //                    scope.getCurrentTransaction().getActivity(),
+    //                    scope,
+    //                    "Initialization of " + observation),
+    //                scope,
+    //                triggeringResolution);
     try {
-      if (contextualize(observation, scale, scope, this.initializationEvent, transaction)) {
-        transaction.commit();
+      if (contextualize(observation, scale, scope, this.initializationEvent)) {
+//        scope.commit();
       }
     } catch (Throwable t) {
       Logging.INSTANCE.error(t);
-      transaction.fail(t);
+      scope.fail(t);
     }
   }
 
@@ -176,15 +176,13 @@ public class SchedulerImpl implements Scheduler {
    * @param geometry
    * @param scope
    * @param causingEvent
-   * @param transaction
    * @return
    */
   private boolean contextualize(
       Observation observation,
       Geometry geometry,
       ServiceContextScope scope,
-      EventImpl causingEvent,
-      DigitalTwin.Transaction transaction) {
+      EventImpl causingEvent) {
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
 
@@ -207,8 +205,12 @@ public class SchedulerImpl implements Scheduler {
               .between(affecting, observation, GraphModel.Relationship.AFFECTS)
               .peek(scope);
 
-      transaction.link(
-          transaction.getActivity(), affecting, GraphModel.Relationship.CONTEXTUALIZED);
+      scope
+          .getCurrentTransaction()
+          .link(
+              scope.getCurrentTransaction().getActivity(),
+              affecting,
+              GraphModel.Relationship.CONTEXTUALIZED);
 
       var sequence = 0;
       if (relationship.isPresent()) { // it must be
@@ -218,7 +220,7 @@ public class SchedulerImpl implements Scheduler {
 
       tasks
           .computeIfAbsent(sequence, n -> new ArrayList<>())
-          .add(() -> contextualize(affecting, geometry, scope, causingEvent, transaction));
+          .add(() -> contextualize(affecting, geometry, scope, causingEvent));
     }
 
     var sortedTasks =
@@ -256,7 +258,7 @@ public class SchedulerImpl implements Scheduler {
      */
     var executor = executors.getIfPresent(observation.getId());
     if (executor != null) {
-      return execute(executor, observation, geometry, causingEvent, scope, transaction);
+      return execute(executor, observation, geometry, causingEvent, scope);
     }
     return true;
   }
@@ -266,19 +268,20 @@ public class SchedulerImpl implements Scheduler {
       Observation observation,
       Geometry geometry,
       Scheduler.Event event,
-      ServiceContextScope scope,
-      DigitalTwin.Transaction transaction) {
+      ServiceContextScope scope) {
     if (executor.apply(geometry, event, scope)) {
       if (observation.getObservable().is(SemanticType.QUALITY)) {
         var storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
         if (storage != null) {
           for (var buffer : storage.getNativeShards(event)) {
-            transaction.link(observation, buffer, GraphModel.Relationship.HAS_DATA);
+            scope
+                .getCurrentTransaction()
+                .link(observation, buffer, GraphModel.Relationship.HAS_DATA);
           }
         }
       }
       var geometryTime = GeometryRepository.INSTANCE.scale(geometry).getTime();
-      recordEvent(observation, event, geometryTime, transaction);
+      recordEvent(observation, event, geometryTime, scope.getCurrentTransaction());
       return true;
     }
     return false;
@@ -481,15 +484,11 @@ public class SchedulerImpl implements Scheduler {
    */
   private void handleEvent(Registration registration, EventImpl event) {
     //    System.out.println(registration + " got event " + event);
-    if (event.type
-        == EventImpl.Type
-            .INITIALIZATION) { // FIXME this should not be necessary when the filter works
+    if (event.type == EventImpl.Type.INITIALIZATION) {
+      // FIXME this should not be necessary when the filter works
       var observation = rootScope.getObservation(registration.id());
       if (observation != null) {
-        initialize(
-            observation,
-            rootScope.of(observation).executing(registration.activity(), true),
-            registration.activity());
+        initialize(observation, rootScope.of(observation).executing(registration.activity(), true));
       }
     }
   }

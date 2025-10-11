@@ -120,17 +120,14 @@ public interface Scheduler {
    * consequences of any resulting events and call the scope to carry on any necessary computations
    * and update the knowledge graph.
    *
-   * <p>This must be called <em>only on the root observation of a resolution</em> after the
-   * resolution has been successfully committed to the knowledge graph and all executors have been
-   * registered, which is done through {@link DigitalTwin.Transaction#commit()}. The observation
-   * after commit will contain its finalized IDs and all buffers will have been set up.
+   * <p>The scope passed must be appropriately set to the contextualization activity and carry a DT
+   * transaction that will be committed after contextualization.
    *
    * @param observation
-   * @param triggeringActivity the activity that triggered the submission (not the submission
-   *     activity itself)
+   * @param scope a scope pre-contextualized to the contextualization activity and DT transaction.
    * @return
    */
-  void submit(Observation observation, Activity triggeringActivity);
+  void submit(Observation observation, ContextScope scope);
 
   /**
    * Register an executor compiled from the actuator that resolves the passed observation in the

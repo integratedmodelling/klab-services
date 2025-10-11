@@ -320,15 +320,13 @@ public class RuntimeService extends BaseService
    *       RESOLUTION and linked to the Observations affected by a timestamped CONTEXTUALIZED link.
    * </ul>
    *
-   * TODO revise as follows:
-   *    remove the transaction from all calls - use scope.getCurrentTransaction() and close the
-   *    scope with a commit at the end.
-   *    Use one main SUBMISSION activity (w/o transaction) and implement independent child
-   *    activities for resolution and contextualization, each with an independent transaction
-   *    committed at the end.
-   *    Within scheduler.submit() the transaction used for an instantiator must allow further
-   *    contextualizations to come back into this submit() with the already transacting
-   *    scope. That requires the only transaction generation to be done by scope.executing().
+   * TODO revise as follows: remove the transaction from all calls - use
+   * scope.getCurrentTransaction() and close the scope with a commit at the end. Use one main
+   * SUBMISSION activity (w/o transaction) and implement independent child activities for resolution
+   * and contextualization, each with an independent transaction committed at the end. Within
+   * scheduler.submit() the transaction used for an instantiator must allow further
+   * contextualizations to come back into this submit() with the already transacting scope. That
+   * requires the only transaction generation to be done by scope.executing().
    *
    * @param observation
    * @param scope
@@ -400,21 +398,31 @@ public class RuntimeService extends BaseService
                   .getKnowledgeGraph()
                   .requireAgent(agent.getName());
 
+      var submission =
+          Activity.of(
+              Activity.Type.SUBMISSION,
+              this,
+              observation,
+              scope,
+              storedAgent,
+              observation + " submitted");
 
-
-      /*
-      FIXME this must become executing(submission, false) - initializeResolution must disappear
-       */
-      var contextScope = serviceContextScope.initializeResolution();
+      var contextScope = serviceContextScope.initializeResolution(submission);
       var resolver = scope.getService(Resolver.class);
       var resolution =
           Activity.of(
-              "Resolution of " + observation, Activity.Type.RESOLUTION, this, agent, contextScope);
+              "Resolution of " + observation,
+              Activity.Type.RESOLUTION,
+              this,
+              agent,
+              submission,
+              "Resolution of " + observation,
+              contextScope);
 
-      var runningScope = contextScope.executing(resolution, true);
+      var resolutionScope = contextScope.executing(resolution, true);
       return resolver
           /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
-          .resolve(observation, contextScope)
+          .resolve(observation, resolutionScope)
           /* then compile the dataflow */
           .thenApply(
               dataflow -> {
@@ -422,20 +430,21 @@ public class RuntimeService extends BaseService
                   /*
                    * Compile an atomic transaction from the dataflow, adding new observations if the digital twin does not have them.
                    */
-                  var transaction =
-                      scope
-                          .getDigitalTwin()
-                          .transaction(
-                              resolution, runningScope, dataflow, observation, storedAgent);
+                  //                  var transaction =
+                  //                      scope
+                  //                          .getDigitalTwin()
+                  //                          .transaction(
+                  //                              resolution, runningScope, dataflow, observation,
+                  // storedAgent);
 
-                  if (compile(observation, dataflow, runningScope)) {
-                    if (transaction.commit()) {
+                  if (compile(observation, dataflow, resolutionScope)) {
+                    if (resolutionScope.commit()) {
                       // send the committed graph before submitting the observation to the
-                      // scheduler,
-                      runningScope.send(
-                          Message.MessageClass.DigitalTwin,
-                          Message.MessageType.KnowledgeGraphCommitted,
-                          transaction.getGraph());
+                      // scheduler, TODO make this a debug action
+//                      resolutionScope.send(
+//                          Message.MessageClass.DigitalTwin,
+//                          Message.MessageType.KnowledgeGraphCommitted,
+//                          resolutionScope.getResolvedGraph());
                       return observation;
                     }
                   }
@@ -445,7 +454,21 @@ public class RuntimeService extends BaseService
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
               o -> {
-                runningScope.getDigitalTwin().getScheduler().submit(o, resolution);
+                if (!o.isEmpty()) {
+//                 var contextualization =
+//                      Activity.of(
+//                          "Contextualization of " + observation,
+//                          Activity.Type.CONTEXTUALIZATION,
+//                          this,
+//                          agent,
+//                          submission,
+//                          contextScope);
+//                  var contextualizationScope = contextScope.executing(contextualization, true);
+                  contextScope.contextualize(o);
+                  contextScope.commit();
+                } else {
+                    contextScope.fail();
+                }
                 return o;
               });
     }

@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -48,13 +49,13 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   }
 
   @Override
-  public boolean execute(Scheduler.Event event) {
+  public boolean execute(Scheduler.Event event, ServiceContextScope contextScope) {
 
     List<Callable<Object>> tasks = new ArrayList<>();
 
     if (observation.getObservable().is(SemanticType.QUALITY)) {
       if (storage == null) {
-        storage = scope.getDigitalTwin().getStorageManager().getStorage(observation);
+        storage = contextScope.getDigitalTwin().getStorageManager().getStorage(observation);
       }
       if (storage == null) {
         cause = new KlabIllegalStateException("No storage available for " + observation);

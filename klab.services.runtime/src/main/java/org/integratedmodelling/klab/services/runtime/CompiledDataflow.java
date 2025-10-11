@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
@@ -90,7 +91,7 @@ public class CompiledDataflow {
 
     ///  Main executor method
     /// @return true if successful. A `false` return value will stop contextualization.
-    boolean execute(Scheduler.Event event);
+    boolean execute(Scheduler.Event event, ServiceContextScope contextScope);
 
     ///  If [#execute] has returned false, the cause should be here.
     Throwable getCause();
@@ -595,37 +596,36 @@ public class CompiledDataflow {
     @Override
     public boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
+      var contextScope = (ServiceContextScope) scope;
+
       if (observation.getObservable().is(SemanticType.QUALITY)) {
         createStorage();
       }
 
-      scope.send(
-          Message.create(
-              scope,
-              Message.MessageType.ContextualizationStarted,
-              Message.MessageClass.DigitalTwin,
-              observation));
+      var contextualization =
+          Activity.of(
+              Activity.Type.CONTEXTUALIZATION,
+              observation,
+              contextScope.getActivity(),
+              "Contextualization of " + observation.getObservable());
 
+      var contextualizationScope = contextScope.executing(contextualization, true);
+
+      boolean ret = true;
       for (var executor : executors) {
-        if (!executor.execute(event)) {
-          scope.send(
-              Message.create(
-                  scope,
-                  Message.MessageType.ContextualizationAborted,
-                  Message.MessageClass.DigitalTwin,
-                  observation));
-          return false;
+        if (!executor.execute(event, contextualizationScope)) {
+          ret = false;
+          break;
         }
       }
 
-      scope.send(
-          Message.create(
-              scope,
-              Message.MessageType.ContextualizationSuccessful,
-              Message.MessageClass.DigitalTwin,
-              observation));
+      if (ret) {
+        contextualizationScope.commit();
+      } else {
+        contextualizationScope.fail();
+      }
 
-      return true;
+      return ret;
     }
 
     public boolean isOperational() {

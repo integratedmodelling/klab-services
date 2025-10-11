@@ -141,7 +141,8 @@ public class DigitalTwinImpl implements DigitalTwin {
           }
         }
       }
-      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, activity);
+      //      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted,
+      // activity);
     }
 
     private TransactionImpl(TransactionImpl parent, Activity activity) {
@@ -285,8 +286,9 @@ public class DigitalTwinImpl implements DigitalTwin {
           ((ActivityImpl) activity).setOutcome(Activity.Outcome.INTERNAL_FAILURE);
           ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
           ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(e));
-          scope.send(
-              Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, activity);
+          //          scope.send(
+          //              Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished,
+          // activity);
           return false;
         } finally {
           // dio sanguinaccio
@@ -319,7 +321,8 @@ public class DigitalTwinImpl implements DigitalTwin {
       ((ActivityImpl) activity).setOutcome(Activity.Outcome.SUCCESS);
       ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
 
-      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, activity);
+      //      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished,
+      // activity);
 
       return true;
     }
@@ -350,11 +353,14 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public Transaction fail(Throwable compilationError) {
-      this.failures.add(compilationError);
       ((ActivityImpl) activity).setOutcome(Activity.Outcome.FAILURE);
       ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
-      ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(compilationError));
-      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, activity);
+      if (compilationError != null) {
+        this.failures.add(compilationError);
+        ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(compilationError));
+      }
+      //      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished,
+      // activity);
       return this;
     }
 
@@ -400,7 +406,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     this.storageManager = new StorageManagerImpl(service, scope);
     this.scheduler = new SchedulerImpl(scope, this);
   }
-  
+
   @Override
   public Transaction transaction(Activity activity, ContextScope scope, Object... runtimeAssets) {
     return new TransactionImpl(activity, (ServiceContextScope) scope, runtimeAssets);

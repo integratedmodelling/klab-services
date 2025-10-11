@@ -177,13 +177,14 @@ public interface Activity extends Provenance.Node {
         ret.setServiceType(KlabService.Type.classify(service));
       } else if (o instanceof Activity activity) {
         ret.setTriggeringActivityUrn(activity.getUrn());
-      } else if (o instanceof ContextScope contextScope
+        ret.setParentTransientId(activity.getTransientId());
+      } /*else if (o instanceof ContextScope contextScope
           && contextScope.getCurrentTransaction() != null) {
         ret.getMetadata()
             .put(
                 ActivityImpl.PARENT_ACTIVITY_TRANSIENT_ID_KEY,
-                contextScope.getCurrentTransaction().getActivity().getTransientId());
-      }
+                contextScope.getActivity().getTransientId());
+      }*/
     }
     return ret;
   }
