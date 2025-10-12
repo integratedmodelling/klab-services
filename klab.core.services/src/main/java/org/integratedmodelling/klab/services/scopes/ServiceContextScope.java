@@ -93,7 +93,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.serviceMap.putAll(parent.serviceMap);
     this.resolutionConstraints.putAll(parent.resolutionConstraints);
     //    this.resolutionCache = parent.resolutionCache;
-//    this.nextResolutionId = parent.nextResolutionId;
+    //    this.nextResolutionId = parent.nextResolutionId;
     this.currentTransaction = parent.currentTransaction;
     this.currentActivity = parent.currentActivity;
     this.configuration = parent.configuration;
@@ -136,7 +136,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                     return ret;
                   }
                 });
-//    this.nextResolutionId = new AtomicLong(-1L);
+    //    this.nextResolutionId = new AtomicLong(-1L);
   }
 
   @Override
@@ -313,14 +313,28 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
-  public Collection<Observation> affects(Observation observation) {
-    // TODO Auto-generated method stub
-    return null;
+  public Collection<Observation> affecting(Observation observation) {
+
+    var ret = new ArrayList<Observation>();
+    if (currentTransaction != null) {
+      // TODO lookup in transaction graph
+    }
+    if (observation.getId() > 0) {
+      ret.addAll(
+          digitalTwin
+              .getKnowledgeGraph()
+              .query(Observation.class, this)
+              .target(observation)
+              .along(GraphModel.Relationship.AFFECTS)
+              .run(this));
+    }
+
+    return ret;
   }
 
   @Override
   public Collection<Observation> affected(Observation observation) {
-    // TODO Auto-generated method stub
+
     return null;
   }
 
@@ -642,21 +656,21 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return this;
   }
 
-//  /**
-//   * This is used only by the resolver. TODO must work for resolution to work.
-//   *
-//   * @param observation
-//   */
-//  public void registerObservation(Observation observation) {
-//    if (observation instanceof ObservationImpl observation1) {
-//      if (observation.getId() == Observation.UNASSIGNED_ID) {
-//        observation1.setId(nextResolutionId.decrementAndGet());
-//      }
-//      return;
-//    }
-//    throw new KlabInternalErrorException(
-//        "ServiceContextScope::registerObservation: unexpected observation implementation");
-//  }
+  //  /**
+  //   * This is used only by the resolver. TODO must work for resolution to work.
+  //   *
+  //   * @param observation
+  //   */
+  //  public void registerObservation(Observation observation) {
+  //    if (observation instanceof ObservationImpl observation1) {
+  //      if (observation.getId() == Observation.UNASSIGNED_ID) {
+  //        observation1.setId(nextResolutionId.decrementAndGet());
+  //      }
+  //      return;
+  //    }
+  //    throw new KlabInternalErrorException(
+  //        "ServiceContextScope::registerObservation: unexpected observation implementation");
+  //  }
 
   @Override
   public Data.ShardingStrategy getShardingStrategy(Observation observation) {

@@ -185,19 +185,17 @@ public class SchedulerImpl implements Scheduler {
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
 
+    // FIXME must use scope functions instead of KG queries, using the transaction as well as the KG
+
     // follow the dependency chain first, then execute self
     Map<Integer, List<Callable<Boolean>>> tasks = new HashMap<>();
-    for (var affecting :
-        knowledgeGraph
-            .query(Observation.class, scope)
-            .target(observation)
-            .along(GraphModel.Relationship.AFFECTS)
-            .run(scope)) {
+    for (var affecting : scope.affecting(observation)) {
 
       if (checkEvent(affecting, causingEvent)) {
         continue;
       }
 
+      // FIXME switch to scope.outgoing with a filter; add the transaction management in scope
       var relationship =
           knowledgeGraph
               .query(KnowledgeGraph.Link.class, scope)

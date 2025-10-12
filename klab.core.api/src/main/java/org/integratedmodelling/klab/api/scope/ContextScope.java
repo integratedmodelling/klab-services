@@ -229,7 +229,7 @@ public interface ContextScope extends SessionScope {
    * @param observation
    * @return
    */
-  Collection<Observation> affects(Observation observation);
+  Collection<Observation> affecting(Observation observation);
 
   /**
    * Return all observations that the passed one affects in this scope, either through model

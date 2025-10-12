@@ -135,7 +135,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   }
 
   @Override
-  public Collection<Observation> affects(Observation observation) {
+  public Collection<Observation> affecting(Observation observation) {
     return List.of();
   }
 
