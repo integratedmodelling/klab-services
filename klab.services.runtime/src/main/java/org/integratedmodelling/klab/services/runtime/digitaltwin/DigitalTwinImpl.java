@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.*;
@@ -80,6 +80,66 @@ public class DigitalTwinImpl implements DigitalTwin {
   public class TransactionImpl implements Transaction {
 
     private final GraphModel.KnowledgeGraph graphReference;
+
+    static class LinkImpl implements Link {
+      private RuntimeAsset source;
+      private RuntimeAsset target;
+      private GraphModel.Relationship relationship;
+      private int sequence = -1;
+      private Geometry geometry;
+
+      public LinkImpl(
+          RuntimeAsset source, RuntimeAsset target, GraphModel.Relationship relationship) {
+        this.source = source;
+        this.target = target;
+        this.relationship = relationship;
+      }
+
+      @Override
+      public GraphModel.Relationship getRelationship() {
+        return relationship;
+      }
+
+      @Override
+      public RuntimeAsset getSource() {
+        return source;
+      }
+
+      @Override
+      public RuntimeAsset getTarget() {
+        return target;
+      }
+
+      @Override
+      public int getSequence() {
+        return sequence;
+      }
+
+      @Override
+      public Geometry getGeometry() {
+        return geometry;
+      }
+
+      public void setSource(RuntimeAsset source) {
+        this.source = source;
+      }
+
+      public void setTarget(RuntimeAsset target) {
+        this.target = target;
+      }
+
+      public void setRelationship(GraphModel.Relationship relationship) {
+        this.relationship = relationship;
+      }
+
+      public void setSequence(int sequence) {
+        this.sequence = sequence;
+      }
+
+      public void setGeometry(Geometry geometry) {
+        this.geometry = geometry;
+      }
+    }
 
     static class RelationshipEdge extends DefaultEdge {
       GraphModel.Relationship relationship;
@@ -320,9 +380,6 @@ public class DigitalTwinImpl implements DigitalTwin {
       ((ActivityImpl) activity).setOutcome(Activity.Outcome.SUCCESS);
       ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
 
-      //      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished,
-      // activity);
-
       return true;
     }
 
@@ -358,16 +415,46 @@ public class DigitalTwinImpl implements DigitalTwin {
         this.failures.add(compilationError);
         ((ActivityImpl) activity).setStackTrace(Utils.Exceptions.stackTrace(compilationError));
       }
-      //      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished,
-      // activity);
       return this;
     }
 
     @Override
-    public Collection<RuntimeAsset> getAssets() {
+    public Collection<RuntimeAsset> assets() {
       synchronized (graph) {
         return new ArrayList<>(graph.vertexSet());
       }
+    }
+
+    @Override
+    public Collection<Link> incoming(RuntimeAsset asset) {
+      var ret = new ArrayList<Link>();
+      synchronized (graph) {
+        if (graph.vertexSet().contains(asset)) {
+          for (var edge : graph.incomingEdgesOf(asset)) {
+            var link = new LinkImpl(graph.getEdgeSource(edge), asset, edge.relationship);
+            link.setSequence(edge.sequence);
+            link.setGeometry(edge.geometry);
+            ret.add(link);
+          }
+        }
+      }
+      return ret;
+    }
+
+    @Override
+    public Collection<Link> outgoing(RuntimeAsset asset) {
+      var ret = new ArrayList<Link>();
+      synchronized (graph) {
+        if (graph.vertexSet().contains(asset)) {
+          for (var edge : graph.outgoingEdgesOf(asset)) {
+            var link = new LinkImpl(asset, graph.getEdgeTarget(edge), edge.relationship);
+            link.setSequence(edge.sequence);
+            link.setGeometry(edge.geometry);
+            ret.add(link);
+          }
+        }
+      }
+      return ret;
     }
 
     @Override

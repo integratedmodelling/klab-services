@@ -7,7 +7,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicLong;
+
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -23,8 +23,6 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.SchedulerEventImpl;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
@@ -284,12 +282,28 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Collection<RuntimeAsset> getChildrenOf(RuntimeAsset observation) {
-    return digitalTwin
-        .getKnowledgeGraph()
-        .query(RuntimeAsset.class, this)
-        .source(observation)
-        .along(GraphModel.Relationship.HAS_CHILD)
-        .run(this);
+
+    var ret = new ArrayList<RuntimeAsset>();
+
+    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
+      ret.addAll(
+          currentTransaction.outgoing(observation).stream()
+              .filter(edge -> edge.getRelationship() == GraphModel.Relationship.HAS_CHILD)
+              .map(DigitalTwin.Transaction.Link::getTarget)
+              .toList());
+    }
+
+    if (observation.getId() > 0) {
+      ret.addAll(
+          digitalTwin
+              .getKnowledgeGraph()
+              .query(RuntimeAsset.class, this)
+              .source(observation)
+              .along(GraphModel.Relationship.HAS_CHILD)
+              .run(this));
+    }
+
+    return ret;
   }
 
   @Override
@@ -316,8 +330,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public Collection<Observation> affecting(Observation observation) {
 
     var ret = new ArrayList<Observation>();
-    if (currentTransaction != null) {
-      // TODO lookup in transaction graph
+    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
+      ret.addAll(
+          currentTransaction.incoming(observation).stream()
+              .filter(
+                  edge ->
+                      edge.getRelationship() == GraphModel.Relationship.AFFECTS
+                          && edge.getSource() instanceof Observation)
+              .map(edge -> (Observation) edge.getSource())
+              .toList());
     }
     if (observation.getId() > 0) {
       ret.addAll(
@@ -334,8 +355,29 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Collection<Observation> affected(Observation observation) {
+    var ret = new ArrayList<Observation>();
+    if (currentTransaction != null && currentTransaction.assets().contains(observation)) {
+      ret.addAll(
+          currentTransaction.outgoing(observation).stream()
+              .filter(
+                  edge ->
+                      edge.getRelationship() == GraphModel.Relationship.AFFECTS
+                          && edge.getTarget() instanceof Observation)
+              .map(edge -> (Observation) edge.getTarget())
+              .toList());
+    }
 
-    return null;
+    if (observation.getId() > 0) {
+      ret.addAll(
+          digitalTwin
+              .getKnowledgeGraph()
+              .query(Observation.class, this)
+              .source(observation)
+              .along(GraphModel.Relationship.AFFECTS)
+              .run(this));
+    }
+
+    return ret;
   }
 
   @Override
@@ -605,7 +647,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private List<Observation> getTransactingObservations() {
     List<Observation> ret = new ArrayList<>();
     if (currentTransaction != null) {
-      for (var asset : currentTransaction.getAssets()) {
+      for (var asset : currentTransaction.assets()) {
         if (asset instanceof Observation observation) {
           if (contextObservation != null) {
             // TODO must go over the children of the current context observation if one is there

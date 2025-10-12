@@ -186,8 +186,24 @@ public interface DigitalTwin extends RuntimeAsset {
   /**
    * Operations that modify the digital twin are transactional and use this object, which guarantees
    * that all operations are linked to an activity that gets recorded in provenance.
+   *
+   * <p>The transaction hosts the portion of the knowledge graph being created and modified. The
+   * scope inspection functions must be aware of any transaction and find the observations in it by
+   * reference before consulting the committed graph.
    */
   interface Transaction {
+
+    interface Link {
+        GraphModel.Relationship getRelationship();
+
+        RuntimeAsset getSource();
+
+      RuntimeAsset getTarget();
+
+      int getSequence();
+
+      Geometry getGeometry();
+    }
 
     /**
      * Each transaction represents a provenance activity that cannot be null.
@@ -238,7 +254,7 @@ public interface DigitalTwin extends RuntimeAsset {
     boolean commit();
 
     /**
-     * Obtain a child transaction for the given activity. The child transaction must be committed
+     * Get a child transaction for the given activity. The child transaction must be committed
      * normally but won't cause knowledge graph updates until the root transaction is committed. If
      * a child transaction fails, the whole transaction tree fails.
      *
@@ -257,11 +273,15 @@ public interface DigitalTwin extends RuntimeAsset {
     Transaction fail(Throwable compilationError);
 
     /**
-     * All the uncommitted assets in the transaction
+     * All the uncommitted assets in the transaction.
      *
      * @return
      */
-    Collection<RuntimeAsset> getAssets();
+    Collection<RuntimeAsset> assets();
+
+    Collection<Link> incoming(RuntimeAsset asset);
+
+    Collection<Link> outgoing(RuntimeAsset asset);
 
     /**
      * Produce the serializable and visualizable graph containing all the new assets created and
